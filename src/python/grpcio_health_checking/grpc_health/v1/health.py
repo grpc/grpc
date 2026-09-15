@@ -82,12 +82,15 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         # guards servicer state maps. Taken by the CQ thread, so it must NOT
         # be held across blocking send
         self._state_lock = threading.RLock()
-        # guards server responses so two callbacks never issue overlapping
-        # batches on the same streaming call (which hangs under free threading);
-        # Acquired as the OUTER lock -- before self._state_lock -- and held
+        # Per-service sand locks (one lock per service); guard server responses
+        # so two callbacks never issue overlapping batches on the same streaming
+        # call (which hangs under free threading). For a given service its lock
+        # is the OUTER lock -- acquired before self._state_lock -- and held
         # across whole status read + send, so a Watch's initial send and a
         # concurrent set() / graceful_shutdown() broadcast cannot interleave
-        self._send_lock = threading.RLock()
+        # for that particular service. Keying by service (rather one global
+        # lock) avoids head-of-line blocking
+        self._send_locks = {}
         self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._send_response_callbacks = {}
         self.Watch.__func__.experimental_non_blocking = (
@@ -105,6 +108,12 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             send_response_callback(None)
 
         return callback
+
+    def _get_send_lock(self, service):
+        lock = self._send_locks.get(service)
+        if lock is None:
+            lock = self._send_locks.setdefault(service, threading.RLock())
+        return lock
 
     def Check(self, request, context):
         with self._state_lock:
@@ -126,7 +135,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 blocking_watcher
             )
         service = request.service
-        with self._send_lock:
+        send_lock = self._get_send_lock(service)
+        with send_lock:
             with self._state_lock:
                 status = self._server_status.get(service)
                 if status is None:
@@ -154,7 +164,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
           status: HealthCheckResponse.status enum value indicating the status of
             the service
         """
-        with self._send_lock:
+        send_lock = self._get_send_lock(service)
+        with send_lock:
             with self._state_lock:
                 if self._gracefully_shutting_down:
                     return
@@ -177,19 +188,21 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         not_serving = (
             _health_pb2.HealthCheckResponse.NOT_SERVING
         )  # pylint: disable=no-member
-        callbacks = []
 
-        with self._send_lock:
-            with self._state_lock:
-                if self._gracefully_shutting_down:
-                    return
-                for service in self._server_status:
+        with self._state_lock:
+            if self._gracefully_shutting_down:
+                return
+            self._gracefully_shutting_down = True
+            services = list(self._server_status.keys())
+
+        for service in services:
+            send_lock = self._get_send_lock(service)
+            with send_lock:
+                with self._state_lock:
                     self._server_status[service] = not_serving
-                    callbacks += list(
+                    callbacks = list(
                         self._send_response_callbacks.get(service, ())
                     )
-                self._gracefully_shutting_down = True
-
-            response = _health_pb2.HealthCheckResponse(status=not_serving)
-            for cb in callbacks:
-                cb(response)
+                response = _health_pb2.HealthCheckResponse(status=not_serving)
+                for cb in callbacks:
+                    cb(response)
