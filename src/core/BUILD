@@ -13045,7 +13045,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "alts_upb",
-    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+    deps = ["@grpc_proto//:alts_handshaker_proto"],
 )
 
 grpc_upb_proto_library(
