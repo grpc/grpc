@@ -73,7 +73,7 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
   }
   std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
       stats_plugin_group;
-  if (channel_stack_type == GRPC_SERVER_CHANNEL) {
+  if (!grpc_channel_stack_type_is_client(channel_stack_type)) {
     stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   } else {

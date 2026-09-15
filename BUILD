@@ -4067,6 +4067,7 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel_metrics.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
         "//src/core:client_channel/subchannel_stream_limiter.cc",
+        "//src/core:client_channel/virtual_client_call_tracer_filter.cc",
     ],
     hdrs = [
         "//src/core:client_channel/buffered_call.h",
@@ -4084,6 +4085,7 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel_metrics.h",
         "//src/core:client_channel/subchannel_stream_client.h",
         "//src/core:client_channel/subchannel_stream_limiter.h",
+        "//src/core:client_channel/virtual_client_call_tracer_filter.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4131,6 +4133,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:backend_metric_parser",
         "//src/core:call_destination",
+        "//src/core:call_final_info",
         "//src/core:call_spine",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
