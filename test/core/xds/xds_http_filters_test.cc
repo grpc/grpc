@@ -512,6 +512,50 @@ TEST_P(XdsFaultInjectionFilterConfigTest, ParseInvalidGrpcStatusCode) {
       << status;
 }
 
+TEST_P(XdsFaultInjectionFilterConfigTest,
+       ParseInvalidAbortPercentageDenominator) {
+  HTTPFault fault;
+  auto* percentage = fault.mutable_abort()->mutable_percentage();
+  percentage->set_numerator(75);
+  percentage->GetReflection()->SetEnumValue(
+      percentage, percentage->GetDescriptor()->FindFieldByName("denominator"),
+      99);
+  XdsExtension extension = MakeXdsExtension(fault);
+  auto config = ParseConfig(std::move(extension));
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
+            ".HTTPFault].abort.percentage.denominator error:invalid "
+            "denominator: 99]")
+      << status;
+}
+
+TEST_P(XdsFaultInjectionFilterConfigTest,
+       ParseInvalidDelayPercentageDenominator) {
+  HTTPFault fault;
+  auto* delay = fault.mutable_delay();
+  delay->mutable_fixed_delay()->set_seconds(1);
+  auto* percentage = delay->mutable_percentage();
+  percentage->set_numerator(25);
+  percentage->GetReflection()->SetEnumValue(
+      percentage, percentage->GetDescriptor()->FindFieldByName("denominator"),
+      99);
+  XdsExtension extension = MakeXdsExtension(fault);
+  auto config = ParseConfig(std::move(extension));
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.fault.v3"
+            ".HTTPFault].delay.percentage.denominator error:invalid "
+            "denominator: 99]")
+      << status;
+}
+
 TEST_P(XdsFaultInjectionFilterConfigTest, ParseInvalidDuration) {
   HTTPFault fault;
   fault.mutable_delay()->mutable_fixed_delay()->set_seconds(315576000001);
