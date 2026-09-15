@@ -58,7 +58,8 @@ XdsStreamingCallPromiseWrapper::XdsStreamingCallPromiseWrapper(
   auto internal_event_handler = std::make_unique<EventHandler>(
       WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>());
   call_ =
-      transport.CreateStreamingCall(method, std::move(internal_event_handler));
+      transport.CreateStreamingCall(method, std::move(internal_event_handler),
+                                    /*start_upon_send_message=*/false);
 }
 
 Poll<StatusFlag> XdsStreamingCallPromiseWrapper::PollPushMessage() {

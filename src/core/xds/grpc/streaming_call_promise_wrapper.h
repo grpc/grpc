@@ -66,7 +66,7 @@ class XdsStreamingCallPromiseWrapper final
       send_state_ = SendState::kSendMessageInFlight;
       send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     }
-    call_->SendMessage(std::move(msg));
+    call_->SendMessage(std::move(msg), /*send_half_close=*/false);
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPushMessage();
     };
