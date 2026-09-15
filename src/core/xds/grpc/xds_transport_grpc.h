@@ -185,7 +185,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   // recv_trailing_metadata
   grpc_metadata_array trailing_metadata_recv_;
   grpc_status_code status_code_;
-  grpc_slice status_details_;
+  grpc_slice status_details_ = grpc_empty_slice();
   grpc_closure on_status_received_;
 };
 
