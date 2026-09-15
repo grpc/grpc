@@ -24,6 +24,7 @@ EXPORTS
     grpc_gdch_service_account_credentials_create
     grpc_google_refresh_token_credentials_create
     grpc_access_token_credentials_create
+    grpc_dpop_credentials_create
     grpc_google_iam_credentials_create
     grpc_sts_credentials_create
     grpc_auth_metadata_context_copy

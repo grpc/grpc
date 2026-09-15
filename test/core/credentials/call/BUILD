@@ -149,6 +149,33 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "dpop_credentials_test",
+    srcs = ["dpop_credentials_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:grpc_security_base",
+        "//:promise",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//src/core:exec_ctx_wakeup_scheduler",
+        "//src/core:grpc_dpop_credentials",
+        "//src/core:map",
+        "//src/core:metadata_batch",
+        "//src/core:notification",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
     name = "gdch_service_account_credentials_test",
     srcs = ["gdch_service_account_credentials_test.cc"],
     external_deps = [

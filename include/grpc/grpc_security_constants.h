@@ -44,6 +44,10 @@ extern "C" {
 // https://www.openssl.org/docs/man1.1.0/man3/SSL_get_peer_cert_chain.html.
 #define GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME "x509_pem_cert_chain"
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
+/** Per-connection TLS channel binding material ("type:base64url"), derived
+    from tls-unique (RFC 5929) or tls-exporter (RFC 9266). Unique to this TLS
+    connection; used to bind call credentials (e.g. DPoP) to the session. */
+#define GRPC_TLS_CHANNEL_BINDING_PROPERTY_NAME "tls_channel_binding"
 #define GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME \
   "ssl_negotiated_key_exchange_group"
 #define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
