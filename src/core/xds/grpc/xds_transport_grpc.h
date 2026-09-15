@@ -97,7 +97,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
-      bool start_upon_send_message = false) override;
+      bool start_upon_send_message) override;
 
   void ResetBackoff() override;
 
@@ -132,7 +132,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
 
   void Orphan() override;
 
-  void SendMessage(std::string payload, bool send_half_close = false) override;
+  void SendMessage(std::string payload, bool send_half_close) override;
 
   void StartRecvMessage() override;
 

@@ -58,8 +58,7 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
       // If send_half_close is true, the client-side half-close is sent in
       // the same batch as the message, in which case SendHalfClose() must
       // not be called afterwards.
-      virtual void SendMessage(std::string payload,
-                               bool send_half_close = false) = 0;
+      virtual void SendMessage(std::string payload, bool send_half_close) = 0;
 
       // Starts a recv_message operation on the stream.
       virtual void StartRecvMessage() = 0;
@@ -104,7 +103,7 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        bool start_upon_send_message = false) = 0;
+        bool start_upon_send_message) = 0;
 
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;
