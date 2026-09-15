@@ -42,6 +42,7 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 
 namespace grpc_core {
@@ -139,15 +140,18 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   void SendHalfClose() override;
 
  private:
-  // Starts the recv_initial_metadata and recv_trailing_metadata ops.  If
-  // send_batch is non-null, the send_initial_metadata op is added to
-  // *send_batch (advancing it), so that the caller can send it in the same
-  // batch as the message; otherwise, it is sent along with
-  // recv_initial_metadata.  Called from the ctor, or from the first
-  // SendMessage() if start_upon_send_message was set in the ctor.
-  void StartCallOps(grpc_op** send_batch);
+  using OpList = absl::InlinedVector<grpc_op, 5>;
 
-  static void OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/);
+  void AddSendInitialMetadataOp(OpList& op_list);
+  void AddRecvInitialMetadataOp(OpList& op_list);
+  void AddRecvTrailingMetadataOp(OpList& op_list);
+  void AddSendCloseFromClientOp(OpList& op_list);
+  void AddSendMessageOp(std::string payload, OpList& op_list);
+  void StartStatusBatch();
+  void MaybeAddCallStartOps(OpList& op_list);
+  void StartBatch(const OpList& op_list, const char* ref_reason,
+                  grpc_closure* closure);
+
   static void OnRequestSent(void* arg, grpc_error_handle error);
   static void OnHalfClosed(void* arg, grpc_error_handle error);
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
@@ -162,7 +166,6 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
 
   // recv_initial_metadata
   grpc_metadata_array initial_metadata_recv_;
-  grpc_closure on_recv_initial_metadata_;
 
   // send_initial_metadata
   std::vector<grpc_metadata> send_initial_metadata_;

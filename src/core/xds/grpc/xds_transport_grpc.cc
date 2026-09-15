@@ -108,73 +108,109 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this, nullptr);
   GRPC_CLOSURE_INIT(&on_half_closed_, OnHalfClosed, this, nullptr);
   GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
+  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
   // Start ops on the call, unless the caller asked us to wait until the
   // first message is sent.
-  if (!start_upon_send_message) StartCallOps(/*send_batch=*/nullptr);
+  if (!start_upon_send_message) {
+    call_started_ = true;
+    OpList op_list;
+    AddSendInitialMetadataOp(op_list);
+    AddRecvInitialMetadataOp(op_list);
+    AddRecvTrailingMetadataOp(op_list);
+    StartBatch(op_list, "OnStatusReceived", &on_status_received_);
+  }
 }
 
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::StartCallOps(
-    grpc_op** send_batch) {
-  GRPC_CHECK(!call_started_);
-  call_started_ = true;
-  grpc_call_error call_error;
-  grpc_op ops[2];
-  memset(ops, 0, sizeof(ops));
-  grpc_op* op = ops;
-  // Send initial metadata.  If the caller gave us a batch to add to (i.e.,
-  // we are being called from SendMessage()), we add the op there, so that
-  // it goes out in the same batch as the message; otherwise, we send it in
-  // the same batch as recv_initial_metadata below.
-  grpc_op* send_initial_metadata_op = send_batch != nullptr ? *send_batch : op;
-  send_initial_metadata_op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  send_initial_metadata_op->data.send_initial_metadata.count =
-      send_initial_metadata_.size();
-  send_initial_metadata_op->data.send_initial_metadata.metadata =
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    AddSendInitialMetadataOp(OpList& op_list) {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  op.data.send_initial_metadata.count = send_initial_metadata_.size();
+  op.data.send_initial_metadata.metadata =
       send_initial_metadata_.empty() ? nullptr : send_initial_metadata_.data();
-  send_initial_metadata_op->flags =
-      GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-      GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
-  send_initial_metadata_op->reserved = nullptr;
-  if (send_batch != nullptr) {
-    ++(*send_batch);
-  } else {
-    ++op;
-  }
-  // Start a batch for recv_initial_metadata.
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata =
+  op.flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+             GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
+  op.reserved = nullptr;
+  op_list.push_back(op);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    AddRecvInitialMetadataOp(OpList& op_list) {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_INITIAL_METADATA;
+  op.data.recv_initial_metadata.recv_initial_metadata =
       &initial_metadata_recv_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  ++op;
-  // Ref will be released in the callback
-  GRPC_CLOSURE_INIT(
-      &on_recv_initial_metadata_, OnRecvInitialMetadata,
-      this->Ref(DEBUG_LOCATION, "OnRecvInitialMetadata").release(), nullptr);
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_recv_initial_metadata_);
-  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
-  // Start a batch for recv_trailing_metadata.
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
-  op->data.recv_status_on_client.status = &status_code_;
-  op->data.recv_status_on_client.status_details = &status_details_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  ++op;
-  // Ref will be released in the callback.
-  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived,
-                    this->Ref(DEBUG_LOCATION, "OnStatusReceived").release(),
-                    nullptr);
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
+  op.flags = 0;
+  op.reserved = nullptr;
+  op_list.push_back(op);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    AddRecvTrailingMetadataOp(OpList& op_list) {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op.data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
+  op.data.recv_status_on_client.status = &status_code_;
+  op.data.recv_status_on_client.status_details = &status_details_;
+  op.flags = 0;
+  op.reserved = nullptr;
+  op_list.push_back(op);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    AddSendCloseFromClientOp(OpList& op_list) {
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op.flags = 0;
+  op.reserved = nullptr;
+  op_list.push_back(op);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    AddSendMessageOp(std::string payload, OpList& op_list) {
+  grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
+  send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
+  CSliceUnref(slice);
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_MESSAGE;
+  op.data.send_message.send_message = send_message_payload_;
+  op.flags = 0;
+  op.reserved = nullptr;
+  op_list.push_back(op);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    StartStatusBatch() {
+  OpList op_list;
+  AddRecvInitialMetadataOp(op_list);
+  AddRecvTrailingMetadataOp(op_list);
+  StartBatch(op_list, "OnStatusReceived", &on_status_received_);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    MaybeAddCallStartOps(OpList& op_list) {
+  if (call_started_) return;
+  call_started_ = true;
+  AddSendInitialMetadataOp(op_list);
+  StartStatusBatch();
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::StartBatch(
+    const OpList& op_list, const char* ref_reason, grpc_closure* closure) {
+  Ref(DEBUG_LOCATION, ref_reason).release();
+  grpc_call_error call_error = grpc_call_start_batch_and_execute(
+      call_, op_list.data(), op_list.size(), closure);
   GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     ~GrpcStreamingCall() {
+  grpc_metadata_array_destroy(&initial_metadata_recv_);
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
@@ -199,62 +235,33 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Orphan() {
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
     std::string payload, bool send_half_close) {
-  // Create payload.
-  grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
-  send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
-  CSliceUnref(slice);
-  // Send the message, preceded by initial metadata if the call ops were
-  // deferred until now, and followed by the half-close if requested.
-  grpc_op ops[3];
-  memset(ops, 0, sizeof(ops));
-  grpc_op* op = ops;
-  if (!call_started_) StartCallOps(&op);
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = send_message_payload_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  ++op;
+  OpList op_list;
+  MaybeAddCallStartOps(op_list);
+  AddSendMessageOp(std::move(payload), op_list);
   if (send_half_close) {
-    op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-    op->flags = 0;
-    op->reserved = nullptr;
-    ++op;
+    AddSendCloseFromClientOp(op_list);
   }
-  Ref(DEBUG_LOCATION, "OnRequestSent").release();
-  grpc_call_error call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_request_sent_);
-  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
+  StartBatch(op_list, "OnRequestSent", &on_request_sent_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     StartRecvMessage() {
-  Ref(DEBUG_LOCATION, "StartRecvMessage").release();
+  OpList op_list;
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_MESSAGE;
   op.data.recv_message.recv_message = &recv_message_payload_;
-  GRPC_CHECK_NE(call_, nullptr);
-  const grpc_call_error call_error =
-      grpc_call_start_batch_and_execute(call_, &op, 1, &on_response_received_);
-  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
+  op.flags = 0;
+  op.reserved = nullptr;
+  op_list.push_back(op);
+  StartBatch(op_list, "StartRecvMessage", &on_response_received_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     SendHalfClose() {
-  Ref(DEBUG_LOCATION, "SendHalfClose").release();
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  GRPC_CHECK_NE(call_, nullptr);
-  const grpc_call_error call_error =
-      grpc_call_start_batch_and_execute(call_, &op, 1, &on_half_closed_);
-  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/) {
-  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
-  grpc_metadata_array_destroy(&self->initial_metadata_recv_);
+  OpList op_list;
+  AddSendCloseFromClientOp(op_list);
+  StartBatch(op_list, "SendHalfClose", &on_half_closed_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
