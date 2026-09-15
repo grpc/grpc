@@ -21,6 +21,7 @@ timeout on client side:
 2. Client will set a timer (customized client timeout) waiting for initial_metadata.
 3. Client will timeout if it didn't receive initial_metadata.
 """
+
 import logging
 import threading
 from typing import Sequence, Tuple
