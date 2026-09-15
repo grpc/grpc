@@ -133,12 +133,6 @@ class AuthContextTest(unittest.TestCase):
                 b"secp384r1",
             ],
         )
-        # The negotiated TLS version depends on the underlying Open/BoringSSL
-        # version and configuration.
-        self.assertIn("ssl_tls_version", auth_ctx)
-        tls_version = auth_ctx.pop("ssl_tls_version")
-        self.assertEqual(len(tls_version), 1)
-        self.assertIn(tls_version[0], [b"TLSv1.2", b"TLSv1.3"])
         self.assertIsNone(auth_data[_ID])
         self.assertIsNone(auth_data[_ID_KEY])
         self.assertDictEqual(
@@ -149,6 +143,7 @@ class AuthContextTest(unittest.TestCase):
                 "ssl_requested_server_name": [
                     _SERVER_HOST_OVERRIDE.encode("ascii")
                 ],
+                "ssl_tls_version": [b"TLSv1.3"],
             },
             auth_ctx,
         )
