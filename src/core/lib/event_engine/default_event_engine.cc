@@ -100,6 +100,7 @@ void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine) {
 }
 
 std::shared_ptr<EventEngine> GetDefaultEventEngine() {
+  // Return the default EventEngine if it already exists.
   grpc_core::MutexLock lock(&*g_mu);
   auto engine = InternalGetDefaultEventEngineIfAny();
   if (engine != nullptr) return engine;
