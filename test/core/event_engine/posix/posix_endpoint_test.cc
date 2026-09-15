@@ -14,9 +14,17 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 
+#include <fcntl.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <poll.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <chrono>
@@ -282,6 +290,7 @@ TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
   }
   worker->Wait();
 }
+// TODO(ayerbea): Rcv lowat
 
 // Create  N connections and exchange and verify random number of messages over
 // each connection in parallel.
@@ -338,6 +347,33 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   }
   for (auto& t : threads) {
     t.join();
+  }
+  worker->Wait();
+}
+
+TEST_P(PosixEndpointTest, LargeReadHintTest) {
+  if (PosixPoller() == nullptr) {
+    return;
+  }
+  Worker* worker = new Worker(GetPosixEE(), PosixPoller());
+  worker->Start();
+  {
+    auto connections = CreateConnectedEndpoints(*PosixPoller(), GetParam(), 1,
+                                                GetPosixEE(), GetOracleEE());
+    auto it = connections.begin();
+    auto client_endpoint = std::move((*it).client_endpoint);
+    auto server_endpoint = std::move((*it).server_endpoint);
+    EXPECT_NE(client_endpoint, nullptr);
+    EXPECT_NE(server_endpoint, nullptr);
+    connections.erase(it);
+
+    // 10MB message is larger than 64 * 64KB = 4MB, so it has count >
+    // MAX_READ_IOVEC. If tcp_frame_size_tuning is enabled, we pass a large read
+    // hint.
+    std::string large_msg(10 * 1024 * 1024, 'a');
+    ASSERT_TRUE(SendValidatePayload(large_msg, client_endpoint.get(),
+                                    server_endpoint.get(), large_msg.size())
+                    .ok());
   }
   worker->Wait();
 }
@@ -662,10 +698,366 @@ INSTANTIATE_TEST_SUITE_P(
                                        .use_zero_copy_protector = true}}),
     &SecureEndpointTestScenarioName);
 
+namespace {
+constexpr int kRcvLowatThreshold = 16 * 1024;
+constexpr int kMinRcvLowatTarget = 32 * 1024;
+
+void MakeNonBlocking(int fd) {
+  int flags = fcntl(fd, F_GETFL, 0);
+  ASSERT_GE(flags, 0);
+  ASSERT_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
+}
+
+void CreateTcpSocketPair(int fds[2]) {
+  int listener_fd = socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(listener_fd, 0);
+
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  addr.sin_port = 0;  // Choose ephemeral port
+
+  ASSERT_EQ(bind(listener_fd, (struct sockaddr*)&addr, sizeof(addr)), 0);
+  socklen_t addrlen = sizeof(addr);
+  ASSERT_EQ(getsockname(listener_fd, (struct sockaddr*)&addr, &addrlen), 0);
+  ASSERT_EQ(listen(listener_fd, 1), 0);
+
+  int client_fd = socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(client_fd, 0);
+  MakeNonBlocking(client_fd);
+
+  int ret = connect(client_fd, (struct sockaddr*)&addr, sizeof(addr));
+  if (ret < 0) {
+    ASSERT_EQ(errno, EINPROGRESS);
+  }
+
+  int server_fd = accept(listener_fd, nullptr, nullptr);
+  ASSERT_GE(server_fd, 0);
+  MakeNonBlocking(server_fd);
+
+  int one = 1;
+  ASSERT_EQ(setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)),
+            0);
+  ASSERT_EQ(setsockopt(server_fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)),
+            0);
+
+  close(listener_fd);
+
+  fds[0] = client_fd;
+  fds[1] = server_fd;
+}
+
+class FakePosixEventPoller : public PosixEventPoller {
+ public:
+  explicit FakePosixEventPoller(bool track_errors)
+      : track_errors_(track_errors) {}
+
+  EventHandle* CreateHandle(FileDescriptor /*fd*/, absl::string_view /*name*/,
+                            bool /*track_err*/) override {
+    return nullptr;
+  }
+
+  bool CanTrackErrors() const override { return track_errors_; }
+  std::string Name() override { return "fake_poller"; }
+
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  void HandleForkInChild() override {}
+#endif
+
+  void ResetKickState() override {}
+
+  WorkResult Work(EventEngine::Duration /*timeout*/,
+                  absl::FunctionRef<void()> /*kick_callback*/) override {
+    return WorkResult::kOk;
+  }
+
+  void Kick() override {}
+
+ private:
+  bool track_errors_;
+};
+
+class FakeEventHandle : public EventHandle {
+ public:
+  FakeEventHandle(int fd, PosixEventPoller* poller)
+      : fd_(fd), poller_(poller), on_read_(nullptr), on_error_(nullptr) {}
+
+  FileDescriptor WrappedFd() override { return FileDescriptor(fd_, 0); }
+
+  void OrphanHandle(PosixEngineClosure* on_done, FileDescriptor* release_fd,
+                    absl::string_view /*reason*/) override {
+    if (release_fd != nullptr) {
+      *release_fd = FileDescriptor(fd_, 0);
+    }
+    if (on_done != nullptr) {
+      on_done->Run();
+    }
+  }
+
+  void ShutdownHandle(absl::Status why) override {
+    if (on_read_ != nullptr) {
+      on_read_->SetStatus(why);
+      PosixEngineClosure* cb = on_read_;
+      on_read_ = nullptr;
+      cb->Run();
+    }
+  }
+  void NotifyOnRead(PosixEngineClosure* on_read) override {
+    on_read_ = on_read;
+  }
+  void NotifyOnWrite(PosixEngineClosure* /*on_write*/) override {}
+
+  void NotifyOnError(PosixEngineClosure* on_error) override {
+    on_error_ = on_error;
+  }
+
+  void SetReadable() override {}
+  void SetWritable() override {}
+
+  void SetHasError() override {
+    if (on_error_ != nullptr) {
+      on_error_->SetStatus(absl::CancelledError("shutdown"));
+      on_error_->Run();
+      on_error_ = nullptr;
+    }
+  }
+
+  bool IsHandleShutdown() override { return false; }
+  PosixEventPoller* Poller() override { return poller_; }
+
+  void TriggerRead() {
+    if (on_read_ != nullptr) {
+      PosixEngineClosure* cb = on_read_;
+      on_read_ = nullptr;
+      cb->Run();
+    }
+  }
+
+ private:
+  int fd_;
+  PosixEventPoller* poller_;
+  PosixEngineClosure* on_read_;
+  PosixEngineClosure* on_error_;
+};
+
+}  // namespace
+
+TEST(PosixEndpointTest, RcvLowatTuningTest) {
+  ASSERT_TRUE(grpc_core::IsTcpRcvLowatEnabled());
+
+  int fds[2];
+  CreateTcpSocketPair(fds);
+  int client_fd = fds[0];
+  int server_fd = fds[1];
+
+  FakePosixEventPoller poller(/*track_errors=*/false);
+  FakeEventHandle handle(client_fd, &poller);
+
+  PosixTcpOptions options;
+  options.resource_quota = grpc_core::ResourceQuota::Default();
+
+  auto memory_quota = grpc_core::MakeMemoryQuota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "test"));
+  auto allocator = memory_quota->CreateMemoryAllocator("test");
+
+  auto endpoint = CreatePosixEndpoint(&handle, nullptr, nullptr,
+                                      std::move(allocator), options);
+
+  int hint_bytes = 64 * 1024;
+  EventEngine::Endpoint::ReadArgs read_args;
+  read_args.set_read_hint_bytes(hint_bytes);
+
+  SliceBuffer read_buffer;
+  bool read_callback_called = false;
+  auto read_cb = [&](absl::Status status) { read_callback_called = true; };
+
+  grpc_core::ExecCtx exec_ctx;
+
+  bool read_immediate = endpoint->Read(read_cb, &read_buffer, read_args);
+  EXPECT_FALSE(read_immediate);
+
+  handle.TriggerRead();
+
+  int optval;
+  socklen_t optlen = sizeof(optval);
+  ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVLOWAT, &optval, &optlen),
+            0);
+
+  int expected_lowat = hint_bytes - kRcvLowatThreshold;
+  EXPECT_EQ(optval, expected_lowat);
+
+  endpoint.reset();
+  close(client_fd);
+  close(server_fd);
+}
+
+TEST(PosixEndpointTest, RcvLowatCappedByRxBufferTest) {
+  ASSERT_TRUE(grpc_core::IsTcpRcvLowatEnabled());
+  int fds[2];
+  CreateTcpSocketPair(fds);
+  int client_fd = fds[0];
+  int server_fd = fds[1];
+
+  int target_rcvbuf = 256 * 1024;
+  ASSERT_EQ(setsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &target_rcvbuf,
+                       sizeof(target_rcvbuf)),
+            0);
+
+  int actual_rcvbuf = 0;
+  socklen_t optlen = sizeof(actual_rcvbuf);
+  ASSERT_EQ(
+      getsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &actual_rcvbuf, &optlen), 0);
+
+  ASSERT_LT(actual_rcvbuf, 1024 * 1024);
+
+  FakePosixEventPoller poller(/*track_errors=*/false);
+  FakeEventHandle handle(client_fd, &poller);
+
+  PosixTcpOptions options;
+  options.resource_quota = grpc_core::ResourceQuota::Default();
+
+  auto memory_quota = grpc_core::MakeMemoryQuota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "test"));
+  auto allocator = memory_quota->CreateMemoryAllocator("test");
+
+  auto endpoint = CreatePosixEndpoint(&handle, nullptr, nullptr,
+                                      std::move(allocator), options);
+
+  int hint_bytes = 1024 * 1024;
+  EventEngine::Endpoint::ReadArgs read_args;
+  read_args.set_read_hint_bytes(hint_bytes);
+
+  SliceBuffer read_buffer;
+  bool read_callback_called = false;
+  auto read_cb = [&](absl::Status status) { read_callback_called = true; };
+
+  grpc_core::ExecCtx exec_ctx;
+
+  bool read_immediate = endpoint->Read(read_cb, &read_buffer, read_args);
+  EXPECT_FALSE(read_immediate);
+
+  handle.TriggerRead();
+
+  int optval;
+  optlen = sizeof(optval);
+  ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVLOWAT, &optval, &optlen),
+            0);
+
+  int expected_lowat = (actual_rcvbuf / 2) - kRcvLowatThreshold;
+
+  if (expected_lowat < kMinRcvLowatTarget) {
+    expected_lowat = 0;
+  }
+
+  EXPECT_EQ(optval, expected_lowat);
+  EXPECT_LT(optval, actual_rcvbuf);
+
+  endpoint.reset();
+  close(client_fd);
+  close(server_fd);
+}
+
+#ifndef GPR_APPLE
+TEST(PosixEndpointTest, RcvLowatWakeupBehaviorTest) {
+  ASSERT_TRUE(grpc_core::IsTcpRcvLowatEnabled());
+  int fds[2];
+  CreateTcpSocketPair(fds);
+  int client_fd = fds[0];
+  int server_fd = fds[1];
+
+  FakePosixEventPoller poller(/*track_errors=*/false);
+  FakeEventHandle handle(client_fd, &poller);
+
+  PosixTcpOptions options;
+  options.resource_quota = grpc_core::ResourceQuota::Default();
+
+  auto memory_quota = grpc_core::MakeMemoryQuota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "test"));
+  auto allocator = memory_quota->CreateMemoryAllocator("test");
+
+  auto endpoint = CreatePosixEndpoint(&handle, nullptr, nullptr,
+                                      std::move(allocator), options);
+
+  // Determine the capped rcv_lowat_max for this socket.
+  int rcvbuf = 0;
+  socklen_t optlen = sizeof(rcvbuf);
+  ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, &optlen), 0);
+  int rcv_lowat_max = rcvbuf / 2;
+
+  // We want to read 3 * rcv_lowat_max.
+  int total_bytes_to_read = 3 * rcv_lowat_max;
+  EventEngine::Endpoint::ReadArgs read_args;
+  read_args.set_read_hint_bytes(total_bytes_to_read);
+
+  SliceBuffer read_buffer;
+  auto read_cb = [&](absl::Status status) {};
+
+  grpc_core::ExecCtx exec_ctx;
+
+  // 1. Start the read (registers interest, doesn't read yet).
+  bool read_immediate = endpoint->Read(read_cb, &read_buffer, read_args);
+  EXPECT_FALSE(read_immediate);
+
+  // 2. Write first chunk (rcv_lowat_max) to trigger SO_RCVLOWAT calculation.
+  std::string chunk(rcv_lowat_max, 'a');
+  ASSERT_EQ(write(server_fd, chunk.data(), chunk.size()), chunk.size());
+  handle.TriggerRead();
+
+  // The endpoint should have set SO_RCVLOWAT to (remaining - 16KB).
+  int expected_lowat = rcv_lowat_max - kRcvLowatThreshold;
+  if (expected_lowat < kMinRcvLowatTarget) {
+    expected_lowat = 0;
+  }
+
+  // Verify the value was set.
+  int optval = 0;
+  optlen = sizeof(optval);
+  ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVLOWAT, &optval, &optlen),
+            0);
+  EXPECT_EQ(optval, expected_lowat);
+
+  if (expected_lowat > 0) {
+    // 3. Write less than lowat threshold and verify socket is not readable.
+    int partial_write = expected_lowat - 1;
+    std::string partial_chunk(partial_write, 'b');
+    ASSERT_EQ(write(server_fd, partial_chunk.data(), partial_chunk.size()),
+              partial_chunk.size());
+
+    struct pollfd pfd;
+    pfd.fd = client_fd;
+    pfd.events = POLLIN;
+    EXPECT_EQ(poll(&pfd, 1, 0), 0);  // 0 timeout -> Should not be readable.
+
+    // 4. Write the 1 missing byte and verify socket IS readable now.
+    ASSERT_EQ(write(server_fd, "c", 1), 1);
+    EXPECT_EQ(poll(&pfd, 1, 0), 1);  // Should BE readable.
+    EXPECT_TRUE(pfd.revents & POLLIN);
+
+    // 5. Call TriggerRead to consume the data. Since remaining is still
+    // rcv_lowat_max + 16KB, the lowat value should still be expected_lowat.
+    handle.TriggerRead();
+    optval = 0;
+    optlen = sizeof(optval);
+    ASSERT_EQ(getsockopt(client_fd, SOL_SOCKET, SO_RCVLOWAT, &optval, &optlen),
+              0);
+    EXPECT_EQ(optval, expected_lowat);
+  }
+
+  endpoint.reset();
+  close(client_fd);
+  close(server_fd);
+}
+#endif  // GPR_APPLE
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
+  setenv("GRPC_EXPERIMENTS", "tcp_rcv_lowat,tcp_frame_size_tuning", 1);
   ::testing::InitGoogleTest(&argc, argv);
   auto poll_strategy = grpc_core::ConfigVars::Get().PollStrategy();
   auto strings = absl::StrSplit(poll_strategy, ',');

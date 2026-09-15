@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
@@ -26,11 +27,84 @@ grpc_package(
 )
 
 grpc_cc_library(
+    name = "filter_matchers",
+    testonly = 1,
+    hdrs = ["filter_matchers.h"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:metadata_batch",
+    ],
+)
+
+grpc_cc_library(
+    name = "filter_test",
+    testonly = 1,
+    srcs = ["filter_test.cc"],
+    hdrs = ["filter_test.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "fuzztest",
+        "gtest",
+    ],
+    tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        ":filter_matchers",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_base",
+        "//:grpc_service_config_impl",
+        "//:iomgr_timer",
+        "//:ref_counted_ptr",
+        "//src/core:activity",
+        "//src/core:arena",
+        "//src/core:arena_promise",
+        "//src/core:call_destination",
+        "//src/core:call_finalization",
+        "//src/core:call_spine",
+        "//src/core:channel_args",
+        "//src/core:context",
+        "//src/core:default_event_engine",
+        "//src/core:filter_args",
+        "//src/core:grpc_check",
+        "//src/core:grpc_service_config",
+        "//src/core:interception_chain",
+        "//src/core:map",
+        "//src/core:memory_quota",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:metadata_batch",
+        "//src/core:pipe",
+        "//src/core:poll",
+        "//src/core:promise_factory",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:status_flag",
+        "//test/core/call/yodel:yodel_test",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+    ],
+)
+
+grpc_cc_library(
     name = "filter_test_v2",
     testonly = 1,
     srcs = ["filter_test_v2.cc"],
     hdrs = ["filter_test_v2.h"],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -40,6 +114,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
     deps = [
+        ":filter_matchers",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
@@ -49,12 +124,14 @@ grpc_cc_library(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:basic_seq",
         "//src/core:call_finalization",
         "//src/core:channel_args",
         "//src/core:context",
         "//src/core:default_event_engine",
+        "//src/core:filter_args",
         "//src/core:memory_quota",
+        "//src/core:message",
+        "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:pipe",
         "//src/core:poll",
@@ -67,28 +144,75 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
-    name = "filter_test_v2_test",
-    srcs = ["filter_test_v2_test.cc"],
+grpc_fuzz_test(
+    name = "filter_test_test",
+    srcs = ["filter_test_test.cc"],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
+        "fuzztest",
+        "fuzztest_main",
         "gtest",
     ],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
-        "filter_test_v2",
+        ":filter_matchers",
+        ":filter_test",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:grpc_base",
         "//:grpc_unsecure",
+        "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena_promise",
         "//src/core:channel_args",
+        "//src/core:channelz_property_list",
+        "//src/core:context",
+        "//src/core:filter_args",
+        "//src/core:interception_chain",
         "//src/core:map",
+        "//src/core:message",
+        "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:seq",
         "//src/core:slice",
+    ],
+)
+
+grpc_cc_test(
+    name = "filter_test_v2_test",
+    srcs = ["filter_test_v2_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "gtest",
+        "gtest_main",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":filter_matchers",
+        ":filter_test_v2",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_unsecure",
+        "//:ref_counted_ptr",
+        "//src/core:activity",
+        "//src/core:arena_promise",
+        "//src/core:channel_args",
+        "//src/core:context",
+        "//src/core:filter_args",
+        "//src/core:map",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:metadata_batch",
+        "//src/core:pipe",
+        "//src/core:poll",
+        "//src/core:seq",
+        "//src/core:slice",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -104,7 +228,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "filter_test_v2",
+        ":filter_matchers",
+        ":filter_test_v2",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_core_credentials_header",
@@ -121,20 +246,71 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "client_authority_filter_test",
     srcs = ["client_authority_filter_test.cc"],
     external_deps = [
         "absl/status",
         "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
         "gtest",
     ],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
-        "filter_test_v2",
+        ":filter_matchers",
+        ":filter_test",
         "//:channel_arg_names",
+        "//:grpc_status",
+        "//src/core:channel_args",
         "//src/core:grpc_client_authority_filter",
+        "//src/core:metadata",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "message_size_filter_test",
+    srcs = ["message_size_filter_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        ":filter_matchers",
+        ":filter_test",
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc_status",
+        "//src/core:channel_args",
+        "//src/core:grpc_message_size_filter",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "compression_filter_test",
+    srcs = ["compression_filter_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        ":filter_matchers",
+        ":filter_test",
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_http_filters",
+        "//src/core:arena",
+        "//src/core:channel_args",
+        "//src/core:grpc_check",
+        "//src/core:resource_quota",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
     ],
 )
 
@@ -151,7 +327,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "filter_test_v2",
+        ":filter_matchers",
+        ":filter_test_v2",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_security_base",

@@ -1175,7 +1175,8 @@ MakeFilterCall(Derived* derived) {
 //   failure (in which case the call will be aborted).
 //   useful for cases where the exact metadata returned needs to be customized.
 // It's also acceptable to return a promise that resolves to the
-// relevant return type listed above.
+// relevant return type listed above (except for OnClientToServerHalfClose
+// and OnServerTrailingMetadata, which must be synchronous).
 // Finally, OnFinalize can be added to intercept call finalization.
 // It must have one of the signatures:
 // - static inline const NoInterceptor OnFinalize:

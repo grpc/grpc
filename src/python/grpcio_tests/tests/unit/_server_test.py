@@ -244,8 +244,10 @@ class ServerHandlerTest(unittest.TestCase):
                 _SERVICE_NAME, _REGISTERED_METHOD_HANDLERS
             )
         self.assertTrue(
-            any("Cannot register method handlers") in output
-            for output in cm.output
+            any(
+                "Cannot register method handlers" in output
+                for output in cm.output
+            )
         )
 
         self._channel = grpc.insecure_channel("localhost:%d" % port)

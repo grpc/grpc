@@ -149,6 +149,18 @@ void YodelTest::TickUntilTrue(absl::FunctionRef<bool()> poll) {
   }
 }
 
+bool YodelTest::TryTickUntilTrue(
+    grpc_event_engine::experimental::EventEngine::Duration timeout,
+    absl::FunctionRef<bool()> poll) {
+  auto deadline = state_->event_engine->Now() + timeout;
+  while (!poll()) {
+    ExecCtx exec_ctx;
+    if (state_->event_engine->Now() >= deadline) return false;
+    state_->event_engine->Tick();
+  }
+  return true;
+}
+
 void YodelTest::WaitForAllPendingWork() {
   WatchDog watchdog(this);
   while (!pending_actions_.empty()) {

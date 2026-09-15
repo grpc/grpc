@@ -42,7 +42,7 @@
     s.add_development_dependency 'simplecov',          '~> 0.22'
     s.add_development_dependency 'rake',               '~> 13.0'
     s.add_development_dependency 'rake-compiler',      '~> 1.3.1'
-    s.add_development_dependency 'rake-compiler-dock', '~> 1.11.1'
+    s.add_development_dependency 'rake-compiler-dock', '~> 1.12.0'
     s.add_development_dependency 'rspec',              '~> 3.6'
     s.add_development_dependency 'rubocop',            '~> 1.82.0'
     s.add_development_dependency 'signet',             '~> 0.7'
@@ -51,6 +51,7 @@
     s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
   <%
     files = []
+    win_files = []
     ruby_deps = ruby_gem.get('deps', [])
     lib_maps = {lib.name: lib for lib in libs}
     for dep in ruby_deps[:]:
@@ -59,9 +60,18 @@
       lib = lib_maps.get(dep, None)
       if lib:
         files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
+        win_files.extend(
+          lib.get('headers_windows', []) +
+          lib.get('src_windows', [])
+        )
     files = sorted(set(files))
   %>
     % for file in files:
     s.files += %w( ${file} )
     % endfor
+    if RUBY_PLATFORM =~ /mingw|mswin/
+      % for file in win_files:
+      s.files += %w( ${file} )
+      % endfor
+    end
   end

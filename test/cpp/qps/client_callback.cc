@@ -259,8 +259,9 @@ class CallbackStreamingPingPongReactor final
       : client_(client), ctx_(std::move(ctx)), messages_issued_(0) {}
 
   void StartNewRpc() {
-    ctx_->stub_->async()->StreamingCall(&(ctx_->context_), this);
+    messages_issued_ = 0;
     write_time_ = UsageTimer::Now();
+    ctx_->stub_->async()->StreamingCall(&(ctx_->context_), this);
     StartWrite(client_->request());
     writes_done_started_.clear();
     StartCall();
@@ -280,9 +281,11 @@ class CallbackStreamingPingPongReactor final
   void OnReadDone(bool ok) override {
     client_->AddHistogramEntry(write_time_, ok, thread_ptr_);
 
-    if (client_->ThreadCompleted() || !ok ||
-        (client_->messages_per_stream() != 0 &&
-         ++messages_issued_ >= client_->messages_per_stream())) {
+    bool is_last = client_->ThreadCompleted() || !ok ||
+                   (client_->messages_per_stream() != 0 &&
+                    ++messages_issued_ >= client_->messages_per_stream());
+
+    if (is_last) {
       if (!ok) {
         LOG(ERROR) << "Error reading RPC";
       }
@@ -477,24 +480,23 @@ class CallbackStreamingFromServerReactor final
       : client_(client), ctx_(std::move(ctx)) {}
 
   void StartNewRpc() {
+    start_time_ = UsageTimer::Now();
     ctx_->stub_->async()->StreamingFromServer(&ctx_->context_,
                                               client_->request(), this);
-    read_time_ = UsageTimer::Now();
     StartRead(&ctx_->response_);
     StartCall();
   }
 
   void OnReadDone(bool ok) override {
-    client_->AddHistogramEntry(read_time_, ok, thread_ptr_);
-
     if (!ok) {
       return;
     }
+    client_->AddHistogramEntry(start_time_, ok, thread_ptr_);
+    start_time_ = UsageTimer::Now();
     if (client_->ThreadCompleted()) {
       ctx_->context_.TryCancel();
       return;
     }
-    read_time_ = UsageTimer::Now();
     StartRead(&ctx_->response_);
   }
 
@@ -525,7 +527,7 @@ class CallbackStreamingFromServerReactor final
   CallbackStreamingClient* client_;
   std::unique_ptr<CallbackClientRpcContext> ctx_;
   Client::Thread* thread_ptr_;
-  double read_time_;
+  double start_time_;
 };
 
 class CallbackStreamingFromServerClientImpl final

@@ -33,11 +33,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   }
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-
+TEST(ConnectionPrefixTest, TestPrefix) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "X", 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PX", 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PRX", 0);
@@ -64,7 +60,13 @@ int main(int argc, char** argv) {
                            0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, "PRI * HTTP/2.0\r\n\r\nSM\r\n\rX",
                            0);
+}
 
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
+  int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return result;
 }
