@@ -1171,6 +1171,7 @@ GRPCAPI grpc_server_credentials* grpc_insecure_server_credentials_create();
  * how to fetch credentials dynamically. Does NOT take ownership of the \a
  * fallback_credentials. (Internally takes a ref to the object.)
  */
+#ifndef GRPC_NO_XDS
 GRPCAPI grpc_channel_credentials* grpc_xds_credentials_create(
     grpc_channel_credentials* fallback_credentials);
 
@@ -1187,6 +1188,19 @@ GRPCAPI grpc_channel_credentials* grpc_xds_credentials_create(
  */
 GRPCAPI grpc_server_credentials* grpc_xds_server_credentials_create(
     grpc_server_credentials* fallback_credentials);
+#else
+static inline grpc_channel_credentials* grpc_xds_credentials_create(
+    grpc_channel_credentials* fallback_credentials) {
+  (void)fallback_credentials;
+  return NULL;
+}
+
+static inline grpc_server_credentials* grpc_xds_server_credentials_create(
+    grpc_server_credentials* fallback_credentials) {
+  (void)fallback_credentials;
+  return NULL;
+}
+#endif
 
 /** --- Local channel/server credentials --- **/
 
