@@ -56,3 +56,6 @@
 [submodule "third_party/grpc-proto"]
 	path = third_party/grpc-proto
 	url = https://github.com/grpc/grpc-proto.git
+[submodule "third_party/autosharding"]
+	path = third_party/autosharding
+	url = https://github.com/GoogleCloudPlatform/autosharding
