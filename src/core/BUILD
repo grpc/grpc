@@ -9516,8 +9516,8 @@ grpc_cc_library(
         "ref_counted",
         "sync",
         ":poll",
-        "//third_party/grpc:gpr_platform",
-        "//third_party/grpc:ref_counted_ptr",
+        "//:gpr_platform",
+        "//:ref_counted_ptr",
     ],
 )
 

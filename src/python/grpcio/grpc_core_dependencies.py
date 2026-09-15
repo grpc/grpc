@@ -179,6 +179,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/transport/chttp2/transport/ping_callbacks.cc',
     'src/core/ext/transport/chttp2/transport/ping_promise.cc',
     'src/core/ext/transport/chttp2/transport/ping_rate_policy.cc',
+    'src/core/ext/transport/chttp2/transport/reclaimer.cc',
     'src/core/ext/transport/chttp2/transport/stream_lists.cc',
     'src/core/ext/transport/chttp2/transport/transport_common.cc',
     'src/core/ext/transport/chttp2/transport/varint.cc',
