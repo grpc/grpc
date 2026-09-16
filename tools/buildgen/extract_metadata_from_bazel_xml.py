@@ -92,6 +92,7 @@ EXTERNAL_LINKS = {
     "@envoy_api//": "",
     "@opencensus_proto//": "",
     "@grpc_proto//": "",
+    "@autosharding//": "",
 }
 
 EXTERNAL_PROTO_LIBRARIES = {
@@ -122,6 +123,10 @@ EXTERNAL_PROTO_LIBRARIES = {
     "grpc_proto": ExternalProtoLibrary(
         destination="third_party/grpc-proto",
         proto_prefix="third_party/grpc-proto/",
+    ),
+    "autosharding": ExternalProtoLibrary(
+        destination="third_party/autosharding",
+        proto_prefix="third_party/autosharding/",
     ),
 }
 
