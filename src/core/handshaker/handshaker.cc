@@ -76,7 +76,7 @@ HandshakeManager::HandshakeManager()
                                                      : nullptr) {}
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   GRPC_TRACE_LOG(handshaker, INFO)
       << "handshake_manager " << this << ": adding handshaker "
       << std::string(handshaker->name()) << " [" << handshaker.get()
@@ -94,7 +94,7 @@ void HandshakeManager::DoHandshake(
   // return from this function, and on_handshake_done might release the
   // last ref to this object.
   auto self = Ref();
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   GRPC_CHECK_EQ(index_, 0u);
   on_handshake_done_ = std::move(on_handshake_done);
   // Construct handshaker args.  These will be passed through all
@@ -133,7 +133,7 @@ void HandshakeManager::DoHandshake(
 }
 
 void HandshakeManager::Shutdown(absl::Status error) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!is_shutdown_) {
     GRPC_CHANNELZ_LOG(args_.trace_node) << "Shutdown called: " << error;
     is_shutdown_ = true;
@@ -197,7 +197,7 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   }
   ++index_;
   handshaker->DoHandshake(&args_, [self = Ref()](absl::Status error) mutable {
-    MutexLock lock(&self->mu_);
+    MutexLock lock(self->mu_);
     self->CallNextHandshakerLocked(std::move(error));
   });
 }

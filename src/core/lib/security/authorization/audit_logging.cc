@@ -50,21 +50,21 @@ AuditLoggerRegistry::AuditLoggerRegistry() {
 void AuditLoggerRegistry::RegisterFactory(
     std::unique_ptr<AuditLoggerFactory> factory) {
   GRPC_CHECK(factory != nullptr);
-  MutexLock lock(mu);
+  MutexLock lock(*mu);
   absl::string_view name = factory->name();
   GRPC_CHECK(
       registry->logger_factories_map_.emplace(name, std::move(factory)).second);
 }
 
 bool AuditLoggerRegistry::FactoryExists(absl::string_view name) {
-  MutexLock lock(mu);
+  MutexLock lock(*mu);
   return registry->logger_factories_map_.find(name) !=
          registry->logger_factories_map_.end();
 }
 
 absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
 AuditLoggerRegistry::ParseConfig(absl::string_view name, const Json& json) {
-  MutexLock lock(mu);
+  MutexLock lock(*mu);
   auto it = registry->logger_factories_map_.find(name);
   if (it == registry->logger_factories_map_.end()) {
     return absl::NotFoundError(
@@ -75,14 +75,14 @@ AuditLoggerRegistry::ParseConfig(absl::string_view name, const Json& json) {
 
 std::unique_ptr<AuditLogger> AuditLoggerRegistry::CreateAuditLogger(
     std::shared_ptr<const AuditLoggerFactory::Config> config) {
-  MutexLock lock(mu);
+  MutexLock lock(*mu);
   auto it = registry->logger_factories_map_.find(config->name());
   GRPC_CHECK(it != registry->logger_factories_map_.end());
   return it->second->CreateAuditLogger(std::move(config));
 }
 
 void AuditLoggerRegistry::TestOnlyResetRegistry() {
-  MutexLock lock(mu);
+  MutexLock lock(*mu);
   delete registry;
   registry = new AuditLoggerRegistry();
 }

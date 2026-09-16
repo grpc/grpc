@@ -140,20 +140,20 @@ void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
 void Http2ClientTransport::StartConnectivityWatch(
     grpc_connectivity_state state,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
-  MutexLock lock(&transport_mutex_);
+  MutexLock lock(transport_mutex_);
   state_tracker_.AddWatcher(state, std::move(watcher));
 }
 
 void Http2ClientTransport::StopConnectivityWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  MutexLock lock(&transport_mutex_);
+  MutexLock lock(transport_mutex_);
   state_tracker_.RemoveWatcher(watcher);
 }
 
 void Http2ClientTransport::ReportDisconnection(
     const absl::Status& status, StateWatcher::DisconnectInfo disconnect_info,
     const char* reason) {
-  MutexLock lock(&transport_mutex_);
+  MutexLock lock(transport_mutex_);
   ReportDisconnectionLocked(status, disconnect_info, reason);
 }
 
@@ -168,7 +168,7 @@ void Http2ClientTransport::ReportDisconnectionLocked(
 }
 
 void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
-  MutexLock lock(&transport_mutex_);
+  MutexLock lock(transport_mutex_);
   GRPC_CHECK(watcher_ == nullptr);
   watcher_ = std::move(watcher);
   if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
@@ -183,7 +183,7 @@ void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
 }
 
 void Http2ClientTransport::StopWatch(RefCountedPtr<StateWatcher> watcher) {
-  MutexLock lock(&transport_mutex_);
+  MutexLock lock(transport_mutex_);
   if (watcher_ == watcher) watcher_.reset();
 }
 
@@ -758,7 +758,7 @@ void Http2ClientTransport::ActOnFlowControlAction(
 }
 
 absl::Status Http2ClientTransport::UpdateAllStreamsWritability() {
-  MutexLock lock(&transport_mutex_);
+  MutexLock lock(transport_mutex_);
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport::UpdateAllStreamsWritability total streams: "
       << stream_list_.size();
@@ -1133,7 +1133,7 @@ absl::Status Http2ClientTransport::InitializeStream(Stream& stream) {
 
 void Http2ClientTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
   {
-    MutexLock lock(&transport_mutex_);
+    MutexLock lock(transport_mutex_);
     GRPC_DCHECK(stream != nullptr) << "stream is null";
     GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
     GRPC_HTTP2_CLIENT_DLOG
@@ -1350,7 +1350,7 @@ void Http2ClientTransport::HandleStreamStateChange(Stream& stream,
 
 void Http2ClientTransport::CleanupStream(Stream& stream) {
   {
-    MutexLock lock(&transport_mutex_);
+    MutexLock lock(transport_mutex_);
     stream_list_.erase(stream.GetStreamId());
   }
   // Subtract any positive announced window delta of closed stream from the
@@ -1414,7 +1414,7 @@ void Http2ClientTransport::CloseAllActiveStreams(
   // Close all the streams that are still active on the transport.
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_2;
   {
-    MutexLock lock(&transport_mutex_);
+    MutexLock lock(transport_mutex_);
     stream_list_2 = std::move(stream_list_);
     stream_list_.clear();
   }
@@ -1544,7 +1544,7 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
                       sink = std::move(sink)]() mutable {
     RefCountedPtr<Party> party = nullptr;
     {
-      MutexLock lock(&self->transport_mutex_);
+      MutexLock lock(self->transport_mutex_);
       if (GPR_LIKELY(!self->shutdown_tracker_.IsShutdownInitiated(
               self->transport_mutex_))) {
         GRPC_DCHECK(self->transport_party_ != nullptr);
@@ -1597,7 +1597,7 @@ absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
     // this for incoming streams only. If a server receives more
     // streams from a client than is allowed by the clients settings,
     // whether or not we should fail is debatable.
-    MutexLock lock(&transport_mutex_);
+    MutexLock lock(transport_mutex_);
     if (GetActiveStreamCountLocked() >=
         settings_->peer().max_concurrent_streams()) {
       return absl::ResourceExhaustedError("Reached max concurrent streams");
@@ -1641,7 +1641,7 @@ absl::Status Http2ClientTransport::MaybeAddStreamToWritableStreamList(
 }
 
 RefCountedPtr<Stream> Http2ClientTransport::LookupStream(uint32_t stream_id) {
-  MutexLock lock(&transport_mutex_);
+  MutexLock lock(transport_mutex_);
   auto it = stream_list_.find(stream_id);
   if (it == stream_list_.end()) {
     GRPC_HTTP2_CLIENT_DLOG
@@ -1965,7 +1965,7 @@ Http2ClientTransport::KeepAliveInterfaceImpl::OnKeepAliveTimeout() {
 bool Http2ClientTransport::KeepAliveInterfaceImpl::NeedToSendKeepAlivePing() {
   bool need_to_send_ping = false;
   {
-    MutexLock lock(&transport_->transport_mutex_);
+    MutexLock lock(transport_->transport_mutex_);
     need_to_send_ping = (transport_->keepalive_permit_without_calls_ ||
                          transport_->GetActiveStreamCountLocked() > 0);
   }

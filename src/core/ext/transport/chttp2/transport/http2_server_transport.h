@@ -472,7 +472,7 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   bool IsTransportIdle() {
-    MutexLock lock(&transport_mutex_);
+    MutexLock lock(transport_mutex_);
     return GetActiveStreamCountLocked() == 0;
   }
 
