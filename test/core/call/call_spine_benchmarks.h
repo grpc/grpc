@@ -237,7 +237,7 @@ class UnstartedCallDestinationFixture {
   class SinkDestination : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler handler) override {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       handler_ = std::move(handler);
     }
     void Orphaned() override {}
@@ -250,7 +250,7 @@ class UnstartedCallDestinationFixture {
           this));
       auto h = std::move(*handler_);
       handler_.reset();
-      mu_.Unlock();
+      mu_.unlock();
       return h;
     }
 
@@ -322,7 +322,7 @@ class TransportFixture {
   class Acceptor : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler handler) override {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       handler_ = std::move(handler);
     }
     void Orphaned() override {}
@@ -335,7 +335,7 @@ class TransportFixture {
           this));
       auto h = std::move(*handler_);
       handler_.reset();
-      mu_.Unlock();
+      mu_.unlock();
       return h;
     }
 

@@ -62,7 +62,7 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
 
 TlsSessionKeyLoggerCache::TlsSessionKeyLogger::~TlsSessionKeyLogger() {
   {
-    grpc_core::MutexLock lock(&lock_);
+    grpc_core::MutexLock lock(lock_);
     if (fd_ != nullptr) fclose(fd_);
   }
   {
@@ -77,7 +77,7 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::~TlsSessionKeyLogger() {
 
 void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
     SSL_CTX* /* ssl_context */, const std::string& session_keys_info) {
-  grpc_core::MutexLock lock(&lock_);
+  grpc_core::MutexLock lock(lock_);
   if (fd_ == nullptr || session_keys_info.empty()) return;
   // Append to key log file under lock
   bool err =

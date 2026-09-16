@@ -295,7 +295,7 @@ LoadReporter::GenerateLoadBalancingFeedback() {
 ::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load>
 LoadReporter::GenerateLoads(const std::string& hostname,
                             const std::string& lb_id) {
-  grpc_core::MutexLock lock(&store_mu_);
+  grpc_core::MutexLock lock(store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
   GRPC_CHECK_NE(assigned_stores, nullptr);
   GRPC_CHECK(!assigned_stores->empty());
@@ -376,7 +376,7 @@ void LoadReporter::AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors) {
     // This will make the load balancing feedback generation a no-op.
     cpu_stats = {0, 0};
   }
-  grpc_core::MutexLock lock(&feedback_mu_);
+  grpc_core::MutexLock lock(feedback_mu_);
   feedback_records_.emplace_back(std::chrono::system_clock::now(), rpcs, errors,
                                  cpu_stats.first, cpu_stats.second);
 }
@@ -384,7 +384,7 @@ void LoadReporter::AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors) {
 void LoadReporter::ReportStreamCreated(const std::string& hostname,
                                        const std::string& lb_id,
                                        const std::string& load_key) {
-  grpc_core::MutexLock lock(&store_mu_);
+  grpc_core::MutexLock lock(store_mu_);
   load_data_store_.ReportStreamCreated(hostname, lb_id, load_key);
   LOG(INFO) << "[LR " << this << "] Report stream created (host: " << hostname
             << ", LB ID: " << lb_id << ", load key: " << load_key << ").";
@@ -392,7 +392,7 @@ void LoadReporter::ReportStreamCreated(const std::string& hostname,
 
 void LoadReporter::ReportStreamClosed(const std::string& hostname,
                                       const std::string& lb_id) {
-  grpc_core::MutexLock lock(&store_mu_);
+  grpc_core::MutexLock lock(store_mu_);
   load_data_store_.ReportStreamClosed(hostname, lb_id);
   LOG(INFO) << "[LR " << this << "] Report stream closed (host: " << hostname
             << ", LB ID: " << lb_id << ").";
@@ -411,7 +411,7 @@ void LoadReporter::ProcessViewDataCallStart(
       LoadRecordKey key(client_ip_and_token, user_id);
       LoadRecordValue value = LoadRecordValue(start_count);
       {
-        grpc_core::MutexLock lock(&store_mu_);
+        grpc_core::MutexLock lock(store_mu_);
         load_data_store_.MergeRow(host, key, value);
       }
     }
@@ -462,7 +462,7 @@ void LoadReporter::ProcessViewDataCallEnd(
       LoadRecordValue value = LoadRecordValue(
           0, ok_count, error_count, bytes_sent, bytes_received, latency_ms);
       {
-        grpc_core::MutexLock lock(&store_mu_);
+        grpc_core::MutexLock lock(store_mu_);
         load_data_store_.MergeRow(host, key, value);
       }
     }
@@ -489,7 +489,7 @@ void LoadReporter::ProcessViewDataOtherCallMetrics(
       LoadRecordValue value = LoadRecordValue(
           metric_name, static_cast<uint64_t>(num_calls), total_metric_value);
       {
-        grpc_core::MutexLock lock(&store_mu_);
+        grpc_core::MutexLock lock(store_mu_);
         load_data_store_.MergeRow(host, key, value);
       }
     }

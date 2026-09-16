@@ -104,7 +104,7 @@ struct LegacyMaxAgeFilter::Config {
       Mutex mu;
       absl::BitGen bit_gen ABSL_GUARDED_BY(mu);
       double MakeUniformDouble(double min, double max) {
-        MutexLock lock(&mu);
+        MutexLock lock(mu);
         return absl::Uniform(bit_gen, min, max);
       }
     };

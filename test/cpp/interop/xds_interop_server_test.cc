@@ -91,7 +91,7 @@ TEST(MaintenanceServerHookServiceTest, HookServiceInstalled) {
   Server* server = nullptr;
   std::thread thread(ServerLoop, port, &mutex, &condition, &server);
   {
-    grpc_core::MutexLock lock(&mutex);
+    grpc_core::MutexLock lock(mutex);
     while (server == nullptr) {
       condition.Wait(&mutex);
     }

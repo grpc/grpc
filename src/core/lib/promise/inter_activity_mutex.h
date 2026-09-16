@@ -43,12 +43,12 @@ class InterActivityMutex {
     Lock(Lock&& other) noexcept
         : mutex_(std::exchange(other.mutex_, nullptr)) {}
     Lock& operator=(Lock&& other) noexcept {
-      if (mutex_ != nullptr) mutex_->Unlock();
+      if (mutex_ != nullptr) mutex_->unlock();
       mutex_ = std::exchange(other.mutex_, nullptr);
       return *this;
     }
-    ~Lock() {
-      if (mutex_ != nullptr) mutex_->Unlock();
+    ~lock() {
+      if (mutex_ != nullptr) mutex_->unlock();
     }
 
     T& operator*() { return mutex_->value_; }
@@ -151,7 +151,7 @@ class InterActivityMutex {
             LOG(DFATAL) << "unreachable";
             return;
           case State::kAcquired:
-            mutex_->Unlock();
+            mutex_->unlock();
             delete this;
             return;
         }
@@ -183,7 +183,7 @@ class InterActivityMutex {
             }
             break;
           case State::kAcquisitionCancelled:
-            mutex_->Unlock();
+            mutex_->unlock();
             delete this;
             return;
           case State::kAcquired:
@@ -275,7 +275,7 @@ class InterActivityMutex {
         case State::kStart:
           break;
         case State::kFastLocked:
-          mutex_->Unlock();
+          mutex_->unlock();
           break;
         case State::kMovedFrom:
           break;
@@ -405,7 +405,7 @@ class InterActivityMutex {
       DCHECK_NE(prev_state_, kUnlocked);
       // some other waiter was added to the queue while we were waiting
       // go through the slow unlock path
-      mutex_->Unlock();
+      mutex_->unlock();
       return Pending{};
     }
 
@@ -531,7 +531,7 @@ class InterActivityMutex {
     Waiter* waiter_ = mutex_->waiters_;
   };
 
-  void Unlock() {
+  void unlock() {
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << "[mutex " << this << "] Unlocking";
     Unlocker(this).Run();

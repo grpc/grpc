@@ -90,9 +90,9 @@ class BaseCallData::WeakWakerHandle final : public Wakeable, public Orphanable {
   void Ref() { refs_.Ref(); }
 
   void Orphan() override {
-    mu_.Lock();
+    mu_.lock();
     base_ = nullptr;
-    mu_.Unlock();
+    mu_.unlock();
     Unref();
   }
 
@@ -105,7 +105,7 @@ class BaseCallData::WeakWakerHandle final : public Wakeable, public Orphanable {
   void Drop(WakeupMask) override { Unref(); }
 
   std::string ActivityDebugTag(WakeupMask) const override {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return base_ == nullptr ? "<unknown>" : base_->DebugTag();
   }
 
@@ -113,7 +113,7 @@ class BaseCallData::WeakWakerHandle final : public Wakeable, public Orphanable {
   void WakeupGeneric(WakeupMask wakeup_mask) {
     BaseCallData* wakeup_base = nullptr;
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (base_ != nullptr) {
         auto* call_stack = base_->call_stack();
         if (call_stack->refcount.refs.RefIfNonZero(DEBUG_LOCATION, "waker")) {

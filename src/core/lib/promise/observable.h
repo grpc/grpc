@@ -65,7 +65,7 @@ class Observable {
 
     // Update the value and wake all observers.
     void Set(T value) {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       std::swap(value_, value);
       WakeAll();
     }
