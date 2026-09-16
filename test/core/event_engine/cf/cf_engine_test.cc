@@ -314,9 +314,9 @@ TEST(CFEventEngineTest, TestLockOrder) {
   grpc_core::Mutex mutex;
 
   {
-    grpc_core::MutexLock lock(mutex);
+    grpc_core::MutexLock lock(&mutex);
     dns_resolver->LookupHostname(
-        [&mutex](auto result) { grpc_core::MutexLock lock2(mutex); },
+        [&mutex](auto result) { grpc_core::MutexLock lock2(&mutex); },
         "google.com", "80");
   }
 

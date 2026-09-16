@@ -77,40 +77,40 @@ class TestState {
   void ResetClientByteSizes(
       CallTracerInterface::TransportByteSize incoming = {},
       CallTracerInterface::TransportByteSize outgoing = {}) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     client_incoming_bytes_ = incoming;
     client_outgoing_bytes_ = outgoing;
   }
 
   void IncrementClientIncomingBytes(
       CallTracerInterface::TransportByteSize bytes) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     client_incoming_bytes_ += bytes;
   }
 
   void IncrementClientOutgoingBytes(
       CallTracerInterface::TransportByteSize bytes) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     client_outgoing_bytes_ += bytes;
   }
 
   void ResetServerByteSizes(
       CallTracerInterface::TransportByteSize incoming = {},
       CallTracerInterface::TransportByteSize outgoing = {}) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     server_incoming_bytes_ = incoming;
     server_outgoing_bytes_ = outgoing;
   }
 
   void IncrementServerIncomingBytes(
       CallTracerInterface::TransportByteSize bytes) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     server_incoming_bytes_ += bytes;
   }
 
   void IncrementServerOutgoingBytes(
       CallTracerInterface::TransportByteSize bytes) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     server_outgoing_bytes_ += bytes;
   }
 
@@ -119,7 +119,7 @@ class TestState {
              CallTracerInterface::TransportByteSize,
              CallTracerInterface::TransportByteSize>
   ByteSizes() {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     return std::tuple(client_incoming_bytes_, client_outgoing_bytes_,
                       server_incoming_bytes_, server_outgoing_bytes_);
   }

@@ -37,7 +37,7 @@ void ServerLoop(int port, grpc_core::Mutex* mutex,
                 grpc_core::CondVar* condition, Server** server) {
   RunServer(false, port, /* should not be used */ -1, "127.0.0.1",
             "test_server", [&](Server* s) {
-              grpc_core::MutexLock lock(*mutex);
+              grpc_core::MutexLock lock(mutex);
               *server = s;
               condition->Signal();
             });
@@ -91,7 +91,7 @@ TEST(MaintenanceServerHookServiceTest, HookServiceInstalled) {
   Server* server = nullptr;
   std::thread thread(ServerLoop, port, &mutex, &condition, &server);
   {
-    grpc_core::MutexLock lock(mutex);
+    grpc_core::MutexLock lock(&mutex);
     while (server == nullptr) {
       condition.Wait(&mutex);
     }

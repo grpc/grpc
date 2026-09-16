@@ -44,7 +44,7 @@ class Barrier {
 
   Promise<Result> Wait() {
     return [this]() -> Poll<Result> {
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       if (cleared_) {
         return Result{};
       } else {
@@ -75,7 +75,7 @@ class SingleBarrier {
 
   Promise<Result> Wait() {
     return [this]() -> Poll<Result> {
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       if (cleared_) {
         return Result{};
       } else {

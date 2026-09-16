@@ -218,7 +218,7 @@ std::string DnsServer::address() const {
 }
 
 DnsQuestion DnsServer::WaitForQuestion(absl::string_view host) const {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   while (std::find_if(questions_.begin(), questions_.end(), [=](const auto& q) {
            return q.is_host(host);
          }) == questions_.end()) {
@@ -246,7 +246,7 @@ absl::Status DnsServer::Respond(const DnsQuestion& query,
 void DnsServer::SetIPv4Response(absl::string_view host,
                                 absl::Span<const uint8_t> ipv4_address) {
   CHECK_EQ(ipv4_address.size(), 4u);
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   for (const auto& question : questions_) {
     if (question.is_host(host)) {
       auto status = Respond(question, ipv4_address);
@@ -287,7 +287,7 @@ void DnsServer::ServerLoop(int sockfd) {
               << query->qname;
     query->client_addr = client_addr;
     {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       bool responded = false;
       for (const auto& [host, address] : ipv4_addresses_) {
         LOG(INFO) << query->qname << " " << host << " " << query->is_host(host);

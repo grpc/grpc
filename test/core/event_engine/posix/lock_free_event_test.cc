@@ -45,11 +45,11 @@ TEST(LockFreeEventTest, BasicTest) {
   grpc_core::Mutex mu;
   grpc_core::CondVar cv;
   event.InitEvent();
-  grpc_core::MutexLock lock(mu);
+  grpc_core::MutexLock lock(&mu);
   // Set NotifyOn first and then SetReady
   event.NotifyOn(
       PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
-        grpc_core::MutexLock lock(mu);
+        grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
       }));
@@ -60,7 +60,7 @@ TEST(LockFreeEventTest, BasicTest) {
   event.SetReady();
   event.NotifyOn(
       PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
-        grpc_core::MutexLock lock(mu);
+        grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
       }));
@@ -69,7 +69,7 @@ TEST(LockFreeEventTest, BasicTest) {
   // Set NotifyOn and then call SetShutdown
   event.NotifyOn(
       PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
-        grpc_core::MutexLock lock(mu);
+        grpc_core::MutexLock lock(&mu);
         EXPECT_FALSE(status.ok());
         EXPECT_EQ(status, absl::CancelledError("Shutdown"));
         cv.Signal();
@@ -93,7 +93,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
   for (int i = 0; i < 2; i++) {
     threads.emplace_back([&, thread_id = i]() {
       for (int j = 0; j < kNumOperations; j++) {
-        grpc_core::MutexLock lock(mu);
+        grpc_core::MutexLock lock(&mu);
         // Wait for both threads to process the previous operation before
         // starting the next one.
         while (signalled) {
@@ -103,7 +103,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
         if (thread_id == 0) {
           event.NotifyOn(PosixEngineClosure::TestOnlyToClosure(
               [&mu, &cv, &signalled](absl::Status status) {
-                grpc_core::MutexLock lock(mu);
+                grpc_core::MutexLock lock(&mu);
                 EXPECT_TRUE(status.ok());
                 signalled = true;
                 cv.SignalAll();

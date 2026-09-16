@@ -72,9 +72,9 @@ class EventEngineTimerTest : public EventEngineTest {
 
 TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
   auto engine = this->NewEventEngine();
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   engine->RunAfter(0ms, [this]() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
     cv_.Signal();
   });
@@ -91,13 +91,13 @@ TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
   {
     auto engine = this->NewEventEngine();
     auto handle = engine->RunAfter(24h, [this]() {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       signaled_ = true;
     });
     ASSERT_TRUE(engine->Cancel(handle));
   }
   // The engine is deleted, and all closures should have been flushed
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   ASSERT_FALSE(signaled_);
 }
 
@@ -106,17 +106,17 @@ TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
   // than the second callback's wait time.
   std::vector<uint8_t> ordered;
   uint8_t count = 0;
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   {
     auto engine = this->NewEventEngine();
     engine->RunAfter(3000ms, [&]() {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       ordered.push_back(2);
       ++count;
       cv_.Signal();
     });
     engine->RunAfter(0ms, [&]() {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       ordered.push_back(1);
       ++count;
       cv_.Signal();
@@ -132,9 +132,9 @@ TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
 
 TEST_F(EventEngineTimerTest, CancellingExecutedCallbackIsNoopAndReturnsFalse) {
   auto engine = this->NewEventEngine();
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   auto handle = engine->RunAfter(0ms, [this]() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
     cv_.Signal();
   });
@@ -153,7 +153,7 @@ void EventEngineTimerTest::ScheduleCheckCB(
                        << " ms too early: ";
   if (when > now) ++(*fail_count);
   if (++(*call_count) == total_expected) {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
     cv_.Signal();
   }
@@ -190,7 +190,7 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   for (auto& t : threads) {
     t.join();
   }
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   // to protect against spurious wakeups.
   while (!signaled_) {
     cv_.Wait(&mu_);
@@ -215,7 +215,7 @@ void ImmediateRunTestInternal(
   std::atomic<int> execution_count{0};
   auto cb = [&mu, &cv, &run_timeout, &waiters, &execution_count]() {
     waiters.fetch_add(1);
-    grpc_core::MutexLock lock(mu);
+    grpc_core::MutexLock lock(&mu);
     EXPECT_FALSE(cv.WaitWithTimeout(&mu, run_timeout))
         << "callback timed out waiting.";
     execution_count.fetch_add(1);

@@ -355,7 +355,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
     {
-      MutexLock lock(tcp_destroy_mu_);
+      MutexLock lock(&tcp_destroy_mu_);
       if (tcp_ != nullptr) {
         grpc_endpoint_write(tcp_, buffer, &on_write_done_,
                             grpc_event_engine::experimental::EventEngine::
@@ -377,14 +377,14 @@ class StreamsNotSeenTest : public ::testing::Test {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
     if (error.ok()) {
       {
-        MutexLock lock(self->mu_);
+        MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
           absl::StrAppend(&self->read_bytes_,
                           StringViewFromSlice(self->read_buffer_.slices[i]));
         }
         self->read_cv_.SignalAll();
       }
-      MutexLock lock(self->tcp_destroy_mu_);
+      MutexLock lock(&self->tcp_destroy_mu_);
       if (self->tcp_ != nullptr) {
         grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
         grpc_endpoint_read(self->tcp_, &self->read_buffer_,
@@ -405,7 +405,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   void CloseServerConnection() {
-    MutexLock lock(tcp_destroy_mu_);
+    MutexLock lock(&tcp_destroy_mu_);
     grpc_endpoint_destroy(tcp_);
     tcp_ = nullptr;
   }
@@ -421,7 +421,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       }
     });
     {
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       while (!absl::StrContains(read_bytes_, bytes)) {
         read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
       }

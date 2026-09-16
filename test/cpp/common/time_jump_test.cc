@@ -112,7 +112,7 @@ TEST_P(TimeJumpTest, TimedWait) {
   grpc_core::CondVar cond;
   grpc_core::Mutex mu;
   {
-    grpc_core::MutexLock lock(mu);
+    grpc_core::MutexLock lock(&mu);
     std::thread thd = std::thread([]() {
       gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
       std::ostringstream cmd;
