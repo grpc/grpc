@@ -244,7 +244,7 @@ std::string LoadReporter::GenerateLbId() {
 
 ::grpc::lb::v1::LoadBalancingFeedback
 LoadReporter::GenerateLoadBalancingFeedback() {
-  grpc_core::ReleasableMutexLock lock(feedback_mu_);
+  grpc_core::ReleasableMutexLock lock(&feedback_mu_);
   auto now = std::chrono::system_clock::now();
   // Discard records outside the window until there is only one record
   // outside the window, which is used as the base for difference.

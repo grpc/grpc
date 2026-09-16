@@ -152,7 +152,7 @@ void ThreadManager::MainWorkLoop() {
     bool ok;
     WorkStatus work_status = PollForWork(&tag, &ok);
 
-    grpc_core::LockableAndReleasableMutexLock lock(mu_);
+    grpc_core::LockableAndReleasableMutexLock lock(&mu_);
     // Reduce the number of pollers by 1 and check what happened with the poll
     num_pollers_--;
     bool done = false;

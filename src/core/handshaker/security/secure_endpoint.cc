@@ -1282,7 +1282,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
       while (true) {
         {
           // Check to see if we've written all the bytes.
-          grpc_core::ReleasableMutexLock lock(impl->write_queue_mu_);
+          grpc_core::ReleasableMutexLock lock(&impl->write_queue_mu_);
           if (impl->pending_writes_ == nullptr) {
             impl->writing_ = false;
             GRPC_DCHECK(impl->on_write_ == nullptr);

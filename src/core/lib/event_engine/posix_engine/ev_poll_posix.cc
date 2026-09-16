@@ -253,7 +253,7 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done,
                                    absl::string_view /*reason*/) {
   ForceRemoveHandleFromPoller();
   {
-    grpc_core::ReleasableMutexLock lock(mu_);
+    grpc_core::ReleasableMutexLock lock(&mu_);
     on_done_ = on_done;
     released_ = release_fd != nullptr;
     if (release_fd != nullptr) {
@@ -355,7 +355,7 @@ void PollEventHandle::NotifyOnRead(PosixEngineClosure* on_read) {
   // poller->Shutdown() prematurely.
   Ref();
   {
-    grpc_core::ReleasableMutexLock lock(mu_);
+    grpc_core::ReleasableMutexLock lock(&mu_);
     if (NotifyOnLocked(&read_closure_, on_read)) {
       lock.Release();
       // NotifyOnLocked immediately scheduled some closure. It would have set
@@ -377,7 +377,7 @@ void PollEventHandle::NotifyOnWrite(PosixEngineClosure* on_write) {
   // poller->Shutdown() prematurely.
   Ref();
   {
-    grpc_core::ReleasableMutexLock lock(mu_);
+    grpc_core::ReleasableMutexLock lock(&mu_);
     if (NotifyOnLocked(&write_closure_, on_write)) {
       lock.Release();
       // NotifyOnLocked immediately scheduled some closure. It would have set

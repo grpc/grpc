@@ -628,7 +628,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              EventEngine::Endpoint::ReadArgs args) {
-  grpc_core::ReleasableMutexLock lock(read_mu_);
+  grpc_core::ReleasableMutexLock lock(&read_mu_);
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "Endpoint[" << this << "]: Read";
   GRPC_CHECK(read_cb_ == nullptr);

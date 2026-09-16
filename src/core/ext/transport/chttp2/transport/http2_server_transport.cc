@@ -1850,7 +1850,7 @@ void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
                          << " location=" << whence.file() << ":"
                          << whence.line();
 
-  ReleasableMutexLock lock(transport_mutex_);
+  ReleasableMutexLock lock(&transport_mutex_);
   if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
     lock.Release();
     return;

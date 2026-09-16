@@ -137,7 +137,7 @@ void HttpConnectClientHandshaker::OnWriteDoneScheduler(
 
 // Callback invoked when finished writing HTTP CONNECT request.
 void HttpConnectClientHandshaker::OnWriteDone(absl::Status error) {
-  ReleasableMutexLock lock(mu_);
+  ReleasableMutexLock lock(&mu_);
   if (!error.ok() || args_->endpoint == nullptr) {
     // If the write failed or we're shutting down, clean up and invoke the
     // callback with the error.

@@ -175,7 +175,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   // instance will deallocate itself when it's done.
   CreateAndStart(cq_, service_, load_reporter_);
   {
-    grpc_core::ReleasableMutexLock lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.Release();
       Shutdown(std::move(self), "OnRequestDelivered");
@@ -234,7 +234,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
       SendReport(self, true /* ok */);
       // Expect this read to fail.
       {
-        grpc_core::ReleasableMutexLock lock(service_->cq_shutdown_mu_);
+        grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
         if (service_->shutdown_) {
           lock.Release();
           Shutdown(std::move(self), "OnReadDone");
@@ -266,7 +266,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(load_report_interval_ms_, GPR_TIMESPAN));
   {
-    grpc_core::ReleasableMutexLock lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.Release();
       Shutdown(std::move(self), "ScheduleNextReport");
@@ -306,7 +306,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
     call_status_ = INITIAL_RESPONSE_SENT;
   }
   {
-    grpc_core::ReleasableMutexLock lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.Release();
       Shutdown(std::move(self), "SendReport");

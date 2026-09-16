@@ -395,7 +395,7 @@ void ChaoticGoodServerTransport::AbortWithError() {
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
   outgoing_frames_.MarkClosed();
-  ReleasableMutexLock lock(mu_);
+  ReleasableMutexLock lock(&mu_);
   aborted_with_error_ = true;
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();

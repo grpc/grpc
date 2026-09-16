@@ -149,7 +149,7 @@ thread_local WorkSerializer::WorkSerializerImpl*
 #endif
 
 void WorkSerializer::WorkSerializerImpl::Orphan() {
-  ReleasableMutexLock lock(mu_);
+  ReleasableMutexLock lock(&mu_);
   // If we're not running, then we can delete immediately.
   if (!running_) {
     lock.Release();

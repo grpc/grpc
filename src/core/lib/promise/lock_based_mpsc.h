@@ -69,7 +69,7 @@ class Center : public RefCounted<Center<T>> {
   // That said, some senders may have been cancelled by the time we wake them,
   // and so waking a subset could cause starvation.
   Poll<bool> PollReceiveBatch(std::vector<T>& dest) {
-    ReleasableMutexLock lock(mu_);
+    ReleasableMutexLock lock(&mu_);
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << "MPSC::PollReceiveBatch: "
         << GRPC_DUMP_ARGS(this, batch_, queue_.size());
@@ -95,7 +95,7 @@ class Center : public RefCounted<Center<T>> {
   //  guarantees the item has been received.
   template <bool kAwaitReceipt>
   uint64_t Send(T t) {
-    ReleasableMutexLock lock(mu_);
+    ReleasableMutexLock lock(&mu_);
     if (batch_ == kClosedBatch) return kClosedBatch;
     queue_.push_back(std::move(t));
     auto receive_waker = std::move(receive_waker_);
@@ -108,7 +108,7 @@ class Center : public RefCounted<Center<T>> {
 
   // Poll until a particular batch number is received.
   Poll<Empty> PollReceiveBatch(uint64_t batch) {
-    ReleasableMutexLock lock(mu_);
+    ReleasableMutexLock lock(&mu_);
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << "MPSC::PollReceiveBatch: " << GRPC_DUMP_ARGS(this, batch_, batch);
     if (batch_ >= batch) return Empty{};
@@ -118,7 +118,7 @@ class Center : public RefCounted<Center<T>> {
 
   // Mark that the receiver is closed.
   void ReceiverClosed(bool wake_receiver) {
-    ReleasableMutexLock lock(mu_);
+    ReleasableMutexLock lock(&mu_);
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << "MPSC::ReceiverClosed: " << GRPC_DUMP_ARGS(this, batch_);
     if (batch_ == kClosedBatch) return;

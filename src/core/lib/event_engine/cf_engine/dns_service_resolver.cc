@@ -113,7 +113,7 @@ void DNSServiceResolverImpl::LookupHostname(
     return;
   }
 
-  grpc_core::ReleasableMutexLock lock(request_mu_);
+  grpc_core::ReleasableMutexLock lock(&request_mu_);
 
   error = DNSServiceSetDispatchQueue(sdRef, queue_);
   if (error != kDNSServiceErr_NoError) {
@@ -146,7 +146,7 @@ void DNSServiceResolverImpl::ResolveCallback(
   // after the sdRef is deallocated
   auto that = static_cast<DNSServiceResolverImpl*>(context);
 
-  grpc_core::ReleasableMutexLock lock(that->request_mu_);
+  grpc_core::ReleasableMutexLock lock(&that->request_mu_);
   auto request_it = that->requests_.find(sdRef);
   GRPC_CHECK(request_it != that->requests_.end());
 
@@ -221,7 +221,7 @@ void DNSServiceResolverImpl::Shutdown() {
     grpc_core::RefCountedPtr<DNSServiceResolverImpl> that{
         static_cast<DNSServiceResolverImpl*>(thatPtr)};
 
-    grpc_core::ReleasableMutexLock lock(that->request_mu_);
+    grpc_core::ReleasableMutexLock lock(&that->request_mu_);
     auto requests = std::exchange(that->requests_, {});
     lock.Release();
 

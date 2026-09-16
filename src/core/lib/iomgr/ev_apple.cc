@@ -154,7 +154,7 @@ void grpc_apple_register_write_stream(CFWriteStreamRef write_stream,
 /// Drive the run loop in a global singleton thread until the global run loop is
 /// shutdown.
 static void GlobalRunLoopFunc(void* /*arg*/) {
-  grpc_core::LockableAndReleasableMutexLock lock(gGlobalRunLoopContext->mu);
+  grpc_core::LockableAndReleasableMutexLock lock(&gGlobalRunLoopContext->mu);
   gGlobalRunLoopContext->run_loop = CFRunLoopGetCurrent();
   gGlobalRunLoopContext->init_cv.Signal();
 

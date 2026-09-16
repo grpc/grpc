@@ -46,7 +46,7 @@ class WaitForCallback {
   // Creates a callback that unblocks the promise.
   auto MakeCallback() {
     return [state = state_]() {
-      ReleasableMutexLock lock(state->mutex);
+      ReleasableMutexLock lock(&state->mutex);
       state->done = true;
       auto waker = std::move(state->waker);
       lock.Release();

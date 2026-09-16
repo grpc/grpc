@@ -356,7 +356,7 @@ void OutputBuffers::Write(uint64_t payload_tag,
 // SecureFrameQueue
 
 void SecureFrameQueue::Write(SliceBuffer buffer) {
-  ReleasableMutexLock lock(mu_);
+  ReleasableMutexLock lock(&mu_);
   uint32_t frame_length = buffer.Length();
   uint32_t frame_padding =
       DataConnectionPadding(frame_length, encode_alignment_);

@@ -340,7 +340,7 @@ void ChaoticGoodServerTransport::StreamDispatch::OnFrameTransportClosed(
       << "CHAOTIC_GOOD: OnFrameTransportClosed: " << status;
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
-  ReleasableMutexLock lock(mu_);
+  ReleasableMutexLock lock(&mu_);
   last_seen_new_stream_id_ = std::numeric_limits<uint32_t>::max();
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();

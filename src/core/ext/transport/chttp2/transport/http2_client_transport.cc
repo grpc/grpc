@@ -1482,7 +1482,7 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   // in the MPSC to be drained and block any additional frames from being
   // enqueued. Additionally this also prevents additional frames with non-zero
   // stream_ids from being processed by the read loop.
-  ReleasableMutexLock lock(transport_mutex_);
+  ReleasableMutexLock lock(&transport_mutex_);
   if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
     lock.Release();
     return;

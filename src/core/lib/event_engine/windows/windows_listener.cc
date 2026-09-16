@@ -48,7 +48,7 @@ WindowsEventEngineListener::SinglePortSocketListener::AsyncIOState::
 void WindowsEventEngineListener::SinglePortSocketListener::
     OnAcceptCallbackWrapper::Run() {
   GRPC_CHECK_NE(io_state_, nullptr);
-  grpc_core::ReleasableMutexLock lock(io_state_->mu);
+  grpc_core::ReleasableMutexLock lock(&io_state_->mu);
   if (io_state_->listener_socket->IsShutdown()) {
     GRPC_TRACE_LOG(event_engine, INFO)
         << "SinglePortSocketListener::" << io_state_->port_listener

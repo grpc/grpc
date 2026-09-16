@@ -976,7 +976,7 @@ Server::Server(
 
 Server::~Server() {
   {
-    grpc::internal::ReleasableMutexLock lock(mu_);
+    grpc::internal::ReleasableMutexLock lock(&mu_);
     if (started_ && !shutdown_) {
       lock.Release();
       Shutdown();

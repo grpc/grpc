@@ -556,7 +556,7 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
       RunType::kWrite,
       [write_token = std::move(write_token), middle = std::move(middle), index,
        data, on_writable = std::move(on_writable)]() mutable {
-        grpc_core::ReleasableMutexLock lock(*mu_);
+        grpc_core::ReleasableMutexLock lock(&*mu_);
         GRPC_CHECK(middle->writing[index]);
         if (middle->closed[index]) {
           GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
