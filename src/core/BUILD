@@ -7859,7 +7859,6 @@ config_setting(
 
 grpc_cc_library(
     name = "shared_bit_gen",
-    srcs = ["util/shared_bit_gen.cc"],
     hdrs = [
         "util/shared_bit_gen.h",
     ],
