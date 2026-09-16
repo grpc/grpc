@@ -57,9 +57,8 @@ XdsStreamingCallPromiseWrapper::XdsStreamingCallPromiseWrapper(
     XdsTransport& transport, const char* method, bool start_upon_send_message) {
   auto internal_event_handler = std::make_unique<EventHandler>(
       WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>());
-  call_ =
-      transport.CreateStreamingCall(method, std::move(internal_event_handler),
-                                    start_upon_send_message);
+  call_ = transport.CreateStreamingCall(
+      method, std::move(internal_event_handler), start_upon_send_message);
 }
 
 Poll<StatusFlag> XdsStreamingCallPromiseWrapper::PollPushMessage() {
@@ -109,8 +108,7 @@ void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
       if (send_state_ == SendState::kSendMessageInFlightAndHalfCloseRequested) {
         send_state_ = SendState::kHalfCloseInFlight;
         send_half_close = true;
-      } else if (send_state_ ==
-                 SendState::kSendMessageAndHalfCloseInFlight) {
+      } else if (send_state_ == SendState::kSendMessageAndHalfCloseInFlight) {
         send_state_ = SendState::kHalfCloseInFlight;
       } else if (send_state_ == SendState::kSendMessageInFlight) {
         send_state_ = SendState::kIdle;

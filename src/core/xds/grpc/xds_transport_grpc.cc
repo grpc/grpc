@@ -140,8 +140,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_INITIAL_METADATA;
-  op.data.recv_initial_metadata.recv_initial_metadata =
-      &initial_metadata_recv_;
+  op.data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv_;
   op.flags = 0;
   op.reserved = nullptr;
   op_list.push_back(op);
