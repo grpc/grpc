@@ -113,7 +113,7 @@ class Channel : public UnstartedCallDestination,
   RegisteredCall* RegisterCall(const char* method, const char* host);
 
   int TestOnlyRegisteredCalls() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return registration_table_.size();
   }
 
