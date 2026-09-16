@@ -55,11 +55,11 @@ template <typename IndexSequence, typename... Ts>
 struct ElementsImpl;
 
 template <size_t... Is, typename... Ts>
-struct ElementsImpl<absl::index_sequence<Is...>, Ts...> : TableLeaf<Is, Ts>... {
+struct ElementsImpl<std::index_sequence<Is...>, Ts...> : TableLeaf<Is, Ts>... {
 };
 
 template <typename... Ts>
-using Elements = ElementsImpl<absl::make_index_sequence<sizeof...(Ts)>, Ts...>;
+using Elements = ElementsImpl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
 
 template <typename T, size_t I>
 struct IndexedType {};
@@ -68,11 +68,11 @@ template <typename IndexSequence, typename... Ts>
 struct IndexMapImpl;
 
 template <size_t... Is, typename... Ts>
-struct IndexMapImpl<absl::index_sequence<Is...>, Ts...>
+struct IndexMapImpl<std::index_sequence<Is...>, Ts...>
     : IndexedType<Ts, Is>... {};
 
 template <typename... Ts>
-using IndexMap = IndexMapImpl<absl::make_index_sequence<sizeof...(Ts)>, Ts...>;
+using IndexMap = IndexMapImpl<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
 
 template <typename T, size_t I>
 constexpr size_t ResolveIndex(IndexedType<T, I>*) {
@@ -108,26 +108,26 @@ class Table {
   Table() = default;
   // Destruct - forwards to the Destruct member with an integer sequence so we
   // can destruct field-wise.
-  ~Table() { Destruct(absl::make_index_sequence<sizeof...(Ts)>()); }
+  ~Table() { Destruct(std::make_index_sequence<sizeof...(Ts)>()); }
 
   // Copy another table
   Table(const Table& rhs) {
     // Since we know all fields are clear initially, pass false for or_clear.
-    Copy<false>(absl::make_index_sequence<sizeof...(Ts)>(), rhs);
+    Copy<false>(std::make_index_sequence<sizeof...(Ts)>(), rhs);
   }
 
   // Copy another table
   Table& operator=(const Table& rhs) {
     // Since we may not be all clear, pass true for or_clear to have Copy()
     // clear newly emptied fields.
-    Copy<true>(absl::make_index_sequence<sizeof...(Ts)>(), rhs);
+    Copy<true>(std::make_index_sequence<sizeof...(Ts)>(), rhs);
     return *this;
   }
 
   // Move from another table
   Table(Table&& rhs) noexcept {
     // Since we know all fields are clear initially, pass false for or_clear.
-    Move<false>(absl::make_index_sequence<sizeof...(Ts)>(),
+    Move<false>(std::make_index_sequence<sizeof...(Ts)>(),
                 std::forward<Table>(rhs));
   }
 
@@ -135,7 +135,7 @@ class Table {
   Table& operator=(Table&& rhs) noexcept {
     // Since we may not be all clear, pass true for or_clear to have Move()
     // clear newly emptied fields.
-    Move<true>(absl::make_index_sequence<sizeof...(Ts)>(),
+    Move<true>(std::make_index_sequence<sizeof...(Ts)>(),
                std::forward<Table>(rhs));
     return *this;
   }
@@ -245,7 +245,7 @@ class Table {
   // Iterate through each set field in the table
   template <typename F>
   void ForEach(F f) const {
-    ForEachImpl(std::move(f), absl::make_index_sequence<sizeof...(Ts)>());
+    ForEachImpl(std::move(f), std::make_index_sequence<sizeof...(Ts)>());
   }
 
   // Iterate through each set field in the table if it exists in Vs, in the
@@ -253,7 +253,7 @@ class Table {
   template <typename F, typename... Vs>
   void ForEachIn(F f) const {
     ForEachImpl(std::move(f),
-                absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
+                std::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
   }
 
   // Iterate through each set field in the table if it exists in Vs, in the
@@ -262,7 +262,7 @@ class Table {
   template <typename F, typename... Vs>
   void FilterIn(F f) {
     FilterInImpl(std::move(f),
-                 absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
+                 std::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
   }
 
   // Count the number of set fields in the table
@@ -272,7 +272,7 @@ class Table {
   bool empty() const { return present_bits_.none(); }
 
   // Clear all elements in the table.
-  void ClearAll() { ClearAllImpl(absl::make_index_sequence<sizeof...(Ts)>()); }
+  void ClearAll() { ClearAllImpl(std::make_index_sequence<sizeof...(Ts)>()); }
 
  private:
   // Bit field for which elements of the table are set (true) or un-set (false,
@@ -360,39 +360,39 @@ class Table {
   // For each field (element I=0, 1, ...) if that field is present, call its
   // destructor.
   template <size_t... I>
-  void Destruct(absl::index_sequence<I...>) {
+  void Destruct(std::index_sequence<I...>) {
     (table_detail::DestructIfNotNull(get<I>()), ...);
   }
 
   // For each field (element I=0, 1, ...) copy that field into this table -
   // or_clear as per CopyIf().
   template <bool or_clear, size_t... I>
-  void Copy(absl::index_sequence<I...>, const Table& rhs) {
+  void Copy(std::index_sequence<I...>, const Table& rhs) {
     (CopyIf<or_clear, I>(rhs), ...);
   }
 
   // For each field (element I=0, 1, ...) move that field into this table -
   // or_clear as per MoveIf().
   template <bool or_clear, size_t... I>
-  void Move(absl::index_sequence<I...>, Table&& rhs) {
+  void Move(std::index_sequence<I...>, Table&& rhs) {
     (MoveIf<or_clear, I>(std::forward<Table>(rhs)), ...);
   }
 
   // For each field (element I=0, 1, ...) if that field is present, call f.
   template <typename F, size_t... I>
-  void ForEachImpl(F f, absl::index_sequence<I...>) const {
+  void ForEachImpl(F f, std::index_sequence<I...>) const {
     (CallIf<I>(&f), ...);
   }
 
   // For each field (element I=0, 1, ...) if that field is present, call f. If
   // f returns false, remove the field from the table.
   template <typename F, size_t... I>
-  void FilterInImpl(F f, absl::index_sequence<I...>) {
+  void FilterInImpl(F f, std::index_sequence<I...>) {
     (FilterIf<I>(&f), ...);
   }
 
   template <size_t... I>
-  void ClearAllImpl(absl::index_sequence<I...>) {
+  void ClearAllImpl(std::index_sequence<I...>) {
     (clear<I>(), ...);
   }
 
