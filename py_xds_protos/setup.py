@@ -36,8 +36,8 @@ INSTALL_REQUIRES = [
     "googleapis-common-protos>=1.70.0",
     "protobuf>=6.31.1,<8.0.0",
 ]
-SETUP_REQUIRES = INSTALL_REQUIRES + [
-    f"grpcio-tools>={XDS_PROTOS_GENCODE_GRPC_VERSION}"
+SETUP_REQUIRES = [
+    f"grpcio-tools>={XDS_PROTOS_GENCODE_GRPC_VERSION}",
 ]
 
 if __name__ == "__main__":
