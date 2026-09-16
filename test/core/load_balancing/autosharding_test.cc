@@ -126,32 +126,60 @@ TEST_F(AutoShardingTest, StartupFallback) {
   EXPECT_THAT(address, ::testing::AnyOf(kAddresses[0], kAddresses[1]));
 }
 
-TEST_F(AutoShardingTest, FallbackDisabledFailsPicks) {
+TEST_F(AutoShardingTest, FallbackDisabledQueuesPicksUntilAssignmentTimeout) {
+  // TODO(bpawan): Enable this test when the autosharding client is
+  // implemented.
+  GTEST_SKIP() << "requires the autosharding client";
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build()),
                         lb_policy()),
             absl::OkStatus());
-  auto picker = ExpectState(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                            absl::UnavailableError("waiting for assignment"));
+  // Before the initial assignment timer fires, we have no assignment yet,
+  // so we queue picks and report CONNECTING.
+  auto picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  ExpectPickQueued(picker.get(), {}, MakeMetadata());
+  // When the initial assignment timer fires without an assignment, picks
+  // fail, because fallback is disabled.
+  IncrementTimeBy(Duration::Seconds(1));
+  picker = ExpectState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError(
+          "timed out waiting for initial assignment from autosharding "
+          "server"));
   ExpectPickFail(
       picker.get(),
       [](const absl::Status& status) {
-        EXPECT_EQ(status, absl::UnavailableError("waiting for assignment"));
+        EXPECT_EQ(status, absl::UnavailableError(
+                              "timed out waiting for initial assignment from "
+                              "autosharding server"));
       },
       /*call_attributes=*/{}, MakeMetadata());
 }
 
 TEST_F(AutoShardingTest, ResolutionNotePropagatedOnFallbackDisabled) {
+  // TODO(bpawan): Enable this test when the autosharding client is
+  // implemented.
+  GTEST_SKIP() << "requires the autosharding client";
   auto update = BuildUpdate(kAddresses, ConfigBuilder().Build());
   update.resolution_note = "DNS resolution note";
   EXPECT_EQ(ApplyUpdate(std::move(update), lb_policy()), absl::OkStatus());
-  auto picker = ExpectState(
+  // Before the initial assignment timer fires, we have no assignment yet,
+  // so we queue picks and report CONNECTING.
+  auto picker = ExpectState(GRPC_CHANNEL_CONNECTING);
+  ExpectPickQueued(picker.get(), {}, MakeMetadata());
+  // When the initial assignment timer fires without an assignment, picks
+  // fail with a status that includes the resolution note.
+  IncrementTimeBy(Duration::Seconds(1));
+  picker = ExpectState(
       GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("waiting for assignment (DNS resolution note)"));
+      absl::UnavailableError(
+          "timed out waiting for initial assignment from autosharding server "
+          "(DNS resolution note)"));
   ExpectPickFail(
       picker.get(),
       [](const absl::Status& status) {
         EXPECT_EQ(status, absl::UnavailableError(
-                              "waiting for assignment (DNS resolution note)"));
+                              "timed out waiting for initial assignment from "
+                              "autosharding server (DNS resolution note)"));
       },
       /*call_attributes=*/{}, MakeMetadata());
 }

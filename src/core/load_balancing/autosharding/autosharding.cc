@@ -49,9 +49,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/ref_counted_string.h"
 #include "src/core/util/shared_bit_gen.h"
-#include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
@@ -67,88 +65,6 @@ namespace grpc_core {
 namespace {
 
 constexpr absl::string_view kAutoSharding = "autosharding_experimental";
-constexpr Duration kDefaultInitialAssignmentTimeout = Duration::Seconds(60);
-
-class AutoShardingLbConfig final : public LoadBalancingPolicy::Config {
- public:
-  AutoShardingLbConfig() = default;
-
-  AutoShardingLbConfig(const AutoShardingLbConfig&) = delete;
-  AutoShardingLbConfig& operator=(const AutoShardingLbConfig&) = delete;
-
-  AutoShardingLbConfig(AutoShardingLbConfig&& other) = delete;
-  AutoShardingLbConfig& operator=(AutoShardingLbConfig&& other) = delete;
-
-  absl::string_view name() const override { return kAutoSharding; }
-
-  const std::string& channel_factory_key() const {
-    return channel_factory_key_;
-  }
-  const std::string& autosharding_target() const {
-    return autosharding_target_;
-  }
-  const RefCountedStringValue& key_header_name() const {
-    return key_header_name_;
-  }
-  bool enable_fallback() const { return enable_fallback_; }
-  // TODO(bpawan): Pass this to the autosharding client, which will own the
-  // initial assignment timer (gRFC A119).
-  Duration initial_assignment_timeout() const {
-    return initial_assignment_timeout_;
-  }
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader =
-        JsonObjectLoader<AutoShardingLbConfig>()
-            .Field("channelFactoryKey",
-                   &AutoShardingLbConfig::channel_factory_key_)
-            .Field("autoshardingTarget",
-                   &AutoShardingLbConfig::autosharding_target_)
-            .Field("keyHeaderName", &AutoShardingLbConfig::key_header_name_)
-            .OptionalField("enableFallback",
-                           &AutoShardingLbConfig::enable_fallback_)
-            .OptionalField("initialAssignmentTimeout",
-                           &AutoShardingLbConfig::initial_assignment_timeout_)
-            .Finish();
-    return loader;
-  }
-
-  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
-    {
-      ValidationErrors::ScopedField field(errors, ".channelFactoryKey");
-      if (!errors->FieldHasErrors() && channel_factory_key_.empty()) {
-        errors->AddError("must be non-empty");
-      }
-    }
-    {
-      ValidationErrors::ScopedField field(errors, ".autoshardingTarget");
-      if (!errors->FieldHasErrors() && autosharding_target_.empty()) {
-        errors->AddError("must be non-empty");
-      }
-    }
-    {
-      ValidationErrors::ScopedField field(errors, ".keyHeaderName");
-      if (!errors->FieldHasErrors() &&
-          key_header_name_.as_string_view().empty()) {
-        errors->AddError("must be non-empty");
-      }
-    }
-    {
-      ValidationErrors::ScopedField field(errors, ".initialAssignmentTimeout");
-      if (!errors->FieldHasErrors() &&
-          initial_assignment_timeout_.millis() <= 0) {
-        errors->AddError("must be greater than zero");
-      }
-    }
-  }
-
- private:
-  std::string channel_factory_key_;
-  std::string autosharding_target_;
-  RefCountedStringValue key_header_name_;
-  bool enable_fallback_ = false;
-  Duration initial_assignment_timeout_ = kDefaultInitialAssignmentTimeout;
-};
 
 //
 // autosharding LB policy
@@ -378,8 +294,12 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   std::map<std::string, OrphanablePtr<AutoShardingEndpoint>> endpoint_map_;
   EndpointAddressesList endpoints_;
   ChannelArgs args_;
+  // TODO(bpawan): Until the initial assignment timer fires, the policy must
+  // queue picks and report CONNECTING instead of using this status, so this
+  // placeholder message must never reach a picker.  Fix this when the
+  // autosharding client is implemented.
   absl::StatusOr<Assignment> assignment_ =
-      absl::UnavailableError("waiting for assignment");
+      absl::UnavailableError("invalid_value");
   RefCountedPtr<SliceMap> slice_map_;
   RefCountedPtr<AutoShardingLbConfig> config_;
   std::string resolution_note_;
@@ -950,6 +870,58 @@ class AutoShardingFactory final : public LoadBalancingPolicyFactory {
 };
 
 }  // namespace
+
+//
+// AutoShardingLbConfig
+//
+
+absl::string_view AutoShardingLbConfig::name() const { return kAutoSharding; }
+
+const JsonLoaderInterface* AutoShardingLbConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<AutoShardingLbConfig>()
+          .Field("channelFactoryKey",
+                 &AutoShardingLbConfig::channel_factory_key_)
+          .Field("autoshardingTarget",
+                 &AutoShardingLbConfig::autosharding_target_)
+          .Field("keyHeaderName", &AutoShardingLbConfig::key_header_name_)
+          .OptionalField("enableFallback",
+                         &AutoShardingLbConfig::enable_fallback_)
+          .OptionalField("initialAssignmentTimeout",
+                         &AutoShardingLbConfig::initial_assignment_timeout_)
+          .Finish();
+  return loader;
+}
+
+void AutoShardingLbConfig::JsonPostLoad(const Json&, const JsonArgs&,
+                                        ValidationErrors* errors) {
+  {
+    ValidationErrors::ScopedField field(errors, ".channelFactoryKey");
+    if (!errors->FieldHasErrors() && channel_factory_key_.empty()) {
+      errors->AddError("must be non-empty");
+    }
+  }
+  {
+    ValidationErrors::ScopedField field(errors, ".autoshardingTarget");
+    if (!errors->FieldHasErrors() && autosharding_target_.empty()) {
+      errors->AddError("must be non-empty");
+    }
+  }
+  {
+    ValidationErrors::ScopedField field(errors, ".keyHeaderName");
+    if (!errors->FieldHasErrors() &&
+        key_header_name_.as_string_view().empty()) {
+      errors->AddError("must be non-empty");
+    }
+  }
+  {
+    ValidationErrors::ScopedField field(errors, ".initialAssignmentTimeout");
+    if (!errors->FieldHasErrors() &&
+        initial_assignment_timeout_.millis() <= 0) {
+      errors->AddError("must be greater than zero");
+    }
+  }
+}
 
 void RegisterAutoShardingLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(

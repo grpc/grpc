@@ -530,6 +530,8 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
     ],
     tags = [
         "no_test_ios",
@@ -537,11 +539,15 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
         "//:grpc",
-        "//:grpc_service_config_impl",
-        "//src/core:channel_args",
+        "//:ref_counted_ptr",
+        "//src/core:down_cast",
         "//src/core:grpc_lb_policy_autosharding",
-        "//src/core:grpc_service_config",
+        "//src/core:json_reader",
+        "//src/core:lb_policy",
+        "//src/core:lb_policy_registry",
+        "//src/core:time",
         "//test/core/test_util:grpc_test_util",
     ],
 )
