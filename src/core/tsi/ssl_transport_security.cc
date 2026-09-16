@@ -2396,22 +2396,24 @@ static tsi_result ssl_handshaker_result_extract_peer(
 
   if (impl->exported_keying_material_label != nullptr) {
     size_t ekm_len = impl->exported_keying_material_length;
-    if (ekm_len == 0) ekm_len = 32;
     result = tsi_construct_allocated_string_peer_property(
         TSI_SSL_EXPORTED_KEYING_MATERIAL, ekm_len,
         &peer->properties[peer->property_count]);
     if (result != TSI_OK) return result;
+    // The exporter context is not part of the public API, so the keying
+    // material is derived without one.
     if (SSL_export_keying_material(
             impl->ssl,
             reinterpret_cast<unsigned char*>(
                 peer->properties[peer->property_count].value.data),
             ekm_len, impl->exported_keying_material_label,
-            strlen(impl->exported_keying_material_label), nullptr, 0, 0) != 1) {
+            strlen(impl->exported_keying_material_label), /*context=*/nullptr,
+            /*context_len=*/0, /*use_context=*/0) != 1) {
       LOG(ERROR) << "Failed to export keying material.";
       tsi_peer_property_destruct(&peer->properties[peer->property_count]);
-    } else {
-      peer->property_count++;
+      return TSI_INTERNAL_ERROR;
     }
+    peer->property_count++;
   }
 
   return result;
@@ -3356,6 +3358,22 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
                                                                factory);
 }
 
+// Exported keying material is an opt-in feature, so leaving both the label and
+// the length unset is valid. If it's requested, then both values must be valid.
+static bool exported_keying_material_options_are_valid(const std::string& label,
+                                                       size_t length) {
+  if (label.empty() && length == 0) return true;
+  if (label.empty()) {
+    LOG(ERROR) << "Exported keying material label must not be empty.";
+    return false;
+  }
+  if (length == 0) {
+    LOG(ERROR) << "Exported keying material length must be greater than 0.";
+    return false;
+  }
+  return true;
+}
+
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
     tsi_ssl_client_handshaker_factory** factory) {
@@ -3369,6 +3387,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   *factory = nullptr;
   if (options->root_store == nullptr && options->root_cert_info == nullptr &&
       !options->skip_server_certificate_verification) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  if (!exported_keying_material_options_are_valid(
+          options->exported_keying_material_label,
+          options->exported_keying_material_length)) {
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -3754,6 +3777,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
+  if (!exported_keying_material_options_are_valid(
+          options->exported_keying_material_label,
+          options->exported_keying_material_length)) {
+    return TSI_INVALID_ARGUMENT;
+  }
 
   impl = new tsi_ssl_server_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);

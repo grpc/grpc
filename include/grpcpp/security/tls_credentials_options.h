@@ -141,7 +141,19 @@ class TlsCredentialsOptions {
   // list will be used.
   void set_key_exchange_groups(
       const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups);
-  // Sets the label and length for extracting TLS Exported Keying Material.
+  // Sets the label and length used to derive TLS Exported Keying Material
+  // (EKM), as defined in RFC 5705 and RFC 8446 section 7.5.
+  //
+  // `label` is the input used to derive the exported keying material, and must
+  // not be empty. `length` is the size in bytes of the exported keying material
+  // to derive, and must be greater than 0. Both peers must configure the same
+  // label and length in order to derive the same value.
+  //
+  // gRPC derives the exported keying material without an exporter context, and
+  // the peer must do the same in order to derive a matching value.
+  //
+  // When this is set, the derived value is exposed on the connection's
+  // AuthContext under GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME.
   void set_exported_keying_material_options(const std::string& label,
                                             size_t length);
 

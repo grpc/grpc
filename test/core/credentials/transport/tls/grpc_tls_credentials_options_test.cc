@@ -631,10 +631,33 @@ TEST_F(GrpcTlsCredentialsOptionsTest, SetExportedKeyingMaterialOptions) {
       options.get(), "test_label", 32);
   EXPECT_EQ(options->exported_keying_material_label(), "test_label");
   EXPECT_EQ(options->exported_keying_material_length(), 32);
-  grpc_tls_credentials_options_set_exported_keying_material_options(
-      options.get(), nullptr, 0);
-  EXPECT_EQ(options->exported_keying_material_label(), "");
-  EXPECT_EQ(options->exported_keying_material_length(), 0);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest,
+       SetExportedKeyingMaterialOptionsWithNullLabel) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  ASSERT_DEATH(
+      grpc_tls_credentials_options_set_exported_keying_material_options(
+          options.get(), nullptr, 32),
+      "");
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest,
+       SetExportedKeyingMaterialOptionsWithEmptyLabel) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  ASSERT_DEATH(
+      grpc_tls_credentials_options_set_exported_keying_material_options(
+          options.get(), "", 32),
+      "");
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest,
+       SetExportedKeyingMaterialOptionsWithZeroLength) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  ASSERT_DEATH(
+      grpc_tls_credentials_options_set_exported_keying_material_options(
+          options.get(), "test_label", 0),
+      "");
 }
 
 }  // namespace testing

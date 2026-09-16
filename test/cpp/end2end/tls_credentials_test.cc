@@ -353,6 +353,30 @@ TEST_F(TlsCredentialsTest, ExportedKeyingMaterialNotConfigured) {
           GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
   EXPECT_TRUE(client_properties.empty());
 }
+
+TEST_F(TlsCredentialsTest, ExportedKeyingMaterialDerivationFailureFailsRpc) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_verify_server_certs(false);
+  tls_options.set_min_tls_version(grpc_tls_version::TLS1_3);
+  // Under TLS 1.3, the exporter is built on HKDF-Expand, which cannot produce
+  // more than 255 * HashLen bytes, so this length is guaranteed to be
+  // underivable.
+  tls_options.set_exported_keying_material_options("test_label",
+                                                   /*length=*/100000);
+
+  // Exporting keying material fails, so the RPC should also fail.
+  DoRpcAndExpectFailure(server_addr_, tls_options,
+                        grpc::StatusCode::UNAVAILABLE);
+}
 #endif  // OPENSSL_VERSION_NUMBER >= 0x1100000
 
 #if defined(OPENSSL_IS_BORINGSSL)
