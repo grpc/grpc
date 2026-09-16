@@ -125,26 +125,26 @@ RefCountedPtr<channelz::SocketNode> Http2ServerTransport::GetSocketNode()
       ->RefAsSubclass<channelz::SocketNode>();
 }
 
+RefCountedPtr<Party> Http2ServerTransport::GetTransportPartyIfNotShutdown() {
+  MutexLock lock(transport_mutex_);
+  if (GPR_UNLIKELY(shutdown_tracker_.IsShutdownInitiated(transport_mutex_))) {
+    return nullptr;
+  }
+  GRPC_DCHECK(transport_party_ != nullptr);
+  return transport_party_;
+}
+
 void Http2ServerTransport::AddData(channelz::DataSink sink) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::AddData Begin";
 
   event_engine_->Run([self = RefAsSubclass<Http2ServerTransport>(),
                       sink = std::move(sink)]() mutable {
-    RefCountedPtr<Party> party = nullptr;
-    {
-      MutexLock lock(self->transport_mutex_);
-      if (GPR_LIKELY(!self->shutdown_tracker_.IsShutdownInitiated(
-              self->transport_mutex_))) {
-        GRPC_DCHECK(self->transport_party_ != nullptr);
-        party = self->transport_party_;
-      } else {
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport::AddData Transport is closed.";
-      }
-    }
-
+    RefCountedPtr<Party> party = self->GetTransportPartyIfNotShutdown();
     ExecCtx exec_ctx;
-    if (party != nullptr) {
+    if (GPR_UNLIKELY(party == nullptr)) {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::AddData: Transport is closed.";
+    } else {
       self->SpawnAddChannelzData(std::move(party), std::move(sink));
     }
     self.reset();  // Cleanup with exec_ctx in scope
@@ -1684,6 +1684,7 @@ void Http2ServerTransport::MaybeSpawnPingTimeout(
         });
   }
 }
+
 void Http2ServerTransport::MaybeSpawnDelayedPing(
     std::optional<Duration> delayed_ping_wait) {
   if (delayed_ping_wait.has_value()) {
@@ -1724,34 +1725,48 @@ void Http2ServerTransport::MaybeSpawnKeepaliveLoop() {
   }
 }
 
-auto Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
-  SpawnGuardedTransportParty(
-      "GracefulGoaway",
-      [self = RefAsSubclass<Http2ServerTransport>(),
-       debug_data = std::forward<Slice>(debug_data)]() mutable {
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport::SpawnGracefulGoawayPromise: "
-               "Initiated graceful GOAWAY";
-        return self->UntilTransportClosed(Map(
-            self->goaway_manager_.RequestGoaway(
-                Http2ErrorCode::kNoError, std::move(debug_data),
-                self->GetLastStreamId(), /*immediate=*/false),
-            [self](absl::Status status) {
-              bool should_close = false;
-              {
-                MutexLock lock(self->transport_mutex_);
-                if (self->GetActiveStreamCountLocked() == 0) {
-                  should_close = true;
-                }
-              }
-              if (should_close) {
-                self->MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
-                    absl::StatusCode::kUnavailable,
-                    "Graceful shutdown complete."));
-              }
-              return status;
-            }));
-      });
+void Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
+  event_engine_->Run([self = RefAsSubclass<Http2ServerTransport>(),
+                      debug_data = std::move(debug_data)]() mutable {
+    RefCountedPtr<Party> party = self->GetTransportPartyIfNotShutdown();
+    ExecCtx exec_ctx;
+    if (GPR_UNLIKELY(party == nullptr)) {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::SpawnGracefulGoawayPromise: Transport is "
+             "closed.";
+    } else {
+      self->SpawnGuarded(
+          party, "GracefulGoaway",
+          [self, debug_data = std::move(debug_data)]() mutable {
+            GRPC_HTTP2_SERVER_DLOG
+                << "Http2ServerTransport::SpawnGracefulGoawayPromise: "
+                   "Initiated graceful GOAWAY";
+            return self->UntilTransportClosed(
+                Map(self->goaway_manager_.RequestGoaway(
+                        Http2ErrorCode::kNoError, std::move(debug_data),
+                        self->GetLastStreamId(), /*immediate=*/false),
+                    [self](absl::Status status) {
+                      bool should_close = false;
+                      {
+                        MutexLock lock(self->transport_mutex_);
+                        if (self->GetActiveStreamCountLocked() == 0) {
+                          should_close = true;
+                        }
+                      }
+                      if (should_close) {
+                        self->MaybeSpawnCloseTransport(
+                            Http2Status::AbslConnectionError(
+                                absl::StatusCode::kUnavailable,
+                                "Graceful shutdown complete."));
+                      }
+                      return status;
+                    }));
+          });
+    }
+    // Cleanup with exec_ctx in scope.
+    party.reset();
+    self.reset();
+  });
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2203,6 +2218,10 @@ void Http2ServerTransport::SetCallDestination(
   InitializeAndSpawnTransportLoops();
 }
 
+// PerformOp() can be invoked on any thread. So all processing in this function
+// must be synchronous and must not block. Any work that may block or run the
+// transport party must be deferred off the caller's thread (e.g.
+// SpawnGracefulGoawayPromise() hops to the EventEngine).
 void Http2ServerTransport::PerformOp(grpc_transport_op* op) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp Begin";
   bool did_stuff = false;

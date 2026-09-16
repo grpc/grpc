@@ -394,6 +394,10 @@ class Http2ServerTransport final : public ServerTransport,
                 std::forward<Promise>(promise));
   }
 
+  // Returns the transport party, or nullptr if transport shutdown has already
+  // been initiated.
+  RefCountedPtr<Party> GetTransportPartyIfNotShutdown();
+
   // Spawns an infallible promise on the given party.
   template <typename Factory>
   void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
@@ -408,19 +412,28 @@ class Http2ServerTransport final : public ServerTransport,
     SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
+  // Spawns a promise on the given party. If the promise returns a non-ok
+  // status, it is handled by closing the transport with the corresponding
+  // status.
+  template <typename Factory>
+  void SpawnGuarded(const RefCountedPtr<Party>& party, absl::string_view name,
+                    Factory&& factory) {
+    party->Spawn(
+        name, std::forward<Factory>(factory),
+        [self = RefAsSubclass<Http2ServerTransport>()](absl::Status&& status) {
+          if (!status.ok()) {
+            GRPC_UNUSED const absl::Status error = self->HandleError(
+                /*stream=*/nullptr, ToHttpOkOrConnError(status));
+          }
+        });
+  }
+
   // Spawns a promise on the transport party. If the promise returns a non-ok
   // status, it is handled by closing the transport with the corresponding
   // status.
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
-    transport_party_->Spawn(
-        name, std::forward<Factory>(factory),
-        [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
-          if (!status.ok()) {
-            GRPC_UNUSED absl::Status error = self->HandleError(
-                /*stream=*/nullptr, ToHttpOkOrConnError(status));
-          }
-        });
+    SpawnGuarded(transport_party_, name, std::forward<Factory>(factory));
   }
 
   template <typename Factory, typename OnDone>
@@ -653,7 +666,7 @@ class Http2ServerTransport final : public ServerTransport,
     }));
   }
 
-  auto SpawnGracefulGoawayPromise(Slice&& debug_data);
+  void SpawnGracefulGoawayPromise(Slice&& debug_data);
 
   //////////////////////////////////////////////////////////////////////////////
   // Tarpit
