@@ -5826,6 +5826,7 @@ grpc_cc_library(
         "context",
         "down_cast",
         "dual_ref_counted",
+        "evaluate_args",
         "ext_proc_messages",
         "filter_args",
         "for_each",

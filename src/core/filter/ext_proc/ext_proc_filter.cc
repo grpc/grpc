@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "src/core/call/call_spine.h"
+#include "src/core/call/evaluate_args.h"
 #include "src/core/call/metadata.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/filter/ext_proc/ext_proc_messages.h"
@@ -1104,8 +1105,9 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
       processing_mode = config().processing_mode;
     }
     upb::Arena arena;
+    EvaluateArgs args(client_initial_metadata_.get(), /*channel_args=*/nullptr);
     auto* header_attributes = CreateExtProcAttributesProtoStruct(
-        arena.ptr(), config().request_attributes, *client_initial_metadata_,
+        arena.ptr(), config().request_attributes, args,
         ext_proc_filter_->default_authority_.as_string_view());
     payload = CreateExtProcClientHeadersRequest(
         arena.ptr(), client_initial_metadata_.get(),
@@ -1117,9 +1119,9 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
   // configured, extract initial attributes from client metadata.
   else if (processing_mode().send_request_body &&
            !config().request_attributes.empty()) {
+    EvaluateArgs args(client_initial_metadata_.get(), /*channel_args=*/nullptr);
     request_attributes_ = CreateExtProcAttributesProtoStruct(
-        request_attributes_arena_.ptr(), config().request_attributes,
-        *client_initial_metadata_,
+        request_attributes_arena_.ptr(), config().request_attributes, args,
         ext_proc_filter_->default_authority_.as_string_view());
   }
   const bool call_cancelled =
