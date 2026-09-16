@@ -17,12 +17,15 @@
 //
 
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -31,7 +34,13 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 using testing::HasSubstr;
 using testing::StartsWith;
@@ -42,6 +51,89 @@ void CheckPeer(std::string peer_name) {
   // If the peer name is a uds path, then check if it is filled
   if (absl::StartsWith(peer_name, "unix:/")) {
     EXPECT_THAT(peer_name, StartsWith("unix:/tmp/grpc_fullstack_test."));
+  }
+}
+
+bool IsAllDigits(absl::string_view s) {
+  return !s.empty() && std::all_of(s.begin(), s.end(), [](char c) {
+    return absl::ascii_isdigit(static_cast<unsigned char>(c));
+  });
+}
+
+void CheckPort(absl::string_view port_str) {
+  int port;
+  ASSERT_TRUE(IsAllDigits(port_str)) << "bad port: " << port_str;
+  ASSERT_TRUE(absl::SimpleAtoi(port_str, &port));
+  EXPECT_GT(port, 0);
+  EXPECT_LE(port, 65535);
+}
+
+bool IsIpAddress(absl::string_view address) {
+  return absl::StartsWith(address, "ipv4:") ||
+         absl::StartsWith(address, "ipv6:");
+}
+
+// Verifies that `address` is in the canonical gRPC address URI format. Both
+// the chttp2 transport (grpc_sockaddr_to_uri) and the PH2 transport
+// (ResolvedAddressToURI) must produce exactly this format:
+//   ipv4:<a.b.c.d>:<port>
+//   ipv6:%5B<addr>%5D:<port>
+//   unix:<path>          (path is empty for unnamed sockets, e.g. socketpair)
+//   unix-abstract:<name>
+void CheckAddressFormat(absl::string_view address) {
+  SCOPED_TRACE(absl::StrCat("address: ", address));
+  absl::string_view rest = address;
+  if (absl::ConsumePrefix(&rest, "ipv4:")) {
+    std::vector<absl::string_view> host_port = absl::StrSplit(rest, ':');
+    ASSERT_EQ(host_port.size(), 2u);
+    std::vector<absl::string_view> octets = absl::StrSplit(host_port[0], '.');
+    ASSERT_EQ(octets.size(), 4u);
+    for (absl::string_view octet : octets) {
+      int value;
+      ASSERT_TRUE(IsAllDigits(octet)) << "bad octet: " << octet;
+      ASSERT_TRUE(absl::SimpleAtoi(octet, &value));
+      EXPECT_LE(value, 255);
+    }
+    CheckPort(host_port[1]);
+  } else if (absl::ConsumePrefix(&rest, "ipv6:%5B")) {
+    size_t close = rest.rfind("%5D:");
+    ASSERT_NE(close, absl::string_view::npos);
+    EXPECT_FALSE(rest.substr(0, close).empty());
+    CheckPort(rest.substr(close + 4));
+  } else if (absl::ConsumePrefix(&rest, "unix:") ||
+             absl::ConsumePrefix(&rest, "unix-abstract:")) {
+    // Any path is acceptable.
+  } else {
+    ADD_FAILURE() << "unexpected address format";
+  }
+}
+
+// Checks the local address reported by a call against its peer address.
+void CheckLocalAddress(absl::string_view local_address,
+                       absl::string_view peer) {
+  SCOPED_TRACE(absl::StrCat("local: ", local_address, " peer: ", peer));
+  // Transports that don't report a peer address (e.g. inproc, chaotic_good)
+  // don't report a local address either.
+  if (!IsIpAddress(peer) && !absl::StartsWith(peer, "unix")) {
+    VLOG(2) << "Transport does not report addresses; skipping local address "
+               "format check";
+    return;
+  }
+  CheckAddressFormat(local_address);
+  // Local and peer addresses are formatted by the same code, so they must use
+  // the same scheme family.
+  if (IsIpAddress(peer)) {
+    EXPECT_TRUE(IsIpAddress(local_address));
+#ifndef GPR_WINDOWS
+    // The two ends of a TCP connection never share an ip:port, so this
+    // catches the local address accidentally being populated from the peer.
+    // Not checked on Windows: WindowsEventEngine::CreateEndpointFromWinSocket
+    // (used by the socket-pair fixtures) reports the socket's local address as
+    // its peer address, so the two strings are equal there.
+    EXPECT_NE(local_address, peer);
+#endif  // GPR_WINDOWS
+  } else {
+    EXPECT_THAT(std::string(local_address), StartsWith("unix"));
   }
 }
 
@@ -67,6 +159,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   CheckPeer(*s.GetPeer());
   EXPECT_NE(c.GetPeer(), std::nullopt);
   CheckPeer(*c.GetPeer());
+  ASSERT_NE(s.GetLocalAddress(), std::nullopt);
+  CheckLocalAddress(*s.GetLocalAddress(), *s.GetPeer());
+
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

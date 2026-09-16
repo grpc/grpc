@@ -1134,6 +1134,21 @@ char* FilterStackCall::GetPeer() {
   return gpr_strdup("unknown");
 }
 
+char* FilterStackCall::GetLocalAddress() {
+  Slice local_address_slice = GetLocalAddressString();
+  if (!local_address_slice.empty()) {
+    absl::string_view local_address_string_view =
+        local_address_slice.as_string_view();
+    char* local_address_string =
+        static_cast<char*>(gpr_malloc(local_address_string_view.size() + 1));
+    memcpy(local_address_string, local_address_string_view.data(),
+           local_address_string_view.size());
+    local_address_string[local_address_string_view.size()] = '\0';
+    return local_address_string;
+  }
+  return gpr_strdup("unknown");
+}
+
 }  // namespace grpc_core
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,

@@ -251,6 +251,12 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call* call,
     functionality. Instead, use grpc_auth_context. */
 GRPCAPI char* grpc_call_get_peer(grpc_call* call);
 
+/** Returns a newly allocated string representing the local address to which
+    this call is communicating with. The string is in the uri format accepted
+    by grpc_channel_create.
+    The returned string should be disposed of with gpr_free(). */
+GRPCAPI char* grpc_call_get_local_address(grpc_call* call);
+
 struct census_context;
 
 /** Set census context for a call; Must be called before first call to
