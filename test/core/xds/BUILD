@@ -268,7 +268,7 @@ grpc_cc_library(
         "absl/status",
         "absl/time",
     ],
-    visibility = ["//test/core/ext/filters/ext_authz:__pkg__"],
+    visibility = ["//test/core/filters:__pkg__"],
     deps = [
         "//:event_engine_base_hdrs",
         "//:exec_ctx",

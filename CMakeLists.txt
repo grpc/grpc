@@ -17830,7 +17830,7 @@ add_executable(ext_authz_filter_test
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.h
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/ext/filters/ext_authz/ext_authz_filter_test.cc
+  test/core/filters/ext_authz_filter_test.cc
   test/core/filters/filter_test_v2.cc
   test/core/xds/xds_transport_fake.cc
 )
