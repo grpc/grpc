@@ -125,7 +125,7 @@ struct has_channel_args_compare<
 // static int ChannelArgsCompare(const T* a, const T* b);
 template <typename T>
 struct ChannelArgTypeTraits<
-    T, absl::enable_if_t<
+    T, std::enable_if_t<
            !channel_args_detail::IsRawPointerTagged<T>::kValue &&
                (std::is_base_of<RefCounted<channel_args_detail::RefType<T>>,
                                 channel_args_detail::RefType<T>>::value ||
@@ -162,7 +162,7 @@ struct ChannelArgTypeTraits<
 
 template <typename T>
 struct ChannelArgTypeTraits<
-    T, absl::enable_if_t<channel_args_detail::is_shared_ptr<T>::value, void>> {
+    T, std::enable_if_t<channel_args_detail::is_shared_ptr<T>::value, void>> {
   static void* TakeUnownedPointer(T* p) { return p; }
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
@@ -228,7 +228,7 @@ struct GetObjectImpl;
 template <typename T>
 struct GetObjectImpl<
     T,
-    absl::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
+    std::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
                           channel_args_detail::SupportedSharedPtrType<T>::value,
                       void>> {
   using Result = T*;
@@ -251,7 +251,7 @@ struct GetObjectImpl<
 // RefCountedPtr
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<
+    T, std::enable_if_t<
            !ChannelArgPointerShouldBeConst<T>::kValue &&
                !channel_args_detail::SupportedSharedPtrType<T>::value,
            void>> {
@@ -272,7 +272,7 @@ struct GetObjectImpl<
 
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<
+    T, std::enable_if_t<
            ChannelArgPointerShouldBeConst<T>::kValue &&
                !channel_args_detail::SupportedSharedPtrType<T>::value,
            void>> {
@@ -454,7 +454,7 @@ class ChannelArgs {
                                        const char* value) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(grpc_arg arg) const;
   template <typename T>
-  GRPC_MUST_USE_RESULT absl::enable_if_t<
+  GRPC_MUST_USE_RESULT std::enable_if_t<
       std::is_same<const grpc_arg_pointer_vtable*,
                    decltype(ChannelArgTypeTraits<T>::VTable())>::value,
       ChannelArgs>
@@ -465,7 +465,7 @@ class ChannelArgs {
   template <typename T>
   GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
                                 RefCountedPtr<T> value) const
-      -> absl::enable_if_t<
+      -> std::enable_if_t<
           !ChannelArgPointerShouldBeConst<T>::kValue &&
               std::is_same<const grpc_arg_pointer_vtable*,
                            decltype(ChannelArgTypeTraits<
@@ -478,7 +478,7 @@ class ChannelArgs {
   template <typename T>
   GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
                                 RefCountedPtr<const T> value) const
-      -> absl::enable_if_t<
+      -> std::enable_if_t<
           ChannelArgPointerShouldBeConst<T>::kValue &&
               std::is_same<const grpc_arg_pointer_vtable*,
                            decltype(ChannelArgTypeTraits<
@@ -489,7 +489,7 @@ class ChannelArgs {
                       ChannelArgTypeTraits<absl::remove_cvref_t<T>>::VTable()));
   }
   template <typename T>
-  GRPC_MUST_USE_RESULT absl::enable_if_t<
+  GRPC_MUST_USE_RESULT std::enable_if_t<
       std::is_same<
           const grpc_arg_pointer_vtable*,
           decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
