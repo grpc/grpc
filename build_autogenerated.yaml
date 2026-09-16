@@ -33685,24 +33685,6 @@ targets:
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
-- name: xds_transport_fake_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/xds/xds_transport_fake.h
-  src:
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/xds/xds_transport_fake.cc
-  - test/core/xds/xds_transport_fake_test.cc
-  deps:
-  - gtest
-  - protobuf
-  - grpc_test_util
 - name: xds_transport_grpc_test
   gtest: true
   build: test

@@ -203,6 +203,7 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
     ext_authz.set_failure_mode_allow(failure_mode_allow);
     ext_authz.set_failure_mode_allow_header_add(failure_mode_allow_header_add);
     auto* grpc_service = ext_authz.mutable_grpc_service();
+    grpc_service->mutable_timeout()->set_seconds(10);
     auto* google_grpc = grpc_service->mutable_google_grpc();
     google_grpc->set_target_uri(
         absl::StrCat("ipv4:127.0.0.1:", ext_authz_server_->port()));

@@ -16,6 +16,7 @@
 
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -29,8 +30,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -125,6 +128,37 @@ std::string ExtAuthzFilter::Config::ToString() const {
 // ExtAuthzFilter::Call
 //
 
+namespace {
+
+class ExtAuthzCallEventHandler
+    : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+ public:
+  ExtAuthzCallEventHandler(Notification* notification,
+                           std::optional<std::string>* response_payload,
+                           absl::Status* status)
+      : notification_(notification),
+        response_payload_(response_payload),
+        status_(status) {}
+
+  void OnRequestSent(bool /*ok*/) override {}
+
+  void OnRecvMessage(absl::string_view payload) override {
+    *response_payload_ = std::string(payload);
+  }
+
+  void OnStatusReceived(absl::Status status) override {
+    *status_ = std::move(status);
+    notification_->Notify();
+  }
+
+ private:
+  Notification* notification_;
+  std::optional<std::string>* response_payload_;
+  absl::Status* status_;
+};
+
+}  // namespace
+
 absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ExtAuthzFilter* filter) {
   const auto& config = *filter->config_;
@@ -187,16 +221,30 @@ absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(
     return handle_failure(payload.status().message());
   }
   // Create the unary call to the external authorization service.
-  auto unary_call = filter->channel()->transport()->CreateUnaryCall(
-      "/envoy.service.auth.v3.Authorization/Check");
-  if (unary_call == nullptr) {
+  ExecCtx exec_ctx;
+  Notification notification;
+  std::optional<std::string> result;
+  absl::Status status;
+  auto call = filter->channel()->transport()->CreateStreamingCall(
+      "/envoy.service.auth.v3.Authorization/Check",
+      std::make_unique<ExtAuthzCallEventHandler>(&notification, &result,
+                                                 &status),
+      /*start_upon_send_message=*/true);
+  if (call == nullptr) {
     return handle_failure("Failed to create ext_authz unary call");
   }
   GRPC_TRACE_LOG(ext_authz_filter, INFO) << "starting ext_authz call";
   // Dispatch the CheckRequest message to the external authorization service.
-  auto result = unary_call->SendMessage(std::move(*payload));
-  if (!result.ok()) {
-    return handle_failure(result.status().message());
+  call->StartRecvMessage();
+  call->SendMessage(std::move(*payload), /*send_half_close=*/true);
+  ExecCtx::Get()->Flush();
+  notification.WaitForNotification();
+  call.reset();
+  if (!status.ok()) {
+    return handle_failure(status.message());
+  }
+  if (!result.has_value()) {
+    return handle_failure("No response message received");
   }
   // Parse the received CheckResponse.
   auto response = ExtAuthzResponse::Parse(*result);

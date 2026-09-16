@@ -67,11 +67,6 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
       virtual void SendHalfClose() = 0;
     };
 
-    class UnaryCall : public InternallyRefCounted<UnaryCall> {
-     public:
-      virtual absl::StatusOr<std::string> SendMessage(std::string payload) = 0;
-    };
-
     // A watcher for connectivity failures.
     class ConnectivityFailureWatcher
         : public RefCounted<ConnectivityFailureWatcher> {
