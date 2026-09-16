@@ -808,11 +808,9 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
   RefCountedPtr<NewChttp2ServerListener> new_listener;
   {
     MutexLock lock(&mu_);
-    auto* new_listener_ptr = std::get_if<NewChttp2ServerListener*>(&listener_);
-    if (new_listener_ptr != nullptr && *new_listener_ptr != nullptr) {
-      new_listener = (*new_listener_ptr)
-                         ->RefIfNonZero()
-                         .TakeAsSubclass<NewChttp2ServerListener>();
+    if (listener_ != nullptr) {
+      new_listener =
+          listener_->RefIfNonZero().TakeAsSubclass<NewChttp2ServerListener>();
     }
   }
   if (new_listener == nullptr) {
