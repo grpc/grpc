@@ -593,7 +593,7 @@ Poller::WorkResult PollPoller::Work(
       }
       head = head->PollerHandlesListPos().next;
     }
-    mu_.Unlock();
+    mu_.unlock();
     if (!use_phony_poll_ || timeout_ms == 0 || pfd_count == 1) {
       // If use_phony_poll is true and pfd_count == 1, it implies only the
       // wakeup_fd is present. Allow the call to get blocked in this case as
@@ -700,7 +700,7 @@ Poller::WorkResult PollPoller::Work(
       break;
     }
   }
-  mu_.Unlock();
+  mu_.unlock();
   if (pending_events.empty()) {
     if (was_kicked_ext) {
       return Poller::WorkResult::kKicked;

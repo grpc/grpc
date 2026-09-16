@@ -76,7 +76,7 @@ class Party::Handle final : public Wakeable {
     mu_.Lock();
     GRPC_CHECK_NE(party_, nullptr);
     party_ = nullptr;
-    mu_.Unlock();
+    mu_.unlock();
     Unref();
   }
 
@@ -89,14 +89,14 @@ class Party::Handle final : public Wakeable {
     // it is non-zero.
     Party* party = party_;
     if (party != nullptr && party->RefIfNonZero()) {
-      mu_.Unlock();
+      mu_.unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
       (party->*wakeup_method)(wakeup_mask);
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
-      mu_.Unlock();
+      mu_.unlock();
     }
     // Drop the ref to the handle (we have one ref = one wakeup semantics).
     Unref();

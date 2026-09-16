@@ -230,13 +230,13 @@ WindowsEventEngine::~WindowsEventEngine() {
           VLOG_EVERY_N_SEC(2, 1) << "Waiting for timers. "
                                  << known_handles_.size() << " remaining";
         }
-        task_mu_.Unlock();
+        task_mu_.unlock();
         absl::SleepFor(absl::Milliseconds(200));
         task_mu_.Lock();
       }
     }
     GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
-    task_mu_.Unlock();
+    task_mu_.unlock();
   }
   iocp_.Kick();
   iocp_worker_.WaitForShutdown();

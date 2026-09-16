@@ -431,7 +431,7 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
   char* output = envoy_service_status_v3_ClientStatusResponse_serialize(
       response, arena.ptr(), &output_length);
   for (const auto& xds_client : xds_clients) {
-    xds_client->mu()->Unlock();
+    xds_client->mu()->unlock();
   }
   return grpc_slice_from_cpp_string(std::string(output, output_length));
 }

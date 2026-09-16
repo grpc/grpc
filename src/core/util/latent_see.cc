@@ -257,7 +257,7 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
   // Disable appender first to prevent new incoming events while draining.
   Appender::Disable();
   std::unique_ptr<Sink::EventDump> events = sink->Stop();
-  mu->Unlock();
+  mu->unlock();
   CHECK(events != nullptr);
   LOG(INFO) << "Latent-see collection stopped: processing " << events->size()
             << " bins";

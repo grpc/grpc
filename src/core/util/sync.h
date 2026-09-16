@@ -66,7 +66,7 @@ class ABSL_LOCKABLE Mutex {
   Mutex& operator=(const Mutex&) = delete;
 
   void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() { gpr_mu_lock(&mu_); }
-  void Unlock() ABSL_UNLOCK_FUNCTION() { gpr_mu_unlock(&mu_); }
+  void unlock() ABSL_UNLOCK_FUNCTION() { gpr_mu_unlock(&mu_); }
   bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     return gpr_mu_trylock(&mu_) != 0;
   }
@@ -89,7 +89,7 @@ class ABSL_SCOPED_LOCKABLE MutexLock {
   explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
     mu_->Lock();
   }
-  ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
+  ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->unlock(); }
 
   MutexLock(const MutexLock&) = delete;
   MutexLock& operator=(const MutexLock&) = delete;
@@ -105,7 +105,7 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
     mu_->Lock();
   }
   ~ReleasableMutexLock() ABSL_UNLOCK_FUNCTION() {
-    if (!released_) mu_->Unlock();
+    if (!released_) mu_->unlock();
   }
 
   ReleasableMutexLock(const ReleasableMutexLock&) = delete;
@@ -114,7 +114,7 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
   void Release() ABSL_UNLOCK_FUNCTION() {
     DCHECK(!released_);
     released_ = true;
-    mu_->Unlock();
+    mu_->unlock();
   }
 
  private:
@@ -169,7 +169,7 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
     mu_->Lock();
   }
   ~LockableAndReleasableMutexLock() ABSL_UNLOCK_FUNCTION() {
-    if (!released_) mu_->Unlock();
+    if (!released_) mu_->unlock();
   }
 
   LockableAndReleasableMutexLock(const LockableAndReleasableMutexLock&) =
@@ -186,7 +186,7 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
   void Release() ABSL_UNLOCK_FUNCTION() {
     DCHECK(!released_);
     released_ = true;
-    mu_->Unlock();
+    mu_->unlock();
   }
 
  private:

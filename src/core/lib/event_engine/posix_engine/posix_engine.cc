@@ -288,7 +288,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       status = absl::FailedPreconditionError("Connection cancelled");
     }
   }
-  mu_.Unlock();
+  mu_.unlock();
 
   if (engine_->Cancel(alarm_handle_)) {
     ++consumed_refs;
@@ -318,7 +318,7 @@ void AsyncConnect::OnWritable(absl::Status status)
           });
     }
     done = ((refs_ -= consumed_refs) == 0);
-    mu_.Unlock();
+    mu_.unlock();
     if (done) {
       delete this;
     }
@@ -369,7 +369,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       // opened too many network connections.  The "easy" fix:
       // don't do that!
       LOG(ERROR) << "kernel out of buffers";
-      mu_.Unlock();
+      mu_.unlock();
       fd->NotifyOnWrite(on_writable_);
       // Don't run the cleanup function for this case.
       std::move(on_writable_finish).Cancel();
@@ -697,7 +697,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
         absl::FailedPreconditionError("Connection cancelled"));
   }
   bool done = (--ac->refs_ == 0);
-  ac->mu_.Unlock();
+  ac->mu_.unlock();
   if (done) {
     delete ac;
   }

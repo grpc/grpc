@@ -122,12 +122,12 @@ class ExportedTracesRecorder
     auto deadline = absl::Now() + timeout;
     mutex_.Lock();
     do {
-      mutex_.Unlock();
+      mutex_.unlock();
       ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
       mutex_.Lock();
     } while (recorded_spans_.size() < expected_size && absl::Now() < deadline);
     auto recorded_spans = std::move(recorded_spans_);
-    mutex_.Unlock();
+    mutex_.unlock();
     return recorded_spans;
   }
 

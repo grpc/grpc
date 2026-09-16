@@ -300,7 +300,7 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
   if (!checker_mu_.TryLock()) return std::nullopt;
   std::vector<experimental::EventEngine::Closure*> run =
       FindExpiredTimers(now, next);
-  checker_mu_.Unlock();
+  checker_mu_.unlock();
 
   return std::move(run);
 }

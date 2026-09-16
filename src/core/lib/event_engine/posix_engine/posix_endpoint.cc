@@ -486,7 +486,7 @@ void PosixEndpointImpl::PerformReclamation() {
     incoming_buffer_->Clear();
   }
   has_posted_reclaimer_ = false;
-  read_mu_.Unlock();
+  read_mu_.unlock();
 }
 
 void PosixEndpointImpl::MaybePostReclaimer() {
@@ -1287,7 +1287,7 @@ void PosixEndpointImpl::MaybeShutdown(
   handle_->ShutdownHandle(why);
   read_mu_.Lock();
   memory_owner_.Reset();
-  read_mu_.Unlock();
+  read_mu_.unlock();
   Unref();
 }
 

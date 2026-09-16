@@ -502,7 +502,7 @@ class PromiseActivity final
     // constructing.
     mu()->Lock();
     auto status = Start(Factory(std::move(promise_factory)));
-    mu()->Unlock();
+    mu()->unlock();
     // We may complete immediately.
     if (status.has_value()) {
       on_done_(std::move(*status));
@@ -597,11 +597,11 @@ class PromiseActivity final
     mu()->Lock();
     if (done_) {
       // We might get some spurious wakeups after finishing.
-      mu()->Unlock();
+      mu()->unlock();
       return;
     }
     auto status = RunStep();
-    mu()->Unlock();
+    mu()->unlock();
     if (status.has_value()) {
       on_done_(std::move(*status));
     }

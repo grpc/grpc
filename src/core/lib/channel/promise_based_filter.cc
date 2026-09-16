@@ -92,7 +92,7 @@ class BaseCallData::WeakWakerHandle final : public Wakeable, public Orphanable {
   void Orphan() override {
     mu_.Lock();
     base_ = nullptr;
-    mu_.Unlock();
+    mu_.unlock();
     Unref();
   }
 

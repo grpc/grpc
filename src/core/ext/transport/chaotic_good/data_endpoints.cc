@@ -77,12 +77,12 @@ void OutputBuffers::Reader::EndReadNext() {
     auto frames = std::move(frames_);
     frames_.clear();
     send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
-    mu_.Unlock();
+    mu_.unlock();
     for (auto& frame : frames) {
       output_buffers_->Write(frame.payload_tag, std::move(frame.frame));
     }
   } else {
-    mu_.Unlock();
+    mu_.unlock();
   }
 }
 
@@ -99,7 +99,7 @@ OutputBuffers::Reader::PollReadNext() {
         call_wakeup = true;
       }
       waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      mu_.Unlock();
+      mu_.unlock();
       if (call_wakeup) {
         output_buffers_->WakeupScheduler();
       }
@@ -109,7 +109,7 @@ OutputBuffers::Reader::PollReadNext() {
     auto frames = std::move(frames_);
     frames_.clear();
     send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
-    mu_.Unlock();
+    mu_.unlock();
     output_buffers_->WakeupScheduler(/*async=*/true);
     return std::move(frames);
   }
@@ -120,7 +120,7 @@ void OutputBuffers::Reader::SetNetworkMetrics(
     const SendRate::NetworkMetrics& metrics) {
   mu_.Lock();
   send_rate_.SetNetworkMetrics(network_send, metrics);
-  mu_.Unlock();
+  mu_.unlock();
   output_buffers_->WakeupScheduler();
 }
 
@@ -174,11 +174,11 @@ void OutputBuffers::DestroyReader(uint32_t id) {
   mu_reader_data_.Lock();
   RefCountedPtr<Reader> reader = std::move(readers_[id]);
   DCHECK_NE(reader.get(), nullptr);
-  mu_reader_data_.Unlock();
+  mu_reader_data_.unlock();
   reader->mu_.Lock();
   reader->reading_ = false;
   auto waker = std::move(reader->waker_);
-  reader->mu_.Unlock();
+  reader->mu_.unlock();
   waker.Wakeup();
   num_readers_.fetch_sub(1, std::memory_order_relaxed);
 }
@@ -278,7 +278,7 @@ void OutputBuffers::Schedule() {
       scheduling.reader->mu_.Lock();
       auto delivery_data = scheduling.reader->send_rate_.GetDeliveryData(now);
       bool reading = scheduling.reader->reading_;
-      scheduling.reader->mu_.Unlock();
+      scheduling.reader->mu_.unlock();
       scheduler_->AddChannel(i, reading, delivery_data);
     }
   }
@@ -322,7 +322,7 @@ void OutputBuffers::Schedule() {
         // Frames were assigned to this reader, but it's not allocated anymore.
         auto frames = std::move(scheduling.frames);
         scheduling.frames.clear();
-        reader->mu_.Unlock();
+        reader->mu_.unlock();
         for (auto& frame : frames) {
           Write(frame.payload_tag, std::move(frame.frame));
         }
@@ -334,7 +334,7 @@ void OutputBuffers::Schedule() {
       }
       reader->reading_ = false;
       auto waker = std::move(reader->waker_);
-      reader->mu_.Unlock();
+      reader->mu_.unlock();
       waker.WakeupAsync();
     }
   }
@@ -348,7 +348,7 @@ void OutputBuffers::Write(uint64_t payload_tag,
       << " Queue data frame write, payload_tag=" << payload_tag;
   mu_write_.Lock();
   frames_queue_.Push(QueuedFrame{payload_tag, std::move(output_buffer)});
-  mu_write_.Unlock();
+  mu_write_.unlock();
   WakeupScheduler();
 }
 
@@ -410,28 +410,28 @@ void InputQueue::CompleteRead(uint64_t payload_tag, SliceBuffer buffer) {
   if (payload_tag == 0) return;
   mu_.Lock();
   if (!closed_error_.ok()) {
-    mu_.Unlock();
+    mu_.unlock();
     return;
   }
   if (read_completed_.Set(payload_tag)) {
-    mu_.Unlock();
+    mu_.unlock();
     return;
   }
   auto c = completions_.extract(payload_tag);
   if (!c.empty()) {
     auto& completion = c.mapped();
-    mu_.Unlock();
+    mu_.unlock();
     completion->mu.Lock();
     completion->result.emplace(std::move(buffer));
     completion->ready = true;
     auto waker = std::move(completion->waker);
-    completion->mu.Unlock();
+    completion->mu.unlock();
     waker.Wakeup();
     return;
   }
   completions_.emplace(
       payload_tag, MakeRefCounted<Completion>(payload_tag, std::move(buffer)));
-  mu_.Unlock();
+  mu_.unlock();
 }
 
 void InputQueue::Cancel(Completion* completion) {
@@ -442,13 +442,13 @@ void InputQueue::Cancel(Completion* completion) {
   auto c = completions_.extract(completion->payload_tag);
   if (!c.empty()) {
     auto& completion = c.mapped();
-    mu_.Unlock();
+    mu_.unlock();
     completion->mu.Lock();
     auto waker = std::move(completion->waker);
-    completion->mu.Unlock();
+    completion->mu.unlock();
     waker.Wakeup();
   } else {
-    mu_.Unlock();
+    mu_.unlock();
   }
 }
 
@@ -464,7 +464,7 @@ void InputQueue::AddData(channelz::DataSink sink) {
 void InputQueue::SetClosed(absl::Status status) {
   mu_.Lock();
   if (!closed_error_.ok()) {
-    mu_.Unlock();
+    mu_.unlock();
     return;
   }
   if (status.ok()) status = absl::UnavailableError("transport closed");
@@ -473,7 +473,7 @@ void InputQueue::SetClosed(absl::Status status) {
   auto completions = std::move(completions_);
   completions_.clear();
   Waker await_closed = std::move(await_closed_);
-  mu_.Unlock();
+  mu_.unlock();
   await_closed.Wakeup();
   for (auto& [tag, completion] : completions) {
     completion->mu.Lock();
@@ -481,10 +481,10 @@ void InputQueue::SetClosed(absl::Status status) {
       completion->result = error_to_propagate;
       completion->ready = true;
       auto waker = std::move(completion->waker);
-      completion->mu.Unlock();
+      completion->mu.unlock();
       waker.Wakeup();
     } else {
-      completion->mu.Unlock();
+      completion->mu.unlock();
     }
   }
 }

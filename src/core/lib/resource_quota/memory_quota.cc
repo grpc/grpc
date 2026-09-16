@@ -574,7 +574,7 @@ void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
       if (!shard.allocators.empty()) {
         chosen_allocator = *shard.allocators.begin();
       }
-      shard.shard_mu.Unlock();
+      shard.shard_mu.unlock();
     }
 
     if (chosen_allocator != nullptr) {

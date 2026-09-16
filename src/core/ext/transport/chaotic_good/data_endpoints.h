@@ -279,10 +279,10 @@ class InputQueue final : public RefCounted<InputQueue> {
       if (input_queues_ != nullptr) {
         completion_->mu.Lock();
         if (!completion_->ready) {
-          completion_->mu.Unlock();
+          completion_->mu.unlock();
           input_queues_->Cancel(completion_.get());
         } else {
-          completion_->mu.Unlock();
+          completion_->mu.unlock();
         }
       }
     }
@@ -299,10 +299,10 @@ class InputQueue final : public RefCounted<InputQueue> {
           if (input_queues_ != nullptr) {
             completion_->mu.Lock();
             if (!completion_->ready) {
-              completion_->mu.Unlock();
+              completion_->mu.unlock();
               input_queues_->Cancel(completion_.get());
             } else {
-              completion_->mu.Unlock();
+              completion_->mu.unlock();
             }
           }
         }
@@ -323,12 +323,12 @@ class InputQueue final : public RefCounted<InputQueue> {
           completion_->mu.Lock();
           if (completion_->ready) {
             auto result = std::move(completion_->result);
-            completion_->mu.Unlock();
+            completion_->mu.unlock();
             input_queues_.reset();
             return std::move(result);
           }
           completion_->waker = GetContext<Activity>()->MakeNonOwningWaker();
-          completion_->mu.Unlock();
+          completion_->mu.unlock();
           return Pending{};
         }
 

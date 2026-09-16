@@ -267,7 +267,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
                                 note.location().longitude() ==
                                     note_.location().longitude();
                        });
-          mu_->Unlock();
+          mu_->unlock();
           notes_iterator_ = to_send_notes_.begin();
           NextWrite();
         } else {
@@ -291,7 +291,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
         } else {
           mu_->Lock();
           received_notes_->push_back(note_);
-          mu_->Unlock();
+          mu_->unlock();
           StartRead(&note_);
         }
       }

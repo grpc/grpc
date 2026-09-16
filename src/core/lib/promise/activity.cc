@@ -57,7 +57,7 @@ class FreestandingActivity::Handle final : public Wakeable {
     mu_.Lock();
     GRPC_CHECK_NE(activity_, nullptr);
     activity_ = nullptr;
-    mu_.Unlock();
+    mu_.unlock();
     Unref();
   }
 
@@ -70,14 +70,14 @@ class FreestandingActivity::Handle final : public Wakeable {
     // it is non-zero.
     if (activity_ && activity_->RefIfNonzero()) {
       FreestandingActivity* activity = activity_;
-      mu_.Unlock();
+      mu_.unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
       activity->Wakeup(0);
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
-      mu_.Unlock();
+      mu_.unlock();
     }
     // Drop the ref to the handle (we have one ref = one wakeup semantics).
     Unref();
@@ -90,14 +90,14 @@ class FreestandingActivity::Handle final : public Wakeable {
     // it is non-zero.
     if (activity_ && activity_->RefIfNonzero()) {
       FreestandingActivity* activity = activity_;
-      mu_.Unlock();
+      mu_.unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
       activity->WakeupAsync(0);
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
-      mu_.Unlock();
+      mu_.unlock();
     }
     // Drop the ref to the handle (we have one ref = one wakeup semantics).
     Unref();
