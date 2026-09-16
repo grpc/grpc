@@ -46,8 +46,6 @@ struct AcceptorDeleter {
   }
 };
 
-class Chttp2ServerListener;
-
 namespace testing {
 class Chttp2ServerListenerTestPeer;
 class ActiveConnectionTestPeer;
@@ -259,7 +257,7 @@ class PassiveListenerImpl final : public PassiveListener {
   Mutex mu_;
   // Data members will be populated when initialized.
   RefCountedPtr<Server> server_;
-  std::variant<Chttp2ServerListener*, NewChttp2ServerListener*> listener_;
+  NewChttp2ServerListener* listener_;
 };
 
 }  // namespace experimental

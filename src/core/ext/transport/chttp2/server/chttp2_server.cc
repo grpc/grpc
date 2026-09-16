@@ -844,7 +844,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
 
 void PassiveListenerImpl::ListenerDestroyed() {
   MutexLock lock(&mu_);
-  listener_ = static_cast<Chttp2ServerListener*>(nullptr);
+  listener_ = nullptr;
 }
 
 }  // namespace experimental
