@@ -718,7 +718,7 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
                        Timestamp deadline)
       : channel_(std::move(channel)), cq_(cq), tag_(tag) {
     grpc_cq_begin_op(cq, tag);
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // Start watch.  This inherits the ref from creation.
     auto watcher =
         MakeOrphanable<Watcher>(RefCountedPtr<ExternalStateWatcher>(this));
@@ -756,7 +756,7 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
   // on the first call.  Subsequent calls will be ignored, because
   // events can come in asynchronously.
   void MaybeStartCompletion(absl::Status status) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (watcher_ == nullptr) return;  // Ignore subsequent notifications.
     // Cancel watch.
     channel_->RemoveConnectivityWatcher(watcher_);
@@ -818,7 +818,7 @@ void ClientChannel::RemoveConnectivityWatcher(
 }
 
 void ClientChannel::GetInfo(const grpc_channel_info* info) {
-  MutexLock lock(&info_mu_);
+  MutexLock lock(info_mu_);
   if (info->lb_policy_name != nullptr) {
     *info->lb_policy_name = gpr_strdup(info_lb_policy_name_.c_str());
   }
@@ -1345,7 +1345,7 @@ void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
   saved_config_selector_ = std::move(config_selector);
   // Update the data used by GetChannelInfo().
   {
-    MutexLock lock(&info_mu_);
+    MutexLock lock(info_mu_);
     info_lb_policy_name_ = std::move(lb_policy_name);
     info_service_config_json_ = std::move(service_config_json);
   }

@@ -1,4 +1,6 @@
-// Copyright 2025 The gRPC Authors.
+//
+//
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,16 +13,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#include "src/core/telemetry/default_tcp_tracer.h"
-
-#include "src/core/util/sync.h"
+//
+//
 
 namespace grpc_core {
-
-void DefaultTcpTracer::RecordConnectionMetrics(TcpConnectionMetrics metrics) {
-  MutexLock lock(mu_);
-  connection_metrics_ = metrics;
-}
-
+namespace http2 {}  // namespace http2
 }  // namespace grpc_core

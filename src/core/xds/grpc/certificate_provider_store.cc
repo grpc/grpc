@@ -96,7 +96,7 @@ RefCountedPtr<grpc_tls_certificate_provider>
 CertificateProviderStore::CreateOrGetCertificateProvider(
     absl::string_view key) {
   RefCountedPtr<CertificateProviderWrapper> result;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = certificate_providers_map_.find(key);
   if (it == certificate_providers_map_.end()) {
     result = CreateCertificateProviderLocked(key);
@@ -137,7 +137,7 @@ CertificateProviderStore::CreateCertificateProviderLocked(
 
 void CertificateProviderStore::ReleaseCertificateProvider(
     absl::string_view key, CertificateProviderWrapper* wrapper) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = certificate_providers_map_.find(key);
   if (it != certificate_providers_map_.end()) {
     if (it->second == wrapper) {
