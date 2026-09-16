@@ -1034,6 +1034,7 @@ bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
   if (side_stream_closed_latch_.is_set()) {
     return true;
   }
+  side_stream_closed_latch_.Set();
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << DebugTag() << "status received: " << status;
   const bool has_outstanding_messages =
@@ -1082,7 +1083,6 @@ bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
     (void)HandleServerTrailingMetadataFromSidestream(
         ExtProcResponse::ResponseTrailers{});
   }
-  side_stream_closed_latch_.Set();
   return true;
 }
 
@@ -1618,28 +1618,27 @@ auto ExtProcFilter::ExtProcCall::HandleReadFromServerActivityLoop() {
 // Continuously pulls response messages from the external processor side-stream
 // and dispatches them until the stream closes or an error occurs.
 auto ExtProcFilter::ExtProcCall::HandleReadFromSideStreamLoop() {
-  return Seq(
+  return TrySeq(
       // Loop reading response messages from the side-stream until
       // end-of-stream or error.
-      Loop([self = WeakRef()]() -> Promise<LoopCtl<StatusFlag>> {
-        if (self->streaming_call_ == nullptr) {
-          return Immediate(LoopCtl<StatusFlag>(Success{}));
-        }
+      Loop([self = WeakRef()]() {
         return Seq(
             // Pull the next response message from the streaming call.
-            self->streaming_call_->PullMessage(),
+            If(self->streaming_call_ == nullptr,
+               Immediate(std::optional<std::string>()),
+               [self]() { return self->streaming_call_->PullMessage(); }),
             // Process the message; stop loop if end-of-stream (nullopt) or
             // error.
-            [self](std::optional<std::string> msg)
-                -> Promise<LoopCtl<StatusFlag>> {
-              if (!msg.has_value()) {
-                return Immediate(LoopCtl<StatusFlag>(Success{}));
-              }
-              return Map(self->ProcessSideStreamResponse(std::move(*msg)),
-                         [](StatusFlag status) -> LoopCtl<StatusFlag> {
-                           if (!status.ok()) return Failure{};
-                           return Continue();
-                         });
+            [self](std::optional<std::string> msg) {
+              return If(
+                  !msg.has_value(), Immediate(LoopCtl<StatusFlag>(Success{})),
+                  [self, msg = std::move(msg)]() mutable {
+                    return Map(self->ProcessSideStreamResponse(std::move(*msg)),
+                               [](StatusFlag status) -> LoopCtl<StatusFlag> {
+                                 if (!status.ok()) return Failure{};
+                                 return Continue();
+                               });
+                  });
             });
       }),
       // Once the message loop ends, pull the side-stream's final status and
@@ -1647,11 +1646,10 @@ auto ExtProcFilter::ExtProcCall::HandleReadFromSideStreamLoop() {
       // HandleSideStreamStatus() or straight to CancelCallWithError()), so we
       // stop here: handling it a second time would re-run the fail-open path
       // on a call that we have already failed.
-      [self = WeakRef()](StatusFlag status) -> Promise<StatusFlag> {
-        if (!status.ok()) return Immediate(StatusFlag(Failure{}));
+      [self = WeakRef()]() {
         return Map(
-            // Obtain the side-stream's final status, synthesizing one if the
-            // stream is already gone.
+            // Obtain the side-stream's final status, synthesizing one if
+            // the stream is already gone.
             If(self->streaming_call_ == nullptr,
                Immediate(absl::InternalError("Side stream unavailable")),
                [self]() {
