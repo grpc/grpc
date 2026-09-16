@@ -25,19 +25,19 @@ ThreadQuota::ThreadQuota() = default;
 ThreadQuota::~ThreadQuota() = default;
 
 void ThreadQuota::SetMax(size_t new_max) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   max_ = new_max;
 }
 
 bool ThreadQuota::Reserve(size_t num_threads) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (allocated_ + num_threads > max_) return false;
   allocated_ += num_threads;
   return true;
 }
 
 void ThreadQuota::Release(size_t num_threads) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   GRPC_CHECK(num_threads <= allocated_);
   allocated_ -= num_threads;
 }

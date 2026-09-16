@@ -339,7 +339,7 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::
         ->Record(incoming_bytes, labels, opentelemetry::context::Context{});
   }
   if (parent_->otel_plugin_->client_.call.retry_delay != nullptr) {
-    grpc_core::MutexLock lock(parent_->mu_);
+    grpc_core::MutexLock lock(&parent_->mu_);
     if (--parent_->num_active_attempts_ == 0) {
       parent_->time_at_last_attempt_end_ = absl::Now();
     }
@@ -547,7 +547,7 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::StartNewAttempt(
   bool is_first_attempt = true;
   uint64_t attempt_num;
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
       is_first_attempt = false;
       if (otel_plugin_->client_.call.retry_delay != nullptr &&

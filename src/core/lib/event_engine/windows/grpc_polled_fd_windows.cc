@@ -459,7 +459,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   }
 
   void OnTcpConnect() {
-    grpc_core::MutexLock lock(*mu_);
+    grpc_core::MutexLock lock(mu_);
     GRPC_TRACE_LOG(cares_resolver, INFO)
         << "(EventEngine c-ares resolver) fd:" << GetName()
         << " InnerOnTcpConnectLocked pending_register_for_readable:"
@@ -601,7 +601,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   // the entire resolution attempt. Doing so will allow the "inject broken
   // nameserver list" test to pass on Windows.
   void OnIocpReadable() {
-    grpc_core::MutexLock lock(*mu_);
+    grpc_core::MutexLock lock(mu_);
     absl::Status error;
     if (winsocket_->read_info()->result().wsa_error != 0) {
       // WSAEMSGSIZE would be due to receiving more data
@@ -635,7 +635,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   }
 
   void OnIocpWriteable() {
-    grpc_core::MutexLock lock(*mu_);
+    grpc_core::MutexLock lock(mu_);
     GRPC_TRACE_LOG(cares_resolver, INFO)
         << "(EventEngine c-ares resolver) OnIocpWriteableInner. fd:|"
         << GetName() << "|";

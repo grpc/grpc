@@ -88,7 +88,7 @@ class FileWatcherAuthorizationPolicyProvider
   void Orphaned() override;
 
   AuthorizationEngines engines() override {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     return {allow_engine_, deny_engine_};
   }
 

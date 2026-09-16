@@ -36,7 +36,7 @@ class WaitForCallback {
   // Creates a promise that blocks until the callback is invoked.
   auto MakeWaitPromise() {
     return [state = state_]() -> Poll<Empty> {
-      MutexLock lock(state->mutex);
+      MutexLock lock(&state->mutex);
       if (state->done) return Empty{};
       state->waker = GetContext<Activity>()->MakeNonOwningWaker();
       return Pending{};

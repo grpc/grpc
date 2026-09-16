@@ -123,7 +123,7 @@ void Sink::Gather() {
   while (true) {
     // 1. Wait until collection is actively started via Start().
     {
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       while (state_ == State::kInactive) {
         cv_gather_.Wait(&mu_);
       }
@@ -150,7 +150,7 @@ void Sink::Gather() {
       // If we gathered any bins, record them under the mutex and immediately
       // loop back to pop more without sleeping.
       if (!batch.empty()) {
-        MutexLock lock(mu_);
+        MutexLock lock(&mu_);
         if (GPR_LIKELY(events_ != nullptr)) {
           for (std::unique_ptr<Bin>& bin : batch) {
             RecordLocked(std::move(bin));
@@ -166,7 +166,7 @@ void Sink::Gather() {
       constexpr absl::Duration kGatherWaitTimeout = absl::Milliseconds(100);
 
       // Queue is fully empty (empty == true). Inspect state under lock.
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       bool done_draining = false;  // to break to the outer while loop.
       switch (state_) {
         case State::kRecording:
@@ -196,7 +196,7 @@ void Sink::Gather() {
 
 void Sink::Start(size_t max_bins) {
   std::unique_ptr<EventDump> events = std::make_unique<EventDump>();
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   // Ensure previous collection session has fully drained before resetting.
   while (state_ != State::kInactive) {
     cv_drained_.Wait(&mu_);
@@ -208,7 +208,7 @@ void Sink::Start(size_t max_bins) {
 }
 
 std::unique_ptr<Sink::EventDump> Sink::Stop() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   CHECK(state_ == State::kRecording || state_ == State::kDraining);
   if (state_ == State::kRecording) {
     state_ = State::kDraining;

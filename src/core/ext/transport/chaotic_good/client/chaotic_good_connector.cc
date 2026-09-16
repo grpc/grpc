@@ -280,7 +280,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
         result_notifier->Run(status);
       },
       arena);
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (is_shutdown_) return;
   connect_activity_ = std::move(activity);
 }

@@ -97,7 +97,7 @@ class ExportedTracesRecorder
   ExportedTracesRecorder() : is_recording_(false) {}
   void Export(const std::vector<::opencensus::trace::exporter::SpanData>& spans)
       override {
-    grpc_core::MutexLock lock(mutex_);
+    grpc_core::MutexLock lock(&mutex_);
     if (is_recording_) {
       for (auto const& span : spans) {
         recorded_spans_.push_back(span);
@@ -106,13 +106,13 @@ class ExportedTracesRecorder
   }
 
   void StartRecording() {
-    grpc_core::MutexLock lock(mutex_);
+    grpc_core::MutexLock lock(&mutex_);
     ASSERT_FALSE(is_recording_);
     is_recording_ = true;
   }
 
   void StopRecording() {
-    grpc_core::MutexLock lock(mutex_);
+    grpc_core::MutexLock lock(&mutex_);
     ASSERT_TRUE(is_recording_);
     is_recording_ = false;
   }

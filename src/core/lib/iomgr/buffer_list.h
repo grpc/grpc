@@ -123,7 +123,7 @@ class TracedBufferList {
                         struct scm_timestamping* tss);
   // The Size() operation is slow and is used only in tests.
   int Size() {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     int size = 0;
     TracedBuffer* curr = head_;
     while (curr) {

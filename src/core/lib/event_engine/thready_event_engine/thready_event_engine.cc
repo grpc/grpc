@@ -51,7 +51,7 @@ ThreadyEventEngine::CreateListener(
            std::move(on_accept))](std::unique_ptr<Endpoint> endpoint,
                                   MemoryAllocator memory_allocator) {
         {
-          grpc_core::MutexLock lock(accept_state->mu_);
+          grpc_core::MutexLock lock(&accept_state->mu_);
           ++accept_state->pending_accepts_;
         }
         Asynchronously(
@@ -59,7 +59,7 @@ ThreadyEventEngine::CreateListener(
              memory_allocator = std::move(memory_allocator)]() mutable {
               (*on_accept)(std::move(endpoint), std::move(memory_allocator));
               {
-                grpc_core::MutexLock lock(accept_state->mu_);
+                grpc_core::MutexLock lock(&accept_state->mu_);
                 --accept_state->pending_accepts_;
                 if (accept_state->pending_accepts_ == 0) {
                   accept_state->cv_.Signal();
@@ -72,7 +72,7 @@ ThreadyEventEngine::CreateListener(
         Asynchronously([accept_state, on_shutdown = std::move(on_shutdown),
                         status = std::move(status)]() mutable {
           while (true) {
-            grpc_core::MutexLock lock(accept_state->mu_);
+            grpc_core::MutexLock lock(&accept_state->mu_);
             if (accept_state->pending_accepts_ == 0) {
               break;
             }

@@ -84,7 +84,7 @@ RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
 }
 
 void RegionalAccessBoundaryFetcher::OnFetchSuccess(Slice encoded_locations) {
-  MutexLock lock(cache_mu_);
+  MutexLock lock(&cache_mu_);
   if (shutdown_) return;
   cache_ = {std::move(encoded_locations),
             Timestamp::Now() + kRegionalAccessBoundaryCacheDuration};
@@ -94,7 +94,7 @@ void RegionalAccessBoundaryFetcher::OnFetchSuccess(Slice encoded_locations) {
 
 void RegionalAccessBoundaryFetcher::OnFetchFailure(
     grpc_error_handle error, int http_status, absl::string_view response_body) {
-  MutexLock lock(cache_mu_);
+  MutexLock lock(&cache_mu_);
   if (shutdown_) return;
   auto log_message = absl::StrCat(
       "Regional access boundary request will be retried after failing with "
@@ -134,7 +134,7 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
   }
   {
     const Timestamp now = Timestamp::Now();
-    MutexLock lock(cache_mu_);
+    MutexLock lock(&cache_mu_);
     // We kick off a new fetch attempt if all of the following are true:
     // - We have no cached Regioanl Access Boundary data, or the cached
     //   Regional Access Boundary data's expiration time is less than the grace
@@ -161,7 +161,7 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
 }
 
 void RegionalAccessBoundaryFetcher::Orphaned() {
-  MutexLock lock(cache_mu_);
+  MutexLock lock(&cache_mu_);
   shutdown_ = true;
   pending_request_.reset();
 }
@@ -323,7 +323,7 @@ EmailFetcher::EmailFetcher(
 EmailFetcher::~EmailFetcher() = default;
 
 void EmailFetcher::StartEmailFetch() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (Timestamp::Now() < next_fetch_earliest_time_) {
     return;
   }
@@ -338,7 +338,7 @@ void EmailFetcher::StartEmailFetch() {
 
 void EmailFetcher::Fetch(absl::string_view token,
                          ClientMetadata& initial_metadata) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   auto* rab_fetcher =
       std::get_if<RefCountedPtr<RegionalAccessBoundaryFetcher>>(&state_);
   if (rab_fetcher == nullptr) return;   // Don't yet have RAB fetcher.
@@ -347,12 +347,12 @@ void EmailFetcher::Fetch(absl::string_view token,
 }
 
 void EmailFetcher::Orphaned() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   state_ = RefCountedPtr<RegionalAccessBoundaryFetcher>(nullptr);
 }
 
 void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
     absl::string_view trimmed_email = absl::StripAsciiWhitespace(email);
     if (!IsValidEmail(trimmed_email)) {
@@ -378,7 +378,7 @@ void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
 }
 
 void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
     LOG_EVERY_N_SEC(INFO, 60) << "Regional Access Boundary fetch skipped due "
                                  "to service account email fetch failure: "

@@ -108,7 +108,7 @@ class RequestBuffer {
   void Commit(Reader* winner);
 
   bool committed() const {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     return winner_ != nullptr;
   }
 

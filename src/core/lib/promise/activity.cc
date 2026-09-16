@@ -106,7 +106,7 @@ class FreestandingActivity::Handle final : public Wakeable {
   void Drop(WakeupMask) override { Unref(); }
 
   std::string ActivityDebugTag(WakeupMask) const override {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     return activity_ == nullptr ? "<unknown>" : activity_->DebugTag();
   }
 

@@ -35,7 +35,7 @@ FileDescriptorCollection::FileDescriptorCollection(int generation) noexcept
 FileDescriptorCollection::FileDescriptorCollection(
     FileDescriptorCollection&& other) noexcept
     : generation_(other.generation_) {
-  grpc_core::MutexLock lock(other.mu_);
+  grpc_core::MutexLock lock(&other.mu_);
   file_descriptors_ = std::move(other.file_descriptors_);
   other.generation_ = -1;
   other.file_descriptors_.clear();
@@ -44,8 +44,8 @@ FileDescriptorCollection::FileDescriptorCollection(
 FileDescriptorCollection& FileDescriptorCollection::operator=(
     FileDescriptorCollection&& other) noexcept {
   generation_ = other.generation_;
-  grpc_core::MutexLock self_lock(mu_);
-  grpc_core::MutexLock other_lock(other.mu_);
+  grpc_core::MutexLock self_lock(&mu_);
+  grpc_core::MutexLock other_lock(&other.mu_);
   file_descriptors_ = std::move(other.file_descriptors_);
   other.generation_ = -1;
   other.file_descriptors_.clear();
@@ -54,7 +54,7 @@ FileDescriptorCollection& FileDescriptorCollection::operator=(
 
 FileDescriptor FileDescriptorCollection::Add(int fd) {
   if (IsForkEnabled()) {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     file_descriptors_.emplace(fd);
   }
   return FileDescriptor(fd, generation_);
@@ -65,7 +65,7 @@ bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
     return true;
   }
   if (fd.generation() == generation_) {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return file_descriptors_.erase(fd.fd()) == 1;
   }
   return false;
@@ -76,7 +76,7 @@ FileDescriptorCollection::ClearAndReturnRawDescriptors() {
   if (!IsForkEnabled()) {
     return {};
   }
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   absl::flat_hash_set<int> file_descriptors = std::move(file_descriptors_);
   // Should not be necessary, but standard is not clear if move would empty
   // the collection

@@ -67,26 +67,26 @@ namespace {
 class TransportCounter {
  public:
   static void CounterInitCallback() {
-    grpc_core::MutexLock lock(mu());
+    grpc_core::MutexLock lock(&mu());
     ++count_;
   }
 
   static void CounterDestructCallback() {
-    grpc_core::MutexLock lock(mu());
+    grpc_core::MutexLock lock(&mu());
     if (--count_ == 0) {
       cv().SignalAll();
     }
   }
 
   static void WaitForTransportsToBeDestroyed() {
-    grpc_core::MutexLock lock(mu());
+    grpc_core::MutexLock lock(&mu());
     while (count_ != 0) {
       ASSERT_FALSE(cv().WaitWithTimeout(&mu(), absl::Seconds(10)));
     }
   }
 
   static int count() {
-    grpc_core::MutexLock lock(mu());
+    grpc_core::MutexLock lock(&mu());
     return count_;
   }
 

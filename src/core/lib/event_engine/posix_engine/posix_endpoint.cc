@@ -607,7 +607,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
   bool ret = false;
   absl::AnyInvocable<void(absl::Status)> cb = nullptr;
   grpc_core::EnsureRunInExecCtx([&, this]() mutable {
-    grpc_core::MutexLock lock(read_mu_);
+    grpc_core::MutexLock lock(&read_mu_);
     ret = HandleReadLocked(status);
     if (ret) {
       GRPC_TRACE_LOG(event_engine_endpoint, INFO)

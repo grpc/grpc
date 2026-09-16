@@ -307,7 +307,7 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
 void ChaoticGoodServerTransport::StreamDispatch::AddData(
     channelz::DataSink sink) {
   party_->ExportToChannelz("transport_party", sink);
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   message_chunker_.AddData(sink);
   sink.AddData("transport_state",
                channelz::PropertyList()
@@ -367,7 +367,7 @@ RefCountedPtr<ChaoticGoodServerTransport::Stream>
 ChaoticGoodServerTransport::StreamDispatch::LookupStream(uint32_t stream_id) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " LookupStream " << stream_id;
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) return nullptr;
   return it->second;
@@ -377,7 +377,7 @@ RefCountedPtr<ChaoticGoodServerTransport::Stream>
 ChaoticGoodServerTransport::StreamDispatch::ExtractStream(uint32_t stream_id) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " ExtractStream " << stream_id;
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) return nullptr;
   auto r = std::move(it->second);
@@ -387,7 +387,7 @@ ChaoticGoodServerTransport::StreamDispatch::ExtractStream(uint32_t stream_id) {
 
 absl::Status ChaoticGoodServerTransport::StreamDispatch::AddStream(
     uint32_t stream_id, CallInitiator call_initiator) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " NewStream " << stream_id
       << " last_seen_new_stream_id_=" << last_seen_new_stream_id_;
@@ -429,13 +429,13 @@ absl::Status ChaoticGoodServerTransport::StreamDispatch::AddStream(
 void ChaoticGoodServerTransport::StreamDispatch::StartConnectivityWatch(
     grpc_connectivity_state state,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   state_tracker_.AddWatcher(state, std::move(watcher));
 }
 
 void ChaoticGoodServerTransport::StreamDispatch::StopConnectivityWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   state_tracker_.RemoveWatcher(watcher);
 }
 

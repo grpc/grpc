@@ -78,7 +78,7 @@ SslSessionLRUCache::~SslSessionLRUCache() {
 }
 
 size_t SslSessionLRUCache::Size() {
-  grpc_core::MutexLock lock(lock_);
+  grpc_core::MutexLock lock(&lock_);
   return use_order_list_size_;
 }
 
@@ -101,7 +101,7 @@ void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
     LOG(ERROR) << "Attempted to put null SSL session in session cache.";
     return;
   }
-  grpc_core::MutexLock lock(lock_);
+  grpc_core::MutexLock lock(&lock_);
   Node* node = FindLocked(key);
   if (node != nullptr) {
     node->SetSession(std::move(session));
@@ -123,7 +123,7 @@ void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
 }
 
 SslSessionPtr SslSessionLRUCache::Get(const char* key) {
-  grpc_core::MutexLock lock(lock_);
+  grpc_core::MutexLock lock(&lock_);
   // Key is only used for lookups.
   Node* node = FindLocked(key);
   if (node == nullptr) {

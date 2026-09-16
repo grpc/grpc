@@ -41,7 +41,7 @@ namespace testing {
   // See if we have a configured response for this request.
   ResponseData res;
   {
-    grpc::internal::MutexLock lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     auto it = responses_.find(*request);
     if (it == responses_.end()) {
       LOG(INFO) << "RLS: no matching request, returning INTERNAL";
@@ -65,17 +65,17 @@ namespace testing {
 void RlsServiceImpl::SetResponse(RouteLookupRequest request,
                                  RouteLookupResponse response,
                                  grpc_core::Duration response_delay) {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   responses_[std::move(request)] = {std::move(response), response_delay};
 }
 
 void RlsServiceImpl::RemoveResponse(const RouteLookupRequest& request) {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   responses_.erase(request);
 }
 
 std::vector<RouteLookupRequest> RlsServiceImpl::GetUnmatchedRequests() {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   return std::move(unmatched_requests_);
 }
 

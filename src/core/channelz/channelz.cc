@@ -62,12 +62,12 @@ namespace channelz {
 
 void DataSinkImplementation::AddData(absl::string_view name,
                                      std::unique_ptr<Data> data) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   additional_info_.emplace_back(Element{std::string(name), std::move(data)});
 }
 
 Json::Array DataSinkImplementation::Finalize(bool) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   Json::Array out;
   for (auto& [name, additional_info] : additional_info_) {
     Json::Object obj;
@@ -81,7 +81,7 @@ Json::Array DataSinkImplementation::Finalize(bool) {
 void DataSinkImplementation::Finalize(bool timed_out,
                                       grpc_channelz_v2_Entity* entity,
                                       upb_Arena* arena) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   grpc_channelz_v2_Entity_set_timed_out(entity, timed_out);
   for (auto& [name, additional_info] : additional_info_) {
     auto* staple = grpc_channelz_v2_Entity_add_data(entity, arena);
@@ -129,7 +129,7 @@ Json::Array BaseNode::AdditionalInfo() {
   auto done = std::make_shared<Notification>();
   auto sink_impl = std::make_shared<DataSinkImplementation>();
   {
-    MutexLock lock(data_sources_mu_);
+    MutexLock lock(&data_sources_mu_);
     auto done_notifier = std::make_shared<DataSinkCompletionNotification>(
         [done]() { done->Notify(); });
     for (DataSource* data_source : data_sources_) {
@@ -153,7 +153,7 @@ std::unique_ptr<ZTrace> BaseNode::RunZTrace(
   };
   std::unique_ptr<ZTrace> ztrace;
   {
-    MutexLock lock(data_sources_mu_);
+    MutexLock lock(&data_sources_mu_);
     for (auto* data_source : data_sources_) {
       if (auto found_ztrace = data_source->GetZTrace(name);
           found_ztrace != nullptr) {
@@ -182,7 +182,7 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
       entity, StdStringToUpbString(EntityTypeToKind(type_)));
   std::vector<WeakRefCountedPtr<BaseNode>> parent_nodes;
   {
-    MutexLock lock(parent_mu_);
+    MutexLock lock(&parent_mu_);
     parent_nodes.assign(parents_.begin(), parents_.end());
   }
   auto* parents = grpc_channelz_v2_Entity_resize_parents(
@@ -201,7 +201,7 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
   };
   AddNodeSpecificData(make_data_sink());
   {
-    MutexLock lock(data_sources_mu_);
+    MutexLock lock(&data_sources_mu_);
     for (DataSource* data_source : data_sources_) {
       data_source->AddData(make_data_sink());
     }
@@ -241,14 +241,14 @@ DataSource::~DataSource() {
 
 void DataSource::SourceConstructed() {
   if (node_ == nullptr) return;
-  MutexLock lock(node_->data_sources_mu_);
+  MutexLock lock(&node_->data_sources_mu_);
   node_->data_sources_.push_back(this);
 }
 
 void DataSource::SourceDestructing() {
   RefCountedPtr<BaseNode> node = std::move(node_);
   if (node == nullptr) return;
-  MutexLock lock(node->data_sources_mu_);
+  MutexLock lock(&node->data_sources_mu_);
   for (size_t i = 0; i < node->data_sources_.size(); ++i) {
     if (node->data_sources_[i] == this) {
       std::swap(node->data_sources_[i], node->data_sources_.back());

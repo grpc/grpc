@@ -192,7 +192,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
   }
 
   void SetOnDestroyDone(grpc_closure* closure) override {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     on_destroy_done_ = closure;
   };
 

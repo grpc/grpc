@@ -87,7 +87,7 @@ bool LameClientFilter::GetChannelInfo(const grpc_channel_info*) { return true; }
 
 bool LameClientFilter::StartTransportOp(grpc_transport_op* op) {
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     if (op->start_connectivity_watch != nullptr) {
       state_tracker_.AddWatcher(op->start_connectivity_watch_state,
                                 std::move(op->start_connectivity_watch));

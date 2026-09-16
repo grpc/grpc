@@ -33,7 +33,7 @@ EventLog::~EventLog() {
 
 void EventLog::BeginCollection() {
   for (auto& fragment : fragments_) {
-    MutexLock lock(fragment.mu);
+    MutexLock lock(&fragment.mu);
     fragment.entries.clear();
   }
   collection_begin_ = gpr_get_cycle_counter();
@@ -47,7 +47,7 @@ std::vector<EventLog::Entry> EventLog::EndCollection(
   g_instance_.store(nullptr, std::memory_order_release);
   std::vector<Entry> result;
   for (auto& fragment : fragments_) {
-    MutexLock lock(fragment.mu);
+    MutexLock lock(&fragment.mu);
     for (const auto& entry : fragment.entries) {
       if (std::find(wanted_events.begin(), wanted_events.end(), entry.event) !=
           wanted_events.end()) {
@@ -64,7 +64,7 @@ std::vector<EventLog::Entry> EventLog::EndCollection(
 
 void EventLog::AppendInternal(absl::string_view event, int64_t delta) {
   auto& fragment = fragments_.this_cpu();
-  MutexLock lock(fragment.mu);
+  MutexLock lock(&fragment.mu);
   fragment.entries.push_back({gpr_get_cycle_counter(), event, delta});
 }
 

@@ -200,7 +200,7 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
   {
     // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
     // required here.
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     read_closure_.DestroyEvent();
     write_closure_.DestroyEvent();
     error_closure_.DestroyEvent();
@@ -209,7 +209,7 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
   pending_write_.store(false, std::memory_order_release);
   pending_error_.store(false, std::memory_order_release);
   {
-    grpc_core::MutexLock lock(poller_->mu_);
+    grpc_core::MutexLock lock(&poller_->mu_);
 #ifdef GRPC_ENABLE_FORK_SUPPORT
     poller_->fork_handles_set_.erase(this);
 #endif  // GRPC_ENABLE_FORK_SUPPORT
@@ -259,7 +259,7 @@ Epoll1Poller::Epoll1Poller(std::shared_ptr<ThreadPool> thread_pool)
 }
 
 void Epoll1Poller::Close() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (closed_) return;
 
   if (g_epoll_set_.epfd.ready()) {
@@ -283,7 +283,7 @@ EventHandle* Epoll1Poller::CreateHandle(FileDescriptor fd,
                                         bool track_err) {
   Epoll1EventHandle* new_handle = nullptr;
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     if (free_epoll1_handles_list_.empty()) {
       new_handle = new Epoll1EventHandle(fd, this);
     } else {
@@ -385,7 +385,7 @@ void Epoll1EventHandle::ShutdownHandle(absl::Status why) {
   // in parallel is not safe because some of the lockfree event types e.g, read,
   // write, error may-not have called SetShutdown when DestroyEvent gets
   // called in the OrphanHandle method.
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   HandleShutdownInternal(why, false);
 }
 
@@ -426,7 +426,7 @@ Poller::WorkResult Epoll1Poller::Work(
     }
   }
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     // If was_kicked_ is true, collect all pending events in this iteration.
     if (ProcessEpollEvents(
             was_kicked_ ? INT_MAX : MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION,
@@ -448,7 +448,7 @@ Poller::WorkResult Epoll1Poller::Work(
 }
 
 void Epoll1Poller::Kick() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (was_kicked_ || closed_) {
     return;
   }
@@ -465,7 +465,7 @@ void Epoll1Poller::HandleForkInChild() {
     posix_interface().AdvanceGeneration();
   }
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     for (EventHandle* handle : fork_handles_set_) {
       handle->ShutdownHandle(absl::CancelledError("Closed on fork"));
     }
@@ -489,7 +489,7 @@ void Epoll1Poller::ResetKickState() {
   auto status = posix_interface().EpollCtlAdd(
       g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(), wakeup_fd_.get());
   GRPC_CHECK(status.ok()) << status.StrError();
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   was_kicked_ = false;
 }
 

@@ -356,7 +356,7 @@ Status ChannelzV2Service::QueryTrace(
       grpc_event_engine::experimental::GetDefaultEventEngine(),
       [state, writer](absl::StatusOr<std::optional<std::string>> response) {
         if (state->done.HasBeenNotified()) return;
-        grpc_core::MutexLock lock(state->mu);
+        grpc_core::MutexLock lock(&state->mu);
         if (!response.ok()) {
           state->status = grpc::Status(
               static_cast<grpc::StatusCode>(response.status().code()),
@@ -377,7 +377,7 @@ Status ChannelzV2Service::QueryTrace(
         }
       });
   state->done.WaitForNotification();
-  grpc_core::MutexLock lock(state->mu);
+  grpc_core::MutexLock lock(&state->mu);
   return state->status;
 }
 

@@ -110,12 +110,12 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
   class CertDataMapWrapper {
    public:
     CertDataMap Get() {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       return cert_data_map_;
     }
 
     void Set(CertDataMap data) {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       cert_data_map_ = std::move(data);
     }
 

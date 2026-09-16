@@ -195,7 +195,7 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
 class TransportCounter {
  public:
   void InitCallback() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     ++num_created_;
     ++num_live_;
     LOG(INFO) << "TransportCounter num_created_=" << num_created_
@@ -203,19 +203,19 @@ class TransportCounter {
   }
 
   void DestructCallback() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     --num_live_;
     LOG(INFO) << "TransportCounter num_created_=" << num_created_
               << " num_live_=" << num_live_ << " DestructCallback";
   }
 
   int64_t num_live() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return num_live_;
   }
 
   size_t num_created() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return num_created_;
   }
 

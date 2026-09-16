@@ -196,7 +196,7 @@ class XdsServerTlsTest : public XdsEnd2endTest {
           auto [it, end] = md.equal_range("authorization");
           ASSERT_TRUE(it != end);
           absl::string_view value(it->second.data(), it->second.size());
-          grpc_core::MutexLock lock(mu_);
+          grpc_core::MutexLock lock(&mu_);
           seen_token_ = std::string(absl::StripPrefix(value, "Bearer "));
         });
   }
@@ -212,7 +212,7 @@ class XdsServerTlsTest : public XdsEnd2endTest {
   }
 
   std::string GetSeenToken() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return seen_token_;
   }
 

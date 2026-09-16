@@ -49,7 +49,7 @@ MockEndpoint::MockEndpoint(
     : MockEndpoint(std::move(endpoint_control), -1) {}
 
 MockEndpointController::~MockEndpointController() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (on_read_) {
     engine_->Run([cb = std::move(on_read_)]() mutable {
       cb(absl::InternalError("Endpoint Shutdown"));
@@ -78,7 +78,7 @@ void MockEndpointController::InitMockGrpcEndpoint(int fd) {
 }
 
 void MockEndpointController::TriggerReadEvent(Slice read_data) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   GRPC_CHECK(!reads_done_)
       << "Cannot trigger a read event after NoMoreReads has been called.";
   if (on_read_) {
@@ -93,7 +93,7 @@ void MockEndpointController::TriggerReadEvent(Slice read_data) {
 }
 
 void MockEndpointController::NoMoreReads() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   GRPC_CHECK(!std::exchange(reads_done_, true))
       << "NoMoreReads() can only be called once";
 }
@@ -101,7 +101,7 @@ void MockEndpointController::NoMoreReads() {
 bool MockEndpointController::Read(
     absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
     ReadArgs /*args*/) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (read_buffer_.Count() > 0) {
     GRPC_CHECK(buffer->Count() == 0);
     GRPC_CHECK(!on_read_);
@@ -121,7 +121,7 @@ bool MockEndpointController::Read(
 bool MockEndpointController::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     WriteArgs /*args*/) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   // No-op implementation. Nothing was using it.
   data->Clear();
   engine()->Run(

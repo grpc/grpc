@@ -103,11 +103,11 @@ void BM_MultithreadedStdDequeLIFO(benchmark::State& state) {
   AnyInvocableClosure closure([] {});
   for (auto _ : state) {
     for (int i = 0; i < element_count; i++) {
-      grpc_core::MutexLock lock(globalMu);
+      grpc_core::MutexLock lock(&globalMu);
       globalDeque.push_back(&closure);
     }
     for (int i = 0; i < element_count; i++) {
-      grpc_core::MutexLock lock(globalMu);
+      grpc_core::MutexLock lock(&globalMu);
       EventEngine::Closure* popped = globalDeque.back();
       globalDeque.pop_back();
       GRPC_CHECK_NE(popped, nullptr);
