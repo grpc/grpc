@@ -24,7 +24,7 @@ void Blackboard::Entry::Orphaned() {
 
 RefCountedPtr<Blackboard::Entry> Blackboard::Get(UniqueTypeName type,
                                                  const std::string& key) const {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   auto it = map_.find(std::pair(type, key));
   if (it == map_.end()) return nullptr;
   return it->second->RefIfNonZero();
@@ -33,7 +33,7 @@ RefCountedPtr<Blackboard::Entry> Blackboard::Get(UniqueTypeName type,
 RefCountedPtr<Blackboard::Entry> Blackboard::GetOrSet(
     UniqueTypeName type, const std::string& key,
     absl::FunctionRef<RefCountedPtr<Entry>()> construct) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   auto& entry = map_[std::pair(type, key)];
   if (entry != nullptr) {
     auto reffed_entry = entry->RefIfNonZero();
@@ -49,7 +49,7 @@ RefCountedPtr<Blackboard::Entry> Blackboard::GetOrSet(
 
 void Blackboard::Remove(UniqueTypeName type, const std::string& key,
                         Entry* entry) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   auto it = map_.find(std::pair(type, key));
   if (it == map_.end()) return;
   if (it->second == entry) map_.erase(it);

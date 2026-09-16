@@ -580,7 +580,7 @@ class Subchannel::QueuedCall::Canceller final {
     auto* self = static_cast<Canceller*>(arg);
     bool cancelled = false;
     {
-      MutexLock lock(self->call_->subchannel_->mu_);
+      MutexLock lock(&self->call_->subchannel_->mu_);
       if (self->call_->canceller_ == self && !error.ok()) {
         GRPC_TRACE_LOG(subchannel_call, INFO)
             << "subchannel " << self->call_->subchannel_.get()
@@ -592,7 +592,7 @@ class Subchannel::QueuedCall::Canceller final {
       }
     }
     if (cancelled) {
-      MutexLock lock(self->call_->mu_);
+      MutexLock lock(&self->call_->mu_);
       // Fail pending batches on the call.
       self->call_->buffered_call_.Fail(
           error, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
@@ -626,7 +626,7 @@ Subchannel::QueuedCall::~QueuedCall() {
 
 void Subchannel::QueuedCall::SetAfterCallStackDestroy(grpc_closure* closure) {
   GRPC_CHECK_NE(closure, nullptr);
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (subchannel_call_ != nullptr) {
     subchannel_call_->SetAfterCallStackDestroy(closure);
   } else {
@@ -641,7 +641,7 @@ void Subchannel::QueuedCall::StartTransportStreamOpBatch(
       << "subchannel " << subchannel_.get() << " queued call " << this
       << ": starting batch: "
       << grpc_transport_stream_op_batch_string(batch, false);
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   // If we already have a real subchannel call, pass the batch down to it.
   if (subchannel_call_ != nullptr) {
     subchannel_call_->StartTransportStreamOpBatch(batch);
@@ -706,7 +706,7 @@ void Subchannel::QueuedCall::ResumeOnConnectionLocked(
       << ": resuming on connected_subchannel " << connected_subchannel;
   canceller_ = nullptr;
   queue_entry_ = nullptr;
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   grpc_error_handle error;
   subchannel_call_ = connected_subchannel->CreateCall(args_, &error);
   if (after_call_stack_destroy_ != nullptr) {
@@ -739,7 +739,7 @@ void Subchannel::QueuedCall::FailLocked(absl::Status status) {
   canceller_ = nullptr;
   queue_entry_ = nullptr;
   is_retriable_.store(true);
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   cancel_error_ = status;
   buffered_call_.Fail(status,
                       BufferedCall::YieldCallCombinerIfPendingBatchesFound);
@@ -840,7 +840,7 @@ class Subchannel::ConnectionStateWatcher final
                 ? disconnect_info.keepalive_time->ToString()
                 : "<unset>")
         << ")";
-    MutexLock lock(subchannel->mu_);
+    MutexLock lock(&subchannel->mu_);
     // Handle keepalive update.
     if (disconnect_info.keepalive_time.has_value()) {
       subchannel->ThrottleKeepaliveTimeLocked(*disconnect_info.keepalive_time);
@@ -1124,7 +1124,7 @@ RefCountedPtr<Subchannel> Subchannel::Create(
 }
 
 void Subchannel::ThrottleKeepaliveTime(Duration new_keepalive_time) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   ThrottleKeepaliveTimeLocked(new_keepalive_time);
 }
 
@@ -1145,7 +1145,7 @@ channelz::SubchannelNode* Subchannel::channelz_node() {
 
 void Subchannel::WatchConnectivityState(
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();
   if (interested_parties != nullptr) {
     grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
@@ -1163,7 +1163,7 @@ void Subchannel::WatchConnectivityState(
 
 void Subchannel::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();
   if (interested_parties != nullptr) {
     grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties);
@@ -1175,7 +1175,7 @@ void Subchannel::RequestConnection() {
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString()
       << ": RequestConnection()";
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (state_ == GRPC_CHANNEL_IDLE) {
     StartConnectingLocked();
   }
@@ -1188,7 +1188,7 @@ void Subchannel::ResetBackoff() {
   // does not eliminate the last ref and destroy the Subchannel before the
   // method returns.
   auto self = WeakRef(DEBUG_LOCATION, "ResetBackoff");
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   backoff_.Reset();
   if (retry_timer_handle_.has_value() &&
       event_engine_->Cancel(*retry_timer_handle_)) {
@@ -1207,7 +1207,7 @@ void Subchannel::Orphaned() {
     subchannel_pool_->UnregisterSubchannel(key_, this);
     subchannel_pool_.reset();
   }
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   GRPC_CHECK(!shutdown_);
   shutdown_ = true;
   connector_.reset();
@@ -1220,13 +1220,13 @@ void Subchannel::Orphaned() {
 void Subchannel::GetOrAddDataProducer(
     UniqueTypeName type,
     std::function<void(DataProducerInterface**)> get_or_add) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   auto it = data_producer_map_.emplace(type, nullptr).first;
   get_or_add(&it->second);
 }
 
 void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   auto it = data_producer_map_.find(data_producer->type());
   if (it != data_producer_map_.end() && it->second == data_producer) {
     data_producer_map_.erase(it);
@@ -1315,7 +1315,7 @@ bool Subchannel::RemoveConnectionLocked(
 }
 
 void Subchannel::OnRetryTimer() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   OnRetryTimerLocked();
 }
 
@@ -1351,7 +1351,7 @@ void Subchannel::StartConnectingLocked() {
 void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
   WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
   {
-    MutexLock lock(c->mu_);
+    MutexLock lock(&c->mu_);
     c->OnConnectingFinishedLocked(error);
   }
   c.reset(DEBUG_LOCATION, "Connect");
@@ -1513,7 +1513,7 @@ RefCountedPtr<Subchannel::Call> Subchannel::CreateCall(
     CreateCallArgs args, grpc_error_handle* error) {
   RefCountedPtr<ConnectedSubchannel> connected_subchannel;
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     // If we hit a race condition where the LB picker chose the subchannel
     // at the same time as the last connection was closed, then tell the
     // channel to re-queue the pick.
@@ -1542,7 +1542,7 @@ RefCountedPtr<UnstartedCallDestination> Subchannel::call_destination() {
   // TODO(roth): Implement connection scaling for v3.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel;
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     if (!connections_.empty()) connected_subchannel = connections_[0];
   }
   if (connected_subchannel == nullptr) return nullptr;
@@ -1582,7 +1582,7 @@ Subchannel::ChooseConnectionLocked() {
 }
 
 void Subchannel::RetryQueuedRpcs() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (shutdown_) return;
   RetryQueuedRpcsLocked();
 }
@@ -1644,7 +1644,7 @@ void Subchannel::Ping(absl::AnyInvocable<void(absl::Status)>) {
 absl::Status Subchannel::Ping(grpc_closure* on_initiate, grpc_closure* on_ack) {
   RefCountedPtr<ConnectedSubchannel> connected_subchannel;
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     if (!connections_.empty()) connected_subchannel = connections_[0];
   }
   if (connected_subchannel == nullptr) {

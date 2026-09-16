@@ -222,7 +222,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
   if (!status.ok()) {
     return status;
   }
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (!files_with_errors.empty()) {
     // Need to make sure CRLs we read successfully into new_crls are still
     // in-place updated in crls_.
@@ -245,7 +245,7 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
 
 std::shared_ptr<Crl> DirectoryReloaderCrlProvider::GetCrl(
     const CertificateInfo& certificate_info) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   auto it = crls_.find(certificate_info.Issuer());
   if (it == crls_.end()) {
     return nullptr;

@@ -213,7 +213,7 @@ ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     : resolver_(std::move(resolver)),
       event_engine_resolver_(std::move(event_engine_resolver)) {
   // Locking to prevent completion before all records are queried
-  MutexLock lock(on_resolved_mu_);
+  MutexLock lock(&on_resolved_mu_);
   GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
       << "(event_engine client channel resolver) DNSResolver::"
       << resolver_.get() << " Starting hostname resolution for "
@@ -278,7 +278,7 @@ ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 
 void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::Orphan() {
   {
-    MutexLock lock(on_resolved_mu_);
+    MutexLock lock(&on_resolved_mu_);
     orphaned_ = true;
     if (timeout_handle_.has_value()) {
       resolver_->event_engine_->Cancel(*timeout_handle_);
@@ -292,7 +292,7 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::Orphan() {
 }
 
 void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::OnTimeout() {
-  MutexLock lock(on_resolved_mu_);
+  MutexLock lock(&on_resolved_mu_);
   GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
       << "(event_engine client channel resolver) DNSResolver::"
       << resolver_.get() << " OnTimeout";
@@ -304,7 +304,7 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::OnHostnameResolved(
     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> new_addresses) {
   std::optional<Resolver::Result> result;
   {
-    MutexLock lock(on_resolved_mu_);
+    MutexLock lock(&on_resolved_mu_);
     // Make sure field destroys before cleanup.
     ValidationErrors::ScopedField field(&errors_, "hostname lookup");
     if (orphaned_) return;
@@ -333,7 +333,7 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::OnSRVResolved(
       resolver_->OnRequestComplete(std::move(*result));
     }
   });
-  MutexLock lock(on_resolved_mu_);
+  MutexLock lock(&on_resolved_mu_);
   // Make sure field destroys before cleanup.
   ValidationErrors::ScopedField field(&errors_, "srv lookup");
   if (orphaned_) return;
@@ -387,7 +387,7 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       resolver_->OnRequestComplete(std::move(*result));
     }
   });
-  MutexLock lock(on_resolved_mu_);
+  MutexLock lock(&on_resolved_mu_);
   // Make sure field destroys before cleanup.
   ValidationErrors::ScopedField field(
       &errors_, absl::StrCat("balancer lookup for ", authority));
@@ -414,7 +414,7 @@ void ClientChannelDNSResolver::EventEngineDNSRequestWrapper::OnTXTResolved(
     absl::StatusOr<std::vector<std::string>> service_config) {
   std::optional<Resolver::Result> result;
   {
-    MutexLock lock(on_resolved_mu_);
+    MutexLock lock(&on_resolved_mu_);
     // Make sure field destroys before cleanup.
     ValidationErrors::ScopedField field(&errors_, "txt lookup");
     if (orphaned_) return;

@@ -215,7 +215,7 @@ void OrcaProducer::Start(WeakRefCountedPtr<Subchannel> subchannel) {
 
 void OrcaProducer::Orphaned() {
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     stream_client_.reset();
   }
   GRPC_CHECK(subchannel_ != nullptr);  // Should not be called before Start().
@@ -224,7 +224,7 @@ void OrcaProducer::Orphaned() {
 }
 
 void OrcaProducer::AddWatcher(OrcaWatcher* watcher) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   watchers_.insert(watcher);
   Duration watcher_interval = watcher->report_interval();
   if (watcher_interval < report_interval_) {
@@ -235,7 +235,7 @@ void OrcaProducer::AddWatcher(OrcaWatcher* watcher) {
 }
 
 void OrcaProducer::RemoveWatcher(OrcaWatcher* watcher) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   watchers_.erase(watcher);
   if (watchers_.empty()) {
     stream_client_.reset();
@@ -270,14 +270,14 @@ void OrcaProducer::NotifyWatchers(
     const BackendMetricData& backend_metric_data) {
   GRPC_TRACE_LOG(orca_client, INFO)
       << "OrcaProducer " << this << ": reporting backend metrics to watchers";
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   for (OrcaWatcher* watcher : watchers_) {
     watcher->watcher()->OnBackendMetricReport(backend_metric_data);
   }
 }
 
 void OrcaProducer::OnConnectivityStateChange(grpc_connectivity_state state) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (state == GRPC_CHANNEL_READY) {
     if (!watchers_.empty()) MaybeStartStreamLocked();
   } else {

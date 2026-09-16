@@ -258,7 +258,7 @@ finish:
     int shard_number = ac->connection_handle % (*g_connection_shards).size();
     struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
     {
-      grpc_core::MutexLock lock(shard->mu);
+      grpc_core::MutexLock lock(&shard->mu);
       shard->pending_connections.erase(ac->connection_handle);
     }
   }
@@ -387,7 +387,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   int shard_number = connection_id % (*g_connection_shards).size();
   struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
   {
-    grpc_core::MutexLock lock(shard->mu);
+    grpc_core::MutexLock lock(&shard->mu);
     shard->pending_connections.insert_or_assign(connection_id, ac);
   }
 
@@ -434,7 +434,7 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
   struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
   async_connect* ac = nullptr;
   {
-    grpc_core::MutexLock lock(shard->mu);
+    grpc_core::MutexLock lock(&shard->mu);
     auto it = shard->pending_connections.find(connection_handle);
     if (it != shard->pending_connections.end()) {
       ac = it->second;

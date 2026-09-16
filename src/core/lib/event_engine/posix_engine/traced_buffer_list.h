@@ -59,7 +59,7 @@ class TracedBufferList {
                         struct scm_timestamping* tss);
   // The Size() operation is slow and is used only in tests.
   int Size() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return list_.size();
   }
   // Cleans the list by calling the callback for each traced buffer in the list

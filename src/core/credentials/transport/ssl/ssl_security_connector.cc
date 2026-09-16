@@ -331,7 +331,7 @@ class grpc_ssl_server_security_connector
     bool status;
     if (!has_cert_config_fetcher()) return false;
 
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     grpc_ssl_server_credentials* server_creds =
         static_cast<grpc_ssl_server_credentials*>(this->mutable_server_creds());
     grpc_ssl_certificate_config_reload_status cb_result =

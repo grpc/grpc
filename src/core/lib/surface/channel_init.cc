@@ -519,7 +519,7 @@ void ChannelInit::PrintChannelStackTrace(
   // However, it messes up our logging and makes it harder to reason about the
   // graph, so we add some protection here.
   static Mutex* const m = new Mutex();
-  MutexLock lock(*m);
+  MutexLock lock(m);
   // List the channel stack type (since we'll be repeatedly printing graphs in
   // this loop).
 

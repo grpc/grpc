@@ -123,7 +123,7 @@ void HealthProducer::HealthChecker::NotifyWatchersLocked(
       << "HealthProducer " << producer_.get() << " HealthChecker " << this
       << ": reporting state " << ConnectivityStateName(state) << " to watchers";
   work_serializer_->Run([self = Ref(), state, status = std::move(status)]() {
-    MutexLock lock(self->producer_->mu_);
+    MutexLock lock(&self->producer_->mu_);
     for (HealthWatcher* watcher : self->watchers_) {
       watcher->Notify(state, status);
     }
@@ -142,7 +142,7 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
   }
   work_serializer_->Run(
       [self = Ref(), state, status = std::move(use_status)]() mutable {
-        MutexLock lock(self->producer_->mu_);
+        MutexLock lock(&self->producer_->mu_);
         if (self->stream_client_ != nullptr) {
           self->state_ = state;
           self->status_ = std::move(status);
@@ -313,7 +313,7 @@ void HealthProducer::Orphaned() {
   GRPC_TRACE_LOG(health_check_client, INFO)
       << "HealthProducer " << this << ": shutting down";
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     health_checkers_.clear();
   }
   subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
@@ -323,7 +323,7 @@ void HealthProducer::Orphaned() {
 void HealthProducer::AddWatcher(
     HealthWatcher* watcher,
     const std::optional<std::string>& health_check_service_name) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   grpc_pollset_set_add_pollset_set(interested_parties_,
                                    watcher->interested_parties());
   if (!health_check_service_name.has_value()) {
@@ -344,7 +344,7 @@ void HealthProducer::AddWatcher(
 void HealthProducer::RemoveWatcher(
     HealthWatcher* watcher,
     const std::optional<std::string>& health_check_service_name) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   grpc_pollset_set_del_pollset_set(interested_parties_,
                                    watcher->interested_parties());
   if (!health_check_service_name.has_value()) {
@@ -363,7 +363,7 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
       << "HealthProducer " << this
       << ": subchannel state update: state=" << ConnectivityStateName(state)
       << " status=" << status;
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   state_ = state;
   status_ = status;
   for (const auto& [_, health_checker] : health_checkers_) {

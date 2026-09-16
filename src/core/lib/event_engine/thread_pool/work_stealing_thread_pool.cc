@@ -203,17 +203,17 @@ void WorkStealingThreadPool::Run(EventEngine::Closure* closure) {
 // -------- WorkStealingThreadPool::TheftRegistry --------
 
 void WorkStealingThreadPool::TheftRegistry::Enroll(WorkQueue* queue) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   queues_.emplace(queue);
 }
 
 void WorkStealingThreadPool::TheftRegistry::Unenroll(WorkQueue* queue) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   queues_.erase(queue);
 }
 
 EventEngine::Closure* WorkStealingThreadPool::TheftRegistry::StealOne() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   EventEngine::Closure* closure;
   for (auto* queue : queues_) {
     closure = queue->PopMostRecent();
@@ -240,7 +240,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
   for (size_t i = 0; i < reserve_threads_; i++) {
     StartThread();
   }
-  grpc_core::MutexLock lock(lifeguard_ptr_mu_);
+  grpc_core::MutexLock lock(&lifeguard_ptr_mu_);
   lifeguard_ = std::make_unique<Lifeguard>(this);
 }
 
@@ -290,7 +290,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   }
   GRPC_CHECK(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
-  grpc_core::MutexLock lock(lifeguard_ptr_mu_);
+  grpc_core::MutexLock lock(&lifeguard_ptr_mu_);
   lifeguard_.reset();
 }
 
@@ -334,7 +334,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
   if (!threads_were_shut_down.ok() && g_log_verbose_failures) {
     DumpStacksAndCrash();
   }
-  grpc_core::MutexLock lock(lifeguard_ptr_mu_);
+  grpc_core::MutexLock lock(&lifeguard_ptr_mu_);
   lifeguard_.reset();
 }
 
@@ -345,18 +345,18 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Postfork() {
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::TrackThread(
     gpr_thd_id tid) {
-  grpc_core::MutexLock lock(thd_set_mu_);
+  grpc_core::MutexLock lock(&thd_set_mu_);
   thds_.insert(tid);
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::UntrackThread(
     gpr_thd_id tid) {
-  grpc_core::MutexLock lock(thd_set_mu_);
+  grpc_core::MutexLock lock(&thd_set_mu_);
   thds_.erase(tid);
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::DumpStacksAndCrash() {
-  grpc_core::MutexLock lock(thd_set_mu_);
+  grpc_core::MutexLock lock(&thd_set_mu_);
   LOG(ERROR) << "Pool did not quiesce in time, gRPC will not shut down "
                 "cleanly. Dumping all "
              << thds_.size() << " thread stacks.";
@@ -643,18 +643,18 @@ void WorkStealingThreadPool::ThreadState::FinishDraining() {
 // -------- WorkStealingThreadPool::WorkSignal --------
 
 void WorkStealingThreadPool::WorkSignal::Signal() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   cv_.Signal();
 }
 
 void WorkStealingThreadPool::WorkSignal::SignalAll() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   cv_.SignalAll();
 }
 
 bool WorkStealingThreadPool::WorkSignal::WaitWithTimeout(
     grpc_core::Duration time) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   return cv_.WaitWithTimeout(&mu_, absl::Milliseconds(time.millis()));
 }
 

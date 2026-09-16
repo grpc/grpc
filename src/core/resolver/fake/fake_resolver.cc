@@ -129,7 +129,7 @@ void FakeResolverResponseGenerator::SetResponseAndNotify(
     Resolver::Result result, Notification* notify_when_set) {
   RefCountedPtr<FakeResolver> resolver;
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     if (resolver_ == nullptr) {
       result_ = std::move(result);
       if (notify_when_set != nullptr) notify_when_set->Notify();
@@ -144,7 +144,7 @@ void FakeResolverResponseGenerator::SetFakeResolver(
     RefCountedPtr<FakeResolver> resolver) {
   Resolver::Result result;
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     resolver_ = resolver;
     if (resolver_set_cv_ != nullptr) resolver_set_cv_->SignalAll();
     if (resolver == nullptr) return;
@@ -171,7 +171,7 @@ void FakeResolverResponseGenerator::SendResultToResolver(
 }
 
 bool FakeResolverResponseGenerator::WaitForResolverSet(absl::Duration timeout) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (resolver_ == nullptr) {
     CondVar condition;
     resolver_set_cv_ = &condition;
@@ -183,7 +183,7 @@ bool FakeResolverResponseGenerator::WaitForResolverSet(absl::Duration timeout) {
 
 bool FakeResolverResponseGenerator::WaitForReresolutionRequest(
     absl::Duration timeout) {
-  MutexLock lock(reresolution_mu_);
+  MutexLock lock(&reresolution_mu_);
   if (!reresolution_requested_) {
     CondVar condition;
     reresolution_cv_ = &condition;
@@ -194,7 +194,7 @@ bool FakeResolverResponseGenerator::WaitForReresolutionRequest(
 }
 
 void FakeResolverResponseGenerator::ReresolutionRequested() {
-  MutexLock lock(reresolution_mu_);
+  MutexLock lock(&reresolution_mu_);
   reresolution_requested_ = true;
   if (reresolution_cv_ != nullptr) reresolution_cv_->SignalAll();
 }

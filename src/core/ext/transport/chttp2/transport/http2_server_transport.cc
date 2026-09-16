@@ -129,7 +129,7 @@ void Http2ServerTransport::AddData(channelz::DataSink sink) {
                       sink = std::move(sink)]() mutable {
     RefCountedPtr<Party> party = nullptr;
     {
-      MutexLock lock(self->transport_mutex_);
+      MutexLock lock(&self->transport_mutex_);
       if (GPR_LIKELY(!self->shutdown_tracker_.IsShutdownInitiated(
               self->transport_mutex_))) {
         GRPC_DCHECK(self->transport_party_ != nullptr);
@@ -179,7 +179,7 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
 // Watchers
 
 void Http2ServerTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
-  MutexLock lock(transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   GRPC_CHECK(watcher_ == nullptr);
   watcher_ = std::move(watcher);
   if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
@@ -194,20 +194,20 @@ void Http2ServerTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
 }
 
 void Http2ServerTransport::StopWatch(RefCountedPtr<StateWatcher> watcher) {
-  MutexLock lock(transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   if (watcher_ == watcher) watcher_.reset();
 }
 
 void Http2ServerTransport::StartConnectivityWatch(
     grpc_connectivity_state state,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
-  MutexLock lock(transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   state_tracker_.AddWatcher(state, std::move(watcher));
 }
 
 void Http2ServerTransport::StopConnectivityWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  MutexLock lock(transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   state_tracker_.RemoveWatcher(watcher);
 }
 
@@ -1181,7 +1181,7 @@ auto Http2ServerTransport::BdpLoop() {
 
 RefCountedPtr<Stream> Http2ServerTransport::LookupStream(
     const uint32_t stream_id) {
-  MutexLock lock(transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   auto it = stream_list_.find(stream_id);
   if (it == stream_list_.end()) {
     GRPC_HTTP2_SERVER_DLOG
@@ -1193,7 +1193,7 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(
 }
 
 void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
-  MutexLock lock(transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   GRPC_DCHECK(stream != nullptr) << "stream is null";
   GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
   GRPC_HTTP2_SERVER_DLOG
@@ -1385,7 +1385,7 @@ Http2Status Http2ServerTransport::IncomingStream(
         "Transport shutdown initiated (party lockdown).");
   }
   {
-    MutexLock lock(transport_mutex_);
+    MutexLock lock(&transport_mutex_);
     if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
       return Http2Status::Http2ConnectionError(Http2ErrorCode::kRefusedStream,
                                                "Transport is closed.");
@@ -1516,7 +1516,7 @@ void Http2ServerTransport::HandleStreamStateChange(
 void Http2ServerTransport::CleanupStream(Stream& stream) {
   bool should_close = false;
   {
-    MutexLock lock(transport_mutex_);
+    MutexLock lock(&transport_mutex_);
     stream_list_.erase(stream.GetStreamId());
     // Close transport if graceful GOAWAY has been sent and there are no more
     // streams.
@@ -1535,7 +1535,7 @@ void Http2ServerTransport::CleanupStream(Stream& stream) {
 }
 
 absl::Status Http2ServerTransport::UpdateAllStreamsWritability() {
-  MutexLock lock(transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::UpdateAllStreamsWritability total streams: "
       << stream_list_.size();
@@ -1628,7 +1628,7 @@ auto Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
             [self](absl::Status status) {
               bool should_close = false;
               {
-                MutexLock lock(self->transport_mutex_);
+                MutexLock lock(&self->transport_mutex_);
                 if (self->GetActiveStreamCountLocked() == 0) {
                   should_close = true;
                 }
@@ -1790,7 +1790,7 @@ void Http2ServerTransport::CloseAllActiveStreams(
   // Close all the streams that are still active on the transport.
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_2;
   {
-    MutexLock lock(transport_mutex_);
+    MutexLock lock(&transport_mutex_);
     stream_list_2 = std::move(stream_list_);
     stream_list_.clear();
   }
@@ -1891,7 +1891,7 @@ void Http2ServerTransport::CloseTransport() {
 void Http2ServerTransport::ReportDisconnection(
     const grpc_connectivity_state state, const absl::Status& status,
     StateWatcher::DisconnectInfo disconnect_info, const char* reason) {
-  MutexLock lock(transport_mutex_);
+  MutexLock lock(&transport_mutex_);
   ReportDisconnectionLocked(state, status, disconnect_info, reason);
 }
 
@@ -1982,7 +1982,7 @@ Http2ServerTransport::KeepAliveInterfaceImpl::OnKeepAliveTimeout() {
 bool Http2ServerTransport::KeepAliveInterfaceImpl::NeedToSendKeepAlivePing() {
   bool need_to_send_ping = false;
   {
-    MutexLock lock(transport_->transport_mutex_);
+    MutexLock lock(&transport_->transport_mutex_);
     need_to_send_ping = (transport_->keepalive_permit_without_calls_ ||
                          transport_->GetActiveStreamCountLocked() > 0);
   }

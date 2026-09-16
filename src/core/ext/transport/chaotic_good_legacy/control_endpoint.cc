@@ -27,7 +27,7 @@ auto ControlEndpoint::Buffer::Pull() {
   return [this]() -> Poll<SliceBuffer> {
     Waker waker;
     auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     if (queued_output_.Length() == 0) {
       flush_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       return Pending{};
