@@ -184,7 +184,7 @@ class CdsLbConfig final : public LoadBalancingPolicy::Config {
 
   absl::string_view name() const override { return kCds; }
 
-  const std::string& cluster() const { return cluster_; }
+  const RefCountedStringValue& cluster() const { return cluster_; }
   bool is_dynamic() const { return is_dynamic_; }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
@@ -197,7 +197,7 @@ class CdsLbConfig final : public LoadBalancingPolicy::Config {
   }
 
  private:
-  std::string cluster_;
+  RefCountedStringValue cluster_;
   bool is_dynamic_ = false;
 };
 
@@ -319,15 +319,16 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   auto new_config = args.config.TakeAsSubclass<CdsLbConfig>();
   GRPC_TRACE_LOG(cds_lb, INFO)
       << "[cdslb " << this
-      << "] received update: cluster=" << new_config->cluster()
+      << "] received update: cluster=" << new_config->cluster().as_string_view()
       << " is_dynamic=" << new_config->is_dynamic();
   GRPC_CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
   // child name in xds_cluster_manager in that case.
   if (cluster_name_.as_string_view().empty()) {
-    cluster_name_ = RefCountedStringValue(new_config->cluster());
+    cluster_name_ = new_config->cluster();
   } else {
-    GRPC_CHECK_EQ(cluster_name_.as_string_view(), new_config->cluster());
+    GRPC_CHECK_EQ(cluster_name_.as_string_view(),
+                  new_config->cluster().as_string_view());
   }
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {

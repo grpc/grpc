@@ -214,9 +214,13 @@ INTERNAL_DEPS = {
     "src/proto/grpc/gcp/transport_security_common.upb.h": "alts_upb",
     "src/proto/grpc/gcp/handshaker.upb.h": "alts_upb",
     "src/proto/grpc/gcp/altscontext.upb.h": "alts_upb",
-    "src/proto/grpc/lookup/v1/rls.upb.h": "rls_upb",
-    "src/proto/grpc/lookup/v1/rls_config.upb.h": "rls_config_upb",
-    "src/proto/grpc/lookup/v1/rls_config.upbdefs.h": "rls_config_upbdefs",
+    "grpc/lookup/v1/rls.upb.h": "rls_upb",
+    "grpc/lookup/v1/rls_config.upb.h": "rls_config_upb",
+    "grpc/lookup/v1/rls_config.upbdefs.h": "rls_config_upbdefs",
+    "grpc/lookup/v1/rls.pb.h": "//:rls_cc_proto",
+    "grpc/lookup/v1/rls.grpc.pb.h": "//:rls_cc_grpc",
+    "grpc/lookup/v1/rls_config.pb.h": "//:rls_config_cc_proto",
+    "grpc/lookup/v1/rls_config.grpc.pb.h": "//:rls_config_cc_grpc",
     "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h": (
         "//src/proto/grpc/testing/xds/v3:csds_proto"
     ),
