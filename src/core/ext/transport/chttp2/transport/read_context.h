@@ -184,6 +184,7 @@ class ReadContext {
                        const uint8_t ping_on_rst_stream_percent)
       : max_new_streams_per_read_cycle_(max_new_streams_per_read_cycle),
         peer_string_(GetPeerString(endpoint)),
+        local_address_string_(GetLocalAddressString(endpoint)),
         is_client_(is_client),
         ping_on_rst_stream_percent_(ping_on_rst_stream_percent),
         max_security_frame_size_(max_security_frame_size),
@@ -202,6 +203,7 @@ class ReadContext {
   // Peer String management.
 
   Slice peer_string() const { return peer_string_.Ref(); }
+  Slice local_address_string() const { return local_address_string_.Ref(); }
 
   //////////////////////////////////////////////////////////////////////////////
   // HPack Parser Parsing and Management.
@@ -443,6 +445,16 @@ class ReadContext {
     return Slice::FromCopiedString("unknown");
   }
 
+  static Slice GetLocalAddressString(const PromiseEndpoint& endpoint) {
+    absl::StatusOr<std::string> uri =
+        grpc_event_engine::experimental::ResolvedAddressToURI(
+            endpoint.GetLocalAddress());
+    if (uri.ok()) {
+      return Slice::FromCopiedString(*uri);
+    }
+    return Slice::FromCopiedString("unknown");
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Read Cycle Counter management.
   void ResetReadCycleCounters() {
@@ -500,6 +512,7 @@ class ReadContext {
   // Initialized only once at the time of transport creation.
   // Should remain constant for the lifetime of the transport.
   const Slice peer_string_;
+  const Slice local_address_string_;
   const bool is_client_;
 
   const uint8_t ping_on_rst_stream_percent_;

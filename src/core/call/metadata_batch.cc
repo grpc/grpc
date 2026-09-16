@@ -368,6 +368,10 @@ std::string PeerString::DisplayValue(const ValueType& x) {
   return std::string(x.as_string_view());
 }
 
+std::string LocalAddressString::DisplayValue(const ValueType& x) {
+  return std::string(x.as_string_view());
+}
+
 const std::string& GrpcStatusContext::DisplayValue(const std::string& x) {
   return x;
 }

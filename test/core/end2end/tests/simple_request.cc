@@ -53,6 +53,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   auto before = global_stats().Collect();
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetLocalAddress(), std::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -67,6 +68,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   CheckPeer(*s.GetPeer());
   EXPECT_NE(c.GetPeer(), std::nullopt);
   CheckPeer(*c.GetPeer());
+  EXPECT_NE(s.GetLocalAddress(), std::nullopt);
+  EXPECT_NE(c.GetLocalAddress(), std::nullopt);
+
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
