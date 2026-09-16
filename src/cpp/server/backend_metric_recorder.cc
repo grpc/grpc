@@ -58,7 +58,7 @@ ServerMetricRecorder::ServerMetricRecorder()
 
 void ServerMetricRecorder::UpdateBackendMetricDataState(
     std::function<void(BackendMetricData*)> updater) {
-  internal::MutexLock lock(mu_);
+  internal::MutexLock lock(&mu_);
   auto new_state = std::make_shared<BackendMetricDataState>(*metric_state_);
   updater(&new_state->data);
   ++new_state->sequence_number;
@@ -205,7 +205,7 @@ std::shared_ptr<const ServerMetricRecorder::BackendMetricDataState>
 ServerMetricRecorder::GetMetricsIfChanged() const {
   std::shared_ptr<const BackendMetricDataState> result;
   {
-    internal::MutexLock lock(mu_);
+    internal::MutexLock lock(&mu_);
     result = metric_state_;
   }
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
@@ -296,7 +296,7 @@ experimental::CallMetricRecorder& BackendMetricState::RecordUtilizationMetric(
         << std::string(name.data(), name.length()) << " " << value;
     return *this;
   }
-  internal::MutexLock lock(mu_);
+  internal::MutexLock lock(&mu_);
   absl::string_view name_sv(name.data(), name.length());
   utilization_[name_sv] = value;
   GRPC_TRACE_LOG(backend_metric, INFO)
@@ -306,7 +306,7 @@ experimental::CallMetricRecorder& BackendMetricState::RecordUtilizationMetric(
 
 experimental::CallMetricRecorder& BackendMetricState::RecordRequestCostMetric(
     string_ref name, double value) {
-  internal::MutexLock lock(mu_);
+  internal::MutexLock lock(&mu_);
   absl::string_view name_sv(name.data(), name.length());
   request_cost_[name_sv] = value;
   GRPC_TRACE_LOG(backend_metric, INFO)
@@ -316,7 +316,7 @@ experimental::CallMetricRecorder& BackendMetricState::RecordRequestCostMetric(
 
 experimental::CallMetricRecorder& BackendMetricState::RecordNamedMetric(
     string_ref name, double value) {
-  internal::MutexLock lock(mu_);
+  internal::MutexLock lock(&mu_);
   absl::string_view name_sv(name.data(), name.length());
   named_metrics_[name_sv] = value;
   GRPC_TRACE_LOG(backend_metric, INFO)
@@ -354,7 +354,7 @@ BackendMetricData BackendMetricState::GetBackendMetricData() {
     data.eps = eps;
   }
   {
-    internal::MutexLock lock(mu_);
+    internal::MutexLock lock(&mu_);
     for (const auto& u : utilization_) {
       data.utilization[u.first] = u.second;
     }
