@@ -17,8 +17,6 @@
 require 'grpc'
 require 'grpc/reflection/v1alpha/reflection_services_pb'
 require 'google/protobuf/descriptor_pb'
-require 'set' if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('3.2')
-require 'tsort'
 
 module Grpc
   module Reflection
@@ -36,89 +34,43 @@ module Grpc
           super()
           @service_names = service_names.sort.freeze
           @pool = pool || Google::Protobuf::DescriptorPool.generated_pool
-          @files_by_name = {}
-          @extensions_by_type = {}
-          warm_index!
+
+          @list_services_response = ListServiceResponse.new(
+            service: @service_names.map { |name| ServiceResponse.new(name: name) }
+          ).freeze
         end
 
         def server_reflection_info(requests, _call)
-          # Lazy enumerator: respond as each request arrives.
-          # An eager .map would deadlock clients that read before half-closing.
           Enumerator.new { |y| requests.each { |req| y << dispatch(req) } }
         end
 
         private
 
-        # Build all indexes at construction time; frozen afterwards for thread safety.
-        def warm_index!
-          @service_names
-            .filter_map { |name| @pool.lookup(name) }
-            .each       { |desc| index_file_tree(desc.file_descriptor) }
-
-          @files_by_name.freeze
-          @extensions_by_type.each_value(&:freeze)
-          @extensions_by_type.freeze
-        end
-
-        def index_file_tree(file_descriptor)
-          fd_proto = file_descriptor.to_proto
-          return if @files_by_name.key?(fd_proto.name)
-
-          @files_by_name[fd_proto.name] = fd_proto
-          index_extensions(fd_proto)
-          index_symbol_deps(fd_proto)
-        end
-
-        def index_symbol_deps(fd_proto)
-          type_references_in(fd_proto).each do |sym|
-            dep_desc = @pool.lookup(sym)
-            index_file_tree(dep_desc.file_descriptor) if dep_desc
-          end
-        end
-
-        def type_references_in(fd_proto)
-          symbols = Set.new
-          fd_proto.message_type.each { |msg| extract_type_refs(msg, symbols) }
-          fd_proto.service.each do |svc|
-            svc['method'].each do |m| # string key avoids Kernel#method collision
-              symbols << m.input_type.delete_prefix('.')  unless m.input_type.empty?
-              symbols << m.output_type.delete_prefix('.') unless m.output_type.empty?
-            end
-          end
-          fd_proto.extension.each { |ext| symbols << ext.extendee.delete_prefix('.') unless ext.extendee.empty? }
-          symbols
-        end
-
-        def extract_type_refs(msg, symbols)
-          msg.field.each     { |f|   symbols << f.type_name.delete_prefix('.')  unless f.type_name.empty? }
-          msg.extension.each { |ext| symbols << ext.extendee.delete_prefix('.') unless ext.extendee.empty? }
-          msg.nested_type.each { |nested| extract_type_refs(nested, symbols) }
-        end
-
-        def index_extensions(fd_proto)
-          fd_proto.extension.each    { |ext| register_extension(ext, fd_proto) }
-          fd_proto.message_type.each { |msg| index_nested_extensions(msg, fd_proto) }
-        end
-
-        def index_nested_extensions(msg, fd_proto)
-          msg.extension.each   { |ext|    register_extension(ext, fd_proto) }
-          msg.nested_type.each { |nested| index_nested_extensions(nested, fd_proto) }
-        end
-
-        def register_extension(ext, fd_proto)
-          (@extensions_by_type[ext.extendee] ||= {})[ext.number] = fd_proto
-        end
-
         def dispatch(req)
-          handler = :"handle_#{req.message_request}"
-          return unknown_request(req) unless respond_to?(handler, true)
-
-          send(handler, req)
+          case req.message_request
+          when :file_by_filename
+            handle_file_by_filename(req)
+          when :file_containing_symbol
+            handle_file_containing_symbol(req)
+          when :file_containing_extension
+            handle_file_containing_extension(req)
+          when :all_extension_numbers_of_type
+            handle_all_extension_numbers_of_type(req)
+          when :list_services
+            handle_list_services(req)
+          else
+            unknown_request(req)
+          end
+        rescue StandardError => e
+          respond(req, error_response: ErrorResponse.new(
+            error_code: StatusCodes::INTERNAL,
+            error_message: e.message
+          ))
         end
 
         def handle_file_by_filename(req)
-          fd_proto = @files_by_name[req.file_by_filename]
-          fd_proto ? file_response(req, fd_proto) : not_found(req, req.file_by_filename)
+          fd = @pool.find_file_by_name(req.file_by_filename)
+          fd ? file_response(req, fd) : not_found(req, req.file_by_filename)
         end
 
         def handle_file_containing_symbol(req)
@@ -126,60 +78,61 @@ module Grpc
           desc   = @pool.lookup(symbol)
           return not_found(req, symbol) unless desc
 
-          # pool.lookup may return a FileDescriptor directly (for filenames) or
-          # a message/service descriptor — normalize to the owning file.
           file_desc = desc.is_a?(Google::Protobuf::FileDescriptor) ? desc : desc.file_descriptor
-          fd_proto = @files_by_name[file_desc.to_proto.name]
-          fd_proto ? file_response(req, fd_proto) : not_found(req, symbol)
+          file_desc ? file_response(req, file_desc) : not_found(req, symbol)
         end
 
         def handle_file_containing_extension(req)
           ext_req   = req.file_containing_extension
-          type_name = ".#{ext_req.containing_type.delete_prefix('.')}"
-          fd_proto  = @extensions_by_type.dig(type_name, ext_req.extension_number)
-          fd_proto ? file_response(req, fd_proto) : not_found(req, "#{type_name}[#{ext_req.extension_number}]")
+          type_name = ext_req.containing_type.delete_prefix('.')
+          msg_desc  = @pool.lookup(type_name)
+
+          unless msg_desc.is_a?(Google::Protobuf::Descriptor)
+            return not_found(req, "#{ext_req.containing_type}[#{ext_req.extension_number}]")
+          end
+
+          ext_desc = @pool.find_extension_by_number(msg_desc, ext_req.extension_number)
+          file_desc = ext_desc&.file_descriptor
+
+          file_desc ? file_response(req, file_desc) : not_found(req, "#{ext_req.containing_type}[#{ext_req.extension_number}]")
         end
 
         def handle_all_extension_numbers_of_type(req)
-          type_name = ".#{req.all_extension_numbers_of_type.delete_prefix('.')}"
-          exts      = @extensions_by_type.fetch(type_name, {})
-          return not_found(req, type_name) if exts.empty?
+          type_name = req.all_extension_numbers_of_type.delete_prefix('.')
+          msg_desc  = @pool.lookup(type_name)
+
+          unless msg_desc.is_a?(Google::Protobuf::Descriptor)
+            return not_found(req, req.all_extension_numbers_of_type)
+          end
+
+          exts = @pool.find_all_extensions(msg_desc) || []
 
           respond(req, all_extension_numbers_response: ExtensionNumberResponse.new(
             base_type_name: type_name,
-            extension_number: exts.keys.sort
+            extension_number: exts.map(&:number).sort
           ))
         end
 
         def handle_list_services(req)
-          respond(req, list_services_response: ListServiceResponse.new(
-            service: @service_names.map { |name| ServiceResponse.new(name: name) }
-          ))
+          respond(req, list_services_response: @list_services_response)
         end
 
-        def file_response(req, fd_proto)
+        def file_response(req, file_descriptor)
+          descriptors = {}
+          collect_transitive_dependencies(file_descriptor, descriptors)
+
           respond(req, file_descriptor_response: FileDescriptorResponse.new(
-            file_descriptor_proto: transitive_deps_of(fd_proto).map do |p|
-              Google::Protobuf::FileDescriptorProto.encode(p)
+            file_descriptor_proto: descriptors.values.map do |fd|
+              Google::Protobuf::FileDescriptorProto.encode(fd.to_proto)
             end
           ))
         end
 
-        # BFS + TSort for dependency-first ordering.
-        def transitive_deps_of(root)
-          subgraph = {}
-          queue    = [root]
-          until queue.empty?
-            node = queue.shift
-            next if subgraph.key?(node.name)
-            subgraph[node.name] = node
-            node.dependency.filter_map { |n| @files_by_name[n] }.each { |d| queue << d }
+        def collect_transitive_dependencies(file_descriptor, seen_files)
+          seen_files[file_descriptor.name] = file_descriptor
+          file_descriptor.dependencies.each do |dep|
+            collect_transitive_dependencies(dep, seen_files) unless seen_files.key?(dep.name)
           end
-
-          TSort.tsort(
-            subgraph.method(:each_key),
-            ->(name, &b) { subgraph[name].dependency.each { |d| b.call(d) if subgraph.key?(d) } }
-          ).map { |name| subgraph[name] }
         end
 
         def not_found(req, subject)
