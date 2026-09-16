@@ -222,7 +222,7 @@ struct StatusType {
 
 template <typename T>
 struct StatusType<
-    T, absl::enable_if_t<
+    T, std::enable_if_t<
            std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
                !std::is_same<T, ServerMetadataHandle>::value &&
                !TakeValueExists<T>::value,
@@ -256,7 +256,7 @@ struct StatusOrType {
 template <typename T, typename U>
 struct StatusOrType<
     T, U,
-    absl::enable_if_t<
+    std::enable_if_t<
         std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
             TakeValueExists<T>::value && HasStatusMethod<T>::value &&
             std::is_same<decltype(TakeValue(std::declval<T>())), U>::value,
@@ -271,7 +271,7 @@ template <typename T, typename A, typename R, typename Call,
           R (Call::*method)(A)>
 class AdaptMethod<
     T, R (Call::*)(A), method,
-    absl::enable_if_t<StatusType<R>::value && IsSameExcludingCVRef<T, A>,
+    std::enable_if_t<StatusType<R>::value && IsSameExcludingCVRef<T, A>,
                       void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
@@ -290,7 +290,7 @@ class AdaptMethod<
 
 template <typename T, typename R, typename Call, R (Call::*method)()>
 class AdaptMethod<T, R (Call::*)(), method,
-                  absl::enable_if_t<StatusType<R>::value, void>> {
+                  std::enable_if_t<StatusType<R>::value, void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
   auto operator()(Hdl<T> x) {
@@ -310,7 +310,7 @@ template <typename T, typename A, typename R, typename Call, typename Derived,
           R (Call::*method)(A, Derived*)>
 class AdaptMethod<
     T, R (Call::*)(A, Derived*), method,
-    absl::enable_if_t<StatusType<R>::value && IsSameExcludingCVRef<T, A>,
+    std::enable_if_t<StatusType<R>::value && IsSameExcludingCVRef<T, A>,
                       void>> {
  public:
   explicit AdaptMethod(Call* call, Derived* filter)
@@ -335,7 +335,7 @@ template <typename T, typename A, typename R, typename Call,
           R (Call::*method)(A)>
 class AdaptMethod<
     T, R (Call::*)(A), method,
-    absl::enable_if_t<StatusOrType<R, T>::value && IsSameExcludingCVRef<T, A>,
+    std::enable_if_t<StatusOrType<R, T>::value && IsSameExcludingCVRef<T, A>,
                       void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
@@ -355,7 +355,7 @@ class AdaptMethod<
 
 template <typename T, typename R, typename Call, R (Call::*method)()>
 class AdaptMethod<T, R (Call::*)(), method,
-                  absl::enable_if_t<StatusOrType<R, T>::value, void>> {
+                  std::enable_if_t<StatusOrType<R, T>::value, void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
   auto operator()(Hdl<T> /*x*/) {
@@ -376,7 +376,7 @@ template <typename T, typename A, typename R, typename Call, typename Derived,
           R (Call::*method)(A, Derived*)>
 class AdaptMethod<
     T, R (Call::*)(A, Derived*), method,
-    absl::enable_if_t<StatusOrType<R, T>::value && IsSameExcludingCVRef<T, A>,
+    std::enable_if_t<StatusOrType<R, T>::value && IsSameExcludingCVRef<T, A>,
                       void>> {
  public:
   using UnwrappedType = decltype(TakeValue(std::declval<R>()));
@@ -402,7 +402,7 @@ class AdaptMethod<
 // return a StatusOr<Hdl<T>> type as output
 template <typename T, typename R, typename Call, R (Call::*method)(Hdl<T>)>
 class AdaptMethod<T, R (Call::*)(Hdl<T>), method,
-                  absl::enable_if_t<StatusOrType<R, Hdl<T>>::value, void>> {
+                  std::enable_if_t<StatusOrType<R, Hdl<T>>::value, void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
   auto operator()(Hdl<T> x) {
@@ -421,7 +421,7 @@ class AdaptMethod<T, R (Call::*)(Hdl<T>), method,
 
 template <typename T, typename R, typename Call, R (Call::*method)()>
 class AdaptMethod<T, R (Call::*)(), method,
-                  absl::enable_if_t<StatusOrType<R, Hdl<T>>::value, void>> {
+                  std::enable_if_t<StatusOrType<R, Hdl<T>>::value, void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
   auto operator()(Hdl<T> /*x*/) {
@@ -441,7 +441,7 @@ class AdaptMethod<T, R (Call::*)(), method,
 template <typename T, typename R, typename Call, typename Derived,
           R (Call::*method)(Hdl<T>, Derived*)>
 class AdaptMethod<T, R (Call::*)(Hdl<T>, Derived*), method,
-                  absl::enable_if_t<StatusOrType<R, Hdl<T>>::value, void>> {
+                  std::enable_if_t<StatusOrType<R, Hdl<T>>::value, void>> {
  public:
   explicit AdaptMethod(Call* call, Derived* filter)
       : call_(call), filter_(filter) {}
