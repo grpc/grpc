@@ -356,7 +356,7 @@ class GrpcXdsTransportFactory::SharedChannel final
         factory_(std::move(factory)) {}
 
   ~SharedChannel() override {
-    MutexLock lock(&factory_->mu_);
+    MutexLock lock(factory_->mu_);
     auto it = factory_->channels_.find(key_);
     if (it != factory_->channels_.end() && it->second == this) {
       factory_->channels_.erase(it);
@@ -400,7 +400,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[GrpcXdsTransport " << this << "] orphaned";
   {
-    MutexLock lock(&factory_->mu_);
+    MutexLock lock(factory_->mu_);
     auto it = factory_->transports_.find(key_);
     if (it != factory_->transports_.end() && it->second == this) {
       factory_->transports_.erase(it);
@@ -421,7 +421,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::StartConnectivityFailureWatch(
   if (channel_->channel()->IsLame()) return;
   auto* state_watcher = new StateWatcher(watcher);
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     watchers_.emplace(watcher, state_watcher);
   }
   channel_->channel()->AddConnectivityWatcher(
@@ -434,7 +434,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::StopConnectivityFailureWatch(
   if (channel_->channel()->IsLame()) return;
   StateWatcher* state_watcher = nullptr;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     auto it = watchers_.find(watcher);
     if (it == watchers_.end()) return;
     state_watcher = it->second;
@@ -496,7 +496,7 @@ GrpcXdsTransportFactory::GetTransport(
     const XdsBootstrap::XdsServerTarget& server, absl::Status* status) {
   std::string key = server.Key();
   RefCountedPtr<GrpcXdsTransport> transport;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = transports_.find(key);
   if (it != transports_.end()) {
     transport = it->second->RefIfNonZero().TakeAsSubclass<GrpcXdsTransport>();

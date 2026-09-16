@@ -46,7 +46,7 @@ class ControlEndpoint {
       return [buffer = std::move(buffer), this]() mutable -> Poll<Empty> {
         Waker waker;
         auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-        MutexLock lock(&mu_);
+        MutexLock lock(mu_);
         if (queued_output_.Length() != 0 &&
             queued_output_.Length() + buffer.Length() > MaxQueued()) {
           write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
