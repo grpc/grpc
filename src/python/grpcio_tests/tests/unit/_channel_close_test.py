@@ -131,7 +131,9 @@ class ChannelCloseTest(unittest.TestCase):
             registration_started = threading.Event()
             errors = []
 
-            def register():
+            def register(channel=channel, barrier=barrier,
+                       registration_started=registration_started,
+                       errors=errors):
                 barrier.wait()
                 registration_started.set()
                 try:
@@ -142,7 +144,8 @@ class ChannelCloseTest(unittest.TestCase):
                 except Exception as error:
                     errors.append(error)
 
-            def close():
+            def close(channel=channel, barrier=barrier,
+                    registration_started=registration_started):
                 barrier.wait()
                 registration_started.wait()
                 channel.close()
