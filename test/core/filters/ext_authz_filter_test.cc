@@ -427,8 +427,8 @@ FILTER_TEST(ExtAuthzFilterTest, TransportFailureFailureModeAllow) {
                            /*failure_mode_allow_header_add=*/false);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         unary_call->MaybeSendStatusToClient(
@@ -446,8 +446,8 @@ FILTER_TEST(ExtAuthzFilterTest, TransportFailureFailureModeAllowInjectsHeader) {
                            /*failure_mode_allow_header_add=*/true);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         unary_call->MaybeSendStatusToClient(
@@ -468,8 +468,8 @@ FILTER_TEST(ExtAuthzFilterTest, FailureModeAllowServerTrailingMetadata) {
                            /*failure_mode_allow_header_add=*/true);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         unary_call->MaybeSendStatusToClient(
@@ -505,8 +505,8 @@ FILTER_TEST(ExtAuthzFilterTest, TransportFailureFailureModeDeny) {
                            GRPC_STATUS_PERMISSION_DENIED);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         unary_call->MaybeSendStatusToClient(
@@ -527,8 +527,8 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseAllows) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -561,8 +561,8 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseAdditionsBeforeRemovals) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -609,8 +609,8 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseDisallowedMutationFailureModeAllow) {
   config->decoder_header_mutation_rules = std::move(rules);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -646,8 +646,8 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseInjectsResponseHeaders) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -686,8 +686,8 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseTrailersOnlySkipsResponseHeaders) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -727,8 +727,8 @@ FILTER_TEST(ExtAuthzFilterTest,
   config->decoder_header_mutation_rules = std::move(rules);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -756,8 +756,8 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseTrailersOnlyForwardsTrailers) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -784,8 +784,8 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseServerTrailingMetadataOkStatus) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -821,8 +821,8 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseServerTrailingMetadataErrorStatus) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -859,8 +859,8 @@ FILTER_TEST(ExtAuthzFilterTest,
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -887,8 +887,8 @@ FILTER_TEST(ExtAuthzFilterTest, NonOkStatusWithOkResponseFails) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -911,8 +911,8 @@ FILTER_TEST(ExtAuthzFilterTest, DeniedResponseFails) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -944,8 +944,8 @@ FILTER_TEST(ExtAuthzFilterTest,
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -982,8 +982,8 @@ FILTER_TEST(ExtAuthzFilterTest,
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -1018,8 +1018,8 @@ FILTER_TEST(ExtAuthzFilterTest, OkStatusWithDeniedResponseFails) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -1054,8 +1054,8 @@ FILTER_TEST(ExtAuthzFilterTest,
   config->decoder_header_mutation_rules = std::move(rules);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
@@ -1090,8 +1090,8 @@ FILTER_TEST(ExtAuthzFilterTest,
   config->decoder_header_mutation_rules = std::move(rules);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
-  auto handler =
-      HandleUnaryCall([](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
