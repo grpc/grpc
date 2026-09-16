@@ -32,8 +32,8 @@ class PromiseMutex {
  public:
   class Lock {
    public:
-    lock() {}
-    ~lock() {
+    Lock() {}
+    ~Lock() {
       if (mutex_ != nullptr) {
         GRPC_CHECK(mutex_->locked_);
         mutex_->locked_ = false;
