@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <deque>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -33,6 +34,7 @@
 #include "src/core/util/function_signature.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/string_view.h"
@@ -234,8 +236,16 @@ class Sink {
  private:
   friend void Collect(Notification*, absl::Duration, size_t, Output*);
 
+  enum class State {
+    kInactive,
+    kRecording,
+    kDraining,
+  };
+
   void Gather();
-  void Record(std::unique_ptr<Bin> bin);
+  // Records a bin into the event dump. Caller must hold mu_.
+  void RecordLocked(std::unique_ptr<Bin> bin)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void Start(size_t max_bins);
   std::unique_ptr<EventDump> Stop();
@@ -243,6 +253,9 @@ class Sink {
   MultiProducerSingleConsumerQueue appending_;
   Thread gatherer_;
   Mutex mu_;
+  CondVar cv_gather_;
+  CondVar cv_drained_;
+  State state_ ABSL_GUARDED_BY(mu_) = State::kInactive;
   std::unique_ptr<EventDump> events_ ABSL_GUARDED_BY(mu_);
   size_t max_bins_ ABSL_GUARDED_BY(mu_);
 };

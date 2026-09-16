@@ -1190,7 +1190,7 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidTimeout) {
                 "field:timeout error:duration must be positive]"));
 }
 
-TEST_F(ParseXdsGrpcServiceTest, HeaderValueForNonBinaryHeader) {
+TEST_F(ParseXdsGrpcServiceTest, InitialMetadata) {
   xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
   GrpcService grpc_service;
   auto* header_value = grpc_service.add_initial_metadata();
@@ -1210,7 +1210,7 @@ TEST_F(ParseXdsGrpcServiceTest, HeaderValueForNonBinaryHeader) {
 // Note: This shows that we include validation errors from ParseXdsHeader()
 // itself.  We don't need to test every possible matcher validation failure
 // case here, because those are covered in the tests for ParseXdsHeader().
-TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSet) {
+TEST_F(ParseXdsGrpcServiceTest, InvalidInitialMetadata) {
   xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
   GrpcService grpc_service;
   auto* header_value = grpc_service.add_initial_metadata();
@@ -1226,6 +1226,28 @@ TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSet) {
                 "validation failed: ["
                 "field:initial_metadata[0] "
                 "error:either value or raw_value must be set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, InitialMetadataIgnoredFromUntrustedServer) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
+  xds_client_ = MakeXdsClient(
+      "  \"allowed_grpc_services\": {\n"
+      "    \"dns:server.example.com\": {\n"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]\n"
+      "    }\n"
+      "  },\n");
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  header_value->set_value("bar");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_THAT(xds_grpc_service->initial_metadata(), ::testing::ElementsAre());
 }
 
 TEST_F(ParseXdsGrpcServiceTest, GoogleGrpcNotSet) {

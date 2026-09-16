@@ -1716,7 +1716,12 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
         if (scope == nullptr) return nullptr;
         return TelemetryDomain::GetStorage(
             std::move(scope), args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
-      }()) {}
+      }()) {
+  // TODO(rishesh): If the config requests the
+  // connection.sha256_peer_certificate_digest attribute, compute it here (once
+  // per connection) via ComputeSha256PeerCertificateDigest() and pass it to
+  // CreateExtProcAttributesProtoStruct().
+}
 
 ExtProcFilter::~ExtProcFilter() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
