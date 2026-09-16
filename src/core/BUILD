@@ -335,6 +335,7 @@ grpc_cc_library(
         "json_writer",
         "notification",
         "sync",
+        "time",
         "//:backoff",
         "//:gpr",
     ],
@@ -5528,6 +5529,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "no_destruct",
+        "ref_counted_string",
         "time",
         "validation_errors",
         "//:gpr",
@@ -9650,6 +9652,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ph2_reclaimer",
+    srcs = [
+        "ext/transport/chttp2/transport/reclaimer.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/reclaimer.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "activity",
+        "context",
+        "grpc_check",
+        "http2_status",
+        "loop",
+        "memory_quota",
+        "ref_counted",
+        "sync",
+        ":poll",
+        "//:gpr_platform",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_client_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_client_transport.cc",
@@ -9709,6 +9739,7 @@ grpc_cc_library(
         "metadata_batch",
         "metadata_info",
         "mpsc",
+        "ph2_reclaimer",
         "ph2_stream",
         "ping_promise",
         "race",
@@ -9717,6 +9748,7 @@ grpc_cc_library(
         "sleep",
         "status_flag",
         "stream_data_queue",
+        "stream_quota",
         "sync",
         "time",
         "transport_common",
@@ -9805,6 +9837,7 @@ grpc_cc_library(
         "metadata_batch",
         "metadata_info",
         "mpsc",
+        "ph2_reclaimer",
         "ph2_stream",
         "ping_promise",
         "race",
@@ -9814,6 +9847,7 @@ grpc_cc_library(
         "sleep",
         "status_flag",
         "stream_data_queue",
+        "stream_quota",
         "sync",
         "time",
         "transport_common",
@@ -9934,6 +9968,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_status",
         "slice",
         "slice_buffer",
         "transport_common",
@@ -13114,17 +13149,17 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "rls_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_proto"],
+    deps = ["@grpc_proto//:rls_proto"],
 )
 
 grpc_upb_proto_library(
     name = "rls_config_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+    deps = ["@grpc_proto//:rls_config_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+    deps = ["@grpc_proto//:rls_config_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

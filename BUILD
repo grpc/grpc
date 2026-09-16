@@ -5627,17 +5627,17 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "rls_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_proto"],
+    deps = ["@grpc_proto//:rls_proto"],
 )
 
 grpc_upb_proto_library(
     name = "rls_config_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+    deps = ["@grpc_proto//:rls_config_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+    deps = ["@grpc_proto//:rls_config_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5741,6 +5741,16 @@ grpc_cc_proto_library(
     deps = ["@grpc_proto//:channelz_proto"],
 )
 
+grpc_cc_proto_library(
+    name = "rls_cc_proto",
+    deps = ["@grpc_proto//:rls_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "rls_config_cc_proto",
+    deps = ["@grpc_proto//:rls_config_proto"],
+)
+
 grpc_cc_grpc_library(
     name = "reflection_v1_cc_grpc",
     srcs = ["@grpc_proto//:reflection_proto"],
@@ -5757,4 +5767,16 @@ grpc_cc_grpc_library(
     name = "channelz_cc_grpc",
     srcs = ["@grpc_proto//:channelz_proto"],
     deps = [":channelz_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "rls_cc_grpc",
+    srcs = ["@grpc_proto//:rls_proto"],
+    deps = [":rls_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "rls_config_cc_grpc",
+    srcs = ["@grpc_proto//:rls_config_proto"],
+    deps = [":rls_config_cc_proto"],
 )

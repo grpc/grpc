@@ -250,7 +250,6 @@ TEST_F(EvaluateArgsTest, GetTlsVersionFailDuplicateProperty) {
 
 TEST_F(EvaluateArgsTest, GetLocalCertificateIdentitySuccess) {
   util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_URI_PROPERTY_NAME,
-                                 "spiffe://foo.com/server");
   util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
                                  "server.example.com");
   util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
@@ -286,8 +285,6 @@ TEST_F(EvaluateArgsTest, GetLocalCertificateIdentityFailDuplicateProperty) {
 }
 
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();

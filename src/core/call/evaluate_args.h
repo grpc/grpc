@@ -103,14 +103,10 @@ class EvaluateArgs final {
   absl::string_view GetTlsVersion() const;
   // The three accessors below describe the LOCAL endpoint's certificate, not
   // the peer's; see PerChannelArgs.  They return an empty string_view unless
-  // this is the server side of a TLS connection on which this endpoint
   // presented a certificate.
   absl::string_view GetLocalUriSan() const;
   absl::string_view GetLocalDnsSan() const;
   absl::string_view GetLocalSubject() const;
-
-  // Iterates over all metadata entries, invoking encoder->Encode() for each
-  // one.  See grpc_metadata_batch::Encode() for details.
   template <typename Encoder>
   void EncodeHeaders(Encoder* encoder) const {
     if (metadata_ != nullptr) metadata_->Encode(encoder);
