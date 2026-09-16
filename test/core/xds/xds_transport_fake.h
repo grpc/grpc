@@ -116,7 +116,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       std::unique_ptr<StreamingCall::EventHandler> event_handler_;
     };
 
-    void SendMessage(std::string payload) override;
+    void SendMessage(std::string payload, bool send_half_close) override;
 
     void CompleteSendMessageFromClientLocked(bool ok)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
@@ -264,7 +264,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        bool start_upon_send_message) override;
 
     OrphanablePtr<UnaryCall> CreateUnaryCall(const char* method) override;
 

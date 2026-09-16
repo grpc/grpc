@@ -42,6 +42,7 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 
 namespace grpc_core {
@@ -97,8 +98,9 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
-      std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
-  OrphanablePtr<UnaryCall> CreateUnaryCall(const char* method) override;
+      std::unique_ptr<StreamingCall::EventHandler> event_handler,
+      bool start_upon_send_message) override;
+
   void ResetBackoff() override;
 
   Channel* channel() const;
@@ -127,19 +129,30 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
       grpc_call_credentials* call_creds,
       const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-      Duration timeout);
+      Duration timeout, bool start_upon_send_message);
   ~GrpcStreamingCall() override;
 
   void Orphan() override;
 
-  void SendMessage(std::string payload) override;
+  void SendMessage(std::string payload, bool send_half_close) override;
 
   void StartRecvMessage() override;
 
   void SendHalfClose() override;
 
  private:
-  static void OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/);
+  using OpList = absl::InlinedVector<grpc_op, 5>;
+
+  void AddSendInitialMetadataOp(OpList& op_list);
+  void AddRecvInitialMetadataOp(OpList& op_list);
+  void AddRecvTrailingMetadataOp(OpList& op_list);
+  void AddSendCloseFromClientOp(OpList& op_list);
+  void AddSendMessageOp(std::string payload, OpList& op_list);
+  void StartStatusBatch();
+  void MaybeAddCallStartOps(OpList& op_list);
+  void StartBatch(const OpList& op_list, const char* ref_reason,
+                  grpc_closure* closure);
+
   static void OnRequestSent(void* arg, grpc_error_handle error);
   static void OnHalfClosed(void* arg, grpc_error_handle error);
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
@@ -154,10 +167,13 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
 
   // recv_initial_metadata
   grpc_metadata_array initial_metadata_recv_;
-  grpc_closure on_recv_initial_metadata_;
 
   // send_initial_metadata
   std::vector<grpc_metadata> send_initial_metadata_;
+
+  // Whether StartCallOps() has been called.  Will be false upon
+  // construction only if start_upon_send_message was set in the ctor.
+  bool call_started_ = false;
 
   // send_message
   grpc_byte_buffer* send_message_payload_ = nullptr;
@@ -173,7 +189,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   // recv_trailing_metadata
   grpc_metadata_array trailing_metadata_recv_;
   grpc_status_code status_code_;
-  grpc_slice status_details_;
+  grpc_slice status_details_ = grpc_empty_slice();
   grpc_closure on_status_received_;
 };
 

@@ -259,6 +259,27 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, SendHalfClose) {
   EXPECT_TRUE(stream_->half_closed());
 }
 
+TEST_F(XdsStreamingCallPromiseWrapperTest, PushMessageWithSendHalfClose) {
+  InitStream();
+  bool send_completed = false;
+  auto activity = MakeActivity(
+      [this, &send_completed] {
+        return Map(
+            wrapper_->PushMessage(kClientMessage, /*send_half_close=*/true),
+            [&](StatusFlag status) {
+              EXPECT_TRUE(status.ok());
+              send_completed = true;
+              return absl::OkStatus();
+            });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_TRUE(send_completed);
+  EXPECT_EQ(stream_->WaitForMessageFromClient(), kClientMessage);
+  EXPECT_TRUE(stream_->half_closed());
+}
+
 TEST_F(XdsStreamingCallPromiseWrapperTest, ConcurrentStatusAndPullMessage) {
   constexpr int kIterations = 200;
   for (int i = 0; i < kIterations; ++i) {

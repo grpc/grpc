@@ -7728,6 +7728,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
         "absl/status",
         "absl/strings",
     ],

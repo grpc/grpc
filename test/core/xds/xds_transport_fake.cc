@@ -74,10 +74,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
-    std::string payload) {
+    std::string payload, bool send_half_close) {
   MutexLock lock(&mu_);
   GRPC_CHECK(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
+  if (send_half_close) half_closed_ = true;
   if (transport_->auto_complete_messages_from_client()) {
     CompleteSendMessageFromClientLocked(/*ok=*/true);
   }
@@ -387,7 +388,10 @@ void FakeXdsTransportFactory::FakeXdsTransport::StopConnectivityFailureWatch(
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
-    std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+    std::unique_ptr<StreamingCall::EventHandler> event_handler,
+    bool /*start_upon_send_message*/) {
+  // Note: There are no ops to defer in the fake, so the call is always
+  // visible to the test as soon as it is created.
   auto call = MakeOrphanable<FakeStreamingCall>(
       WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler));
   MutexLock lock(&mu_);
