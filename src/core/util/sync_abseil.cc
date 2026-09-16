@@ -43,7 +43,7 @@ void gpr_mu_destroy(gpr_mu* mu) {
 }
 
 void gpr_mu_lock(gpr_mu* mu) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  reinterpret_cast<absl::Mutex*>(mu)->Lock();
+  reinterpret_cast<absl::Mutex*>(mu)->lock();
 }
 
 void gpr_mu_unlock(gpr_mu* mu) ABSL_NO_THREAD_SAFETY_ANALYSIS {

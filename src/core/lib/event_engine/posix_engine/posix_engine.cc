@@ -272,7 +272,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   EventHandle* fd;
   absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep;
 
-  mu_.Lock();
+  mu_.lock();
   GRPC_CHECK_NE(fd_, nullptr);
   fd = std::exchange(fd_, nullptr);
   bool connect_cancelled = connect_cancelled_;
@@ -324,7 +324,7 @@ void AsyncConnect::OnWritable(absl::Status status)
     }
   });
 
-  mu_.Lock();
+  mu_.lock();
   if (!status.ok() || connect_cancelled) {
     return;
   }
@@ -683,7 +683,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   if (ac == nullptr) {
     return false;
   }
-  ac->mu_.Lock();
+  ac->mu_.lock();
   bool connection_cancel_success = (ac->fd_ != nullptr);
   if (connection_cancel_success) {
     // Connection is still pending. The OnWritable callback hasn't executed

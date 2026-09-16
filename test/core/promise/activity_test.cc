@@ -54,7 +54,7 @@ class Barrier {
   }
 
   void Clear() {
-    mu_.Lock();
+    mu_.lock();
     cleared_ = true;
     auto wakeup = wait_set_.TakeWakeupSet();
     mu_.unlock();
@@ -86,7 +86,7 @@ class SingleBarrier {
   }
 
   void Clear() {
-    mu_.Lock();
+    mu_.lock();
     cleared_ = true;
     auto waker = std::move(waker_);
     mu_.unlock();

@@ -77,7 +77,7 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
 void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   const size_t node_shard_index = NodeShardIndex(node);
   NodeShard& node_shard = node_shards_[node_shard_index];
-  node_shard.mu.Lock();
+  node_shard.mu.lock();
   CHECK_EQ(node->orphaned_index_, 0u);
   intptr_t uuid = node->uuid_.load(std::memory_order_relaxed);
   NodeList& remove_list = uuid == -1 ? node_shard.nursery : node_shard.numbered;

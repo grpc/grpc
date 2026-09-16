@@ -145,12 +145,12 @@ class FrameProtector : public RefCounted<FrameProtector> {
               grpc_slice temp_read_slice;
               grpc_slice temp_write_slice;
 
-              self->read_mu_.Lock();
+              self->read_mu_.lock();
               temp_read_slice =
                   std::exchange(self->read_staging_buffer_, grpc_empty_slice());
               self->read_mu_.unlock();
 
-              self->write_mu_.Lock();
+              self->write_mu_.lock();
               temp_write_slice = std::exchange(self->write_staging_buffer_,
                                                grpc_empty_slice());
               self->write_mu_.unlock();
@@ -231,7 +231,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, message_bytes, &processed_message_size, cur,
                 &unprotected_buffer_size_written);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_unprotect(
                 protector_, message_bytes, &processed_message_size, cur,
                 &unprotected_buffer_size_written);
@@ -368,7 +368,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, message_bytes, &processed_message_size, cur,
                 &protected_buffer_size_to_send);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_protect(
                 protector_, message_bytes, &processed_message_size, cur,
                 &protected_buffer_size_to_send);
@@ -397,7 +397,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, cur, &protected_buffer_size_to_send,
                 &still_pending_size);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_protect_flush(
                 protector_, cur, &protected_buffer_size_to_send,
                 &still_pending_size);
@@ -785,7 +785,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     static void FailReads(grpc_core::RefCountedPtr<Impl> impl,
                           absl::Status status)
         ABSL_LOCKS_EXCLUDED(read_queue_mu_) {
-      impl->read_queue_mu_.Lock();
+      impl->read_queue_mu_.lock();
       impl->unprotecting_ = status;
       auto on_read = std::move(impl->on_read_);
       impl->read_queue_mu_.unlock();
@@ -937,7 +937,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
           }
         }
 
-        impl->read_queue_mu_.Lock();
+        impl->read_queue_mu_.lock();
         impl->unprotected_data_buffer_ = std::move(read_buffer);
         if (impl->on_read_ != nullptr) {
           // We have a transport read waiting on this unprotected data - either

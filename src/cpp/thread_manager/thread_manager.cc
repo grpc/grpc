@@ -212,7 +212,7 @@ void ThreadManager::MainWorkLoop() {
         // get a thread in which to do it.
         DoWork(tag, ok, !resource_exhausted);
         // Take the lock again to check post conditions
-        lock.Lock();
+        lock.lock();
         // If we're shutdown, we should finish at this point.
         if (shutdown_) done = true;
         break;

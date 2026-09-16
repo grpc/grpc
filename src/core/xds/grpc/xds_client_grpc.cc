@@ -421,7 +421,7 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
     auto client_config =
         envoy_service_status_v3_ClientStatusResponse_add_config(response,
                                                                 arena.ptr());
-    xds_client->mu()->Lock();
+    xds_client->mu()->lock();
     xds_client->DumpClientConfig(&string_pool, arena.ptr(), client_config);
     envoy_service_status_v3_ClientConfig_set_client_scope(
         client_config, StdStringToUpbString(xds_client->key()));

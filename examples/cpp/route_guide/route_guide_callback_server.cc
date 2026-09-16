@@ -258,7 +258,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           // strategy. We'll grab the lock locally to build a copy of the
           // list of nodes we're going to send, then we'll grab the lock
           // again to append the received note to the existing vector.
-          mu_->Lock();
+          mu_->lock();
           std::copy_if(received_notes_->begin(), received_notes_->end(),
                        std::back_inserter(to_send_notes_),
                        [this](const RouteNote& note) {
@@ -289,7 +289,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           StartWrite(&*notes_iterator_);
           notes_iterator_++;
         } else {
-          mu_->Lock();
+          mu_->lock();
           received_notes_->push_back(note_);
           mu_->unlock();
           StartRead(&note_);

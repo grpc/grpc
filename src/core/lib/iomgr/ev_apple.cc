@@ -168,7 +168,7 @@ static void GlobalRunLoopFunc(void* /*arg*/) {
     gGlobalRunLoopContext->input_source_registered = false;
     lock.Release();
     CFRunLoopRun();
-    lock.Lock();
+    lock.lock();
   }
   lock.Release();
 }

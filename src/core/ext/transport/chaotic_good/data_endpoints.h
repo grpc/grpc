@@ -277,7 +277,7 @@ class InputQueue final : public RefCounted<InputQueue> {
 
     ~ReadTicket() {
       if (input_queues_ != nullptr) {
-        completion_->mu.Lock();
+        completion_->mu.lock();
         if (!completion_->ready) {
           completion_->mu.unlock();
           input_queues_->Cancel(completion_.get());
@@ -297,7 +297,7 @@ class InputQueue final : public RefCounted<InputQueue> {
 
         ~AwaitPromise() {
           if (input_queues_ != nullptr) {
-            completion_->mu.Lock();
+            completion_->mu.lock();
             if (!completion_->ready) {
               completion_->mu.unlock();
               input_queues_->Cancel(completion_.get());
@@ -320,7 +320,7 @@ class InputQueue final : public RefCounted<InputQueue> {
 
         Poll<absl::StatusOr<SliceBuffer>> operator()() {
           DCHECK(completion_ != nullptr);
-          completion_->mu.Lock();
+          completion_->mu.lock();
           if (completion_->ready) {
             auto result = std::move(completion_->result);
             completion_->mu.unlock();

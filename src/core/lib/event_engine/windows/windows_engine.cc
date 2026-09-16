@@ -213,7 +213,7 @@ WindowsEventEngine::WindowsEventEngine()
 WindowsEventEngine::~WindowsEventEngine() {
   GRPC_TRACE_LOG(event_engine, INFO) << "~WindowsEventEngine::" << this;
   {
-    task_mu_.Lock();
+    task_mu_.lock();
     if (!known_handles_.empty()) {
       if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
         for (auto handle : known_handles_) {
@@ -232,7 +232,7 @@ WindowsEventEngine::~WindowsEventEngine() {
         }
         task_mu_.unlock();
         absl::SleepFor(absl::Milliseconds(200));
-        task_mu_.Lock();
+        task_mu_.lock();
       }
     }
     GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));

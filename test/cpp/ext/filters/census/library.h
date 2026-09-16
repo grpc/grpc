@@ -120,11 +120,11 @@ class ExportedTracesRecorder
   std::vector<::opencensus::trace::exporter::SpanData> GetAndClearSpans(
       size_t expected_size = 0, absl::Duration timeout = absl::Seconds(10)) {
     auto deadline = absl::Now() + timeout;
-    mutex_.Lock();
+    mutex_.lock();
     do {
       mutex_.unlock();
       ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
-      mutex_.Lock();
+      mutex_.lock();
     } while (recorded_spans_.size() < expected_size && absl::Now() < deadline);
     auto recorded_spans = std::move(recorded_spans_);
     mutex_.unlock();

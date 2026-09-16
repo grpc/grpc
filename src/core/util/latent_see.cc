@@ -239,7 +239,7 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
   static Mutex* mu = new Mutex;
 
   // Collection phase - under a mutex to prevent multiple collections at once.
-  mu->Lock();
+  mu->lock();
   LOG(INFO) << "Latent-see collection starting";
   // Start the sink before enabling appender to ensure events are not dropped.
   sink->Start(memory_limit / sizeof(Bin) + 1u);

@@ -54,7 +54,7 @@ class FreestandingActivity::Handle final : public Wakeable {
 
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
-    mu_.Lock();
+    mu_.lock();
     GRPC_CHECK_NE(activity_, nullptr);
     activity_ = nullptr;
     mu_.unlock();
@@ -64,7 +64,7 @@ class FreestandingActivity::Handle final : public Wakeable {
   // Activity needs to wake up (if it still exists!) - wake it up, and drop the
   // ref that was kept for this handle.
   void Wakeup(WakeupMask) override ABSL_LOCKS_EXCLUDED(mu_) {
-    mu_.Lock();
+    mu_.lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
     // it is non-zero.
@@ -84,7 +84,7 @@ class FreestandingActivity::Handle final : public Wakeable {
   }
 
   void WakeupAsync(WakeupMask) override ABSL_LOCKS_EXCLUDED(mu_) {
-    mu_.Lock();
+    mu_.lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
     // it is non-zero.

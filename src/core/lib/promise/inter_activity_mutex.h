@@ -47,7 +47,7 @@ class InterActivityMutex {
       mutex_ = std::exchange(other.mutex_, nullptr);
       return *this;
     }
-    ~Lock() {
+    ~lock() {
       if (mutex_ != nullptr) mutex_->unlock();
     }
 

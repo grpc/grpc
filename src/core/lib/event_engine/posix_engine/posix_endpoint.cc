@@ -481,7 +481,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 }
 
 void PosixEndpointImpl::PerformReclamation() {
-  read_mu_.Lock();
+  read_mu_.lock();
   if (incoming_buffer_ != nullptr) {
     incoming_buffer_->Clear();
   }
@@ -1285,7 +1285,7 @@ void PosixEndpointImpl::MaybeShutdown(
   }
   on_release_fd_ = std::move(on_release_fd);
   handle_->ShutdownHandle(why);
-  read_mu_.Lock();
+  read_mu_.lock();
   memory_owner_.Reset();
   read_mu_.unlock();
   Unref();

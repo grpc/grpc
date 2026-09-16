@@ -530,7 +530,7 @@ Poller::WorkResult PollPoller::Work(
   pending_events.clear();
   int timeout_ms =
       static_cast<int>(grpc_event_engine::experimental::Milliseconds(timeout));
-  mu_.Lock();
+  mu_.lock();
   // Start polling, and keep doing so while we're being asked to
   // re-evaluate our pollers (this allows poll() based pollers to
   // ensure they don't miss wakeups).
@@ -692,7 +692,7 @@ Poller::WorkResult PollPoller::Work(
 
     // End of poll iteration. Update how much time is remaining.
     timeout_ms -= PollElapsedTimeToMillis(start);
-    mu_.Lock();
+    mu_.lock();
     if (std::exchange(was_kicked_, false) &&
         std::exchange(was_kicked_ext_, false)) {
       // External kick. Need to break out.
