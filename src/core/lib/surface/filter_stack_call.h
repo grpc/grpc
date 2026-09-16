@@ -140,6 +140,7 @@ class FilterStackCall final : public Call {
   }
 
   char* GetPeer() final;
+  char* GetLocalAddress() final;
 
   grpc_compression_options compression_options() override {
     return channel_->compression_options();

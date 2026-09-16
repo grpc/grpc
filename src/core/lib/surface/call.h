@@ -106,6 +106,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual void CancelWithError(grpc_error_handle error) = 0;
   virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
   virtual char* GetPeer() = 0;
+  virtual char* GetLocalAddress() = 0;
   virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
                                      void* notify_tag,
                                      bool is_notify_tag_closure) = 0;
@@ -203,6 +204,16 @@ class Call : public CppImplOf<Call, grpc_call>,
     peer_string_ = std::move(peer_string);
   }
 
+  Slice GetLocalAddressString() const {
+    MutexLock lock(&local_address_mu_);
+    return local_address_string_.Ref();
+  }
+
+  void SetLocalAddressString(Slice local_address_string) {
+    MutexLock lock(&local_address_mu_);
+    local_address_string_ = std::move(local_address_string);
+  }
+
   void ClearPeerString() { SetPeerString(Slice(grpc_empty_slice())); }
 
   // TODO(ctiller): cancel_func is for cancellation of the call - filter stack
@@ -244,6 +255,8 @@ class Call : public CppImplOf<Call, grpc_call>,
   // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
   mutable Mutex peer_mu_;
   Slice peer_string_;
+  mutable Mutex local_address_mu_;
+  Slice local_address_string_;
   // Current deadline.
   Mutex deadline_mu_;
   Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();

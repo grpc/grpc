@@ -30,6 +30,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -126,6 +127,45 @@ TEST(MetadataMapTest, NonEncodableTrait) {
   EXPECT_EQ(map.DebugString(), "GrpcStreamNetworkState: not sent on wire");
 }
 
+struct LocalAddressMetadataMap
+    : public MetadataMap<LocalAddressMetadataMap, LocalAddressString> {
+  using MetadataMap<LocalAddressMetadataMap, LocalAddressString>::MetadataMap;
+};
+
+TEST(MetadataMapTest, LocalAddressStringIsNotEncoded) {
+  struct EncoderWithNoTraitEncodeFunctions {
+    void Encode(const Slice&, const Slice&) {
+      abort();  // LocalAddressString must never be sent on the wire.
+    }
+  };
+  LocalAddressMetadataMap map;
+  map.Set(LocalAddressString(), Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
+  EncoderWithNoTraitEncodeFunctions encoder;
+  map.Encode(&encoder);
+  // The value is allow-listed for debug output, so it must not be redacted.
+  EXPECT_EQ(map.DebugString(), "LocalAddressString: ipv4:127.0.0.1:1234");
+}
+
+TEST(MetadataMapTest, LocalAddressStringInMetadataBatch) {
+  grpc_metadata_batch md;
+  EXPECT_EQ(md.get_pointer(LocalAddressString()), nullptr);
+  md.Set(LocalAddressString(), Slice::FromCopiedString("ipv6:%5B::1%5D:5678"));
+  ASSERT_NE(md.get_pointer(LocalAddressString()), nullptr);
+  EXPECT_EQ(md.get_pointer(LocalAddressString())->as_string_view(),
+            "ipv6:%5B::1%5D:5678");
+  EXPECT_THAT(md.DebugString(),
+              ::testing::HasSubstr("LocalAddressString: ipv6:%5B::1%5D:5678"));
+  // Copies (e.g. for retries/logging) must carry the local address.
+  grpc_metadata_batch copy = md.Copy();
+  ASSERT_NE(copy.get_pointer(LocalAddressString()), nullptr);
+  EXPECT_EQ(copy.get_pointer(LocalAddressString())->as_string_view(),
+            "ipv6:%5B::1%5D:5678");
+  md.Remove(LocalAddressString());
+  EXPECT_EQ(md.get_pointer(LocalAddressString()), nullptr);
+  // Removing from the original does not affect the copy.
+  EXPECT_NE(copy.get_pointer(LocalAddressString()), nullptr);
+}
+
 TEST(MetadataMapTest, NonTraitKeyWithMultipleValues) {
   FakeEncoder encoder;
   TimeoutOnlyMetadataMap map;
@@ -189,6 +229,7 @@ std::vector<std::string> GetAllowList() {
           std::string(GrpcStreamNetworkState::DebugKey()),
           std::string(GrpcTarPit::DebugKey()),
           std::string(GrpcTrailersOnly::DebugKey()),
+          std::string(LocalAddressString::DebugKey()),
           std::string(PeerString::DebugKey()),
           std::string(WaitForReady::DebugKey())
       // clang-format on
@@ -238,6 +279,7 @@ TEST(DebugStringBuilderTest, TestAllAllowListed) {
       "GrpcStreamNetworkState: GrpcStreamNetworkState, "
       "GrpcTarPit: GrpcTarPit, "
       "GrpcTrailersOnly: GrpcTrailersOnly, "
+      "LocalAddressString: LocalAddressString, "
       "PeerString: PeerString, "
       "WaitForReady: WaitForReady");
 }

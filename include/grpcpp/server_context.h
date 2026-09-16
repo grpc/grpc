@@ -350,6 +350,9 @@ class ServerContextBase {
   /// functionality. Instead, use auth_context.
   std::string peer() const;
 
+  /// Return the local address of the server call.
+  std::string local_address() const;
+
   /// Get the census context associated with this server call.
   const struct census_context* census_context() const;
 
