@@ -642,10 +642,10 @@ TEST(SecurityConnectorTest, EkmToAuthContext) {
   tsi_peer peer;
   const char* expected_ekm = "some_exported_keying_material";
   ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
-  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
-                TSI_SSL_EXPORTED_KEYING_MATERIAL, expected_ekm,
-                &peer.properties[0]),
-            TSI_OK);
+  ASSERT_EQ(
+      tsi_construct_string_peer_property_from_cstring(
+          TSI_SSL_EXPORTED_KEYING_MATERIAL, expected_ekm, &peer.properties[0]),
+      TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   ASSERT_NE(ctx, nullptr);
