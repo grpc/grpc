@@ -79,10 +79,15 @@ class ABSL_LOCKABLE Mutex {
 
 class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
-  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
+  [[deprecated("Use the constructor that takes a reference instead")]]
+  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : MutexLock((mu) {}
+
+  explicit MutexLock(Mutex& mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(&mu) {
     mu_->lock();
   }
-  ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->unlock(); }
+
+  ~MutexLock() ABSL_UNLOCK_FUNCTION() {
+    mu_->unlock(); }
 
   MutexLock(const MutexLock&) = delete;
   MutexLock& operator=(const MutexLock&) = delete;
