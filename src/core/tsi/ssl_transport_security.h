@@ -525,6 +525,13 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property);
 
+// Exposed for testing only.
+tsi_result x509_subject_rfc2253(X509* cert, std::string* subject);
+
+// Exposed for testing only.
+void first_subject_alt_names_from_x509(X509* cert, std::string* uri_san,
+                                       std::string* dns_san);
+
 namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
 }  // namespace tsi

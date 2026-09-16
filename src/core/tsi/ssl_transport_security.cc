@@ -1080,22 +1080,33 @@ static tsi_result peer_property_from_x509_common_name(
 
 // Gets the subject of an X509 cert in RFC 2253 form.  \a subject is left
 // untouched unless TSI_OK is returned.
-static tsi_result x509_subject_rfc2253(X509* cert, std::string* subject) {
+tsi_result x509_subject_rfc2253(X509* cert, std::string* subject) {
+  if (cert == nullptr || subject == nullptr) {
+    return TSI_INVALID_ARGUMENT;
+  }
   auto* subject_name = X509_get_subject_name(cert);
   if (subject_name == nullptr) {
     GRPC_TRACE_LOG(tsi, INFO) << "Could not get subject name from certificate.";
     return TSI_NOT_FOUND;
   }
   BIO* bio = BIO_new(BIO_s_mem());
-  X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
-  char* contents;
+  if (bio == nullptr) {
+    LOG(ERROR) << "Could not allocate BIO.";
+    return TSI_OUT_OF_RESOURCES;
+  }
+  int status = X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
+  char* contents = nullptr;
   long len = BIO_get_mem_data(bio, &contents);
-  if (len < 0) {
+  if (status < 0 || len < 0 || (len > 0 && contents == nullptr)) {
     LOG(ERROR) << "Could not get subject entry from certificate.";
     BIO_free(bio);
     return TSI_INTERNAL_ERROR;
   }
-  subject->assign(contents, static_cast<size_t>(len));
+  if (len > 0) {
+    subject->assign(contents, static_cast<size_t>(len));
+  } else {
+    subject->clear();
+  }
   BIO_free(bio);
   return TSI_OK;
 }
@@ -1103,42 +1114,64 @@ static tsi_result x509_subject_rfc2253(X509* cert, std::string* subject) {
 // Finds the first URI SAN and the first DNS SAN of \a cert, storing them in
 // \a uri_san and \a dns_san respectively.  Either one is left empty if the
 // certificate has no SAN of that type.
-static void first_subject_alt_names_from_x509(X509* cert, std::string* uri_san,
-                                              std::string* dns_san) {
+void first_subject_alt_names_from_x509(X509* cert, std::string* uri_san,
+                                       std::string* dns_san) {
+  if (uri_san != nullptr) uri_san->clear();
+  if (dns_san != nullptr) dns_san->clear();
+  if (cert == nullptr) return;
+  bool found_uri = (uri_san == nullptr);
+  bool found_dns = (dns_san == nullptr);
+  if (found_uri && found_dns) return;
   GENERAL_NAMES* subject_alt_names = static_cast<GENERAL_NAMES*>(
       X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
   if (subject_alt_names == nullptr) return;
-  const int subject_alt_name_count =
-      static_cast<int>(sk_GENERAL_NAME_num(subject_alt_names));
-  bool found_uri = false;
-  bool found_dns = false;
-  for (int i = 0; i < subject_alt_name_count && !(found_uri && found_dns);
+  const size_t subject_alt_name_count = sk_GENERAL_NAME_num(subject_alt_names);
+  for (size_t i = 0; i < subject_alt_name_count && !(found_uri && found_dns);
        ++i) {
     GENERAL_NAME* subject_alt_name =
         sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
+    if (subject_alt_name == nullptr) continue;
     std::string* destination = nullptr;
     const ASN1_STRING* value = nullptr;
+    bool is_uri = false;
     if (subject_alt_name->type == GEN_URI && !found_uri) {
-      found_uri = true;
+      is_uri = true;
       destination = uri_san;
       value = subject_alt_name->d.uniformResourceIdentifier;
     } else if (subject_alt_name->type == GEN_DNS && !found_dns) {
-      found_dns = true;
       destination = dns_san;
       value = subject_alt_name->d.dNSName;
     } else {
       continue;
     }
+    if (value == nullptr) {
+      continue;
+    }
     unsigned char* name = nullptr;
     const int name_size =
         ASN1_STRING_to_UTF8(&name, const_cast<ASN1_STRING*>(value));
-    if (name_size < 0) {
-      LOG(ERROR) << "Could not get utf8 from asn1 string.";
+    if (name_size <= 0 || name == nullptr) {
+      if (name_size < 0) {
+        LOG(ERROR) << "Could not get utf8 from asn1 string.";
+      }
+      if (name != nullptr) {
+        OPENSSL_free(name);
+      }
+      continue;
+    }
+    if (memchr(name, '\0', static_cast<size_t>(name_size)) != nullptr) {
+      LOG(ERROR) << "SAN contains embedded null byte.";
+      OPENSSL_free(name);
       continue;
     }
     destination->assign(reinterpret_cast<const char*>(name),
                         static_cast<size_t>(name_size));
     OPENSSL_free(name);
+    if (is_uri) {
+      found_uri = true;
+    } else {
+      found_dns = true;
+    }
   }
   sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
 }
