@@ -462,19 +462,21 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "ext_authz_filter_test",
     srcs = ["ext_authz_filter_test.cc"],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
         "gtest",
     ],
     tags = ["xds_test"],
     deps = [
         ":filter_matchers",
-        ":filter_test_v2",
+        ":filter_test",
         "//:gpr",
         "//:grpc",
         "//:grpc_credentials_util",
