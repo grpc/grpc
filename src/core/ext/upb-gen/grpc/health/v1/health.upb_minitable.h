@@ -20,6 +20,9 @@ extern "C" {
 
 extern const upb_MiniTable grpc__health__v1__HealthCheckRequest_msg_init;
 extern const upb_MiniTable grpc__health__v1__HealthCheckResponse_msg_init;
+extern const upb_MiniTable grpc__health__v1__HealthListRequest_msg_init;
+extern const upb_MiniTable grpc__health__v1__HealthListResponse_msg_init;
+extern const upb_MiniTable grpc__health__v1__HealthListResponse__StatusesEntry_msg_init;
 
 extern const upb_MiniTableFile grpc_health_v1_health_proto_upb_file_layout;
 
