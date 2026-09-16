@@ -251,6 +251,15 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
           call_handler.PullClientInitialMetadata(),
           [call_handler](ClientMetadataHandle metadata) mutable {
             LOG(INFO) << "Client initial metadata: " << metadata->DebugString();
+            const Slice* peer = metadata->get_pointer(PeerString());
+            const Slice* local_address =
+                metadata->get_pointer(LocalAddressString());
+            EXPECT_NE(peer, nullptr);
+            EXPECT_NE(local_address, nullptr);
+            if (peer != nullptr && local_address != nullptr) {
+              EXPECT_EQ(peer->as_string_view(), "ipv4:127.0.0.1:12345");
+              EXPECT_EQ(local_address->as_string_view(), "ipv4:127.0.0.1:6789");
+            }
             return call_handler.PushServerInitialMetadata(
                 ServerMetadataFromStatus(absl::OkStatus()));
           },

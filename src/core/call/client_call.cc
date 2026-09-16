@@ -488,6 +488,9 @@ char* ClientCall::GetPeer() {
   return gpr_strdup("unknown");
 }
 
+// TODO(b/568493863): Plumb the local address through to the client side.
+char* ClientCall::GetLocalAddress() { return gpr_strdup("unknown"); }
+
 grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           grpc_completion_queue* cq, Slice path,
                           std::optional<Slice> authority,
