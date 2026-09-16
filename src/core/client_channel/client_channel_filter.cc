@@ -564,11 +564,10 @@ class ClientChannelFilter::SubchannelWrapper final
           << "; hopping into work_serializer";
       auto self = RefAsSubclass<WatcherWrapper>();
       parent_->chand_->work_serializer_->Run(
-          [self, state, status]()
-              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->parent_->chand_
-                                                ->work_serializer_) {
-                self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
-              });
+          [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+              *self->parent_->chand_->work_serializer_) {
+            self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
+          });
     }
 
     void OnKeepaliveUpdate(Duration new_keepalive_time) override {
@@ -578,12 +577,10 @@ class ClientChannelFilter::SubchannelWrapper final
           << "; hopping into work_serializer";
       auto self = RefAsSubclass<WatcherWrapper>();
       parent_->chand_->work_serializer_->Run(
-          [self, new_keepalive_time]()
-              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->parent_->chand_
-                                                ->work_serializer_) {
-                self->ApplyKeepaliveThrottlingInWorkSerializer(
-                    new_keepalive_time);
-              });
+          [self, new_keepalive_time]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+              *self->parent_->chand_->work_serializer_) {
+            self->ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
+          });
     }
 
     uint32_t max_connections_per_subchannel() const override {
@@ -1604,8 +1601,8 @@ grpc_error_handle ClientChannelFilter::DoPingLocked(grpc_transport_op* op) {
       &result,
       // Complete pick.
       [op](LoadBalancingPolicy::PickResult::Complete* complete_pick)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*ClientChannelFilter::work_serializer_)
-              -> grpc_error_handle {
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+              *ClientChannelFilter::work_serializer_) -> grpc_error_handle {
             SubchannelWrapper* subchannel =
                 DownCast<SubchannelWrapper*>(complete_pick->subchannel.get());
             return subchannel->Ping(op->send_ping.on_initiate,
@@ -1732,10 +1729,8 @@ grpc_connectivity_state ClientChannelFilter::CheckConnectivityState(
   grpc_connectivity_state out = ABSL_TS_UNCHECKED_READ(state_tracker_).state();
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(owning_stack_, "TryToConnect");
-    work_serializer_->Run([this]()
-                              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-                                TryToConnectLocked();
-                              });
+    work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                              *work_serializer_) { TryToConnectLocked(); });
   }
   return out;
 }

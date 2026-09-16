@@ -237,12 +237,10 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_.get() << "; hopping into work_serializer";
     auto self = RefAsSubclass<WatcherWrapper>();
     subchannel_wrapper_->client_channel_->work_serializer_->Run(
-        [self, state, status]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->subchannel_wrapper_
-                                              ->client_channel_
-                                              ->work_serializer_) {
-              self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
-            });
+        [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *self->subchannel_wrapper_->client_channel_->work_serializer_) {
+          self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
+        });
   }
 
   void OnKeepaliveUpdate(Duration new_keepalive_time) override {
@@ -252,13 +250,10 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_.get() << "; hopping into work_serializer";
     auto self = RefAsSubclass<WatcherWrapper>();
     subchannel_wrapper_->client_channel_->work_serializer_->Run(
-        [self, new_keepalive_time]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->subchannel_wrapper_
-                                              ->client_channel_
-                                              ->work_serializer_) {
-              self->ApplyKeepaliveThrottlingInWorkSerializer(
-                  new_keepalive_time);
-            });
+        [self, new_keepalive_time]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *self->subchannel_wrapper_->client_channel_->work_serializer_) {
+          self->ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
+        });
   }
 
   uint32_t max_connections_per_subchannel() const override {
@@ -359,8 +354,8 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
   auto self = WeakRefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION,
                                                    "subchannel map cleanup");
   client_channel_->work_serializer_->Run(
-      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->client_channel_
-                                                 ->work_serializer_) {
+      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+          *self->client_channel_->work_serializer_) {
         auto it = self->client_channel_->subchannel_map_.find(
             self->subchannel_.get());
         GRPC_CHECK(it != self->client_channel_->subchannel_map_.end());
