@@ -45,10 +45,5 @@ RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp315-cp315/bin/pip install --upgrade 'cython==3.1.1'
 
 
-# The `cryptography` package's dependency `cffi` lacks Python 3.14 supported
-# wheels (as of Aug 2025), causing a source install that fails due to a missing
-# `libffi-devel` package in the manylinux docker images. Install it beforehand to fix.
-RUN yum update -y && yum install -y libffi-devel
-
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
