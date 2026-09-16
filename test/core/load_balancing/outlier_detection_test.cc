@@ -173,8 +173,8 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
   }
 
   uint64_t GetEnforcedEjectionCount(absl::string_view detection_method) {
-    const absl::string_view kLabelValues[] = {
-        target_, kBackendServiceName, kLocalityName, detection_method};
+    const absl::string_view kLabelValues[] = {target_, kBackendServiceName,
+                                              kLocalityName, detection_method};
     return stats_plugin_
         ->GetUInt64MetricValueByName(kEjectionsEnforced, kLabelValues)
         .value_or(0);
