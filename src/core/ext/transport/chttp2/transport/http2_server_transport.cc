@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -1191,6 +1192,9 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(
 }
 
 void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
+  // Count the call as inflight from the point of admission. Released by the
+  // CallInitiator::OnDone hook registered in IncomingStream().
+  IncrementInflightCalls();
   MutexLock lock(&transport_mutex_);
   GRPC_DCHECK(stream != nullptr) << "stream is null";
   GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
@@ -1360,7 +1364,8 @@ auto Http2ServerTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
                          "Received Server Trailing Metadata";
                   return send_trailing_metadata(std::move(metadata));
                 });
-          }));
+          },
+          [](absl::Status status) { return status; }));
 }
 
 absl::Status Http2ServerTransport::InitializeStream(
@@ -1411,6 +1416,15 @@ Http2Status Http2ServerTransport::IncomingStream(
   RefCountedPtr<Stream> stream = std::move(result.value());
   AddToStreamList(stream);
   stream->SetInitialMetadataReceived();
+
+  // Release the admission count when the call finishes. OnDone cannot fail here
+  // because the CallSpine was just created above and CallOutboundLoop (which
+  // pulls server trailing metadata) has not been spawned yet.
+  const bool on_done_registered = stream->GetCallInitiator().OnDone(
+      [self = RefAsSubclass<Http2ServerTransport>()](bool /*cancelled*/) {
+        self->DecrementInflightCalls();
+      });
+  GRPC_CHECK(on_done_registered);
 
   stream->GetCallInitiator().SpawnGuarded(
       "CallOutboundLoop",
@@ -1565,9 +1579,10 @@ void Http2ServerTransport::MaybeSpawnPingTimeout(
     std::optional<uint64_t> opaque_data) {
   if (opaque_data.has_value()) {
     SpawnGuardedTransportParty(
-        "PingTimeout", [self = RefAsSubclass<Http2ServerTransport>(),
-                        opaque_data = *opaque_data]() {
-          return self->ping_manager_->TimeoutPromise(opaque_data);
+        "PingTimeout",
+        [self = RefAsSubclass<Http2ServerTransport>(),
+         promise = ping_manager_->TimeoutPromise(*opaque_data)]() mutable {
+          return promise();
         });
   }
 }
@@ -1611,9 +1626,24 @@ void Http2ServerTransport::MaybeSpawnKeepaliveLoop() {
   }
 }
 
-auto Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
-  SpawnGuardedTransportParty(
-      "GracefulGoaway",
+void Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
+  RefCountedPtr<Party> party = nullptr;
+  {
+    MutexLock lock(&transport_mutex_);
+    if (GPR_UNLIKELY(shutdown_tracker_.IsShutdownInitiated(transport_mutex_))) {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::SpawnGracefulGoawayPromise: Transport is "
+             "closed.";
+      return;
+    }
+    party = transport_party_;
+  }
+  if (GPR_UNLIKELY(party == nullptr)) {
+    return;
+  }
+
+  SpawnGuarded(
+      std::move(party), "GracefulGoaway",
       [self = RefAsSubclass<Http2ServerTransport>(),
        debug_data = std::forward<Slice>(debug_data)]() mutable {
         GRPC_HTTP2_SERVER_DLOG
@@ -1859,9 +1889,13 @@ void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
   stream_list_.clear();
-  ReportDisconnectionLocked(
-      GRPC_CHANNEL_SHUTDOWN, http2_status.GetAbslConnectionError(), {},
-      absl::StrCat("Transport closed: ", http2_status.DebugString()).c_str());
+  shutdown_disconnect_status_ = http2_status.GetAbslConnectionError();
+  // Reported here instead of at the end of CloseTransport(): CloseTransport()
+  // only runs after Race(RequestGoaway, Sleep(kGoawaySendTimeoutSeconds)) in
+  // CloseTransportFactory(), and on a dead socket RequestGoaway never
+  // completes, so deferring the report would delay server shutdown by the full
+  // sleep duration.
+  MaybeReportShutdownDisconnectionLocked();
   lock.Release();
 
   SpawnInfallibleTransportParty(
@@ -1901,6 +1935,35 @@ void Http2ServerTransport::ReportDisconnectionLocked(
       << status.ToString() << "; reason=" << reason;
   state_tracker_.SetState(state, status, reason);
   NotifyStateWatcherOnDisconnectLocked(status, disconnect_info);
+}
+
+void Http2ServerTransport::IncrementInflightCalls() {
+  inflight_calls_.fetch_add(1u, std::memory_order_relaxed);
+}
+
+void Http2ServerTransport::DecrementInflightCalls() {
+  if (inflight_calls_.fetch_sub(1u, std::memory_order_acq_rel) != 1u) {
+    return;
+  }
+  // This was the last active call. If MaybeSpawnCloseTransport() has already
+  // initiated shutdown, report disconnection to the server.
+  MaybeReportShutdownDisconnection();
+}
+
+void Http2ServerTransport::MaybeReportShutdownDisconnection() {
+  MutexLock lock(&transport_mutex_);
+  MaybeReportShutdownDisconnectionLocked();
+}
+
+void Http2ServerTransport::MaybeReportShutdownDisconnectionLocked() {
+  // If shutdown is not initiated or there are still inflight calls, we cannot
+  // report disconnection.
+  if (!shutdown_tracker_.IsShutdownInitiated(transport_mutex_) ||
+      inflight_calls_.load(std::memory_order_acquire) != 0u) {
+    return;
+  }
+  ReportDisconnectionLocked(GRPC_CHANNEL_SHUTDOWN, shutdown_disconnect_status_,
+                            {}, "Transport closed");
 }
 
 void Http2ServerTransport::ReadChannelArgs(const ChannelArgs& channel_args,
