@@ -107,6 +107,9 @@ ExtProcFilter::ProcessingMode ParseProcessingMode(
     const envoy_extensions_filters_http_ext_proc_v3_ProcessingMode* proto,
     ValidationErrors* errors) {
   ExtProcFilter::ProcessingMode processing_mode;
+  if (proto == nullptr) {
+    return processing_mode;
+  }
   {
     ValidationErrors::ScopedField field(errors, ".request_header_mode");
     processing_mode.send_request_headers = ParseHeaderProcessingMode(
@@ -189,18 +192,10 @@ XdsHttpExtProcFilterFactory::ParseTopLevelConfig(
   // processing_mode
   {
     ValidationErrors::ScopedField field(errors, ".processing_mode");
-    const auto* processing_mode =
+    config->processing_mode = ParseProcessingMode(
         envoy_extensions_filters_http_ext_proc_v3_ExternalProcessor_processing_mode(
-            ext_proc);
-    // All fields inside of the ProcessingMode message are optional, so if
-    // the message itself is not present, we use an empty message, which
-    // yields the default value for every field.
-    if (processing_mode == nullptr) {
-      processing_mode =
-          envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_new(
-              context.arena);
-    }
-    config->processing_mode = ParseProcessingMode(processing_mode, errors);
+            ext_proc),
+        errors);
   }
   size_t size;
   // TODO(rishesh): Validate that request_attributes and response_attributes are
