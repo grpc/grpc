@@ -211,6 +211,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     RefCountedPtr<FakeStreamingCall> WaitForStream(const char* method);
 
+    void RegisterStream(const char* method,
+                        RefCountedPtr<FakeStreamingCall> call);
     void RemoveStream(const char* method, FakeStreamingCall* call);
 
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
@@ -218,9 +220,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const XdsBootstrap::XdsServerTarget* server() const { return &server_; }
 
    private:
-    friend class FakeXdsTransportFactory::FakeStreamingCall;
-    void RegisterStream(const char* method,
-                        RefCountedPtr<FakeStreamingCall> call);
     void StartConnectivityFailureWatch(
         RefCountedPtr<ConnectivityFailureWatcher> watcher) override;
     void StopConnectivityFailureWatch(
