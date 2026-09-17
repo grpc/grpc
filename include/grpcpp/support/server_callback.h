@@ -336,7 +336,7 @@ class ServerBidiReactor : public internal::ServerReactor {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
-      grpc::internal::MutexLock l(&stream_mu_);
+      grpc::internal::MutexLock l(stream_mu_);
       stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         backlog_.send_initial_metadata_wanted = true;
@@ -413,7 +413,7 @@ class ServerBidiReactor : public internal::ServerReactor {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
-      grpc::internal::MutexLock l(&stream_mu_);
+      grpc::internal::MutexLock l(stream_mu_);
       stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         backlog_.write_and_finish_wanted = true;
@@ -551,7 +551,7 @@ class ServerReadReactor : public internal::ServerReactor {
     ServerCallbackReader<Request>* reader =
         reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
-      grpc::internal::MutexLock l(&reader_mu_);
+      grpc::internal::MutexLock l(reader_mu_);
       reader = reader_.load(std::memory_order_relaxed);
       if (reader == nullptr) {
         backlog_.send_initial_metadata_wanted = true;
@@ -639,7 +639,7 @@ class ServerWriteReactor : public internal::ServerReactor {
     ServerCallbackWriter<Response>* writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
-      grpc::internal::MutexLock l(&writer_mu_);
+      grpc::internal::MutexLock l(writer_mu_);
       writer = writer_.load(std::memory_order_relaxed);
       if (writer == nullptr) {
         backlog_.send_initial_metadata_wanted = true;
@@ -671,7 +671,7 @@ class ServerWriteReactor : public internal::ServerReactor {
     ServerCallbackWriter<Response>* writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
-      grpc::internal::MutexLock l(&writer_mu_);
+      grpc::internal::MutexLock l(writer_mu_);
       writer = writer_.load(std::memory_order_relaxed);
       if (writer == nullptr) {
         backlog_.write_and_finish_wanted = true;
