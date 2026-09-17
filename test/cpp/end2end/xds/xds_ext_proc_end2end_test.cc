@@ -1076,12 +1076,36 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
   EXPECT_EQ(ext_proc_service().GetStream(absl::ZeroDuration()), nullptr);
 }
 
-// Leaving processing_mode unset disables all processing.
+// Leaving processing_mode unset defaults to sending request and response
+// headers.
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeNotSetSuccess) {
   auto ext_proc_config = MakeFilterConfigBuilder().Build();
   SetFilterConfig(ext_proc_config);
-  CheckRpcSendOk(DEBUG_LOCATION);
-  EXPECT_EQ(ext_proc_service().GetStream(absl::ZeroDuration()), nullptr);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  // ext_proc server sees request headers and sends them back.
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req,
+      ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
+          ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {{kRequestHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // ext_proc server sees response headers and sends them back.
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
+      {{kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue}}));
+  // Response trailers are not sent to the ext_proc server.
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+  Status status = rpc.GetStatus();
+  EXPECT_THAT(status, IsStatusOk());
+  EXPECT_THAT(rpc.GetServerInitialMetadata(),
+              ::testing::Contains(::testing::Pair(
+                  kResponseHeadersMutatedHeaderKey, kHeaderMutatedValue)));
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
 }
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {

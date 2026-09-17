@@ -47,8 +47,8 @@ namespace grpc_core {
 // send_response_body), it always operates in GRPC mode (deframed gRPC messages
 // sent one at a time).
 struct ExtProcProcessingMode {
-  bool send_request_headers = false;
-  bool send_response_headers = false;
+  bool send_request_headers = true;
+  bool send_response_headers = true;
   bool send_response_trailers = false;
   bool send_request_body = false;
   bool send_response_body = false;
