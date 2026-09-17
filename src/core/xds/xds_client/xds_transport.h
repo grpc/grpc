@@ -58,6 +58,9 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
       // If send_half_close is true, the client-side half-close is sent in
       // the same batch as the message, in which case SendHalfClose() must
       // not be called afterwards.
+      void SendMessage(std::string payload) {
+        SendMessage(std::move(payload), /*send_half_close=*/false);
+      }
       virtual void SendMessage(std::string payload, bool send_half_close) = 0;
 
       // Starts a recv_message operation on the stream.

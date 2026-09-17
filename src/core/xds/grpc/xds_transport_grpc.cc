@@ -123,7 +123,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     AddSendInitialMetadataOp(OpList& op_list) {
-  grpc_op op;
+  grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_INITIAL_METADATA;
   op.data.send_initial_metadata.count = send_initial_metadata_.size();
@@ -132,23 +132,21 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   op.flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op.reserved = nullptr;
-  op_list.push_back(op);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     AddRecvInitialMetadataOp(OpList& op_list) {
-  grpc_op op;
+  grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_INITIAL_METADATA;
   op.data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv_;
   op.flags = 0;
   op.reserved = nullptr;
-  op_list.push_back(op);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     AddRecvTrailingMetadataOp(OpList& op_list) {
-  grpc_op op;
+  grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op.data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
@@ -156,17 +154,15 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   op.data.recv_status_on_client.status_details = &status_details_;
   op.flags = 0;
   op.reserved = nullptr;
-  op_list.push_back(op);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     AddSendCloseFromClientOp(OpList& op_list) {
-  grpc_op op;
+  grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op.flags = 0;
   op.reserved = nullptr;
-  op_list.push_back(op);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
@@ -174,13 +170,12 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
   send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
   CSliceUnref(slice);
-  grpc_op op;
+  grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_MESSAGE;
   op.data.send_message.send_message = send_message_payload_;
   op.flags = 0;
   op.reserved = nullptr;
-  op_list.push_back(op);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
@@ -246,13 +241,12 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     StartRecvMessage() {
   OpList op_list;
-  grpc_op op;
+  grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_MESSAGE;
   op.data.recv_message.recv_message = &recv_message_payload_;
   op.flags = 0;
   op.reserved = nullptr;
-  op_list.push_back(op);
   StartBatch(op_list, "StartRecvMessage", &on_response_received_);
 }
 

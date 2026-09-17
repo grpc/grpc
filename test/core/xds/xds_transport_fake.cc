@@ -57,9 +57,12 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
   // XdsClient that acquires its mutex, but it was already holding its
   // mutex when it called us, so it would deadlock.
   event_engine_->Run([event_handler = std::move(event_handler_),
-                      status_sent = status_sent_]() mutable {
+                      status_sent = status_sent_,
+                      started = started_]() mutable {
     ExecCtx exec_ctx;
-    if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
+    if (started && !status_sent) {
+      event_handler->OnStatusReceived(absl::OkStatus());
+    }
     event_handler.reset();
   });
 }
@@ -75,8 +78,20 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload, bool send_half_close) {
+  bool register_stream = false;
+  {
+    MutexLock lock(&mu_);
+    GRPC_CHECK(!orphaned_);
+    if (!started_) {
+      started_ = true;
+      register_stream = true;
+    }
+  }
+  if (register_stream) {
+    transport_->RegisterStream(method_,
+                               Ref().TakeAsSubclass<FakeStreamingCall>());
+  }
   MutexLock lock(&mu_);
-  GRPC_CHECK(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
   if (send_half_close) half_closed_ = true;
   if (transport_->auto_complete_messages_from_client()) {
@@ -255,6 +270,12 @@ FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(const char* method) {
   }
 }
 
+void FakeXdsTransportFactory::FakeXdsTransport::RegisterStream(
+    const char* method, RefCountedPtr<FakeStreamingCall> call) {
+  MutexLock lock(&mu_);
+  active_calls_[method] = std::move(call);
+}
+
 void FakeXdsTransportFactory::FakeXdsTransport::RemoveStream(
     const char* method, FakeStreamingCall* call) {
   MutexLock lock(&mu_);
@@ -280,13 +301,13 @@ OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
-    bool /*start_upon_send_message*/) {
-  // Note: There are no ops to defer in the fake, so the call is always
-  // visible to the test as soon as it is created.
+    bool start_upon_send_message) {
   auto call = MakeOrphanable<FakeStreamingCall>(
-      WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler));
-  MutexLock lock(&mu_);
-  active_calls_[method] = call->Ref().TakeAsSubclass<FakeStreamingCall>();
+      WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler),
+      start_upon_send_message);
+  if (!start_upon_send_message) {
+    RegisterStream(method, call->Ref().TakeAsSubclass<FakeStreamingCall>());
+  }
   return call;
 }
 

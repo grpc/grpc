@@ -58,12 +58,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
    public:
     FakeStreamingCall(
         WeakRefCountedPtr<FakeXdsTransport> transport, const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler)
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        bool start_upon_send_message)
         : transport_(std::move(transport)),
           method_(method),
           event_engine_(transport_->factory()->event_engine_),
           event_handler_(MakeRefCounted<RefCountedEventHandler>(
-              std::move(event_handler))) {}
+              std::move(event_handler))),
+          started_(!start_upon_send_message) {}
 
     ~FakeStreamingCall() override;
 
@@ -130,6 +132,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     mutable Mutex mu_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
+    bool started_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
     bool half_closed_ ABSL_GUARDED_BY(&mu_) = false;
@@ -208,6 +211,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     RefCountedPtr<FakeStreamingCall> WaitForStream(const char* method);
 
+    void RegisterStream(const char* method,
+                        RefCountedPtr<FakeStreamingCall> call);
     void RemoveStream(const char* method, FakeStreamingCall* call);
 
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
