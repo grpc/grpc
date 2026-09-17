@@ -92,17 +92,20 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     // Create a streaming call on this transport for the specified method.
     // Events on the stream will be reported to event_handler.
     //
-    // If start_upon_send_message is true, the send_initial_metadata op and
-    // the recv ops are not started when the call is created; instead, they
-    // are started by the first call to SendMessage().  This allows a unary
-    // call to send initial metadata, the request message, and the
-    // half-close in a single batch:
+    // If start_upon_send_message is true, the send_initial_metadata op is
+    // not started when the call is created; instead, it is started by the
+    // first call to SendMessage().  This allows a unary call to send
+    // initial metadata, the request message, and the half-close in a single
+    // batch:
     //   auto call = transport->CreateStreamingCall(
     //       method, std::move(handler), /*start_upon_send_message=*/true);
     //   call->SendMessage(payload, /*send_half_close=*/true);
-    // Note that such a call does nothing until SendMessage() is called; in
-    // particular, the event handler will not see a status if the call is
-    // orphaned before then.
+    OrphanablePtr<StreamingCall> CreateStreamingCall(
+        const char* method,
+        std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+      return CreateStreamingCall(method, std::move(event_handler),
+                                 /*start_upon_send_message=*/false);
+    }
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,

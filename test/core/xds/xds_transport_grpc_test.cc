@@ -215,8 +215,7 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
   absl::Notification on_status_received;
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
-      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
-      /*start_upon_send_message=*/false);
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received));
   ASSERT_NE(call, nullptr);
   exec_ctx.Flush();
   on_status_received.WaitForNotification();
