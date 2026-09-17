@@ -370,8 +370,8 @@ def _create_portability_test_jobs(
     for compiler in [
         "gcc12",
         # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
-        "gcc10.2_openssl102",
-        "gcc10.2_openssl111",
+        "gcc12.2_openssl102",
+        "gcc14.2_openssl111",
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
