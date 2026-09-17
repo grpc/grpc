@@ -102,6 +102,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                     raise AssertionError("Core should not return GRPC_QUEUE_TIMEOUT!")
             elif event.type == GRPC_QUEUE_SHUTDOWN:
                 self._shutdown.store(True)
+                break
             else:
                 self._queue_mutex.lock()
                 self._queue.push(event)
