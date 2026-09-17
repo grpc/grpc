@@ -559,8 +559,8 @@ class CLanguage:
 
         if compiler == "default" or compiler == "cmake":
             return ("debian12", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10":
-            return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc12":
+            return ("gcc_12", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",
