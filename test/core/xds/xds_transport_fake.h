@@ -63,8 +63,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         : transport_(std::move(transport)),
           method_(method),
           event_engine_(transport_->factory()->event_engine_),
-          event_handler_(MakeRefCounted<RefCountedEventHandler>(
-              std::move(event_handler))),
+          event_handler_(
+              MakeRefCounted<RefCountedEventHandler>(std::move(event_handler))),
           started_(!start_upon_send_message) {}
 
     ~FakeStreamingCall() override;
