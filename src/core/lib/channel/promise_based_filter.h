@@ -1895,6 +1895,9 @@ class BaseCallData : public Activity,
     void Done(const ServerMetadata& metadata, Flusher* flusher,
               bool discard_buffered_message = false);
     bool IsIdle() const;
+    // Close inbound message pipe with clean EOF when server is completing the
+    // call.
+    void CloseInboundPipe();
 
     channelz::PropertyList ChannelzProperties() {
       return channelz::PropertyList().Set("state", StateString(state_));
