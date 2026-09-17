@@ -1313,9 +1313,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
         Race(
             // Get server trailing metadata from the v3 promise via the
             // inter-activity latch.
-            [pipe_owner]() {
-              return pipe_owner->server_trailing_metadata.Wait();
-            },
+            pipe_owner->server_trailing_metadata.Wait(),
             // This promise does the rest of the things, but it will always
             // return pending, because the promise can't actually finish
             // until the initiator returns trailing metadata above.
