@@ -83,16 +83,15 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
       started_ = true;
       register_stream = true;
     }
+    from_client_messages_.push_back(std::move(payload));
+    if (send_half_close) half_closed_ = true;
+    if (transport_->auto_complete_messages_from_client()) {
+      CompleteSendMessageFromClientLocked(/*ok=*/true);
+    }
   }
   if (register_stream) {
     transport_->RegisterStream(method_,
                                Ref().TakeAsSubclass<FakeStreamingCall>());
-  }
-  MutexLock lock(&mu_);
-  from_client_messages_.push_back(std::move(payload));
-  if (send_half_close) half_closed_ = true;
-  if (transport_->auto_complete_messages_from_client()) {
-    CompleteSendMessageFromClientLocked(/*ok=*/true);
   }
 }
 
