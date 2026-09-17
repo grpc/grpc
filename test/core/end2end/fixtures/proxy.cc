@@ -200,7 +200,7 @@ static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
   }
   bool trailing_metadata_op_deferred = false;
   {
-    grpc_core::MutexLock lock(*pc->initial_metadata_mu);
+    grpc_core::MutexLock lock(pc->initial_metadata_mu);
     trailing_metadata_op_deferred = pc->trailing_metadata_op_deferred;
     pc->p2s_initial_metadata_received = true;
   }
@@ -359,7 +359,7 @@ static void on_p2s_status(void* arg, int success) {
   //
   // This entire fixture will need a redesign when the batch API goes away.
   {
-    grpc_core::MutexLock lock(*pc->initial_metadata_mu);
+    grpc_core::MutexLock lock(pc->initial_metadata_mu);
     if (!pc->p2s_initial_metadata_received) {
       pc->trailing_metadata_op_deferred = true;
       return;
@@ -404,7 +404,7 @@ static void on_new_call(void* arg, int success) {
     std::swap(pc->c2p_initial_metadata, proxy->new_call_metadata);
     pc->initial_metadata_mu = new grpc_core::Mutex();
     {
-      grpc_core::MutexLock lock(*pc->initial_metadata_mu);
+      grpc_core::MutexLock lock(pc->initial_metadata_mu);
       pc->p2s_initial_metadata_received = false;
     }
     pc->c2p = proxy->new_call;

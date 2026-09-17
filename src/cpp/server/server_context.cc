@@ -69,7 +69,7 @@ class SessionContextRegistry {
  public:
   static uint16_t Register(void (*destroy)(void*)) {
     auto* state = GetState();
-    grpc_core::MutexLock lock(state->mu);
+    grpc_core::MutexLock lock(&state->mu);
     uint16_t id = state->destroy_functions.size();
     GRPC_CHECK_LT(id, std::numeric_limits<uint16_t>::max());
     state->destroy_functions.push_back(destroy);
@@ -81,7 +81,7 @@ class SessionContextRegistry {
     auto* state = GetState();
     void (*destroy)(void*) = nullptr;
     {
-      grpc_core::MutexLock lock(state->mu);
+      grpc_core::MutexLock lock(&state->mu);
       if (id < state->destroy_functions.size()) {
         destroy = state->destroy_functions[id];
       }
@@ -301,7 +301,7 @@ class ServerContextBase::CompletionOp final
 
  private:
   bool CheckCancelledNoPluck() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return finalized_ ? (cancelled_ != 0) : false;
   }
 
@@ -349,7 +349,7 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
   bool call_cancel = false;
 
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     if (done_intercepting_) {
       // We are done intercepting.
       has_tag = has_tag_;

@@ -48,7 +48,7 @@ DefaultHealthCheckService::DefaultHealthCheckService() {
 
 void DefaultHealthCheckService::SetServingStatus(
     const std::string& service_name, bool serving) {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   if (shutdown_) {
     // Set to NOT_SERVING in case service_name is not in the map.
     serving = false;
@@ -58,7 +58,7 @@ void DefaultHealthCheckService::SetServingStatus(
 
 void DefaultHealthCheckService::SetServingStatus(bool serving) {
   const ServingStatus status = serving ? SERVING : NOT_SERVING;
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   if (shutdown_) return;
   for (auto& p : services_map_) {
     ServiceData& service_data = p.second;
@@ -67,7 +67,7 @@ void DefaultHealthCheckService::SetServingStatus(bool serving) {
 }
 
 void DefaultHealthCheckService::Shutdown() {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   if (shutdown_) return;
   shutdown_ = true;
   for (auto& p : services_map_) {
@@ -79,7 +79,7 @@ void DefaultHealthCheckService::Shutdown() {
 DefaultHealthCheckService::ServingStatus
 DefaultHealthCheckService::GetServingStatus(
     const std::string& service_name) const {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
   if (it == services_map_.end()) return NOT_FOUND;
   const ServiceData& service_data = it->second;
@@ -89,7 +89,7 @@ DefaultHealthCheckService::GetServingStatus(
 void DefaultHealthCheckService::RegisterWatch(
     const std::string& service_name,
     grpc_core::RefCountedPtr<HealthCheckServiceImpl::WatchReactor> watcher) {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   ServiceData& service_data = services_map_[service_name];
   watcher->SendHealth(service_data.GetServingStatus());
   service_data.AddWatch(std::move(watcher));
@@ -98,7 +98,7 @@ void DefaultHealthCheckService::RegisterWatch(
 void DefaultHealthCheckService::UnregisterWatch(
     const std::string& service_name,
     HealthCheckServiceImpl::WatchReactor* watcher) {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
   if (it == services_map_.end()) return;
   ServiceData& service_data = it->second;
@@ -167,7 +167,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl::~HealthCheckServiceImpl() {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   shutdown_ = true;
   while (num_watches_ > 0) {
     shutdown_condition_.Wait(&mu_);
@@ -253,7 +253,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::WatchReactor(
     HealthCheckServiceImpl* service, const ByteBuffer* request)
     : service_(service) {
   {
-    grpc::internal::MutexLock lock(service_->mu_);
+    grpc::internal::MutexLock lock(&service_->mu_);
     ++service_->num_watches_;
   }
   bool success = DecodeRequest(*request, &service_name_);
@@ -271,7 +271,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     SendHealth(ServingStatus status) {
   VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
           << service_name_ << "\": SendHealth() for ServingStatus " << status;
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   // If there's already a send in flight, cache the new status, and
   // we'll start a new send for it when the one in flight completes.
   if (write_pending_) {
@@ -290,7 +290,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
   if (finish_called_) return;
   // Check if we're shutting down.
   {
-    grpc::internal::MutexLock lock(service_->mu_);
+    grpc::internal::MutexLock lock(&service_->mu_);
     if (service_->shutdown_) {
       MaybeFinishLocked(
           Status(StatusCode::CANCELLED, "not writing due to shutdown"));
@@ -315,7 +315,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
   VLOG(2) << "[HCS " << service_ << "] watcher " << this << " \""
           << service_name_ << "\": OnWriteDone(): ok=" << ok;
   response_.Clear();
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   if (!ok) {
     MaybeFinishLocked(Status(StatusCode::CANCELLED, "OnWriteDone() ok=false"));
     return;
@@ -332,7 +332,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     OnCancel() {
-  grpc::internal::MutexLock lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   MaybeFinishLocked(Status(StatusCode::UNKNOWN, "OnCancel()"));
 }
 
@@ -341,7 +341,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::OnDone() {
           << service_name_ << "\": OnDone()";
   service_->database_->UnregisterWatch(service_name_, this);
   {
-    grpc::internal::MutexLock lock(service_->mu_);
+    grpc::internal::MutexLock lock(&service_->mu_);
     if (--service_->num_watches_ == 0 && service_->shutdown_) {
       service_->shutdown_condition_.Signal();
     }

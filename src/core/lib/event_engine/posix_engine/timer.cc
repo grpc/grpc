@@ -115,7 +115,7 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
 #endif
 
   {
-    grpc_core::MutexLock lock(shard->mu);
+    grpc_core::MutexLock lock(&shard->mu);
     timer->pending = true;
     grpc_core::Timestamp now = host_->Now();
     if (deadline <= now) {
@@ -144,7 +144,7 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
   // In that case, the timer will simply have to wait for the next
   // TimerCheck.
   if (is_first_timer) {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     if (deadline < shard->min_deadline) {
       grpc_core::Timestamp old_min_deadline = shard_queue_[0]->min_deadline;
       shard->min_deadline = deadline;
@@ -160,7 +160,7 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
 
 bool TimerList::TimerCancel(Timer* timer) {
   Shard* shard = &shards_[grpc_core::HashPointer(timer, num_shards_)];
-  grpc_core::MutexLock lock(shard->mu);
+  grpc_core::MutexLock lock(&shard->mu);
 
   if (timer->pending) {
     timer->pending = false;
@@ -228,7 +228,7 @@ Timer* TimerList::Shard::PopOne(grpc_core::Timestamp now) {
 void TimerList::Shard::PopTimers(
     grpc_core::Timestamp now, grpc_core::Timestamp* new_min_deadline,
     std::vector<experimental::EventEngine::Closure*>* out) {
-  grpc_core::MutexLock lock(mu);
+  grpc_core::MutexLock lock(&mu);
   while (Timer* timer = PopOne(now)) {
     out->push_back(timer->closure);
   }
@@ -247,7 +247,7 @@ std::vector<experimental::EventEngine::Closure*> TimerList::FindExpiredTimers(
     return done;
   }
 
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
 
   while (shard_queue_[0]->min_deadline < now ||
          (now != grpc_core::Timestamp::InfFuture() &&

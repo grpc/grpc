@@ -56,7 +56,7 @@ class ReadAheadHandshaker : public Handshaker {
   void DoHandshake(
       HandshakerArgs* args,
       absl::AnyInvocable<void(absl::Status)> on_handshake_done) override {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     args_ = args;
     on_handshake_done_ = std::move(on_handshake_done);
     Ref().release();  // Held by callback.
@@ -67,7 +67,7 @@ class ReadAheadHandshaker : public Handshaker {
   }
 
   void Shutdown(absl::Status /*error*/) override {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     if (on_handshake_done_ != nullptr) args_->endpoint.reset();
   }
 
@@ -83,7 +83,7 @@ class ReadAheadHandshaker : public Handshaker {
          error = std::move(error)]() mutable {
           absl::AnyInvocable<void(absl::Status)> on_handshake_done;
           {
-            MutexLock lock(self->mu_);
+            MutexLock lock(&self->mu_);
             on_handshake_done = std::move(self->on_handshake_done_);
           }
           on_handshake_done(std::move(error));

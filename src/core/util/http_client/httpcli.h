@@ -204,7 +204,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data,
                                                    grpc_error_handle error) {
     RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(user_data));
-    MutexLock lock(req->mu_);
+    MutexLock lock(&req->mu_);
     req->OnReadInternal(error);
   }
 

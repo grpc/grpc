@@ -117,7 +117,7 @@ void WindowsEventEngine::ConnectionState::OnConnectedCallback::Run() {
       << " has already run. It should only ever run once.";
   bool has_run;
   {
-    grpc_core::MutexLock lock(connection_state_->mu_);
+    grpc_core::MutexLock lock(&connection_state_->mu_);
     has_run = std::exchange(connection_state_->has_run_, true);
   }
   // This could race with the deadline timer. If so, the engine's
@@ -136,7 +136,7 @@ void WindowsEventEngine::ConnectionState::DeadlineTimerCallback::Run() {
       << " has already run. It should only ever run once.";
   bool has_run;
   {
-    grpc_core::MutexLock lock(connection_state_->mu_);
+    grpc_core::MutexLock lock(&connection_state_->mu_);
     has_run = std::exchange(connection_state_->has_run_, true);
   }
   // This could race with the on connected callback. If so, the engine's
@@ -191,7 +191,7 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
     GRPC_TRACE_LOG(event_engine, INFO)
         << "WindowsEventEngine:" << engine << " executing callback:" << handle;
     {
-      grpc_core::MutexLock lock(engine->task_mu_);
+      grpc_core::MutexLock lock(&engine->task_mu_);
       engine->known_handles_.erase(handle);
     }
     cb();
@@ -247,7 +247,7 @@ WindowsEventEngine::~WindowsEventEngine() {
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
-  grpc_core::MutexLock lock(task_mu_);
+  grpc_core::MutexLock lock(&task_mu_);
   if (!known_handles_.contains(handle)) return false;
   GRPC_TRACE_LOG(event_engine, INFO)
       << "WindowsEventEngine::" << this << " cancelling " << handle;
@@ -326,7 +326,7 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
-  grpc_core::MutexLock lock(task_mu_);
+  grpc_core::MutexLock lock(&task_mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
   GRPC_TRACE_LOG(event_engine, INFO)
@@ -390,11 +390,11 @@ void WindowsEventEngine::OnConnectCompleted(
   EventEngine::OnConnectCallback cb;
   {
     // Connection attempt complete!
-    grpc_core::MutexLock lock(state->mu());
+    grpc_core::MutexLock lock(&state->mu());
     // return early if we cannot cancel the connection timeout timer.
     int erased_handles = 0;
     {
-      grpc_core::MutexLock handle_lock(connection_mu_);
+      grpc_core::MutexLock handle_lock(&connection_mu_);
       erased_handles =
           known_connection_handles_.erase(state->connection_handle());
     }
@@ -436,7 +436,7 @@ void WindowsEventEngine::OnDeadlineTimerFired(
   bool cancelled = false;
   EventEngine::OnConnectCallback cb;
   {
-    grpc_core::MutexLock lock(connection_state->mu());
+    grpc_core::MutexLock lock(&connection_state->mu());
     cancelled = CancelConnectFromDeadlineTimer(connection_state.get());
     if (cancelled) cb = connection_state->TakeCallback();
   }
@@ -533,10 +533,10 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
       /*socket=*/iocp_.Watch(sock), address,
       /*memory_allocator=*/std::move(memory_allocator),
       /*on_connect_user_callback=*/std::move(on_connect));
-  grpc_core::MutexLock lock(connection_state->mu());
+  grpc_core::MutexLock lock(&connection_state->mu());
   auto* info = connection_state->socket()->write_info();
   {
-    grpc_core::MutexLock connection_handle_lock(connection_mu_);
+    grpc_core::MutexLock connection_handle_lock(&connection_mu_);
     known_connection_handles_.insert(connection_state->connection_handle());
   }
   connection_state->Start(timeout);
@@ -557,7 +557,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   connection_state->AbortOnConnect();
   int erased_handles = 0;
   {
-    grpc_core::MutexLock connection_handle_lock(connection_mu_);
+    grpc_core::MutexLock connection_handle_lock(&connection_mu_);
     erased_handles =
         known_connection_handles_.erase(connection_state->connection_handle());
   }
@@ -577,7 +577,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
        status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
     EventEngine::OnConnectCallback cb;
     {
-      grpc_core::MutexLock lock(connection_state->mu());
+      grpc_core::MutexLock lock(&connection_state->mu());
       cb = connection_state->TakeCallback();
     }
     connection_state.reset();
@@ -594,7 +594,7 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   }
   // Erase the connection handle, which may be unknown
   {
-    grpc_core::MutexLock lock(connection_mu_);
+    grpc_core::MutexLock lock(&connection_mu_);
     if (known_connection_handles_.erase(handle) != 1) {
       GRPC_TRACE_LOG(event_engine, INFO)
           << "Unknown connection handle: " << handle;
@@ -602,7 +602,7 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
     }
   }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
-  grpc_core::MutexLock state_lock(connection_state->mu());
+  grpc_core::MutexLock state_lock(&connection_state->mu());
   // The connection cannot be cancelled if the deadline timer is already firing.
   if (!Cancel(connection_state->timer_handle())) return false;
   // The deadline timer was cancelled, so we must clean up its state.
@@ -615,7 +615,7 @@ bool WindowsEventEngine::CancelConnectFromDeadlineTimer(
     ConnectionState* connection_state) {
   // Erase the connection handle, which is guaranteed to exist.
   {
-    grpc_core::MutexLock lock(connection_mu_);
+    grpc_core::MutexLock lock(&connection_mu_);
     if (known_connection_handles_.erase(
             connection_state->connection_handle()) != 1) {
       return false;

@@ -2573,7 +2573,7 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
     ~TestTokenFetcherCredentials() override { GRPC_CHECK_EQ(queue_.size(), 0); }
 
     void AddResult(absl::StatusOr<RefCountedPtr<Token>> result) {
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       queue_.push_front(std::move(result));
     }
 
@@ -2603,7 +2603,7 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
         override {
       absl::StatusOr<RefCountedPtr<Token>> result;
       {
-        MutexLock lock(mu_);
+        MutexLock lock(&mu_);
         GRPC_CHECK(!queue_.empty());
         result = std::move(queue_.back());
         queue_.pop_back();

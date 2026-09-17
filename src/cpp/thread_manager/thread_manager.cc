@@ -66,7 +66,7 @@ ThreadManager::ThreadManager(const char*, grpc_resource_quota* resource_quota,
 
 ThreadManager::~ThreadManager() {
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     GRPC_CHECK_EQ(num_threads_, 0);
   }
 
@@ -74,35 +74,35 @@ ThreadManager::~ThreadManager() {
 }
 
 void ThreadManager::Wait() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   while (num_threads_ != 0) {
     shutdown_cv_.Wait(&mu_);
   }
 }
 
 void ThreadManager::Shutdown() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   shutdown_ = true;
 }
 
 bool ThreadManager::IsShutdown() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   return shutdown_;
 }
 
 int ThreadManager::GetMaxActiveThreadsSoFar() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   return max_active_threads_sofar_;
 }
 
 void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
   {
-    grpc_core::MutexLock list_lock(list_mu_);
+    grpc_core::MutexLock list_lock(&list_mu_);
     completed_threads_.push_back(thd);
   }
 
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     num_threads_--;
     if (num_threads_ == 0) {
       shutdown_cv_.Signal();
@@ -118,7 +118,7 @@ void ThreadManager::CleanupCompletedThreads() {
   {
     // swap out the completed threads list: allows other threads to clean up
     // more quickly
-    grpc_core::MutexLock lock(list_mu_);
+    grpc_core::MutexLock lock(&list_mu_);
     completed_threads.swap(completed_threads_);
   }
   for (auto thd : completed_threads) delete thd;
@@ -133,7 +133,7 @@ void ThreadManager::Initialize() {
   }
 
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     num_pollers_ = min_pollers_;
     num_threads_ = min_pollers_;
     max_active_threads_sofar_ = min_pollers_;
@@ -185,7 +185,7 @@ void ThreadManager::MainWorkLoop() {
               worker->Start();
             } else {
               // Get lock again to undo changes to poller/thread counters.
-              grpc_core::MutexLock failure_lock(mu_);
+              grpc_core::MutexLock failure_lock(&mu_);
               num_pollers_--;
               num_threads_--;
               resource_exhausted = true;

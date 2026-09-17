@@ -61,7 +61,7 @@ class Server {
 
   ~Server() {
     {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       server_->Shutdown();
     }
     server_thread_.join();
@@ -85,7 +85,7 @@ class Server {
     builder.AddListeningPort(address(), InsecureServerCredentials());
     auto grpc_server = builder.BuildAndStart();
     {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       server_ = grpc_server.get();
       is_running_.Notify();
     }
@@ -117,7 +117,7 @@ TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
   std::optional<Status> status;
 
   stub.async()->UnaryCall(&ctx, &req, &res, [&](auto s) {
-    grpc_core::MutexLock lock(mu);
+    grpc_core::MutexLock lock(&mu);
     status = s;
     cond.SignalAll();
   });
@@ -136,7 +136,7 @@ TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
     EXPECT_EQ(report->cpu_utilization(), 0.5);
   }
   {
-    grpc_core::MutexLock lock(mu);
+    grpc_core::MutexLock lock(&mu);
     if (!status.has_value()) {
       cond.Wait(&mu);
     }

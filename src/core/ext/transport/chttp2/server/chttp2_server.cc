@@ -508,7 +508,7 @@ grpc_error_handle NewChttp2ServerListener::Create(
     // number.
     listener->resolved_address_ = iomgr_addr;
     {
-      MutexLock lock(listener->mu_);
+      MutexLock lock(&listener->mu_);
       listener->add_port_on_start_ = true;
     }
   } else {
@@ -583,7 +583,7 @@ void NewChttp2ServerListener::Start() {
   bool should_add_port = false;
   grpc_tcp_server* tcp_server = nullptr;
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     if (!shutdown_) {
       should_add_port = std::exchange(add_port_on_start_, false);
       // Hold a ref while we start the server
@@ -612,7 +612,7 @@ void NewChttp2ServerListener::Start() {
 }
 
 void NewChttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   on_destroy_done_ = on_destroy_done;
 }
 
@@ -652,7 +652,7 @@ void NewChttp2ServerListener::OnAccept(
     // tcp_server but this ref is given away when the listener is orphaned
     // (shutdown). A connection needs the tcp_server to outlast the handshake
     // since the acceptor needs it.
-    MutexLock lock(self->mu_);
+    MutexLock lock(&self->mu_);
     if (self->shutdown_) {
       self->listener_state_->connection_quota()->ReleaseConnections(1);
       return;
@@ -691,7 +691,7 @@ void NewChttp2ServerListener::TcpServerShutdownComplete(
 void NewChttp2ServerListener::Orphan() {
   grpc_tcp_server* tcp_server;
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     shutdown_ = true;
     tcp_server = tcp_server_;
   }
@@ -807,7 +807,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
   GRPC_CHECK_NE(server_.get(), nullptr);
   RefCountedPtr<NewChttp2ServerListener> new_listener;
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     auto* new_listener_ptr = std::get_if<NewChttp2ServerListener*>(&listener_);
     if (new_listener_ptr != nullptr && *new_listener_ptr != nullptr) {
       new_listener = (*new_listener_ptr)
@@ -843,7 +843,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
 }
 
 void PassiveListenerImpl::ListenerDestroyed() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   listener_ = static_cast<Chttp2ServerListener*>(nullptr);
 }
 

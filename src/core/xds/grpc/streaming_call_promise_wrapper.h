@@ -61,7 +61,7 @@ class XdsStreamingCallPromiseWrapper final
   // from the previous PushMessage() resolves.
   auto PushMessage(std::string msg) {
     {
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       GRPC_CHECK(send_state_ == SendState::kIdle);
       send_state_ = SendState::kSendMessageInFlight;
       send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
@@ -80,7 +80,7 @@ class XdsStreamingCallPromiseWrapper final
   auto PullMessage() {
     bool start_recv = false;
     {
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       if (recv_state_ == RecvState::kIdle) {
         recv_state_ = RecvState::kRecvMessageInFlight;
         recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
@@ -105,7 +105,7 @@ class XdsStreamingCallPromiseWrapper final
   // the final status of the call.
   auto PullServerTrailingMetadata() {
     {
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       if (recv_state_ != RecvState::kReceivedStatus) {
         recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       }

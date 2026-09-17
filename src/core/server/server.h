@@ -630,7 +630,7 @@ class Server : public ServerInterface,
   // appropriate.
   void ShutdownUnrefOnRequest() ABSL_LOCKS_EXCLUDED(mu_global_) {
     if (shutdown_refs_.fetch_sub(2, std::memory_order_acq_rel) == 2) {
-      MutexLock lock(mu_global_);
+      MutexLock lock(&mu_global_);
       MaybeFinishShutdown();
     }
   }

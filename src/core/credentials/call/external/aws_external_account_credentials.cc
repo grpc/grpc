@@ -91,7 +91,7 @@ AwsExternalAccountCredentials::AwsFetchBody::AwsFetchBody(
     absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
     AwsExternalAccountCredentials* creds, Timestamp deadline)
     : FetchBody(std::move(on_done)), creds_(creds), deadline_(deadline) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   // Do a quick async hop here, so that we can invoke the callback at
   // any time without deadlocking.
   fetch_body_ = MakeOrphanable<NoOpFetchBody>(
@@ -102,7 +102,7 @@ AwsExternalAccountCredentials::AwsFetchBody::AwsFetchBody(
 }
 
 void AwsExternalAccountCredentials::AwsFetchBody::Shutdown() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   fetch_body_.reset();
 }
 
@@ -131,7 +131,7 @@ bool AwsExternalAccountCredentials::AwsFetchBody::MaybeFail(
 }
 
 void AwsExternalAccountCredentials::AwsFetchBody::Start() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (MaybeFail(absl::OkStatus())) return;
   if (!creds_->imdsv2_session_token_url_.empty() && ShouldUseMetadataServer()) {
     RetrieveImdsV2SessionToken();
@@ -175,7 +175,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveImdsV2SessionToken() {
       },
       [self =
            RefAsSubclass<AwsFetchBody>()](absl::StatusOr<std::string> result) {
-        MutexLock lock(self->mu_);
+        MutexLock lock(&self->mu_);
         if (self->MaybeFail(result.status())) return;
         self->imdsv2_session_token_ = std::move(*result);
         if (self->creds_->signer_ != nullptr) {
@@ -228,7 +228,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveRegion() {
       },
       [self =
            RefAsSubclass<AwsFetchBody>()](absl::StatusOr<std::string> result) {
-        MutexLock lock(self->mu_);
+        MutexLock lock(&self->mu_);
         if (self->MaybeFail(result.status())) return;
         // Remove the last letter of availability zone to get pure region
         self->region_ = result->substr(0, result->size() - 1);
@@ -270,7 +270,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveRoleName() {
       },
       [self =
            RefAsSubclass<AwsFetchBody>()](absl::StatusOr<std::string> result) {
-        MutexLock lock(self->mu_);
+        MutexLock lock(&self->mu_);
         if (self->MaybeFail(result.status())) return;
         self->role_name_ = std::move(*result);
         self->RetrieveSigningKeys();
@@ -326,7 +326,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveSigningKeys() {
       },
       [self =
            RefAsSubclass<AwsFetchBody>()](absl::StatusOr<std::string> result) {
-        MutexLock lock(self->mu_);
+        MutexLock lock(&self->mu_);
         if (self->MaybeFail(result.status())) return;
         self->OnRetrieveSigningKeys(std::move(*result));
       });

@@ -57,7 +57,7 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>
 ExternalConnectionAcceptorImpl::GetAcceptor() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   GRPC_CHECK(!has_acceptor_);
   has_acceptor_ = true;
   return std::unique_ptr<experimental::ExternalConnectionAcceptor>(
@@ -66,7 +66,7 @@ ExternalConnectionAcceptorImpl::GetAcceptor() {
 
 void ExternalConnectionAcceptorImpl::HandleNewConnection(
     experimental::ExternalConnectionAcceptor::NewConnectionParameters* p) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
     LOG(ERROR) << "NOT handling external connection with fd " << p->fd
@@ -79,12 +79,12 @@ void ExternalConnectionAcceptorImpl::HandleNewConnection(
 }
 
 void ExternalConnectionAcceptorImpl::Shutdown() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   shutdown_ = true;
 }
 
 void ExternalConnectionAcceptorImpl::Start() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   GRPC_CHECK(!started_);
   GRPC_CHECK(has_acceptor_);
   GRPC_CHECK(!shutdown_);

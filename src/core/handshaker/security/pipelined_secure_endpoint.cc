@@ -639,7 +639,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       tsi_result result;
       frame_protector_.TraceOp("Write", data->c_slice_buffer());
       {
-        grpc_core::MutexLock lock(*frame_protector_.write_mu());
+        grpc_core::MutexLock lock(frame_protector_.write_mu());
         result = frame_protector_.Protect(data->c_slice_buffer(),
                                           args.max_frame_size());
       }
@@ -677,9 +677,9 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
 
     void Shutdown() {
       std::unique_ptr<EventEngine::Endpoint> wrapped_ep;
-      grpc_core::MutexLock write_lock(*frame_protector_.write_mu());
-      grpc_core::MutexLock read_lock(*frame_protector_.read_mu());
-      grpc_core::MutexLock shutdown_read_lock(shutdown_read_mu_);
+      grpc_core::MutexLock write_lock(frame_protector_.write_mu());
+      grpc_core::MutexLock read_lock(frame_protector_.read_mu());
+      grpc_core::MutexLock shutdown_read_lock(&shutdown_read_mu_);
       wrapped_ep = std::move(wrapped_ep_);
       frame_protector_.Shutdown();
     }
@@ -735,7 +735,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         if (read_finished_immediately) {
           lock.Release();
           {
-            grpc_core::MutexLock lock(impl->read_queue_mu_);
+            grpc_core::MutexLock lock(&impl->read_queue_mu_);
             impl->frame_protector_.TraceOp(
                 "ReadImm",
                 impl->staging_protected_data_buffer_->c_slice_buffer());
@@ -754,7 +754,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         ABSL_LOCKS_EXCLUDED(impl->read_queue_mu_) {
       if (status.ok()) {
         {
-          grpc_core::MutexLock lock(impl->read_queue_mu_);
+          grpc_core::MutexLock lock(&impl->read_queue_mu_);
           impl->frame_protector_.TraceOp(
               "Read", impl->staging_protected_data_buffer_->c_slice_buffer());
           impl->MoveStagingIntoProtectedBuffer();
@@ -816,7 +816,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       if (read_finished_immediately) {
         shutdown_read_lock.Release();
         {
-          grpc_core::MutexLock read_queue_lock(read_queue_mu_);
+          grpc_core::MutexLock read_queue_lock(&read_queue_mu_);
           frame_protector_.TraceOp(
               "ReadImm", staging_protected_data_buffer_->c_slice_buffer());
           MoveStagingIntoProtectedBuffer();
@@ -829,7 +829,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
           // If there was an error, the read will fail asynchronously;
           // otherwise, the unprotected data is now in the transport read's
           // buffer and we can return true.
-          grpc_core::MutexLock read_queue_lock(read_queue_mu_);
+          grpc_core::MutexLock read_queue_lock(&read_queue_mu_);
           return unprotecting_.ok();
         }
       }
@@ -1004,7 +1004,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         lock.Release();
         bool should_unprotect = false;
         {
-          grpc_core::MutexLock lock(impl->read_queue_mu_);
+          grpc_core::MutexLock lock(&impl->read_queue_mu_);
           impl->frame_protector_.TraceOp(
               "ReadImm",
               impl->staging_protected_data_buffer_->c_slice_buffer());
@@ -1027,7 +1027,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         ABSL_LOCKS_EXCLUDED(impl->read_queue_mu_) {
       bool should_unprotect = false;
       {
-        grpc_core::MutexLock lock(impl->read_queue_mu_);
+        grpc_core::MutexLock lock(&impl->read_queue_mu_);
         should_unprotect = impl->ShouldContinueUnprotect();
         if (!status.ok()) {
           // We rely on ContinueUnprotect to fail the read if the

@@ -63,7 +63,7 @@ size_t LivingThreadCount::WaitForCountChange(size_t desired_threads,
   size_t count;
   auto deadline = absl::Now() + absl::Milliseconds(timeout.millis());
   do {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     count = CountLocked();
     if (count == desired_threads) break;
     cv_.WaitWithDeadline(&mu_, deadline);

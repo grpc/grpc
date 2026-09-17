@@ -58,7 +58,7 @@ LoadReporterAsyncServiceImpl::~LoadReporterAsyncServiceImpl() {
   // We will reach here after the server starts shutting down.
   shutdown_ = true;
   {
-    grpc_core::MutexLock lock(cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&cq_shutdown_mu_);
     cq_->Shutdown();
   }
   if (next_fetch_and_sample_alarm_ != nullptr) {
@@ -73,7 +73,7 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
                    gpr_time_from_millis(kFetchAndSampleIntervalSeconds * 1000,
                                         GPR_TIMESPAN));
   {
-    grpc_core::MutexLock lock(cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&cq_shutdown_mu_);
     if (shutdown_) return;
     // TODO(juanlishen): Improve the Alarm implementation to reuse a single
     // instance for multiple events.
@@ -130,7 +130,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::CreateAndStart(
       std::make_shared<ReportLoadHandler>(cq, service, load_reporter);
   ReportLoadHandler* p = handler.get();
   {
-    grpc_core::MutexLock lock(service->cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
     p->on_done_notified_ =
         CallableTag(std::bind(&ReportLoadHandler::OnDoneNotified, p,
@@ -175,7 +175,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   // instance will deallocate itself when it's done.
   CreateAndStart(cq_, service_, load_reporter_);
   {
-    grpc_core::ReleasableMutexLock lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.Release();
       Shutdown(std::move(self), "OnRequestDelivered");
@@ -234,7 +234,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
       SendReport(self, true /* ok */);
       // Expect this read to fail.
       {
-        grpc_core::ReleasableMutexLock lock(service_->cq_shutdown_mu_);
+        grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
         if (service_->shutdown_) {
           lock.Release();
           Shutdown(std::move(self), "OnReadDone");
@@ -266,7 +266,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(load_report_interval_ms_, GPR_TIMESPAN));
   {
-    grpc_core::ReleasableMutexLock lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.Release();
       Shutdown(std::move(self), "ScheduleNextReport");
@@ -306,7 +306,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
     call_status_ = INITIAL_RESPONSE_SENT;
   }
   {
-    grpc_core::ReleasableMutexLock lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.Release();
       Shutdown(std::move(self), "SendReport");
@@ -352,7 +352,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
   // OnRequestDelivered() may be called after OnDoneNotified(), so we need to
   // try to Finish() every time we are in Shutdown().
   if (call_status_ >= DELIVERED && call_status_ < FINISH_CALLED) {
-    grpc_core::MutexLock lock(service_->cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&service_->cq_shutdown_mu_);
     if (!service_->shutdown_) {
       on_finish_done_ =
           CallableTag(std::bind(&ReportLoadHandler::OnFinishDone, this,

@@ -147,7 +147,7 @@ class GracefulShutdownTest : public ::testing::Test {
     shutdown_ = true;
     ExecCtx exec_ctx;
     {
-      MutexLock lock(ep_destroy_mu_);
+      MutexLock lock(&ep_destroy_mu_);
       grpc_endpoint_destroy(fds_.client);
       fds_.client = nullptr;
     }
@@ -168,7 +168,7 @@ class GracefulShutdownTest : public ::testing::Test {
     GracefulShutdownTest* self = static_cast<GracefulShutdownTest*>(arg);
     if (error.ok()) {
       {
-        MutexLock lock(self->mu_);
+        MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
           char* dump = grpc_dump_slice(self->read_buffer_.slices[i],
                                        GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -179,7 +179,7 @@ class GracefulShutdownTest : public ::testing::Test {
         }
         self->read_cv_.SignalAll();
       }
-      MutexLock lock(self->ep_destroy_mu_);
+      MutexLock lock(&self->ep_destroy_mu_);
       if (self->fds_.client != nullptr) {
         grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
         grpc_endpoint_read(self->fds_.client, &self->read_buffer_,
@@ -202,7 +202,7 @@ class GracefulShutdownTest : public ::testing::Test {
   // Waits for \a bytes to show up in read_bytes_
   void WaitForReadBytes(absl::string_view bytes) {
     auto start_time = absl::Now();
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     while (true) {
       auto where = read_bytes_.find(std::string(bytes));
       if (where != std::string::npos) {
@@ -217,7 +217,7 @@ class GracefulShutdownTest : public ::testing::Test {
 
   std::string WaitForNBytes(size_t bytes) {
     auto start_time = absl::Now();
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     while (read_bytes_.size() < bytes) {
       EXPECT_LT(absl::Now() - start_time, absl::Seconds(60));
       read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));

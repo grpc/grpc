@@ -87,7 +87,7 @@ class PollEventHandle : public EventHandle {
         read_closure_(reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)),
         write_closure_(
             reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)) {
-    grpc_core::MutexLock lock(poller_->mu_);
+    grpc_core::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
   }
   PollPoller* Poller() override { return poller_.get(); }
@@ -105,7 +105,7 @@ class PollEventHandle : public EventHandle {
     return false;
   }
   void ForceRemoveHandleFromPoller() {
-    grpc_core::MutexLock lock(poller_->mu_);
+    grpc_core::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListRemoveHandle(this);
   }
   FileDescriptor WrappedFd() override { return fd_; }
@@ -142,13 +142,13 @@ class PollEventHandle : public EventHandle {
   void SetWritable() override;
   void SetHasError() override;
   bool IsHandleShutdown() override {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return is_shutdown_;
   };
   inline void ExecutePendingActions() {
     int kick = 0;
     {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       if ((pending_actions_ & 1UL)) {
         if (SetReadyLocked(&read_closure_)) {
           kick = 1;
@@ -334,7 +334,7 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
   // of a closure which calls OrphanHandle or poller->Shutdown() prematurely.
   Ref();
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     // only shutdown once
     if (!is_shutdown_) {
       is_shutdown_ = true;
@@ -403,7 +403,7 @@ void PollEventHandle::NotifyOnError(PosixEngineClosure* on_error) {
 void PollEventHandle::SetReadable() {
   Ref();
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     SetReadyLocked(&read_closure_);
   }
   Unref();
@@ -412,7 +412,7 @@ void PollEventHandle::SetReadable() {
 void PollEventHandle::SetWritable() {
   Ref();
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     SetReadyLocked(&write_closure_);
   }
   Unref();
@@ -456,7 +456,7 @@ bool PollEventHandle::EndPollLocked(bool got_read, bool got_write) {
 }
 
 void PollPoller::KickExternal(bool ext) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (closed_) {
     return;
   }
@@ -566,7 +566,7 @@ Poller::WorkResult PollPoller::Work(
     PollEventHandle* head = poll_handles_list_head_;
     while (head != nullptr) {
       {
-        grpc_core::MutexLock lock(*head->mu());
+        grpc_core::MutexLock lock(head->mu());
         // There shouldn't be any orphaned fds at this point. This is because
         // prior to marking a handle as orphaned it is first removed from
         // poll handle list for the poller under the poller lock.
@@ -717,7 +717,7 @@ Poller::WorkResult PollPoller::Work(
 }
 
 void PollPoller::Close() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   closed_ = true;
 }
 
@@ -728,7 +728,7 @@ void PollPoller::HandleForkInChild() {
   }
   PollEventHandle* handle;
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     handle = poll_handles_list_head_;
   }
   while (handle != nullptr) {
@@ -744,7 +744,7 @@ void PollPoller::ResetKickState() {
   // new fd
   // TODO (eostroukhov): Need to consider merging kicked/kicked_ext
   // with the wakeup_fd so there's no duplicate state.
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   was_kicked_ = false;
   was_kicked_ext_ = false;
 }

@@ -253,7 +253,7 @@ uint64_t EstimateEntrySize(const LoggingSink::Entry& entry) {
 
 void ObservabilityLoggingSink::LogEntry(Entry entry) {
   auto entry_size = EstimateEntrySize(entry);
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (sink_closed_) return;
   entries_.push_back(std::move(entry));
   entries_memory_footprint_ += entry_size;
@@ -262,13 +262,13 @@ void ObservabilityLoggingSink::LogEntry(Entry entry) {
 
 void ObservabilityLoggingSink::RegisterEnvironmentResource(
     const EnvironmentAutoDetect::ResourceType* resource) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   resource_ = resource;
   MaybeTriggerFlushLocked();
 }
 
 void ObservabilityLoggingSink::FlushAndClose() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   sink_closed_ = true;
   if (entries_.empty()) return;
   MaybeTriggerFlushLocked();
@@ -280,7 +280,7 @@ void ObservabilityLoggingSink::Flush() {
   google::logging::v2::LoggingServiceV2::StubInterface* stub = nullptr;
   const EnvironmentAutoDetect::ResourceType* resource = nullptr;
   {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     if (flush_in_progress_) {
       return;
     }
@@ -376,7 +376,7 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
           }
         }
         delete call;
-        grpc_core::MutexLock lock(mu_);
+        grpc_core::MutexLock lock(&mu_);
         flush_in_progress_ = false;
         if (sink_closed_ && entries_.empty()) {
           sink_flushed_after_close_.SignalAll();
@@ -387,7 +387,7 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
 }
 
 void ObservabilityLoggingSink::MaybeTriggerFlush() {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   return MaybeTriggerFlushLocked();
 }
 

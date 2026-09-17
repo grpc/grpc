@@ -65,7 +65,7 @@ PassthroughEndpoint::~PassthroughEndpoint() {
 bool PassthroughEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                                SliceBuffer* buffer, ReadArgs) {
   CallbackHelper callback_helper(event_engine_.get(), allow_inline_callbacks_);
-  grpc_core::MutexLock lock(recv_middle_->mu);
+  grpc_core::MutexLock lock(&recv_middle_->mu);
   if (recv_middle_->closed) {
     callback_helper.AddCallback([on_read = std::move(on_read)]() mutable {
       on_read(absl::CancelledError());
@@ -89,7 +89,7 @@ bool PassthroughEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
 bool PassthroughEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_write,
                                 SliceBuffer* buffer, WriteArgs) {
   CallbackHelper callback_helper(event_engine_.get(), allow_inline_callbacks_);
-  grpc_core::MutexLock lock(send_middle_->mu);
+  grpc_core::MutexLock lock(&send_middle_->mu);
   if (send_middle_->closed) {
     callback_helper.AddCallback([on_write = std::move(on_write)]() mutable {
       on_write(absl::CancelledError());
@@ -111,7 +111,7 @@ bool PassthroughEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_write,
 }
 
 void PassthroughEndpoint::Middle::Close(CallbackHelper& callback_helper) {
-  grpc_core::MutexLock lock(mu);
+  grpc_core::MutexLock lock(&mu);
   closed = true;
   if (on_read != nullptr) {
     callback_helper.AddCallback([on_read = std::move(on_read)]() mutable {

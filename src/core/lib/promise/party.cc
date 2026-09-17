@@ -115,7 +115,7 @@ class Party::Handle final : public Wakeable {
   void Drop(WakeupMask) override { Unref(); }
 
   std::string ActivityDebugTag(WakeupMask) const override {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     return party_ == nullptr ? "<unknown>" : party_->DebugTag();
   }
 

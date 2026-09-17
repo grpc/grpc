@@ -106,7 +106,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
       : poller_(poller) {}
 
   ~GrpcPolledFdFactoryPosix() override {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     for (auto& fd : owned_fds_) {
       close(fd);
     }
@@ -116,7 +116,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(
       ares_socket_t as) override {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     owned_fds_.insert(as);
     CHECK_NE(poller_, nullptr);
     FileDescriptor fd(as, poller_->posix_interface().generation());
@@ -165,7 +165,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   static int Close(ares_socket_t as, void* user_data) {
     GrpcPolledFdFactoryPosix* self =
         static_cast<GrpcPolledFdFactoryPosix*>(user_data);
-    grpc_core::MutexLock lock(self->mu_);
+    grpc_core::MutexLock lock(&self->mu_);
     if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
       // c-ares owns this fd, grpc has never seen it
       return close(as);

@@ -349,7 +349,7 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
 void TlsChannelSecurityConnector::add_handshakers(
     const ChannelArgs& args, grpc_pollset_set* /*interested_parties*/,
     HandshakeManager* handshake_mgr) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
   if (client_handshaker_factory_ != nullptr) {
     // Instantiate TSI handshaker.
@@ -410,7 +410,7 @@ void TlsChannelSecurityConnector::check_peer(
       RefAsSubclass<TlsChannelSecurityConnector>(), on_peer_checked, peer,
       target_name);
   {
-    MutexLock lock(verifier_request_map_mu_);
+    MutexLock lock(&verifier_request_map_mu_);
     pending_verifier_requests_.emplace(on_peer_checked, pending_request);
   }
   pending_request->Start();
@@ -423,7 +423,7 @@ void TlsChannelSecurityConnector::cancel_check_peer(
     grpc_tls_custom_verification_check_request* pending_verifier_request =
         nullptr;
     {
-      MutexLock lock(verifier_request_map_mu_);
+      MutexLock lock(&verifier_request_map_mu_);
       auto it = pending_verifier_requests_.find(on_peer_checked);
       if (it != pending_verifier_requests_.end()) {
         pending_verifier_request = it->second->request();
@@ -465,7 +465,7 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
         std::shared_ptr<tsi::RootCertInfo> root_certs,
         std::optional<KeyCertPairsOrSelector> key_cert_pairs_or_selector) {
   GRPC_CHECK_NE(security_connector_, nullptr);
-  MutexLock lock(security_connector_->mu_);
+  MutexLock lock(&security_connector_->mu_);
   if (root_certs != nullptr) {
     security_connector_->root_cert_info_ = std::move(root_certs);
   }
@@ -535,7 +535,7 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::Start() {
 void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
     bool run_callback_inline, absl::Status status) {
   {
-    MutexLock lock(security_connector_->verifier_request_map_mu_);
+    MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
   grpc_error_handle error;
@@ -666,7 +666,7 @@ TlsServerSecurityConnector::~TlsServerSecurityConnector() {
 void TlsServerSecurityConnector::add_handshakers(
     const ChannelArgs& args, grpc_pollset_set* /*interested_parties*/,
     HandshakeManager* handshake_mgr) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
   if (server_handshaker_factory_ != nullptr) {
     auto stats_plugin_group =
@@ -703,7 +703,7 @@ void TlsServerSecurityConnector::check_peer(
     auto* pending_request = new ServerPendingVerifierRequest(
         RefAsSubclass<TlsServerSecurityConnector>(), on_peer_checked, peer);
     {
-      MutexLock lock(verifier_request_map_mu_);
+      MutexLock lock(&verifier_request_map_mu_);
       pending_verifier_requests_.emplace(on_peer_checked, pending_request);
     }
     pending_request->Start();
@@ -720,7 +720,7 @@ void TlsServerSecurityConnector::cancel_check_peer(
     grpc_tls_custom_verification_check_request* pending_verifier_request =
         nullptr;
     {
-      MutexLock lock(verifier_request_map_mu_);
+      MutexLock lock(&verifier_request_map_mu_);
       auto it = pending_verifier_requests_.find(on_peer_checked);
       if (it != pending_verifier_requests_.end()) {
         pending_verifier_request = it->second->request();
@@ -748,7 +748,7 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
         std::shared_ptr<tsi::RootCertInfo> roots,
         std::optional<KeyCertPairsOrSelector> key_cert_pairs_or_selector) {
   GRPC_CHECK_NE(security_connector_, nullptr);
-  MutexLock lock(security_connector_->mu_);
+  MutexLock lock(&security_connector_->mu_);
   if (roots != nullptr) {
     security_connector_->root_cert_info_ = std::move(roots);
   }
@@ -820,7 +820,7 @@ void TlsServerSecurityConnector::ServerPendingVerifierRequest::Start() {
 void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
     bool run_callback_inline, absl::Status status) {
   {
-    MutexLock lock(security_connector_->verifier_request_map_mu_);
+    MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
   grpc_error_handle error;

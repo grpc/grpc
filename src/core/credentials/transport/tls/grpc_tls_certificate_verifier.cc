@@ -41,7 +41,7 @@ bool ExternalCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)> callback, absl::Status* sync_status) {
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     request_map_.emplace(request, std::move(callback));
   }
   // Invoke the caller-specified verification logic embedded in
@@ -56,7 +56,7 @@ bool ExternalCertificateVerifier::Verify(
       *sync_status = absl::Status(static_cast<absl::StatusCode>(status_code),
                                   error_details);
     }
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     request_map_.erase(request);
   }
   gpr_free(error_details);
@@ -75,7 +75,7 @@ void ExternalCertificateVerifier::OnVerifyDone(
   auto* self = static_cast<ExternalCertificateVerifier*>(callback_arg);
   std::function<void(absl::Status)> callback;
   {
-    MutexLock lock(self->mu_);
+    MutexLock lock(&self->mu_);
     auto it = self->request_map_.find(request);
     if (it != self->request_map_.end()) {
       callback = std::move(it->second);

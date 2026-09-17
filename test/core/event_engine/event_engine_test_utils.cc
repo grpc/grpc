@@ -68,7 +68,7 @@ std::string GetNextSendMessage() {
   std::string tmp_s;
   int len;
   {
-    grpc_core::MutexLock lock(g_mu);
+    grpc_core::MutexLock lock(&g_mu);
     len = dis(gen);
   }
   tmp_s.reserve(len);
@@ -163,7 +163,7 @@ absl::Status SendValidatePayload(absl::string_view data,
 
 absl::Status ConnectionManager::BindAndStartListener(
     const std::vector<std::string>& addrs, bool listener_type_oracle) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (addrs.empty()) {
     return absl::InvalidArgumentError(
         "Atleast one bind address must be specified");
@@ -219,7 +219,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
                                     EventEngine::Duration timeout,
                                     bool client_type_oracle) {
   // Only allow one CreateConnection call to proceed at a time.
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   std::string conn_name =
       absl::StrCat("connection-", std::to_string(num_processed_connections_++));
   EventEngine* event_engine = client_type_oracle ? oracle_event_engine_.get()
