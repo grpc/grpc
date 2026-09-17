@@ -140,18 +140,17 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   void SendHalfClose() override;
 
  private:
-  using OpList = absl::InlinedVector<grpc_op, 5>;
+  using OpList = absl::InlinedVector<grpc_op, 3>;
 
   void AddSendInitialMetadataOp(OpList& op_list);
   void AddRecvInitialMetadataOp(OpList& op_list);
   void AddRecvTrailingMetadataOp(OpList& op_list);
   void AddSendCloseFromClientOp(OpList& op_list);
   void AddSendMessageOp(std::string payload, OpList& op_list);
-  void StartStatusBatch();
-  void MaybeAddCallStartOps(OpList& op_list);
   void StartBatch(const OpList& op_list, const char* ref_reason,
                   grpc_closure* closure);
 
+  static void OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/);
   static void OnRequestSent(void* arg, grpc_error_handle error);
   static void OnHalfClosed(void* arg, grpc_error_handle error);
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
@@ -166,13 +165,11 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
 
   // recv_initial_metadata
   grpc_metadata_array initial_metadata_recv_;
+  grpc_closure on_recv_initial_metadata_;
 
   // send_initial_metadata
   std::vector<grpc_metadata> send_initial_metadata_;
-
-  // Whether StartCallOps() has been called.  Will be false upon
-  // construction only if start_upon_send_message was set in the ctor.
-  bool call_started_ = false;
+  bool sent_initial_metadata_ = false;
 
   // send_message
   grpc_byte_buffer* send_message_payload_ = nullptr;

@@ -105,20 +105,25 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
         grpc_slice_from_cpp_string(initial_metadata[i].second);
   }
   // Initialize closures.
+  GRPC_CLOSURE_INIT(&on_recv_initial_metadata_, OnRecvInitialMetadata, this,
+                    nullptr);
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this, nullptr);
   GRPC_CLOSURE_INIT(&on_half_closed_, OnHalfClosed, this, nullptr);
   GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
-  // Start ops on the call, unless the caller asked us to wait until the
-  // first message is sent.
+  // Start batch for recv_initial_metadata (and send_initial_metadata, unless
+  // the caller asked us to wait until the first message is sent).
+  OpList op_list;
   if (!start_upon_send_message) {
-    call_started_ = true;
-    OpList op_list;
+    sent_initial_metadata_ = true;
     AddSendInitialMetadataOp(op_list);
-    AddRecvInitialMetadataOp(op_list);
-    AddRecvTrailingMetadataOp(op_list);
-    StartBatch(op_list, "OnStatusReceived", &on_status_received_);
   }
+  AddRecvInitialMetadataOp(op_list);
+  StartBatch(op_list, "OnRecvInitialMetadata", &on_recv_initial_metadata_);
+  // Start batch for recv_trailing_metadata.
+  op_list.clear();
+  AddRecvTrailingMetadataOp(op_list);
+  StartBatch(op_list, "OnStatusReceived", &on_status_received_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
@@ -178,22 +183,6 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   op.reserved = nullptr;
 }
 
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    StartStatusBatch() {
-  OpList op_list;
-  AddRecvInitialMetadataOp(op_list);
-  AddRecvTrailingMetadataOp(op_list);
-  StartBatch(op_list, "OnStatusReceived", &on_status_received_);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    MaybeAddCallStartOps(OpList& op_list) {
-  if (call_started_) return;
-  call_started_ = true;
-  AddSendInitialMetadataOp(op_list);
-  StartStatusBatch();
-}
-
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::StartBatch(
     const OpList& op_list, const char* ref_reason, grpc_closure* closure) {
   Ref(DEBUG_LOCATION, ref_reason).release();
@@ -204,7 +193,6 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::StartBatch(
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     ~GrpcStreamingCall() {
-  grpc_metadata_array_destroy(&initial_metadata_recv_);
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
@@ -230,7 +218,10 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Orphan() {
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
     std::string payload, bool send_half_close) {
   OpList op_list;
-  MaybeAddCallStartOps(op_list);
+  if (!sent_initial_metadata_) {
+    sent_initial_metadata_ = true;
+    AddSendInitialMetadataOp(op_list);
+  }
   AddSendMessageOp(std::move(payload), op_list);
   if (send_half_close) {
     AddSendCloseFromClientOp(op_list);
@@ -255,6 +246,12 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   OpList op_list;
   AddSendCloseFromClientOp(op_list);
   StartBatch(op_list, "SendHalfClose", &on_half_closed_);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
+  grpc_metadata_array_destroy(&self->initial_metadata_recv_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::

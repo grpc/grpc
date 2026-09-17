@@ -57,12 +57,9 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
   // XdsClient that acquires its mutex, but it was already holding its
   // mutex when it called us, so it would deadlock.
   event_engine_->Run([event_handler = std::move(event_handler_),
-                      status_sent = status_sent_,
-                      started = started_]() mutable {
+                      status_sent = status_sent_]() mutable {
     ExecCtx exec_ctx;
-    if (started && !status_sent) {
-      event_handler->OnStatusReceived(absl::OkStatus());
-    }
+    if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
     event_handler.reset();
   });
 }
