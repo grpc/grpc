@@ -23,6 +23,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
+#include <openssl/opensslv.h>
 #include <openssl/x509.h>
 
 #include <cstdint>
@@ -39,6 +40,10 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/strings/string_view.h"
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#error "OpenSSL versions older than 1.1.0 are no longer supported."
+#endif
 
 // Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs.
 #define TSI_X509_CERTIFICATE_TYPE "X509"
