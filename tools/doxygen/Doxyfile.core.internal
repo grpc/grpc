@@ -1192,8 +1192,6 @@ src/core/ext/transport/chttp2/client/chttp2_connector.h \
 src/core/ext/transport/chttp2/server/chttp2_server.cc \
 src/core/ext/transport/chttp2/server/chttp2_server.h \
 src/core/ext/transport/chttp2/transport/README.md \
-src/core/ext/transport/chttp2/transport/bin_decoder.cc \
-src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
 src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc \

@@ -397,8 +397,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/client/chttp2_connector.h )
   s.files += %w( src/core/ext/transport/chttp2/server/chttp2_server.cc )
   s.files += %w( src/core/ext/transport/chttp2/server/chttp2_server.h )
-  s.files += %w( src/core/ext/transport/chttp2/transport/bin_decoder.cc )
-  s.files += %w( src/core/ext/transport/chttp2/transport/bin_decoder.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/bin_encoder.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/bin_encoder.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc )
