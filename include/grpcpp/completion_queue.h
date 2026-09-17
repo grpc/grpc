@@ -394,13 +394,13 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   void UnregisterServer(const grpc::Server* server) {
     (void)server;
 #ifndef NDEBUG
-    grpc::internal::MutexLock l(&server_list_mutex_);
+    grpc::internal::MutexLock l(server_list_mutex_);
     server_list_.remove(server);
 #endif
   }
   bool ServerListEmpty() const {
 #ifndef NDEBUG
-    grpc::internal::MutexLock l(&server_list_mutex_);
+    grpc::internal::MutexLock l(server_list_mutex_);
     return server_list_.empty();
 #endif
     return true;
