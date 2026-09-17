@@ -629,8 +629,14 @@ class SslTransportSecurityTest
                                           TSI_SSL_TLS_VERSION_PEER_PROPERTY);
         if (tls_version_prop != nullptr) {
           expected_property_count++;
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+          // OpenSSL versions < 1.1.1 do not support TLS 1.3, so TLS 1.2 is
+          // negotiated.
+          std::string expected_tls_version = "TLSv1.2";
+#else
           std::string expected_tls_version =
               ssl_fixture->tls_version_ == TSI_TLS1_2 ? "TLSv1.2" : "TLSv1.3";
+#endif
           EXPECT_EQ(std::string(tls_version_prop->value.data,
                                 tls_version_prop->value.length),
                     expected_tls_version);
