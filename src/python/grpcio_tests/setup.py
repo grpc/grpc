@@ -21,10 +21,8 @@ import sys
 # imports to succeed
 sys.path.insert(0, os.path.abspath("."))
 
-import grpc_tools.command
 import setuptools
 
-import commands
 import grpc_version
 import python_version
 
@@ -45,10 +43,6 @@ INSTALL_REQUIRES = (
     "typeguard~=4.2",
 )
 
-COMMAND_CLASS = {
-    "run_fork": commands.RunFork,
-}
-
 TEST_SUITE = "tests"
 TEST_LOADER = "tests:Loader"
 TEST_RUNNER = "tests:Runner"
@@ -63,7 +57,6 @@ if __name__ == "__main__":
     multiprocessing.freeze_support()
     setuptools.setup(
         install_requires=INSTALL_REQUIRES,
-        cmdclass=COMMAND_CLASS,
         classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         tests_require=TESTS_REQUIRE,

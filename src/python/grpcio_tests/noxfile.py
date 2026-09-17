@@ -204,3 +204,30 @@ def run_interop(session: nox.Session):
 
             sys.argv[1:] = parsed_args.args.split()
             server.serve(server.parse_interop_server_arguments(sys.argv))
+
+
+@nox.session(venv_params=["--system-site-packages"])
+def run_fork(session: nox.Session):
+    """
+    Session to run fork test client
+    """
+    session.log("Running run_fork for grpcio_tests")
+
+    parser = argparse.ArgumentParser(description="run fork test client")
+    parser.add_argument(
+        "-a",
+        "--args",
+        default="",
+        help="pass-thru arguments for the client/server",
+    )
+
+    parsed_args = parser.parse_args(session.posargs)
+
+    session.cd(GRPC_ROOT_ABS_PATH)
+    if ROOT_DIR not in sys.path:
+        sys.path.insert(0, ROOT_DIR)
+
+    from tests.fork import client
+
+    sys.argv[1:] = parsed_args.args.split()
+    client.test_fork()
