@@ -163,7 +163,7 @@ class ListenerStateTestPeer {
 
   // Returns the number of connections currently being actively tracked
   size_t ConnectionsSize() {
-    MutexLock lock(&listener_state_->mu_);
+    MutexLock lock(listener_state_->mu_);
     return listener_state_->connections_.size();
   }
 

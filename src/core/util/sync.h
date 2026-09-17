@@ -86,6 +86,9 @@ inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) { return &mutex->mu_; }
 
 class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
+  explicit MutexLock(Mutex& mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(&mu) {
+    mu_->Lock();
+  }
   explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
     mu_->Lock();
   }
