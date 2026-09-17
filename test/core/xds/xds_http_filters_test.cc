@@ -3445,8 +3445,7 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigNoProcessingMode) {
   ExternalProcessor proto;
   auto* grpc_service = proto.mutable_grpc_service();
   grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  // Leave the processing_mode field unset, which is equivalent to setting it
-  // to an empty message.
+  // Leave the processing_mode field unset, which disables all processing.
   XdsExtension extension = MakeXdsExtension(proto);
   auto config =
       factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
@@ -3457,8 +3456,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigNoProcessingMode) {
   const auto& processing_mode =
       DownCast<const ExtProcFilter::Config&>(*config).processing_mode;
   ASSERT_TRUE(processing_mode.has_value());
-  EXPECT_TRUE(processing_mode->send_request_headers);
-  EXPECT_TRUE(processing_mode->send_response_headers);
+  EXPECT_FALSE(processing_mode->send_request_headers);
+  EXPECT_FALSE(processing_mode->send_response_headers);
   EXPECT_FALSE(processing_mode->send_response_trailers);
   EXPECT_FALSE(processing_mode->send_request_body);
   EXPECT_FALSE(processing_mode->send_response_body);

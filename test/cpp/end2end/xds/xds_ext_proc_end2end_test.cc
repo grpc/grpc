@@ -1079,7 +1079,8 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
 // The DEFAULT header processing mode means SEND for request and response
 // headers and SKIP for response trailers.
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeHeaderDefaultModeSuccess) {
-  auto ext_proc_config = MakeFilterConfigBuilder().Build();
+  auto ext_proc_config =
+      MakeFilterConfigBuilder().SetResponseTrailerMode(false).Build();
   SetFilterConfig(ext_proc_config);
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
