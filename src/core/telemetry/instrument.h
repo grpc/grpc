@@ -208,7 +208,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_map.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/hash/hash.h"
 #include "absl/log/log.h"
@@ -427,19 +426,16 @@ class InstrumentMetadata {
 class MetricsQuery;
 class MetricsSink;
 
-// OpenTelemetry has no facility to export histogram data in the API (though
-// there is a facility in the SDK). To cover this gap, if we are accessed via
-// the OpenTelemetry API without the SDK being known to gRPC, we register a hook
-// to be called when histogram data is collected.
-// This comes with a relatively sever performance penalty. We'd like to be able
-// to remove this in the future.
-template <typename T>
-using InstrumentCollectionHook =
-    absl::AnyInvocable<void(const InstrumentMetadata::Description* instrument,
-                            absl::Span<const std::string> labels, T value)>;
-
-template <typename T>
-void RegisterInstrumentCollectionHook(InstrumentCollectionHook<T> hook);
+class InstrumentRecorder {
+ public:
+  virtual ~InstrumentRecorder() = default;
+  virtual void RecordHistogram(
+      const InstrumentMetadata::Description* description, int64_t value,
+      absl::Span<const std::string> label_values) = 0;
+  virtual void RecordHistogram(
+      const InstrumentMetadata::Description* description, double value,
+      absl::Span<const std::string> label_values) = 0;
+};
 
 // Defines a scope for collecting metrics, identified by a set of labels of
 // interest. Metric collection via GetStorage+Increment will be filtered
@@ -447,9 +443,13 @@ void RegisterInstrumentCollectionHook(InstrumentCollectionHook<T> hook);
 // metrics collected in this scope are aggregated into the parent scope.
 class CollectionScope : public RefCounted<CollectionScope> {
  public:
+  // `instrument_recorder` is an optional weak pointer to a StatsPluginGroup
+  // that has stats plugins with push-based instruments that cannot pull from
+  // the MetricsSink.
   CollectionScope(std::vector<RefCountedPtr<CollectionScope>> parents,
                   InstrumentLabelSet labels_of_interest,
-                  size_t child_shards_count, size_t storage_shards_count);
+                  size_t child_shards_count, size_t storage_shards_count,
+                  std::weak_ptr<InstrumentRecorder> instrument_recorder = {});
   ~CollectionScope() override;
 
   size_t TestOnlyCountStorageHeld() const;
@@ -462,6 +462,10 @@ class CollectionScope : public RefCounted<CollectionScope> {
   }
 
   bool IsRoot() const { return parents_.empty(); }
+
+  const std::weak_ptr<InstrumentRecorder>& instrument_recorder() const {
+    return instrument_recorder_;
+  }
 
  private:
   friend class GlobalCollectionScopeManager;
@@ -489,6 +493,7 @@ class CollectionScope : public RefCounted<CollectionScope> {
   InstrumentLabelSet labels_of_interest_;
   std::vector<ChildShard> child_shards_;
   std::vector<StorageShard> storage_shards_;
+  std::weak_ptr<InstrumentRecorder> instrument_recorder_;
 
   void ForEachUniqueStorage(
       absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb,
@@ -498,11 +503,6 @@ class CollectionScope : public RefCounted<CollectionScope> {
 };
 
 namespace instrument_detail {
-
-template <typename T>
-void CallInstrumentCollectionHooks(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, T value);
 
 class GaugeStorage {
  public:
@@ -543,7 +543,8 @@ class GaugeStorage {
 class DomainStorage : public DualRefCounted<DomainStorage>,
                       public channelz::DataSource {
  public:
-  DomainStorage(QueryableDomain* domain, std::vector<std::string> label);
+  DomainStorage(QueryableDomain* domain, std::vector<std::string> label,
+                std::weak_ptr<InstrumentRecorder> instrument_recorder = {});
 
   void Orphaned() override;
 
@@ -557,11 +558,16 @@ class DomainStorage : public DualRefCounted<DomainStorage>,
   absl::Span<const std::string> label() const { return label_; }
   QueryableDomain* domain() const { return domain_; }
 
+  const std::weak_ptr<InstrumentRecorder>& instrument_recorder() const {
+    return instrument_recorder_;
+  }
+
   void AddData(channelz::DataSink sink) override;
 
  private:
   QueryableDomain* domain_;
   const std::vector<std::string> label_;
+  const std::weak_ptr<InstrumentRecorder> instrument_recorder_;
 };
 
 // A registry of metrics.
@@ -703,7 +709,8 @@ class QueryableDomain {
   };
 
   virtual RefCountedPtr<DomainStorage> CreateDomainStorage(
-      std::vector<std::string> label) = 0;
+      std::vector<std::string> label,
+      std::weak_ptr<InstrumentRecorder> instrument_recorder) = 0;
   void DomainStorageOrphaned(DomainStorage* storage);
   MapShard& GetMapShard(absl::Span<const std::string> label);
 
@@ -1029,15 +1036,17 @@ class InstrumentDomainImpl final : public QueryableDomain {
     template <typename Shape, typename T>
     void Increment(const HistogramHandle<Shape>& handle, T value) {
       GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
-      if constexpr (std::is_same_v<Shape, LinearDoubleHistogramShape> ||
-                    std::is_same_v<Shape, ExponentialDoubleHistogramShape>) {
-        CallInstrumentCollectionHooks<double>(handle.description_, label(),
-                                              static_cast<double>(value));
-      } else {
-        CallInstrumentCollectionHooks<int64_t>(handle.description_, label(),
-                                               static_cast<int64_t>(value));
-      }
       backend_.Add(handle.offset_ + handle.shape_->BucketFor(value), 1);
+      if (auto recorder = instrument_recorder().lock()) {
+        if constexpr (std::is_same_v<Shape, LinearDoubleHistogramShape> ||
+                      std::is_same_v<Shape, ExponentialDoubleHistogramShape>) {
+          recorder->RecordHistogram(handle.description_,
+                                    static_cast<double>(value), label());
+        } else {
+          recorder->RecordHistogram(handle.description_,
+                                    static_cast<int64_t>(value), label());
+        }
+      }
     }
 
     uint64_t SumCounter(size_t offset) override { return backend_.Sum(offset); }
@@ -1054,8 +1063,10 @@ class InstrumentDomainImpl final : public QueryableDomain {
     friend class GaugeProvider;
 
     explicit Storage(InstrumentDomainImpl* instrument_domain,
-                     std::vector<std::string> labels)
-        : DomainStorage(instrument_domain, std::move(labels)),
+                     std::vector<std::string> labels,
+                     std::weak_ptr<InstrumentRecorder> instrument_recorder = {})
+        : DomainStorage(instrument_domain, std::move(labels),
+                        std::move(instrument_recorder)),
           backend_(instrument_domain->allocated_counter_slots()) {}
 
     void RegisterGaugeProvider(GaugeProvider* provider) {
@@ -1160,8 +1171,10 @@ class InstrumentDomainImpl final : public QueryableDomain {
   }
 
   RefCountedPtr<DomainStorage> CreateDomainStorage(
-      std::vector<std::string> labels) override {
-    return RefCountedPtr<Storage>(new Storage(this, std::move(labels)));
+      std::vector<std::string> labels,
+      std::weak_ptr<InstrumentRecorder> instrument_recorder) override {
+    return RefCountedPtr<Storage>(
+        new Storage(this, std::move(labels), std::move(instrument_recorder)));
   }
 
  private:
@@ -1315,10 +1328,14 @@ void TestOnlyResetInstruments();
 // labels.
 // `child_shards_count` and `storage_shards_count` are performance tuning
 // parameters for sharding internal data structures.
+// `instrument_recorder` is an optional weak pointer to a StatsPluginGroup that
+// has stats plugins with push-based instruments that cannot pull from the
+// MetricsSink.
 RefCountedPtr<CollectionScope> CreateCollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
     InstrumentLabelSet labels, size_t child_shards_count = 1,
-    size_t storage_shards_count = 1);
+    size_t storage_shards_count = 1,
+    std::weak_ptr<InstrumentRecorder> instrument_recorder = {});
 
 RefCountedPtr<CollectionScope> CreateRootCollectionScope(
     InstrumentLabelSet labels, size_t child_shards_count = 1,

@@ -16,6 +16,7 @@
 
 #include <thread>
 
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/random/random.h"
@@ -214,6 +215,9 @@ class FanOutDomain final : public InstrumentDomain<FanOutDomain> {
       RegisterUpDownCounter("fan_out_up_down", "Desc", "unit");
   static inline const auto kDoubleGauge =
       RegisterDoubleGauge("fan_out_double", "Desc", "unit");
+  static inline const auto kExponentialHistogram =
+      RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+          "fan_out_histogram", "Desc", "unit", 1024, 20);
 };
 
 using InstrumentIndexDeathTest = InstrumentTest;
@@ -814,83 +818,177 @@ TEST_F(MetricsQueryTest, ThreadStress) {
   }
 }
 
-// Tests that a registered histogram collection hook is called when a histogram
-// is incremented.
-TEST_F(InstrumentTest, HistogramHook) {
-  auto scope = CreateCollectionScope({}, {});
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, int64_t value)>
-      hook;
-  RegisterInstrumentCollectionHook<int64_t>(hook.AsStdFunction());
+class TestRecorderStatsPlugin : public FakeStatsPlugin {
+ public:
+  using FakeStatsPlugin::RecordHistogram;
+  void RecordHistogram(const InstrumentMetadata::Description* description,
+                       int64_t value,
+                       absl::Span<const std::string> label_values) override {
+    int64_histograms_.push_back(
+        {description, value,
+         std::vector<std::string>(label_values.begin(), label_values.end())});
+  }
+
+  void RecordHistogram(const InstrumentMetadata::Description* description,
+                       double value,
+                       absl::Span<const std::string> label_values) override {
+    double_histograms_.push_back(
+        {description, value,
+         std::vector<std::string>(label_values.begin(), label_values.end())});
+  }
+
+  const std::vector<FakeInstrumentRecorder::Int64Histogram>& int64_histograms()
+      const {
+    return int64_histograms_;
+  }
+
+  const std::vector<FakeInstrumentRecorder::DoubleHistogram>&
+  double_histograms() const {
+    return double_histograms_;
+  }
+
+ private:
+  std::vector<FakeInstrumentRecorder::Int64Histogram> int64_histograms_;
+  std::vector<FakeInstrumentRecorder::DoubleHistogram> double_histograms_;
+};
+
+class TestNoRecorderStatsPlugin : public FakeStatsPlugin {
+ public:
+  using FakeStatsPlugin::RecordHistogram;
+  int record_histogram_call_count() const {
+    return record_histogram_call_count_;
+  }
+
+  void RecordHistogram(const InstrumentMetadata::Description* description,
+                       int64_t value,
+                       absl::Span<const std::string> label_values) override {
+    ++record_histogram_call_count_;
+    // Invokes base StatsPlugin default no-op behavior (no push-based histogram
+    // recording).
+    FakeStatsPlugin::RecordHistogram(description, value, label_values);
+  }
+
+  void RecordHistogram(const InstrumentMetadata::Description* description,
+                       double value,
+                       absl::Span<const std::string> label_values) override {
+    ++record_histogram_call_count_;
+    // Invokes base StatsPlugin default no-op behavior (no push-based histogram
+    // recording).
+    FakeStatsPlugin::RecordHistogram(description, value, label_values);
+  }
+
+ private:
+  int record_histogram_call_count_ = 0;
+};
+
+TEST_F(InstrumentTest, InstrumentRecorderInt64) {
+  auto plugin1 = std::make_shared<TestRecorderStatsPlugin>();
+  auto plugin2 = std::make_shared<TestRecorderStatsPlugin>();
+  auto plugin3 = std::make_shared<TestNoRecorderStatsPlugin>();
+
+  auto stats_plugin_group =
+      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  stats_plugin_group->AddStatsPlugin(plugin1, nullptr);
+  stats_plugin_group->AddStatsPlugin(plugin2, nullptr);
+  stats_plugin_group->AddStatsPlugin(plugin3, nullptr);
+  stats_plugin_group->Finish();
+
+  auto scope = stats_plugin_group->GetCollectionScope();
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label = {std::string(kOmittedLabel)};
-  EXPECT_CALL(hook, Call(::testing::_, ::testing::ElementsAreArray(label), 10));
-  storage->Increment(LowContentionDomain::kExponentialHistogram, 10);
-  ::testing::Mock::VerifyAndClearExpectations(&hook);
+  std::vector<std::string> label_keys = {"grpc.target"};
+  std::vector<std::string> label = {"example.com"};
+  FakeStatsPlugin::DomainMetricsSink<std::vector<uint64_t>> sink_before(
+      "exponential_histogram", label_keys, label);
+  MetricsQuery().OnlyMetrics({"exponential_histogram"}).Run(scope, sink_before);
+  ASSERT_TRUE(sink_before.captured_value().has_value());
+  std::vector<uint64_t> counts_before = *sink_before.captured_value();
+  ASSERT_FALSE(counts_before.empty());
+  const auto* desc = InstrumentIndex::Get().Find(
+      LowContentionDomain::kExponentialHistogram.name());
+  ASSERT_NE(desc, nullptr);
+
+  storage->Increment(LowContentionDomain::kExponentialHistogram, 0);
+
+  // Verify plugin1 (recorder) received the push notification.
+  ASSERT_EQ(plugin1->int64_histograms().size(), 1);
+  EXPECT_EQ(plugin1->int64_histograms()[0].description, desc);
+  EXPECT_EQ(plugin1->int64_histograms()[0].value, 0);
+  EXPECT_EQ(plugin1->int64_histograms()[0].label_values, label);
+
+  // Verify plugin2 (recorder) received the push notification.
+  ASSERT_EQ(plugin2->int64_histograms().size(), 1);
+  EXPECT_EQ(plugin2->int64_histograms()[0].description, desc);
+  EXPECT_EQ(plugin2->int64_histograms()[0].value, 0);
+  EXPECT_EQ(plugin2->int64_histograms()[0].label_values, label);
+
+  // Verify plugin3 (no recorder) had the call dispatched to it through the
+  // group, but performed no push-based recording (no-op).
+  EXPECT_EQ(plugin3->record_histogram_call_count(), 1);
+
+  // Verify the lock-free backend is properly incremented.
+  std::vector<uint64_t> expected_counts = counts_before;
+  expected_counts[0] += 1;
+  FakeStatsPlugin::DomainMetricsSink<std::vector<uint64_t>> sink_after(
+      "exponential_histogram", label_keys, label);
+  MetricsQuery().OnlyMetrics({"exponential_histogram"}).Run(scope, sink_after);
+  EXPECT_EQ(sink_after.captured_value(), expected_counts);
 }
 
-// Tests that multiple registered histogram collection hooks are all called when
-// a histogram is incremented.
-TEST_F(InstrumentTest, MultipleHistogramHooks) {
-  auto scope = CreateCollectionScope({}, {});
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, int64_t value)>
-      hook1;
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, int64_t value)>
-      hook2;
-  RegisterInstrumentCollectionHook<int64_t>(hook1.AsStdFunction());
-  RegisterInstrumentCollectionHook<int64_t>(hook2.AsStdFunction());
-  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label = {std::string(kOmittedLabel)};
-  EXPECT_CALL(hook1,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10));
-  EXPECT_CALL(hook2,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10));
-  storage->Increment(LowContentionDomain::kExponentialHistogram, 10);
-  ::testing::Mock::VerifyAndClearExpectations(&hook1);
-  ::testing::Mock::VerifyAndClearExpectations(&hook2);
-}
+TEST_F(InstrumentTest, InstrumentRecorderDouble) {
+  auto plugin1 = std::make_shared<TestRecorderStatsPlugin>();
+  auto plugin2 = std::make_shared<TestRecorderStatsPlugin>();
+  auto plugin3 = std::make_shared<TestNoRecorderStatsPlugin>();
 
-TEST_F(InstrumentTest, DoubleHistogramHook) {
-  auto scope = CreateCollectionScope({}, {});
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, double value)>
-      hook;
-  RegisterInstrumentCollectionHook<double>(hook.AsStdFunction());
-  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label = {std::string(kOmittedLabel)};
-  EXPECT_CALL(hook,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10.5));
-  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 10.5);
-  ::testing::Mock::VerifyAndClearExpectations(&hook);
-}
+  auto stats_plugin_group =
+      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  stats_plugin_group->AddStatsPlugin(plugin1, nullptr);
+  stats_plugin_group->AddStatsPlugin(plugin2, nullptr);
+  stats_plugin_group->AddStatsPlugin(plugin3, nullptr);
+  stats_plugin_group->Finish();
 
-TEST_F(InstrumentTest, MultipleDoubleHistogramHooks) {
-  auto scope = CreateCollectionScope({}, {});
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, double value)>
-      hook1;
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, double value)>
-      hook2;
-  RegisterInstrumentCollectionHook<double>(hook1.AsStdFunction());
-  RegisterInstrumentCollectionHook<double>(hook2.AsStdFunction());
+  auto scope = stats_plugin_group->GetCollectionScope();
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label = {std::string(kOmittedLabel)};
-  EXPECT_CALL(hook1,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10.5));
-  EXPECT_CALL(hook2,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10.5));
-  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 10.5);
-  ::testing::Mock::VerifyAndClearExpectations(&hook1);
-  ::testing::Mock::VerifyAndClearExpectations(&hook2);
+  std::vector<std::string> label_keys = {"grpc.target"};
+  std::vector<std::string> label = {"example.com"};
+  FakeStatsPlugin::DomainMetricsSink<std::vector<uint64_t>> sink_before(
+      "exponential_double_histogram", label_keys, label);
+  MetricsQuery()
+      .OnlyMetrics({"exponential_double_histogram"})
+      .Run(scope, sink_before);
+  ASSERT_TRUE(sink_before.captured_value().has_value());
+  std::vector<uint64_t> counts_before = *sink_before.captured_value();
+  ASSERT_FALSE(counts_before.empty());
+  const auto* desc = InstrumentIndex::Get().Find(
+      LowContentionDomain::kExponentialDoubleHistogram.name());
+  ASSERT_NE(desc, nullptr);
+
+  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5);
+
+  // Verify plugin1 (recorder) received the push notification.
+  ASSERT_EQ(plugin1->double_histograms().size(), 1);
+  EXPECT_EQ(plugin1->double_histograms()[0].description, desc);
+  EXPECT_EQ(plugin1->double_histograms()[0].value, 0.5);
+  EXPECT_EQ(plugin1->double_histograms()[0].label_values, label);
+
+  // Verify plugin2 (recorder) received the push notification.
+  ASSERT_EQ(plugin2->double_histograms().size(), 1);
+  EXPECT_EQ(plugin2->double_histograms()[0].description, desc);
+  EXPECT_EQ(plugin2->double_histograms()[0].value, 0.5);
+  EXPECT_EQ(plugin2->double_histograms()[0].label_values, label);
+
+  // Verify plugin3 (no recorder) had the call dispatched to it through the
+  // group, but performed no push-based recording (no-op).
+  EXPECT_EQ(plugin3->record_histogram_call_count(), 1);
+
+  // Verify the lock-free backend is properly incremented.
+  std::vector<uint64_t> expected_counts = counts_before;
+  expected_counts[0] += 1;
+  FakeStatsPlugin::DomainMetricsSink<std::vector<uint64_t>> sink_after(
+      "exponential_double_histogram", label_keys, label);
+  MetricsQuery()
+      .OnlyMetrics({"exponential_double_histogram"})
+      .Run(scope, sink_after);
+  EXPECT_EQ(sink_after.captured_value(), expected_counts);
 }
 
 TEST_F(InstrumentLabelListTest, FixedToList) {
