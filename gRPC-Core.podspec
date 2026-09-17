@@ -47,7 +47,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '~> 1.20260526.0'
+  abseil_version = '~> 1.20250512.1'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -260,6 +260,8 @@ Pod::Spec.new do |s|
                       'src/core/call/client_call.cc',
                       'src/core/call/client_call.h',
                       'src/core/call/custom_metadata.h',
+                      'src/core/call/evaluate_args.cc',
+                      'src/core/call/evaluate_args.h',
                       'src/core/call/filter_fusion.h',
                       'src/core/call/interception_chain.cc',
                       'src/core/call/interception_chain.h',
@@ -587,6 +589,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.cc',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                       'src/core/ext/transport/chttp2/transport/read_context.h',
+                      'src/core/ext/transport/chttp2/transport/reclaimer.cc',
+                      'src/core/ext/transport/chttp2/transport/reclaimer.h',
                       'src/core/ext/transport/chttp2/transport/security_frame.h',
                       'src/core/ext/transport/chttp2/transport/stream.h',
                       'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
@@ -1883,8 +1887,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/authorization_policy_provider.h',
                       'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
-                      'src/core/lib/security/authorization/evaluate_args.cc',
-                      'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/authorization/grpc_authorization_engine.cc',
                       'src/core/lib/security/authorization/grpc_authorization_engine.h',
                       'src/core/lib/security/authorization/grpc_server_authz_filter.cc',
@@ -2687,6 +2689,7 @@ Pod::Spec.new do |s|
                               'src/core/call/channelz_context.h',
                               'src/core/call/client_call.h',
                               'src/core/call/custom_metadata.h',
+                              'src/core/call/evaluate_args.h',
                               'src/core/call/filter_fusion.h',
                               'src/core/call/interception_chain.h',
                               'src/core/call/message.h',
@@ -2855,6 +2858,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/ping_promise.h',
                               'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                               'src/core/ext/transport/chttp2/transport/read_context.h',
+                              'src/core/ext/transport/chttp2/transport/reclaimer.h',
                               'src/core/ext/transport/chttp2/transport/security_frame.h',
                               'src/core/ext/transport/chttp2/transport/stream.h',
                               'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
@@ -3620,7 +3624,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/audit_logging.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/authorization_policy_provider.h',
-                              'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/authorization/grpc_authorization_engine.h',
                               'src/core/lib/security/authorization/grpc_server_authz_filter.h',
                               'src/core/lib/security/authorization/matchers.h',
@@ -4076,21 +4079,6 @@ Pod::Spec.new do |s|
   # patch include of openssl to openssl_grpc
   s.prepare_command = <<-END_OF_COMMAND
     set -e
-    # TODO(weizheyuan, bpawan) remove this block once 1.20260526.1 properly
-    # excludes windows-only files.
-    #
-    # See also https://github.com/abseil/abseil-cpp/pull/2138
-    patched=0
-    for abseil_dir in ../abseil $(find . -type d -path "*/Pods/abseil" 2>/dev/null); do
-      if [ -d "$abseil_dir" ]; then
-        find "$abseil_dir" -name "time_zone_name_win.cc" -exec rm -f {} +
-        patched=1
-      fi
-    done
-    if [ "$patched" -eq 0 ]; then
-      echo "Error: can't patch abseil 1.20260526.0." >&2
-      exit 1
-    fi
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND

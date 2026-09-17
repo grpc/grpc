@@ -152,7 +152,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
-  absl_hardening
   absl_has_ostream_operator
   absl_hash
   absl_hash_container_defaults
@@ -164,7 +163,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
-  absl_internal_optional_ref
   absl_iterator_traits_internal
   absl_kernel_timeout_internal
   absl_layout
@@ -192,6 +190,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_log_severity
   absl_log_sink
   absl_log_sink_registry
+  absl_low_level_hash
   absl_malloc_internal
   absl_memory
   absl_no_destructor
@@ -224,7 +223,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_internal_traits
   absl_random_internal_uniform_helper
   absl_random_internal_wide_multiply
-  absl_random_mocking_access
   absl_random_random
   absl_random_seed_gen_exception
   absl_random_seed_sequences
@@ -233,7 +231,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_raw_hash_set_resize_impl
   absl_raw_logging_internal
   absl_sample_recorder
-  absl_source_location
   absl_span
   absl_spinlock_wait
   absl_stacktrace
@@ -244,9 +241,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_strerror
   absl_string_view
   absl_strings
-  absl_strings_append_and_overwrite
   absl_strings_internal
-  absl_strings_resize_and_overwrite
   absl_symbolize
   absl_synchronization
   absl_throw_delegate
@@ -2260,6 +2255,7 @@ add_library(grpc
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/evaluate_args.cc
   src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
@@ -2416,6 +2412,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  src/core/ext/transport/chttp2/transport/reclaimer.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -2946,7 +2943,6 @@ add_library(grpc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/security/authorization/matchers.cc
@@ -3464,6 +3460,7 @@ add_library(grpc_unsecure
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/evaluate_args.cc
   src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
@@ -3574,6 +3571,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  src/core/ext/transport/chttp2/transport/reclaimer.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -3776,7 +3774,6 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -6060,6 +6057,7 @@ add_library(grpc_authorization_provider
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/evaluate_args.cc
   src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
@@ -6270,7 +6268,6 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
@@ -17083,7 +17080,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
-  test/core/security/evaluate_args_test.cc
+  test/core/call/evaluate_args_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17920,6 +17917,7 @@ target_link_libraries(ext_proc_message_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++
+  grpc_test_util
 )
 
 
