@@ -63,11 +63,14 @@ ARTIFACT_REGISTRY_PREFIX=us-docker.pkg.dev/grpc-testing/testing-images-public
 
 # all dockerfile definitions we use for testing and for which we push an image to the registry
 ALL_DOCKERFILE_DIRS=(
-  tools/dockerfile/test/*
-  tools/dockerfile/grpc_artifact_*
-  tools/dockerfile/interoptest/*
-  tools/dockerfile/distribtest/*
-  third_party/rake-compiler-dock/*
+#  tools/dockerfile/test/*
+#  tools/dockerfile/grpc_artifact_*
+#  tools/dockerfile/interoptest/*
+#  tools/dockerfile/distribtest/*
+#  third_party/rake-compiler-dock/*
+tools/dockerfile/distribtest/csharp_debian11_x64
+tools/dockerfile/test/csharp_debian11_arm64
+tools/dockerfile/test/csharp_debian11_x64
 )
 
 # These Docker directories contain obsolete images that cannot be built.
