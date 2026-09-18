@@ -120,10 +120,9 @@ def _run():
         [
             "tools/bazel",
             "build",
+            "--bazelrc=tools/remote_build/include/absl_copts.bazelrc",
             "-c",
             "opt",
-            # Needed for compiling abseil with older compilers (e.g. gcc 10.2)
-            "--cxxopt=-Wno-invalid-partial-specialization",
             "test/core/memory_usage/memory_usage_test",
         ]
     )
