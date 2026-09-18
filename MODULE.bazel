@@ -22,13 +22,6 @@ module(
 # Regular dependencies
 # ====================
 
-# TODO(weizheyuan): Check if this version bump is still needed for BCR
-# releases after we drop bazel 7 supprot.
-#
-# Upgrade version of rules_swift to avoid an error in BCR CI of not
-# finding switfc.exe on Windows with bazel 7.
-bazel_dep(name = "rules_swift", version = "2.5.0")
-
 # -- Abseil library.
 # Pinning version to be consistent with third_party/abseil-cpp
 bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_absl")
@@ -39,7 +32,7 @@ single_version_override(
 
 bazel_dep(name = "grpc-proto", version = "0.0.0-20240627-ec30f58.bcr.1", repo_name = "grpc_proto")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_apple_support")
+bazel_dep(name = "apple_support", version = "2.8.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20260616.0")
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
@@ -55,7 +48,8 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 # --- Protobuf related packages.
 bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
+bazel_dep(name = "rules_apple", version = "4.5.3", repo_name = "build_bazel_rules_apple")
+bazel_dep(name = "rules_swift", version = "3.6.1")
 bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
 
