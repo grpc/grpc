@@ -1,0 +1,16 @@
+#====================
+# run_tests.py python dependencies
+
+# Basic python dependencies to be able to run tools/run_tests python scripts
+# These dependencies are not sufficient to build gRPC Python, gRPC Python
+# deps are defined elsewhere (e.g. python_deps.include)
+RUN apt-get update && apt-get install -y \
+  python3 \
+  python3-pip \
+  python3-venv \
+  && apt-get clean
+
+# Use system python to bootstrap virtualenv and activate it
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
