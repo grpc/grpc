@@ -941,7 +941,7 @@ struct AddOpImpl<
     FilterType, T,
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
     std::enable_if_t<!std::is_same<R, absl::Status>::value &&
-                      std::is_same<absl::Status, PromiseResult<R>>::value>> {
+                     std::is_same<absl::Status, PromiseResult<R>>::value>> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     class Promise {
      public:
@@ -994,7 +994,7 @@ template <typename FilterType, typename T, typename R,
           R (FilterType::Call::*impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
                  std::enable_if_t<std::is_same<absl::StatusOr<T>,
-                                                PromiseResult<R>>::value>> {
+                                               PromiseResult<R>>::value>> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
 #if defined(__GNUC__) && __GNUC__ == 9
     // Workaround for a bug in GNU C++ 9 compilers that fail to compile this

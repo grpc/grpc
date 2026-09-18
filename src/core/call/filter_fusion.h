@@ -272,7 +272,7 @@ template <typename T, typename A, typename R, typename Call,
 class AdaptMethod<
     T, R (Call::*)(A), method,
     std::enable_if_t<StatusType<R>::value && IsSameExcludingCVRef<T, A>,
-                      void>> {
+                     void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
   auto operator()(Hdl<T> x) {
@@ -311,7 +311,7 @@ template <typename T, typename A, typename R, typename Call, typename Derived,
 class AdaptMethod<
     T, R (Call::*)(A, Derived*), method,
     std::enable_if_t<StatusType<R>::value && IsSameExcludingCVRef<T, A>,
-                      void>> {
+                     void>> {
  public:
   explicit AdaptMethod(Call* call, Derived* filter)
       : call_(call), filter_(filter) {}
@@ -336,7 +336,7 @@ template <typename T, typename A, typename R, typename Call,
 class AdaptMethod<
     T, R (Call::*)(A), method,
     std::enable_if_t<StatusOrType<R, T>::value && IsSameExcludingCVRef<T, A>,
-                      void>> {
+                     void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
   auto operator()(Hdl<T> x) {
@@ -377,7 +377,7 @@ template <typename T, typename A, typename R, typename Call, typename Derived,
 class AdaptMethod<
     T, R (Call::*)(A, Derived*), method,
     std::enable_if_t<StatusOrType<R, T>::value && IsSameExcludingCVRef<T, A>,
-                      void>> {
+                     void>> {
  public:
   using UnwrappedType = decltype(TakeValue(std::declval<R>()));
   static_assert(std::is_same<UnwrappedType, T>::value);
