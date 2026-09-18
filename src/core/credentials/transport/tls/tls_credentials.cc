@@ -127,8 +127,7 @@ TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
   // back in phase 3.
   {
     grpc_core::MutexLock lock(&factory_cache_mu_);
-    while (factory_creation_in_progress_) {
-      factory_creation_done_cv_.Wait(&factory_cache_mu_);
+    while (true) {
       if (CacheMatchesLocked(root_cert_info, identity_certs,
                              ssl_session_cache)) {
         GRPC_DCHECK_EQ(cached_key_logger_, key_logger);
@@ -137,15 +136,12 @@ TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
             TsiSslClientHandshakerFactoryPtr(
                 tsi_ssl_client_handshaker_factory_ref(cached_factory_.get()))};
       }
+      if (!factory_creation_in_progress_) {
+        factory_creation_in_progress_ = true;
+        break;
+      }
+      factory_creation_done_cv_.Wait(&factory_cache_mu_);
     }
-    if (CacheMatchesLocked(root_cert_info, identity_certs, ssl_session_cache)) {
-      GRPC_DCHECK_EQ(cached_key_logger_, key_logger);
-      return {
-          GRPC_SECURITY_OK,
-          TsiSslClientHandshakerFactoryPtr(
-              tsi_ssl_client_handshaker_factory_ref(cached_factory_.get()))};
-    }
-    factory_creation_in_progress_ = true;
   }
 
   // Phase 2: build the factory with no lock held so unrelated callers are
