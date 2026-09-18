@@ -67,6 +67,32 @@ class CredentialsTest(unittest.TestCase):
             certificate_chain=None,
         )
 
+    def test_tls_version_values(self):
+        self.assertSequenceEqual(
+            (grpc.TLSVersion.TLS1_2, grpc.TLSVersion.TLS1_3),
+            tuple(grpc.TLSVersion),
+        )
+
+    def test_tls_versions_create_channel_credentials(self):
+        credentials = grpc.ssl_channel_credentials(
+            minimum_tls_version=grpc.TLSVersion.TLS1_2,
+            maximum_tls_version=grpc.TLSVersion.TLS1_3,
+        )
+        self.assertIsInstance(credentials, grpc.ChannelCredentials)
+
+    def test_invalid_tls_version_types(self):
+        for argument in ("minimum_tls_version", "maximum_tls_version"):
+            with self.subTest(argument=argument):
+                with self.assertRaises(TypeError):
+                    grpc.ssl_channel_credentials(**{argument: "TLS1_2"})
+
+    def test_minimum_tls_version_greater_than_maximum(self):
+        with self.assertRaises(ValueError):
+            grpc.ssl_channel_credentials(
+                minimum_tls_version=grpc.TLSVersion.TLS1_3,
+                maximum_tls_version=grpc.TLSVersion.TLS1_2,
+            )
+
 
 if __name__ == "__main__":
     logging.basicConfig()
