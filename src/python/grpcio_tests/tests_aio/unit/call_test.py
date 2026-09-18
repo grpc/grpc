@@ -40,6 +40,19 @@ _INFINITE_INTERVAL_US = 2**31 - 1
 _NONDETERMINISTIC_ITERATIONS = 50
 _NONDETERMINISTIC_SERVER_SLEEP_MAX_US = 1000
 
+_STREAM_UNARY_ABORT_AFTER_ONE_REQUEST = "/test/StreamUnaryAbortAfterOneRequest"
+_STREAM_UNARY_OK_AFTER_ONE_REQUEST = "/test/StreamUnaryOkAfterOneRequest"
+_STREAM_STREAM_ABORT_AFTER_ONE_REQUEST = (
+    "/test/StreamStreamAbortAfterOneRequest"
+)
+_EARLY_STATUS_CODE = grpc.StatusCode.PERMISSION_DENIED
+_EARLY_STATUS_DETAILS = "Ended by the peer before the client finished writing."
+_EARLY_STATUS_REQUEST = b"\x00" * 64 * 1024
+_EARLY_STATUS_RESPONSE = b"\x01\x01\x01"
+# Enough requests that the client is still writing when the peer's status
+# arrives.
+_EARLY_STATUS_NUM_REQUESTS = 64
+
 
 class _MulticallableTestMixin:
     async def setUp(self):
@@ -946,6 +959,124 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
             self.assertEqual(b"", response.SerializeToString())
         await call.done_writing()
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+
+class _EndsAfterOneRequestHandler(grpc.GenericRpcHandler):
+    """Ends each RPC after one request, while the client is still writing."""
+
+    @staticmethod
+    async def _stream_unary_abort(request_iterator, context):
+        await request_iterator.__anext__()
+        await context.abort(_EARLY_STATUS_CODE, _EARLY_STATUS_DETAILS)
+        raise RuntimeError("This line should not be executed")
+
+    @staticmethod
+    async def _stream_unary_ok(request_iterator, unused_context):
+        await request_iterator.__anext__()
+        return _EARLY_STATUS_RESPONSE
+
+    @staticmethod
+    async def _stream_stream_abort(request_iterator, context):
+        await request_iterator.__anext__()
+        await context.abort(_EARLY_STATUS_CODE, _EARLY_STATUS_DETAILS)
+        # Never reached. The yield only makes this handler an async generator.
+        yield _EARLY_STATUS_RESPONSE
+
+    def service(self, handler_call_details):
+        method = handler_call_details.method
+        if method == _STREAM_UNARY_ABORT_AFTER_ONE_REQUEST:
+            return grpc.stream_unary_rpc_method_handler(
+                self._stream_unary_abort
+            )
+        if method == _STREAM_UNARY_OK_AFTER_ONE_REQUEST:
+            return grpc.stream_unary_rpc_method_handler(self._stream_unary_ok)
+        if method == _STREAM_STREAM_ABORT_AFTER_ONE_REQUEST:
+            return grpc.stream_stream_rpc_method_handler(
+                self._stream_stream_abort
+            )
+        return None
+
+
+class TestStatusReceivedWhileWriting(AioTestBase):
+    """The peer ends an RPC while the client is still writing requests.
+
+    When the stream goes away, Core fails the write that was in flight. The
+    outcome of the RPC is the status that the peer sent, and the failed write
+    must not replace it with INTERNAL. Whether a write is in flight at that
+    moment depends on timing, so each scenario runs several times.
+    """
+
+    async def setUp(self):
+        self._server = aio.server()
+        port = self._server.add_insecure_port("[::]:0")
+        self._server.add_generic_rpc_handlers((_EndsAfterOneRequestHandler(),))
+        await self._server.start()
+        self._channel = aio.insecure_channel("localhost:%d" % port)
+
+    async def tearDown(self):
+        await self._channel.close()
+        await self._server.stop(None)
+
+    @staticmethod
+    def _requests():
+        return iter([_EARLY_STATUS_REQUEST] * _EARLY_STATUS_NUM_REQUESTS)
+
+    async def test_stream_unary_reports_the_peer_status(self):
+        method = self._channel.stream_unary(
+            _STREAM_UNARY_ABORT_AFTER_ONE_REQUEST
+        )
+        for _ in range(_NONDETERMINISTIC_ITERATIONS):
+            call = method(self._requests())
+            with self.assertRaises(aio.AioRpcError) as exception_context:
+                await call
+            self.assertEqual(
+                _EARLY_STATUS_CODE, exception_context.exception.code()
+            )
+            self.assertEqual(
+                _EARLY_STATUS_DETAILS, exception_context.exception.details()
+            )
+
+    async def test_stream_unary_reports_the_peer_response(self):
+        method = self._channel.stream_unary(_STREAM_UNARY_OK_AFTER_ONE_REQUEST)
+        for _ in range(_NONDETERMINISTIC_ITERATIONS):
+            call = method(self._requests())
+            self.assertEqual(_EARLY_STATUS_RESPONSE, await call)
+            self.assertEqual(grpc.StatusCode.OK, await call.code())
+
+    async def test_stream_stream_reports_the_peer_status(self):
+        method = self._channel.stream_stream(
+            _STREAM_STREAM_ABORT_AFTER_ONE_REQUEST
+        )
+        for _ in range(_NONDETERMINISTIC_ITERATIONS):
+            call = method(self._requests())
+            with self.assertRaises(aio.AioRpcError) as exception_context:
+                await call.read()
+            self.assertEqual(
+                _EARLY_STATUS_CODE, exception_context.exception.code()
+            )
+            self.assertEqual(_EARLY_STATUS_CODE, await call.code())
+
+    async def test_write_reports_the_peer_status(self):
+        method = self._channel.stream_unary(
+            _STREAM_UNARY_ABORT_AFTER_ONE_REQUEST
+        )
+        for _ in range(_NONDETERMINISTIC_ITERATIONS):
+            call = method()
+            try:
+                for _ in range(_EARLY_STATUS_NUM_REQUESTS):
+                    await call.write(_EARLY_STATUS_REQUEST)
+            except aio.AioRpcError as rpc_error:
+                # Core failed this write because the peer ended the RPC, so
+                # the error carries the peer's status.
+                self.assertEqual(_EARLY_STATUS_CODE, rpc_error.code())
+            except asyncio.InvalidStateError:
+                # The status arrived before this write started.
+                pass
+            with self.assertRaises(aio.AioRpcError) as exception_context:
+                await call
+            self.assertEqual(
+                _EARLY_STATUS_CODE, exception_context.exception.code()
+            )
 
 
 if __name__ == "__main__":

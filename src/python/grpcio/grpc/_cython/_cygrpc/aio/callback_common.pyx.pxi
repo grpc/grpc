@@ -74,6 +74,15 @@ class ExecuteBatchError(InternalError):
     """Raised when execute batch returns a failure from Core."""
 
 
+class StartBatchError(ExecuteBatchError):
+    """Raised when Core refuses to start a batch.
+
+    This is different from a batch that Core accepted and later failed. When
+    an accepted batch fails, Core ends the RPC and delivers its status. When
+    Core refuses a batch, the RPC continues unchanged and no status follows.
+    """
+
+
 async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
                                tuple operations,
                                object loop):
@@ -94,7 +103,7 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
 
     if error != GRPC_CALL_OK:
         grpc_call_error_string = grpc_call_error_to_string(error).decode()
-        raise ExecuteBatchError("Failed grpc_call_start_batch: {} with grpc_call_error value: '{}'".format(error, grpc_call_error_string))
+        raise StartBatchError("Failed grpc_call_start_batch: {} with grpc_call_error value: '{}'".format(error, grpc_call_error_string))
 
     await future
 
