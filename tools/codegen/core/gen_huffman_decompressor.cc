@@ -490,12 +490,14 @@ class FunMaker;
 class BuildCtx {
  public:
   BuildCtx(std::vector<int> max_bits_for_depth, Sink* global_fns,
-           Sink* global_decls, Sink* global_values, FunMaker* fun_maker)
+           Sink* global_decls, Sink* global_values, FunMaker* fun_maker,
+           bool allow_nested_tables = true)
       : max_bits_for_depth_(std::move(max_bits_for_depth)),
         global_fns_(global_fns),
         global_decls_(global_decls),
         global_values_(global_values),
-        fun_maker_(fun_maker) {}
+        fun_maker_(fun_maker),
+        allow_nested_tables_(allow_nested_tables) {}
 
   void AddStep(SymSet start_syms, int num_bits, bool is_top, bool refill,
                int depth, Sink* out);
@@ -522,6 +524,8 @@ class BuildCtx {
   Sink* global_decls() const { return global_decls_; }
   Sink* global_values() const { return global_values_; }
 
+  bool allow_nested_tables() const { return allow_nested_tables_; }
+
  private:
   void AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far, SymSet syms,
                    std::vector<uint8_t> emit, TableBuilder* table_builder,
@@ -534,6 +538,7 @@ class BuildCtx {
   Sink* const global_decls_;
   Sink* const global_values_;
   FunMaker* const fun_maker_;
+  const bool allow_nested_tables_;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1158,17 +1163,24 @@ class TableBuilder {
   std::unique_ptr<EncodeOption> Choose() const {
     std::unique_ptr<EncodeOption> chosen;
     size_t best_size = std::numeric_limits<size_t>::max();
-    for (size_t slice_bits = 0; (1 << slice_bits) < elems_.size();
-         slice_bits++) {
+    size_t max_slice_bits = 0;
+    if (ctx_->allow_nested_tables() && elems_.size() > 1) {
+      max_slice_bits = BitsForMaxValue(elems_.size() - 1) - 1;
+    }
+    for (size_t slice_bits = 0; slice_bits <= max_slice_bits; slice_bits++) {
       auto raw = MakeTable(slice_bits);
       size_t raw_size = raw->Size();
-      auto nested = raw->MakeNestedTable();
-      size_t nested_size = nested->Size();
+      std::unique_ptr<NestedTable> nested;
+      size_t nested_size = std::numeric_limits<size_t>::max();
+      if (ctx_->allow_nested_tables()) {
+        nested = raw->MakeNestedTable();
+        nested_size = nested->Size();
+      }
       if (raw_size < best_size) {
         chosen = std::move(raw);
         best_size = raw_size;
       }
-      if (nested_size < best_size) {
+      if (ctx_->allow_nested_tables() && nested_size < best_size) {
         chosen = std::move(nested);
         best_size = nested_size;
       }
@@ -1506,7 +1518,8 @@ struct FileSet {
 
   explicit FileSet(std::string base_name) : base_name(base_name) {}
   void AddFrontMatter(int copyright_year);
-  void AddBuild(std::vector<int> max_bits_for_depth, bool selected_version);
+  void AddBuild(std::vector<int> max_bits_for_depth, bool selected_version,
+                bool allow_nested_tables = true);
   void AddTailMatter();
 };
 
@@ -1536,7 +1549,7 @@ void FileSet::AddTailMatter() {
 // Given max_bits_for_depth = {n1,n2,n3,...}
 // Build a decoder that first considers n1 bits, then n2, then n3, ...
 void FileSet::AddBuild(std::vector<int> max_bits_for_depth,
-                       bool selected_version) {
+                       bool selected_version, bool allow_nested_tables) {
   auto hdr = std::make_unique<Sink>();
   auto src = std::make_unique<Sink>();
   src->Add(absl::StrCat("#include \"", base_name, ".h\""));
@@ -1576,7 +1589,7 @@ void FileSet::AddBuild(std::vector<int> max_bits_for_depth,
   }
   src->Add("}  // namespace grpc_core");
   BuildCtx ctx(std::move(max_bits_for_depth), global_fns, global_decls,
-               global_values, &fun_maker);
+               global_values, &fun_maker, allow_nested_tables);
   // constructor
   pub->Add(
       "HuffDecoder(F sink, const uint8_t* begin, const uint8_t* end) : "
@@ -1662,12 +1675,10 @@ void WriteFile(std::string filename, std::string content) {
 }
 
 void GenMicrobenchmarks() {
-  std::queue<std::thread> threads;
   // Generate all permutations of max_bits_for_depth for the Build function.
   // Then generate all variations of the code.
   static constexpr int kNumShards = 100;
   std::unique_ptr<FileSet> results[kNumShards];
-  std::mutex results_mutexes[kNumShards];
   for (int i = 0; i < kNumShards; i++) {
     results[i] = std::make_unique<FileSet>(
         absl::StrCat("test/cpp/microbenchmarks/huffman_geometries/shard_", i));
@@ -1676,15 +1687,7 @@ void GenMicrobenchmarks() {
   int r = 0;
   for (const auto& perm : PermutationBuilder(3).Run()) {
     int shard = r++ % kNumShards;
-    threads.emplace(
-        [perm, fileset = results[shard].get(), mu = &results_mutexes[shard]] {
-          std::lock_guard<std::mutex> lock(*mu);
-          fileset->AddBuild(perm, false);
-        });
-  }
-  while (!threads.empty()) {
-    threads.front().join();
-    threads.pop();
+    results[shard]->AddBuild(perm, false);
   }
   auto index_hdr = std::make_unique<Sink>();
   index_hdr->Add<Prelude>("//", 2023);
@@ -1716,7 +1719,8 @@ void GenMicrobenchmarks() {
 void GenSelected() {
   FileSet selected("src/core/ext/transport/chttp2/transport/decode_huff");
   selected.AddFrontMatter(2023);
-  selected.AddBuild(std::vector<int>({14, 5, 11}), true);
+  selected.AddBuild(std::vector<int>({14, 5, 11}), true,
+                    /*allow_nested_tables=*/false);
   selected.AddTailMatter();
   WriteFile(selected.base_name + ".h", selected.header);
   WriteFile(selected.base_name + ".cc", selected.source);
