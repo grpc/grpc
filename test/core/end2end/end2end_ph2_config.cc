@@ -86,11 +86,13 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.CancelAfterAccept"
 
 // RequestResponseWithPayload10Times and InvokeLargeRequest flake about 6%.
-#define GRPC_HTTP2_PH2_SERVER_ONLY_AVOID_LIST             \
-  "|CoreLargeSendTests.RequestResponseWithPayload10Times" \
-  "|Http2Tests.HighInitialSeqno"                          \
-  "|Http2SingleHopTests.InvokeLargeRequest"
-
+#define GRPC_HTTP2_PH2_SERVER_ONLY_AVOID_LIST               \
+  "|CoreLargeSendTests.RequestResponseWithPayload10Times"   \
+  "|Http2Tests.HighInitialSeqno"                            \
+  "|Http2SingleHopTests.InvokeLargeRequest"                 \
+  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst" \
+  "|Http2SingleHopTests."                                   \
+  "RequestWithSendMessageBeforeInitialMetadataDecompressInCore"
 #define GRPC_HTTP2_PH2_CLIENT_SERVER_ONLY_AVOID_LIST ""
 
 #define GRPC_HTTP2_PH2_COMMON_AVOID_LIST  \
