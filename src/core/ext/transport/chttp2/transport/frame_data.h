@@ -35,7 +35,8 @@
 #include "absl/status/status.h"
 
 // start processing a new data frame
-absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
+absl::Status grpc_chttp2_data_parser_begin_frame(grpc_chttp2_transport* t,
+                                                 uint8_t flags,
                                                  uint32_t stream_id,
                                                  grpc_chttp2_stream* s);
 
