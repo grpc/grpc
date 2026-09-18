@@ -22,7 +22,7 @@ cd $(dirname $0)/../../..
 PROTOC=bazel-bin/external/protobuf+/protoc
 PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_ruby_plugin_binary
 
-$PROTOC -I src/proto src/proto/grpc/health/v1/health.proto \
+$PROTOC -I third_party/grpc-proto third_party/grpc-proto/grpc/health/v1/health.proto \
     --grpc_out=src/ruby/pb \
     --ruby_out=src/ruby/pb \
     --plugin=$PLUGIN

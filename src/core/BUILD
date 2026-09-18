@@ -12969,7 +12969,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto"],
+    deps = ["@grpc_proto//:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -12989,7 +12989,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto"],
+    deps = ["@grpc_proto//:grpclb_load_balancer_proto"],
 )
 
 grpc_upb_proto_library(
