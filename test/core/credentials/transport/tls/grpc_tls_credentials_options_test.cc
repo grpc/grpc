@@ -625,6 +625,14 @@ TEST_F(GrpcTlsCredentialsOptionsTest, SetKeyExchangeGroups) {
   EXPECT_EQ(options->key_exchange_groups(), groups);
 }
 
+TEST_F(GrpcTlsCredentialsOptionsTest, SetVerificationKeyPurpose) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  grpc_tls_credentials_options_set_verification_key_purpose(
+      options.get(), GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY);
+  EXPECT_EQ(options->verification_key_purpose(),
+            GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY);
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core
