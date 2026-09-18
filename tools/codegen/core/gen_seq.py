@@ -18,8 +18,7 @@ import sys
 
 from mako.template import Template
 
-seq_state = Template(
-    """
+seq_state = Template("""
 <%def name="decl(promise_name, i, n)">
 using Promise${i} = ${promise_name};
 % if i < n-1:
@@ -180,8 +179,7 @@ tail${i}:
       }
     }
   }
-};"""
-)
+};""")
 
 front_matter = """
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_SEQ_STATE_H
