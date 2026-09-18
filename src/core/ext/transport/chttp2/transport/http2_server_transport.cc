@@ -621,8 +621,14 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
     stream = LookupStream(frame.stream_id);
   }
 
-  const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
-      frame, flow_control_, stream.get());
+  ValueOrHttp2Status<bool> window_update_result =
+      ProcessIncomingWindowUpdateFrameFlowControl(
+          frame, flow_control_, stream.get(), settings_->peer());
+  if (!window_update_result.IsOk()) {
+    return ValueOrHttp2Status<bool>::TakeStatus(
+        std::move(window_update_result));
+  }
+  const bool should_trigger_write = window_update_result.value();
 
   if (should_trigger_write) {
     return ToHttpOkOrConnError(TriggerWriteCycle());
