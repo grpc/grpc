@@ -39,6 +39,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
@@ -820,10 +821,10 @@ TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
   // correctly. Assertions: GetCurrentFrameHeader returns the exact frame header
   // that was set.
   util::testing::MockPromiseEndpoint mock_endpoint(1234);
-  ReadContext context(/*max_new_streams_per_read_cycle=*/32u,
-                      mock_endpoint.promise_endpoint, true,
-                      GrpcErrors::kMaxSecurityFrameSize,
-                      /*ping_on_rst_stream_percent=*/1u);
+  ReadContext context(
+      /*max_new_streams_per_read_cycle=*/32u, mock_endpoint.promise_endpoint,
+      true, GrpcErrors::kMaxSecurityFrameSize,
+      /*ping_on_rst_stream_percent=*/1u, Http2TransportStats(ChannelArgs()));
   Http2FrameHeader header;
   header.length = 100u;
   header.type = 1u;
@@ -856,7 +857,8 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
         ReadContext read_context(/*max_new_streams_per_read_cycle=*/32u,
                                  mock_endpoint.promise_endpoint, true,
                                  GrpcErrors::kMaxSecurityFrameSize,
-                                 /*ping_on_rst_stream_percent=*/1u);
+                                 /*ping_on_rst_stream_percent=*/1u,
+                                 Http2TransportStats(ChannelArgs()));
         const Http2FrameHeader header = {
             0u,  // length
             0u,  // type
