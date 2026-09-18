@@ -719,6 +719,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+  TransportStatsTracker stats_tracker_;
 };
 
 }  // namespace http2
