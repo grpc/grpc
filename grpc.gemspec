@@ -1880,6 +1880,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/load_balancing/oob_backend_metric_internal.h )
   s.files += %w( src/core/load_balancing/outlier_detection/outlier_detection.cc )
   s.files += %w( src/core/load_balancing/outlier_detection/outlier_detection.h )
+  s.files += %w( src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc )
+  s.files += %w( src/core/load_balancing/outlier_detection/outlier_detection_metrics.h )
   s.files += %w( src/core/load_balancing/pick_first/pick_first.cc )
   s.files += %w( src/core/load_balancing/pick_first/pick_first.h )
   s.files += %w( src/core/load_balancing/priority/priority.cc )

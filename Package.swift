@@ -1877,6 +1877,8 @@ let package = Package(
         "src/core/load_balancing/oob_backend_metric_internal.h",
         "src/core/load_balancing/outlier_detection/outlier_detection.cc",
         "src/core/load_balancing/outlier_detection/outlier_detection.h",
+        "src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc",
+        "src/core/load_balancing/outlier_detection/outlier_detection_metrics.h",
         "src/core/load_balancing/pick_first/pick_first.cc",
         "src/core/load_balancing/pick_first/pick_first.h",
         "src/core/load_balancing/priority/priority.cc",
