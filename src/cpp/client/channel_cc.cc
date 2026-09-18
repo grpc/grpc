@@ -82,12 +82,11 @@ inline grpc_slice SliceFromArray(const char* arr, size_t len) {
 }
 
 std::string GetChannelInfoField(grpc_channel* channel,
-                                grpc_channel_info* channel_info,
-                                char*** channel_info_field) {
+                                char** grpc_channel_info::* field) {
   char* value = nullptr;
-  memset(channel_info, 0, sizeof(*channel_info));
-  *channel_info_field = &value;
-  grpc_channel_get_info(channel, channel_info);
+  grpc_channel_info channel_info = {};
+  channel_info.*field = &value;
+  grpc_channel_get_info(channel, &channel_info);
   if (value == nullptr) return "";
   std::string result = value;
   gpr_free(value);
@@ -97,15 +96,12 @@ std::string GetChannelInfoField(grpc_channel* channel,
 }  // namespace
 
 std::string Channel::GetLoadBalancingPolicyName() const {
-  grpc_channel_info channel_info;
-  return GetChannelInfoField(c_channel_, &channel_info,
-                             &channel_info.lb_policy_name);
+  return GetChannelInfoField(c_channel_, &grpc_channel_info::lb_policy_name);
 }
 
 std::string Channel::GetServiceConfigJSON() const {
-  grpc_channel_info channel_info;
-  return GetChannelInfoField(c_channel_, &channel_info,
-                             &channel_info.service_config_json);
+  return GetChannelInfoField(c_channel_,
+                             &grpc_channel_info::service_config_json);
 }
 
 namespace experimental {
