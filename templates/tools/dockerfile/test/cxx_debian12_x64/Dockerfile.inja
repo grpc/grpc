@@ -23,6 +23,10 @@ FROM debian:12
 {% include "../../run_tests_addons.include" %}
 
 
+# Used by generate_projects.sh
+RUN apt-get update && apt-get install -y \
+  python3-mako && apt-get clean
+
 #=================
 # Setup git to access working directory across docker boundary
 
