@@ -1501,6 +1501,41 @@ TEST_F(TlsSecurityConnectorTest, ConcurrentConstructionBuildsOneFactory) {
   }
 }
 
+TEST_F(TlsSecurityConnectorTest,
+       ConcurrentConstructionBuildsOneFactoryWithSystemRoots) {
+  // No distributor here: with no root certificate provider set, TlsCredentials
+  // falls back to the default system roots. This exercises
+  // factory_cache_mu_/factory_creation_in_progress_ on its own, without any
+  // locking the distributor/watcher path would otherwise provide.
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(std::move(options));
+  constexpr int kNumThreads = 16;
+  absl::Barrier barrier(kNumThreads);
+  std::vector<RefCountedPtr<grpc_channel_security_connector>> connectors(
+      kNumThreads);
+  std::vector<std::thread> threads;
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; ++i) {
+    threads.emplace_back([&, i] {
+      barrier.Block();
+      ChannelArgs args;
+      connectors[i] =
+          credential->create_security_connector(nullptr, kTargetName, &args);
+    });
+  }
+  for (auto& t : threads) t.join();
+  ASSERT_NE(connectors[0], nullptr);
+  tsi_ssl_client_handshaker_factory* expected = GetClientFactory(connectors[0]);
+  ASSERT_NE(expected, nullptr);
+  for (int i = 1; i < kNumThreads; ++i) {
+    ASSERT_NE(connectors[i], nullptr);
+    EXPECT_EQ(GetClientFactory(connectors[i]), expected);
+  }
+  EXPECT_TRUE(credential->HasCachedClientHandshakerFactoryForTesting());
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
