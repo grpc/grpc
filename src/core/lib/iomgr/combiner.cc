@@ -217,7 +217,10 @@ bool grpc_combiner_continue_exec_ctx() {
     cl->cb(cl->cb_arg, std::move(cl_err));
   } else {
     grpc_closure* c = lock->final_list.head;
-    CHECK_NE(c, nullptr);
+    if (c == nullptr) {
+      queue_offload(lock);
+      return true;
+    }
     grpc_closure_list_init(&lock->final_list);
     int loops = 0;
     while (c != nullptr) {
