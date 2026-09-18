@@ -63,7 +63,8 @@ inline std::optional<uint32_t> ParseUInt32Value(
 
 // Returns the number per million.
 uint32_t ParseFractionalPercent(
-    const envoy_type_v3_FractionalPercent* fractional_percent);
+    const envoy_type_v3_FractionalPercent* fractional_percent,
+    ValidationErrors* errors);
 
 std::optional<grpc_resolved_address> ParseXdsAddress(
     const envoy_config_core_v3_Address* address, ValidationErrors* errors);
