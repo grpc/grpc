@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
+#include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
@@ -76,6 +77,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
@@ -1213,9 +1215,12 @@ Http2ClientTransport::Http2ClientTransport(
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner_),
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
-      ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()) {
+      ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
+      http2_stats_collector_(CreateHttp2StatsCollector(
+          channel_args.GetObject<grpc_auth_context>())) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::Http2ClientTransport Begin";
   // Initialize the transport party and write party.
+  read_context_.SetHttp2StatsCollector(http2_stats_collector_);
   RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<EventEngine>(event_engine_.get());
   transport_party_ = Party::Make(std::move(party_arena));
