@@ -15,6 +15,7 @@
 # limitations under the License.
 
 load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 package(default_testonly = 1)
@@ -38,6 +39,7 @@ py_grpc_library(
 py_binary(
     name = "client",
     srcs = ["client.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [
@@ -59,6 +61,7 @@ py_library(
 py_binary(
     name = "server",
     srcs = ["server.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [

@@ -14,36 +14,27 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <atomic>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/xds/xds_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/child_policy_handler.h"
@@ -58,6 +49,7 @@
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -68,12 +60,17 @@
 #include "src/core/util/ref_counted_string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_locality.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -193,7 +190,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
     // object, that object already contains the locality label.  We
     // need to store the locality label directly only in the case where
     // load reporting is disabled.
-    using LocalityData = absl::variant<
+    using LocalityData = std::variant<
         RefCountedStringValue /*locality*/,
         RefCountedPtr<LrsClient::ClusterLocalityStats> /*locality_stats*/>;
 
@@ -332,55 +329,35 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
         call_counter_(std::move(call_counter)) {}
 
   ~SubchannelCallTracker() override {
-    locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
-    call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
-#ifndef NDEBUG
-    DCHECK(!started_);
-#endif
-  }
-
-  void Start() override {
-    // Increment number of calls in flight.
-    call_counter_->Increment();
-    // Record a call started.
-    if (locality_stats_ != nullptr) {
-      locality_stats_->AddCallStarted();
-    }
-    // Delegate if needed.
-    if (original_subchannel_call_tracker_ != nullptr) {
-      original_subchannel_call_tracker_->Start();
-    }
-#ifndef NDEBUG
-    started_ = true;
-#endif
+    MaybeFinish(/*succeeded=*/false, /*backend_metrics=*/nullptr);
   }
 
   void Finish(FinishArgs args) override {
-    // Delegate if needed.
     if (original_subchannel_call_tracker_ != nullptr) {
       original_subchannel_call_tracker_->Finish(args);
     }
-    // Record call completion for load reporting.
-    if (locality_stats_ != nullptr) {
-      locality_stats_->AddCallFinished(
-          args.backend_metric_accessor->GetBackendMetricData(),
-          !args.status.ok());
-    }
-    // Decrement number of calls in flight.
-    call_counter_->Decrement();
-#ifndef NDEBUG
-    started_ = false;
-#endif
+    MaybeFinish(/*succeeded=*/args.status.ok(),
+                args.backend_metric_accessor->GetBackendMetricData());
   }
 
  private:
+  void MaybeFinish(bool succeeded, const BackendMetricData* backend_metrics) {
+    // Record call completion for load reporting.
+    if (locality_stats_ != nullptr) {
+      locality_stats_->AddCallFinished(backend_metrics, /*fail=*/!succeeded);
+      locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    }
+    // Decrement number of calls in flight.
+    if (call_counter_ != nullptr) {
+      call_counter_->Decrement();
+      call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    }
+  }
+
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       original_subchannel_call_tracker_;
   RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats_;
   RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
-#ifndef NDEBUG
-  bool started_ = false;
-#endif
 };
 
 //
@@ -409,10 +386,11 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
   if (call_attempt_tracer != nullptr) {
     call_attempt_tracer->SetOptionalLabel(
-        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kXdsServiceName,
+        ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
+            kXdsServiceName,
         service_telemetry_label_);
     call_attempt_tracer->SetOptionalLabel(
-        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+        ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
             kXdsServiceNamespace,
         namespace_telemetry_label_);
   }
@@ -439,21 +417,25 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   }
   // Not dropping, so delegate to child picker.
   PickResult result = picker_->Pick(args);
-  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  auto* complete_pick = std::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
     auto* subchannel_wrapper =
         static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
     // Add locality label to per-call metrics if needed.
     if (call_attempt_tracer != nullptr) {
       call_attempt_tracer->SetOptionalLabel(
-          ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kLocality,
+          ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
+              kLocality,
           subchannel_wrapper->locality());
     }
+    // Increment number of calls in flight.
+    call_counter_->Increment();
     // Handle load reporting.
     RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats;
     if (subchannel_wrapper->locality_stats() != nullptr) {
       locality_stats = subchannel_wrapper->locality_stats()->Ref(
           DEBUG_LOCATION, "SubchannelCallTracker");
+      locality_stats->AddCallStarted();
     }
     // Handle authority rewriting if needed.
     if (!subchannel_wrapper->hostname().empty()) {
@@ -461,7 +443,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
           call_state->GetCallAttribute<XdsRouteStateAttribute>();
       if (route_state_attribute != nullptr) {
         auto* route_action =
-            absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+            std::get_if<XdsRouteConfigResource::Route::RouteAction>(
                 &route_state_attribute->route().action);
         if (route_action != nullptr && route_action->auto_host_rewrite) {
           complete_pick->authority_override =
@@ -547,7 +529,7 @@ void XdsClusterImplLb::ResetBackoffLocked() {
 }
 
 std::string GetEdsResourceName(const XdsClusterResource& cluster_resource) {
-  auto* eds = absl::get_if<XdsClusterResource::Eds>(&cluster_resource.type);
+  auto* eds = std::get_if<XdsClusterResource::Eds>(&cluster_resource.type);
   if (eds == nullptr) return "";
   return eds->eds_service_name;
 }
@@ -561,7 +543,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // different priority child name if that happens, which means that this
   // policy instance will get replaced instead of being updated.
   if (config_ != nullptr) {
-    CHECK(config_->cluster_name() == new_config->cluster_name());
+    GRPC_CHECK(config_->cluster_name() == new_config->cluster_name());
   }
   // Get xDS config.
   auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
@@ -582,9 +564,8 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
     return status;
   }
   auto& new_cluster_config = *it->second;
-  auto* endpoint_config =
-      absl::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
-          &new_cluster_config.children);
+  auto* endpoint_config = std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
+      &new_cluster_config.children);
   if (endpoint_config == nullptr) {
     // Should never happen.
     absl::Status status = absl::InternalError(
@@ -684,9 +665,9 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
   bool use_system_root_certs = false;
   absl::Status status = Match(
-      cluster_resource.common_tls_context.certificate_validation_context
-          .ca_certs,
-      [](const absl::monostate&) {
+      cluster_resource.upstream_tls_context.common_tls_context
+          .certificate_validation_context.ca_certs,
+      [](const std::monostate&) {
         // No root cert configured.
         return absl::OkStatus();
       },
@@ -711,11 +692,11 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   if (!status.ok()) return status;
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
-      cluster_resource.common_tls_context.tls_certificate_provider_instance
-          .instance_name;
+      cluster_resource.upstream_tls_context.common_tls_context
+          .tls_certificate_provider_instance.instance_name;
   absl::string_view identity_cert_name =
-      cluster_resource.common_tls_context.tls_certificate_provider_instance
-          .certificate_name;
+      cluster_resource.upstream_tls_context.common_tls_context
+          .tls_certificate_provider_instance.certificate_name;
   RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider;
   if (!identity_provider_instance_name.empty()) {
     identity_cert_provider =
@@ -729,12 +710,15 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   }
   // Configure SAN matchers.
   const std::vector<StringMatcher>& san_matchers =
-      cluster_resource.common_tls_context.certificate_validation_context
-          .match_subject_alt_names;
+      cluster_resource.upstream_tls_context.common_tls_context
+          .certificate_validation_context.match_subject_alt_names;
   // Create xds cert provider.
   return MakeRefCounted<XdsCertificateProvider>(
       std::move(root_cert_provider), root_cert_name, use_system_root_certs,
-      std::move(identity_cert_provider), identity_cert_name, san_matchers);
+      std::move(identity_cert_provider), identity_cert_name, san_matchers,
+      cluster_resource.upstream_tls_context.sni,
+      cluster_resource.upstream_tls_context.auto_host_sni,
+      cluster_resource.upstream_tls_context.auto_sni_san_validation);
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {
@@ -887,15 +871,13 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   auto it = json.object().find("childPolicy");
   if (it == json.object().end()) {
     errors->AddError("field not present");
+  } else if (auto lb_config = CoreConfiguration::Get()
+                                  .lb_policy_registry()
+                                  .ParseLoadBalancingConfig(it->second);
+             !lb_config.ok()) {
+    errors->AddError(lb_config.status().message());
   } else {
-    auto lb_config =
-        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            it->second);
-    if (!lb_config.ok()) {
-      errors->AddError(lb_config.status().message());
-    } else {
-      child_policy_ = std::move(*lb_config);
-    }
+    child_policy_ = std::move(*lb_config);
   }
 }
 

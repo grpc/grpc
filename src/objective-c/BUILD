@@ -21,7 +21,10 @@ licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
-    features = ["-layering_check"],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
 )
 
 exports_files(["LICENSE"])
@@ -64,7 +67,6 @@ grpc_objc_library(
     hdrs = [
         "GRPCClient/GRPCCall+ChannelArg.h",
         "GRPCClient/GRPCCall+ChannelCredentials.h",
-        "GRPCClient/GRPCCall+Cronet.h",
         "GRPCClient/GRPCCall+OAuth2.h",
         "GRPCClient/GRPCCall+Tests.h",
         "GRPCClient/GRPCCallLegacy.h",
@@ -111,6 +113,7 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
     ],
 )
 
@@ -119,7 +122,6 @@ grpc_objc_library(
     srcs = [
         "GRPCClient/GRPCCall+ChannelArg.mm",
         "GRPCClient/GRPCCall+ChannelCredentials.mm",
-        "GRPCClient/GRPCCall+Cronet.mm",
         "GRPCClient/GRPCCall+OAuth2.mm",
         "GRPCClient/GRPCCall+Tests.mm",
         "GRPCClient/GRPCCallLegacy.mm",
@@ -127,7 +129,6 @@ grpc_objc_library(
     hdrs = [
         "GRPCClient/GRPCCall+ChannelArg.h",
         "GRPCClient/GRPCCall+ChannelCredentials.h",
-        "GRPCClient/GRPCCall+Cronet.h",
         "GRPCClient/GRPCCall+OAuth2.h",
         "GRPCClient/GRPCCall+Tests.h",
     ],
@@ -137,7 +138,13 @@ grpc_objc_library(
     deps = [
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++_public_hdrs",
+        "//:grpc_core_credentials_header",
         "//:grpc_objc",
     ],
 )
@@ -174,6 +181,7 @@ grpc_objc_library(
     deps = [
         ":grpc_objc_interface",
         ":proto_objc_rpc_legacy_header",
+        ":rx_library_headers",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )
@@ -192,9 +200,12 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_client_core",
+        ":grpc_objc_interface",
+        ":grpc_objc_interface_legacy",
         ":proto_objc_rpc_legacy_header",
         ":proto_objc_rpc_v2",
         ":rx_library",
+        ":rx_library_headers",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )
@@ -211,7 +222,6 @@ grpc_objc_library(
     srcs = [
         "GRPCClient/GRPCCall+ChannelArg.mm",
         "GRPCClient/GRPCCall+ChannelCredentials.mm",
-        "GRPCClient/GRPCCall+Cronet.mm",
         "GRPCClient/GRPCCall+OAuth2.mm",
         "GRPCClient/GRPCCall+Tests.mm",
         "GRPCClient/GRPCCallLegacy.mm",
@@ -220,7 +230,6 @@ grpc_objc_library(
     hdrs = [
         "GRPCClient/GRPCCall+ChannelArg.h",
         "GRPCClient/GRPCCall+ChannelCredentials.h",
-        "GRPCClient/GRPCCall+Cronet.h",
         "GRPCClient/GRPCCall+OAuth2.h",
         "GRPCClient/GRPCCall+Tests.h",
         "GRPCClient/internal_testing/GRPCCall+InternalTests.h",
@@ -234,23 +243,14 @@ grpc_objc_library(
     deps = [
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
+        "//:grpc_core_credentials_header",
         "//:grpc_objc",
     ],
 )
-
-# TODO: Enable this again once @CronetFramework is working
-#grpc_objc_library(
-#    name = "grpc_objc_client_core_cronet_testing",
-#    srcs = glob(["GRPCClient/private/GRPCCore/GRPCCoreCronet/*.mm"]),
-#    hdrs = glob(["GRPCClient/private/GRPCCore/GRPCCoreCronet/*.h"]),
-#    deps = [
-#        ":grpc_objc_client_core_internal_testing",
-#        "//:grpc_cronet_hdrs",
-#        "//src/core/ext/transport/cronet:grpc_transport_cronet_client_secure",
-#        "@CronetFramework",
-#    ],
-#)
 
 grpc_objc_library(
     name = "proto_objc_rpc_internal_testing",
@@ -266,9 +266,14 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_client_core_internal_testing",
+        ":grpc_objc_interface",
+        ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
         ":proto_objc_rpc_legacy_header",
         ":proto_objc_rpc_v2",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )

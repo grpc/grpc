@@ -16,54 +16,49 @@
 
 #include "src/core/xds/grpc/xds_client_grpc.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "envoy/service/status/v3/csds.upb.h"
-#include "upb/base/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
 #include "src/core/util/load_file.h"
-#include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "upb/base/string_view.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
 // will be appended to the user agent name reported to the xDS server.
@@ -162,16 +157,16 @@ class GrpcXdsClient::MetricsReporter final : public XdsMetricsReporter {
                              absl::string_view resource_type,
                              uint64_t num_valid_resources,
                              uint64_t num_invalid_resources) override {
-    xds_client_.stats_plugin_group_.AddCounter(
+    xds_client_.stats_plugin_group_->AddCounter(
         kMetricResourceUpdatesValid, num_valid_resources,
         {xds_client_.key_, xds_server, resource_type}, {});
-    xds_client_.stats_plugin_group_.AddCounter(
+    xds_client_.stats_plugin_group_->AddCounter(
         kMetricResourceUpdatesInvalid, num_invalid_resources,
         {xds_client_.key_, xds_server, resource_type}, {});
   }
 
   void ReportServerFailure(absl::string_view xds_server) override {
-    xds_client_.stats_plugin_group_.AddCounter(
+    xds_client_.stats_plugin_group_->AddCounter(
         kMetricServerFailure, 1, {xds_client_.key_, xds_server}, {});
   }
 
@@ -192,9 +187,13 @@ const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 // Key bytes live in clients so they outlive the entries in this map
 NoDestruct<std::map<absl::string_view, GrpcXdsClient*>> g_xds_client_map
     ABSL_GUARDED_BY(*g_mu);
+bool g_inhibit_map_removal ABSL_GUARDED_BY(*g_mu) = false;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
+NoDestruct<std::shared_ptr<GrpcXdsBootstrap>> g_parsed_bootstrap
+    ABSL_GUARDED_BY(*g_mu);
 
-absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
+absl::StatusOr<std::string> FindBootstrapContents()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*g_mu) {
   // First, try GRPC_XDS_BOOTSTRAP env var.
   auto path = GetEnv("GRPC_XDS_BOOTSTRAP");
   if (path.has_value()) {
@@ -202,7 +201,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
         << "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
            "environment variable: "
         << *path;
-    auto contents = LoadFile(*path, /*add_null_terminator=*/true);
+    auto contents = LoadFile(*path);
     if (!contents.ok()) return contents.status();
     return std::string(contents->as_string_view());
   }
@@ -215,10 +214,10 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
     return std::move(*env_config);
   }
   // Finally, try fallback config.
-  if (fallback_config != nullptr) {
+  if (g_fallback_bootstrap_config != nullptr) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "Got bootstrap contents from fallback config";
-    return fallback_config;
+    return g_fallback_bootstrap_config;
   }
   // No bootstrap config found.
   return absl::FailedPreconditionError(
@@ -226,25 +225,67 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
       "not defined");
 }
 
+absl::StatusOr<std::shared_ptr<GrpcXdsBootstrap>> GetOrCreateGlobalBootstrap()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*g_mu) {
+  if (*g_parsed_bootstrap == nullptr) {
+    // First, find bootstrap contents.
+    auto bootstrap_contents = FindBootstrapContents();
+    if (!bootstrap_contents.ok()) return bootstrap_contents.status();
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "xDS bootstrap contents: " << *bootstrap_contents;
+    // Parse bootstrap.
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(*bootstrap_contents);
+    if (!bootstrap.ok()) return bootstrap.status();
+    *g_parsed_bootstrap = std::move(*bootstrap);
+  }
+  return *g_parsed_bootstrap;
+}
+
+std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+GetStatsPluginGroupForKeyAndChannelArgs(absl::string_view key,
+                                        const ChannelArgs& channel_args) {
+  if (key == GrpcXdsClient::kServerKey) {
+    return GlobalStatsPluginRegistry::GetStatsPluginsForServer(channel_args);
+  }
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
+      channel_args);
+  std::string authority =
+      channel_args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+          .value_or(
+              CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
+                  key));
+  experimental::StatsPluginChannelScope scope(key, authority, endpoint_config);
+  return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+}
+
 }  // namespace
 
 absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
-    absl::string_view key, const ChannelArgs& args, const char* reason) {
+    absl::string_view key, const ChannelArgs& args, const char* reason,
+    std::shared_ptr<GrpcXdsBootstrap> bootstrap_override) {
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.
-  absl::optional<absl::string_view> bootstrap_config = args.GetString(
+  std::optional<absl::string_view> bootstrap_config = args.GetString(
       GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
   if (bootstrap_config.has_value()) {
-    auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_config);
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "xDS bootstrap contents: " << *bootstrap_config;
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(*bootstrap_config);
     if (!bootstrap.ok()) return bootstrap.status();
     grpc_channel_args* xds_channel_args = args.GetPointer<grpc_channel_args>(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
     auto channel_args = ChannelArgs::FromC(xds_channel_args);
+    auto certificate_provider_store = MakeRefCounted<CertificateProviderStore>(
+        (*bootstrap)->certificate_providers());
     return MakeRefCounted<GrpcXdsClient>(
         key, std::move(*bootstrap), channel_args,
-        MakeRefCounted<GrpcXdsTransportFactory>(channel_args));
+        MakeRefCounted<GrpcXdsTransportFactory>(channel_args,
+                                                certificate_provider_store),
+        certificate_provider_store,
+        GetStatsPluginGroupForKeyAndChannelArgs(key, args));
   }
-  // Otherwise, use the global instance.
+  // Otherwise, check the global map to see if the XdsClient instance
+  // for this key already exists.
   MutexLock lock(g_mu);
   auto it = g_xds_client_map->find(key);
   if (it != g_xds_client_map->end()) {
@@ -252,39 +293,36 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     if (xds_client != nullptr) {
       return xds_client.TakeAsSubclass<GrpcXdsClient>();
     }
+    // Ref count was 0.  Remove the entry so that when we call emplace()
+    // below, we add a new entry, thus ensuring the lifetime of the map
+    // key is correct (since it points into the XdsClient instance).
+    g_xds_client_map->erase(it);
   }
-  // Find bootstrap contents.
-  auto bootstrap_contents = GetBootstrapContents(g_fallback_bootstrap_config);
-  if (!bootstrap_contents.ok()) return bootstrap_contents.status();
-  GRPC_TRACE_LOG(xds_client, INFO)
-      << "xDS bootstrap contents: " << *bootstrap_contents;
-  // Parse bootstrap.
-  auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
-  if (!bootstrap.ok()) return bootstrap.status();
-  // Instantiate XdsClient.
+  // The XdsClient doesn't exist, so we'll create it.
+  std::shared_ptr<GrpcXdsBootstrap> bootstrap = std::move(bootstrap_override);
+  if (bootstrap == nullptr) {
+    auto global_bootstrap = GetOrCreateGlobalBootstrap();
+    if (!global_bootstrap.ok()) return global_bootstrap.status();
+    bootstrap = std::move(*global_bootstrap);
+  }
   auto channel_args = ChannelArgs::FromC(g_channel_args);
+  auto certificate_provider_store = MakeRefCounted<CertificateProviderStore>(
+      bootstrap->certificate_providers());
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
-      key, std::move(*bootstrap), channel_args,
-      MakeRefCounted<GrpcXdsTransportFactory>(channel_args));
-  g_xds_client_map->emplace(xds_client->key(), xds_client.get());
+      key, std::move(bootstrap), channel_args,
+      MakeRefCounted<GrpcXdsTransportFactory>(channel_args,
+                                              certificate_provider_store),
+      certificate_provider_store,
+      GetStatsPluginGroupForKeyAndChannelArgs(key, args));
+  auto [_, inserted] =
+      g_xds_client_map->emplace(xds_client->key(), xds_client.get());
+  GRPC_CHECK(inserted) << "Key: " << key;
   GRPC_TRACE_LOG(xds_client, INFO) << "[xds_client " << xds_client.get()
                                    << "] Created xDS client for key " << key;
   return xds_client;
 }
 
 namespace {
-
-GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
-    absl::string_view key) {
-  if (key == GrpcXdsClient::kServerKey) {
-    return GlobalStatsPluginRegistry::GetStatsPluginsForServer(ChannelArgs{});
-  }
-  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
-      ChannelArgs{});
-  // TODO(roth): How do we set the authority here?
-  experimental::StatsPluginChannelScope scope(key, "", endpoint_config);
-  return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
-}
 
 std::string UserAgentName() {
   return absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
@@ -302,7 +340,10 @@ std::string UserAgentVersion() {
 GrpcXdsClient::GrpcXdsClient(
     absl::string_view key, std::shared_ptr<GrpcXdsBootstrap> bootstrap,
     const ChannelArgs& args,
-    RefCountedPtr<XdsTransportFactory> transport_factory)
+    RefCountedPtr<XdsTransportFactory> transport_factory,
+    RefCountedPtr<CertificateProviderStore> certificate_provider_store,
+    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group)
     : XdsClient(
           bootstrap, transport_factory,
           grpc_event_engine::experimental::GetDefaultEventEngine(),
@@ -313,11 +354,9 @@ GrpcXdsClient::GrpcXdsClient(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)
                        .value_or(Duration::Seconds(15)))),
       key_(key),
-      certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
-          static_cast<const GrpcXdsBootstrap&>(this->bootstrap())
-              .certificate_providers())),
-      stats_plugin_group_(GetStatsPluginGroupForKey(key_)),
-      registered_metric_callback_(stats_plugin_group_.RegisterCallback(
+      certificate_provider_store_(std::move(certificate_provider_store)),
+      stats_plugin_group_(std::move(stats_plugin_group)),
+      registered_metric_callback_(stats_plugin_group_->RegisterCallback(
           [this](CallbackMetricReporter& reporter) {
             ReportCallbackMetrics(reporter);
           },
@@ -332,9 +371,11 @@ void GrpcXdsClient::Orphaned() {
   XdsClient::Orphaned();
   lrs_client_.reset();
   MutexLock lock(g_mu);
+  if (g_inhibit_map_removal) return;
   auto it = g_xds_client_map->find(key_);
   if (it != g_xds_client_map->end() && it->second == this) {
     g_xds_client_map->erase(it);
+    if (g_xds_client_map->empty()) g_parsed_bootstrap->reset();
   }
 }
 
@@ -353,9 +394,9 @@ namespace {
 std::vector<RefCountedPtr<GrpcXdsClient>> GetAllXdsClients() {
   MutexLock lock(g_mu);
   std::vector<RefCountedPtr<GrpcXdsClient>> xds_clients;
-  for (const auto& key_client : *g_xds_client_map) {
+  for (const auto& [_, client] : *g_xds_client_map) {
     auto xds_client =
-        key_client.second->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
+        client->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
     if (xds_client != nullptr) {
       xds_clients.emplace_back(xds_client.TakeAsSubclass<GrpcXdsClient>());
     }
@@ -415,9 +456,15 @@ void SetXdsChannelArgsForTest(grpc_channel_args* args) {
   g_channel_args = args;
 }
 
+void SetInhibitXdsClientMapRemovalForTest(bool inhibit) {
+  MutexLock lock(g_mu);
+  g_inhibit_map_removal = inhibit;
+}
+
 void UnsetGlobalXdsClientsForTest() {
   MutexLock lock(g_mu);
   g_xds_client_map->clear();
+  g_parsed_bootstrap->reset();
 }
 
 void SetXdsFallbackBootstrapConfig(const char* config) {
@@ -432,7 +479,6 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 
 // The returned bytes may contain NULL(0), so we can't use c-string.
 grpc_slice grpc_dump_xds_configs(void) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::GrpcXdsClient::DumpAllClientConfigs();
 }

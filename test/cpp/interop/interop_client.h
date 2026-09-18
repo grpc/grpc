@@ -19,11 +19,11 @@
 #ifndef GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
 #define GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
 
-#include <cstdint>
-#include <memory>
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
+
+#include <cstdint>
+#include <memory>
 
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -78,6 +78,7 @@ class InteropClient {
   bool DoPickFirstUnary();
   bool DoOrcaPerRpc();
   bool DoOrcaOob();
+  bool DoMcsConnectionScaling();
 
   // The following interop test are not yet part of the interop spec, and are
   // not implemented cross-language. They are considered experimental for now,
@@ -116,7 +117,7 @@ class InteropClient {
    public:
     typedef std::function<std::shared_ptr<Channel>()> ChannelCreationFunc;
     // If new_stub_every_call = true, pointer to a new instance of
-    // TestServce::Stub is returned by Get() everytime it is called
+    // TestService::Stub is returned by Get() everytime it is called
     ServiceStub(ChannelCreationFunc channel_creation_func,
                 bool new_stub_every_call);
 

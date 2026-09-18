@@ -13,18 +13,36 @@
 # limitations under the License.
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 # TODO(xuanwn): Instead of using Bazel build, we should pip install all dependencies
 # once we have a released version of grpcio-csm-observability.
+
+proto_library(
+    name = "helloworld_proto",
+    srcs = ["helloworld.proto"],
+)
+
+py_proto_library(
+    name = "helloworld_py_pb2",
+    deps = [":helloworld_proto"],
+)
+
+py_grpc_library(
+    name = "helloworld_py_pb2_grpc",
+    srcs = [":helloworld_proto"],
+    deps = [":helloworld_py_pb2"],
+)
 
 py_binary(
     name = "csm_greeter_client",
     srcs = ["csm_greeter_client.py"],
     python_version = "PY3",
     deps = [
-        "//src/proto/grpc/testing:py_messages_proto",
-        "//src/proto/grpc/testing:py_test_proto",
-        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        ":helloworld_py_pb2",
+        ":helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
         requirement("opentelemetry-exporter-prometheus"),
@@ -36,9 +54,8 @@ py_binary(
     srcs = ["csm_greeter_server.py"],
     python_version = "PY3",
     deps = [
-        "//src/proto/grpc/testing:py_messages_proto",
-        "//src/proto/grpc/testing:py_test_proto",
-        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        ":helloworld_py_pb2",
+        ":helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
         requirement("opentelemetry-exporter-prometheus"),

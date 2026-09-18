@@ -12,23 +12,7 @@
 #ifndef UPB_REFLECTION_COMMON_H_
 #define UPB_REFLECTION_COMMON_H_
 
-// begin:google_only
-// #ifndef UPB_BOOTSTRAP_STAGE0
-// #include "net/proto2/proto/descriptor.upb.h"
-// #else
-// #include "google/protobuf/descriptor.upb.h"
-// #endif
-// end:google_only
-
-// begin:github_only
-#include "google/protobuf/descriptor.upb.h"
-// end:github_only
-
-typedef enum {
-  kUpb_Syntax_Proto2 = 2,
-  kUpb_Syntax_Proto3 = 3,
-  kUpb_Syntax_Editions = 99
-} upb_Syntax;
+#include "upb/reflection/descriptor_bootstrap.h"  // IWYU pragma: export
 
 // Forward declarations for circular references.
 typedef struct upb_DefPool upb_DefPool;

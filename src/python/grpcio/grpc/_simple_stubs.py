@@ -79,10 +79,11 @@ def _create_channel(
     channel_credentials: Optional[grpc.ChannelCredentials],
     compression: Optional[grpc.Compression],
 ) -> grpc.Channel:
-    _LOGGER.debug(
+    debug_msg = (
         f"Creating secure channel with credentials '{channel_credentials}', "
-        + f"options '{options}' and compression '{compression}'"
+        f"options '{options}' and compression '{compression}'"
     )
+    _LOGGER.debug(debug_msg)
     return grpc.secure_channel(
         target,
         credentials=channel_credentials,
@@ -143,14 +144,13 @@ class ChannelCache:
                     if eviction_time <= now:
                         ChannelCache._singleton._evict_locked(key)
                         continue
-                    else:
-                        time_to_eviction = (eviction_time - now).total_seconds()
-                        # NOTE: We aim to *eventually* coalesce to a state in
-                        # which no overdue channels are in the cache and the
-                        # length of the cache is longer than _MAXIMUM_CHANNELS.
-                        # We tolerate momentary states in which these two
-                        # criteria are not met.
-                        ChannelCache._condition.wait(timeout=time_to_eviction)
+                    time_to_eviction = (eviction_time - now).total_seconds()
+                    # NOTE: We aim to *eventually* coalesce to a state in
+                    # which no overdue channels are in the cache and the
+                    # length of the cache is longer than _MAXIMUM_CHANNELS.
+                    # We tolerate momentary states in which these two
+                    # criteria are not met.
+                    ChannelCache._condition.wait(timeout=time_to_eviction)
 
     def get_channel(
         self,
@@ -201,22 +201,21 @@ class ChannelCache:
                     datetime.datetime.now() + _EVICTION_PERIOD,
                 )
                 return channel, call_handle
-            else:
-                channel = _create_channel(
-                    target, options, channel_credentials, compression
-                )
-                if _registered_method:
-                    call_handle = channel._get_registered_call_handle(method)
-                self._mapping[key] = (
-                    channel,
-                    datetime.datetime.now() + _EVICTION_PERIOD,
-                )
-                if (
-                    len(self._mapping) == 1
-                    or len(self._mapping) >= _MAXIMUM_CHANNELS
-                ):
-                    self._condition.notify()
-                return channel, call_handle
+            channel = _create_channel(
+                target, options, channel_credentials, compression
+            )
+            if _registered_method:
+                call_handle = channel._get_registered_call_handle(method)
+            self._mapping[key] = (
+                channel,
+                datetime.datetime.now() + _EVICTION_PERIOD,
+            )
+            if (
+                len(self._mapping) == 1
+                or len(self._mapping) >= _MAXIMUM_CHANNELS
+            ):
+                self._condition.notify()
+            return channel, call_handle
 
     def _test_only_channel_count(self) -> int:
         with self._lock:

@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_CONSTANTS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstddef>
 #include <cstdint>
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace hpack_constants {

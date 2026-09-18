@@ -1,9 +1,0 @@
-actions {
-  create_quota {}
-}
-actions {
-  create_allocator {}
-}
-actions {
-  create_allocation {}
-}

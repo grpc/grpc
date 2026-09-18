@@ -18,20 +18,19 @@
 
 #include "src/core/lib/surface/init.h"
 
-#include <chrono>
-#include <memory>
-
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+
+#include <chrono>
+#include <memory>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/thd.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 static void test(int rounds) {
   int i;
@@ -69,11 +68,7 @@ TEST(Init, blocking) {
 
 TEST(Init, ShutdownWithThread) {
   grpc_init();
-  {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
-        GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
-    grpc_shutdown();
-  }
+  grpc_shutdown();
   grpc_maybe_wait_for_async_shutdown();
   EXPECT_FALSE(grpc_is_initialized());
 }
@@ -90,15 +85,11 @@ TEST(Init, mixed) {
 
 TEST(Init, MixedWithThread) {
   grpc_init();
-  {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
-        GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
-    grpc_init();
-    grpc_shutdown();
-    grpc_init();
-    grpc_shutdown();
-    grpc_shutdown();
-  }
+  grpc_init();
+  grpc_shutdown();
+  grpc_init();
+  grpc_shutdown();
+  grpc_shutdown();
   grpc_maybe_wait_for_async_shutdown();
   EXPECT_FALSE(grpc_is_initialized());
 }
@@ -106,11 +97,7 @@ TEST(Init, MixedWithThread) {
 TEST(Init, Repeatedly) {
   for (int i = 0; i < 10; i++) {
     grpc_init();
-    {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
-          GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
-      grpc_shutdown();
-    }
+    grpc_shutdown();
   }
   grpc_maybe_wait_for_async_shutdown();
   EXPECT_FALSE(grpc_is_initialized());
@@ -153,11 +140,7 @@ TEST(Init, WaitForShutdownWithTimeout) {
 TEST(Init, RepeatedlyBlocking) {
   for (int i = 0; i < 10; i++) {
     grpc_init();
-    {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
-          GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
-      grpc_shutdown_blocking();
-    }
+    grpc_shutdown_blocking();
   }
   EXPECT_FALSE(grpc_is_initialized());
 }
@@ -169,7 +152,6 @@ TEST(Init, TimerManagerHoldsLastInit) {
   engine->RunAfter(
       std::chrono::seconds(1),
       [engine = grpc_event_engine::experimental::GetDefaultEventEngine()] {
-        grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         grpc_shutdown();
       });

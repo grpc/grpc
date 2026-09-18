@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_ROUTER_V3_ROUTER_PROTO_UPB_MINITABLE_H_
-#define ENVOY_EXTENSIONS_FILTERS_HTTP_ROUTER_V3_ROUTER_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_ROUTER_V3_ROUTER_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_EXTENSIONS_FILTERS_HTTP_ROUTER_V3_ROUTER_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__extensions__filters__http__router__v3__Router_msg_init;
-extern const upb_MiniTable* envoy__extensions__filters__http__router__v3__Router_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init;
-extern const upb_MiniTable* envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout;
 
@@ -31,4 +29,4 @@ extern const upb_MiniTableFile envoy_extensions_filters_http_router_v3_router_pr
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_FILTERS_HTTP_ROUTER_V3_ROUTER_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_EXTENSIONS_FILTERS_HTTP_ROUTER_V3_ROUTER_PROTO_UPB_H__UPB_MINITABLE_H_ */

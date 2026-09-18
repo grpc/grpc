@@ -19,15 +19,14 @@
 
 #include <map>
 #include <memory>
+#include <utility>
 
-#include "absl/strings/string_view.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
-
-#include <grpc/support/port_platform.h>
-
+#include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -47,8 +46,22 @@ class XdsAuditLoggerRegistry final {
     virtual absl::string_view name() = 0;
   };
 
-  XdsAuditLoggerRegistry();
+  XdsAuditLoggerRegistry() = default;
 
+  template <typename T>
+  void RegisterFactory(std::unique_ptr<T> factory) {
+    audit_logger_config_factories_.emplace(T::Type(), std::move(factory));
+  }
+
+  std::shared_ptr<const experimental::AuditLoggerFactory::Config>
+  ParseXdsAuditLoggerConfig(
+      const XdsResourceType::DecodeContext& context,
+      const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig*
+          logger_config,
+      ValidationErrors* errors) const;
+
+  // TODO(roth): Remove this method when removing the
+  // xds_server_filter_chain_per_route experiment.
   Json ConvertXdsAuditLoggerConfig(
       const XdsResourceType::DecodeContext& context,
       const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig*

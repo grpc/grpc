@@ -16,30 +16,32 @@
 //
 //
 
-#include <netinet/in.h>
-#include <stdint.h>
-#include <stdio.h>
-
-#include <openssl/crypto.h>
-#include <openssl/evp.h>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
+#include <netinet/in.h>
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/str_format.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -47,21 +49,13 @@
 
 #include <string>
 
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 #define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
@@ -203,6 +197,7 @@ static void server_thread(void* arg) {
   OpenSSL_add_ssl_algorithms();
   args->ssl_library_info->Notify();
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   const SSL_METHOD* method = TLSv1_2_server_method();
   SSL_CTX* ctx = SSL_CTX_new(method);
   if (!ctx) {
@@ -210,6 +205,17 @@ static void server_thread(void* arg) {
     ERR_print_errors_fp(stderr);
     abort();
   }
+#else
+  const SSL_METHOD* method = TLS_server_method();
+  SSL_CTX* ctx = SSL_CTX_new(method);
+  if (!ctx) {
+    perror("Unable to create SSL context");
+    ERR_print_errors_fp(stderr);
+    abort();
+  }
+  SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+  SSL_CTX_set_max_proto_version(ctx, TLS1_2_VERSION);
+#endif
 
   // Load key pair.
   if (SSL_CTX_use_certificate_file(ctx, SSL_CERT_PATH, SSL_FILETYPE_PEM) < 0) {
@@ -310,16 +316,9 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   EXPECT_GT(server_socket, 0);
   EXPECT_GT(port, 0);
 
-  // Launch the TLS server thread.
-  SslLibraryInfo ssl_library_info;
-  server_args args = {server_socket, server_alpn_preferred, &ssl_library_info};
-  bool ok;
-  grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &args, &ok);
-  EXPECT_TRUE(ok);
-  thd.Start();
-  ssl_library_info.Await();
-
   // Load key pair and establish client SSL credentials.
+  // Creating ssl_creds initializes gRPC SSL and installs the OpenSSL locking
+  // callbacks before server_thread begins OpenSSL operations.
   std::string ca_cert = grpc_core::testing::GetFileContents(SSL_CA_PATH);
   std::string cert = grpc_core::testing::GetFileContents(SSL_CERT_PATH);
   std::string key = grpc_core::testing::GetFileContents(SSL_KEY_PATH);
@@ -329,6 +328,15 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   pem_key_cert_pair.cert_chain = cert.c_str();
   grpc_channel_credentials* ssl_creds = grpc_ssl_credentials_create(
       ca_cert.c_str(), &pem_key_cert_pair, nullptr, nullptr);
+
+  // Launch the TLS server thread.
+  SslLibraryInfo ssl_library_info;
+  server_args args = {server_socket, server_alpn_preferred, &ssl_library_info};
+  bool ok;
+  grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &args, &ok);
+  EXPECT_TRUE(ok);
+  thd.Start();
+  ssl_library_info.Await();
 
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
   // lazy, this won't necessarily establish a connection yet.
@@ -382,7 +390,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
 }
 
 TEST(ClientSslTest, MainTest) {
-  // Handshake succeeeds when the server has h2 as the ALPN preference.
+  // Handshake succeeds when the server has h2 as the ALPN preference.
   ASSERT_TRUE(client_ssl_test(const_cast<char*>("h2")));
 
 // TODO(gtcooke94) Figure out why test is failing with OpenSSL and fix it.

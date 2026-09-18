@@ -18,12 +18,11 @@
 
 #include "src/core/handshaker/handshaker_registry.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
 #include <utility>
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

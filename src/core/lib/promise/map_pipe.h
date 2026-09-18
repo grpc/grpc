@@ -15,9 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -26,12 +23,14 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
 // Apply a (possibly async) mapping function to src, and output into dst.
 //
-// In psuedo-code:
+// In pseudo-code:
 // for each element in wait_for src.Next:
 //   x = wait_for filter_factory(element)
 //   wait_for dst.Push(x)
@@ -60,7 +59,7 @@ auto MapPipe(PipeReceiver<T> src, PipeSender<T> dst, Filter filter_factory) {
       });
 }
 
-// Helper to intecept a pipe and apply a mapping function.
+// Helper to intercept a pipe and apply a mapping function.
 // Each of the `Intercept` constructors will take a PipeSender or PipeReceiver,
 // construct a new pipe, and then replace the passed in pipe with its new end.
 // In this way it can interject logic per-element.

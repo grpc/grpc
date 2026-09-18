@@ -16,39 +16,32 @@
 //
 //
 
-#include <stdio.h>
-#include <string.h>
-
-#include <string>
-
-#include <gmock/gmock.h>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
+#include <stdio.h>
+#include <string.h>
 
+#include <string>
+
+#include "src/core/config/config_vars.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/string.h"
@@ -61,6 +54,9 @@
 #include "test/core/test_util/socket_use_after_close_detector.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -70,6 +66,8 @@
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
+
+#if GRPC_ARES == 1
 
 namespace {
 
@@ -119,7 +117,7 @@ void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   grpc_core::Notification notification;
-  args->lock->Run([&notification]() { notification.Notify(); }, DEBUG_LOCATION);
+  args->lock->Run([&notification]() { notification.Notify(); });
   args->lock.reset();
   notification.WaitForNotification();
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
@@ -300,7 +298,7 @@ void TestCancelDuringActiveQuery(
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline, nullptr);
-  CHECK(call);
+  GRPC_CHECK(call);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -388,13 +386,8 @@ TEST_F(
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
   std::string expected_error_message_substring;
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    expected_error_message_substring =
-        absl::StrCat("errors resolving ", kFakeName);
-  } else {
-    expected_error_message_substring =
-        absl::StrCat("DNS resolution failed for ", kFakeName);
-  }
+  expected_error_message_substring =
+      absl::StrCat("errors resolving ", kFakeName);
   // The DNS resolution timeout should fire well before the
   // RPC's deadline expires.
   gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(10);
@@ -436,20 +429,11 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::
           CloseSocketUponReceivingBytesFromPeer);
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    g_event_engine_grpc_ares_test_only_force_tcp = true;
-  } else {
-    g_grpc_ares_test_only_force_tcp = true;
-  }
+  g_event_engine_grpc_ares_test_only_force_tcp = true;
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
   std::string expected_error_message_substring;
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    expected_error_message_substring =
-        absl::StrCat("errors resolving ", kFakeName);
-  } else {
-    expected_error_message_substring =
-        absl::StrCat("DNS resolution failed for ", kFakeName);
-  }
+  expected_error_message_substring =
+      absl::StrCat("errors resolving ", kFakeName);
   // Don't really care about the deadline - we should quickly hit a DNS
   // resolution failure.
   gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(100);
@@ -457,11 +441,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
   TestCancelDuringActiveQuery(expected_status_code,
                               expected_error_message_substring, rpc_deadline,
                               dns_query_timeout_ms, fake_dns_server.port());
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    g_event_engine_grpc_ares_test_only_force_tcp = false;
-  } else {
-    g_grpc_ares_test_only_force_tcp = false;
-  }
+  g_event_engine_grpc_ares_test_only_force_tcp = false;
 }
 
 // This test is meant to repro a bug noticed in internal issue b/297538255.
@@ -499,11 +479,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 //      But c-ares will never try to read from that socket again, so we have an
 //      infinite busy loop.
 TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    g_event_engine_grpc_ares_test_only_force_tcp = true;
-  } else {
-    g_grpc_ares_test_only_force_tcp = true;
-  }
+  g_event_engine_grpc_ares_test_only_force_tcp = true;
   grpc_core::testing::SocketUseAfterCloseDetector
       socket_use_after_close_detector;
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
@@ -518,11 +494,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
   TestCancelDuringActiveQuery(
       expected_status_code, "" /* expected error message substring */,
       rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    g_event_engine_grpc_ares_test_only_force_tcp = false;
-  } else {
-    g_grpc_ares_test_only_force_tcp = false;
-  }
+  g_event_engine_grpc_ares_test_only_force_tcp = false;
 }
 
 }  // namespace
@@ -534,3 +506,13 @@ int main(int argc, char** argv) {
   auto result = RUN_ALL_TESTS();
   return result;
 }
+
+#else  // GRPC_ARES
+
+int main(int argc, char** argv) {
+  InitGoogle(argv[0], &argc, &argv, true);
+  LOG(INFO) << "Skipping test because GRPC_ARES is not defined";
+  return 0;
+}
+
+#endif  // GRPC_ARES

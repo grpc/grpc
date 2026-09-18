@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import argparse
 import os
 import os.path
@@ -38,7 +36,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", ".."))
 
 SETUP_PATH = os.path.join(PROJECT_ROOT, "setup.py")
-REQUIREMENTS_PATH = os.path.join(PROJECT_ROOT, "requirements.bazel.txt")
+REQUIREMENTS_PATH = os.path.join(PROJECT_ROOT, "requirements.bazel.lock")
 DOC_PATH = os.path.join(PROJECT_ROOT, "doc/build")
 
 if "VIRTUAL_ENV" in os.environ:

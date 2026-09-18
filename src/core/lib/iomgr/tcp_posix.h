@@ -29,6 +29,7 @@
 // otherwise specified.
 //
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -38,11 +39,18 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
-/// Create a tcp endpoint given a file desciptor and a read slice size.
-/// Takes ownership of \a fd. Takes ownership of the \a slice_allocator.
+/// [DEPRECATED] Create a tcp endpoint given a file descriptor and a read slice
+/// size. Takes ownership of \a fd. This is a legacy API, intended for iomgr use
+/// only, it will not support EventEngine.
 grpc_endpoint* grpc_tcp_create(grpc_fd* fd,
                                const grpc_core::PosixTcpOptions& options,
                                absl::string_view peer_string);
+
+/// Create a tcp endpoint given a file descriptor and a read slice size.
+/// Takes ownership of \a fd.
+grpc_endpoint* grpc_tcp_create(
+    grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
+    absl::string_view peer_string);
 
 /// Return the tcp endpoint's fd, or -1 if this is not available. Does not
 /// release the fd. Requires: \a ep must be a tcp endpoint.

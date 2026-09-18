@@ -19,14 +19,13 @@
 #ifndef GRPCPP_EXT_CALL_METRIC_RECORDER_H
 #define GRPCPP_EXT_CALL_METRIC_RECORDER_H
 
+#include <grpcpp/impl/sync.h>
+#include <grpcpp/support/slice.h>
+
 #include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpcpp/impl/sync.h>
-#include <grpcpp/support/slice.h>
 
 namespace grpc {
 namespace experimental {

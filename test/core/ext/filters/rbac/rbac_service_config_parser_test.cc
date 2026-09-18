@@ -14,19 +14,13 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
-#include <map>
-#include <memory>
-#include <string>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/slice.h>
+
+#include <map>
+#include <memory>
+#include <string>
 
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/service_config/service_config.h"
@@ -34,6 +28,11 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {
@@ -70,7 +69,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
       std::map<absl::string_view, std::string>* configs)
       : configs_(configs) {}
   absl::string_view name() const override { return kLoggerName; }
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+  absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
     // Invalidate configs with "bad" field in it.
     if (json.object().find("bad") != json.object().end()) {
@@ -79,7 +78,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     return std::make_unique<Config>(json);
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config> config) override {
+      std::shared_ptr<const AuditLoggerFactory::Config> config) override {
     // Only insert entry to the map when logger is created.
     configs_->emplace(name(), config->ToString());
     return std::make_unique<TestAuditLogger>();

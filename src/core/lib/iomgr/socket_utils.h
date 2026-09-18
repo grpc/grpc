@@ -19,9 +19,8 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_SOCKET_UTILS_H
 #define GRPC_SRC_CORE_LIB_IOMGR_SOCKET_UTILS_H
 
-#include <stddef.h>
-
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 // TODO(juanlishen): The following functions might be simple enough to implement
 // ourselves, so that they don't cause any portability hassle.

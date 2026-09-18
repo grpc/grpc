@@ -20,6 +20,9 @@
 #define GRPC_SRC_CORE_TSI_ALTS_CRYPT_GSEC_H
 
 #include <assert.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -27,10 +30,6 @@
 #include <vector>
 
 #include "absl/types/span.h"
-
-#include <grpc/event_engine/port.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -99,14 +98,16 @@ class GsecKey : public GsecKeyInterface {
 
 }  // namespace grpc_core
 
-#ifndef _STRUCT_IOVEC
+#if !defined(_STRUCT_IOVEC) && !defined(__DEFINED_struct_iovec)
 #if !defined(GRPC_EVENT_ENGINE_POSIX)
+#define _STRUCT_IOVEC
+#define __DEFINED_struct_iovec
 struct iovec {
   void* iov_base;
   size_t iov_len;
 };
 #endif  // GRPC_EVENT_ENGINE_POSIX
-#endif  // _STRUCT_IOVEC
+#endif  // !defined(_STRUCT_IOVEC) && !defined(__DEFINED_struct_iovec)
 
 //
 // A gsec interface for AEAD encryption schemes. The API is thread-compatible.

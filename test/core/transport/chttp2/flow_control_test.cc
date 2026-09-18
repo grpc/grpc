@@ -14,21 +14,23 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+
+#include <climits>
+#include <cstdint>
 #include <memory>
 #include <tuple>
-
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
-
-#include <grpc/support/time.h>
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "gtest/gtest.h"
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
@@ -41,7 +43,7 @@ constexpr uint64_t kMaxAdvanceTimeMillis = 24ull * 365 * 3600 * 1000;
 
 gpr_timespec g_now;
 gpr_timespec now_impl(gpr_clock_type clock_type) {
-  CHECK(clock_type != GPR_TIMESPAN);
+  GRPC_CHECK(clock_type != GPR_TIMESPAN);
   gpr_timespec ts = g_now;
   ts.clock_type = clock_type;
   return ts;
@@ -92,13 +94,13 @@ TEST_F(FlowControlTest, NoOp) {
   TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   // Check initial values are per http2 spec
-  EXPECT_EQ(tfc.acked_init_window(), 65535);
+  EXPECT_EQ(tfc.test_only_acked_init_window(), 65535);
   EXPECT_EQ(tfc.remote_window(), 65535);
-  EXPECT_EQ(tfc.target_frame_size(), 16384);
-  EXPECT_EQ(tfc.target_preferred_rx_crypto_frame_size(), INT_MAX);
+  EXPECT_EQ(tfc.test_only_target_frame_size(), 16384);
+  EXPECT_EQ(tfc.test_only_target_preferred_rx_crypto_frame_size(), INT_MAX);
   EXPECT_EQ(sfc.remote_window_delta(), 0);
-  EXPECT_EQ(sfc.min_progress_size(), 0);
-  EXPECT_EQ(sfc.announced_window_delta(), 0);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 0);
+  EXPECT_EQ(sfc.test_only_announced_window_delta(), 0);
 }
 
 TEST_F(FlowControlTest, SendData) {
@@ -106,14 +108,14 @@ TEST_F(FlowControlTest, SendData) {
   TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   int64_t prev_preferred_rx_frame_size =
-      tfc.target_preferred_rx_crypto_frame_size();
+      tfc.test_only_target_preferred_rx_crypto_frame_size();
   {
     StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
     sfc_upd.SentData(1024);
   }
   EXPECT_EQ(sfc.remote_window_delta(), -1024);
   EXPECT_EQ(tfc.remote_window(), 65535 - 1024);
-  EXPECT_EQ(tfc.target_preferred_rx_crypto_frame_size(),
+  EXPECT_EQ(tfc.test_only_target_preferred_rx_crypto_frame_size(),
             prev_preferred_rx_frame_size);
 }
 
@@ -137,7 +139,7 @@ TEST_F(FlowControlTest, PeriodicUpdate) {
   TransportFlowControl tfc("test", true, &memory_owner_);
   constexpr int kNumPeriodicUpdates = 100;
   Timestamp next_ping = Timestamp::Now() + Duration::Milliseconds(1000);
-  uint32_t prev_max_frame_size = tfc.target_frame_size();
+  uint32_t prev_max_frame_size = tfc.test_only_target_frame_size();
   for (int i = 0; i < kNumPeriodicUpdates; i++) {
     BdpEstimator* bdp = tfc.bdp_estimator();
     bdp->AddIncomingBytes(1024 + (i * 100));
@@ -171,12 +173,12 @@ TEST_F(FlowControlTest, RecvData) {
   StreamFlowControl sfc(&tfc);
   StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
   int64_t prev_preferred_rx_frame_size =
-      tfc.target_preferred_rx_crypto_frame_size();
+      tfc.test_only_target_preferred_rx_crypto_frame_size();
   EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(1024));
   std::ignore = sfc_upd.MakeAction();
-  EXPECT_EQ(tfc.announced_window(), 65535 - 1024);
-  EXPECT_EQ(sfc.announced_window_delta(), -1024);
-  EXPECT_EQ(tfc.target_preferred_rx_crypto_frame_size(),
+  EXPECT_EQ(tfc.test_only_announced_window(), 65535 - 1024);
+  EXPECT_EQ(sfc.test_only_announced_window_delta(), -1024);
+  EXPECT_EQ(tfc.test_only_target_preferred_rx_crypto_frame_size(),
             prev_preferred_rx_frame_size);
 }
 
@@ -189,31 +191,31 @@ TEST_F(FlowControlTest, TrackMinProgressSize) {
     sfc_upd.SetMinProgressSize(5);
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 5);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 5);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     sfc_upd.SetMinProgressSize(10);
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 10);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 10);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 5);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 5);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 0);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 0);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 0);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 0);
 }
 
 TEST_F(FlowControlTest, NoUpdateWithoutReader) {
@@ -230,7 +232,7 @@ TEST_F(FlowControlTest, NoUpdateWithoutReader) {
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     sfc_upd.SetMinProgressSize(1);
-    EXPECT_EQ(sfc.min_progress_size(), 1);
+    EXPECT_EQ(sfc.test_only_min_progress_size(), 1);
     EXPECT_EQ(sfc_upd.MakeAction().send_stream_update(),
               FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
   }
@@ -262,6 +264,63 @@ TEST_F(FlowControlTest, GradualReadsUpdate) {
   EXPECT_GE(immediate_updates, 0);
   EXPECT_GT(queued_updates, 0);
   EXPECT_EQ(immediate_updates + queued_updates, 65535);
+}
+
+// Tests that OnStreamClosed() decreases the transport's aggregate stream window
+// total by the exact delta of the closed stream and resets the stream's delta
+// to 0.
+TEST_F(FlowControlTest, OnStreamClosedDecreasesAnnouncedDeltaFromTransport) {
+  TransportFlowControl tfc(/*peer_name=*/"test",
+                           /*enable_bdp_probe=*/true, &memory_owner_);
+  StreamFlowControl sfc1(&tfc);
+  StreamFlowControl sfc2(&tfc);
+
+  // Increase window delta on stream 1 (1024 bytes).
+  {
+    StreamFlowControl::IncomingUpdateContext sfc1_update(&sfc1);
+    sfc1_update.SetMinProgressSize(1024u);
+    GRPC_UNUSED const FlowControlAction action = sfc1_update.MakeAction();
+  }
+  const uint32_t announced1 = sfc1.MaybeSendUpdate();
+  EXPECT_EQ(announced1, 1024u);
+
+  // Increase window delta on stream 2 (2048 bytes).
+  {
+    StreamFlowControl::IncomingUpdateContext sfc2_update(&sfc2);
+    sfc2_update.SetMinProgressSize(2048u);
+    GRPC_UNUSED const FlowControlAction action = sfc2_update.MakeAction();
+  }
+  const uint32_t announced2 = sfc2.MaybeSendUpdate();
+  EXPECT_EQ(announced2, 2048u);
+
+  // Verify aggregate transport total equals sum of both stream deltas.
+  const int64_t total_expected =
+      static_cast<int64_t>(announced1) + static_cast<int64_t>(announced2);
+  EXPECT_EQ(tfc.test_only_announced_stream_total_over_incoming_window(),
+            total_expected);
+
+  // Close stream 1 only.
+  sfc1.OnStreamClosed();
+
+  // Verify transport total MUST decrease by stream 1's delta,
+  // leaving stream 2's delta intact.
+  EXPECT_EQ(sfc1.test_only_announced_window_delta(), 0);
+  EXPECT_EQ(sfc2.test_only_announced_window_delta(),
+            static_cast<int64_t>(announced2));
+  EXPECT_EQ(tfc.test_only_announced_stream_total_over_incoming_window(),
+            static_cast<int64_t>(announced2));
+
+  // Close stream 2.
+  sfc2.OnStreamClosed();
+
+  // Transport total MUST now be 0.
+  EXPECT_EQ(sfc2.test_only_announced_window_delta(), 0);
+  EXPECT_EQ(tfc.test_only_announced_stream_total_over_incoming_window(), 0);
+
+  // Verify idempotency check - calling OnStreamClosed() again is a safe no-op.
+  sfc2.OnStreamClosed();
+  EXPECT_EQ(tfc.test_only_announced_stream_total_over_incoming_window(), 0);
+  EXPECT_EQ(sfc2.test_only_announced_window_delta(), 0);
 }
 
 }  // namespace chttp2

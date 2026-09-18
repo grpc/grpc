@@ -15,10 +15,6 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_SSL_CRED_RELOAD_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_H2_SSL_CRED_RELOAD_FIXTURE_H
 
-#include <stddef.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -26,10 +22,12 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <stddef.h>
 
+#include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/test_util/tls_utils.h"
@@ -92,7 +90,7 @@ class SslCredReloadFixture : public SecureFixture {
                                    size_t /*md_count*/,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void* user_data) {
-    CHECK_EQ(state, nullptr);
+    GRPC_CHECK_EQ(state, nullptr);
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 

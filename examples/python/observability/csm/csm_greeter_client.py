@@ -25,8 +25,8 @@ from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics import view
 from prometheus_client import start_http_server
 
-from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import test_pb2_grpc
+from examples.python.observability.csm import helloworld_pb2
+from examples.python.observability.csm import helloworld_pb2_grpc
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
@@ -35,7 +35,7 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
-def _run(target: int, secure_mode: bool, prometheus_endpoint: int):
+def _run(target: str, secure_mode: bool, prometheus_endpoint: int):
     csm_plugin = _prepare_csm_observability_plugin(prometheus_endpoint)
     csm_plugin.register_global()
     if secure_mode:
@@ -45,13 +45,14 @@ def _run(target: int, secure_mode: bool, prometheus_endpoint: int):
     else:
         channel = grpc.insecure_channel(target)
     with channel:
-        stub = test_pb2_grpc.TestServiceStub(channel)
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
         # Continuously send RPCs every second.
         while True:
-            request = messages_pb2.SimpleRequest()
+            request = helloworld_pb2.HelloRequest(name="You")
             logger.info("Sending request to server")
             try:
-                stub.UnaryCall(request)
+                response = stub.SayHello(request)
+                print(f"Greeter client received: {response.message}")
                 time.sleep(1)
             except Exception:  # pylint: disable=broad-except
                 logger.info(
@@ -176,7 +177,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--target",
-        default="xds:///helloworld:50051",
+        default="localhost:50051",
         help="The address of the server.",
     )
     parser.add_argument(

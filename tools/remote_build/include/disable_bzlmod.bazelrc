@@ -1,0 +1,4 @@
+# Explicitly disable bzlmod. Used for migraion.
+# This can be imported by individual test suites to take precedence over `enable_bzlmod.bazelrc`.
+common --enable_bzlmod=false
+common --enable_workspace=true

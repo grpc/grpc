@@ -1,12 +1,13 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//bazel:proto_library.bzl", "proto_library")
 load(
-    "//bazel:upb_proto_library.bzl",
+    "//upb/bazel:upb_proto_library.bzl",
     "upb_c_proto_library",
     "upb_proto_reflection_library",
 )
 
-# begin:google_only
-# package(default_applicable_licenses = ["//upb:license"])
-# end:google_only
+package(default_applicable_licenses = ["//:license"])
 
 licenses(["notice"])
 
@@ -18,10 +19,12 @@ cc_library(
     hdrs = ["def_to_proto.h"],
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:base",
-        "//upb:descriptor_upb_proto",
-        "//upb:port",
-        "//upb:reflection",
+        "//src/google/protobuf:descriptor_upb_c_proto",
+        "//upb/base",
+        "//upb/mem",
+        "//upb/message",
+        "//upb/port",
+        "//upb/reflection",
         "//upb/reflection:internal",
     ],
 )
@@ -49,15 +52,16 @@ cc_library(
     name = "def_to_proto_test_lib",
     testonly = 1,
     hdrs = ["def_to_proto_test.h"],
+    visibility = ["//upb:__pkg__"],
     deps = [
         ":def_to_proto",
-        "//:protobuf",
+        "//src/google/protobuf",
+        "//src/google/protobuf:descriptor_upb_c_proto",
         "//src/google/protobuf/util:differencer",
-        "//upb:base",
-        "//upb:descriptor_upb_proto",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb/reflection:internal",
-        "@com_google_googletest//:gtest",
+        "@googletest//:gtest",
     ],
 )
 
@@ -71,32 +75,19 @@ cc_test(
         ":def_to_proto_test_lib",
         ":def_to_proto_test_upb_proto",
         ":def_to_proto_test_upb_proto_reflection",
-        "//:protobuf",
+        "//src/google/protobuf",
+        "//src/google/protobuf:descriptor_upb_c_proto",
+        "//src/google/protobuf:descriptor_upb_reflection_proto",
         "//src/google/protobuf/util:differencer",
-        "//upb:base",
-        "//upb:descriptor_upb_proto",
-        "//upb:descriptor_upb_proto_reflection",
-        "//upb:mem",
-        "//upb:reflection",
+        "//upb/base",
+        "//upb/mem",
+        "//upb/reflection",
         "//upb/test:parse_text_proto",
-        "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
-
-# begin:google_only
-# cc_test(
-#     name = "def_to_proto_fuzz_test",
-#     srcs = ["def_to_proto_fuzz_test.cc"],
-#     tags = ["clang_only"],
-#     deps = [
-#         ":def_to_proto_test_lib",
-#         "@com_google_googletest//:gtest", "@com_google_googletest//:gtest_main",
-#         "//testing/fuzzing:fuzztest",
-#     ],
-# )
-# end:google_only
 
 # Required fields
 
@@ -106,11 +97,11 @@ cc_library(
     hdrs = ["required_fields.h"],
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:base",
-        "//upb:mem",
-        "//upb:message",
-        "//upb:port",
-        "//upb:reflection",
+        "//upb/base",
+        "//upb/mem",
+        "//upb/message",
+        "//upb/port",
+        "//upb/reflection",
     ],
 )
 
@@ -154,18 +145,17 @@ cc_test(
         ":required_fields",
         ":required_fields_test_upb_proto",
         ":required_fields_test_upb_proto_reflection",
-        "//upb:base",
-        "//upb:json",
-        "//upb:mem",
-        "//upb:reflection",
+        "//upb/base",
+        "//upb/json",
+        "//upb/mem",
+        "//upb/reflection",
         "//upb/reflection:internal",
-        "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
-# begin:github_only
 filegroup(
     name = "source_files",
     srcs = [
@@ -176,9 +166,7 @@ filegroup(
     ],
     visibility = ["//python/dist:__pkg__"],
 )
-# end:github_only
 
-# begin:github_only
 filegroup(
     name = "test_srcs",
     srcs = glob(
@@ -186,16 +174,6 @@ filegroup(
             "**/*test.cc",
         ],
         exclude = ["def_to_proto_fuzz_test.cc"],
-    ),
-    visibility = ["//upb:__pkg__"],
-)
-
-filegroup(
-    name = "test_util",
-    srcs = glob(
-        [
-            "**/*test.h",
-        ],
     ),
     visibility = ["//upb:__pkg__"],
 )
@@ -209,4 +187,3 @@ filegroup(
     ),
     visibility = ["//upb:__pkg__"],
 )
-# end:github_only

@@ -16,9 +16,9 @@
 //
 //
 
-#include <memory>
-
 #include <grpcpp/support/status.h>
+
+#include <memory>
 
 namespace grpc {
 

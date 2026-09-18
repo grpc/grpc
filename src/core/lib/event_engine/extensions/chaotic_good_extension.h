@@ -15,14 +15,12 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CHAOTIC_GOOD_EXTENSION_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CHAOTIC_GOOD_EXTENSION_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "absl/strings/string_view.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 /// An Endpoint extension class that will be supported by EventEngine endpoints
 /// which need to work with the ChaoticGood transport.
@@ -44,22 +42,8 @@ class ChaoticGoodExtension {
   /// one provided to it through the channel args. It is safe to call this
   /// only when there are no outstanding Reads on the Endpoint.
   virtual void UseMemoryQuota(grpc_core::MemoryQuotaRefPtr mem_quota) = 0;
-
-  /// Forces the endpoint to receive rpcs in one contiguous block of memory.
-  /// It is safe to call this only when there are no outstanding Reads on
-  /// the Endpoint.
-  virtual void EnableRpcReceiveCoalescing() = 0;
-
-  /// Disables rpc receive coalescing until it is explicitly enabled again.
-  /// It is safe to call this only when there are no outstanding Reads on
-  /// the Endpoint.
-  virtual void DisableRpcReceiveCoalescing() = 0;
-  /// If invoked, the endpoint tries to preserve proper order and alignment of
-  /// any memory that maybe shared across reads.
-  virtual void EnforceRxMemoryAlignment() = 0;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CHAOTIC_GOOD_EXTENSION_H

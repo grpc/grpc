@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_UTIL_BITSET_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -181,6 +180,12 @@ class BitSet {
       set(i, value);
     }
     return *this;
+  }
+
+  void Merge(const BitSet& other) {
+    for (size_t i = 0; i < kUnits; i++) {
+      units_[i] |= other.units_[i];
+    }
   }
 
  private:

@@ -17,6 +17,16 @@
 //
 
 #include <fcntl.h>
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/server_builder.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,30 +39,13 @@
 #include <set>
 #include <thread>
 
-#include <gmock/gmock.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-#include <grpcpp/impl/service_type.h>
-#include <grpcpp/server_builder.h>
-
+#include "src/core/credentials/transport/alts/alts_credentials.h"
+#include "src/core/credentials/transport/alts/alts_security_connector.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/credentials/alts/alts_credentials.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
@@ -62,6 +55,10 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
+#include "gmock/gmock.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 
 namespace {
 
@@ -144,8 +141,8 @@ class TestServer {
     grpc_server_register_completion_queue(server_, server_cq_, nullptr);
     int port = grpc_pick_unused_port_or_die();
     server_addr_ = grpc_core::JoinHostPort("localhost", port);
-    CHECK(grpc_server_add_http2_port(server_, server_addr_.c_str(),
-                                     server_creds));
+    GRPC_CHECK(grpc_server_add_http2_port(server_, server_addr_.c_str(),
+                                          server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     VLOG(2) << "Start TestServer " << this << ". listen on " << server_addr_;
@@ -167,8 +164,8 @@ class TestServer {
   static void PollUntilShutdown(const TestServer* self) {
     grpc_event ev = grpc_completion_queue_next(
         self->server_cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    CHECK(ev.type == GRPC_OP_COMPLETE);
-    CHECK(ev.tag == self);
+    GRPC_CHECK(ev.type == GRPC_OP_COMPLETE);
+    GRPC_CHECK(ev.tag == self);
     VLOG(2) << "TestServer " << self << " stop polling";
   }
 
@@ -300,9 +297,11 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     VLOG(2) << "start performing concurrent expected-to-succeed connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
+      // WARNING: Hardcoded deadlines used to support different sanitizers and
+      // scenarios make this test inherently flaky in some environments.
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           test_server.address(), fake_handshake_server.address(),
-          15 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          45 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
           5 /* loops */, GRPC_CHANNEL_READY /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
@@ -338,9 +337,11 @@ TEST(AltsConcurrentConnectivityTest,
     size_t num_concurrent_connects = 100;
     VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
+      // WARNING: Hardcoded deadlines used to support different sanitizers and
+      // scenarios make this test inherently flaky in some environments.
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          30 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
           3 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
@@ -373,7 +374,7 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          20 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          30 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
           2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));

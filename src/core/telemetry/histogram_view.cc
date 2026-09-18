@@ -54,9 +54,9 @@ double HistogramView::ThresholdForCountBelow(double count_below) const {
     // should lie
     lower_bound = bucket_boundaries[lower_idx];
     upper_bound = bucket_boundaries[lower_idx + 1];
-    return upper_bound - (upper_bound - lower_bound) *
-                             (count_so_far - count_below) /
-                             static_cast<double>(buckets[lower_idx]);
+    return upper_bound -
+           ((upper_bound - lower_bound) * (count_so_far - count_below) /
+            static_cast<double>(buckets[lower_idx]));
   }
 }
 

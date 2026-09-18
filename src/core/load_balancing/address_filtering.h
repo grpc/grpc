@@ -17,19 +17,18 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_ADDRESS_FILTERING_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_ADDRESS_FILTERING_H
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_string.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // The resolver returns a flat list of addresses.  When a hierarchy of
 // LB policies is in use, each leaf of the hierarchy will need a

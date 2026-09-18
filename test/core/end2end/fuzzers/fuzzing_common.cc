@@ -18,16 +18,6 @@
 
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 
-#include <string.h>
-
-#include <memory>
-#include <new>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -35,17 +25,27 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
+#include <string.h>
+
+#include <limits>
+#include <memory>
+#include <new>
+#include <optional>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/postmortem_emit.h"
+#include "src/core/util/useful.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -60,7 +60,7 @@ int force_experiments = []() {
 namespace testing {
 
 static void free_non_null(void* p) {
-  CHECK_NE(p, nullptr);
+  GRPC_CHECK_NE(p, nullptr);
   gpr_free(p);
 }
 
@@ -94,7 +94,7 @@ class Call : public std::enable_shared_from_this<Call> {
   }
 
   void SetCall(grpc_call* call) {
-    CHECK_EQ(call_, nullptr);
+    GRPC_CHECK_EQ(call_, nullptr);
     call_ = call;
   }
 
@@ -145,9 +145,9 @@ class Call : public std::enable_shared_from_this<Call> {
                                static_cast<size_t>(metadata.size()), m};
   }
 
-  absl::optional<grpc_op> ReadOp(
-      const api_fuzzer::BatchOp& batch_op, bool* batch_is_ok,
-      uint8_t* batch_ops, std::vector<std::function<void()>>* unwinders) {
+  std::optional<grpc_op> ReadOp(const api_fuzzer::BatchOp& batch_op,
+                                bool* batch_is_ok, uint8_t* batch_ops,
+                                std::vector<std::function<void()>>* unwinders) {
     grpc_op op;
     memset(&op, 0, sizeof(op));
     switch (batch_op.op_case()) {
@@ -195,7 +195,9 @@ class Call : public std::enable_shared_from_this<Call> {
         op.data.send_status_from_server.trailing_metadata_count = ary.count;
         op.data.send_status_from_server.trailing_metadata = ary.metadata;
         op.data.send_status_from_server.status = static_cast<grpc_status_code>(
-            batch_op.send_status_from_server().status_code());
+            Clamp<int64_t>(batch_op.send_status_from_server().status_code(),
+                           std::numeric_limits<int>::min(),
+                           std::numeric_limits<int>::max()));
         op.data.send_status_from_server.status_details =
             batch_op.send_status_from_server().has_status_details()
                 ? NewCopy(ReadSlice(
@@ -275,10 +277,10 @@ class Call : public std::enable_shared_from_this<Call> {
     ++pending_ops_;
     auto self = shared_from_this();
     return MakeValidator([self](bool success) {
-      CHECK_GT(self->pending_ops_, 0);
+      GRPC_CHECK_GT(self->pending_ops_, 0);
       --self->pending_ops_;
       if (success) {
-        CHECK_NE(self->call_, nullptr);
+        GRPC_CHECK_NE(self->call_, nullptr);
         self->type_ = CallType::SERVER;
       } else {
         self->type_ = CallType::TOMBSTONED;
@@ -337,7 +339,7 @@ Validator* ValidateConnectivityWatch(gpr_timespec deadline, int* counter) {
   return MakeValidator([deadline, counter](bool success) {
     if (!success) {
       auto now = gpr_now(deadline.clock_type);
-      CHECK_GE(gpr_time_cmp(now, deadline), 0);
+      GRPC_CHECK_GE(gpr_time_cmp(now, deadline), 0);
     }
     --*counter;
   });
@@ -345,42 +347,33 @@ Validator* ValidateConnectivityWatch(gpr_timespec deadline, int* counter) {
 }  // namespace
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-using ::grpc_event_engine::experimental::SetEventEngineFactory;
 
 BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
-    : engine_([actions]() {
-        SetEventEngineFactory(
-            [actions]() -> std::unique_ptr<
-                            grpc_event_engine::experimental::EventEngine> {
-              return std::make_unique<FuzzingEventEngine>(
-                  FuzzingEventEngine::Options(), actions);
-            });
-        return std::dynamic_pointer_cast<FuzzingEventEngine>(
-            GetDefaultEventEngine());
-      }()) {
+    : engine_(std::make_shared<FuzzingEventEngine>(
+          FuzzingEventEngine::Options(), actions)) {
+  GRPC_CHECK(engine_);
+  grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
-  {
-    ExecCtx exec_ctx;
-    Executor::SetThreadingAll(false);
-  }
   resource_quota_ = MakeResourceQuota("fuzzer");
   cq_ = grpc_completion_queue_create_for_next(nullptr);
 }
 
 BasicFuzzer::~BasicFuzzer() {
-  CHECK_EQ(ActiveCall(), nullptr);
-  CHECK(calls_.empty());
+  GRPC_CHECK_EQ(ActiveCall(), nullptr);
+  GRPC_CHECK(calls_.empty());
 
   engine_->TickUntilIdle();
 
   grpc_completion_queue_shutdown(cq_);
-  CHECK(PollCq() == Result::kComplete);
+  GRPC_CHECK(PollCq() == Result::kComplete);
   grpc_completion_queue_destroy(cq_);
 
   grpc_shutdown_blocking();
   engine_->UnsetGlobalHooks();
+  // The engine ref must be released for ShutdownDefaultEventEngine to finish.
+  engine_.reset();
+  grpc_event_engine::experimental::ShutdownDefaultEventEngine();
 }
 
 void BasicFuzzer::Tick() {
@@ -714,6 +707,9 @@ BasicFuzzer::Result BasicFuzzer::ExecuteAction(
     case api_fuzzer::Action::kSleepMs:
       return Pause(std::min(Duration::Milliseconds(action.sleep_ms()),
                             Duration::Minutes(1)));
+    case api_fuzzer::Action::kPostMortemEmit:
+      SilentPostMortemEmit();
+      break;
     default:
       Crash(absl::StrCat("Unsupported Fuzzing Action of type: ",
                          action.type_case()));
@@ -729,6 +725,7 @@ void BasicFuzzer::TryShutdown() {
   if (server() != nullptr) {
     if (!server_shutdown_called()) {
       ShutdownServer();
+      CancelAllCallsIfShutdown();
     }
     if (server_finished_shutting_down()) {
       DestroyServer();
@@ -737,7 +734,7 @@ void BasicFuzzer::TryShutdown() {
   ShutdownCalls();
 
   grpc_timer_manager_tick();
-  CHECK(PollCq() == Result::kPending);
+  GRPC_CHECK(PollCq() == Result::kPending);
 }
 
 void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {

@@ -15,15 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
 
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 
@@ -32,8 +31,8 @@ template <typename T>
 class Observable {
  public:
   // We need to assign a value initially.
-  explicit Observable(T initial)
-      : state_(MakeRefCounted<State>(std::move(initial))) {}
+  explicit Observable(T&& initial)
+      : state_(MakeRefCounted<State>(std::forward<T>(initial))) {}
 
   // Update the value to something new. Awakes any waiters.
   void Set(T value) { state_->Set(std::move(value)); }
@@ -42,8 +41,8 @@ class Observable {
   // that value.
   // is_acceptable is any invocable that takes a `const T&` and returns a bool.
   template <typename F>
-  auto NextWhen(F is_acceptable) {
-    return ObserverWhen<F>(state_, std::move(is_acceptable));
+  auto NextWhen(F&& is_acceptable) {
+    return ObserverWhen<F>(state_, std::forward<F>(is_acceptable));
   }
 
   // Returns a promise that resolves to a T when the value becomes != current.
@@ -124,9 +123,9 @@ class Observable {
     Observer(const Observer&) = delete;
     Observer& operator=(const Observer&) = delete;
     Observer(Observer&& other) noexcept : state_(std::move(other.state_)) {
-      CHECK(other.waker_.is_unwakeable());
-      DCHECK(waker_.is_unwakeable());
-      CHECK(!other.saw_pending_);
+      GRPC_CHECK(other.waker_.is_unwakeable());
+      GRPC_DCHECK(waker_.is_unwakeable());
+      GRPC_CHECK(!other.saw_pending_);
     }
     Observer& operator=(Observer&& other) noexcept = delete;
 
@@ -158,9 +157,9 @@ class Observable {
   template <typename F>
   class ObserverWhen : public Observer {
    public:
-    ObserverWhen(RefCountedPtr<State> state, F is_acceptable)
+    ObserverWhen(RefCountedPtr<State> state, F&& is_acceptable)
         : Observer(std::move(state)),
-          is_acceptable_(std::move(is_acceptable)) {}
+          is_acceptable_(std::forward<F>(is_acceptable)) {}
 
     ObserverWhen(ObserverWhen&& other) noexcept
         : Observer(std::move(other)),

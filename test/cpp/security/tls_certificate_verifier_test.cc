@@ -14,20 +14,19 @@
 // limitations under the License.
 //
 
-#include <memory>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 
+#include <memory>
+
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace {
 
@@ -208,6 +207,16 @@ TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsMismatch) {
   EXPECT_EQ(sync_status.error_code(), grpc::StatusCode::UNAUTHENTICATED);
   EXPECT_EQ(sync_status.error_message(),
             "VerifiedRootCertSubjectVerifier failed");
+}
+
+TEST(TlsCertificateVerifierTest, NegotiatedKeyExchangeGroupProperty) {
+  grpc_tls_custom_verification_check_request request = {};
+  constexpr char kExpectedGroup[] = "X25519";
+  request.peer_info.negotiated_key_exchange_group = kExpectedGroup;
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  EXPECT_EQ(cpp_request.negotiated_key_exchange_group(), kExpectedGroup);
+  request.peer_info.negotiated_key_exchange_group = nullptr;
+  EXPECT_EQ(cpp_request.negotiated_key_exchange_group(), "");
 }
 
 }  // namespace

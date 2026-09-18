@@ -14,20 +14,18 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_service_config.h"
 
 #include <map>
+#include <optional>
 #include <utility>
 
+#include "src/core/config/experiment_env_var.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
-#include "src/core/load_balancing/lb_policy_registry.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
@@ -50,6 +48,21 @@ ClientChannelGlobalParsedConfig::HealthCheckConfig::JsonLoader(
 }
 
 //
+// ClientChannelGlobalParsedConfig::ConnectionScaling
+//
+
+const JsonLoaderInterface*
+ClientChannelGlobalParsedConfig::ConnectionScaling::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<ConnectionScaling>()
+          .OptionalField("maxConnectionsPerSubchannel",
+                         &ConnectionScaling::max_connections_per_subchannel)
+          .Finish();
+  return loader;
+}
+
+//
 // ClientChannelGlobalParsedConfig
 //
 
@@ -64,6 +77,8 @@ const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader(
               &ClientChannelGlobalParsedConfig::parsed_deprecated_lb_policy_)
           .OptionalField("healthCheckConfig",
                          &ClientChannelGlobalParsedConfig::health_check_config_)
+          .OptionalField("connectionScaling",
+                         &ClientChannelGlobalParsedConfig::connection_scaling_)
           .Finish();
   return loader;
 }

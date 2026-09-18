@@ -18,13 +18,12 @@
 
 #include <string>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/health_check.upb.h"
+#include "src/core/util/string.h"
 
 namespace grpc_core {
 
-absl::optional<XdsHealthStatus> XdsHealthStatus::FromUpb(uint32_t status) {
+std::optional<XdsHealthStatus> XdsHealthStatus::FromUpb(uint32_t status) {
   switch (status) {
     case envoy_config_core_v3_UNKNOWN:
       return XdsHealthStatus(kUnknown);
@@ -33,16 +32,16 @@ absl::optional<XdsHealthStatus> XdsHealthStatus::FromUpb(uint32_t status) {
     case envoy_config_core_v3_DRAINING:
       return XdsHealthStatus(kDraining);
     default:
-      return absl::nullopt;
+      return std::nullopt;
   }
 }
 
-absl::optional<XdsHealthStatus> XdsHealthStatus::FromString(
+std::optional<XdsHealthStatus> XdsHealthStatus::FromString(
     absl::string_view status) {
   if (status == "UNKNOWN") return XdsHealthStatus(kUnknown);
   if (status == "HEALTHY") return XdsHealthStatus(kHealthy);
   if (status == "DRAINING") return XdsHealthStatus(kDraining);
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 const char* XdsHealthStatus::ToString() const {
@@ -59,15 +58,20 @@ const char* XdsHealthStatus::ToString() const {
 }
 
 std::string XdsHealthStatusSet::ToString() const {
-  std::vector<const char*> set;
-  set.reserve(3);
+  std::string result = "{";
+  bool is_first = true;
   for (const auto& status :
        {XdsHealthStatus::kUnknown, XdsHealthStatus::kHealthy,
         XdsHealthStatus::kDraining}) {
     const XdsHealthStatus health_status(status);
-    if (Contains(health_status)) set.push_back(health_status.ToString());
+    if (Contains(health_status)) {
+      if (!is_first) StrAppend(result, ", ");
+      StrAppend(result, health_status.ToString());
+      is_first = false;
+    }
   }
-  return absl::StrCat("{", absl::StrJoin(set, ", "), "}");
+  StrAppend(result, "}");
+  return result;
 }
 
 }  // namespace grpc_core

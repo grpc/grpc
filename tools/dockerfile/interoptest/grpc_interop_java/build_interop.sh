@@ -45,4 +45,4 @@ java.util.logging.ConsoleHandler.level = ALL
 .level = FINE
 io.grpc.netty.NettyClientHandler = ALL
 io.grpc.netty.NettyServerHandler = ALL" > /var/local/grpc_java_logging/logconf.txt
-  
+

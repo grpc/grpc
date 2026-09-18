@@ -13,10 +13,6 @@
 # limitations under the License.
 """Tests for protoc."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import contextlib
 import functools
 import multiprocessing
@@ -26,9 +22,9 @@ import unittest
 
 # TODO(https://github.com/grpc/grpc/issues/23847): Deduplicate this mechanism with
 # the grpcio_tests module.
-def _wrap_in_subprocess(error_queue, fn):
+def _collect_errors(fn):
     @functools.wraps(fn)
-    def _wrapped():
+    def _wrapped(error_queue):
         try:
             fn()
         except Exception as e:
@@ -40,15 +36,12 @@ def _wrap_in_subprocess(error_queue, fn):
 
 def _run_in_subprocess(test_case):
     error_queue = multiprocessing.Queue()
-    wrapped_case = _wrap_in_subprocess(error_queue, test_case)
-    proc = multiprocessing.Process(target=wrapped_case)
+    proc = multiprocessing.Process(target=test_case, args=(error_queue,))
     proc.start()
     proc.join()
     if not error_queue.empty():
         raise error_queue.get()
-    assert proc.exitcode == 0, "Process exited with code {}".format(
-        proc.exitcode
-    )
+    assert proc.exitcode == 0, f"Process exited with code {proc.exitcode}"
 
 
 @contextlib.contextmanager
@@ -62,6 +55,7 @@ def _augmented_syspath(new_paths):
         sys.path = original_sys_path
 
 
+@_collect_errors
 def _test_import_protos():
     from grpc_tools import protoc
 
@@ -72,6 +66,7 @@ def _test_import_protos():
         assert protos.SimpleMessage is not None
 
 
+@_collect_errors
 def _test_import_services():
     from grpc_tools import protoc
 
@@ -83,6 +78,7 @@ def _test_import_services():
         assert services.SimpleMessageServiceStub is not None
 
 
+@_collect_errors
 def _test_import_services_without_protos():
     from grpc_tools import protoc
 
@@ -93,6 +89,7 @@ def _test_import_services_without_protos():
         assert services.SimpleMessageServiceStub is not None
 
 
+@_collect_errors
 def _test_proto_module_imported_once():
     from grpc_tools import protoc
 
@@ -110,6 +107,7 @@ def _test_proto_module_imported_once():
         )
 
 
+@_collect_errors
 def _test_static_dynamic_combo():
     with _augmented_syspath(
         ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)
@@ -126,26 +124,34 @@ def _test_static_dynamic_combo():
         )
 
 
+@_collect_errors
 def _test_combined_import():
-    from grpc_tools import protoc
+    with _augmented_syspath(
+        ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)
+    ):
+        from grpc_tools import protoc
 
-    protos, services = protoc._protos_and_services("simple.proto")
-    assert protos.SimpleMessage is not None
-    assert services.SimpleMessageServiceStub is not None
+        protos, services = protoc._protos_and_services("simple.proto")
+        assert protos.SimpleMessage is not None
+        assert services.SimpleMessageServiceStub is not None
 
 
+@_collect_errors
 def _test_syntax_errors():
-    from grpc_tools import protoc
+    with _augmented_syspath(
+        ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)
+    ):
+        from grpc_tools import protoc
 
-    try:
-        protos = protoc._protos("flawed.proto")
-    except Exception as e:
-        error_str = str(e)
-        assert "flawed.proto" in error_str
-        assert "17:23" in error_str
-        assert "21:23" in error_str
-    else:
-        assert False, "Compile error expected. None occurred."
+        try:
+            protos = protoc._protos("flawed.proto")
+        except Exception as e:
+            error_str = str(e)
+            assert "flawed.proto" in error_str
+            assert "17:23" in error_str
+            assert "21:23" in error_str
+        else:
+            assert False, "Compile error expected. None occurred."
 
 
 class ProtocTest(unittest.TestCase):

@@ -18,19 +18,17 @@
 
 #include "src/core/lib/slice/percent_encoding.h"
 
+#include <grpc/support/alloc.h>
 #include <stddef.h>
 
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 #define TEST_VECTOR(raw, encoded, dict) \
   test_vector(raw, sizeof(raw) - 1, encoded, sizeof(encoded) - 1, dict)

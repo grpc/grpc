@@ -25,13 +25,13 @@
 #include <pthread.h>
 #endif
 
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
 #include <mutex>
 
 #include "absl/log/absl_check.h"
 #include "absl/synchronization/mutex.h"
-
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.

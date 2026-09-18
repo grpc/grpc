@@ -14,19 +14,18 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 
-#include <memory>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
+
+#include <memory>
 
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"
 #include "test/core/test_util/audit_logging_utils.h"
 #include "test/core/test_util/evaluate_args_test_util.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -60,16 +59,17 @@ class GrpcAuthorizationEngineTest : public ::testing::Test {
 
 TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   Rbac::Policy policy2(Rbac::Permission::MakeAnyPermission(),
                        Rbac::Principal::MakeAnyPrincipal());
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   policies["policy2"] = std::move(policy2);
   Rbac rbac("authz", Rbac::Action::kAllow, std::move(policies));
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
@@ -78,13 +78,14 @@ TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
 
 TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithNoMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac("authz", Rbac::Action::kAllow, std::move(policies));
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
@@ -101,16 +102,17 @@ TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithEmptyPolicies) {
 
 TEST_F(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   Rbac::Policy policy2(Rbac::Permission::MakeAnyPermission(),
                        Rbac::Principal::MakeAnyPrincipal());
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   policies["policy2"] = std::move(policy2);
   Rbac rbac("authz", Rbac::Action::kDeny, std::move(policies));
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
@@ -119,13 +121,14 @@ TEST_F(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
 
 TEST_F(GrpcAuthorizationEngineTest, DenyEngineWithNoMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac("authz", Rbac::Action::kDeny, std::move(policies));
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
@@ -150,7 +153,7 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerNoneNotInvokedOnAllowedRequest) {
   rbac.audit_condition = Rbac::AuditCondition::kNone;
   rbac.logger_configs.push_back(
       std::make_unique<TestAuditLoggerFactory::Config>());
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
@@ -160,9 +163,10 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerNoneNotInvokedOnAllowedRequest) {
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerNoneNotInvokedOnDeniedRequest) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,
@@ -170,7 +174,7 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerNoneNotInvokedOnDeniedRequest) {
   rbac.audit_condition = Rbac::AuditCondition::kNone;
   rbac.logger_configs.push_back(
       std::make_unique<TestAuditLoggerFactory::Config>());
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
@@ -188,7 +192,7 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyNotInvoked) {
   rbac.audit_condition = Rbac::AuditCondition::kOnDeny;
   rbac.logger_configs.push_back(
       std::make_unique<TestAuditLoggerFactory::Config>());
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
@@ -198,9 +202,10 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyNotInvoked) {
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnAllowNotInvoked) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,
@@ -208,7 +213,7 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnAllowNotInvoked) {
   rbac.audit_condition = Rbac::AuditCondition::kOnAllow;
   rbac.logger_configs.push_back(
       std::make_unique<TestAuditLoggerFactory::Config>());
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
@@ -226,7 +231,7 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnAllowInvoked) {
   rbac.audit_condition = Rbac::AuditCondition::kOnAllow;
   rbac.logger_configs.push_back(
       std::make_unique<TestAuditLoggerFactory::Config>());
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
@@ -249,7 +254,7 @@ TEST_F(GrpcAuthorizationEngineTest,
   rbac.audit_condition = Rbac::AuditCondition::kOnDenyAndAllow;
   rbac.logger_configs.push_back(
       std::make_unique<TestAuditLoggerFactory::Config>());
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
@@ -263,9 +268,10 @@ TEST_F(GrpcAuthorizationEngineTest,
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyInvoked) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,
@@ -273,7 +279,7 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyInvoked) {
   rbac.audit_condition = Rbac::AuditCondition::kOnDeny;
   rbac.logger_configs.push_back(
       std::make_unique<TestAuditLoggerFactory::Config>());
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
@@ -288,9 +294,10 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyInvoked) {
 TEST_F(GrpcAuthorizationEngineTest,
        AuditLoggerOnDenyAndAllowInvokedWithDeniedRequest) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,
@@ -298,7 +305,7 @@ TEST_F(GrpcAuthorizationEngineTest,
   rbac.audit_condition = Rbac::AuditCondition::kOnDenyAndAllow;
   rbac.logger_configs.push_back(
       std::make_unique<TestAuditLoggerFactory::Config>());
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
@@ -312,9 +319,10 @@ TEST_F(GrpcAuthorizationEngineTest,
 
 TEST_F(GrpcAuthorizationEngineTest, MultipleAuditLoggerInvoked) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,
@@ -324,7 +332,7 @@ TEST_F(GrpcAuthorizationEngineTest, MultipleAuditLoggerInvoked) {
       std::make_unique<TestAuditLoggerFactory::Config>());
   rbac.logger_configs.push_back(
       std::make_unique<TestAuditLoggerFactory::Config>());
-  GrpcAuthorizationEngine engine(std::move(rbac));
+  GrpcAuthorizationEngine engine(rbac);
   AuthorizationEngine::Decision decision =
       engine.Evaluate(evaluate_args_util_.MakeEvaluateArgs());
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);

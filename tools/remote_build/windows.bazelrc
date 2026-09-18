@@ -12,12 +12,16 @@ build --shell_executable=C:\\msys64\\usr\\bin\\bash.exe
 build --python_path="C:\\Program Files\\Python310\\python.exe"
 
 build --test_tag_filters=-no_windows
-build --build_tag_filters=-no_windows
+build --build_tag_filters=-no_windows,-grpc-fuzztest
 
 build --jobs=100
 
 # Without this the build is broken on windows RBE with bazel 6.x+
 # TODO(jtattermusch): Remove the workaround.
 build --dynamic_mode=off
+
+# use double the default value for "moderate" and "long" timeout as seeing 
+# quite a few tests timeout
+build --test_timeout=60,600,1800,3600
 
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc

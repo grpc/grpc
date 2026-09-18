@@ -18,7 +18,13 @@ load("//test/cpp/qps:qps_benchmark_script.bzl", "json_run_localhost_batch", "qps
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/qps")
+grpc_package(
+    name = "test/cpp/qps",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "parse_json",
@@ -27,8 +33,15 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "protobuf",
+        "absl/log:log",
+        "absl/strings:str_format",
     ],
-    deps = ["//:grpc++"],
+    deps = [
+        "//:gpr",
+        "//:grpc++",
+        "//:grpc++_config_proto",
+        "//src/core:grpc_check",
+    ],
 )
 
 grpc_cc_library(
@@ -42,26 +55,45 @@ grpc_cc_library(
         "server_async.cc",
         "server_callback.cc",
         "server_sync.cc",
+        "session_util.cc",
     ],
     hdrs = [
         "client.h",
         "qps_server_builder.h",
         "qps_worker.h",
         "server.h",
+        "session_util.h",
     ],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/memory",
+        "absl/log:log",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/synchronization",
+    ],
     deps = [
         ":histogram",
         ":interarrival",
         ":usage_timer",
+        "//:generic_stub_session_hdrs",
+        "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing:benchmark_service_proto",
-        "//src/proto/grpc/testing:control_proto",
-        "//src/proto/grpc/testing:payloads_proto",
-        "//src/proto/grpc/testing:worker_service_proto",
+        "//:grpc_base",
+        "//:grpcpp_latent_see_service",
+        "//src/core:chaotic_good",
+        "//src/core:endpoint_transport",
+        "//src/core:env",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/testing:benchmark_service_cc_grpc",
+        "//src/proto/grpc/testing:control_cc_proto",
+        "//src/proto/grpc/testing:messages_cc_proto",
+        "//src/proto/grpc/testing:payloads_cc_proto",
+        "//src/proto/grpc/testing:worker_service_cc_grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -85,13 +117,19 @@ grpc_cc_library(
         ":histogram",
         ":parse_json",
         ":qps_worker_impl",
+        "//:gpr",
         "//:grpc++",
-        "//src/proto/grpc/testing:control_proto",
-        "//src/proto/grpc/testing:messages_proto",
-        "//src/proto/grpc/testing:report_qps_scenario_service_proto",
-        "//src/proto/grpc/testing:worker_service_proto",
+        "//:grpcpp_latent_see_client",
+        "//src/core:env",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
+        "//src/proto/grpc/testing:control_cc_proto",
+        "//src/proto/grpc/testing:messages_cc_proto",
+        "//src/proto/grpc/testing:report_qps_scenario_service_cc_grpc",
+        "//src/proto/grpc/testing:worker_service_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "@com_google_protobuf//:timestamp_cc_proto",
     ],
 )
 
@@ -110,8 +148,11 @@ grpc_cc_library(
     deps = [
         ":driver_impl",
         ":histogram",
+        "//:gpr",
         "//:grpc++",
-        "//src/proto/grpc/testing:control_proto",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/testing:control_cc_proto",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -122,8 +163,9 @@ grpc_cc_library(
         "stats.h",
     ],
     deps = [
-        "//src/proto/grpc/testing:stats_proto",
+        "//src/proto/grpc/testing:stats_cc_proto",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -133,11 +175,18 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log",
     ],
     deps = [
         ":benchmark_config",
         ":driver_impl",
+        ":parse_json",
+        ":qps_worker_impl",
+        "//:gpr",
         "//:grpc++",
+        "//:grpc++_config_proto",
+        "//src/core:grpc_check",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -146,10 +195,16 @@ grpc_cc_binary(
 grpc_cc_test(
     name = "inproc_sync_unary_ping_pong_test",
     srcs = ["inproc_sync_unary_ping_pong_test.cc"],
+    external_deps = [
+        "absl/log:log",
+    ],
     deps = [
         ":benchmark_config",
         ":driver_impl",
+        ":qps_worker_impl",
+        "//:gpr",
         "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -173,6 +228,7 @@ grpc_cc_test(
     deps = [
         ":histogram",
         ":interarrival",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
@@ -182,11 +238,16 @@ grpc_cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
     exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "absl/log",
+    ],
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         ":benchmark_config",
         ":driver_impl",
         ":qps_worker_impl",
+        "//:gpr",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -195,10 +256,17 @@ grpc_cc_test(
 grpc_cc_test(
     name = "secure_sync_unary_ping_pong_test",
     srcs = ["secure_sync_unary_ping_pong_test.cc"],
+    external_deps = [
+        "absl/log",
+    ],
+    tags = ["grpc:no-internal-test"],
     deps = [
         ":benchmark_config",
         ":driver_impl",
+        ":qps_worker_impl",
+        "//:gpr",
         "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -208,6 +276,9 @@ grpc_cc_library(
     name = "usage_timer",
     srcs = ["usage_timer.cc"],
     hdrs = ["usage_timer.h"],
+    external_deps = [
+        "absl/log",
+    ],
     deps = ["//:gpr"],
 )
 
@@ -219,7 +290,12 @@ grpc_cc_binary(
     ],
     deps = [
         ":qps_worker_impl",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc_base",
+        "//:stats",
+        "//src/core:experiments",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -239,11 +315,17 @@ grpc_cc_binary(
     srcs = ["scenario_runner.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/log",
     ],
     deps = [
         ":benchmark_config",
         ":driver_impl",
+        ":parse_json",
         "//:grpc++",
+        "//:stats",
+        "//src/core:slice",
+        "//src/core:stats_data",
+        "//src/proto/grpc/testing:control_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

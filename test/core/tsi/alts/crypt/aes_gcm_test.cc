@@ -16,17 +16,15 @@
 //
 //
 
-#include <memory>
-
-#include <gtest/gtest.h>
-
-#include "absl/types/span.h"
-
 #include <grpc/support/alloc.h>
+
+#include <memory>
 
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
+#include "gtest/gtest.h"
+#include "absl/types/span.h"
 
 const size_t kTestMinTagLengthForCorruption = 8;
 const size_t kTestNumCrypters = 3;

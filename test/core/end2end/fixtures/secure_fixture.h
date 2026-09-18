@@ -15,20 +15,20 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H
 
-#include <string>
-#include <utility>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+#include <string>
+#include <utility>
+
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/port.h"
+#include "absl/functional/any_invocable.h"
 
 // Base class for a fixture that just needs to select cred types (or mutate
 // client/server channel args).
@@ -41,17 +41,18 @@ class SecureFixture : public grpc_core::CoreTestFixture {
  protected:
   const std::string& localaddr() const { return localaddr_; }
 
- private:
-  virtual grpc_channel_credentials* MakeClientCreds(
-      const grpc_core::ChannelArgs& args) = 0;
-  virtual grpc_server_credentials* MakeServerCreds(
-      const grpc_core::ChannelArgs& args) = 0;
   virtual grpc_core::ChannelArgs MutateClientArgs(grpc_core::ChannelArgs args) {
     return args;
   }
   virtual grpc_core::ChannelArgs MutateServerArgs(grpc_core::ChannelArgs args) {
     return args;
   }
+  virtual grpc_channel_credentials* MakeClientCreds(
+      const grpc_core::ChannelArgs& args) = 0;
+  virtual grpc_server_credentials* MakeServerCreds(
+      const grpc_core::ChannelArgs& args) = 0;
+
+ private:
   grpc_server* MakeServer(
       const grpc_core::ChannelArgs& in_args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
@@ -59,7 +60,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     auto* creds = MakeServerCreds(args);
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), creds));
+    GRPC_CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), creds));
     grpc_server_credentials_release(creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -71,7 +72,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     auto* creds = MakeClientCreds(args);
     auto* client =
         grpc_channel_create(localaddr_.c_str(), creds, args.ToC().get());
-    CHECK_NE(client, nullptr);
+    GRPC_CHECK_NE(client, nullptr);
     grpc_channel_credentials_release(creds);
     return client;
   }

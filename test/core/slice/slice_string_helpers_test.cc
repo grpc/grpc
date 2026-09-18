@@ -18,14 +18,13 @@
 
 #include "src/core/lib/slice/slice_string_helpers.h"
 
-#include <memory>
-
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
-
 #include <grpc/support/alloc.h>
 
+#include <memory>
+
 #include "src/core/util/string.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 static void expect_slice_dump(grpc_slice slice, uint32_t flags,
                               const char* result) {

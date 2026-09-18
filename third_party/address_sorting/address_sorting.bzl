@@ -28,11 +28,14 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-def address_sorting_cc_library(name, srcs, hdrs, copts, includes):
-    native.cc_library(
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+def address_sorting_cc_library(name, srcs, hdrs, copts, includes, linkopts=[]):
+    cc_library(
         name = name,
         srcs = srcs,
         hdrs = hdrs,
         copts = copts,
         includes = includes,
+        linkopts = linkopts,
     )

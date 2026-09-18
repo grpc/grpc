@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/tsi/alts/zero_copy_frame_protector")
+grpc_package(
+    name = "test/core/tsi/alts/zero_copy_frame_protector",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "alts_grpc_record_protocol_test",
@@ -25,11 +31,11 @@ grpc_cc_test(
         "gtest",
         "absl/types:span",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
+        "//:tsi_alts_frame_protector",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
@@ -43,10 +49,10 @@ grpc_cc_test(
         "gtest",
         "absl/types:span",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_alts_frame_protector",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
     ],
@@ -59,11 +65,12 @@ grpc_cc_test(
         "gtest",
         "absl/types:span",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
+        "//:tsi_alts_frame_protector",
+        "//:tsi_base",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",

@@ -21,25 +21,22 @@
 
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
-#include <memory>
-
 #include <ares.h>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-
 #include <grpc/event_engine/event_engine.h>
+
+#include <memory>
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/util/sync.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 
 struct iovec;
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class GrpcPolledFdWindows;
 
@@ -52,6 +49,10 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(
       ares_socket_t as) override;
   void ConfigureAresChannelLocked(ares_channel channel) override;
+
+  std::unique_ptr<GrpcPolledFdFactory> NewEmptyInstance() const override {
+    return std::make_unique<GrpcPolledFdFactoryWindows>(iocp_);
+  }
 
  private:
   friend class CustomSockFuncs;
@@ -67,8 +68,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 

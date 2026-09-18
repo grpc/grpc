@@ -6,7 +6,7 @@ libdir=${exec_prefix}/@gRPC_INSTALL_LIBDIR@
 Name: @PC_NAME@
 Description: @PC_DESCRIPTION@
 Version: @PC_VERSION@
-Cflags: -I${includedir}
+Cflags: -I${includedir} @PC_CFLAGS@
 Requires: @PC_REQUIRES@
 Requires.private: @PC_REQUIRES_PRIVATE@
 Libs: -L${libdir} @PC_LIB@

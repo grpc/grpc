@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_STATEFUL_SESSION_V3_STATEFUL_SESSION_PROTO_UPBDEFS_H_
-#define ENVOY_EXTENSIONS_FILTERS_HTTP_STATEFUL_SESSION_V3_STATEFUL_SESSION_PROTO_UPBDEFS_H_
+
+
+#ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_STATEFUL_SESSION_V3_STATEFUL_SESSION_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_EXTENSIONS_FILTERS_HTTP_STATEFUL_SESSION_V3_STATEFUL_SESSION_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,10 +32,11 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_stateful_session_
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.stateful_session.v3.StatefulSessionPerRoute");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_FILTERS_HTTP_STATEFUL_SESSION_V3_STATEFUL_SESSION_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_EXTENSIONS_FILTERS_HTTP_STATEFUL_SESSION_V3_STATEFUL_SESSION_PROTO_UPB_H__UPBDEFS_H_ */

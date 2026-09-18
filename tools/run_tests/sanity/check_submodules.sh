@@ -25,22 +25,24 @@ want_submodules=$(mktemp /tmp/submXXXXXX)
 
 git submodule | sed 's/+//g' | awk '{ print $2 " " $1 }' | sort >"$submodules"
 cat <<EOF | sort >"$want_submodules"
-third_party/abseil-cpp 4447c7562e3bc702ade25105912dce503f0c4010
-third_party/benchmark 344117638c8ff7e239044fd0fa7085839fc03021
+third_party/abseil-cpp 76bb24329e8bf5f39704eb10d21b9a80befa7c81
+third_party/benchmark 12235e24652fc7f809373e7c11a5f73c5763fc4c
 third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
-third_party/boringssl-with-bazel b8b3e6e11166719a8ebfa43c0cde9ad7d57a84f6
-third_party/cares/cares 6360e96b5cf8e5980c887ce58ef727e53d77243a
-third_party/envoy-api f8b75d1efa92bbf534596a013d9ca5873f79dd30
-third_party/googleapis fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
-third_party/googletest 2dd1c131950043a8ad5ab0d2dda0e0970596586a
+third_party/boringssl-with-bazel 3adc3d1aba162a578e2547f329fcce8659b8e89c
+third_party/cares/cares d3a507e920e7af18a5efb7f9f1d8044ed4750013
+third_party/cel-spec 9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
+third_party/envoy-api 6ef568cf4a67362849911d1d2a546fd9f35db2ff
+third_party/googleapis 2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
+third_party/googletest 52eb8108c5bdec04579160ae17225d66034bd723
+third_party/grpc-proto ec30f589e2519d595688b9a42f88a91bdd6b733f
 third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
 third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
-third_party/opentelemetry-cpp 4bd64c9a336fd438d6c4c9dad2e6b61b0585311f
-third_party/protobuf 10ef3f77683f77fb3c059bf47725c27b3ff41e63
-third_party/protoc-gen-validate fab737efbb4b4d03e7c771393708f75594b121e4
+third_party/opentelemetry-cpp ced79860f8c8a091a2eabfee6d47783f828a9b59
+third_party/protobuf 35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03
+third_party/protoc-gen-validate 7b06248484ceeaa947e93ca2747eccf336a88ecc
 third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
-third_party/xds 3a472e524827f72d1ad621c4983dd5af54c46776
-third_party/zlib 09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851
+third_party/xds ee656c7534f5d7dc23d44dd611689568f72017a6
+third_party/zlib f1f503da85d52e56aae11557b4d79a42bcaa2b86
 EOF
 
 if ! diff -u "$submodules" "$want_submodules"; then

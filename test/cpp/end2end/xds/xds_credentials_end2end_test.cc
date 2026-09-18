@@ -16,9 +16,6 @@
 //
 //
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/server_builder.h>
 
@@ -26,6 +23,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {

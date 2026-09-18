@@ -26,6 +26,13 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # make sure bazel is available
 tools/bazel version
 
+# Needed for upload_rbe_results.py big_query_utils called by bazel_report_helper.py
+# Note: the versions are locked to the ones supporting python3.10.
+# Google will drop Python 3.10 once it reaches its end of life (2026-10-04)
+# TODO(sergiitk): we need to migrate off of oauth2client: https://google-auth.readthedocs.io/en/latest/oauth2client-deprecation.html
+pip install --user google-api-python-client==2.187.0 oauth2client==4.1.3 \
+  "pyOpenSSL>=23.2.0"
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_rbe
 
 bazel_rbe/bazel_wrapper \
@@ -33,5 +40,7 @@ bazel_rbe/bazel_wrapper \
   --output_user_root=/tmpfs/bazel \
   test \
   $BAZEL_FLAGS \
+  --generate_json_trace_profile \
+  --profile=bazel_rbe/profile.json \
   "$@" \
   -- ${BAZEL_TESTS:-//test/...}

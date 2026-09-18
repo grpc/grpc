@@ -22,7 +22,7 @@
 
 namespace grpc_core {
 
-CORE_END2END_TEST(CoreEnd2endTest, EmptyBatch) {
+CORE_END2END_TEST(CoreEnd2endTests, EmptyBatch) {
   auto c = NewClientCall("/service/method").Create();
   c.NewBatch(1);
   Expect(1, true);

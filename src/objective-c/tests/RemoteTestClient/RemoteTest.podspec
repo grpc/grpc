@@ -7,9 +7,9 @@ Pod::Spec.new do |s|
   s.summary = "RemoteTest example"
   s.source = { :git => 'https://github.com/grpc/grpc.git' }
 
-  s.ios.deployment_target = '10.0'
-  s.osx.deployment_target = '10.12'
-  s.tvos.deployment_target = '12.0'
+  s.ios.deployment_target = '15.0'
+  s.osx.deployment_target = '11.0'
+  s.tvos.deployment_target = '13.0'
   s.watchos.deployment_target = '6.0'
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
   repo_root = '../../../..'
   bazel_exec_root = "#{repo_root}/bazel-bin"
 
-  protoc = "#{bazel_exec_root}/external/com_google_protobuf/protoc"
+  protoc = "#{bazel_exec_root}/external/protobuf+/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
   plugin = "#{bazel_exec_root}/src/compiler/grpc_objective_c_plugin"
 

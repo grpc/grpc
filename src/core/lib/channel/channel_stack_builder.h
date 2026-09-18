@@ -15,18 +15,18 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -54,12 +54,10 @@ class ChannelStackBuilder {
   const ChannelArgs& channel_args() const { return args_; }
 
   // Mutable vector of proposed stack entries.
-  std::vector<const grpc_channel_filter*>* mutable_stack() { return &stack_; }
+  std::vector<FilterAndConfig>* mutable_stack() { return &stack_; }
 
   // Immutable vector of proposed stack entries.
-  const std::vector<const grpc_channel_filter*>& stack() const {
-    return stack_;
-  }
+  const std::vector<FilterAndConfig>& stack() const { return stack_; }
 
   // The type of channel stack being built.
   grpc_channel_stack_type channel_stack_type() const { return type_; }
@@ -69,10 +67,12 @@ class ChannelStackBuilder {
   // channel init.
 
   // Helper to add a filter to the front of the stack.
-  void PrependFilter(const grpc_channel_filter* filter);
+  void PrependFilter(const grpc_channel_filter* filter,
+                     RefCountedPtr<const FilterConfig> config = nullptr);
 
   // Helper to add a filter to the end of the stack.
-  void AppendFilter(const grpc_channel_filter* filter);
+  void AppendFilter(const grpc_channel_filter* filter,
+                    RefCountedPtr<const FilterConfig> config = nullptr);
 
   // Build the channel stack.
   // After success, *result holds the new channel stack,
@@ -96,7 +96,7 @@ class ChannelStackBuilder {
   // Channel args
   ChannelArgs args_;
   // The in-progress stack
-  std::vector<const grpc_channel_filter*> stack_;
+  std::vector<FilterAndConfig> stack_;
 };
 
 }  // namespace grpc_core

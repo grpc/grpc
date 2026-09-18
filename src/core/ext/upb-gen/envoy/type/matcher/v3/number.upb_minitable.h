@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_MINITABLE_H_
-#define ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__type__matcher__v3__DoubleMatcher_msg_init;
-extern const upb_MiniTable* envoy__type__matcher__v3__DoubleMatcher_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_type_matcher_v3_number_proto_upb_file_layout;
 
@@ -29,4 +28,4 @@ extern const upb_MiniTableFile envoy_type_matcher_v3_number_proto_upb_file_layou
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H__UPB_MINITABLE_H_ */

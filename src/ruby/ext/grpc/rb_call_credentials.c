@@ -20,18 +20,18 @@
 
 #include "rb_call_credentials.h"
 
-#include <ruby/thread.h>
-
-#include "rb_call.h"
-#include "rb_event_thread.h"
-#include "rb_grpc.h"
-#include "rb_grpc_imports.generated.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <ruby/thread.h>
+#include <stdbool.h>
+
+#include "rb_call.h"
+#include "rb_event_thread.h"
+#include "rb_grpc.h"
+#include "rb_grpc_imports.generated.h"
 
 /* grpc_rb_cCallCredentials is the ruby class that proxies
  * grpc_call_credentials */
@@ -307,6 +307,7 @@ static VALUE grpc_rb_call_credentials_compose(int argc, VALUE* argv,
     return self;
   }
   mark = rb_ary_new();
+  rb_ary_push(mark, self);
   creds = grpc_rb_get_wrapped_call_credentials(self);
   for (int i = 0; i < argc; i++) {
     rb_ary_push(mark, argv[i]);

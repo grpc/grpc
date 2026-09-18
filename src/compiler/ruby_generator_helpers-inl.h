@@ -31,9 +31,9 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
   static const unsigned proto_suffix_length = 6;  // length of ".proto"
   if (file->name().size() > proto_suffix_length &&
       file->name().find_last_of(".proto") == file->name().size() - 1) {
-    *file_name_or_error =
-        file->name().substr(0, file->name().size() - proto_suffix_length) +
-        "_services_pb.rb";
+    *file_name_or_error = std::string(file->name().substr(
+                              0, file->name().size() - proto_suffix_length)) +
+                          "_services_pb.rb";
     return true;
   } else {
     *file_name_or_error = "Invalid proto file name:  must end with .proto";
@@ -43,7 +43,7 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
 
 inline std::string MessagesRequireName(
     const grpc::protobuf::FileDescriptor* file) {
-  return Replace(file->name(), ".proto", "_pb");
+  return Replace(std::string(file->name()), ".proto", "_pb");
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "# ".

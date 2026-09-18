@@ -18,17 +18,17 @@
 
 #include "src/cpp/ext/proto_server_reflection.h"
 
-#include <unordered_set>
-#include <vector>
-
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/sync_stream.h>
 
+#include <unordered_set>
+#include <vector>
+
 // IWYU pragma: no_include "google/protobuf/descriptor.h"
 // IWYU pragma: no_include <google/protobuf/descriptor.h>
-// IWYU pragma: no_include "src/proto/grpc/reflection/v1/reflection.pb.h"
-// IWYU pragma: no_include "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
+// IWYU pragma: no_include <grpc/reflection/v1/reflection.pb.h>
+// IWYU pragma: no_include <grpc/reflection/v1alpha/reflection.pb.h>
 
 namespace grpc {
 

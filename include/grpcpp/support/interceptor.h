@@ -19,15 +19,15 @@
 #ifndef GRPCPP_SUPPORT_INTERCEPTOR_H
 #define GRPCPP_SUPPORT_INTERCEPTOR_H
 
-#include <map>
-#include <memory>
-#include <string>
-
 #include <grpc/impl/grpc_types.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <map>
+#include <memory>
+#include <string>
 
 namespace grpc {
 

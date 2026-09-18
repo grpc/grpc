@@ -15,21 +15,19 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_LATCH_H
 #define GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_LATCH_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <string>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/wait_set.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -47,8 +45,8 @@ class InterActivityLatch {
       MutexLock lock(&mu_);
       GRPC_TRACE_LOG(promise_primitives, INFO)
           << DebugTag() << "PollWait " << StateString();
-      if (is_set_) {
-        return std::move(value_);
+      if (value_.has_value()) {
+        return std::move(*value_);
       } else {
         return waiters_.AddPending(
             GetContext<Activity>()->MakeNonOwningWaker());
@@ -61,32 +59,30 @@ class InterActivityLatch {
     MutexLock lock(&mu_);
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugTag() << "Set " << StateString();
-    is_set_ = true;
     value_ = std::move(value);
     waiters_.WakeupAsync();
   }
 
   bool IsSet() const ABSL_LOCKS_EXCLUDED(mu_) {
     MutexLock lock(&mu_);
-    return is_set_;
+    return value_.has_value();
   }
 
  private:
   std::string DebugTag() {
-    return absl::StrCat(GetContext<Activity>()->DebugTag(),
-                        " INTER_ACTIVITY_LATCH[0x",
-                        reinterpret_cast<uintptr_t>(this), "]: ");
+    return absl::StrCat(
+        HasContext<Activity>() ? GetContext<Activity>()->DebugTag()
+                               : "NO_ACTIVITY:",
+        " INTER_ACTIVITY_LATCH[0x", reinterpret_cast<uintptr_t>(this), "]: ");
   }
 
   std::string StateString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return absl::StrCat("is_set:", is_set_);
+    return absl::StrCat("is_set:", value_.has_value());
   }
 
   mutable Mutex mu_;
-  // True if we have a value set, false otherwise.
-  bool is_set_ ABSL_GUARDED_BY(mu_) = false;
   WaitSet waiters_ ABSL_GUARDED_BY(mu_);
-  T value_ ABSL_GUARDED_BY(mu_);
+  std::optional<T> value_ ABSL_GUARDED_BY(mu_);
 };
 
 template <>
@@ -134,7 +130,7 @@ class InterActivityLatch<void> {
   }
 
   std::string StateString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return absl::StrCat("is_set:", is_set_);
+    return absl::StrCat("is_set:", is_set_, " waiters:", waiters_.ToString());
   }
 
   mutable Mutex mu_;

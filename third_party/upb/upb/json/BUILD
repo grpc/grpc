@@ -1,15 +1,16 @@
 # TODO: describe this package.
 
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//bazel:proto_library.bzl", "proto_library")
+load("//upb/bazel:copts.bzl", "UPB_DEFAULT_COPTS", "UPB_DEFAULT_FEATURES")
 load(
-    "//bazel:upb_proto_library.bzl",
+    "//upb/bazel:upb_proto_library.bzl",
     "upb_c_proto_library",
     "upb_proto_reflection_library",
 )
-load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
-# begin:google_only
-# package(default_applicable_licenses = ["//upb:license"])
-# end:google_only
+package(default_applicable_licenses = ["//:license"])
 
 cc_library(
     name = "json",
@@ -22,16 +23,17 @@ cc_library(
         "encode.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:base",
-        "//upb:mem",
-        "//upb:message",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:reflection",
-        "//upb:wire",
+        "//upb/base",
         "//upb/lex",
+        "//upb/mem",
+        "//upb/message",
+        "//upb/mini_table",
+        "//upb/port",
+        "//upb/reflection",
+        "//upb/wire",
     ],
 )
 
@@ -40,14 +42,14 @@ cc_test(
     srcs = ["decode_test.cc"],
     deps = [
         ":json",
-        ":struct_upb_proto",
         ":test_upb_proto",
         ":test_upb_proto_reflection",
-        "//upb:base",
-        "//upb:mem",
-        "//upb:reflection",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "//:struct_upb_proto",
+        "//upb/base",
+        "//upb/mem",
+        "//upb/reflection",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -56,14 +58,14 @@ cc_test(
     srcs = ["encode_test.cc"],
     deps = [
         ":json",
-        ":struct_upb_proto",
         ":test_upb_proto",
         ":test_upb_proto_reflection",
-        "//upb:base",
-        "//upb:mem",
-        "//upb:reflection",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "//:struct_upb_proto",
+        "//upb/base",
+        "//upb/mem",
+        "//upb/reflection",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -86,33 +88,6 @@ upb_proto_reflection_library(
     deps = [":test_proto"],
 )
 
-# TODO: This target arguably belongs in //google/protobuf/BUILD
-upb_c_proto_library(
-    name = "struct_upb_proto",
-    testonly = 1,
-    deps = ["//:struct_proto"],
-)
-
-# begin:google_only
-# cc_test(
-#     name = "fuzz_test",
-#     srcs = ["fuzz_test.cc"],
-#     deps = [
-#         ":json",
-#         ":test_upb_proto",
-#         ":test_upb_proto_reflection",
-#         "@com_google_googletest//:gtest", "@com_google_googletest//:gtest_main",
-#         "//testing/fuzzing:fuzztest",
-#         "//upb:base",
-#         "//upb:mem",
-#         "//upb:message",
-#         "//upb:mini_table",
-#         "//upb:reflection",
-#     ],
-# )
-# end:google_only
-
-# begin:github_only
 filegroup(
     name = "test_srcs",
     srcs = glob(
@@ -133,4 +108,3 @@ filegroup(
     ),
     visibility = ["//upb:__pkg__"],
 )
-# end:github_only

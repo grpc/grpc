@@ -18,6 +18,7 @@
 
 #include "metadata_exchange.h"
 
+#include <grpc/slice.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -25,12 +26,9 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "absl/strings/string_view.h"
 #include "constants.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_observability {
 
@@ -90,15 +88,17 @@ void PythonLabelsInjector::AddXdsOptionalLabels(
   // Performs JSON label name format to CSM Observability Metric spec format
   // conversion.
   absl::string_view service_name =
-      optional_labels_span[static_cast<size_t>(
-                               grpc_core::ClientCallTracer::CallAttemptTracer::
-                                   OptionalLabelKey::kXdsServiceName)]
-          .as_string_view();
+      optional_labels_span
+          [static_cast<size_t>(
+               grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                   OptionalLabelKey::kXdsServiceName)]
+              .as_string_view();
   absl::string_view service_namespace =
-      optional_labels_span[static_cast<size_t>(
-                               grpc_core::ClientCallTracer::CallAttemptTracer::
-                                   OptionalLabelKey::kXdsServiceNamespace)]
-          .as_string_view();
+      optional_labels_span
+          [static_cast<size_t>(
+               grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                   OptionalLabelKey::kXdsServiceNamespace)]
+              .as_string_view();
   // According to the CSM Observability Metric spec, if the control plane fails
   // to provide these labels, the client will set their values to "unknown".
   if (service_name.empty()) {

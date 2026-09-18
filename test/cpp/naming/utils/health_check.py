@@ -86,7 +86,7 @@ def wait_until_dns_server_is_up(args):
     test_runner_log(
         (
             "Failed to reach DNS server over TCP and/or UDP. "
-            "Exitting without running tests."
+            "Exiting without running tests."
         )
     )
     sys.exit(1)

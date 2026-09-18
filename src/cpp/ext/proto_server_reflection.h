@@ -19,20 +19,19 @@
 #ifndef GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H
 #define GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H
 
-#include <memory>
-#include <string>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-
+#include <grpc/reflection/v1/reflection.grpc.pb.h>
+#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/sync_stream.h>
 
-#include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
-#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
+#include <memory>
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 namespace grpc {
 

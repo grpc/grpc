@@ -14,24 +14,24 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
+#include <grpc/event_engine/event_engine.h>
 #include <inttypes.h>
 #include <string.h>
 #include <sys/types.h>
 
 #include <string>
-
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-
-#include <grpc/event_engine/event_engine.h>
+#include <vector>
 
 #include "src/core/lib/event_engine/windows/native_windows_dns_resolver.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
@@ -83,10 +83,11 @@ NativeWindowsDNSResolver::NativeWindowsDNSResolver(
 void NativeWindowsDNSResolver::LookupHostname(
     EventEngine::DNSResolver::LookupHostnameCallback on_resolved,
     absl::string_view name, absl::string_view default_port) {
-  event_engine_->Run(
-      [name, default_port, on_resolved = std::move(on_resolved)]() mutable {
-        on_resolved(LookupHostnameBlocking(name, default_port));
-      });
+  event_engine_->Run([name = std::string(name),
+                      default_port = std::string(default_port),
+                      on_resolved = std::move(on_resolved)]() mutable {
+    on_resolved(LookupHostnameBlocking(name, default_port));
+  });
 }
 
 void NativeWindowsDNSResolver::LookupSRV(
@@ -109,7 +110,6 @@ void NativeWindowsDNSResolver::LookupTXT(
   });
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

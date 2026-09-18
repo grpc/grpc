@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPBDEFS_H_
-#define ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPBDEFS_H_
+
+
+#ifndef ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,10 +57,11 @@ UPB_INLINE const upb_MessageDef *envoy_type_metadata_v3_MetadataKind_Host_getmsg
   return upb_DefPool_FindMessageByName(s, "envoy.type.metadata.v3.MetadataKind.Host");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_TYPE_METADATA_V3_METADATA_PROTO_UPB_H__UPBDEFS_H_ */

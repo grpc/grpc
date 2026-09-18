@@ -16,11 +16,6 @@
 //
 //
 
-#include <memory>
-#include <vector>
-
-#include <gtest/gtest.h>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -32,12 +27,16 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_interceptor.h>
 
+#include <memory>
+#include <vector>
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {

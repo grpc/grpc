@@ -15,9 +15,8 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_HISTOGRAM_VIEW_H
 #define GRPC_SRC_CORE_TELEMETRY_HISTOGRAM_VIEW_H
 
-#include <stdint.h>
-
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
 namespace grpc_core {
 

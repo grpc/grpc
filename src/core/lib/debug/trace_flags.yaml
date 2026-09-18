@@ -82,6 +82,10 @@ chttp2_hpack_parser:
 chttp2_new_stream:
   default: false
   description: HTTP/2 incoming stream creation.
+chttp2_server_refcount:
+  debug_only: true
+  default: false
+  description: Refcounting in Chttp2 Server.
 client_channel:
   default: false
   description: Client channel control plane activity, including resolver and load balancing policy interaction.
@@ -102,6 +106,9 @@ combiner:
   debug_only: true
   default: false
   description: Combiner lock state.
+composite_filter:
+  default: false
+  description: xDS composite filter.
 compression:
   default: false
   description: Compression operations.
@@ -112,9 +119,6 @@ cq_refcount:
   debug_only: true
   default: false
   description: Completion queue refcounting.
-cronet:
-  default: false
-  description: Cronet transport engine.
 dns_resolver:
   default: false
   description: The active DNS resolver.
@@ -143,9 +147,9 @@ event_engine_endpoint_data:
 event_engine_poller:
   default: false
   description: EventEngine Poller events.
-executor:
+ext_proc_filter:
   default: false
-  description: gRPC's legacy thread pool ('the executor').
+  description: External processing filter.
 fault_injection_filter:
   default: false
   description: Fault injection.
@@ -225,6 +229,10 @@ pending_tags:
   debug_only: true
   default: false
   description: Still-in-progress tags on completion queues. The `api` tracer must be enabled for this flag to have any effect.
+http2_ph2_transport:
+  debug_only: true
+  default: false
+  description: Promise Based HTTP2 transport.
 pick_first:
   default: false
   description: Pick first load balancing policy.
@@ -278,6 +286,9 @@ security_connector_refcount:
 server_channel:
   default: false
   description: Lightweight trace of significant server channel events.
+server_config_selector_interceptor:
+  default: false
+  description: Traces calls in the server config selector interceptor.
 slice_refcount:
   debug_only: true
   default: false
@@ -292,6 +303,9 @@ stream_refcount:
 subchannel:
   default: false
   description: Connectivity state of subchannels.
+subchannel_call:
+  default: false
+  description: Call handling in the subchannel.
 subchannel_pool:
   default: false
   description: Subchannel pool.
@@ -345,10 +359,12 @@ xds_resolver:
 xds_server_config_fetcher:
   default: false
   description: XDS Server config fetcher.
-xds_unittest:
-  default: true
-  description: xDS unit tests.
-  internal: true
 xds_wrr_locality_lb:
   default: false
   description: XDS WRR locality LB policy.
+ztrace:
+  # we may want to toggle this to false for detailed opt debugging, but best not to
+  # check that in.
+  debug_only: true
+  default: false
+  description: Trace ztrace appends globally (for debugging the ztrace system itself).

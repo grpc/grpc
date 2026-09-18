@@ -18,7 +18,7 @@
 
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 
 namespace grpc {
@@ -33,8 +33,8 @@ int GetIntValueFromMetadataHelper(
     const char* key,
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
     int default_value) {
-  if (metadata.find(key) != metadata.end()) {
-    std::istringstream iss(ToString(metadata.find(key)->second));
+  if (auto [it, end] = metadata.equal_range(key); it != end) {
+    std::istringstream iss(ToString(it->second));
     iss >> default_value;
   }
 
@@ -74,7 +74,7 @@ CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
       StartRead(&request_);
     }
     void OnDone() override {
-      CHECK(finished_);
+      GRPC_CHECK(finished_);
       delete this;
     }
     void OnCancel() override {}

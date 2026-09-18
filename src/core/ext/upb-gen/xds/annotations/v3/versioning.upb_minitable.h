@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_ANNOTATIONS_V3_VERSIONING_PROTO_UPB_MINITABLE_H_
-#define XDS_ANNOTATIONS_V3_VERSIONING_PROTO_UPB_MINITABLE_H_
+#ifndef XDS_ANNOTATIONS_V3_VERSIONING_PROTO_UPB_H__UPB_MINITABLE_H_
+#define XDS_ANNOTATIONS_V3_VERSIONING_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -19,8 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__annotations__v3__VersioningAnnotation_msg_init;
-extern const upb_MiniTable* xds__annotations__v3__VersioningAnnotation_msg_init_ptr;
-extern const upb_MiniTableExtension xds_annotations_v3_versioning_ext;
+extern const upb_MiniTableExtension* xds_annotations_v3_versioning_ext;
 
 extern const upb_MiniTableFile xds_annotations_v3_versioning_proto_upb_file_layout;
 
@@ -30,4 +29,4 @@ extern const upb_MiniTableFile xds_annotations_v3_versioning_proto_upb_file_layo
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_ANNOTATIONS_V3_VERSIONING_PROTO_UPB_MINITABLE_H_ */
+#endif  /* XDS_ANNOTATIONS_V3_VERSIONING_PROTO_UPB_H__UPB_MINITABLE_H_ */

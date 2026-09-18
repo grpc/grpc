@@ -53,7 +53,7 @@ Once the prerequisites are satisfied, you can build with cmake:
 ```
 $ mkdir -p cmake/build
 $ cd cmake/build
-$ cmake -DgRPC_BUILD_TESTS=ON ../..
+$ cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_CXX_STANDARD=17 ../..
 $ make grpc_cli
 ```
 

@@ -77,7 +77,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["Sample/Sample/Info.plist"],
-    minimum_os_version = "9.0",
+    minimum_os_version = "15.0",
     visibility = ["//visibility:public"],
     deps = ["Sample-lib"],
 )
@@ -100,7 +100,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["InterceptorSample/InterceptorSample/Info.plist"],
-    minimum_os_version = "9.0",  # Safe Area Layout Guide used
+    minimum_os_version = "15.0",  # Safe Area Layout Guide used
     deps = ["InterceptorSample-lib"],
 )
 
@@ -119,7 +119,7 @@ tvos_application(
     name = "tvOS-sample",
     bundle_id = "io.grpc.tvOS-sample",
     infoplists = ["tvOS-sample/tvOS-sample/Info.plist"],
-    minimum_os_version = "10.0",
+    minimum_os_version = "13.0",
     deps = [":tvOS-sample-lib"],
 )
 
@@ -148,7 +148,7 @@ ios_application(
     bundle_id = "io.grpc.watchOS-sample",
     families = ["iphone"],
     infoplists = ["watchOS-sample/watchOS-sample/Info.plist"],
-    minimum_os_version = "9.0",  # Safe Area Layout Guide used
+    minimum_os_version = "15.0",  # Safe Area Layout Guide used
     watch_application = "watchOS-sample-watchApp",
     deps = [":watchOS-sample-iOS-lib"],
 )
@@ -159,7 +159,7 @@ watchos_application(
     bundle_id = "io.grpc.watchOS-sample.watchkitapp",
     extension = ":watchOS-sample-extension",
     infoplists = ["watchOS-sample/WatchKit-App/Info.plist"],
-    minimum_os_version = "4.0",
+    minimum_os_version = "6.0",
     storyboards = ["watchOS-sample/WatchKit-App/Base.lproj/Interface.storyboard"],
 )
 
@@ -167,6 +167,6 @@ watchos_extension(
     name = "watchOS-sample-extension",
     bundle_id = "io.grpc.watchOS-sample.watchkitapp.watchkitextension",
     infoplists = ["watchOS-sample/WatchKit-Extension/Info.plist"],
-    minimum_os_version = "4.0",
+    minimum_os_version = "6.0",
     deps = [":watchOS-sample-extension-lib"],
 )

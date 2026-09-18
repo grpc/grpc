@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/event_log.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <atomic>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
@@ -28,7 +28,7 @@ namespace grpc_core {
 std::atomic<EventLog*> EventLog::g_instance_{nullptr};
 
 EventLog::~EventLog() {
-  CHECK(g_instance_.load(std::memory_order_acquire) != this);
+  GRPC_CHECK_NE(g_instance_.load(std::memory_order_acquire), this);
 }
 
 void EventLog::BeginCollection() {

@@ -42,7 +42,7 @@ cdef int _get_metadata(void *state,
                        grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
                        size_t *num_creds_md,
                        grpc_status_code *status,
-                       const char **error_details) except * with gil:
+                       const char **error_details) except -1 with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -77,7 +77,7 @@ cdef int g_shutting_down = 0
 # GIL destruction during process shutdown. Since GIL destruction happens after
 # Python's exit handlers, we mark that Python is shutting down from an exit
 # handler and don't grab GIL in this function afterwards using a C mutex.
-cdef void _destroy(void *state) nogil:
+cdef void _destroy(void *state) noexcept nogil:
   global g_shutdown_mu
   global g_shutting_down
   g_shutdown_mu.lock()
@@ -101,7 +101,7 @@ def _maybe_register_shutdown_handler():
   g_shutdown_handler_registered = True
   atexit.register(_on_shutdown)
 
-cdef void _on_shutdown() nogil:
+cdef void _on_shutdown() noexcept nogil:
   global g_shutdown_mu
   global g_shutting_down
   # Wait for up to ~2s if C-core is still cleaning up.
@@ -188,36 +188,64 @@ cdef class SSLSessionCacheLRU:
 
 cdef class SSLChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self, pem_root_certificates, private_key, certificate_chain):
+  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, private_key_signer=None):
     if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
       raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
+    self._private_key_signer = private_key_signer
+    # This gets passed around C++, make sure it stays
+    if self._private_key_signer is not None:
+      Py_INCREF(self._private_key_signer)
+
+  def __dealloc__(self):
+    # We manually increased the reference count, decrease it on dealloc of this object
+    if self._private_key_signer is not None:
+      Py_DECREF(self._private_key_signer)
 
   cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
-    cdef grpc_ssl_pem_key_cert_pair c_pem_key_certificate_pair
-    if self._pem_root_certificates is None:
-      c_pem_root_certificates = NULL
-    else:
-      c_pem_root_certificates = self._pem_root_certificates
-    if self._private_key is None and self._certificate_chain is None:
-      with nogil:
-        return grpc_ssl_credentials_create(
-            c_pem_root_certificates, NULL, NULL, NULL)
-    else:
-      if self._private_key:
-        c_pem_key_certificate_pair.private_key = self._private_key
+    cdef const char *c_private_key
+    cdef const char *c_cert_chain
+    cdef shared_ptr[PrivateKeySigner] c_private_key_signer
+    cdef grpc_tls_credentials_options* c_tls_credentials_options
+    cdef grpc_tls_identity_pairs* c_tls_identity_pairs = NULL
+    cdef grpc_tls_certificate_provider* c_tls_certificate_provider
+    cdef Status private_key_status
+
+    c_tls_credentials_options = grpc_tls_credentials_options_create()
+    c_pem_root_certificates = self._pem_root_certificates or <const char*>NULL
+    if self._private_key or self._certificate_chain or self._private_key_signer:
+      c_tls_identity_pairs = grpc_tls_identity_pairs_create()
+      c_private_key = self._private_key or <const char*>NULL
+      c_cert_chain = self._certificate_chain or <const char*>NULL
+      if self._private_key_signer:
+        c_private_key_signer = build_private_key_signer(self._private_key_signer)
+        private_key_status = grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
+        if not private_key_status.ok():
+          grpc_tls_identity_pairs_destroy(c_tls_identity_pairs)
+          grpc_tls_credentials_options_destroy(c_tls_credentials_options)
+          raise RuntimeError("Unable to create custom PrivateKeySigner with user provided function: ", private_key_status.ToString());
       else:
-        c_pem_key_certificate_pair.private_key = NULL
-      if self._certificate_chain:
-        c_pem_key_certificate_pair.certificate_chain = self._certificate_chain
-      else:
-        c_pem_key_certificate_pair.certificate_chain = NULL
-      with nogil:
-        return grpc_ssl_credentials_create(
-            c_pem_root_certificates, &c_pem_key_certificate_pair, NULL, NULL)
+        grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
+
+    if c_pem_root_certificates != NULL or c_tls_identity_pairs != NULL:
+      c_tls_certificate_provider = grpc_tls_certificate_provider_in_memory_create()
+      if c_pem_root_certificates != NULL:
+        grpc_tls_certificate_provider_in_memory_set_root_certificate(
+          c_tls_certificate_provider, c_pem_root_certificates)
+        grpc_tls_credentials_options_set_root_certificate_provider(
+            c_tls_credentials_options, c_tls_certificate_provider)
+      if c_tls_identity_pairs != NULL:
+        grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+          c_tls_certificate_provider, c_tls_identity_pairs)
+        grpc_tls_credentials_options_set_identity_certificate_provider(
+            c_tls_credentials_options, c_tls_certificate_provider)
+      grpc_tls_certificate_provider_release(c_tls_certificate_provider)
+
+    with nogil:
+      return grpc_tls_credentials_create(c_tls_credentials_options)
 
 
 cdef class CompositeChannelCredentials(ChannelCredentials):
@@ -488,7 +516,7 @@ cdef class ComputeEngineChannelCredentials(ChannelCredentials):
 
   cdef grpc_channel_credentials *c(self) except *:
     with nogil:
-      self._c_creds = grpc_google_default_credentials_create(self._call_creds)
+      self._c_creds = grpc_google_default_credentials_create(self._call_creds, NULL)
       return self._c_creds
 
 

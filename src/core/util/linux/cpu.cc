@@ -25,17 +25,15 @@
 #ifdef GPR_CPU_LINUX
 
 #include <errno.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/sync.h>
 #include <sched.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
-
-#include <grpc/support/cpu.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
+#include "absl/log/log.h"
 
 static int ncpus = 0;
 
@@ -50,7 +48,7 @@ static void init_num_cpus() {
 #endif
   // This must be signed. sysconf returns -1 when the number cannot be
   // determined
-  ncpus = static_cast<int>(sysconf(_SC_NPROCESSORS_CONF));
+  ncpus = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
   if (ncpus < 1) {
     LOG(ERROR) << "Cannot determine number of CPUs: assuming 1";
     ncpus = 1;

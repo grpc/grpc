@@ -31,6 +31,8 @@ GRPC_JAVA_REPO=grpc/grpc-java
 GRPC_JAVA_GITREF=master
 GRPC_NODE_REPO=grpc/grpc-node
 GRPC_NODE_GITREF=master
+GRPC_RUST_REPO=grpc/grpc-rust
+GRPC_RUST_GITREF=master
 TEST_INFRA_REPO=grpc/test-infra
 TEST_INFRA_GITREF=master
 
@@ -65,6 +67,7 @@ GRPC_DOTNET_COMMIT="$(git ls-remote "https://github.com/${GRPC_DOTNET_REPO}.git"
 GRPC_GO_COMMIT="$(git ls-remote "https://github.com/${GRPC_GO_REPO}.git" "${GRPC_GO_GITREF}" | cut -f1)"
 GRPC_JAVA_COMMIT="$(git ls-remote "https://github.com/${GRPC_JAVA_REPO}.git" "${GRPC_JAVA_GITREF}" | cut -f1)"
 GRPC_NODE_COMMIT="$(git ls-remote "https://github.com/${GRPC_NODE_REPO}.git" "${GRPC_NODE_GITREF}" | cut -f1)"
+GRPC_RUST_COMMIT="$(git ls-remote "https://github.com/${GRPC_RUST_REPO}.git" "${GRPC_RUST_GITREF}" | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
@@ -112,12 +115,32 @@ buildConfigs() {
     -a ci_gitCommit_dotnet="${GRPC_DOTNET_COMMIT}" \
     -a ci_gitCommit_go="${GRPC_GO_COMMIT}" \
     -a ci_gitCommit_java="${GRPC_JAVA_COMMIT}" \
+    -a ci_gitCommit_rust="${GRPC_RUST_COMMIT}" \
     -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
     --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
     -a pool="${pool}" --category=scalable \
     --allow_client_language=c++ --allow_server_language=c++ \
     --allow_server_language=node \
     -o "loadtest_with_prebuilt_workers_${pool}.yaml"
+}
+
+# Regex to disable specific tests.
+# https://stackoverflow.com/questions/406230
+disableTestsRegex() {
+  if (($# == 0)); then
+    echo '.*'
+    return
+  fi
+  local s='^((?!'
+  s+="$1"
+  shift
+  while (($# > 0)); do
+    s+='|'
+    s+="$1"
+    shift
+  done
+  s+=').)*$'
+  echo "${s}"
 }
 
 # List all languages.
@@ -128,13 +151,15 @@ declare -A useLanguage=(
   [java]=1
   [node]=1
   [python]=1
+  [python_asyncio]=1
   [ruby]=1
+  [rust]=1
+  [php8]=1
 )
 
 # Disable specific languages.
 declare -a disabledLanguages=(
   # Add a language here to disable it.
-  dotnet
 )
 for language in "${disabledLanguages[@]}"; do
   unset "useLanguage[${language}]"
@@ -185,14 +210,51 @@ if [[ -v "useLanguage[python]" ]]; then
   runnerLangArgs+=(-l "python:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
 fi
 
+# python_asyncio
+if [[ -v "useLanguage[python_asyncio]" ]]; then
+  configLangArgs8core+=(-l python_asyncio)
+  configLangArgs32core+=(-l python_asyncio)
+  runnerLangArgs+=(-l "python_asyncio:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+fi
+
 # ruby
 if [[ -v "useLanguage[ruby]" ]]; then
   configLangArgs8core+=(-l ruby) # 8-core only.
   runnerLangArgs+=(-l "ruby:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
 fi
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${configLangArgs8core[@]}"
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${configLangArgs32core[@]}"
+# rust
+if [[ -v "useLanguage[rust]" ]]; then
+  configLangArgs8core+=(-l rust)
+  configLangArgs32core+=(-l rust)
+  runnerLangArgs+=(-l "rust:${GRPC_RUST_REPO}:${GRPC_RUST_COMMIT}")
+fi
+
+# php8
+if [[ -v "useLanguage[php8]" ]]; then
+  configLangArgs8core+=(-l php8) # 8-core only.
+  runnerLangArgs+=(-l "php8:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+  configLangArgs8core+=(-l php8_protobuf_c) # 8-core only.
+  runnerLangArgs+=(-l "php8_protobuf_c:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+fi
+
+# Disable broken tests by regex.
+# The test disabled here hangs on 8 cores. The result of this test is not
+# displayed on the public dashboard. The test runs and passes on the 30-core
+# ("32core") node pool. This can be considered a permanent fix, selectively
+# removing an unnecessary test and allowing the test run to become green.
+# IMPORTANT: Scenario names are case-sensitive.
+declare -a disabledTests8core=(
+  cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_insecure
+)
+declare -a disabledTests32core=()
+
+# Arguments to disable tests.
+regexArgs8core=(-r "$(disableTestsRegex "${disabledTests8core[@]}")")
+regexArgs32core=(-r "$(disableTestsRegex "${disabledTests32core[@]}")")
+
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${configLangArgs8core[@]}" "${regexArgs8core[@]}"
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${configLangArgs32core[@]}" "${regexArgs32core[@]}"
 
 # Delete prebuilt images on exit.
 deleteImages() {

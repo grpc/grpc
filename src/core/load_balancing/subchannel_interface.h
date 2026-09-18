@@ -17,18 +17,17 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 
-#include <memory>
-#include <utility>
-
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
+
+#include <memory>
+#include <utility>
 
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

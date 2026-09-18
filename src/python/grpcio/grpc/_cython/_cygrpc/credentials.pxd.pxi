@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 cdef class CallCredentials:
 
   cdef grpc_call_credentials *c(self) except *
@@ -26,9 +25,9 @@ cdef int _get_metadata(
     grpc_credentials_plugin_metadata_cb cb, void *user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) except * with gil
+    const char **error_details) except -1 with gil
 
-cdef void _destroy(void *state) except * with gil
+cdef void _destroy(void *state) noexcept nogil
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -64,6 +63,7 @@ cdef class SSLChannelCredentials(ChannelCredentials):
   cdef readonly object _pem_root_certificates
   cdef readonly object _private_key
   cdef readonly object _certificate_chain
+  cdef readonly object _private_key_signer
 
   cdef grpc_channel_credentials *c(self) except *
 
@@ -98,7 +98,7 @@ cdef class ServerCredentials:
   cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
   cdef size_t c_ssl_pem_key_cert_pairs_count
   cdef list references
-  # the cert config related state is used only if this credentials is
+  # the cert config related state is used only if these credentials are
   # created with cert config/fetcher
   cdef object initial_cert_config
   cdef object cert_config_fetcher

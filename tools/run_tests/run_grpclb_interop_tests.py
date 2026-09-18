@@ -14,23 +14,15 @@
 # limitations under the License.
 """Run interop (cross-language) tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import atexit
-import itertools
 import json
 import multiprocessing
 import os
-import re
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
 import uuid
-
-import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
@@ -676,7 +668,7 @@ def run_one_scenario(scenario_config):
                 print('Server "%s" has exited prematurely.' % server)
         suppress_failure = suppress_server_logs and not args.verbose
         dockerjob.finish_jobs(
-            [j for j in six.itervalues(server_jobs)],
+            [j for j in server_jobs.values()],
             suppress_failure=suppress_failure,
         )
 

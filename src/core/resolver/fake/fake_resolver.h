@@ -17,15 +17,11 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_FAKE_FAKE_RESOLVER_H
 #define GRPC_SRC_CORE_RESOLVER_FAKE_FAKE_RESOLVER_H
 
-#include <utility>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+
+#include <optional>
+#include <utility>
 
 #include "src/core/resolver/resolver.h"
 #include "src/core/util/notification.h"
@@ -33,6 +29,9 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"
@@ -116,7 +115,7 @@ class FakeResolverResponseGenerator final
   RefCountedPtr<FakeResolver> resolver_ ABSL_GUARDED_BY(mu_);
   // Temporarily stores the result when it gets set before the response
   // generator is seen by the FakeResolver.
-  absl::optional<Resolver::Result> result_ ABSL_GUARDED_BY(mu_);
+  std::optional<Resolver::Result> result_ ABSL_GUARDED_BY(mu_);
 
   Mutex reresolution_mu_;
   CondVar* reresolution_cv_ ABSL_GUARDED_BY(reresolution_mu_) = nullptr;

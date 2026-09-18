@@ -19,13 +19,13 @@
 #include <fstream>
 #include <string>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
 
-long GetMemUsage(absl::optional<int> pid) {
+long GetMemUsage(std::optional<int> pid) {
   // Default is getting memory usage for self (calling process)
   std::string path = "/proc/self/stat";
-  if (pid != absl::nullopt) {
+  if (pid != std::nullopt) {
     path = absl::StrCat("/proc/", pid.value(), "/stat");
   }
   std::ifstream stat_stream(path, std::ios_base::in);
@@ -46,7 +46,7 @@ long GetMemUsage(absl::optional<int> pid) {
   stat_stream.close();
 
   // pid does not connect to an existing process
-  CHECK(!state.empty());
+  GRPC_CHECK(!state.empty());
 
   // Calculations in case x86-64 is configured to use 2MB pages
   long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;

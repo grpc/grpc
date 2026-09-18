@@ -16,16 +16,11 @@
 
 #include "test/cpp/interop/pre_stop_hook_server.h"
 
-#include <thread>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
+
+#include <thread>
 
 #include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
@@ -33,6 +28,9 @@
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace testing {
@@ -44,7 +42,7 @@ struct CallInfo {
   Empty request;
   Empty response;
 
-  absl::optional<Status> WaitForStatus(
+  std::optional<Status> WaitForStatus(
       absl::Duration timeout = absl::Seconds(1)) {
     grpc_core::MutexLock lock(&mu);
     cv.WaitWithTimeout(&mu, timeout);
@@ -60,7 +58,7 @@ struct CallInfo {
  private:
   grpc_core::Mutex mu;
   grpc_core::CondVar cv;
-  absl::optional<Status> status_;
+  std::optional<Status> status_;
 };
 
 void ServerLoop(HookServiceImpl* service, int port, Server** server,

@@ -46,7 +46,7 @@ EXTERNAL_DEPS = {
     "absl/base/call_once.h": "absl/base",
     "absl/base/config.h": "absl/base:config",
     # TODO(ctiller) remove this
-    "absl/base/internal/endian.h": "absl/base:endian",
+    "absl/base/no_destructor.h": "absl/base:no_destructor",
     "absl/base/thread_annotations.h": "absl/base:core_headers",
     "absl/container/flat_hash_map.h": "absl/container:flat_hash_map",
     "absl/container/flat_hash_set.h": "absl/container:flat_hash_set",
@@ -65,9 +65,11 @@ EXTERNAL_DEPS = {
     "absl/functional/function_ref.h": "absl/functional:function_ref",
     "absl/hash/hash.h": "absl/hash",
     "absl/log/check.h": "absl/log:check",
+    "absl/log/globals.h": "absl/log:globals",
     "absl/log/log.h": "absl/log",
     "absl/memory/memory.h": "absl/memory",
     "absl/meta/type_traits.h": "absl/meta:type_traits",
+    "absl/numeric/bits.h": "absl/numeric:bits",
     "absl/numeric/int128.h": "absl/numeric:int128",
     "absl/random/random.h": "absl/random",
     "absl/random/bit_gen_ref.h": "absl/random:bit_gen_ref",
@@ -93,9 +95,7 @@ EXTERNAL_DEPS = {
     "absl/synchronization/notification.h": "absl/synchronization",
     "absl/time/clock.h": "absl/time",
     "absl/time/time.h": "absl/time",
-    "absl/types/optional.h": "absl/types:optional",
     "absl/types/span.h": "absl/types:span",
-    "absl/types/variant.h": "absl/types:variant",
     "absl/utility/utility.h": "absl/utility",
     "benchmark/benchmark.h": "benchmark",
     "address_sorting/address_sorting.h": "address_sorting",
@@ -164,13 +164,13 @@ EXTERNAL_DEPS = {
     "openssl/x509.h": "libcrypto",
     "openssl/x509v3.h": "libcrypto",
     "re2/re2.h": "re2",
-    "upb/base/status.hpp": "upb_base_lib",
-    "upb/base/string_view.h": "upb_base_lib",
-    "upb/message/map.h": "upb_message_lib",
+    "upb/base/status.hpp": "@com_google_protobuf//upb/base",
+    "upb/base/string_view.h": "@com_google_protobuf//upb/base",
+    "upb/message/map.h": "@com_google_protobuf//upb/message",
     "upb/reflection/def.h": "upb_reflection",
     "upb/json/encode.h": "upb_json_lib",
-    "upb/mem/arena.h": "upb_mem_lib",
-    "upb/mem/arena.hpp": "upb_mem_lib",
+    "upb/mem/arena.h": "@com_google_protobuf//upb/mem",
+    "upb/mem/arena.hpp": "@com_google_protobuf//upb/mem",
     "upb/text/encode.h": "upb_textformat_lib",
     "upb/reflection/def.hpp": "upb_reflection",
     "xxhash.h": "xxhash",
@@ -181,9 +181,15 @@ INTERNAL_DEPS = {
     "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h": (
         "//test/core/event_engine/fuzzing_event_engine"
     ),
-    "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h": "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-    "test/core/experiments/test_experiments.h": "//test/core/experiments:test_experiments_lib",
-    "google/api/expr/v1alpha1/syntax.upb.h": "google_api_expr_v1alpha1_syntax_upb",
+    "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h": (
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto"
+    ),
+    "test/core/experiments/test_experiments.h": (
+        "//test/core/experiments:test_experiments_lib"
+    ),
+    "google/api/expr/v1alpha1/syntax.upb.h": (
+        "google_api_expr_v1alpha1_syntax_upb"
+    ),
     "google/rpc/status.upb.h": "google_rpc_status_upb",
     "google/protobuf/any.upb.h": "protobuf_any_upb",
     "google/protobuf/duration.upb.h": "protobuf_duration_upb",
@@ -191,24 +197,32 @@ INTERNAL_DEPS = {
     "google/protobuf/timestamp.upb.h": "protobuf_timestamp_upb",
     "google/protobuf/wrappers.upb.h": "protobuf_wrappers_upb",
     "grpc/status.h": "grpc_public_hdrs",
-    "src/proto/grpc/channelz/channelz.grpc.pb.h": (
-        "//src/proto/grpc/channelz:channelz_proto"
-    ),
+    "grpc/channelz/v1/channelz.pb.h": "//:channelz_cc_proto",
+    "grpc/channelz/v1/channelz.grpc.pb.h": "//:channelz_cc_grpc",
     "src/proto/grpc/core/stats.pb.h": "//src/proto/grpc/core:stats_proto",
-    "src/proto/grpc/health/v1/health.upb.h": "grpc_health_upb",
+    "grpc/health/v1/health.upb.h": "grpc_health_upb",
+    "grpc/health/v1/health.pb.h": "//:health_cc_proto",
+    "grpc/health/v1/health.grpc.pb.h": "//:health_cc_grpc",
     "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h": (
         "//src/proto/grpc/lb/v1:load_reporter_proto"
     ),
     "src/proto/grpc/lb/v1/load_balancer.upb.h": "grpc_lb_upb",
-    "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h": (
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto"
+    "grpc/reflection/v1/reflection.pb.h": "//:reflection_v1_cc_proto",
+    "grpc/reflection/v1/reflection.grpc.pb.h": "//:reflection_v1_cc_grpc",
+    "grpc/reflection/v1alpha/reflection.pb.h": "//:reflection_v1alpha_cc_proto",
+    "grpc/reflection/v1alpha/reflection.grpc.pb.h": (
+        "//:reflection_v1alpha_cc_grpc"
     ),
     "src/proto/grpc/gcp/transport_security_common.upb.h": "alts_upb",
     "src/proto/grpc/gcp/handshaker.upb.h": "alts_upb",
     "src/proto/grpc/gcp/altscontext.upb.h": "alts_upb",
-    "src/proto/grpc/lookup/v1/rls.upb.h": "rls_upb",
-    "src/proto/grpc/lookup/v1/rls_config.upb.h": "rls_config_upb",
-    "src/proto/grpc/lookup/v1/rls_config.upbdefs.h": "rls_config_upbdefs",
+    "grpc/lookup/v1/rls.upb.h": "rls_upb",
+    "grpc/lookup/v1/rls_config.upb.h": "rls_config_upb",
+    "grpc/lookup/v1/rls_config.upbdefs.h": "rls_config_upbdefs",
+    "grpc/lookup/v1/rls.pb.h": "//:rls_cc_proto",
+    "grpc/lookup/v1/rls.grpc.pb.h": "//:rls_cc_grpc",
+    "grpc/lookup/v1/rls_config.pb.h": "//:rls_config_cc_proto",
+    "grpc/lookup/v1/rls_config.grpc.pb.h": "//:rls_config_cc_grpc",
     "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h": (
         "//src/proto/grpc/testing/xds/v3:csds_proto"
     ),
@@ -404,6 +418,7 @@ for dirname in [
     "test/core/call/yodel",
     "test/core/client_channel",
     "test/core/experiments",
+    "test/core/handshake",
     "test/core/load_balancing",
     "test/core/util",
     "test/core/test_util",
@@ -415,9 +430,6 @@ for dirname in [
     "test/core/transport/chaotic_good",
     "test/core/transport/test_suite",
     "test/core/transport",
-    "fuzztest",
-    "fuzztest/core/channel",
-    "fuzztest/core/transport/chttp2",
 ]:
     parsing_path = dirname
     exec(
@@ -436,15 +448,16 @@ for dirname in [
             "grpc_cc_library": grpc_cc_library,
             "grpc_cc_test": grpc_cc_library,
             "grpc_cc_benchmark": grpc_cc_library,
-            "grpc_core_end2end_test": lambda **kwargs: None,
+            "grpc_core_end2end_test_suite": lambda **kwargs: None,
             "grpc_filegroup": lambda **kwargs: None,
             "grpc_transport_test": lambda **kwargs: None,
             "grpc_yodel_test": lambda **kwargs: None,
             "grpc_yodel_simple_test": lambda **kwargs: None,
             "grpc_fuzzer": grpc_cc_library,
             "grpc_fuzz_test": grpc_cc_library,
-            "grpc_proto_fuzzer": grpc_cc_library,
             "grpc_proto_library": grpc_proto_library,
+            "grpc_internal_proto_library": grpc_proto_library,
+            "grpc_cc_proto_library": lambda **kwargs: None,
             "select": lambda d: d["//conditions:default"],
             "glob": lambda files, **kwargs: None,
             "grpc_end2end_tests": lambda: None,
@@ -458,6 +471,8 @@ for dirname in [
             "platform": lambda name, **kwargs: None,
             "grpc_clang_cl_settings": lambda **kwargs: None,
             "grpc_benchmark_args": lambda **kwargs: [],
+            "LARGE_MACHINE": 1,
+            "HISTORY": 1,
         },
         {},
     )

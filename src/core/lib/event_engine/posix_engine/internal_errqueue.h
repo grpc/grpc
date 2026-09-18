@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
-#include <grpc/support/port_platform.h>
-
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -30,8 +30,7 @@
 #include <sys/socket.h>
 #endif  // GRPC_LINUX_ERRQUEUE
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_LINUX_ERRQUEUE
 
@@ -94,6 +93,8 @@ enum TCPOptStats {
   TCP_NLA_DSACK_DUPS,             // DSACK blocks received
   TCP_NLA_REORD_SEEN,             // reordering events seen
   TCP_NLA_SRTT,                   // smoothed RTT in usecs
+  TCP_NLA_TIMEOUT_REHASH,         // Timeout-triggered rehash attempts
+  TCP_NLA_BYTES_NOTSENT,          // Bytes in write queue not yet sent
 };
 
 // tcp_info from from linux/tcp.h
@@ -163,7 +164,9 @@ struct tcp_info {
 #define TCP_INFO 11
 #endif
 
-int GetSocketTcpInfo(tcp_info* info, int fd);
+PosixError GetSocketTcpInfo(tcp_info* info,
+                            EventEnginePosixInterface* posix_interface,
+                            const FileDescriptor& fd);
 
 #endif  // GRPC_LINUX_ERRQUEUE
 
@@ -171,8 +174,7 @@ int GetSocketTcpInfo(tcp_info* info, int fd);
 // Currently allowing only linux kernels above 4.0.0
 bool KernelSupportsErrqueue();
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_POSIX_SOCKET_TCP
 

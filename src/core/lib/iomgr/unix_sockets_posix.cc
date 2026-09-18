@@ -33,9 +33,6 @@
 #include <sys/un.h>
 #endif  // GPR_WINDOWS
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -43,13 +40,15 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/str_cat.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
 #ifdef GPR_WINDOWS
   grpc_core::Crash("AF_UNIX socket pairs are not supported on Windows");
 #else
-  CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+  GRPC_CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
 #endif
 }
 
@@ -60,8 +59,7 @@ grpc_resolve_unix_domain_address(absl::string_view name) {
   if (error.ok()) {
     return std::vector<grpc_resolved_address>({addr});
   }
-  auto result = grpc_error_to_absl_status(error);
-  return result;
+  return error;
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
@@ -72,8 +70,7 @@ grpc_resolve_unix_abstract_domain_address(const absl::string_view name) {
   if (error.ok()) {
     return std::vector<grpc_resolved_address>({addr});
   }
-  auto result = grpc_error_to_absl_status(error);
-  return result;
+  return error;
 }
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {

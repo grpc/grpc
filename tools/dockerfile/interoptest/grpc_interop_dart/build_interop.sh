@@ -16,6 +16,7 @@
 # Builds Dart interop server and client in a base image.
 set -ex
 
+git config --global --add safe.directory /var/local/jenkins/grpc-dart/.git
 mkdir -p /var/local/git
 git clone /var/local/jenkins/grpc-dart /var/local/git/grpc-dart
 

@@ -25,9 +25,9 @@ RUN yum install epel-release -y && \
   yum --enablerepo=remi-php81 install php -y && \
   yum-config-manager --enable remi-php81 > /dev/null && \
   yum install -y make wget which \
-    gmp-devel libmpc-devel mpfr-devel yum-utils \                                                    
-    php-mbstring php-devel php-fpm php-pear && \                                                                          
-  yum clean all -y  
+    gmp-devel libmpc-devel mpfr-devel yum-utils \
+    php-mbstring php-devel php-fpm php-pear && \
+  yum clean all -y
 
 ARG MAKEFLAGS=-j8
 

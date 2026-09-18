@@ -15,14 +15,10 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_LEGACY_CHANNEL_IDLE_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CHANNEL_IDLE_LEGACY_CHANNEL_IDLE_FILTER_H
 
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
 
 #include <memory>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
-#include <grpc/impl/connectivity_state.h>
 
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -37,6 +33,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

@@ -42,9 +42,8 @@ inline bool ServerOnlyStreaming(const grpc_generator::Method* method) {
 
 std::string FilenameIdentifier(const std::string& filename) {
   std::string result;
-  for (unsigned i = 0; i < filename.size(); i++) {
-    char c = filename[i];
-    if (isalnum(c)) {
+  for (char c : filename) {
+    if (c >= 0 && std::isalnum(c)) {
       result.push_back(c);
     } else {
       static char hex[] = "0123456789abcdef";
@@ -119,7 +118,7 @@ std::string GetHeaderPrologue(grpc_generator::File* file,
 }
 
 // Convert from "a/b/c.proto" to "#include \"a/b/c$message_header_ext$\"\n"
-std::string ImportInludeFromProtoName(const std::string& proto_name) {
+std::string ImportIncludeFromProtoName(const std::string& proto_name) {
   return std::string("#include \"") +
          proto_name.substr(0, proto_name.size() - 6) +
          std::string("$message_header_ext$\"\n");
@@ -156,6 +155,8 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/support/status.h",
         "grpcpp/support/stub_options.h",
         "grpcpp/support/sync_stream.h",
+        // ports_def.inc Must be included at last
+        "grpcpp/ports_def.inc",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
@@ -169,7 +170,8 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
     if (params.include_import_headers) {
       const std::vector<std::string> import_names = file->GetImportNames();
       for (const auto& import_name : import_names) {
-        const std::string include_name = ImportInludeFromProtoName(import_name);
+        const std::string include_name =
+            ImportIncludeFromProtoName(import_name);
         printer->Print(vars, include_name.c_str());
       }
       printer->PrintRaw("\n");
@@ -1404,9 +1406,15 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   (*vars)["Service"] = service->name();
 
   printer->Print(service->GetLeadingComments("//").c_str());
-  printer->Print(*vars,
-                 "class $Service$ final {\n"
-                 " public:\n");
+  if (params.allow_deprecated && service->is_deprecated()) {
+    printer->Print(*vars,
+                   "class [[deprecated]] $Service$ final {\n"
+                   " public:\n");
+  } else {
+    printer->Print(*vars,
+                   "class $Service$ final {\n"
+                   " public:\n");
+  }
   printer->Indent();
 
   // Service metadata
@@ -1691,6 +1699,9 @@ std::string GetHeaderEpilogue(grpc_generator::File* file,
     }
 
     printer->Print(vars, "\n");
+
+    // Must be included at end of file
+    printer->Print("#include <grpcpp/ports_undef.inc>\n");
     printer->Print(vars, "#endif  // GRPC_$filename_identifier$__INCLUDED\n");
 
     printer->Print(file->GetTrailingComments("//").c_str());
@@ -1733,20 +1744,15 @@ std::string GetSourceIncludes(grpc_generator::File* file,
     auto printer = file->CreatePrinter(&output);
     std::map<std::string, std::string> vars;
     static const char* headers_strs[] = {
-        "functional",
-        "grpcpp/support/async_stream.h",
-        "grpcpp/support/async_unary_call.h",
-        "grpcpp/impl/channel_interface.h",
-        "grpcpp/impl/client_unary_call.h",
-        "grpcpp/support/client_callback.h",
-        "grpcpp/support/message_allocator.h",
-        "grpcpp/support/method_handler.h",
-        "grpcpp/impl/rpc_service_method.h",
-        "grpcpp/support/server_callback.h",
-        "grpcpp/impl/server_callback_handlers.h",
-        "grpcpp/server_context.h",
-        "grpcpp/impl/service_type.h",
-        "grpcpp/support/sync_stream.h"};
+        "functional", "grpcpp/support/async_stream.h",
+        "grpcpp/support/async_unary_call.h", "grpcpp/impl/channel_interface.h",
+        "grpcpp/impl/client_unary_call.h", "grpcpp/support/client_callback.h",
+        "grpcpp/support/message_allocator.h", "grpcpp/support/method_handler.h",
+        "grpcpp/impl/rpc_service_method.h", "grpcpp/support/server_callback.h",
+        "grpcpp/impl/server_callback_handlers.h", "grpcpp/server_context.h",
+        "grpcpp/impl/service_type.h", "grpcpp/support/sync_stream.h",
+        // ports_def.inc Must be included as last
+        "grpcpp/ports_def.inc"};
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
@@ -2242,6 +2248,8 @@ std::string GetSourceEpilogue(grpc_generator::File* file,
       temp.append(*part);
       temp.append("\n");
     }
+    // Must be included at end of file
+    temp.append("#include <grpcpp/ports_undef.inc>\n");
     temp.append("\n");
   }
 
@@ -2278,7 +2286,8 @@ std::string GetMockPrologue(grpc_generator::File* file,
     if (params.include_import_headers) {
       const std::vector<std::string> import_names = file->GetImportNames();
       for (const auto& import_name : import_names) {
-        const std::string include_name = ImportInludeFromProtoName(import_name);
+        const std::string include_name =
+            ImportIncludeFromProtoName(import_name);
         printer->Print(vars, include_name.c_str());
       }
       printer->PrintRaw("\n");

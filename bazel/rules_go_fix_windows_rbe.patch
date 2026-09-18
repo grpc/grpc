@@ -1,0 +1,24 @@
+# Patch to fix a windows rbe related regression with bazel 8.7.0 + rules_go
+#
+# Rationale: The gotmp folder is a temporary working directory declared as a tree
+# artifact. `rules_go` repo build some artifcats inside that folder and then
+# delete all of its contents, leaving this directory empty.
+# RBE may treated this folder is unused and aggressively elides it,
+# causing the static analysis to fail. This patch leaves a non-empty
+# file inside that folder, inhibiting such behavior.
+#
+# See also:
+#   - https://github.com/grpc/grpc/issues/42607
+#   - https://bazel.build/reference/glossary#tree-artifact
+diff --git a/go/private/rules/binary.bzl b/go/private/rules/binary.bzl
+index 730bcda3..822ef819 100644
+--- a/go/private/rules/binary.bzl
++++ b/go/private/rules/binary.bzl
+@@ -546,6 +546,7 @@ if %ERRORLEVEL% EQU 0 (
+ set GO_EXIT_CODE=%ERRORLEVEL%
+ RMDIR /S /Q "{gotmp}"
+ MKDIR "{gotmp}"
++echo "keep_gotmp_folder" > "{gotmp}\\dummy"
+ exit /b %GO_EXIT_CODE%
+ """.format(
+             gotmp = gotmp.path.replace("/", "\\"),

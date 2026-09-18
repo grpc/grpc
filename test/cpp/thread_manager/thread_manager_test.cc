@@ -18,21 +18,19 @@
 
 #include "src/cpp/thread_manager/thread_manager.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpcpp/grpcpp.h>
+
 #include <atomic>
 #include <chrono>
 #include <climits>
 #include <memory>
 #include <thread>
 
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace {
@@ -175,6 +173,16 @@ TEST_P(ThreadManagerTest, TestThreadQuota) {
     for (auto& tm : thread_manager_) {
       EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
       EXPECT_LE(tm->GetMaxActiveThreadsSoFar(), GetParam().thread_limit);
+    }
+  }
+}
+
+TEST_P(ThreadManagerTest, TestMaxActiveThreadsSoFar) {
+  for (auto& tm : thread_manager_) {
+    int max_active = tm->GetMaxActiveThreadsSoFar();
+    EXPECT_GE(max_active, GetParam().min_pollers);
+    if (GetParam().thread_limit > 0) {
+      EXPECT_LE(max_active, GetParam().thread_limit);
     }
   }
 }

@@ -15,15 +15,18 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_RACE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_RACE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
-#include <grpc/support/port_platform.h>
+#include "src/core/util/json/json.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
 
 namespace grpc_core {
 
-namespace promise_detail {
-
-// Implementation type for Race combinator.
+/// Run all the promises, return the first result that's available.
+/// If two results are simultaneously available, bias towards the first result
+/// listed.
 template <typename... Promises>
 class Race;
 
@@ -32,9 +35,10 @@ class Race<Promise, Promises...> {
  public:
   using Result = decltype(std::declval<Promise>()());
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Race(Promise promise,
-                                                     Promises... promises)
-      : promise_(std::move(promise)), next_(std::move(promises)...) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Race(Promise&& promise,
+                                                     Promises&&... promises)
+      : promise_(std::forward<Promise>(promise)),
+        next_(std::forward<Promises>(promises)...) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Result operator()() {
     // Check our own promise.
@@ -45,6 +49,24 @@ class Race<Promise, Promises...> {
     }
     // Return the first ready result.
     return std::move(r.value());
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* race_promise =
+        grpc_channelz_v2_Promise_mutable_race_promise(promise_proto, arena);
+    auto** children = grpc_channelz_v2_Promise_Race_resize_children(
+        race_promise, 1 + sizeof...(Promises), arena);
+    for (size_t i = 0; i < 1 + sizeof...(Promises); ++i) {
+      children[i] = grpc_channelz_v2_Promise_new(arena);
+    }
+    SetChildrenProto(children, 0, arena);
+  }
+
+  void SetChildrenProto(grpc_channelz_v2_Promise** promise_protos, int index,
+                        upb_Arena* arena) const {
+    PromiseAsProto(promise_, promise_protos[index], arena);
+    next_.SetChildrenProto(promise_protos, index + 1, arena);
   }
 
  private:
@@ -58,26 +80,28 @@ template <typename Promise>
 class Race<Promise> {
  public:
   using Result = decltype(std::declval<Promise>()());
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Race(Promise promise)
-      : promise_(std::move(promise)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Race(Promise&& promise)
+      : promise_(std::forward<Promise>(promise)) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Result operator()() {
     return promise_();
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    PromiseAsProto(promise_, promise_proto, arena);
+  }
+
+  void SetChildrenProto(grpc_channelz_v2_Promise** promise_protos, int index,
+                        upb_Arena* arena) const {
+    PromiseAsProto(promise_, promise_protos[index], arena);
   }
 
  private:
   Promise promise_;
 };
 
-}  // namespace promise_detail
-
-/// Run all the promises, return the first result that's available.
-/// If two results are simultaneously available, bias towards the first result
-/// listed.
 template <typename... Promises>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Race<Promises...> Race(
-    Promises... promises) {
-  return promise_detail::Race<Promises...>(std::move(promises)...);
-}
+Race(Promises...) -> Race<Promises...>;
 
 }  // namespace grpc_core
 

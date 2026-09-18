@@ -19,14 +19,14 @@
 #ifndef GRPCPP_SECURITY_SERVER_CREDENTIALS_H
 #define GRPCPP_SECURITY_SERVER_CREDENTIALS_H
 
-#include <memory>
-#include <vector>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
+#include <vector>
 
 struct grpc_server;
 

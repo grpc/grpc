@@ -1,7 +1,0 @@
-network_input {
-  input_segments {
-    segments {
-      delay_ms: 4
-    }
-  }
-}

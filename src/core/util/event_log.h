@@ -16,20 +16,18 @@
 #define GRPC_SRC_CORE_UTIL_EVENT_LOG_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <atomic>
 #include <string>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
-
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time_precise.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 

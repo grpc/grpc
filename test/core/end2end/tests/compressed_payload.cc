@@ -16,24 +16,23 @@
 //
 //
 
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <stdint.h>
 
 #include <initializer_list>
 #include <string>
 #include <utility>
 
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
-
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -53,10 +52,28 @@ class TestConfigurator {
     return *this;
   }
 
+  TestConfigurator& DisableAlgorithmAtClient(
+      grpc_compression_algorithm algorithm) {
+    client_args_ =
+        client_args_.Set(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+                         BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT>()
+                             .SetAll(true)
+                             .Set(algorithm, false)
+                             .ToInt<uint32_t>());
+    return *this;
+  }
+
   TestConfigurator& ClientDefaultAlgorithm(
       grpc_compression_algorithm algorithm) {
     client_args_ =
         client_args_.Set(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
+    return *this;
+  }
+
+  TestConfigurator& ServerDefaultCompressionLevel(
+      grpc_compression_level level) {
+    server_args_ =
+        server_args_.Set(GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL, level);
     return *this;
   }
 
@@ -119,6 +136,59 @@ class TestConfigurator {
     EXPECT_EQ(s.method(), "/foo");
   }
 
+  void CompressedBitWithIdentityTest() {
+    Init();
+    auto c =
+        test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
+    IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
+    c.NewBatch(1)
+        .SendInitialMetadata({})
+        .SendMessage(std::string(1024, 'x'), GRPC_WRITE_INTERNAL_COMPRESS)
+        .SendCloseFromClient()
+        .RecvInitialMetadata(server_initial_metadata)
+        .RecvStatusOnClient(server_status);
+    auto s = test_.RequestCall(100);
+    test_.Expect(100, true);
+    test_.Step();
+    IncomingMessage client_message;
+    s.NewBatch(101).RecvMessage(client_message);
+    test_.Expect(101, false);
+    test_.Expect(1, true);
+    test_.Step();
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_INTERNAL);
+    EXPECT_EQ(server_status.message(),
+              "Compression bit set but no encoding configured");
+  }
+
+  void ClientUnsupportedAlgorithmTest() {
+    Init();
+    auto c = test_.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
+    IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
+    c.NewBatch(1)
+        .SendInitialMetadata({})
+        .SendCloseFromClient()
+        .RecvInitialMetadata(server_initial_metadata)
+        .RecvStatusOnClient(server_status);
+    auto s = test_.RequestCall(100);
+    test_.Expect(100, true);
+    test_.Step();
+    IncomingMessage client_message;
+    s.NewBatch(101).SendInitialMetadata({}).RecvMessage(client_message);
+    s.NewBatch(102).SendMessage(std::string(1024, 'y'));
+    test_.Expect(102, CoreEnd2endTest::AnyStatus{});
+    test_.Expect(101, CoreEnd2endTest::AnyStatus{});
+    test_.Expect(1, true);
+    test_.Step();
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_INTERNAL);
+    EXPECT_THAT(
+        server_status.message(),
+        ::testing::AnyOf(
+            ::testing::HasSubstr("Compression algorithm 'gzip' is disabled."),
+            ::testing::HasSubstr("Compression algorithm not supported: gzip")));
+  }
+
   void RequestWithPayload(
       uint32_t client_send_flags_bitmask,
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
@@ -167,7 +237,7 @@ class TestConfigurator {
     test_.Expect(104, true);
     test_.Step();
     EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-    EXPECT_EQ(server_status.message(), "xyz");
+    EXPECT_EQ(server_status.message(), "");
     EXPECT_EQ(s.method(), "/foo");
     EXPECT_FALSE(client_close.was_cancelled());
   }
@@ -220,7 +290,7 @@ class TestConfigurator {
     test_.Expect(104, true);
     test_.Step();
     EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-    EXPECT_EQ(server_status.message(), "xyz");
+    EXPECT_EQ(server_status.message(), "");
     EXPECT_EQ(s.method(), "/foo");
     EXPECT_FALSE(client_close.was_cancelled());
   }
@@ -270,7 +340,7 @@ class TestConfigurator {
     test_.Expect(104, true);
     test_.Step();
     EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-    EXPECT_EQ(server_status.message(), "xyz");
+    EXPECT_EQ(server_status.message(), "");
     EXPECT_EQ(s.method(), "/foo");
     EXPECT_FALSE(client_close.was_cancelled());
   }
@@ -284,7 +354,7 @@ class TestConfigurator {
   CoreEnd2endTest& test_;
   ChannelArgs client_args_ = ChannelArgs().Set(
       GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, GRPC_COMPRESS_NONE);
-  ChannelArgs server_args_ = ChannelArgs().Set(
+  ChannelArgs server_args_ = CoreEnd2endTest::DefaultServerArgs().Set(
       GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, GRPC_COMPRESS_NONE);
   grpc_compression_algorithm expected_algorithm_from_client_ =
       GRPC_COMPRESS_NONE;
@@ -292,14 +362,16 @@ class TestConfigurator {
       GRPC_COMPRESS_NONE;
 };
 
-CORE_END2END_TEST(Http2SingleHopTest, DisabledAlgorithmDecompressInCore) {
+CORE_END2END_TEST(Http2SingleHopTests, DisabledAlgorithmDecompressInCore) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .DisableAlgorithmAtServer(GRPC_COMPRESS_GZIP)
       .DisabledAlgorithmTest();
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, DisabledAlgorithmDecompressInApp) {
+CORE_END2END_TEST(Http2SingleHopTests, DisabledAlgorithmDecompressInApp) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .DisableAlgorithmAtServer(GRPC_COMPRESS_GZIP)
@@ -307,16 +379,18 @@ CORE_END2END_TEST(Http2SingleHopTest, DisabledAlgorithmDecompressInApp) {
       .DisabledAlgorithmTest();
 }
 
-CORE_END2END_TEST(Http2SingleHopTest,
+CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithExceptionallyUncompressedPayloadDecompressInCore) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .RequestWithPayload(GRPC_WRITE_NO_COMPRESS, {});
 }
 
-CORE_END2END_TEST(Http2SingleHopTest,
+CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithExceptionallyUncompressedPayloadDecompressInApp) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
@@ -325,26 +399,30 @@ CORE_END2END_TEST(Http2SingleHopTest,
       .RequestWithPayload(GRPC_WRITE_NO_COMPRESS, {});
 }
 
-CORE_END2END_TEST(Http2SingleHopTest,
+CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithUncompressedPayloadDecompressInCore) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this).RequestWithPayload(0, {});
 }
 
-CORE_END2END_TEST(Http2SingleHopTest,
+CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithUncompressedPayloadDecompressInApp) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this).DecompressInApp().RequestWithPayload(0, {});
 }
 
-CORE_END2END_TEST(Http2SingleHopTest,
+CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithCompressedPayloadDecompressInCore) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .RequestWithPayload(0, {});
 }
 
-CORE_END2END_TEST(Http2SingleHopTest,
+CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithCompressedPayloadDecompressInApp) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
@@ -354,16 +432,18 @@ CORE_END2END_TEST(Http2SingleHopTest,
       .RequestWithPayload(0, {});
 }
 
-CORE_END2END_TEST(Http2SingleHopTest,
+CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithSendMessageBeforeInitialMetadataDecompressInCore) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .RequestWithSendMessageBeforeInitialMetadata();
 }
 
-CORE_END2END_TEST(Http2SingleHopTest,
+CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithSendMessageBeforeInitialMetadataDecompressInApp) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
@@ -373,11 +453,13 @@ CORE_END2END_TEST(Http2SingleHopTest,
       .RequestWithSendMessageBeforeInitialMetadata();
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, RequestWithServerLevelDecompressInCore) {
+CORE_END2END_TEST(Http2SingleHopTests, RequestWithServerLevelDecompressInCore) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this).RequestWithServerLevel(GRPC_COMPRESS_LEVEL_HIGH);
 }
 
-CORE_END2END_TEST(Http2SingleHopTest, RequestWithServerLevelDecompressInApp) {
+CORE_END2END_TEST(Http2SingleHopTests, RequestWithServerLevelDecompressInApp) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .DecompressInApp()
       .ExpectedAlgorithmFromServer(GRPC_COMPRESS_DEFLATE)
@@ -385,15 +467,17 @@ CORE_END2END_TEST(Http2SingleHopTest, RequestWithServerLevelDecompressInApp) {
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInCore) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this).RequestWithPayload(
       0, {{"grpc-internal-encoding-request", "gzip"}});
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInApp) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .DecompressInApp()
       .ExpectedAlgorithmFromClient(GRPC_COMPRESS_GZIP)
@@ -401,16 +485,18 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInCore) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
       .RequestWithPayload(0, {{"grpc-internal-encoding-request", "gzip"}});
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInApp) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
       .DecompressInApp()
@@ -419,20 +505,78 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInCore) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
       .RequestWithPayload(0, {{"grpc-internal-encoding-request", "identity"}});
 }
 
 CORE_END2END_TEST(
-    Http2SingleHopTest,
+    Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInApp) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
       .DecompressInApp()
       .RequestWithPayload(0, {{"grpc-internal-encoding-request", "identity"}});
+}
+
+// Note: This test currently assumes that the compression level is tied to a
+// specific algorithm. When the semantics around compression level become more
+// clear, this would need to change.
+CORE_END2END_TEST(Http2SingleHopTests,
+                  RequestWithDefaultHighLevelDecompressInCore) {
+  SKIP_IF_VIRTUAL();
+  TestConfigurator(*this)
+      .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_HIGH)
+      .DecompressInApp()
+      .ExpectedAlgorithmFromServer(GRPC_COMPRESS_DEFLATE)
+      .RequestWithPayload(0, {});
+}
+
+CORE_END2END_TEST(Http2SingleHopTests,
+                  RequestWithDefaultMediumLevelDecompressInCore) {
+  SKIP_IF_VIRTUAL();
+  TestConfigurator(*this)
+      .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_MED)
+      .DecompressInApp()
+      .ExpectedAlgorithmFromServer(GRPC_COMPRESS_DEFLATE)
+      .RequestWithPayload(0, {});
+}
+
+CORE_END2END_TEST(Http2SingleHopTests,
+                  RequestWithDefaultLowLevelDecompressInCore) {
+  SKIP_IF_VIRTUAL();
+  TestConfigurator(*this)
+      .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_LOW)
+      .DecompressInApp()
+      .ExpectedAlgorithmFromServer(GRPC_COMPRESS_GZIP)
+      .RequestWithPayload(0, {});
+}
+
+CORE_END2END_TEST(Http2SingleHopTests,
+                  RequestWithDefaultNoneLevelDecompressInCore) {
+  SKIP_IF_VIRTUAL();
+  TestConfigurator(*this)
+      .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_NONE)
+      .DecompressInApp()
+      .ExpectedAlgorithmFromServer(GRPC_COMPRESS_NONE)
+      .RequestWithPayload(0, {});
+}
+
+CORE_END2END_TEST(Http2SingleHopTests, CompressedBitWithIdentityFails) {
+  SKIP_IF_VIRTUAL();
+  TestConfigurator(*this).CompressedBitWithIdentityTest();
+}
+
+CORE_END2END_TEST(Http2SingleHopTests, ClientUnsupportedAlgorithmFails) {
+  SKIP_IF_VIRTUAL();
+  TestConfigurator(*this)
+      .DisableAlgorithmAtClient(GRPC_COMPRESS_GZIP)
+      .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
+      .ClientUnsupportedAlgorithmTest();
 }
 
 }  // namespace

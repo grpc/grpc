@@ -14,6 +14,7 @@
 """Bazel rule tests of bazel/python_rules.bzl"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@rules_python//python:py_info.bzl", "PyInfo")
 
 def _assert_in(env, item, container):
     asserts.true(
@@ -38,19 +39,21 @@ def _py_proto_library_provider_contents_test_impl(ctx):
     ]
 
     _assert_in(env, "helloworld_pb2.py", files)
-    _assert_in(env, "helloworld_pb2.pyi", files)
     _assert_in(env, "subdir/hello_dep_pb2.py", files)
-    _assert_in(env, "subdir/hello_dep_pb2.pyi", files)
 
     _assert_in(env, "helloworld_pb2.py", runfiles)
-    _assert_in(env, "helloworld_pb2.pyi", runfiles)
     _assert_in(env, "subdir/hello_dep_pb2.py", runfiles)
-    _assert_in(env, "subdir/hello_dep_pb2.pyi", runfiles)
 
     _assert_in(env, "helloworld_pb2.py", py_info_transitive_sources)
-    _assert_in(env, "helloworld_pb2.pyi", py_info_transitive_sources)
     _assert_in(env, "subdir/hello_dep_pb2.py", py_info_transitive_sources)
-    _assert_in(env, "subdir/hello_dep_pb2.pyi", py_info_transitive_sources)
+
+    # TODO: Enable after py_proto_library supports outputting .pyi files.
+    # _assert_in(env, "helloworld_pb2.pyi", files)
+    # _assert_in(env, "subdir/hello_dep_pb2.pyi", files)
+    # _assert_in(env, "helloworld_pb2.pyi", runfiles)
+    # _assert_in(env, "subdir/hello_dep_pb2.pyi", runfiles)
+    # _assert_in(env, "helloworld_pb2.pyi", py_info_transitive_sources)
+    # _assert_in(env, "subdir/hello_dep_pb2.pyi", py_info_transitive_sources)
 
     return analysistest.end(env)
 

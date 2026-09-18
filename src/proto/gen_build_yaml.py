@@ -37,6 +37,16 @@ def update_deps(key, proto_filename, deps, deps_external, is_trans, visited):
                         deps_external[key] = []
                     deps_external[key].append(imp_proto[:-6])
                     continue
+                if imp_proto.startswith("xds/"):
+                    if key not in deps_external:
+                        deps_external[key] = []
+                    deps_external[key].append(imp_proto[:-3])
+                    continue
+                if imp_proto.startswith("envoy/"):
+                    if key not in deps_external:
+                        deps_external[key] = []
+                    deps_external[key].append(imp_proto[:-5])
+                    continue
                 # In case that the path is changed by copybara,
                 # revert the change to avoid file error.
                 if imp_proto.startswith("third_party/grpc"):

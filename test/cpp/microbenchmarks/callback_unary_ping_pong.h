@@ -21,12 +21,11 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_UNARY_PING_PONG_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_UNARY_PING_PONG_H
 
-#include <sstream>
-
 #include <benchmark/benchmark.h>
 
-#include "absl/log/check.h"
+#include <sstream>
 
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -48,7 +47,7 @@ inline void SendCallbackUnaryPingPong(
   stub_->async()->Echo(
       cli_ctx, request, response,
       [state, cli_ctx, request, response, stub_, done, mu, cv](Status s) {
-        CHECK(s.ok());
+        GRPC_CHECK(s.ok());
         if (state->KeepRunning()) {
           cli_ctx->~ClientContext();
           new (cli_ctx) ClientContext();
@@ -92,8 +91,8 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
     cv.wait(l);
   }
   fixture.reset();
-  state.SetBytesProcessed(request_msgs_size * state.iterations() +
-                          response_msgs_size * state.iterations());
+  state.SetBytesProcessed((request_msgs_size * state.iterations()) +
+                          (response_msgs_size * state.iterations()));
 }
 
 }  // namespace testing

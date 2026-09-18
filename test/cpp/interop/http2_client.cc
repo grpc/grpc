@@ -18,24 +18,23 @@
 
 #include "test/cpp/interop/http2_client.h"
 
-#include <thread>
-
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
+#include <thread>
+
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace testing {
@@ -85,7 +84,7 @@ bool Http2Client::DoRstAfterHeader() {
 
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
-  CHECK(!response.has_payload());  // no data should be received
+  GRPC_CHECK(!response.has_payload());  // no data should be received
 
   VLOG(2) << "Done testing reset stream after header";
   return true;
@@ -107,7 +106,7 @@ bool Http2Client::DoRstDuringData() {
 
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
-  CHECK(!response.has_payload());  // no data should be received
+  GRPC_CHECK(!response.has_payload());  // no data should be received
 
   VLOG(2) << "Done testing reset stream during data";
   return true;
@@ -117,7 +116,8 @@ bool Http2Client::DoGoaway() {
   VLOG(2) << "Sending two RPCs and expecting goaway";
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+  GRPC_CHECK(response.payload().body() ==
+             std::string(kLargeResponseSize, '\0'));
 
   // Sleep for one second to give time for client to receive goaway frame.
   gpr_timespec sleep_time = gpr_time_add(
@@ -126,7 +126,8 @@ bool Http2Client::DoGoaway() {
 
   response.Clear();
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+  GRPC_CHECK(response.payload().body() ==
+             std::string(kLargeResponseSize, '\0'));
   VLOG(2) << "Done testing goaway";
   return true;
 }
@@ -135,7 +136,8 @@ bool Http2Client::DoPing() {
   VLOG(2) << "Sending RPC and expecting ping";
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+  GRPC_CHECK(response.payload().body() ==
+             std::string(kLargeResponseSize, '\0'));
   VLOG(2) << "Done testing ping";
   return true;
 }
@@ -144,7 +146,8 @@ void Http2Client::MaxStreamsWorker(
     const std::shared_ptr<grpc::Channel>& /*channel*/) {
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+  GRPC_CHECK(response.payload().body() ==
+             std::string(kLargeResponseSize, '\0'));
 }
 
 bool Http2Client::DoMaxStreams() {
@@ -154,7 +157,8 @@ bool Http2Client::DoMaxStreams() {
   // setting is received
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+  GRPC_CHECK(response.payload().body() ==
+             std::string(kLargeResponseSize, '\0'));
 
   std::vector<std::thread> test_threads;
   test_threads.reserve(10);
@@ -187,7 +191,7 @@ ABSL_FLAG(std::string, test_case, "rst_after_header",
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  CHECK(absl::GetFlag(FLAGS_server_port));
+  GRPC_CHECK(absl::GetFlag(FLAGS_server_port));
   const int host_port_buf_size = 1024;
   char host_port[host_port_buf_size];
   snprintf(host_port, host_port_buf_size, "%s:%d",
@@ -195,7 +199,7 @@ int main(int argc, char** argv) {
            absl::GetFlag(FLAGS_server_port));
   std::shared_ptr<grpc::Channel> channel =
       grpc::CreateTestChannel(host_port, grpc::testing::INSECURE);
-  CHECK(channel->WaitForConnected(gpr_time_add(
+  GRPC_CHECK(channel->WaitForConnected(gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(300, GPR_TIMESPAN))));
   grpc::testing::Http2Client client(channel);
   LOG(INFO) << "Testing case: " << absl::GetFlag(FLAGS_test_case);

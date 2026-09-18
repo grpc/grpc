@@ -5,7 +5,11 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
-load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//upb/bazel:copts.bzl", "UPB_DEFAULT_COPTS", "UPB_DEFAULT_FEATURES")
+
+package(default_applicable_licenses = ["//:license"])
 
 cc_library(
     name = "text",
@@ -17,17 +21,19 @@ cc_library(
         "options.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
-        "//upb:base",
-        "//upb:eps_copy_input_stream",
-        "//upb:message",
-        "//upb:port",
-        "//upb:reflection",
+        "//upb/base",
+        "//upb/hash",
         "//upb/lex",
+        "//upb/message",
         "//upb/message:internal",
         "//upb/message:types",
+        "//upb/port",
+        "//upb/reflection",
+        "//upb/wire:eps_copy_input_stream",
     ],
 )
 
@@ -41,19 +47,19 @@ cc_library(
         "options.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
-        "//upb:base",
-        "//upb:eps_copy_input_stream",
-        "//upb:message",
-        "//upb:mini_table",
-        "//upb:port",
+        "//upb/base",
         "//upb/lex",
+        "//upb/message",
         "//upb/message:internal",
         "//upb/message:iterator",
         "//upb/message:types",
+        "//upb/mini_table",
         "//upb/mini_table:internal",
+        "//upb/port",
     ],
 )
 
@@ -67,16 +73,17 @@ cc_library(
         "options.h",
     ],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
         "//third_party/utf8_range",
-        "//upb:base",
-        "//upb:eps_copy_input_stream",
-        "//upb:message",
-        "//upb:port",
-        "//upb:wire_reader",
+        "//upb/base",
         "//upb/lex",
+        "//upb/message",
         "//upb/message:internal",
+        "//upb/port",
+        "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:reader",
     ],
 )
 
@@ -87,23 +94,22 @@ cc_test(
     ],
     deps = [
         ":debug",
-        "//upb:base",
-        "//upb:eps_copy_input_stream",
-        "//upb:mem",
-        "//upb:message",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:wire_reader",
+        "//upb/base",
+        "//upb/mem",
+        "//upb/message",
         "//upb/message:internal",
+        "//upb/mini_table",
+        "//upb/port",
         "//upb/test:test_proto_upb_minitable",
         "//upb/test:test_upb_proto",
-        "@com_google_absl//absl/log:absl_log",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:reader",
+        "@abseil-cpp//absl/log:absl_log",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
-# begin:github_only
 filegroup(
     name = "source_files",
     srcs = glob(
@@ -117,4 +123,3 @@ filegroup(
         "//upb/cmake:__pkg__",
     ],
 )
-# end:github_only

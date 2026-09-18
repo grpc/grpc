@@ -27,13 +27,13 @@
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/gcp/transport_security_common.upb.h"
 
-// C struct coresponding to protobuf message RpcProtocolVersions.Version
+// C struct corresponding to protobuf message RpcProtocolVersions.Version
 typedef struct _grpc_gcp_RpcProtocolVersions_Version {
   uint32_t major;
   uint32_t minor;
 } grpc_gcp_rpc_protocol_versions_version;
 
-// C struct coresponding to protobuf message RpcProtocolVersions
+// C struct corresponding to protobuf message RpcProtocolVersions
 typedef struct _grpc_gcp_RpcProtocolVersions {
   grpc_gcp_rpc_protocol_versions_version max_rpc_version;
   grpc_gcp_rpc_protocol_versions_version min_rpc_version;

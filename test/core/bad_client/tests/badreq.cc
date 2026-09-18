@@ -16,13 +16,13 @@
 //
 //
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 
 #include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 #define PFX_STR                      \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
@@ -31,16 +31,13 @@
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    CHECK(grpc_completion_queue_next(
-              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-              .type == GRPC_QUEUE_TIMEOUT);
+    GRPC_CHECK(grpc_completion_queue_next(
+                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-
+TEST(BadreqTest, InvalidContentType) {
   // invalid content type
   GRPC_RUN_BAD_CLIENT_TEST(
       verifier, nullptr,
@@ -56,7 +53,9 @@ int main(int argc, char** argv) {
       "\x10\x02te\x08trailers"
       "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
       GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(BadreqTest, InvalidTe) {
   // invalid te
   GRPC_RUN_BAD_CLIENT_TEST(
       verifier, nullptr,
@@ -74,7 +73,9 @@ int main(int argc, char** argv) {
       "frobnicate"
       "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
       GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(BadreqTest, TwoPathHeaders) {
   // two path headers
   GRPC_RUN_BAD_CLIENT_TEST(
       verifier, nullptr,
@@ -92,7 +93,9 @@ int main(int argc, char** argv) {
       "\x10\x02te\x08trailers"
       "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
       GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(BadreqTest, BadAcceptEncodingAlgorithm) {
   // bad accept-encoding algorithm
   GRPC_RUN_BAD_CLIENT_TEST(
       verifier, nullptr,
@@ -109,7 +112,9 @@ int main(int argc, char** argv) {
       "\x10\x02te\x08trailers"
       "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
       GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(BadreqTest, BadGrpcEncodingAlgorithm) {
   // bad grpc-encoding algorithm
   GRPC_RUN_BAD_CLIENT_TEST(
       verifier, nullptr,
@@ -127,7 +132,13 @@ int main(int argc, char** argv) {
       "\x10\x02te\x08trailers"
       "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
       GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
+  int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return result;
 }

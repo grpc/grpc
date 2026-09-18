@@ -18,12 +18,11 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
-
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/manual_constructor.h"
 #include "src/core/util/ref_counted.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -32,7 +31,7 @@ namespace {
 class Foo : public DualRefCounted<Foo> {
  public:
   Foo() = default;
-  ~Foo() override { CHECK(shutting_down_); }
+  ~Foo() override { GRPC_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 
@@ -74,6 +73,21 @@ TEST(DualRefCounted, RefIfNonZero) {
   foo->WeakUnref();
 }
 
+TEST(DualRefCounted, WeakRefIfNonZero) {
+  Foo* foo = new Foo();
+  foo->WeakRef().release();
+  {
+    WeakRefCountedPtr<Foo> foop = foo->WeakRefIfNonZero();
+    EXPECT_NE(foop.get(), nullptr);
+  }
+  foo->Unref();
+  {
+    WeakRefCountedPtr<Foo> foop = foo->WeakRefIfNonZero();
+    EXPECT_NE(foop.get(), nullptr);
+  }
+  foo->WeakUnref();
+}
+
 TEST(DualRefCounted, RefAndWeakRefAsSubclass) {
   class Bar : public Foo {};
   Foo* foo = new Bar();
@@ -95,7 +109,7 @@ TEST(DualRefCounted, RefAndWeakRefAsSubclass) {
 class FooWithTracing : public DualRefCounted<FooWithTracing> {
  public:
   FooWithTracing() : DualRefCounted("FooWithTracing") {}
-  ~FooWithTracing() override { CHECK(shutting_down_); }
+  ~FooWithTracing() override { GRPC_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 

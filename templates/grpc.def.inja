@@ -1,0 +1,4 @@
+EXPORTS
+## for api in c_apis
+    {{api.name}}
+## endfor

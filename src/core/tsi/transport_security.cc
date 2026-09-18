@@ -18,12 +18,11 @@
 
 #include "src/core/tsi/transport_security.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <stdlib.h>
+#include <string.h>
 
 // --- tsi_result common implementation. ---
 
@@ -233,10 +232,10 @@ tsi_result tsi_handshaker_next(
                             handshaker_result, cb, user_data, error);
 }
 
-void tsi_handshaker_shutdown(tsi_handshaker* self) {
+void tsi_handshaker_shutdown(tsi_handshaker* self, bool peer_closed) {
   if (self == nullptr || self->vtable == nullptr) return;
   if (self->vtable->shutdown != nullptr) {
-    self->vtable->shutdown(self);
+    self->vtable->shutdown(self, peer_closed);
   }
   self->handshake_shutdown = true;
 }

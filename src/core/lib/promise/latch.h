@@ -15,29 +15,35 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_LATCH_H
 #define GRPC_SRC_CORE_LIB_PROMISE_LATCH_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <atomic>
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
-// Latch provides a single set waitable object.
-// Initially the Latch is unset.
-// It can be waited upon by the Wait method, which produces a Promise that
-// resolves when the Latch is Set to a value of type T.
-// Latches only work correctly within a single activity.
+// Latches only work correctly within a single activity or a single party. If
+// you need something that works across activities/parties refer to
+// inter_activity_latch.h
+//
+// Latch provides a single set waitable object. We use Latch when we want to
+// wait for a particular object to be set. This object would typically be set by
+// some promise getting resolved.
+//
+// Initially the value Latch is unset.
+//
+// We can wait for Latch to be set using either the Wait or WaitAndCopy method.
+// These two methods produce Promises that resolves when the Latch is value Set
+// to a value of type T.
 template <typename T>
 class Latch {
  public:
@@ -48,12 +54,12 @@ class Latch {
   Latch(Latch&& other) noexcept
       : value_(std::move(other.value_)), has_value_(other.has_value_) {
 #ifndef NDEBUG
-    DCHECK(!other.has_had_waiters_);
+    GRPC_DCHECK(!other.has_had_waiters_);
 #endif
   }
   Latch& operator=(Latch&& other) noexcept {
 #ifndef NDEBUG
-    DCHECK(!other.has_had_waiters_);
+    GRPC_DCHECK(!other.has_had_waiters_);
 #endif
     value_ = std::move(other.value_);
     has_value_ = other.has_value_;
@@ -98,7 +104,7 @@ class Latch {
   void Set(T value) {
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugTag() << "Set " << StateString();
-    DCHECK(!has_value_);
+    GRPC_DCHECK(!has_value_);
     value_ = std::move(value);
     has_value_ = true;
     waiter_.Wake();
@@ -119,7 +125,7 @@ class Latch {
 
   // The value stored (if has_value_ is true), otherwise some random value, we
   // don't care.
-  // Why not absl::optional<>? Writing things this way lets us compress
+  // Why not std::optional<>? Writing things this way lets us compress
   // has_value_ with waiter_ and leads to some significant memory savings for
   // some scenarios.
   GPR_NO_UNIQUE_ADDRESS T value_;
@@ -141,12 +147,12 @@ class Latch<void> {
   Latch& operator=(const Latch&) = delete;
   Latch(Latch&& other) noexcept : is_set_(other.is_set_) {
 #ifndef NDEBUG
-    DCHECK(!other.has_had_waiters_);
+    GRPC_DCHECK(!other.has_had_waiters_);
 #endif
   }
   Latch& operator=(Latch&& other) noexcept {
 #ifndef NDEBUG
-    DCHECK(!other.has_had_waiters_);
+    GRPC_DCHECK(!other.has_had_waiters_);
 #endif
     is_set_ = other.is_set_;
     return *this;
@@ -172,7 +178,7 @@ class Latch<void> {
   void Set() {
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugTag() << "Set " << StateString();
-    DCHECK(!is_set_);
+    GRPC_DCHECK(!is_set_);
     is_set_ = true;
     waiter_.Wake();
   }

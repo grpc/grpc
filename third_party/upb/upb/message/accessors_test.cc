@@ -333,9 +333,7 @@ TEST(GeneratedCode, SubMessage) {
                          new_nested_message);
 
   upb_Message* mutable_message = upb_Message_GetOrCreateMutableMessage(
-      UPB_UPCAST(msg),
-      &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
-      optional_message_field, arena);
+      UPB_UPCAST(msg), optional_message_field, arena);
   EXPECT_EQ(
       true,
       protobuf_test_messages_proto2_TestAllTypesProto2_optional_nested_message(
@@ -408,17 +406,24 @@ TEST(GeneratedCode, RepeatedMessage) {
 
   const upb_MiniTableField* repeated_nested_message_field =
       find_proto2_field(kFieldOptionalRepeatedNestedMessage);
-  upb_Message* nested_message = (upb_Message*)
+  upb_Message* msg1 = (upb_Message*)
+      protobuf_test_messages_proto2_TestAllTypesProto2_NestedMessage_new(arena);
+  upb_Message* msg2 = (upb_Message*)
       protobuf_test_messages_proto2_TestAllTypesProto2_NestedMessage_new(arena);
 
   upb_Array* array = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), repeated_nested_message_field, arena);
-  upb_MessageValue new_value;
-  new_value.msg_val = nested_message;
-  EXPECT_TRUE(upb_Array_Append(array, new_value, arena));
+  upb_MessageValue val1;
+  val1.msg_val = msg1;
+  upb_MessageValue val2;
+  val2.msg_val = msg2;
+  EXPECT_TRUE(upb_Array_Append(array, val1, arena));
+  EXPECT_TRUE(upb_Array_Append(array, val2, arena));
 
-  EXPECT_EQ(nested_message, upb_Array_GetMutable(array, 0).msg);
-  EXPECT_EQ(nested_message, upb_Array_Get(array, 0).msg_val);
+  EXPECT_EQ(msg1, upb_Array_GetMutable(array, 0));
+  EXPECT_EQ(msg1, upb_Array_Get(array, 0).msg_val);
+  EXPECT_EQ(msg2, upb_Array_GetMutable(array, 1));
+  EXPECT_EQ(msg2, upb_Array_Get(array, 1).msg_val);
 
   upb_Arena_Free(arena);
 }
@@ -431,13 +436,9 @@ TEST(GeneratedCode, GetMutableMessage) {
   const upb_MiniTableField* optional_message_field =
       find_proto2_field(kFieldOptionalNestedMessage);
   upb_Message* msg1 = upb_Message_GetOrCreateMutableMessage(
-      UPB_UPCAST(msg),
-      &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
-      optional_message_field, arena);
+      UPB_UPCAST(msg), optional_message_field, arena);
   upb_Message* msg2 = upb_Message_GetOrCreateMutableMessage(
-      UPB_UPCAST(msg),
-      &protobuf_0test_0messages__proto2__TestAllTypesProto2_msg_init,
-      optional_message_field, arena);
+      UPB_UPCAST(msg), optional_message_field, arena);
   // Verify that newly constructed sub message is stored in msg.
   EXPECT_EQ(msg1, msg2);
 

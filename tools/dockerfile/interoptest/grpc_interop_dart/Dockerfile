@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM dart:stable
+# Updated: 2025-11-18
+
+FROM dart:3.10.0-sdk
 
 # Define the default command.
 CMD ["bash"]

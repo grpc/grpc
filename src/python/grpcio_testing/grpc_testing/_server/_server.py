@@ -135,12 +135,9 @@ class _Serverish(_common.Serverish):
 def _deadline_and_handler(requests_closed, time, timeout):
     if timeout is None:
         return None, _handler.handler_without_deadline(requests_closed)
-    else:
-        deadline = time.time() + timeout
-        handler = _handler.handler_with_deadline(
-            requests_closed, time, deadline
-        )
-        return deadline, handler
+    deadline = time.time() + timeout
+    handler = _handler.handler_with_deadline(requests_closed, time, deadline)
+    return deadline, handler
 
 
 class _Server(grpc_testing.Server):

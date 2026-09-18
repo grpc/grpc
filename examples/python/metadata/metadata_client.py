@@ -13,8 +13,6 @@
 # limitations under the License.
 """Example gRPC client that gets/sets metadata (HTTP2 headers)"""
 
-from __future__ import print_function
-
 import logging
 
 import grpc
@@ -31,10 +29,10 @@ def run():
         response, call = stub.SayHello.with_call(
             helloworld_pb2.HelloRequest(name="you"),
             metadata=(
-                ("initial-metadata-1", "The value should be str"),
+                ("initial-metadata-1", "The value must be str"),
                 (
                     "binary-metadata-bin",
-                    b"With -bin surffix, the value can be bytes",
+                    b"With -bin surffix, the value must be bytes",
                 ),
                 ("accesstoken", "gRPC Python is great"),
             ),

@@ -15,17 +15,12 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
 #define GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <string>
+#include <type_traits>
 #include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
@@ -34,6 +29,10 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/util/construct_destruct.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -60,6 +59,13 @@ struct Done<StatusFlag> {
   }
 };
 
+template <>
+struct Done<Success> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static StatusFlag Make(bool cancelled) {
+    return StatusFlag(!cancelled);
+  }
+};
+
 template <typename T, typename SfinaeVoid = void>
 struct NextValueTraits;
 
@@ -79,17 +85,17 @@ struct NextValueTraits<T, absl::void_t<typename T::value_type>> {
     return NextValueType::kEndOfStream;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value& MutableValue(T& t) {
-    return *t;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value&& TakeValue(T& t) {
+    return std::move(*t);
   }
 };
 
 template <typename T>
-struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
+struct NextValueTraits<ValueOrFailure<std::optional<T>>> {
   using Value = T;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(
-      const ValueOrFailure<absl::optional<T>>& t) {
+      const ValueOrFailure<std::optional<T>>& t) {
     if (t.ok()) {
       if (t.value().has_value()) return NextValueType::kValue;
       return NextValueType::kEndOfStream;
@@ -97,9 +103,9 @@ struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
     return NextValueType::kError;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value& MutableValue(
-      ValueOrFailure<absl::optional<T>>& t) {
-    return **t;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value&& TakeValue(
+      ValueOrFailure<std::optional<T>>& t) {
+    return std::move(**t);
   }
 };
 
@@ -113,14 +119,16 @@ class ForEach {
   using ActionFactory =
       promise_detail::RepeatedPromiseFactory<ReaderResultValue, Action>;
   using ActionPromise = typename ActionFactory::Promise;
+  using ActionResult =
+      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
 
  public:
-  using Result =
-      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader reader, Action action,
+  using Result = decltype(Done<ActionResult>::Make(false));
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader&& reader, Action&& action,
                                                DebugLocation whence = {})
-      : reader_(std::move(reader)),
-        action_factory_(std::move(action)),
+      : reader_(std::forward<Reader>(reader)),
+        action_factory_(std::forward<Action>(action)),
         whence_(whence) {
     Construct(&reader_next_, reader_.Next());
   }
@@ -138,13 +146,13 @@ class ForEach {
       : reader_(std::move(other.reader_)),
         action_factory_(std::move(other.action_factory_)),
         whence_(other.whence_) {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    GRPC_DCHECK(reading_next_);
+    GRPC_DCHECK(other.reading_next_);
     Construct(&reader_next_, std::move(other.reader_next_));
   }
   ForEach& operator=(ForEach&& other) noexcept {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    GRPC_DCHECK(reading_next_);
+    GRPC_DCHECK(other.reading_next_);
     reader_ = std::move(other.reader_);
     action_factory_ = std::move(other.action_factory_);
     reader_next_ = std::move(other.reader_next_);
@@ -157,10 +165,33 @@ class ForEach {
     return PollAction();
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* for_each_promise =
+        grpc_channelz_v2_Promise_mutable_for_each_promise(promise_proto, arena);
+
+    grpc_channelz_v2_Promise_ForEach_set_reader_factory(
+        for_each_promise, StdStringToUpbString(TypeName<Reader>()));
+    grpc_channelz_v2_Promise_ForEach_set_action_factory(
+        for_each_promise, StdStringToUpbString(TypeName<ActionFactory>()));
+    if (reading_next_) {
+      PromiseAsProto(reader_next_,
+                     grpc_channelz_v2_Promise_ForEach_mutable_reader_promise(
+                         for_each_promise, arena),
+                     arena);
+    } else {
+      PromiseAsProto(in_action_.promise,
+                     grpc_channelz_v2_Promise_ForEach_mutable_action_promise(
+                         for_each_promise, arena),
+                     arena);
+    }
+  }
+
  private:
   struct InAction {
-    InAction(ActionPromise promise, ReaderResult result)
-        : promise(std::move(promise)), result(std::move(result)) {}
+    InAction(ActionPromise&& promise, ReaderResult&& result)
+        : promise(std::forward<ActionPromise>(promise)),
+          result(std::forward<ReaderResult>(result)) {}
     ActionPromise promise;
     ReaderResult result;
   };
@@ -181,7 +212,7 @@ class ForEach {
               << DebugTag() << " PollReaderNext: got value";
           Destruct(&reader_next_);
           auto action = action_factory_.Make(
-              std::move(NextValueTraits<ReaderResult>::MutableValue(*p)));
+              NextValueTraits<ReaderResult>::TakeValue(*p));
           Construct(&in_action_, std::move(action), std::move(*p));
           reading_next_ = false;
           return PollAction();
@@ -231,10 +262,11 @@ class ForEach {
 
 /// For each item acquired by calling Reader::Next, run the promise Action.
 template <typename Reader, typename Action>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION for_each_detail::ForEach<Reader, Action>
-ForEach(Reader reader, Action action, DebugLocation whence = {}) {
-  return for_each_detail::ForEach<Reader, Action>(std::move(reader),
-                                                  std::move(action), whence);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline for_each_detail::ForEach<Reader,
+                                                                     Action>
+ForEach(Reader&& reader, Action&& action, DebugLocation whence = {}) {
+  return for_each_detail::ForEach<std::decay_t<Reader>, std::decay_t<Action>>(
+      std::forward<Reader>(reader), std::forward<Action>(action), whence);
 }
 
 }  // namespace grpc_core

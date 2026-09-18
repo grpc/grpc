@@ -19,11 +19,10 @@
 #ifndef GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
 #define GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace internal {

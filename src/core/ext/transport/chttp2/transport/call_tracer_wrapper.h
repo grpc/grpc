@@ -19,7 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CALL_TRACER_WRAPPER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CALL_TRACER_WRAPPER_H
 
-#include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 
 struct grpc_chttp2_stream;
@@ -43,20 +42,25 @@ class Chttp2CallTracerWrapper final : public CallTracerInterface {
   // Everything else is a no-op.
   void RecordSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+    MutateSendTrailingMetadata(send_trailing_metadata);
+  }
+  void MutateSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-  void RecordSendMessage(const SliceBuffer& /*send_message*/) override {}
+  void RecordSendMessage(const Message& /*send_message*/) override {}
   void RecordSendCompressedMessage(
-      const SliceBuffer& /*send_compressed_message*/) override {}
+      const Message& /*send_compressed_message*/) override {}
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* /*recv_initial_metadata*/) override {}
-  void RecordReceivedMessage(const SliceBuffer& /*recv_message*/) override {}
+  void RecordReceivedMessage(const Message& /*recv_message*/) override {}
   void RecordReceivedDecompressedMessage(
-      const SliceBuffer& /*recv_decompressed_message*/) override {}
+      const Message& /*recv_decompressed_message*/) override {}
   void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   void RecordAnnotation(absl::string_view /*annotation*/) override {}
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
   std::string TraceId() override { return ""; }

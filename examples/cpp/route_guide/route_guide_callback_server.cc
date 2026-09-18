@@ -16,6 +16,12 @@
  *
  */
 
+#include <grpc/grpc.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -24,17 +30,11 @@
 #include <string>
 #include <thread>
 
+#include "helper.h"
 #include "absl/flags/parse.h"
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
-#include "helper.h"
-
-#include <grpc/grpc.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
 #ifdef BAZEL_BUILD
 #include "examples/protos/route_guide.grpc.pb.h"
 #else
@@ -311,9 +311,9 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
   std::vector<RouteNote> received_notes_ ABSL_GUARDED_BY(mu_);
 };
 
-void RunServer(const std::string& db_path) {
+void RunServer(const std::string& db) {
   std::string server_address("0.0.0.0:50051");
-  RouteGuideImpl service(db_path);
+  RouteGuideImpl service(db);
 
   ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());

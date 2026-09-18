@@ -18,12 +18,12 @@
 
 #include "src/cpp/client/create_channel_internal.h"
 
+#include <grpcpp/channel.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <grpcpp/channel.h>
 
 namespace grpc {
 

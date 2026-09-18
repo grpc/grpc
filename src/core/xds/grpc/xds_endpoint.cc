@@ -16,21 +16,26 @@
 
 #include "src/core/xds/grpc/xds_endpoint.h"
 
-#include <vector>
+#include <string>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
+#include "src/core/util/string.h"
 
 namespace grpc_core {
 
 std::string XdsEndpointResource::Priority::Locality::ToString() const {
-  std::vector<std::string> endpoint_strings;
+  std::string result = "{name=";
+  StrAppend(result, name->human_readable_string().as_string_view());
+  StrAppend(result, ", lb_weight=");
+  StrAppend(result, std::to_string(lb_weight));
+  StrAppend(result, ", endpoints=[");
+  bool is_first = true;
   for (const EndpointAddresses& endpoint : endpoints) {
-    endpoint_strings.emplace_back(endpoint.ToString());
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, endpoint.ToString());
+    is_first = false;
   }
-  return absl::StrCat("{name=", name->human_readable_string().as_string_view(),
-                      ", lb_weight=", lb_weight, ", endpoints=[",
-                      absl::StrJoin(endpoint_strings, ", "), "]}");
+  StrAppend(result, "]}");
+  return result;
 }
 
 bool XdsEndpointResource::Priority::operator==(const Priority& other) const {
@@ -47,18 +52,20 @@ bool XdsEndpointResource::Priority::operator==(const Priority& other) const {
 }
 
 std::string XdsEndpointResource::Priority::ToString() const {
-  std::vector<std::string> locality_strings;
-  locality_strings.reserve(localities.size());
-  for (const auto& p : localities) {
-    locality_strings.emplace_back(p.second.ToString());
+  std::string result = "[";
+  bool is_first = true;
+  for (const auto& [_, locality] : localities) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, locality.ToString());
+    is_first = false;
   }
-  return absl::StrCat("[", absl::StrJoin(locality_strings, ", "), "]");
+  StrAppend(result, "]");
+  return result;
 }
 
 bool XdsEndpointResource::DropConfig::ShouldDrop(
     const std::string** category_name) {
-  for (size_t i = 0; i < drop_category_list_.size(); ++i) {
-    const auto& drop_category = drop_category_list_[i];
+  for (const auto& drop_category : drop_category_list_) {
     // Generate a random number in [0, 1000000).
     const uint32_t random = [&]() {
       MutexLock lock(&mu_);
@@ -73,25 +80,37 @@ bool XdsEndpointResource::DropConfig::ShouldDrop(
 }
 
 std::string XdsEndpointResource::DropConfig::ToString() const {
-  std::vector<std::string> category_strings;
+  std::string result = "{[";
+  bool is_first = true;
   for (const DropCategory& category : drop_category_list_) {
-    category_strings.emplace_back(
-        absl::StrCat(category.name, "=", category.parts_per_million));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, category.name);
+    StrAppend(result, "=");
+    StrAppend(result, std::to_string(category.parts_per_million));
+    is_first = false;
   }
-  return absl::StrCat("{[", absl::StrJoin(category_strings, ", "),
-                      "], drop_all=", drop_all_, "}");
+  StrAppend(result, "], drop_all=");
+  StrAppend(result, drop_all_ ? "true" : "false");
+  StrAppend(result, "}");
+  return result;
 }
 
 std::string XdsEndpointResource::ToString() const {
-  std::vector<std::string> priority_strings;
+  std::string result = "{priorities=[";
   for (size_t i = 0; i < priorities.size(); ++i) {
-    const Priority& priority = priorities[i];
-    priority_strings.emplace_back(
-        absl::StrCat("priority ", i, ": ", priority.ToString()));
+    if (i > 0) StrAppend(result, ", ");
+    StrAppend(result, "priority ");
+    StrAppend(result, std::to_string(i));
+    StrAppend(result, ": ");
+    StrAppend(result, priorities[i].ToString());
   }
-  return absl::StrCat(
-      "priorities=[", absl::StrJoin(priority_strings, ", "), "], drop_config=",
-      drop_config == nullptr ? "<null>" : drop_config->ToString());
+  StrAppend(result, "]");
+  if (drop_config != nullptr) {
+    StrAppend(result, ", drop_config=");
+    StrAppend(result, drop_config->ToString());
+  }
+  StrAppend(result, "}");
+  return result;
 }
 
 }  // namespace grpc_core

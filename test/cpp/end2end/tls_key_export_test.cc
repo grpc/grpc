@@ -12,18 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <string>
-#include <thread>  // NOLINT
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -31,12 +19,24 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include <memory>
+#include <string>
+#include <thread>  // NOLINT
+#include <vector>
+
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 extern "C" {
 #include <openssl/ssl.h>
@@ -129,9 +129,9 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   std::string CreateTmpFile() {
     char* name = nullptr;
     FILE* file_descriptor = gpr_tmpfile("GrpcTlsKeyLoggerTest", &name);
-    CHECK_EQ(fclose(file_descriptor), 0);
-    CHECK_NE(file_descriptor, nullptr);
-    CHECK_NE(name, nullptr);
+    GRPC_CHECK_EQ(fclose(file_descriptor), 0);
+    GRPC_CHECK_NE(file_descriptor, nullptr);
+    GRPC_CHECK_NE(name, nullptr);
     std::string name_to_return = name;
     gpr_free(name);
     return name_to_return;
@@ -256,6 +256,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 };
 
 TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Flakes on PH2");
   // Cover all valid statuses.
   for (int i = 0; i <= NUM_REQUESTS_PER_CHANNEL; ++i) {
     for (int j = 0; j < GetParam().num_listening_ports(); ++j) {

@@ -19,34 +19,17 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/port.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
-bool UseEventEngineClient() {
-// TODO(hork, eryu): Adjust the ifdefs accordingly when event engines become
-// available for other platforms.
-#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM) && \
-    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-  return grpc_core::IsEventEngineClientEnabled();
-#elif defined(GPR_WINDOWS) && !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-  return grpc_core::IsEventEngineClientEnabled();
-#elif GRPC_IOS_EVENT_ENGINE_CLIENT
-  return true;
-#else
-  return false;
-#endif
-}
+bool UseEventEngineClient() { return grpc_core::IsEventEngineClientEnabled(); }
 
 bool UseEventEngineListener() {
-// TODO(hork, eryu): Adjust the ifdefs accordingly when event engines become
-// available for other platforms.
-#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM) && \
-    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
   return grpc_core::IsEventEngineListenerEnabled();
-#else
-  return false;
-#endif
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+bool UsePollsetAlternative() {
+  return UseEventEngineClient() && UseEventEngineListener() &&
+         grpc_core::IsPollsetAlternativeEnabled();
+}
+
+}  // namespace grpc_event_engine::experimental

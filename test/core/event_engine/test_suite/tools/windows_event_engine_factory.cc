@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
+#include "absl/log/log.h"
 
 #ifdef GPR_WINDOWS
 
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 
 absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory() {
   return []() {
-    return std::make_unique<
+    return std::make_shared<
         grpc_event_engine::experimental::WindowsEventEngine>();
   };
 }
@@ -36,9 +36,9 @@ CustomEventEngineFactory() {
 #else
 
 absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory() {
-  CHECK(false) << "This tool was not built for Windows.";
+  LOG(FATAL) << "This tool was not built for Windows.";
 }
 
 #endif

@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/resolver")
+grpc_package(
+    name = "test/core/resolver",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -24,30 +31,19 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "absl/status:statusor",
+        "absl/strings:string_view",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:endpoint_addresses",
+        "//:gpr_platform",
         "//:parse_address",
         "//:sockaddr_utils",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "binder_resolver_test",
-    srcs = ["binder_resolver_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//src/core:grpc_resolver_binder",
+        "//:uri",
+        "//src/core:grpc_check",
+        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -59,27 +55,13 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
+    tags = [
+        # authority based dns uri's not supported
+        "grpc:fails-internally",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "dns_resolver_cooldown_test",
-    srcs = ["dns_resolver_cooldown_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//src/core:channel_args",
-        "//src/core:closure",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -90,11 +72,20 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
-    language = "C++",
     deps = [
+        "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_resolver",
+        "//:orphanable",
+        "//:uri",
+        "//:work_serializer",
+        "//src/core:default_event_engine",
+        "//src/core:iomgr_port",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -102,13 +93,30 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fake_resolver_test",
     srcs = ["fake_resolver_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
+    external_deps = [
+        "gtest",
+        "absl/container:inlined_vector",
+        "absl/status:statusor",
+        "absl/strings:str_format",
+        "absl/synchronization",
+    ],
     deps = [
+        "//:config",
+        "//:debug_location",
+        "//:endpoint_addresses",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_resolver",
         "//:grpc_resolver_fake",
+        "//:orphanable",
+        "//:parse_address",
+        "//:ref_counted_ptr",
+        "//:uri",
+        "//:work_serializer",
         "//src/core:channel_args",
+        "//src/core:default_event_engine",
+        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -120,13 +128,72 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:env",
         "//test/core/test_util:fake_udp_and_tcp_server",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_internal_proto_library(
+    name = "dns_resolver_fuzzer_proto",
+    srcs = ["dns_resolver_fuzzer.proto"],
+    deps = [
+        "//test/core/test_util:fuzz_config_vars_proto",
+        "//test/core/test_util:fuzzing_channel_args_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "dns_resolver_fuzzer_cc_proto",
+    deps = ["dns_resolver_fuzzer_proto"],
+)
+
+grpc_fuzz_test(
+    name = "dns_resolver_fuzzer",
+    srcs = ["dns_resolver_fuzzer.cc"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/log:check",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    deps = [
+        "dns_resolver_fuzzer_cc_proto",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_resolver",
+        "//:orphanable",
+        "//:uri",
+        "//:work_serializer",
+        "//src/core:channel_args",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:experiments",
+        "//src/core:grpc_check",
+        "//src/core:grpc_resolver_dns",
+        "//test/core/event_engine:aborting_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars_helpers",
+        "//test/core/test_util:fuzzing_channel_args",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )

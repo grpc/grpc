@@ -16,13 +16,18 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/compiler_bugs")
+grpc_package(
+    name = "test/core/compiler_bugs",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "miscompile_with_no_unique_address_test",
     srcs = ["miscompile_with_no_unique_address_test.cc"],
     external_deps = ["gtest"],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

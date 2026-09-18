@@ -1,5 +1,0 @@
-frames {
-  max_metadata_length: 4096
-  parse: "(??\201;[(\244(\'?\244\007"
-  absolute_max_metadata_length: 1073741824
-}

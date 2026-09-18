@@ -18,13 +18,13 @@
 #define GRPC_SRC_CORE_UTIL_LRU_CACHE_H
 
 #include <list>
+#include <optional>
 #include <tuple>
 #include <utility>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -35,11 +35,11 @@ template <typename Key, typename Value>
 class LruCache {
  public:
   explicit LruCache(size_t max_size) : max_size_(max_size) {
-    CHECK_GT(max_size, 0UL);
+    GRPC_CHECK_GT(max_size, 0UL);
   }
 
   // Returns the value for key, or nullopt if not present.
-  absl::optional<Value> Get(Key key);
+  std::optional<Value> Get(Key key);
 
   // If key is present in the cache, returns the corresponding value.
   // Otherwise, inserts a new entry in the map, calling create() to
@@ -51,6 +51,8 @@ class LruCache {
   // max_size entries, deletes least-recently-used entries to enforce
   // the new max size.
   void SetMaxSize(size_t max_size);
+
+  size_t max_size() const { return max_size_; }
 
  private:
   struct CacheEntry {
@@ -72,9 +74,9 @@ class LruCache {
 //
 
 template <typename Key, typename Value>
-absl::optional<Value> LruCache<Key, Value>::Get(Key key) {
+std::optional<Value> LruCache<Key, Value>::Get(Key key) {
   auto it = cache_.find(key);
-  if (it == cache_.end()) return absl::nullopt;
+  if (it == cache_.end()) return std::nullopt;
   // Found the entry.  Move the entry to the end of the LRU list.
   auto new_lru_it = lru_list_.insert(lru_list_.end(), *it->second.lru_iterator);
   lru_list_.erase(it->second.lru_iterator);
@@ -110,9 +112,9 @@ void LruCache<Key, Value>::SetMaxSize(size_t max_size) {
 template <typename Key, typename Value>
 void LruCache<Key, Value>::RemoveOldestEntry() {
   auto lru_it = lru_list_.begin();
-  CHECK(lru_it != lru_list_.end());
+  GRPC_CHECK(lru_it != lru_list_.end());
   auto cache_it = cache_.find(*lru_it);
-  CHECK(cache_it != cache_.end());
+  GRPC_CHECK(cache_it != cache_.end());
   cache_.erase(cache_it);
   lru_list_.pop_front();
 }

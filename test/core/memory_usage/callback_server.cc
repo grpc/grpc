@@ -16,28 +16,27 @@
 //
 //
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/support/server_callback.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/xds_server_builder.h>
 #include <signal.h>
 #include <unistd.h>
 
 #include <memory>
 #include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/support/server_callback.h>
-#include <grpcpp/support/status.h>
-#include <grpcpp/xds_server_builder.h>
-
-#include "src/cpp/ext/chaotic_good.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
+#include "src/core/transport/endpoint_transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
@@ -80,7 +79,7 @@ static void sigint_handler(int /*x*/) { _exit(0); }
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
-  CHECK_GE(argc, 1);
+  GRPC_CHECK_GE(argc, 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
@@ -101,12 +100,16 @@ int main(int argc, char** argv) {
   grpc::ServerBuilder* builder =
       absl::GetFlag(FLAGS_use_xds) ? &xds_builder : &normal_builder;
 
+  if (absl::GetFlag(FLAGS_chaotic_good)) {
+    builder->AddChannelArgument(
+        GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+        std::string(grpc_core::chaotic_good::WireFormatPreferences()));
+  }
+
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ServerCredentials> creds =
       grpc::InsecureServerCredentials();
-  if (absl::GetFlag(FLAGS_chaotic_good)) {
-    creds = grpc::ChaoticGoodInsecureServerCredentials();
-  } else if (absl::GetFlag(FLAGS_secure)) {
+  if (absl::GetFlag(FLAGS_secure)) {
     LOG(INFO) << "Supposed to be secure, is not yet";
     // TODO (chennancy) Add in secure credentials
   }

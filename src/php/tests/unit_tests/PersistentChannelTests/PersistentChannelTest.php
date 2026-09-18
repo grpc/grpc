@@ -51,14 +51,6 @@ class PersistentChannelTest extends \PHPUnit\Framework\TestCase
       $state == GRPC\CHANNEL_TRANSIENT_FAILURE);
   }
 
-  public function testInitHelper()
-  {
-      // PersistentList is not empty at the beginning of the tests
-      // because phpunit will cache the channels created by other test
-      // files.
-  }
-
-
   public function testChannelNotPersist()
   {
       $this->channel1 = new Grpc\Channel('localhost:1', ['force_new' => true]);

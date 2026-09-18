@@ -14,16 +14,15 @@
 
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_CLOSURE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_CLOSURE_H
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // The callbacks for Endpoint read and write take an absl::Status as
 // argument - this is important for the tcp code to function correctly. We need
@@ -73,7 +72,6 @@ class PosixEngineClosure final
   absl::Status status_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_CLOSURE_H

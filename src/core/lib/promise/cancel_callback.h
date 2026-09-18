@@ -28,8 +28,8 @@ namespace cancel_callback_detail {
 template <typename Fn>
 class Handler {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Handler(Fn fn)
-      : fn_(std::move(fn)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Handler(Fn&& fn)
+      : fn_(std::forward<Fn>(fn)) {}
   Handler(const Handler&) = delete;
   Handler& operator=(const Handler&) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Handler() {
@@ -69,12 +69,12 @@ class Handler {
 // completion.
 // Returns a promise with the same result type as main_fn.
 template <typename MainFn, typename CancelFn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancel(MainFn main_fn,
-                                                   CancelFn cancel_fn) {
-  return [on_cancel =
-              cancel_callback_detail::Handler<CancelFn>(std::move(cancel_fn)),
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto OnCancel(
+    MainFn&& main_fn, CancelFn&& cancel_fn) {
+  return [on_cancel = cancel_callback_detail::Handler<CancelFn>(
+              std::forward<CancelFn>(cancel_fn)),
           main_fn = promise_detail::PromiseLike<MainFn>(
-              std::move(main_fn))]() mutable {
+              std::forward<MainFn>(main_fn))]() mutable {
     auto r = main_fn();
     if (r.ready()) {
       on_cancel.Done();
@@ -87,14 +87,13 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancel(MainFn main_fn,
 // resulting promise. If the factory is dropped without being called, cancel_fn
 // is called.
 template <typename MainFn, typename CancelFn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancelFactory(MainFn main_fn,
-                                                          CancelFn cancel_fn) {
-  return [on_cancel =
-              cancel_callback_detail::Handler<CancelFn>(std::move(cancel_fn)),
-          main_fn = std::move(main_fn)]() mutable {
-    auto r = main_fn();
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto OnCancelFactory(
+    MainFn&& main_fn, CancelFn&& cancel_fn) {
+  return [on_cancel = cancel_callback_detail::Handler<CancelFn>(
+              std::forward<CancelFn>(cancel_fn)),
+          main_fn = std::forward<MainFn>(main_fn)]() mutable {
     on_cancel.Done();
-    return r;
+    return main_fn();
   };
 };
 

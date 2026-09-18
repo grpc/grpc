@@ -14,27 +14,25 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
+
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc_audit_logging.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/matchers.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -154,7 +152,7 @@ struct RbacConfig {
           };
 
           struct Authenticated {
-            absl::optional<StringMatch> principal_name;
+            std::optional<StringMatch> principal_name;
 
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
           };
@@ -207,7 +205,8 @@ struct RbacConfig {
       std::map<std::string, Policy> policies;
       // Defaults to kNone since its json field is optional.
       Rbac::AuditCondition audit_condition = Rbac::AuditCondition::kNone;
-      std::vector<std::unique_ptr<AuditLoggerFactory::Config>> logger_configs;
+      std::vector<std::shared_ptr<const AuditLoggerFactory::Config>>
+          logger_configs;
 
       Rules() {}
       Rules(const Rules&) = delete;
@@ -220,7 +219,7 @@ struct RbacConfig {
       void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
     };
 
-    absl::optional<Rules> rules;
+    std::optional<Rules> rules;
 
     Rbac TakeAsRbac();
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
@@ -355,6 +354,13 @@ void RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonPostLoad(
                                              range_match->end, invert_match));
     return;
   }
+  auto string_match = LoadJsonObjectField<StringMatch>(
+      json.object(), args, "stringMatch", errors, /*required=*/false);
+  if (string_match.has_value()) {
+    matcher = HeaderMatcher::CreateFromStringMatcher(
+        name, std::move(string_match->matcher), invert_match);
+    return;
+  }
   if (errors->size() == original_error_size) {
     errors->AddError("no valid matcher found");
   }
@@ -392,7 +398,8 @@ void RbacConfig::RbacPolicy::Rules::Policy::StringMatch::JsonPostLoad(
                                                   field_name, errors,
                                                   /*required=*/false);
     if (match.has_value()) {
-      set_string_matcher(StringMatcher::Create(type, *match, ignore_case));
+      set_string_matcher(
+          StringMatcher::Create(type, *match, /*case_sensitive=*/!ignore_case));
       return true;
     }
     return false;
@@ -408,7 +415,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::StringMatch::JsonPostLoad(
                                                          /*required=*/false);
   if (regex_match.has_value()) {
     set_string_matcher(StringMatcher::Create(StringMatcher::Type::kSafeRegex,
-                                             regex_match->regex, ignore_case));
+                                             regex_match->regex));
     return;
   }
   if (errors->size() == original_error_size) {
@@ -557,7 +564,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
                                       /*required=*/false);
   if (not_rule.has_value()) {
     permission = std::make_unique<Rbac::Permission>(
-        Rbac::Permission::MakeNotPermission(std::move(*not_rule->permission)));
+        Rbac::Permission::MakeNotPermission(std::move(not_rule->permission)));
     return;
   }
   if (errors->size() == original_error_size) {
@@ -712,7 +719,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
                                      /*required=*/false);
   if (not_rule.has_value()) {
     principal = std::make_unique<Rbac::Principal>(
-        Rbac::Principal::MakeNotPrincipal(std::move(*not_rule->principal)));
+        Rbac::Principal::MakeNotPrincipal(std::move(not_rule->principal)));
     return;
   }
   if (errors->size() == original_error_size) {

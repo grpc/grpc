@@ -21,7 +21,6 @@
 // Import category headers for Swift build
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+ChannelCredentials.h>
-#import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall+OAuth2.h>
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <RxLibrary/GRXWriteable.h>

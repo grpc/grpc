@@ -21,9 +21,13 @@ syntax = "proto3";
 package grpc.testing;
 
 message FuzzConfigVars {
+  optional int32 channelz_max_orphaned_nodes = 475973073;
+  optional double experimental_target_memory_pressure = 172375146;
+  optional double experimental_memory_pressure_threshold = 402942472;
   optional bool enable_fork_support = 61008869;
+  optional bool channelz_call_tracer = 346908333;
   optional string dns_resolver = 76817901;
   optional string verbosity = 68420950;
-  optional uint64 experiments = 510817011;
+  optional string experiments = 510817011;
   optional string trace = 291231137;
 };

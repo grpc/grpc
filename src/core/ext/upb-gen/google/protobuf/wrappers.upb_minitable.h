@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_PROTOBUF_WRAPPERS_PROTO_UPB_MINITABLE_H_
-#define GOOGLE_PROTOBUF_WRAPPERS_PROTO_UPB_MINITABLE_H_
+#ifndef GOOGLE_PROTOBUF_WRAPPERS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define GOOGLE_PROTOBUF_WRAPPERS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -19,23 +19,14 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable google__protobuf__DoubleValue_msg_init;
-extern const upb_MiniTable* google__protobuf__DoubleValue_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__FloatValue_msg_init;
-extern const upb_MiniTable* google__protobuf__FloatValue_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__Int64Value_msg_init;
-extern const upb_MiniTable* google__protobuf__Int64Value_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__UInt64Value_msg_init;
-extern const upb_MiniTable* google__protobuf__UInt64Value_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__Int32Value_msg_init;
-extern const upb_MiniTable* google__protobuf__Int32Value_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__UInt32Value_msg_init;
-extern const upb_MiniTable* google__protobuf__UInt32Value_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__BoolValue_msg_init;
-extern const upb_MiniTable* google__protobuf__BoolValue_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__StringValue_msg_init;
-extern const upb_MiniTable* google__protobuf__StringValue_msg_init_ptr;
 extern const upb_MiniTable google__protobuf__BytesValue_msg_init;
-extern const upb_MiniTable* google__protobuf__BytesValue_msg_init_ptr;
 
 extern const upb_MiniTableFile google_protobuf_wrappers_proto_upb_file_layout;
 
@@ -45,4 +36,4 @@ extern const upb_MiniTableFile google_protobuf_wrappers_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_PROTOBUF_WRAPPERS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* GOOGLE_PROTOBUF_WRAPPERS_PROTO_UPB_H__UPB_MINITABLE_H_ */

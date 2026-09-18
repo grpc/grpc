@@ -14,16 +14,15 @@
 
 from collections import defaultdict
 import datetime
-import json
 import logging
 import os
-import random
 import sys
 import time
 from typing import Any, Callable, Dict, List, Optional, Set
 import unittest
 from unittest import mock
 
+from google.protobuf import struct_pb2
 from grpc_csm_observability import CsmOpenTelemetryPlugin
 from grpc_csm_observability._csm_observability_plugin import (
     CSMOpenTelemetryLabelInjector,
@@ -258,68 +257,6 @@ class CSMObservabilityPluginTest(unittest.TestCase):
                 "xds://traffic-director-global.xds.googleapis.com/foo.bar"
             )
         )
-
-    def testGetMeshIdFromConfig(self):
-        config_json = {
-            "node": {
-                "id": "projects/12345/networks/mesh:test_mesh_id/nodes/abcdefg"
-            }
-        }
-        config_str = json.dumps(config_json)
-        with mock.patch.dict(
-            os.environ, {"GRPC_XDS_BOOTSTRAP_CONFIG": config_str}
-        ):
-            csm_plugin = CsmOpenTelemetryPlugin(
-                meter_provider=self._provider,
-            )
-            csm_label_injector = csm_plugin.plugin_options[
-                0
-            ].get_label_injector()
-            additional_labels = csm_label_injector.get_additional_labels(
-                include_exchange_labels=True
-            )
-            self.assertEqual(additional_labels["csm.mesh_id"], "test_mesh_id")
-
-    def testGetMeshIdFromFile(self):
-        config_json = {
-            "node": {
-                "id": "projects/12345/networks/mesh:test_mesh_id/nodes/abcdefg"
-            }
-        }
-        config_file_path = "/tmp/" + str(random.randint(0, 100000))
-        with open(config_file_path, "w", encoding="utf-8") as f:
-            f.write(json.dumps(config_json))
-
-        with mock.patch.dict(
-            os.environ, {"GRPC_XDS_BOOTSTRAP": config_file_path}
-        ):
-            csm_plugin = CsmOpenTelemetryPlugin(
-                meter_provider=self._provider,
-            )
-            csm_label_injector = csm_plugin.plugin_options[
-                0
-            ].get_label_injector()
-            additional_labels = csm_label_injector.get_additional_labels(
-                include_exchange_labels=True
-            )
-            self.assertEqual(additional_labels["csm.mesh_id"], "test_mesh_id")
-
-    def testGetMeshIdFromInvalidConfig(self):
-        config_json = {"node": {"id": "12345"}}
-        config_str = json.dumps(config_json)
-        with mock.patch.dict(
-            os.environ, {"GRPC_XDS_BOOTSTRAP_CONFIG": config_str}
-        ):
-            csm_plugin = CsmOpenTelemetryPlugin(
-                meter_provider=self._provider,
-            )
-            csm_label_injector = csm_plugin.plugin_options[
-                0
-            ].get_label_injector()
-            additional_labels = csm_label_injector.get_additional_labels(
-                include_exchange_labels=True
-            )
-            self.assertEqual(additional_labels["csm.mesh_id"], "unknown")
 
     def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
         self._validate_server_metrics_names(metric_names)
@@ -616,6 +553,160 @@ class MetadataExchangeTest(unittest.TestCase):
             )
             self.assertTrue("csm.workload_type" not in labels.keys())
             self.assertTrue("csm.mesh_id" not in labels.keys())
+
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class DeserializeLabelsTest(unittest.TestCase):
+    def _serialize_metadata(self, fields):
+        struct = struct_pb2.Struct(
+            fields={
+                key: struct_pb2.Value(string_value=value)
+                for key, value in fields.items()
+            }
+        )
+        return struct.SerializeToString()
+
+    def testMalformedMetadataFallsBackToUnknown(self):
+        labels = {"XEnvoyPeerMetadata": b"\xff\xff not a valid struct \x08"}
+
+        result = CSMOpenTelemetryLabelInjector.deserialize_labels(labels)
+
+        self.assertEqual(result["csm.remote_workload_type"], UNKNOWN_VALUE)
+        self.assertEqual(
+            result["csm.remote_workload_canonical_service"], UNKNOWN_VALUE
+        )
+
+    def testAbsentMetadataRecordsUnknownRemoteLabels(self):
+        grpc_method = "test/UnaryUnary"
+        labels = {"grpc.method": grpc_method}
+
+        result = CSMOpenTelemetryLabelInjector.deserialize_labels(labels)
+
+        self.assertEqual(result["csm.remote_workload_type"], UNKNOWN_VALUE)
+        self.assertEqual(
+            result["csm.remote_workload_canonical_service"], UNKNOWN_VALUE
+        )
+        self.assertEqual(result["grpc.method"], grpc_method)
+
+    def testValidGceMetadataDecodesAllRemoteLabels(self):
+        metadata_canonical_service = "my_canonical_service"
+        metadata_workload = "my_workload"
+        metadata_location = "my_location"
+        metadata_project_id = "my_project"
+
+        metadata = self._serialize_metadata(
+            {
+                "type": TYPE_GCE,
+                "canonical_service": metadata_canonical_service,
+                "workload_name": metadata_workload,
+                "location": metadata_location,
+                "project_id": metadata_project_id,
+            }
+        )
+        labels = {"XEnvoyPeerMetadata": metadata}
+
+        result = CSMOpenTelemetryLabelInjector.deserialize_labels(labels)
+
+        self.assertEqual(result["csm.remote_workload_type"], TYPE_GCE)
+        self.assertEqual(
+            result["csm.remote_workload_canonical_service"],
+            metadata_canonical_service,
+        )
+        self.assertEqual(result["csm.remote_workload_name"], metadata_workload)
+        self.assertEqual(
+            result["csm.remote_workload_location"], metadata_location
+        )
+        self.assertEqual(
+            result["csm.remote_workload_project_id"], metadata_project_id
+        )
+
+    def testValidGkeMetadataDecodesAllRemoteLabels(self):
+        metadata_canonical_service = "my_canonical_service"
+        metadata_workload = "my_workload"
+        metadata_namespace = "my_namespace"
+        metadata_cluster = "my_cluster"
+        metadata_location = "my_location"
+        metadata_project_id = "my_project"
+        grpc_method = "test/UnaryUnary"
+
+        metadata = self._serialize_metadata(
+            {
+                "type": TYPE_GKE,
+                "canonical_service": metadata_canonical_service,
+                "workload_name": metadata_workload,
+                "namespace_name": metadata_namespace,
+                "cluster_name": metadata_cluster,
+                "location": metadata_location,
+                "project_id": metadata_project_id,
+            }
+        )
+        labels = {
+            "XEnvoyPeerMetadata": metadata,
+            "grpc.method": grpc_method,
+        }
+
+        result = CSMOpenTelemetryLabelInjector.deserialize_labels(labels)
+
+        self.assertEqual(result["csm.remote_workload_type"], TYPE_GKE)
+        self.assertEqual(
+            result["csm.remote_workload_canonical_service"],
+            metadata_canonical_service,
+        )
+        self.assertEqual(result["csm.remote_workload_name"], metadata_workload)
+        self.assertEqual(
+            result["csm.remote_workload_namespace_name"], metadata_namespace
+        )
+        self.assertEqual(
+            result["csm.remote_workload_cluster_name"], metadata_cluster
+        )
+        self.assertEqual(
+            result["csm.remote_workload_location"], metadata_location
+        )
+        self.assertEqual(
+            result["csm.remote_workload_project_id"], metadata_project_id
+        )
+        self.assertEqual(result["grpc.method"], grpc_method)
+        self.assertNotIn("XEnvoyPeerMetadata", result)
+
+    def testInvalidMetadataTypeDecodesRemoteLabelsPartially(self):
+        metadata_type = "my_type"
+        metadata_canonical_service = "my_canonical_service"
+        metadata_workload = "my_workload"
+        metadata_location = "my_location"
+        metadata_project_id = "my_project"
+        grpc_method = "test/UnaryUnary"
+
+        metadata = self._serialize_metadata(
+            {
+                "type": metadata_type,
+                "canonical_service": metadata_canonical_service,
+                "workload_name": metadata_workload,
+                "location": metadata_location,
+                "project_id": metadata_project_id,
+            }
+        )
+        labels = {
+            "XEnvoyPeerMetadata": metadata,
+            "grpc.method": grpc_method,
+        }
+
+        result = CSMOpenTelemetryLabelInjector.deserialize_labels(labels)
+
+        self.assertEqual(result["csm.remote_workload_type"], metadata_type)
+        self.assertEqual(
+            result["csm.remote_workload_canonical_service"],
+            metadata_canonical_service,
+        )
+        self.assertNotIn("csm.remote_workload_name", result)
+        self.assertNotIn("csm.remote_workload_namespace_name", result)
+        self.assertNotIn("csm.remote_workload_cluster_name", result)
+        self.assertNotIn("csm.remote_workload_location", result)
+        self.assertNotIn("csm.remote_workload_project_id", result)
+        self.assertEqual(result["grpc.method"], grpc_method)
+        self.assertNotIn("XEnvoyPeerMetadata", result)
 
 
 def validate_metrics_exist(

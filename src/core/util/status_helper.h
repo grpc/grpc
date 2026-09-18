@@ -19,19 +19,15 @@
 #ifndef GRPC_SRC_CORE_UTIL_STATUS_HELPER_H
 #define GRPC_SRC_CORE_UTIL_STATUS_HELPER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "src/core/util/debug_location.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
-
-#include "src/core/util/debug_location.h"
 
 extern "C" {
 struct google_rpc_Status;
@@ -46,42 +42,31 @@ struct upb_Arena;
 
 namespace grpc_core {
 
+/// Adds prefix to the message of status.
+absl::Status AddMessagePrefix(absl::string_view prefix,
+                              const absl::Status& status);
+
+/// Adds detail to the message of status in parens.
+absl::Status AddMessageDetail(absl::string_view detail,
+                              const absl::Status& status);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//                  ALL APIs BELOW ARE DEPRECATED!
+//
+//         Callers should instead use absl::Status APIs directly.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 /// This enum should have the same value of grpc_error_ints
 enum class StatusIntProperty {
-  /// __LINE__ from the call site creating the error
-  kFileLine,
   /// stream identifier: for errors that are associated with an individual
   /// wire stream
+  // TODO(tjagtap): Remove this when the PH2 migration is done.
   kStreamId,
-  /// grpc status code representing this error
-  // TODO(veblush): Remove this after grpc_error is replaced with absl::Status
-  kRpcStatus,
   /// http2 error code associated with the error (see the HTTP2 RFC)
+  // TODO(tjagtap): Remove this as part of creating a new HTTP/2 error type.
   kHttp2Error,
-  /// File descriptor associated with this error
-  kFd,
-  /// chttp2: did the error occur while a write was in progress
-  kOccurredDuringWrite,
-  /// channel connectivity state associated with the error
-  ChannelConnectivityState,
-  /// LB policy drop
-  kLbPolicyDrop,
-};
-
-/// This enum should have the same value of grpc_error_strs
-enum class StatusStrProperty {
-  /// top-level textual description of this error
-  kDescription,
-  /// source file in which this error occurred
-  kFile,
-  /// peer that we were trying to communicate when this error occurred
-  kGrpcMessage,
-};
-
-/// This enum should have the same value of grpc_error_times
-enum class StatusTimeProperty {
-  /// timestamp of error creation
-  kCreated,
 };
 
 /// Creates a status with given additional information
@@ -94,31 +79,14 @@ void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value);
 
 /// Gets the int property from the status
 GRPC_MUST_USE_RESULT
-absl::optional<intptr_t> StatusGetInt(const absl::Status& status,
-                                      StatusIntProperty key);
+std::optional<intptr_t> StatusGetInt(const absl::Status& status,
+                                     StatusIntProperty key);
 
-/// Sets the str property to the status
-void StatusSetStr(absl::Status* status, StatusStrProperty key,
-                  absl::string_view value);
-
-/// Gets the str property from the status
-GRPC_MUST_USE_RESULT absl::optional<std::string> StatusGetStr(
-    const absl::Status& status, StatusStrProperty key);
-
-/// Sets the time property to the status
-void StatusSetTime(absl::Status* status, StatusTimeProperty key,
-                   absl::Time time);
-
-/// Gets the time property from the status
-GRPC_MUST_USE_RESULT absl::optional<absl::Time> StatusGetTime(
-    const absl::Status& status, StatusTimeProperty key);
+absl::Status ReplaceStatusCode(const absl::Status& status,
+                               absl::StatusCode code);
 
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
-
-/// Returns all children status from a status
-GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
-    absl::Status status);
 
 /// Returns a string representation from status
 /// Error status will be like
@@ -126,9 +94,6 @@ GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
 /// e.g.
 ///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
 GRPC_MUST_USE_RESULT std::string StatusToString(const absl::Status& status);
-
-/// Adds prefix to the message of status.
-absl::Status AddMessagePrefix(absl::string_view prefix, absl::Status status);
 
 namespace internal {
 

@@ -14,17 +14,15 @@
 
 #include "src/core/util/load_file.h"
 
+#include <grpc/support/alloc.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <cstdint>
 
-#include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 static const char prefix[] = "file_test";
 
@@ -38,14 +36,9 @@ TEST(LoadFileTest, TestLoadEmptyFile) {
   ASSERT_NE(tmp, nullptr);
   fclose(tmp);
 
-  result = grpc_core::LoadFile(tmp_name, false);
+  result = grpc_core::LoadFile(tmp_name);
   ASSERT_TRUE(result.ok());
   ASSERT_EQ(result->length(), 0);
-
-  result = grpc_core::LoadFile(tmp_name, true);
-  ASSERT_TRUE(result.ok());
-  ASSERT_EQ(result->length(), 1);
-  ASSERT_EQ(result->begin()[0], 0);
 
   remove(tmp_name);
   gpr_free(tmp_name);
@@ -62,7 +55,7 @@ TEST(LoadFileTest, TestLoadFailure) {
   fclose(tmp);
   remove(tmp_name);
 
-  result = grpc_core::LoadFile(tmp_name, false);
+  result = grpc_core::LoadFile(tmp_name);
   ASSERT_FALSE(result.ok());
 
   gpr_free(tmp_name);
@@ -80,15 +73,10 @@ TEST(LoadFileTest, TestLoadSmallFile) {
   ASSERT_EQ(fwrite(blah, 1, strlen(blah), tmp), strlen(blah));
   fclose(tmp);
 
-  result = grpc_core::LoadFile(tmp_name, false);
+  result = grpc_core::LoadFile(tmp_name);
   ASSERT_TRUE(result.ok());
   ASSERT_EQ(result->length(), strlen(blah));
   ASSERT_FALSE(memcmp(result->begin(), blah, strlen(blah)));
-
-  result = grpc_core::LoadFile(tmp_name, true);
-  ASSERT_TRUE(result.ok());
-  ASSERT_EQ(result->length(), strlen(blah) + 1);
-  ASSERT_STREQ(reinterpret_cast<const char*>(result->begin()), blah);
 
   remove(tmp_name);
   gpr_free(tmp_name);
@@ -111,7 +99,7 @@ TEST(LoadFileTest, TestLoadBigFile) {
   ASSERT_EQ(fwrite(buffer, 1, buffer_size, tmp), buffer_size);
   fclose(tmp);
 
-  result = grpc_core::LoadFile(tmp_name, false);
+  result = grpc_core::LoadFile(tmp_name);
   ASSERT_TRUE(result.ok());
   ASSERT_EQ(result->length(), buffer_size);
   current = result->begin();

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import os
 import re
 from typing import AnyStr, Callable, Dict, Iterable, List, Optional, Union
@@ -22,8 +21,6 @@ from grpc_observability._observability import OptionalLabelType
 from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPluginOption
-
-# pytype: disable=pyi-error
 from opentelemetry.metrics import MeterProvider
 from opentelemetry.resourcedetector.gcp_resource_detector import (
     GoogleCloudResourceDetector,
@@ -33,12 +30,14 @@ from opentelemetry.semconv.resource import ResourceAttributes
 
 TRAFFIC_DIRECTOR_AUTHORITY = "traffic-director-global.xds.googleapis.com"
 UNKNOWN_VALUE = "unknown"
+TYPE = "type"
 TYPE_GCE = "gcp_compute_engine"
 TYPE_GKE = "gcp_kubernetes_engine"
 MESH_ID_PREFIX = "mesh:"
+METADATA_EXCHANGE_KEY = "XEnvoyPeerMetadata"
 
 METADATA_EXCHANGE_KEY_FIXED_MAP = {
-    "type": "csm.remote_workload_type",
+    TYPE: "csm.remote_workload_type",
     "canonical_service": "csm.remote_workload_canonical_service",
 }
 
@@ -54,6 +53,11 @@ METADATA_EXCHANGE_KEY_GCE_MAP = {
     "workload_name": "csm.remote_workload_name",
     "location": "csm.remote_workload_location",
     "project_id": "csm.remote_workload_project_id",
+}
+
+_METADATA_EXCHANGE_MAP_BY_TYPE = {
+    TYPE_GKE: METADATA_EXCHANGE_KEY_GKE_MAP,
+    TYPE_GCE: METADATA_EXCHANGE_KEY_GCE_MAP,
 }
 
 
@@ -79,6 +83,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             "CSM_CANONICAL_SERVICE_NAME", UNKNOWN_VALUE
         )
         workload_name_value = os.getenv("CSM_WORKLOAD_NAME", UNKNOWN_VALUE)
+        mesh_id = os.getenv("CSM_MESH_ID", UNKNOWN_VALUE)
 
         gcp_resource = GoogleCloudResourceDetector().detect()
         resource_type_value = get_resource_type(gcp_resource)
@@ -91,7 +96,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         # ResourceAttributes.CLOUD_AVAILABILITY_ZONE are called
         # "zones" on Google Cloud.
         location_value = get_str_value_from_resource("cloud.zone", gcp_resource)
-        if UNKNOWN_VALUE == location_value:
+        if location_value == UNKNOWN_VALUE:
             location_value = get_str_value_from_resource(
                 ResourceAttributes.CLOUD_REGION, gcp_resource
             )
@@ -99,7 +104,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             ResourceAttributes.CLOUD_ACCOUNT_ID, gcp_resource
         )
 
-        fields["type"] = struct_pb2.Value(string_value=resource_type_value)
+        fields[TYPE] = struct_pb2.Value(string_value=resource_type_value)
         fields["canonical_service"] = struct_pb2.Value(
             string_value=canonical_service_value
         )
@@ -129,11 +134,11 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         serialized_struct = struct_pb2.Struct(fields=fields)
         serialized_str = serialized_struct.SerializeToString()
 
-        self._exchange_labels = {"XEnvoyPeerMetadata": serialized_str}
-        self._additional_exchange_labels[
-            "csm.workload_canonical_service"
-        ] = canonical_service_value
-        self._additional_exchange_labels["csm.mesh_id"] = get_mesh_id()
+        self._exchange_labels = {METADATA_EXCHANGE_KEY: serialized_str}
+        self._additional_exchange_labels["csm.workload_canonical_service"] = (
+            canonical_service_value
+        )
+        self._additional_exchange_labels["csm.mesh_id"] = mesh_id
 
     def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
         return self._exchange_labels
@@ -143,50 +148,20 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     ) -> Dict[str, str]:
         if include_exchange_labels:
             return self._additional_exchange_labels
-        else:
-            return {}
+        return {}
 
     @staticmethod
     def deserialize_labels(labels: Dict[str, AnyStr]) -> Dict[str, AnyStr]:
-        deserialized_labels = {}
-        for key, value in labels.items():
-            if "XEnvoyPeerMetadata" == key:
-                pb_struct = struct_pb2.Struct()
-                pb_struct.ParseFromString(value)
+        remote_labels = _deserialize_remote_labels(
+            labels.get(METADATA_EXCHANGE_KEY)
+        )
+        passthrough_labels = {
+            key: value
+            for key, value in labels.items()
+            if key != METADATA_EXCHANGE_KEY
+        }
 
-                remote_type = get_value_from_struct("type", pb_struct)
-
-                for (
-                    local_key,
-                    remote_key,
-                ) in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
-                    deserialized_labels[remote_key] = get_value_from_struct(
-                        local_key, pb_struct
-                    )
-                if remote_type == TYPE_GKE:
-                    for (
-                        local_key,
-                        remote_key,
-                    ) in METADATA_EXCHANGE_KEY_GKE_MAP.items():
-                        deserialized_labels[remote_key] = get_value_from_struct(
-                            local_key, pb_struct
-                        )
-                elif remote_type == TYPE_GCE:
-                    for (
-                        local_key,
-                        remote_key,
-                    ) in METADATA_EXCHANGE_KEY_GCE_MAP.items():
-                        deserialized_labels[remote_key] = get_value_from_struct(
-                            local_key, pb_struct
-                        )
-            # If CSM label injector is enabled on server side but client didn't send
-            # XEnvoyPeerMetadata, we'll record remote label as unknown.
-            else:
-                for _, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
-                    deserialized_labels[remote_key] = UNKNOWN_VALUE
-                deserialized_labels[key] = value
-
-        return deserialized_labels
+        return {**remote_labels, **passthrough_labels}
 
 
 class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
@@ -207,7 +182,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
           target: Required. The target for the RPC.
 
         Returns:
-          True if this this plugin option is active on the channel, false otherwise.
+          True if this plugin option is active on the channel, false otherwise.
         """
         # CSM channels should have an "xds" scheme
         if not target.startswith("xds:"):
@@ -217,13 +192,12 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
         match = re.search(authority_pattern, target)
         if match:
             return TRAFFIC_DIRECTOR_AUTHORITY in match.group(1)
-        else:
-            # Return True if the authority doesn't exist
-            return True
+        # Return True if the authority doesn't exist
+        return True
 
     @staticmethod
     def is_active_on_server(
-        xds: bool,  # pylint: disable=unused-argument
+        xds: bool,  # pylint: disable=unused-argument #noqa: ARG004
     ) -> bool:
         """Determines whether this plugin option is active on a given server.
 
@@ -237,7 +211,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
           xds: Required. if this server is build for xds.
 
         Returns:
-          True if this this plugin option is active on the server, false otherwise.
+          True if this plugin option is active on the server, false otherwise.
         """
         return True
 
@@ -259,10 +233,11 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
     def __init__(
         self,
         *,
-        plugin_options: Iterable[OpenTelemetryPluginOption] = [],
+        plugin_options: Optional[Iterable[OpenTelemetryPluginOption]] = None,
         meter_provider: Optional[MeterProvider] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
     ):
+        plugin_options = plugin_options or []
         new_options = list(plugin_options) + [CsmOpenTelemetryPluginOption()]
         super().__init__(
             plugin_options=new_options,
@@ -279,6 +254,39 @@ def get_value_from_struct(key: str, struct: struct_pb2.Struct) -> str:
     if not value:
         return UNKNOWN_VALUE
     return value.string_value
+
+
+def _deserialize_remote_labels(
+    serialized_data: Optional[AnyStr],
+) -> Dict[str, str]:
+    remote_keys_unknown = dict.fromkeys(
+        METADATA_EXCHANGE_KEY_FIXED_MAP.values(), UNKNOWN_VALUE
+    )
+
+    # If CSM label injector is enabled on server side but client didn't send
+    # XEnvoyPeerMetadata, we'll record remote label as unknown.
+    if serialized_data is None:
+        return remote_keys_unknown
+
+    pb_struct = struct_pb2.Struct()
+    try:
+        pb_struct.ParseFromString(serialized_data)
+    except Exception:  # pylint: disable=broad-exception-caught
+        return remote_keys_unknown
+
+    remote_labels = {
+        remote_key: get_value_from_struct(local_key, pb_struct)
+        for local_key, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items()
+    }
+
+    remote_type = get_value_from_struct(TYPE, pb_struct)
+    remote_type_map = _METADATA_EXCHANGE_MAP_BY_TYPE.get(remote_type)
+    if remote_type_map:
+        remote_labels.update(
+            (remote_key, get_value_from_struct(local_key, pb_struct))
+            for local_key, remote_key in remote_type_map.items()
+        )
+    return remote_labels
 
 
 def get_str_value_from_resource(
@@ -298,46 +306,6 @@ def get_resource_type(gcp_resource: Resource) -> str:
     )
     if gcp_resource_type == "gke_container":
         return TYPE_GKE
-    elif gcp_resource_type == "gce_instance":
+    if gcp_resource_type == "gce_instance":
         return TYPE_GCE
-    else:
-        return gcp_resource_type
-
-
-# Returns the mesh ID by reading and parsing the bootstrap file. Returns "unknown"
-# if for some reason, mesh ID could not be figured out.
-def get_mesh_id() -> str:
-    config_contents = get_bootstrap_config_contents()
-
-    try:
-        config_json = json.loads(config_contents)
-        # The expected format of the Node ID is -
-        # projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
-        node_id_parts = config_json.get("node", {}).get("id", "").split("/")
-        if len(node_id_parts) == 6 and node_id_parts[3].startswith(
-            MESH_ID_PREFIX
-        ):
-            return node_id_parts[3][len(MESH_ID_PREFIX) :]
-    except json.decoder.JSONDecodeError:
-        return UNKNOWN_VALUE
-
-    return UNKNOWN_VALUE
-
-
-def get_bootstrap_config_contents() -> str:
-    """Get the contents of the bootstrap config from environment variable or file.
-
-    Returns:
-        The content from environment variable. Or empty str if no config was found.
-    """
-    contents_str = ""
-    for source in ("GRPC_XDS_BOOTSTRAP", "GRPC_XDS_BOOTSTRAP_CONFIG"):
-        config = os.getenv(source)
-        if config:
-            if os.path.isfile(config):  # Prioritize file over raw config
-                with open(config, "r") as f:
-                    contents_str = f.read()
-            else:
-                contents_str = config
-
-    return contents_str
+    return gcp_resource_type

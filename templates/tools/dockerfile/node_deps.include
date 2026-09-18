@@ -13,4 +13,4 @@ RUN /bin/bash -l -c "nvm install 16 && npm config set cache /tmp/npm-cache"
 RUN /bin/bash -l -c "nvm alias default 16"
 
 # Include the git workaround also for the user "appuser" we just created.
-<%include file="./git_avoid_dubious_ownership_error.include"/>
+{% include "./git_avoid_dubious_ownership_error.include" %}

@@ -14,18 +14,16 @@
 
 #include "src/core/lib/resource_quota/periodic_update.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 
 #include <memory>
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -78,6 +76,37 @@ TEST(PeriodicUpdateTest, SimpleTest) {
   }
 }
 
+TEST(PeriodicUpdateTest, InterruptTest) {
+  std::unique_ptr<PeriodicUpdate> upd;
+  Timestamp start;
+  Timestamp reset_start;
+  // Create a periodic update that updates every second.
+  {
+    ExecCtx exec_ctx;
+    upd = std::make_unique<PeriodicUpdate>(Duration::Seconds(1));
+    start = Timestamp::Now();
+  }
+  // Wait until the first period has elapsed.
+  bool done = false;
+  while (!done) {
+    ExecCtx exec_ctx;
+    upd->Interrupt([&](Duration elapsed) {
+      EXPECT_GE(elapsed, Duration::Zero());
+      EXPECT_LE(elapsed, Duration::Seconds(10));
+    });
+    upd->Tick([&](Duration) {
+      reset_start = Timestamp::Now();
+      done = true;
+    });
+  }
+  // Ensure that took at least 1 second.
+  {
+    ExecCtx exec_ctx;
+    EXPECT_GE(Timestamp::Now() - start, Duration::Seconds(1));
+    start = reset_start;
+  }
+}
+
 TEST(PeriodicUpdate, ThreadTest) {
   std::unique_ptr<PeriodicUpdate> upd;
   std::atomic<int> count(0);
@@ -94,7 +123,7 @@ TEST(PeriodicUpdate, ThreadTest) {
   std::vector<std::thread> threads;
   for (size_t i = 0; i < 10; i++) {
     threads.push_back(std::thread([&]() {
-      while (count.load() < 10) {
+      while (count.load(std::memory_order_relaxed) < 10) {
         ExecCtx exec_ctx;
         upd->Tick([&](Duration d) {
           EXPECT_GE(d, Duration::Seconds(1));
@@ -103,6 +132,17 @@ TEST(PeriodicUpdate, ThreadTest) {
       }
     }));
   }
+  // And one more thread periodically calling Interrupt.
+  threads.push_back(std::thread([&]() {
+    while (count.load() < 10) {
+      ExecCtx exec_ctx;
+      upd->Interrupt([&](Duration d) {
+        EXPECT_GE(d, Duration::Zero());
+        count.fetch_add(1);
+      });
+      absl::SleepFor(absl::Milliseconds(1));
+    }
+  }));
 
   // Finish all threads.
   for (auto& th : threads) {

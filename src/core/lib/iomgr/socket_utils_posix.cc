@@ -16,8 +16,6 @@
 //
 //
 
-#include "absl/types/optional.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -27,27 +25,32 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <grpc/impl/grpc_types.h>
+#include <climits>
+#include <optional>
 
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/util/crash.h"
 #endif
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/grpc_types.h>
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/util/strerror.h"
-
-using ::grpc_event_engine::experimental::EndpointConfig;
-
-using ::grpc_core::PosixTcpOptions;
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/net/socket_mutator.h"
+#include "src/core/util/useful.h"
 
 namespace {
 
+using grpc_core::PosixTcpOptions;
+
 int AdjustValue(int default_value, int min_value, int max_value,
-                absl::optional<int> actual_value) {
+                std::optional<int> actual_value) {
   if (!actual_value.has_value() || *actual_value < min_value ||
       *actual_value > max_value) {
     return default_value;
@@ -56,7 +59,8 @@ int AdjustValue(int default_value, int min_value, int max_value,
 }
 }  // namespace
 
-PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
+PosixTcpOptions TcpOptionsFromEndpointConfig(
+    const grpc_event_engine::experimental::EndpointConfig& config) {
   void* value;
   PosixTcpOptions options;
   options.tcp_read_chunk_size = AdjustValue(
@@ -70,6 +74,9 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
       AdjustValue(PosixTcpOptions::kDefaultMaxReadChunksize, 1,
                   PosixTcpOptions::kMaxChunkSize,
                   config.GetInt(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE));
+  options.tcp_max_read_buffer_size =
+      AdjustValue(PosixTcpOptions::kMaxReadBufferSizeUnset, 1, INT_MAX,
+                  config.GetInt(GRPC_ARG_TCP_MAX_READ_BUFFER_SIZE));
   options.tcp_tx_zerocopy_send_bytes_threshold =
       AdjustValue(PosixTcpOptions::kDefaultSendBytesThreshold, 0, INT_MAX,
                   config.GetInt(GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD));
@@ -111,6 +118,12 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   if (value != nullptr) {
     options.socket_mutator =
         grpc_socket_mutator_ref(static_cast<grpc_socket_mutator*>(value));
+  }
+  value = config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE);
+  if (value != nullptr) {
+    options.event_engine =
+        reinterpret_cast<grpc_event_engine::experimental::EventEngine*>(value)
+            ->shared_from_this();
   }
   return options;
 }

@@ -22,14 +22,13 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "re2/re2.h"
-
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
@@ -39,15 +38,30 @@
 namespace grpc_core {
 
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
-  using TypedPerFilterConfig =
-      std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+  struct FilterConfigOverride {
+    absl::string_view config_proto_type;
+    Json config;
+    RefCountedPtr<const FilterConfig> filter_config;
+    bool disabled = false;
+
+    bool operator==(const FilterConfigOverride& other) const {
+      if (config_proto_type != other.config_proto_type) return false;
+      if (config != other.config) return false;
+      if (disabled != other.disabled) return false;
+      if (filter_config == nullptr) return other.filter_config == nullptr;
+      if (other.filter_config == nullptr) return false;
+      return *filter_config == *other.filter_config;
+    }
+    std::string ToString() const;
+  };
+  using TypedPerFilterConfig = std::map<std::string, FilterConfigOverride>;
 
   using ClusterSpecifierPluginMap =
       std::map<std::string /*cluster_specifier_plugin_name*/,
                std::string /*LB policy config*/>;
 
   struct RetryPolicy {
-    internal::StatusCodeSet retry_on;
+    StatusCodeSet retry_on;
     uint32_t num_retries;
 
     struct RetryBackOff {
@@ -74,7 +88,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
     struct Matchers {
       StringMatcher path_matcher;
       std::vector<HeaderMatcher> header_matchers;
-      absl::optional<uint32_t> fraction_per_million;
+      std::optional<uint32_t> fraction_per_million;
 
       bool operator==(const Matchers& other) const {
         return path_matcher == other.path_matcher &&
@@ -115,7 +129,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
           bool operator==(const ChannelId&) const { return true; }
         };
 
-        absl::variant<Header, ChannelId> policy;
+        std::variant<Header, ChannelId> policy;
         bool terminal = false;
 
         bool operator==(const HashPolicy& other) const {
@@ -154,18 +168,18 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
       };
 
       std::vector<HashPolicy> hash_policies;
-      absl::optional<RetryPolicy> retry_policy;
+      std::optional<RetryPolicy> retry_policy;
 
       // Action for this route.
-      absl::variant<ClusterName, std::vector<ClusterWeight>,
-                    ClusterSpecifierPluginName>
+      std::variant<ClusterName, std::vector<ClusterWeight>,
+                   ClusterSpecifierPluginName>
           action;
 
       // Storing the timeout duration from route action:
       // RouteAction.max_stream_duration.grpc_timeout_header_max or
       // RouteAction.max_stream_duration.max_stream_duration if the former is
       // not set.
-      absl::optional<Duration> max_stream_duration;
+      std::optional<Duration> max_stream_duration;
 
       bool auto_host_rewrite = false;
 
@@ -184,7 +198,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
       }
     };
 
-    absl::variant<UnknownAction, RouteAction, NonForwardingAction> action;
+    std::variant<UnknownAction, RouteAction, NonForwardingAction> action;
     TypedPerFilterConfig typed_per_filter_config;
 
     bool operator==(const Route& other) const {

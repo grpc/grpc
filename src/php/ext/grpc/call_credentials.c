@@ -165,10 +165,8 @@ int plugin_get_metadata(
 
   PHP_GRPC_DELREF(arg);
 
-  grpc_absl_log(GPR_INFO, "GRPC_PHP: call credentials plugin function - begin");
   /* call the user callback function */
-  zend_call_function(state->fci, state->fci_cache TSRMLS_CC);
-  grpc_absl_log(GPR_INFO, "GRPC_PHP: call credentials plugin function - end");
+  PHP_GRPC_CALL_FUNCTION(state->fci, state->fci_cache);
 
   *num_creds_md = 0;
   *status = GRPC_STATUS_OK;

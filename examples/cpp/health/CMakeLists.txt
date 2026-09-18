@@ -17,7 +17,7 @@
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
 # that automatically builds all the dependencies before building helloworld.
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 project(HelloWorld C CXX)
 
@@ -26,7 +26,7 @@ include(../cmake/common.cmake)
 # Proto file
 get_filename_component(hw_proto "../../protos/helloworld.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
-get_filename_component(health_proto "../../../src/proto/grpc/health/v1/health.proto" ABSOLUTE)
+get_filename_component(health_proto "../../../third_party/grpc-proto/grpc/health/v1/health.proto" ABSOLUTE)
 get_filename_component(health_proto_path "${health_proto}" PATH)
 
 # Generated sources
@@ -92,6 +92,7 @@ foreach(_target
     health_grpc_proto
     absl::flags
     absl::flags_parse
+    absl::log_initialize
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})

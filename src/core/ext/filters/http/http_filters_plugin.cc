@@ -18,17 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/match.h"
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/strings/match.h"
 
 namespace grpc_core {
 namespace {
@@ -50,11 +49,6 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
       .After<HttpClientFilter>()
       .After<ClientMessageSizeFilter>();
   builder->channel_init()
-      ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
-      .If(IsBuildingHttpLikeTransport)
-      .After<HttpServerFilter>()
-      .After<ServerMessageSizeFilter>();
-  builder->channel_init()
       ->RegisterFilter<HttpClientFilter>(GRPC_CLIENT_SUBCHANNEL)
       .If(IsBuildingHttpLikeTransport)
       .After<ClientMessageSizeFilter>();
@@ -63,8 +57,30 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
       .If(IsBuildingHttpLikeTransport)
       .After<ClientMessageSizeFilter>();
   builder->channel_init()
-      ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_CHANNEL)
-      .If(IsBuildingHttpLikeTransport)
-      .After<ServerMessageSizeFilter>();
+      ->RegisterFilter<HttpClientFilter>(GRPC_CLIENT_VIRTUAL_CHANNEL)
+      .If(IsBuildingHttpLikeTransport);
+
+  // Server side filters.
+  auto& compression_reg =
+      builder->channel_init()
+          ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
+          .If(IsBuildingHttpLikeTransport);
+  auto& http_server_reg =
+      builder->channel_init()
+          ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_CHANNEL)
+          .If(IsBuildingHttpLikeTransport);
+
+  builder->channel_init()
+      ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_VIRTUAL_CHANNEL)
+      .If(IsBuildingHttpLikeTransport);
+
+  if (IsFixV3FilterStackServerSideOrderingEnabled()) {
+    compression_reg.Before<HttpServerFilter>()
+        .Before<ServerMessageSizeFilter>();
+    http_server_reg.Before<ServerMessageSizeFilter>();
+  } else {
+    compression_reg.After<HttpServerFilter>().After<ServerMessageSizeFilter>();
+    http_server_reg.After<ServerMessageSizeFilter>();
+  }
 }
 }  // namespace grpc_core

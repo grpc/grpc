@@ -16,23 +16,15 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
-#include <array>
-#include <string>
-#include <vector>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
+#include <array>
+#include <string>
+#include <vector>
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/tsi/transport_security.h"
@@ -40,6 +32,13 @@
 #include "src/core/util/load_file.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {
@@ -48,6 +47,18 @@ using ::testing::ContainerEq;
 using ::testing::NotNull;
 using ::testing::TestWithParam;
 using ::testing::ValuesIn;
+using tsi::AkidFromCertificate;
+using tsi::AkidFromCrl;
+using tsi::HasCrlSignBit;
+using tsi::IssuerFromCert;
+using tsi::ParsePemCertificateChain;
+using tsi::ParsePemPrivateKey;
+using tsi::ParseUriString;
+using tsi::SslProtectorProtect;
+using tsi::SslProtectorProtectFlush;
+using tsi::SslProtectorUnprotect;
+using tsi::VerifyCrlCertIssuerNamesMatch;
+using tsi::VerifyCrlSignature;
 
 const char* kValidCrl = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kCrlIssuer = "test/core/tsi/test_creds/crl_data/ca.pem";
@@ -491,6 +502,32 @@ INSTANTIATE_TEST_SUITE_P(FrameProtectorUtil, FlowTest,
 
 #endif  // OPENSSL_IS_BORINGSSL
 
+TEST(ConvertKeyExchangeGroupToStringTest, ValidCases) {
+  EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_SECP256R1),
+            "P-256");
+  EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_SECP384R1),
+            "P-384");
+  EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519),
+            "X25519");
+#if defined(OPENSSL_IS_BORINGSSL)
+  EXPECT_EQ(
+      *tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519_MLKEM768),
+      "X25519MLKEM768");
+#else
+  EXPECT_EQ(tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519_MLKEM768)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+#endif
+}
+
+TEST(ConvertKeyExchangeGroupToStringTest, InvalidCases) {
+  EXPECT_EQ(tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_UNSPECIFIED)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+}
+
 class CrlUtils : public ::testing::Test {
  public:
   static void SetUpTestSuite() {
@@ -504,36 +541,34 @@ class CrlUtils : public ::testing::Test {
   }
 
   void SetUp() override {
-    absl::StatusOr<Slice> root_crl = LoadFile(kValidCrl, false);
+    absl::StatusOr<Slice> root_crl = LoadFile(kValidCrl);
     ASSERT_EQ(root_crl.status(), absl::OkStatus()) << root_crl.status();
     root_crl_ = ReadCrl(root_crl->as_string_view());
-    absl::StatusOr<Slice> intermediate_crl = LoadFile(kIntermediateCrl, false);
+    absl::StatusOr<Slice> intermediate_crl = LoadFile(kIntermediateCrl);
     ASSERT_EQ(intermediate_crl.status(), absl::OkStatus())
         << intermediate_crl.status();
     intermediate_crl_ = ReadCrl(intermediate_crl->as_string_view());
-    absl::StatusOr<Slice> invalid_signature_crl =
-        LoadFile(kModifiedSignature, false);
+    absl::StatusOr<Slice> invalid_signature_crl = LoadFile(kModifiedSignature);
     ASSERT_EQ(invalid_signature_crl.status(), absl::OkStatus())
         << invalid_signature_crl.status();
     invalid_signature_crl_ = ReadCrl(invalid_signature_crl->as_string_view());
-    absl::StatusOr<Slice> akid_crl = LoadFile(kCrlWithAkid, false);
+    absl::StatusOr<Slice> akid_crl = LoadFile(kCrlWithAkid);
     ASSERT_EQ(akid_crl.status(), absl::OkStatus()) << akid_crl.status();
     akid_crl_ = ReadCrl(akid_crl->as_string_view());
 
-    absl::StatusOr<Slice> root_ca = LoadFile(kCrlIssuer, false);
+    absl::StatusOr<Slice> root_ca = LoadFile(kCrlIssuer);
     ASSERT_EQ(root_ca.status(), absl::OkStatus());
     root_ca_ = ReadPemCert(root_ca->as_string_view());
-    absl::StatusOr<Slice> intermediate_ca =
-        LoadFile(kIntermediateCrlIssuer, false);
+    absl::StatusOr<Slice> intermediate_ca = LoadFile(kIntermediateCrlIssuer);
     ASSERT_EQ(intermediate_ca.status(), absl::OkStatus());
     intermediate_ca_ = ReadPemCert(intermediate_ca->as_string_view());
-    absl::StatusOr<Slice> leaf_cert = LoadFile(kLeafCert, false);
+    absl::StatusOr<Slice> leaf_cert = LoadFile(kLeafCert);
     ASSERT_EQ(leaf_cert.status(), absl::OkStatus());
     leaf_cert_ = ReadPemCert(leaf_cert->as_string_view());
-    absl::StatusOr<Slice> evil_ca = LoadFile(kEvilCa, false);
+    absl::StatusOr<Slice> evil_ca = LoadFile(kEvilCa);
     ASSERT_EQ(evil_ca.status(), absl::OkStatus());
     evil_ca_ = ReadPemCert(evil_ca->as_string_view());
-    absl::StatusOr<Slice> ca_with_akid = LoadFile(kCaWithAkid, false);
+    absl::StatusOr<Slice> ca_with_akid = LoadFile(kCaWithAkid);
     ASSERT_EQ(ca_with_akid.status(), absl::OkStatus());
     ca_with_akid_ = ReadPemCert(ca_with_akid->as_string_view());
   }
@@ -575,7 +610,7 @@ TEST_F(CrlUtils, VerifySignatureModifiedSignature) {
 }
 
 TEST_F(CrlUtils, VerifySignatureModifiedContent) {
-  absl::StatusOr<Slice> crl_slice = LoadFile(kModifiedContent, false);
+  absl::StatusOr<Slice> crl_slice = LoadFile(kModifiedContent);
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
   EXPECT_EQ(crl, nullptr);
@@ -836,6 +871,74 @@ TEST(ParsePemPrivateKeyTest, EcSuccess) {
   EXPECT_NE(*pkey, nullptr);
   EVP_PKEY_free(*pkey);
 }
+
+TEST(ParseUriString, ValidUri) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_IA5STRING* uri = ASN1_IA5STRING_new();
+  ASN1_STRING_set(uri, "spiffe://foo.bar/path", -1);
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_URI, uri);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  ASSERT_EQ(parsed_uri.status(), absl::OkStatus());
+  EXPECT_EQ(*parsed_uri, "spiffe://foo.bar/path");
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseUriString, EmptyUri) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_IA5STRING* uri = ASN1_IA5STRING_new();
+  ASN1_STRING_set(uri, "", -1);
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_URI, uri);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  ASSERT_EQ(parsed_uri.status(), absl::OkStatus());
+  EXPECT_EQ(*parsed_uri, "");
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseUriString, InvalidUtf8) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_UTF8STRING* uri = ASN1_UTF8STRING_new();
+  // This sequence is invalid UTF8.
+  const unsigned char invalid_utf8[] = {0xc0};
+  ASN1_STRING_set(reinterpret_cast<ASN1_STRING*>(uri), invalid_utf8,
+                  sizeof(invalid_utf8));
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_URI, uri);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseUriString, WrongType) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_UTF8STRING* other = ASN1_UTF8STRING_new();
+  ASN1_STRING_set(other, "foo", -1);
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, other);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseUriString, DontSetASN1String) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_UTF8STRING* other = ASN1_UTF8STRING_new();
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, other);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(DefaultRepoRoots, RootsAreValid) {
+  FILE* file = fopen("etc/roots.pem", "r");
+  ASSERT_NE(file, nullptr);
+  X509* cert = nullptr;
+  int count = 0;
+  while ((cert = PEM_read_X509(file, nullptr, nullptr, nullptr)) != nullptr) {
+    count++;
+    X509_free(cert);
+  }
+  fclose(file);
+  EXPECT_GT(count, 0);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

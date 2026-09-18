@@ -25,6 +25,7 @@ package(
     default_visibility = ["//visibility:public"],
     features = [
         "layering_check",
+        "parse_headers",
     ],
 )
 
@@ -41,20 +42,18 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
         "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
-        "absl/types:optional",
-        "absl/types:variant",
         "google_cloud_cpp:opentelemetry",
         "otel/api",
         "otel/sdk/src/metrics",
         "otel/sdk:headers",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
     ],
-    language = "c++",
+    tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
     visibility = ["//:__subpackages__"],
     deps = [
         "//:call_tracer",
@@ -66,13 +65,12 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
-        "//src/core:json_args",
-        "//src/core:json_object_loader",
-        "//src/core:json_reader",
-        "//src/core:load_file",
+        "//src/core:grpc_check",
         "//src/core:metadata_batch",
         "//src/core:slice",
         "//src/core:xds_enabled_server",
         "//src/cpp/ext/otel:otel_plugin",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
 )

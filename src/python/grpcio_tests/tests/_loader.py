@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-
 import importlib
 import logging
 import os
@@ -50,12 +48,12 @@ def _relative_path_to_module_prefix(path):
     return path.replace(os.path.sep, ".")
 
 
-class Loader(object):
+class Loader:
     """Test loader for setuptools test suite support.
 
     Attributes:
       suite (unittest.TestSuite): All tests collected by the loader.
-      loader (unittest.TestLoader): Standard Python unittest loader to be ran per
+      loader (unittest.TestLoader): Standard Python unittest loader to be run per
         module discovered.
       module_matcher (re.RegexObject): A regular expression object to match
         against module names and determine whether or not the discovered module
@@ -73,6 +71,13 @@ class Loader(object):
         # ensure that we capture decorators and definitions (else our coverage
         # measure unnecessarily suffers)
         coverage_context = coverage.Coverage(data_suffix=True)
+        # In Python 3.15+, the default coverage tracer can encounter issues or
+        # incompatibilities. We switch to the 'sysmon' core (which uses PEP 669
+        # sys.monitoring) for better reliability. Since 'sysmon' does not
+        # currently support plugins, we must explicitly disable them.
+        if sys.version_info >= (3, 15):
+            coverage_context.set_option("run:plugins", [])
+            coverage_context.set_option("run:core", "sysmon")
         coverage_context.start()
         imported_modules = tuple(
             importlib.import_module(name) for name in names

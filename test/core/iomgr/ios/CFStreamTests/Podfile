@@ -1,5 +1,5 @@
 source 'https://github.com/CocoaPods/Specs.git'
-platform :ios, '10.0'
+platform :ios, '15.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 
@@ -20,7 +20,7 @@ post_install do |installer|
 
     # CocoaPods creates duplicated library targets of gRPC-Core when the test targets include
     # non-default subspecs of gRPC-Core. All of these library targets start with prefix 'gRPC-Core'
-    # and require the same error suppresion.
+    # and require the same error suppression.
     if target.name.start_with?('gRPC-Core')
       target.build_configurations.each do |config|
         # TODO(zyc): Remove this setting after the issue is resolved

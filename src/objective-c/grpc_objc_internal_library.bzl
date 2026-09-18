@@ -65,7 +65,7 @@ def grpc_objc_ios_unit_test(
 
     ios_unit_test(
         name = name,
-        minimum_os_version = "9.0",
+        minimum_os_version = "15.0",
         runner = test_runner,
         deps = deps,
     )
@@ -74,7 +74,7 @@ def proto_library_objc_wrapper(
         name,
         srcs,
         deps = [],
-        use_well_known_protos = False):
+        use_well_known_protos = False):  # @unused
     """proto_library for adding dependencies to google/protobuf protos.
 
     Args:

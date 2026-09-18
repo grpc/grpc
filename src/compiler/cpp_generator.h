@@ -38,7 +38,7 @@ namespace grpc {
 
 // Using grpc::string and grpc::to_string is discouraged in favor of
 // std::string and std::to_string. This is only for legacy code using
-// them explictly.
+// them explicitly.
 using std::string;     // deprecated
 using std::to_string;  // deprecated
 
@@ -68,6 +68,8 @@ struct Parameters {
   bool allow_sync_server_api;
   // Whether to generate completion queue API.
   bool allow_cq_api;
+  // whether to add deprecated warning for services
+  bool allow_deprecated;
 };
 
 // Return the prologue of the generated header file.

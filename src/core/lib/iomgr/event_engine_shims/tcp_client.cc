@@ -13,9 +13,6 @@
 // limitations under the License.
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -31,6 +28,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -54,7 +53,6 @@ int64_t event_engine_tcp_client_connect(
   EventEngine::ConnectionHandle handle = engine_ptr->Connect(
       [on_connect,
        endpoint](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
-        grpc_core::ApplicationCallbackExecCtx app_ctx;
         grpc_core::ExecCtx exec_ctx;
         absl::Status conn_status = ep.ok() ? absl::OkStatus() : ep.status();
         if (ep.ok()) {
@@ -64,8 +62,7 @@ int64_t event_engine_tcp_client_connect(
         }
         GRPC_TRACE_LOG(event_engine, INFO)
             << "EventEngine::Connect Status: " << ep.status();
-        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
-                                absl_status_to_grpc_error(conn_status));
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect, conn_status);
       },
       CreateResolvedAddress(*addr), config,
       resource_quota != nullptr

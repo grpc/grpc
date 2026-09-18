@@ -105,6 +105,7 @@ _TAG_COLOR = {
     "SUCCESS": "green",
     "IDLE": "gray",
     "SKIPPED": "cyan",
+    "LOG": "gray",
 }
 
 _FORMAT = "%(asctime)-15s %(message)s"
@@ -145,16 +146,20 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
                     % (
                         _BEGINNING_OF_LINE,
                         _CLEAR_LINE,
-                        "\n%s" % explanatory_text
-                        if explanatory_text is not None
-                        else "",
-                        _COLORS[_TAG_COLOR[tag]][1],
-                        _COLORS[_TAG_COLOR[tag]][0],
+                        (
+                            "\n%s" % explanatory_text
+                            if explanatory_text is not None
+                            else ""
+                        ),
+                        _COLORS[_TAG_COLOR.get(tag, "gray")][1],
+                        _COLORS[_TAG_COLOR.get(tag, "gray")][0],
                         tag,
                         msg,
-                        "\n"
-                        if do_newline or explanatory_text is not None
-                        else "",
+                        (
+                            "\n"
+                            if do_newline or explanatory_text is not None
+                            else ""
+                        ),
                     )
                 )
             sys.stdout.flush()
@@ -177,7 +182,7 @@ def which(filename):
     raise Exception("%s not found" % filename)
 
 
-class JobSpec(object):
+class JobSpec:
     """Specifies what to run for a job."""
 
     def __init__(
@@ -253,7 +258,7 @@ class JobSpec(object):
         )
 
 
-class JobResult(object):
+class JobResult:
     def __init__(self):
         self.state = "UNKNOWN"
         self.returncode = -1
@@ -270,7 +275,7 @@ def read_from_start(f):
     return f.read()
 
 
-class Job(object):
+class Job:
     """Manages one job."""
 
     def __init__(
@@ -285,6 +290,10 @@ class Job(object):
         self._suppress_failure_message = False
         self._quiet_success = quiet_success
         if not self._quiet_success:
+            # TODO(sergiitk): should we print out the timeout here? It may be
+            #   useful to make it easier identify timeout issues when we have
+            #   multiple layers of run_tests.py, f.e run_tests_matrix.py runs
+            #   run_tests.py that starts a docker job that also runs run_tests.py
             message("START", spec.shortname, do_newline=self._travis)
         self.result = JobResult()
         self.start()
@@ -300,12 +309,19 @@ class Job(object):
             )
             if not os.path.exists(logfile_dir):
                 os.makedirs(logfile_dir)
+            message("LOG", f"Logging output to {self._spec.logfilename}")
             self._logfile = open(self._spec.logfilename, "w+")
         else:
             # macOS: a series of quick os.unlink invocation might cause OS
             # error during the creation of temporary file. By using
             # NamedTemporaryFile, we defer the removal of file and directory.
-            self._logfile = tempfile.NamedTemporaryFile()
+            self._logfile = tempfile.NamedTemporaryFile(delete=False)
+            print(
+                "Job "
+                + self._spec.shortname
+                + " started with log file "
+                + self._logfile.name
+            )
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)
@@ -473,7 +489,7 @@ class Job(object):
         self._suppress_failure_message = True
 
 
-class Jobset(object):
+class Jobset:
     """Manages one run of jobs."""
 
     def __init__(
@@ -676,9 +692,11 @@ def run(
     js = Jobset(
         check_cancelled,
         maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-        maxjobs_cpu_agnostic
-        if maxjobs_cpu_agnostic is not None
-        else _DEFAULT_MAX_JOBS,
+        (
+            maxjobs_cpu_agnostic
+            if maxjobs_cpu_agnostic is not None
+            else _DEFAULT_MAX_JOBS
+        ),
         newline_on_success,
         travis,
         stop_on_failure,

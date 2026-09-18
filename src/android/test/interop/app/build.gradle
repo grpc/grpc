@@ -2,10 +2,12 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
-    ndkVersion "25.1.8937393"
+    ndkVersion "29.0.14206865"
     defaultConfig {
         applicationId "io.grpc.android.interop.cpp"
-        minSdkVersion 21
+        // API Level 24 or above for ftello()/fseeko() support.
+        // See https://android.googlesource.com/platform/bionic/+/refs/heads/main/docs/32-bit-abi.md
+        minSdkVersion 24
         // noinspection ExpiredTargetSDKVersion
         targetSdkVersion 26
         versionCode 1
@@ -20,7 +22,7 @@ android {
                 def grpc_cpp_plugin = project.hasProperty('grpc_cpp_plugin') ?
                         project.property('grpc_cpp_plugin') : '/usr/local/bin/grpc_cpp_plugin'
 
-                cppFlags "-std=c++14 -frtti -fexceptions"
+                cppFlags "-std=c++17 -frtti -fexceptions"
                 arguments '-DANDROID_STL=c++_shared'
                 arguments '-DRUN_HAVE_POSIX_REGEX=0'
                 arguments '-DRUN_HAVE_STD_REGEX=0'

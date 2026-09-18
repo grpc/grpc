@@ -16,6 +16,7 @@
 # Create a workspace in a subdirectory to allow running multiple builds in isolation.
 # WORKSPACE_NAME env variable needs to contain name of the workspace to create.
 # All cmdline args will be executed as a command.
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 cd "$(dirname "$0")/../../.."

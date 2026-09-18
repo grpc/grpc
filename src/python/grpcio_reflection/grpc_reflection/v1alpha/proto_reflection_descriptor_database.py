@@ -55,7 +55,7 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         self._logger = logging.getLogger(__name__)
         self._stub = ServerReflectionStub(channel)
         self._known_files: Set[str] = set()
-        self._cached_extension_numbers: Dict[str, List[int]] = dict()
+        self._cached_extension_numbers: Dict[str, List[int]] = {}
 
     def get_services(self) -> Iterable[str]:
         """
@@ -64,7 +64,6 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         Returns:
             A list of strings corresponding to the names of the services.
         """
-
         request = ServerReflectionRequest(list_services="")
         response = self._do_one_request(request, key="")
         list_services: ListServiceResponse = response.list_services_response
@@ -87,7 +86,6 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         Raises:
             KeyError: the file was not found.
         """
-
         try:
             return super().FindFileByName(name)
         except KeyError:
@@ -121,7 +119,6 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         Raises:
             KeyError: the symbol was not found.
         """
-
         try:
             return super().FindFileContainingSymbol(symbol)
         except KeyError:
@@ -148,7 +145,6 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         Raises:
             KeyError: The message type `extendee_name` was not found.
         """
-
         if extendee_name in self._cached_extension_numbers:
             return self._cached_extension_numbers[extendee_name]
         request = ServerReflectionRequest(
@@ -182,7 +178,6 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         Raises:
             KeyError: The message or the extension number were not found.
         """
-
         try:
             return super().FindFileContainingExtension(
                 extendee_name, extension_number

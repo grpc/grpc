@@ -18,27 +18,29 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <ostream>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/useful.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/util/useful.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace chttp2 {
@@ -97,12 +99,33 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action) {
   return out << action.DebugString();
 }
 
-TransportFlowControl::TransportFlowControl(absl::string_view name,
+std::string FlowControlAction::ImmediateUpdateReasons() const {
+  std::string result;
+  if (send_stream_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_stream_update,");
+  }
+  if (send_transport_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_transport_update,");
+  }
+  if (send_initial_window_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_initial_window_update,");
+  }
+  if (send_max_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_max_frame_size_update,");
+  }
+  if (preferred_rx_crypto_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "preferred_rx_crypto_frame_size_update,");
+  }
+  return result;
+}
+
+TransportFlowControl::TransportFlowControl(absl::string_view peer_name,
                                            bool enable_bdp_probe,
                                            MemoryOwner* memory_owner)
     : memory_owner_(memory_owner),
       enable_bdp_probe_(enable_bdp_probe),
-      bdp_estimator_(name) {}
+      bdp_ping_blocked_(true),
+      bdp_estimator_(peer_name) {}
 
 uint32_t TransportFlowControl::DesiredAnnounceSize(bool writing_anyway) const {
   const uint32_t target_announced_window =
@@ -184,7 +207,7 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
   // and a value t such that t_min <= t <= t_max, return the value on the line
   // segment at t.
   auto lerp = [](double t, double t_min, double t_max, double a, double b) {
-    return a + (b - a) * (t - t_min) / (t_max - t_min);
+    return a + ((b - a) * (t - t_min) / (t_max - t_min));
   };
   // We split memory pressure into three broad regions:
   // 1. Low memory pressure, the "anything goes" case - we assume no memory
@@ -293,11 +316,11 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                         Http2Settings::max_max_frame_size()),
                   &action, &FlowControlAction::set_send_max_frame_size_update);
 
-    if (IsTcpFrameSizeTuningEnabled()) {
+    if (IsTcpFrameSizeTuningEnabled() && ph2_enable_rx_crypto_) {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
       // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
       // peer that we have tcp frame size tuning enabled and we inform it of our
-      // prefered rx frame sizes. The prefered rx frame size is determined as:
+      // preferred rx frame sizes. The preferred rx frame size is determined as:
       // Clamp(target_frame_size_ * 2, 16384, 0x7fffffff). In the future, this
       // maybe updated to a different function of the memory pressure.
       UpdateSetting(
@@ -326,15 +349,16 @@ std::string TransportFlowControl::Stats::ToString() const {
                       " announced_stream_total_over_incoming_window: ",
                       announced_stream_total_over_incoming_window,
                       " bdp_accumulator: ", bdp_accumulator,
+                      " bdp_ping_blocked: ", bdp_ping_blocked,
                       " bdp_estimate: ", bdp_estimate,
                       " bdp_bw_est: ", bdp_bw_est);
 }
 
 void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
-  pending_size_ = absl::nullopt;
+  pending_size_ = std::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
-  CHECK_EQ(DesiredAnnounceSize(), 0u);
+  GRPC_CHECK_EQ(DesiredAnnounceSize(), 0u);
   std::ignore = tfc_upd.MakeAction();
 }
 
@@ -382,9 +406,22 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   return action;
 }
 
+void StreamFlowControl::IncomingUpdateContext::HackIncrementPendingSize(
+    int64_t pending_size) {
+  GRPC_CHECK_GE(pending_size, 0);
+  SetMinProgressSize(1u);
+  if (sfc_->pending_size_.has_value()) {
+    int64_t final_size = Clamp(sfc_->pending_size_.value() + pending_size,
+                               int64_t{0}, kMaxWindowUpdateSize);
+    *sfc_->pending_size_ = final_size;
+  } else {
+    sfc_->pending_size_ = pending_size;
+  }
+}
+
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
-  CHECK_GE(pending_size, 0);
+  GRPC_CHECK_GE(pending_size, 0);
   sfc_->pending_size_ = pending_size;
 }
 

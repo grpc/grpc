@@ -18,14 +18,23 @@
 
 #include <grpc/support/port_platform.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
+// Returns true if the EventEngine client shim should be used.
+// This is based on the experiment state, and compile-time configurations that
+// may disable the poller in some builds.
 bool UseEventEngineClient();
 
+// Returns true if the EventEngine listener shim should be used.
+// This is based on the experiment state, and compile-time configurations that
+// may disable the poller in some builds.
 bool UseEventEngineListener();
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+// Returns true if the pollset alternative experiment should be used.
+// This is based on the experiment state, and compile-time configurations that
+// may disable the poller in some builds.
+bool UsePollsetAlternative();
+
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_SHIM_H

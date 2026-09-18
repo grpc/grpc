@@ -19,10 +19,10 @@
 #ifndef GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
 #define GRPCPP_IMPL_CREATE_AUTH_CONTEXT_H
 
-#include <memory>
-
 #include <grpc/impl/grpc_types.h>
 #include <grpcpp/security/auth_context.h>
+
+#include <memory>
 
 namespace grpc {
 

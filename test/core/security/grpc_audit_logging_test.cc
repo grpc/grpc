@@ -16,20 +16,11 @@
 //
 //
 
-#include <memory>
-#include <string>
-
-#include <gtest/gtest.h>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/support/port_platform.h>
+
+#include <memory>
+#include <string>
 
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"
@@ -37,6 +28,13 @@
 #include "src/core/util/json/json_writer.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 namespace testing {
@@ -67,12 +65,12 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
 
   absl::string_view name() const override { return kName; }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) override {
+      std::shared_ptr<const AuditLoggerFactory::Config>) override {
     return std::make_unique<TestAuditLogger>();
   }
-  absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
+  absl::StatusOr<std::shared_ptr<const Config>> ParseAuditLoggerConfig(
       const Json&) override {
-    return std::make_unique<TestConfig>();
+    return std::make_shared<TestConfig>();
   }
 };
 

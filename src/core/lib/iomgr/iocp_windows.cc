@@ -22,15 +22,11 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log_windows.h>
 #include <winsock2.h>
 
 #include <limits>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log_windows.h>
 
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -39,7 +35,9 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/thd.h"
+#include "absl/log/log.h"
 
 static ULONG g_iocp_kick_token;
 static OVERLAPPED g_iocp_custom_overlap;
@@ -75,8 +73,8 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
   if (success == 0 && overlapped == NULL) {
     return GRPC_IOCP_WORK_TIMEOUT;
   }
-  CHECK(completion_key);
-  CHECK(overlapped);
+  GRPC_CHECK(completion_key);
+  GRPC_CHECK(overlapped);
   if (overlapped == &g_iocp_custom_overlap) {
     gpr_atm_full_fetch_add(&g_custom_events, -1);
     if (completion_key == (ULONG_PTR)&g_iocp_kick_token) {
@@ -104,7 +102,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
     info->bytes_transferred = bytes;
     info->wsa_error = success ? 0 : WSAGetLastError();
   }
-  CHECK(overlapped == &info->overlapped);
+  GRPC_CHECK(overlapped == &info->overlapped);
   bool should_destroy = grpc_socket_become_ready(socket, info);
   gpr_mu_unlock(&socket->state_mu);
   if (should_destroy) {
@@ -116,7 +114,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
 void grpc_iocp_init(void) {
   g_iocp =
       CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, (ULONG_PTR)NULL, 0);
-  CHECK(g_iocp);
+  GRPC_CHECK(g_iocp);
 }
 
 void grpc_iocp_kick(void) {
@@ -125,7 +123,7 @@ void grpc_iocp_kick(void) {
   gpr_atm_full_fetch_add(&g_custom_events, 1);
   success = PostQueuedCompletionStatus(g_iocp, 0, (ULONG_PTR)&g_iocp_kick_token,
                                        &g_iocp_custom_overlap);
-  CHECK(success);
+  GRPC_CHECK(success);
 }
 
 void grpc_iocp_flush(void) {
@@ -147,7 +145,7 @@ void grpc_iocp_shutdown(void) {
     grpc_core::ExecCtx::Get()->Flush();
   }
 
-  CHECK(CloseHandle(g_iocp));
+  GRPC_CHECK(CloseHandle(g_iocp));
 }
 
 void grpc_iocp_add_socket(grpc_winsocket* socket) {
@@ -163,7 +161,7 @@ void grpc_iocp_add_socket(grpc_winsocket* socket) {
     abort();
   }
   socket->added_to_iocp = 1;
-  CHECK(ret == g_iocp);
+  GRPC_CHECK(ret == g_iocp);
 }
 
 void grpc_iocp_register_socket_shutdown_socket_locked(grpc_winsocket* socket) {

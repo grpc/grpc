@@ -24,14 +24,13 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/statusor.h"
-
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -44,23 +43,22 @@ class CallData {
 
   bool ShouldLog() { return config_.ShouldLog(); }
 
-  void LogClientHeader(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogClientHeader(bool is_client, CallSpan* tracer,
                        const ClientMetadata& metadata);
-  void LogClientHalfClose(bool is_client,
-                          CallTracerAnnotationInterface* tracer);
-  void LogServerHeader(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogClientHalfClose(bool is_client, CallSpan* tracer);
+  void LogServerHeader(bool is_client, CallSpan* tracer,
                        const ServerMetadata* metadata);
-  void LogServerTrailer(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogServerTrailer(bool is_client, CallSpan* tracer,
                         const ServerMetadata* metadata);
-  void LogClientMessage(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogClientMessage(bool is_client, CallSpan* tracer,
                         const SliceBuffer* message);
-  void LogServerMessage(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogServerMessage(bool is_client, CallSpan* tracer,
                         const SliceBuffer* message);
-  void LogCancel(bool is_client, CallTracerAnnotationInterface* tracer);
+  void LogCancel(bool is_client, CallSpan* tracer);
 
  private:
   void SetCommonEntryFields(LoggingSink::Entry* entry, bool is_client,
-                            CallTracerAnnotationInterface* tracer,
+                            CallSpan* tracer,
                             LoggingSink::Entry::EventType event_type);
   absl::uint128 call_id_;
   uint32_t sequence_id_ = 0;
@@ -95,10 +93,10 @@ class ClientLoggingFilter final
     void OnClientToServerMessage(const Message& message);
     void OnClientToServerHalfClose();
     void OnServerToClientMessage(const Message& message);
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnFinalize;
 
    private:
-    absl::optional<logging_filter_detail::CallData> call_data_;
+    std::optional<logging_filter_detail::CallData> call_data_;
   };
 
  private:
@@ -123,10 +121,10 @@ class ServerLoggingFilter final
     void OnClientToServerMessage(const Message& message);
     void OnClientToServerHalfClose();
     void OnServerToClientMessage(const Message& message);
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnFinalize;
 
    private:
-    absl::optional<logging_filter_detail::CallData> call_data_;
+    std::optional<logging_filter_detail::CallData> call_data_;
   };
 };
 

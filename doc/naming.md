@@ -34,12 +34,12 @@ Most gRPC implementations support the following URI schemes:
     resolver does not support this, but the c-ares based resolver
     supports specifying this in the form "IP:port".)
 
-- `unix:path`, `unix://absolute_path` -- Unix domain sockets (Unix systems only)
+- `unix:path`, `unix:///absolute_path` -- Unix domain sockets (Unix systems only)
   - `path` indicates the location of the desired socket.
   - In the first form, the path may be relative or absolute; in the
-    second form, the path must be absolute (i.e., there will actually be
-    three slashes, two prior to the path and another to begin the
-    absolute path).
+    second form, the path must be absolute (i.e., the last of the three
+    slashes is actually part of the path, so the path part of the URI is
+    `/absolute_path`).
 
 - `unix-abstract:abstract_path` -- Unix domain socket in abstract namespace (Unix systems only)
   - `abstract_path` indicates a name in the abstract namespace.

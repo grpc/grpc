@@ -25,21 +25,21 @@
 namespace grpc_core {
 
 template <typename To, typename From>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION To DownCast(From* f) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline To DownCast(From* f) {
   static_assert(
       std::is_base_of<From, typename std::remove_pointer<To>::type>::value,
       "DownCast requires a base-to-derived relationship");
 // If we have RTTI & we're in debug, assert that the cast is legal.
 #if ABSL_INTERNAL_HAS_RTTI
 #ifndef NDEBUG
-  if (f != nullptr) CHECK_NE(dynamic_cast<To>(f), nullptr);
+  if (f != nullptr) CHECK_NE(dynamic_cast<To>(f), nullptr) << f;
 #endif
 #endif
   return static_cast<To>(f);
 }
 
 template <typename To, typename From>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION To DownCast(From& f) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline To DownCast(From& f) {
   return *DownCast<typename std::remove_reference<To>::type*>(&f);
 }
 

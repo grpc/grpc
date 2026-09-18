@@ -17,9 +17,9 @@
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 
 #include <limits>
+#include <optional>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -64,7 +64,7 @@ TEST(StaticStrideSchedulerTest, OneWeightsIsNullopt) {
 TEST(StaticStrideSchedulerTest, PicksAreWeightedExactly) {
   uint32_t sequence = 0;
   const std::vector<float> weights = {1, 2, 3};
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(absl::MakeSpan(weights),
                                   [&] { return sequence++; });
   ASSERT_TRUE(scheduler.has_value());
@@ -79,7 +79,7 @@ TEST(StaticStrideSchedulerTest, PicksAreWeightedExactly) {
 TEST(StaticStrideSchedulerTest, ZeroWeightUsesMean) {
   uint32_t sequence = 0;
   const std::vector<float> weights = {3, 0, 1};
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(absl::MakeSpan(weights),
                                   [&] { return sequence++; });
   ASSERT_TRUE(scheduler.has_value());
@@ -94,7 +94,7 @@ TEST(StaticStrideSchedulerTest, ZeroWeightUsesMean) {
 TEST(StaticStrideSchedulerTest, AllWeightsEqualIsRoundRobin) {
   uint32_t sequence = 0;
   const std::vector<float> weights = {300, 300, 0};
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(absl::MakeSpan(weights),
                                   [&] { return sequence++; });
   ASSERT_TRUE(scheduler.has_value());
@@ -116,7 +116,7 @@ TEST(StaticStrideSchedulerTest, AllWeightsEqualIsRoundRobin) {
 TEST(StaticStrideSchedulerTest, PicksAreDeterministic) {
   uint32_t sequence = 0;
   const std::vector<float> weights = {1, 2, 3};
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(absl::MakeSpan(weights),
                                   [&] { return sequence++; });
   ASSERT_TRUE(scheduler.has_value());
@@ -138,7 +138,7 @@ TEST(StaticStrideSchedulerTest, PicksAreDeterministic) {
 TEST(StaticStrideSchedulerTest, RebuildGiveSamePicks) {
   uint32_t sequence = 0;
   const std::vector<float> weights = {1, 2, 3};
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(absl::MakeSpan(weights),
                                   [&] { return sequence++; });
   ASSERT_TRUE(scheduler.has_value());
@@ -154,7 +154,7 @@ TEST(StaticStrideSchedulerTest, RebuildGiveSamePicks) {
   // identical picks.
   sequence = 0;
   for (int i = 0; i < n; ++i) {
-    const absl::optional<StaticStrideScheduler> rebuild =
+    const std::optional<StaticStrideScheduler> rebuild =
         StaticStrideScheduler::Make(absl::MakeSpan(weights),
                                     [&] { return sequence++; });
     ASSERT_TRUE(rebuild.has_value());
@@ -172,7 +172,7 @@ TEST(StaticStrideSchedulerTest, LargestIsPickedEveryGeneration) {
   uint32_t sequence = 0;
   const std::vector<float> weights = {1, 2, 3};
   const int mean = 2;
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(absl::MakeSpan(weights),
                                   [&] { return sequence++; });
   ASSERT_TRUE(scheduler.has_value());
@@ -191,7 +191,7 @@ TEST(StaticStrideSchedulerTest, MaxIsClampedForHighRatio) {
   uint32_t sequence = 0;
   const std::vector<float> weights{81, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                    1,  1, 1, 1, 1, 1, 1, 1, 1, 1};
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(absl::MakeSpan(weights),
                                   [&] { return sequence++; });
   ASSERT_TRUE(scheduler.has_value());
@@ -209,7 +209,7 @@ TEST(StaticStrideSchedulerTest, MaxIsClampedForHighRatio) {
 TEST(StaticStrideSchedulerTest, MinIsClampedForHighRatio) {
   uint32_t sequence = 0;
   const std::vector<float> weights{100, 1e-10};
-  const absl::optional<StaticStrideScheduler> scheduler =
+  const std::optional<StaticStrideScheduler> scheduler =
       StaticStrideScheduler::Make(absl::MakeSpan(weights),
                                   [&] { return sequence++; });
   ASSERT_TRUE(scheduler.has_value());

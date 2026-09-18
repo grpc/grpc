@@ -18,10 +18,9 @@
 
 #include "src/core/lib/iomgr/timer_heap.h"
 
-#include <string.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <string.h>
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/useful.h"
@@ -49,7 +48,7 @@ static void adjust_upwards(grpc_timer** first, uint32_t i, grpc_timer* t) {
 static void adjust_downwards(grpc_timer** first, uint32_t i, uint32_t length,
                              grpc_timer* t) {
   for (;;) {
-    uint32_t left_child = 1u + 2u * i;
+    uint32_t left_child = 1u + (2u * i);
     if (left_child >= length) break;
     uint32_t right_child = left_child + 1;
     uint32_t next_i = right_child < length && first[left_child]->deadline >

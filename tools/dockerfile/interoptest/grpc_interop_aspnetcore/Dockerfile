@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0.100-preview3-stretch
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
 # needed by get-dotnet.sh script
-RUN apt-get update && apt-get install -y jq && apt-get clean
+RUN apt-get update && apt-get install -y curl git jq && apt-get clean
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
 
 # Define the default command.
 CMD ["bash"]

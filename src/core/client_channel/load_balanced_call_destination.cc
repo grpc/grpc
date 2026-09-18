@@ -14,26 +14,27 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
-#include "absl/log/log.h"
-
+#include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/lb_metadata.h"
 #include "src/core/client_channel/subchannel.h"
-#include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
 namespace {
 
 void MaybeCreateCallAttemptTracer(bool is_transparent_retry) {
+  auto* arena = MaybeGetContext<Arena>();
+  if (arena == nullptr) return;
   auto* call_tracer = MaybeGetContext<ClientCallTracer>();
   if (call_tracer == nullptr) return;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
-  SetContext<CallTracerInterface>(tracer);
+  SetContext<CallAttemptTracer>(WrapCallAttemptTracer(tracer, arena));
 }
 
 class LbCallState : public ClientChannelLbCallState {
@@ -48,8 +49,8 @@ class LbCallState : public ClientChannelLbCallState {
     return service_config_call_data->GetCallAttribute(type);
   }
 
-  ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
-    return GetContext<ClientCallTracer::CallAttemptTracer>();
+  CallAttemptTracer* GetCallAttemptTracer() const override {
+    return GetContext<CallAttemptTracer>();
   }
 };
 
@@ -63,22 +64,22 @@ T HandlePickResult(
     std::function<T(LoadBalancingPolicy::PickResult::Fail*)> fail_func,
     std::function<T(LoadBalancingPolicy::PickResult::Drop*)> drop_func) {
   auto* complete_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Complete>(&result->result);
   if (complete_pick != nullptr) {
     return complete_func(complete_pick);
   }
   auto* queue_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Queue>(&result->result);
   if (queue_pick != nullptr) {
     return queue_func(queue_pick);
   }
   auto* fail_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Fail>(&result->result);
   if (fail_pick != nullptr) {
     return fail_func(fail_pick);
   }
   auto* drop_pick =
-      absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
+      std::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
   CHECK(drop_pick != nullptr);
   return drop_func(drop_pick);
 }
@@ -134,11 +135,9 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
                  "pick";
           return Continue{};
         }
-        // If the LB policy returned a call tracker, inform it that the
-        // call is starting and add it to context, so that we can notify
-        // it when the call finishes.
+        // If the LB policy returned a call tracker, add it to context, so
+        // that we can notify it when the call finishes.
         if (complete_pick->subchannel_call_tracker != nullptr) {
-          complete_pick->subchannel_call_tracker->Start();
           SetContext(complete_pick->subchannel_call_tracker.release());
         }
         // Apply metadata mutations, if any.
@@ -180,9 +179,11 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "client_channel: " << GetContext<Activity>()->DebugTag()
             << " pick dropped: " << drop_pick->status;
-        return grpc_error_set_int(MaybeRewriteIllegalStatusCode(
-                                      std::move(drop_pick->status), "LB drop"),
-                                  StatusIntProperty::kLbPolicyDrop, 1);
+        // TODO(roth): Need to set the LbPolicyDrop trait in server
+        // trailing metadata, so that the retry interceptor can know not
+        // to retry.
+        return MaybeRewriteIllegalStatusCode(std::move(drop_pick->status),
+                                             "LB drop");
       });
 }
 
@@ -240,8 +241,7 @@ void LoadBalancedCallDestination::StartCall(
               }
               // If it was queued, add a trace annotation.
               if (was_queued) {
-                auto* tracer =
-                    MaybeGetContext<ClientCallTracer::CallAttemptTracer>();
+                auto* tracer = MaybeGetContext<CallAttemptTracer>();
                 if (tracer != nullptr) {
                   tracer->RecordAnnotation("Delayed LB pick complete.");
                 }

@@ -11,6 +11,8 @@ Gem::Specification.new do |s|
   s.description = 'protoc and the Ruby gRPC protoc plugin'
   s.license = 'Apache-2.0'
 
+  s.required_ruby_version = '>= 3.2'
+
   s.files = %w( version.rb platform_check.rb README.md )
   s.files += Dir.glob('bin/**/*')
 

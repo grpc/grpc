@@ -15,17 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
-
-#include "absl/types/optional.h"
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/util/matchers.h"
 
@@ -46,12 +44,18 @@ struct Rbac {
     kOnDenyAndAllow,
   };
 
+  // TODO(roth): Unify this with
+  // XdsListenerResource::FilterChainMap::CidrRange, possibly as part of
+  // addressing https://github.com/grpc/grpc/issues/34172.
   struct CidrRange {
     CidrRange() = default;
     CidrRange(std::string address_prefix, uint32_t prefix_len);
 
     CidrRange(CidrRange&& other) noexcept;
     CidrRange& operator=(CidrRange&& other) noexcept;
+
+    bool operator==(const CidrRange& other) const;
+    bool operator!=(const CidrRange& other) const { return !(*this == other); }
 
     std::string ToString() const;
 
@@ -78,7 +82,7 @@ struct Rbac {
         std::vector<std::unique_ptr<Permission>> permissions);
     static Permission MakeOrPermission(
         std::vector<std::unique_ptr<Permission>> permissions);
-    static Permission MakeNotPermission(Permission permission);
+    static Permission MakeNotPermission(std::unique_ptr<Permission> permission);
     static Permission MakeAnyPermission();
     static Permission MakeHeaderPermission(HeaderMatcher header_matcher);
     static Permission MakePathPermission(StringMatcher string_matcher);
@@ -92,6 +96,9 @@ struct Rbac {
 
     Permission(Permission&& other) noexcept;
     Permission& operator=(Permission&& other) noexcept;
+
+    bool operator==(const Permission& other) const;
+    bool operator!=(const Permission& other) const { return !(*this == other); }
 
     std::string ToString() const;
 
@@ -126,10 +133,10 @@ struct Rbac {
         std::vector<std::unique_ptr<Principal>> principals);
     static Principal MakeOrPrincipal(
         std::vector<std::unique_ptr<Principal>> principals);
-    static Principal MakeNotPrincipal(Principal principal);
+    static Principal MakeNotPrincipal(std::unique_ptr<Principal> principal);
     static Principal MakeAnyPrincipal();
     static Principal MakeAuthenticatedPrincipal(
-        absl::optional<StringMatcher> string_matcher);
+        std::optional<StringMatcher> string_matcher);
     static Principal MakeSourceIpPrincipal(CidrRange ip);
     static Principal MakeDirectRemoteIpPrincipal(CidrRange ip);
     static Principal MakeRemoteIpPrincipal(CidrRange ip);
@@ -143,11 +150,14 @@ struct Rbac {
     Principal(Principal&& other) noexcept;
     Principal& operator=(Principal&& other) noexcept;
 
+    bool operator==(const Principal& other) const;
+    bool operator!=(const Principal& other) const { return !(*this == other); }
+
     std::string ToString() const;
 
     RuleType type = RuleType::kAnd;
     HeaderMatcher header_matcher;
-    absl::optional<StringMatcher> string_matcher;
+    std::optional<StringMatcher> string_matcher;
     CidrRange ip;
     // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
     // element.
@@ -163,6 +173,9 @@ struct Rbac {
     Policy(Policy&& other) noexcept;
     Policy& operator=(Policy&& other) noexcept;
 
+    bool operator==(const Policy& other) const;
+    bool operator!=(const Policy& other) const { return !(*this == other); }
+
     std::string ToString() const;
 
     Permission permissions;
@@ -176,6 +189,9 @@ struct Rbac {
   Rbac(Rbac&& other) noexcept;
   Rbac& operator=(Rbac&& other) noexcept;
 
+  bool operator==(const Rbac& other) const;
+  bool operator!=(const Rbac& other) const { return !(*this == other); }
+
   std::string ToString() const;
 
   // The authorization policy name or empty string in xDS case.
@@ -184,8 +200,8 @@ struct Rbac {
   Action action;
   std::map<std::string, Policy> policies;
 
-  AuditCondition audit_condition;
-  std::vector<std::unique_ptr<experimental::AuditLoggerFactory::Config>>
+  AuditCondition audit_condition = AuditCondition::kNone;
+  std::vector<std::shared_ptr<const experimental::AuditLoggerFactory::Config>>
       logger_configs;
 };
 

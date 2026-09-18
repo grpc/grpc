@@ -19,9 +19,9 @@
 #ifndef GRPC_TEST_CPP_UTIL_PROTO_FILE_PARSER_H
 #define GRPC_TEST_CPP_UTIL_PROTO_FILE_PARSER_H
 
-#include <memory>
-
 #include <grpcpp/channel.h>
+
+#include <memory>
 
 #include "test/cpp/util/config_grpc_cli.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"

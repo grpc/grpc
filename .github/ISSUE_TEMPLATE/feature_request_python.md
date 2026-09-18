@@ -1,12 +1,11 @@
 ---
 name: Request a gRPC Python feature
 about: Suggest an idea for this project
-labels: kind/enhancement, priority/P2, lang/Python
+labels: kind/enhancement, priority/P2, lang/Python, untriaged
 assignees:
-  - gnossen
-  - XuanWang-Amos
+  - asheshvidyut
+  - sergiitk
   - sreenithi
-  - sourabhsinghs
 
 ---
 

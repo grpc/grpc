@@ -23,9 +23,6 @@
 
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
@@ -36,6 +33,7 @@
 #include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/ev_apple.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "absl/log/log.h"
 
 GrpcLibraryInitHolder::GrpcLibraryInitHolder() { grpc_init(); }
 
@@ -60,7 +58,6 @@ CFStreamHandle* CFStreamHandle::CreateStreamHandle(
 void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
                                   CFStreamEventType type,
                                   void* client_callback_info) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error;
   CFErrorRef stream_error;
@@ -78,9 +75,7 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
       break;
     case kCFStreamEventErrorOccurred:
       stream_error = CFReadStreamCopyError(stream);
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "read error"),
-          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
+      error = GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "read error");
       CFRelease(stream_error);
       handle->open_event_.SetShutdown(error);
       handle->write_event_.SetShutdown(error);
@@ -93,7 +88,6 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
 void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
                                    CFStreamEventType type,
                                    void* clientCallBackInfo) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error;
   CFErrorRef stream_error;
@@ -111,9 +105,7 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
       break;
     case kCFStreamEventErrorOccurred:
       stream_error = CFWriteStreamCopyError(stream);
-      error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write error"),
-          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
+      error = GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write error");
       CFRelease(stream_error);
       handle->open_event_.SetShutdown(error);
       handle->write_event_.SetShutdown(error);

@@ -11,15 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/support/port_platform.h>
+
+#include <memory>
+#include <optional>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "gtest/gtest.h"
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 

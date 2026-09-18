@@ -33,7 +33,7 @@ namespace grpc {
 
 // Using grpc::string and grpc::to_string is discouraged in favor of
 // std::string and std::to_string. This is only for legacy code using
-// them explictly.
+// them explicitly.
 using std::string;     // deprecated
 using std::to_string;  // deprecated
 
@@ -81,6 +81,7 @@ struct Service : public CommentHolder {
   virtual ~Service() {}
 
   virtual std::string name() const = 0;
+  virtual bool is_deprecated() const = 0;
 
   virtual int method_count() const = 0;
   virtual std::unique_ptr<const Method> method(int i) const = 0;

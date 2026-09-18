@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_MINITABLE_H_
-#define XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_MINITABLE_H_
+#ifndef XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H__UPB_MINITABLE_H_
+#define XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -19,13 +19,9 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__data__orca__v3__OrcaLoadReport_msg_init;
-extern const upb_MiniTable* xds__data__orca__v3__OrcaLoadReport_msg_init_ptr;
 extern const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init;
-extern const upb_MiniTable* xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init_ptr;
 extern const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init;
-extern const upb_MiniTable* xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init_ptr;
 extern const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init;
-extern const upb_MiniTable* xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init_ptr;
 
 extern const upb_MiniTableFile xds_data_orca_v3_orca_load_report_proto_upb_file_layout;
 
@@ -35,4 +31,4 @@ extern const upb_MiniTableFile xds_data_orca_v3_orca_load_report_proto_upb_file_
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_MINITABLE_H_ */
+#endif  /* XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H__UPB_MINITABLE_H_ */

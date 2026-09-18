@@ -16,39 +16,34 @@
 
 #include "src/core/load_balancing/backend_metric_parser.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <map>
 
-#include "absl/strings/string_view.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "upb/message/map.h"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
-
-#include <grpc/support/port_platform.h>
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 namespace {
 
-template <typename EntryType>
 std::map<absl::string_view, double> ParseMap(
     xds_data_orca_v3_OrcaLoadReport* msg,
-    const EntryType* (*entry_func)(const xds_data_orca_v3_OrcaLoadReport*,
-                                   size_t*),
-    upb_StringView (*key_func)(const EntryType*),
-    double (*value_func)(const EntryType*),
+    bool (*upb_next_func)(const xds_data_orca_v3_OrcaLoadReport* msg,
+                          upb_StringView* key, double* val, size_t* iter),
     BackendMetricAllocatorInterface* allocator) {
   std::map<absl::string_view, double> result;
   size_t i = kUpb_Map_Begin;
-  while (true) {
-    const auto* entry = entry_func(msg, &i);
-    if (entry == nullptr) break;
-    upb_StringView key_view = key_func(entry);
+  upb_StringView key_view;
+  double value;
+  while (upb_next_func(msg, &key_view, &value, &i)) {
     char* key = allocator->AllocateString(key_view.size);
     memcpy(key, key_view.data, key_view.size);
-    result[absl::string_view(key, key_view.size)] = value_func(entry);
+    result[absl::string_view(key, key_view.size)] = value;
   }
   return result;
 }
@@ -74,21 +69,12 @@ const BackendMetricData* ParseBackendMetricData(
   backend_metric_data->qps =
       xds_data_orca_v3_OrcaLoadReport_rps_fractional(msg);
   backend_metric_data->eps = xds_data_orca_v3_OrcaLoadReport_eps(msg);
-  backend_metric_data->request_cost =
-      ParseMap<xds_data_orca_v3_OrcaLoadReport_RequestCostEntry>(
-          msg, xds_data_orca_v3_OrcaLoadReport_request_cost_next,
-          xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_key,
-          xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_value, allocator);
-  backend_metric_data->utilization =
-      ParseMap<xds_data_orca_v3_OrcaLoadReport_UtilizationEntry>(
-          msg, xds_data_orca_v3_OrcaLoadReport_utilization_next,
-          xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_key,
-          xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_value, allocator);
-  backend_metric_data->named_metrics =
-      ParseMap<xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry>(
-          msg, xds_data_orca_v3_OrcaLoadReport_named_metrics_next,
-          xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_key,
-          xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_value, allocator);
+  backend_metric_data->request_cost = ParseMap(
+      msg, xds_data_orca_v3_OrcaLoadReport_request_cost_next, allocator);
+  backend_metric_data->utilization = ParseMap(
+      msg, xds_data_orca_v3_OrcaLoadReport_utilization_next, allocator);
+  backend_metric_data->named_metrics = ParseMap(
+      msg, xds_data_orca_v3_OrcaLoadReport_named_metrics_next, allocator);
   return backend_metric_data;
 }
 

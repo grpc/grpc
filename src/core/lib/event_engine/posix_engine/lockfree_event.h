@@ -14,23 +14,20 @@
 
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_LOCKFREE_EVENT_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_LOCKFREE_EVENT_H
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <cstdint>
 
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "absl/status/status.h"
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-
-namespace grpc_event_engine {
-namespace experimental {
-
-class Scheduler;
+namespace grpc_event_engine::experimental {
 
 class LockfreeEvent {
  public:
-  explicit LockfreeEvent(Scheduler* scheduler) : scheduler_(scheduler) {}
+  explicit LockfreeEvent(ThreadPool* thread_pool) : thread_pool_(thread_pool) {}
 
   LockfreeEvent(const LockfreeEvent&) = delete;
   LockfreeEvent& operator=(const LockfreeEvent&) = delete;
@@ -64,10 +61,9 @@ class LockfreeEvent {
   enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
 
   std::atomic<intptr_t> state_;
-  Scheduler* scheduler_;
+  ThreadPool* thread_pool_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_LOCKFREE_EVENT_H

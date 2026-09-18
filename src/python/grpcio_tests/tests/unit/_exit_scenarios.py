@@ -155,7 +155,7 @@ _METHOD_HANDLERS = {
 # Traditional executors will not exit until all their
 # current jobs complete.  Because we submit jobs that will
 # never finish, we don't want to block exit on these jobs.
-class DaemonPool(object):
+class DaemonPool:
     def submit(self, fn, *args, **kwargs):
         thread = threading.Thread(target=fn, args=args, kwargs=kwargs)
         thread.daemon = True

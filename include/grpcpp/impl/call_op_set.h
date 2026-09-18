@@ -19,13 +19,7 @@
 #ifndef GRPCPP_IMPL_CALL_OP_SET_H
 #define GRPCPP_IMPL_CALL_OP_SET_H
 
-#include <cstring>
-#include <map>
-#include <memory>
-
-#include "absl/log/absl_check.h"
-#include "absl/log/absl_log.h"
-
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/grpc_types.h>
@@ -34,7 +28,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/call_hook.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/intercepted_channel.h>
 #include <grpcpp/impl/completion_queue_tag.h>
@@ -45,11 +38,17 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/string_ref.h>
 
+#include <cstring>
+#include <map>
+#include <memory>
+
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
+
 namespace grpc {
 
 namespace internal {
 class Call;
-class CallHook;
 
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
@@ -292,23 +291,33 @@ class CallOpSendMessage {
   /// Send \a message using \a options for the write. The \a options are cleared
   /// after use.
   template <class M>
-  GRPC_MUST_USE_RESULT Status SendMessage(const M& message,
-                                          WriteOptions options);
+  GRPC_MUST_USE_RESULT Status
+  SendMessage(const M& message, WriteOptions options,
+              grpc_event_engine::experimental::MemoryAllocator* allocator);
 
   template <class M>
-  GRPC_MUST_USE_RESULT Status SendMessage(const M& message);
+  GRPC_MUST_USE_RESULT Status
+  SendMessage(const M& message,
+              grpc_event_engine::experimental::MemoryAllocator* allocator) {
+    return SendMessage(message, WriteOptions(), allocator);
+  }
 
   /// Send \a message using \a options for the write. The \a options are cleared
   /// after use. This form of SendMessage allows gRPC to reference \a message
   /// beyond the lifetime of SendMessage.
   template <class M>
-  GRPC_MUST_USE_RESULT Status SendMessagePtr(const M* message,
-                                             WriteOptions options);
+  GRPC_MUST_USE_RESULT Status
+  SendMessagePtr(const M* message, WriteOptions options,
+                 grpc_event_engine::experimental::MemoryAllocator* allocator);
 
   /// This form of SendMessage allows gRPC to reference \a message beyond the
   /// lifetime of SendMessage.
   template <class M>
-  GRPC_MUST_USE_RESULT Status SendMessagePtr(const M* message);
+  GRPC_MUST_USE_RESULT Status
+  SendMessagePtr(const M* message,
+                 grpc_event_engine::experimental::MemoryAllocator* allocator) {
+    return SendMessagePtr(message, WriteOptions(), allocator);
+  }
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
@@ -378,12 +387,13 @@ class CallOpSendMessage {
 };
 
 template <class M>
-Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
+Status CallOpSendMessage::SendMessage(
+    const M& message, WriteOptions options,
+    grpc_event_engine::experimental::MemoryAllocator* allocator) {
   write_options_ = options;
   // Serialize immediately since we do not have access to the message pointer
   bool own_buf;
-  Status result = SerializationTraits<M>::Serialize(
-      message, send_buf_.bbuf_ptr(), &own_buf);
+  Status result = Serialize(allocator, message, send_buf_.bbuf_ptr(), &own_buf);
   if (!own_buf) {
     send_buf_.Duplicate();
   }
@@ -391,35 +401,26 @@ Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
 }
 
 template <class M>
-Status CallOpSendMessage::SendMessage(const M& message) {
-  return SendMessage(message, WriteOptions());
-}
-
-template <class M>
-Status CallOpSendMessage::SendMessagePtr(const M* message,
-                                         WriteOptions options) {
+Status CallOpSendMessage::SendMessagePtr(
+    const M* message, WriteOptions options,
+    grpc_event_engine::experimental::MemoryAllocator* allocator) {
   msg_ = message;
   write_options_ = options;
   // Store the serializer for later since we have access to the message
-  serializer_ = [this](const void* message) {
+  serializer_ = [this, allocator](const void* message) {
     bool own_buf;
     // TODO(vjpai): Remove the void below when possible
     // The void in the template parameter below should not be needed
     // (since it should be implicit) but is needed due to an observed
     // difference in behavior between clang and gcc for certain internal users
-    Status result = SerializationTraits<M>::Serialize(
-        *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
+    Status result = Serialize(allocator, *static_cast<const M*>(message),
+                              send_buf_.bbuf_ptr(), &own_buf);
     if (!own_buf) {
       send_buf_.Duplicate();
     }
     return result;
   };
   return Status();
-}
-
-template <class M>
-Status CallOpSendMessage::SendMessagePtr(const M* message) {
-  return SendMessagePtr(message, WriteOptions());
 }
 
 template <class R>
@@ -447,8 +448,7 @@ class CallOpRecvMessage {
     if (recv_buf_.Valid()) {
       if (*status) {
         got_message = *status =
-            SerializationTraits<R>::Deserialize(recv_buf_.bbuf_ptr(), message_)
-                .ok();
+            grpc::Deserialize(recv_buf_.bbuf_ptr(), message_).ok();
         recv_buf_.Release();
       } else {
         got_message = false;
@@ -516,7 +516,7 @@ class DeserializeFuncType final : public DeserializeFunc {
  public:
   explicit DeserializeFuncType(R* message) : message_(message) {}
   Status Deserialize(ByteBuffer* buf) override {
-    return SerializationTraits<R>::Deserialize(buf->bbuf_ptr(), message_);
+    return grpc::Deserialize(buf->bbuf_ptr(), message_);
   }
 
   ~DeserializeFuncType() override {}

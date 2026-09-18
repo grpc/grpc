@@ -146,7 +146,7 @@ typedef enum {
   GRPC_STATUS_DATA_LOSS = 15,
 
   /** Force users to include a default branch: */
-  GRPC_STATUS__DO_NOT_USE = -1
+  GRPC_STATUS__DO_NOT_USE = 0x7fffffffu,
 } grpc_status_code;
 
 #ifdef __cplusplus

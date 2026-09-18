@@ -17,18 +17,16 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 #include <errno.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
 // clang-format off
@@ -42,11 +40,10 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 
 namespace {
@@ -57,7 +54,7 @@ grpc_resolved_address MakeAddr4(const uint8_t* data, size_t data_len) {
       reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4.addr);
   memset(&resolved_addr4, 0, sizeof(resolved_addr4));
   addr4->sin_family = GRPC_AF_INET;
-  CHECK(data_len == sizeof(addr4->sin_addr.s_addr));
+  GRPC_CHECK(data_len == sizeof(addr4->sin_addr.s_addr));
   memcpy(&addr4->sin_addr.s_addr, data, data_len);
   addr4->sin_port = grpc_htons(12345);
   resolved_addr4.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
@@ -70,7 +67,7 @@ grpc_resolved_address MakeAddr6(const uint8_t* data, size_t data_len) {
       reinterpret_cast<grpc_sockaddr_in6*>(resolved_addr6.addr);
   memset(&resolved_addr6, 0, sizeof(resolved_addr6));
   addr6->sin6_family = GRPC_AF_INET6;
-  CHECK(data_len == sizeof(addr6->sin6_addr.s6_addr));
+  GRPC_CHECK(data_len == sizeof(addr6->sin6_addr.s6_addr));
   memcpy(&addr6->sin6_addr.s6_addr, data, data_len);
   addr6->sin6_port = grpc_htons(12345);
   resolved_addr6.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));

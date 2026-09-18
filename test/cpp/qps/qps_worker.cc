@@ -18,17 +18,6 @@
 
 #include "test/cpp/qps/qps_worker.h"
 
-#include <memory>
-#include <mutex>
-#include <sstream>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -37,16 +26,22 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/util/crash.h"
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/test_util/grpc_profiler.h"
-#include "test/core/test_util/histogram.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
-#include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -181,7 +176,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   void ReleaseInstance() {
     std::lock_guard<std::mutex> g(mu_);
-    CHECK(acquired_);
+    GRPC_CHECK(acquired_);
     acquired_ = false;
   }
 
@@ -206,7 +201,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     }
     LOG(INFO) << "RunClientBody: creation status reported";
     while (stream->Read(&args)) {
-      LOG(INFO) << "RunClientBody: Message read";
+      LOG(INFO) << "RunClientBody: Message read: " << args.DebugString();
       if (!args.has_mark()) {
         LOG(INFO) << "RunClientBody: Message is not a mark!";
         return Status(StatusCode::INVALID_ARGUMENT, "Invalid mark");
@@ -254,7 +249,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     }
     LOG(INFO) << "RunServerBody: creation status reported";
     while (stream->Read(&args)) {
-      LOG(INFO) << "RunServerBody: Message read";
+      LOG(INFO) << "RunServerBody: Message read: " << args.DebugString();
       if (!args.has_mark()) {
         LOG(INFO) << "RunServerBody: Message not a mark!";
         return Status(StatusCode::INVALID_ARGUMENT, "Invalid mark");
@@ -279,6 +274,10 @@ class WorkerServiceImpl final : public WorkerService::Service {
 QpsWorker::QpsWorker(int driver_port, int server_port,
                      const std::string& credential_type) {
   impl_ = std::make_unique<WorkerServiceImpl>(server_port, this);
+  latent_see_ =
+      std::make_unique<LatentSeeService>(LatentSeeService::Options()
+                                             .set_max_memory(1024 * 1024 * 1024)
+                                             .set_max_query_time(30.0));
   gpr_atm_rel_store(&done_, gpr_atm{0});
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
@@ -289,6 +288,7 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
         server_address,
         GetCredentialsProvider()->GetServerCredentials(credential_type));
   }
+  builder->RegisterService(latent_see_.get());
   builder->RegisterService(impl_.get());
 
   server_ = builder->BuildAndStart();

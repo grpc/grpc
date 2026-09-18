@@ -36,7 +36,7 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
     for (int i = 0; i < CPU_STATE_MAX; i++) total += cpuinfo.cpu_ticks[i];
     busy = total - cpuinfo.cpu_ticks[CPU_STATE_IDLE];
   }
-  return std::make_pair(busy, total);
+  return std::pair(busy, total);
 }
 
 }  // namespace load_reporter

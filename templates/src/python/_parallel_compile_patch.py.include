@@ -1,4 +1,4 @@
-"""Patches the compile() to allow enable parallel compilation of C/C++.
+"""Patches the compile() to enable parallel compilation of C/C++.
 
 build_ext has lots of C/C++ files and normally them one by one.
 Enabling parallel build helps a lot.

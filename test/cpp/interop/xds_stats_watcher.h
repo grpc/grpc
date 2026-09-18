@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CPP_INTEROP_XDS_STATS_WATCHER_H
 #define GRPC_TEST_CPP_INTEROP_XDS_STATS_WATCHER_H
 
+#include <grpcpp/grpcpp.h>
+
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -32,13 +34,10 @@
 #include <unordered_set>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/types/span.h"
-
-#include <grpcpp/grpcpp.h>
-
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
+#include "absl/status/status.h"
+#include "absl/types/span.h"
 
 namespace grpc {
 namespace testing {

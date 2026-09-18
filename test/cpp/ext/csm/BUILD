@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/ext/csm",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -29,15 +33,18 @@ grpc_cc_test(
     external_deps = [
         "google_cloud_cpp:opentelemetry",
         "gtest",
+        "otel/sdk:headers",
         "otel/sdk/src/metrics",
     ],
-    language = "C++",
     tags = [
+        # TODO(b/406886630): Remove after fixing
+        "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
         "//:grpc++",
-        "//:grpcpp_csm_observability",
-        "//:grpcpp_otel_plugin",
+        "//src/core:xds_enabled_server",
         "//src/cpp/ext/csm:csm_observability",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:grpc_test_util",
@@ -50,33 +57,29 @@ grpc_cc_test(
         "metadata_exchange_test.cc",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "google_cloud_cpp:opentelemetry",
         "gtest",
+        "otel/api",
+        "otel/sdk:headers",
         "otel/sdk/src/metrics",
     ],
-    language = "C++",
     tags = [
+        # TODO(b/406886630): Remove after fixing
+        "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
+        "//:call_tracer",
+        "//:config",
+        "//:gpr",
         "//:grpc++",
+        "//src/core:env",
         "//src/cpp/ext/csm:csm_observability",
+        "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
         "//test/cpp/ext/otel:otel_test_library",
-    ],
-)
-
-grpc_cc_test(
-    name = "mesh_id_test",
-    srcs = [
-        "mesh_id_test.cc",
-    ],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:grpc++",
-        "//src/cpp/ext/csm:csm_observability",
-        "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -47,18 +47,11 @@ static void StreamingPingPongArgs(benchmark::internal::Benchmark* b) {
        msg_size == 0 ? msg_size++ : msg_size *= 8) {
     b->Args({msg_size, 1});
     b->Args({msg_size, 2});
+    b->MeasureProcessCPUTime()->UseRealTime();
   }
 }
 
 // Streaming with different message size
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(StreamingPingPongArgs);
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(StreamingPingPongArgs);
-
-// Streaming with different message number
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
                    NoOpMutator)
     ->Apply(StreamingPingPongArgs);

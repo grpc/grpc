@@ -18,16 +18,16 @@
 
 #include "src/core/util/backoff.h"
 
+#include <grpc/grpc.h>
+
 #include <algorithm>
 #include <memory>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -49,6 +49,24 @@ TEST(BackOffTest, ConstantBackOff) {
   EXPECT_EQ(backoff.NextAttemptDelay(), kInitialBackoff);
   EXPECT_EQ(backoff.NextAttemptDelay(), kInitialBackoff);
   EXPECT_EQ(backoff.NextAttemptDelay(), kInitialBackoff);
+}
+
+TEST(BackOffTest, InitialBackoffCappedByMaxBackoff) {
+  const auto kInitialBackoff = Duration::Seconds(2);
+  const auto kMaxBackoff = Duration::Seconds(1);
+  const double kMultiplier = 1.0;
+  const double kJitter = 0.0;
+  BackOff::Options options;
+  options.set_initial_backoff(kInitialBackoff)
+      .set_multiplier(kMultiplier)
+      .set_jitter(kJitter)
+      .set_max_backoff(kMaxBackoff);
+  BackOff backoff(options);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
+  EXPECT_EQ(backoff.NextAttemptDelay(), kMaxBackoff);
 }
 
 TEST(BackOffTest, NoJitterBackOff) {

@@ -35,7 +35,7 @@ def serve():
     grpc.keepalive_time_ms: The period (in milliseconds) after which a keepalive ping is
         sent on the transport.
     grpc.keepalive_timeout_ms: The amount of time (in milliseconds) the sender of the keepalive
-        ping waits for an acknowledgement. If it does not receive an acknowledgment within
+        ping waits for an acknowledgement. If it does not receive an acknowledgement within
         this time, it will close the connection.
     grpc.http2.min_ping_interval_without_data_ms: Minimum allowed time (in milliseconds)
         between a server receiving successive ping frames without sending any data/header frame.

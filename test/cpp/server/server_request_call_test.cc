@@ -16,23 +16,21 @@
 //
 //
 
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/config.h>
 
+#include <thread>
+
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace {

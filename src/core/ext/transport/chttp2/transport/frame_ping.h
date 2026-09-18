@@ -19,10 +19,9 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_PING_H
 
-#include <stdint.h>
-
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/error.h"

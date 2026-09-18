@@ -18,13 +18,12 @@
 #ifndef GRPC_TEST_CPP_END2END_TEST_HEALTH_CHECK_SERVICE_IMPL_H
 #define GRPC_TEST_CPP_END2END_TEST_HEALTH_CHECK_SERVICE_IMPL_H
 
-#include <map>
-#include <mutex>
-
+#include <grpc/health/v1/health.grpc.pb.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/status.h>
 
-#include "src/proto/grpc/health/v1/health.grpc.pb.h"
+#include <map>
+#include <mutex>
 
 namespace grpc {
 namespace testing {

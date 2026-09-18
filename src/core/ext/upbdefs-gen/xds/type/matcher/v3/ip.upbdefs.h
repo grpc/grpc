@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_IP_PROTO_UPBDEFS_H_
-#define XDS_TYPE_MATCHER_V3_IP_PROTO_UPBDEFS_H_
+
+
+#ifndef XDS_TYPE_MATCHER_V3_IP_PROTO_UPB_H__UPBDEFS_H_
+#define XDS_TYPE_MATCHER_V3_IP_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,10 +32,11 @@ UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_IPMatcher_IPRangeMatcher_ge
   return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.IPMatcher.IPRangeMatcher");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_IP_PROTO_UPBDEFS_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_IP_PROTO_UPB_H__UPBDEFS_H_ */

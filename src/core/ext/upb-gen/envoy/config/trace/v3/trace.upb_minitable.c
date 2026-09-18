@@ -13,7 +13,6 @@
 #include "envoy/config/trace/v3/dynamic_ot.upb_minitable.h"
 #include "envoy/config/trace/v3/http_tracer.upb_minitable.h"
 #include "envoy/config/trace/v3/lightstep.upb_minitable.h"
-#include "envoy/config/trace/v3/opencensus.upb_minitable.h"
 #include "envoy/config/trace/v3/opentelemetry.upb_minitable.h"
 #include "envoy/config/trace/v3/service.upb_minitable.h"
 #include "envoy/config/trace/v3/zipkin.upb_minitable.h"
@@ -21,7 +20,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
 const upb_MiniTableFile envoy_config_trace_v3_trace_proto_upb_file_layout = {
   NULL,
   NULL,

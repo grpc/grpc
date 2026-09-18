@@ -16,15 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <forward_list>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <thread>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/generic/async_generic_service.h>
@@ -35,6 +26,13 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/config.h>
 
+#include <algorithm>
+#include <forward_list>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <thread>
+
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/host_port.h"
@@ -42,6 +40,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

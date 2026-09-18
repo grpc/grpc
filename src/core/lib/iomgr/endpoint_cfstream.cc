@@ -23,10 +23,6 @@
 #ifdef GRPC_CFSTREAM_ENDPOINT
 
 #import <CoreFoundation/CoreFoundation.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -41,7 +37,9 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
+#include "absl/log/log.h"
 
 struct CFStreamEndpoint {
   grpc_endpoint base;
@@ -103,11 +101,6 @@ static void CFStreamUnref(CFStreamEndpoint* ep) {
 static void CFStreamRef(CFStreamEndpoint* ep) { gpr_ref(&ep->refcount); }
 #endif
 
-static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error) {
-  return grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kRpcStatus,
-                            GRPC_STATUS_UNAVAILABLE);
-}
-
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp) && ABSL_VLOG_IS_ON(2)) {
     VLOG(2) << "CFStream endpoint:" << ep << " call_read_cb " << ep->read_cb
@@ -141,7 +134,7 @@ static void CallWriteCb(CFStreamEndpoint* ep, grpc_error_handle error) {
 
 static void ReadAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
-  CHECK_NE(ep->read_cb, nullptr);
+  GRPC_CHECK_NE(ep->read_cb, nullptr);
   if (!error.ok()) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
     CallReadCb(ep, error);
@@ -149,7 +142,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     return;
   }
 
-  CHECK_EQ(ep->read_slices->count, 1);
+  GRPC_CHECK_EQ(ep->read_slices->count, 1);
   grpc_slice slice = ep->read_slices->slices[0];
   size_t len = GRPC_SLICE_LENGTH(slice);
   CFIndex read_size =
@@ -158,8 +151,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
     CFErrorRef stream_error = CFReadStreamCopyError(ep->read_stream);
     if (stream_error != nullptr) {
-      error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"));
+      error = GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error");
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE("Read error");
@@ -168,7 +160,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     EP_UNREF(ep, "read");
   } else if (read_size == 0) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
-    CallReadCb(ep, CFStreamAnnotateError(GRPC_ERROR_CREATE("Socket closed")));
+    CallReadCb(ep, absl::UnavailableError("Socket closed"));
     EP_UNREF(ep, "read");
   } else {
     if (read_size < static_cast<CFIndex>(len)) {
@@ -181,7 +173,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
 
 static void WriteAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
-  CHECK_NE(ep->write_cb, nullptr);
+  GRPC_CHECK_NE(ep->write_cb, nullptr);
   if (!error.ok()) {
     grpc_slice_buffer_reset_and_unref(ep->write_slices);
     CallWriteCb(ep, error);
@@ -196,8 +188,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
     grpc_slice_buffer_reset_and_unref(ep->write_slices);
     CFErrorRef stream_error = CFWriteStreamCopyError(ep->write_stream);
     if (stream_error != nullptr) {
-      error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Write failed"));
+      error = GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Write failed");
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE("write failed.");
@@ -235,7 +226,7 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
   GRPC_TRACE_VLOG(tcp, 2) << "CFStream endpoint:" << ep_impl << " read ("
                           << slices << ", " << cb
                           << ") length:" << slices->length;
-  CHECK_EQ(ep_impl->read_cb, nullptr);
+  GRPC_CHECK_EQ(ep_impl->read_cb, nullptr);
   ep_impl->read_cb = cb;
   ep_impl->read_slices = slices;
   grpc_slice_buffer_reset_and_unref(slices);
@@ -246,13 +237,14 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb, void* /*arg*/,
-                          int /*max_frame_size*/) {
+                          grpc_closure* cb,
+                          grpc_event_engine::experimental::EventEngine::
+                              Endpoint::WriteArgs /*args*/) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   GRPC_TRACE_VLOG(tcp, 2) << "CFStream endpoint:" << ep_impl << " write ("
                           << slices << ", " << cb
                           << ") length:" << slices->length;
-  CHECK_EQ(ep_impl->write_cb, nullptr);
+  GRPC_CHECK_EQ(ep_impl->write_cb, nullptr);
   ep_impl->write_cb = cb;
   ep_impl->write_slices = slices;
   EP_REF(ep_impl, "write");

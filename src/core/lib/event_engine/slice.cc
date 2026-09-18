@@ -14,22 +14,19 @@
 
 #include "src/core/lib/slice/slice.h"
 
+#include <grpc/event_engine/slice.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-
-#include <grpc/event_engine/slice.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/util/grpc_check.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace slice_detail {
 
@@ -49,7 +46,7 @@ Slice CopyConstructors<Slice>::FromCopiedString(std::string s) {
 
 MutableSlice::MutableSlice(const grpc_slice& slice)
     : slice_detail::BaseSlice(slice) {
-  DCHECK(slice.refcount == nullptr || slice.refcount->IsUnique());
+  GRPC_DCHECK(slice.refcount == nullptr || slice.refcount->IsUnique());
 }
 
 MutableSlice::~MutableSlice() { grpc_core::CSliceUnref(c_slice()); }
@@ -99,5 +96,4 @@ Slice Slice::FromRefcountAndBytes(grpc_slice_refcount* r, const uint8_t* begin,
   return Slice(out);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

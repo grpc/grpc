@@ -13,10 +13,16 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
-grpc_package(name = "test/core/client_channel")
+grpc_package(
+    name = "test/core/client_channel",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -24,10 +30,12 @@ grpc_cc_test(
     name = "subchannel_args_test",
     srcs = ["subchannel_args_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
+        "//:endpoint_addresses",
+        "//:gpr_platform",
         "//:grpc_client_channel",
         "//src/core:channel_args",
         "//src/core:subchannel_pool_interface",
@@ -35,36 +43,80 @@ grpc_cc_test(
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "client_channel",
+grpc_fuzz_test(
+    name = "client_channel_test",
     srcs = ["client_channel_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+        "absl/log",
+        "absl/strings",
+    ],
     deps = [
+        "//:config",
+        "//:grpc",
+        "//:grpc_base",
         "//:grpc_client_channel",
+        "//:grpc_service_config_impl",
+        "//:parse_address",
         "//test/core/call/yodel:yodel_test",
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "connected_subchannel",
-    srcs = ["connected_subchannel_test.cc"],
-    external_deps = ["gtest"],
+grpc_fuzz_test(
+    name = "subchannel_test",
+    srcs = ["subchannel_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
     deps = [
+        "//:config",
+        "//:grpc",
         "//:grpc_client_channel",
+        "//:parse_address",
         "//test/core/call/yodel:yodel_test",
     ],
 )
 
-grpc_yodel_simple_test(
-    name = "load_balanced_call_destination",
+grpc_fuzz_test(
+    name = "load_balanced_call_destination_test",
     srcs = ["load_balanced_call_destination_test.cc"],
     external_deps = [
+        "fuzztest",
+        "fuzztest_main",
         "absl/log:log",
         "gtest",
+        "absl/strings",
     ],
     deps = [
+        "//:grpc",
         "//:grpc_client_channel",
         "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "retry_interceptor_test",
+    srcs = ["retry_interceptor_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "absl/log:log",
+        "absl/status",
+        "gtest",
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:retry_interceptor",
+        "//test/core/filters:filter_matchers",
+        "//test/core/filters:filter_test",
     ],
 )
 
@@ -74,12 +126,12 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:retry_throttle",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -89,15 +141,23 @@ grpc_cc_test(
     srcs = ["client_channel_service_config_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
         "//:gpr",
         "//:grpc",
+        "//:grpc_service_config_impl",
         "//src/core:channel_args",
+        "//src/core:client_channel_service_config",
+        "//src/core:grpc_service_config",
+        "//src/core:service_config_parser",
+        "//src/core:time",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -106,14 +166,23 @@ grpc_cc_test(
     srcs = ["retry_service_config_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
+        "//:config",
         "//:gpr",
         "//:grpc",
+        "//:grpc_service_config_impl",
+        "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:grpc_service_config",
+        "//src/core:retry_service_config",
+        "//src/core:service_config_parser",
+        "//src/core:time",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -121,34 +190,91 @@ grpc_cc_test(
 grpc_cc_benchmark(
     name = "bm_client_channel",
     srcs = ["bm_client_channel.cc"],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+    ],
+    monitoring = HISTORY,
     deps = [
         "//:grpc",
+        "//:grpc_client_channel",
+        "//:parse_address",
         "//src/core:default_event_engine",
-        "//test/core/transport:call_spine_benchmarks",
+        "//test/core/call:call_spine_benchmarks",
     ],
 )
 
 grpc_cc_benchmark(
     name = "bm_load_balanced_call_destination",
     srcs = ["bm_load_balanced_call_destination.cc"],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+    ],
+    monitoring = HISTORY,
     deps = [
         "//:grpc",
+        "//:grpc_client_channel",
+        "//:parse_address",
         "//src/core:default_event_engine",
-        "//test/core/transport:call_spine_benchmarks",
+        "//test/core/call:call_spine_benchmarks",
     ],
 )
 
 grpc_cc_test(
     name = "lb_metadata_test",
     srcs = ["lb_metadata_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//src/core:lb_metadata",
         "//src/core:metadata_batch",
         "//src/core:slice",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "retry_state_test",
+    srcs = ["retry_state_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:json_reader",
+        "//src/core:retry_interceptor",
+    ],
+)
+
+grpc_cc_test(
+    name = "subchannel_metrics_test",
+    size = "small",
+    srcs = ["subchannel_metrics_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc",
+        "//:grpc_client_channel",
+        "//src/core:instrument",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "subchannel_stream_limiter_test",
+    srcs = ["subchannel_stream_limiter_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_client_channel",
         "//test/core/test_util:grpc_test_util",
     ],
 )

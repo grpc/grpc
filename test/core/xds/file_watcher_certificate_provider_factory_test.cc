@@ -18,17 +18,17 @@
 
 #include "src/core/xds/grpc/file_watcher_certificate_provider_factory.h"
 
+#include <grpc/grpc.h>
+
 #include <utility>
 
+#include "src/core/util/json/json_reader.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/util/json/json_reader.h"
-#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -37,6 +37,7 @@ namespace {
 const char* kIdentityCertFile = "/path/to/identity_cert_file";
 const char* kPrivateKeyFile = "/path/to/private_key_file";
 const char* kRootCertFile = "/path/to/root_cert_file";
+const char* kSpiffeBundleMapFile = "/path/to/spiffe_bundle_map_file";
 const int kRefreshInterval = 400;
 
 absl::StatusOr<RefCountedPtr<FileWatcherCertificateProviderFactory::Config>>
@@ -55,19 +56,43 @@ ParseConfig(absl::string_view json_string) {
 }
 
 TEST(FileWatcherConfigTest, Basic) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE");
   std::string json_str = absl::StrFormat(
       "{"
       "  \"certificate_file\": \"%s\","
       "  \"private_key_file\": \"%s\","
       "  \"ca_certificate_file\": \"%s\","
+      "  \"spiffe_bundle_map_file\": \"%s\","
       "  \"refresh_interval\": \"%ds\""
       "}",
-      kIdentityCertFile, kPrivateKeyFile, kRootCertFile, kRefreshInterval);
+      kIdentityCertFile, kPrivateKeyFile, kRootCertFile, kSpiffeBundleMapFile,
+      kRefreshInterval);
   auto config = ParseConfig(json_str);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ((*config)->identity_cert_file(), kIdentityCertFile);
   EXPECT_EQ((*config)->private_key_file(), kPrivateKeyFile);
   EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
+  EXPECT_EQ((*config)->spiffe_bundle_map_file(), kSpiffeBundleMapFile);
+  EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(kRefreshInterval));
+}
+
+TEST(FileWatcherConfigTest, SpiffeEnvVarDisables) {
+  std::string json_str = absl::StrFormat(
+      "{"
+      "  \"certificate_file\": \"%s\","
+      "  \"private_key_file\": \"%s\","
+      "  \"ca_certificate_file\": \"%s\","
+      "  \"spiffe_bundle_map_file\": \"%s\","
+      "  \"refresh_interval\": \"%ds\""
+      "}",
+      kIdentityCertFile, kPrivateKeyFile, kRootCertFile, kSpiffeBundleMapFile,
+      kRefreshInterval);
+  auto config = ParseConfig(json_str);
+  ASSERT_TRUE(config.ok()) << config.status();
+  EXPECT_EQ((*config)->identity_cert_file(), kIdentityCertFile);
+  EXPECT_EQ((*config)->private_key_file(), kPrivateKeyFile);
+  EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
+  EXPECT_EQ((*config)->spiffe_bundle_map_file(), "");
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(kRefreshInterval));
 }
 
@@ -84,6 +109,7 @@ TEST(FileWatcherConfigTest, DefaultRefreshInterval) {
   EXPECT_EQ((*config)->identity_cert_file(), kIdentityCertFile);
   EXPECT_EQ((*config)->private_key_file(), kPrivateKeyFile);
   EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
+  EXPECT_EQ((*config)->spiffe_bundle_map_file(), "");
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
 }
 
@@ -98,10 +124,44 @@ TEST(FileWatcherConfigTest, OnlyRootCertificatesFileProvided) {
   EXPECT_EQ((*config)->identity_cert_file(), "");
   EXPECT_EQ((*config)->private_key_file(), "");
   EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
+  EXPECT_EQ((*config)->spiffe_bundle_map_file(), "");
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
 }
 
-TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
+TEST(FileWatcherConfigTest, OnlySpiffeBundleMapProvided) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE");
+  std::string json_str = absl::StrFormat(
+      "{"
+      "  \"spiffe_bundle_map_file\": \"%s\""
+      "}",
+      kSpiffeBundleMapFile);
+  auto config = ParseConfig(json_str);
+  ASSERT_TRUE(config.ok()) << config.status();
+  EXPECT_EQ((*config)->identity_cert_file(), "");
+  EXPECT_EQ((*config)->private_key_file(), "");
+  EXPECT_EQ((*config)->root_cert_file(), "");
+  EXPECT_EQ((*config)->spiffe_bundle_map_file(), kSpiffeBundleMapFile);
+  EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
+}
+
+TEST(FileWatcherConfigTest, RootAndSpiffeBundleMapProvided) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE");
+  std::string json_str = absl::StrFormat(
+      "{"
+      "  \"ca_certificate_file\": \"%s\","
+      "  \"spiffe_bundle_map_file\": \"%s\""
+      "}",
+      kRootCertFile, kSpiffeBundleMapFile);
+  auto config = ParseConfig(json_str);
+  ASSERT_TRUE(config.ok()) << config.status();
+  EXPECT_EQ((*config)->identity_cert_file(), "");
+  EXPECT_EQ((*config)->private_key_file(), "");
+  EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
+  EXPECT_EQ((*config)->spiffe_bundle_map_file(), kSpiffeBundleMapFile);
+  EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
+}
+
+TEST(FileWatcherConfigTest, OnlyIdentityCertificatesAndPrivateKeyProvided) {
   std::string json_str = absl::StrFormat(
       "{"
       "  \"certificate_file\": \"%s\","
@@ -170,6 +230,17 @@ TEST(FileWatcherConfigTest, EmptyJsonObject) {
             "validation errors: ["
             "field: error:at least one of \"certificate_file\" and "
             "\"ca_certificate_file\" must be specified]")
+      << config.status();
+}
+
+TEST(FileWatcherConfigTest, EmptyJsonObjectWithSpiffeEnabled) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE");
+  std::string json_str = "{}";
+  auto config = ParseConfig(json_str);
+  EXPECT_EQ(config.status().message(),
+            "validation errors: [field: error:at least one of "
+            "\"certificate_file\", \"ca_certificate_file\", and "
+            "\"spiffe_bundle_map_file\" must be specified]")
       << config.status();
 }
 

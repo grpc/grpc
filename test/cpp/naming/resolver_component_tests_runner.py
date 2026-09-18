@@ -92,7 +92,7 @@ def wait_until_dns_server_is_up(args,
   dns_server_subprocess.kill()
   dns_server_subprocess.wait()
   test_runner_log(('Failed to reach DNS server over TCP and/or UDP. '
-                   'Exitting without running tests.'))
+                   'Exiting without running tests.'))
   test_runner_log('======= DNS server stdout '
                   '(merged stdout and stderr) =============')
   with open(dns_server_subprocess_output, 'r') as l:
@@ -529,6 +529,24 @@ current_test_subprocess = subprocess.Popen([
   '--expected_service_config_error', 'JSON parse error',
   '--expected_lb_policy', '',
   '--enable_srv_queries', 'True',
+  '--enable_txt_queries', 'True',
+  '--inject_broken_nameserver_list', 'False',
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
+current_test_subprocess.communicate()
+if current_test_subprocess.returncode != 0:
+  num_test_failures += 1
+
+test_runner_log('Run test with target: %s' % 'ipv4-svc_cfg_short_txt.resolver-tests-version-4.grpctestingexp.')
+current_test_subprocess = subprocess.Popen([
+  args.test_bin_path,
+  '--target_name', 'ipv4-svc_cfg_short_txt.resolver-tests-version-4.grpctestingexp.',
+  '--do_ordered_address_comparison', 'False',
+  '--expected_addrs', '1.2.3.4:443,False',
+  '--expected_chosen_service_config', '',
+  '--expected_service_config_error', '',
+  '--expected_lb_policy', '',
+  '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
   '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port

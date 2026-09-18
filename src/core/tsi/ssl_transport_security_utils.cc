@@ -18,27 +18,26 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
+#include <grpc/support/port_platform.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/ec.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/obj_mac.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
-#include "absl/log/check.h"
+#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/tsi/transport_security_interface.h"
-
-namespace grpc_core {
+namespace tsi {
 
 const char* SslErrorString(int error) {
   switch (error) {
@@ -76,7 +75,7 @@ void LogSslErrorStack(void) {
 
 tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
                       size_t unprotected_bytes_size) {
-  CHECK_LE(unprotected_bytes_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int ssl_write_result = SSL_write(ssl, unprotected_bytes,
                                    static_cast<int>(unprotected_bytes_size));
@@ -97,7 +96,7 @@ tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
 
 tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
                      size_t* unprotected_bytes_size) {
-  CHECK_LE(*unprotected_bytes_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int read_from_ssl = SSL_read(ssl, unprotected_bytes,
                                static_cast<int>(*unprotected_bytes_size));
@@ -141,7 +140,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   int pending_in_ssl = static_cast<int>(BIO_pending(network_io));
   if (pending_in_ssl > 0) {
     *unprotected_bytes_size = 0;
-    CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
+    GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
     read_from_ssl = BIO_read(network_io, protected_output_frames,
                              static_cast<int>(*protected_output_frames_size));
     if (read_from_ssl < 0) {
@@ -167,7 +166,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   result = DoSslWrite(ssl, buffer, buffer_size);
   if (result != TSI_OK) return result;
 
-  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl < 0) {
@@ -197,11 +196,11 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   }
 
   pending = static_cast<int>(BIO_pending(network_io));
-  CHECK_GE(pending, 0);
+  GRPC_CHECK_GE(pending, 0);
   *still_pending_size = static_cast<size_t>(pending);
   if (*still_pending_size == 0) return TSI_OK;
 
-  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl <= 0) {
@@ -210,7 +209,7 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   pending = static_cast<int>(BIO_pending(network_io));
-  CHECK_GE(pending, 0);
+  GRPC_CHECK_GE(pending, 0);
   *still_pending_size = static_cast<size_t>(pending);
   return TSI_OK;
 }
@@ -238,7 +237,7 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   *unprotected_bytes_size = output_bytes_size - output_bytes_offset;
 
   // Then, try to write some data to ssl.
-  CHECK_LE(*protected_frames_bytes_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*protected_frames_bytes_size, static_cast<size_t>(INT_MAX));
   written_into_ssl = BIO_write(network_io, protected_frames_bytes,
                                static_cast<int>(*protected_frames_bytes_size));
   if (written_into_ssl < 0) {
@@ -283,11 +282,11 @@ bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
   if (cert == nullptr || crl == nullptr) {
     return false;
   }
-  X509_NAME* cert_issuer_name = X509_get_issuer_name(cert);
-  if (cert == nullptr) {
+  auto* cert_issuer_name = X509_get_issuer_name(cert);
+  if (cert_issuer_name == nullptr) {
     return false;
   }
-  X509_NAME* crl_issuer_name = X509_CRL_get_issuer(crl);
+  auto* crl_issuer_name = X509_CRL_get_issuer(crl);
   if (crl_issuer_name == nullptr) {
     return false;
   }
@@ -318,9 +317,9 @@ absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
   if (cert == nullptr) {
     return absl::InvalidArgumentError("cert cannot be null");
   }
-  X509_NAME* issuer = X509_get_issuer_name(cert);
+  auto* issuer = X509_get_issuer_name(cert);
   unsigned char* buf = nullptr;
-  int len = i2d_X509_NAME(issuer, &buf);
+  int len = i2d_X509_NAME(const_cast<X509_NAME*>(issuer), &buf);
   if (len < 0 || buf == nullptr) {
     return absl::InvalidArgumentError("could not read issuer name from cert");
   }
@@ -340,7 +339,8 @@ absl::StatusOr<std::string> AkidFromCertificate(X509* cert) {
     if (X509_get_ext_by_NID(cert, NID_authority_key_identifier, j) != -1) {
       return absl::InvalidArgumentError("Could not get AKID from certificate.");
     }
-    akid = X509_EXTENSION_get_data(X509_get_ext(cert, j));
+    akid = const_cast<ASN1_OCTET_STRING*>(
+        X509_EXTENSION_get_data(X509_get_ext(cert, j)));
   } else {
     return absl::InvalidArgumentError("Could not get AKID from certificate.");
   }
@@ -365,7 +365,8 @@ absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
     if (X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, j) != -1) {
       return absl::InvalidArgumentError("Could not get AKID from crl.");
     }
-    akid = X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j));
+    akid = const_cast<ASN1_OCTET_STRING*>(
+        X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j)));
   } else {
     return absl::InvalidArgumentError("Could not get AKID from crl.");
   }
@@ -430,4 +431,50 @@ absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(
   return pkey;
 }
 
-}  // namespace grpc_core
+absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name) {
+  if (subject_alt_name == nullptr || subject_alt_name->type != GEN_URI) {
+    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+  }
+  // This shouldn't be a possible if statement to enter because if the type is
+  // GEN_URI it then by definition should have a d.uniformResourceIdentifier.
+  // But we can still keep it for safety.
+  if (subject_alt_name->d.uniformResourceIdentifier == nullptr) {
+    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+  }
+  unsigned char* name = nullptr;
+  int name_size =
+      ASN1_STRING_to_UTF8(&name, subject_alt_name->d.uniformResourceIdentifier);
+  if (name_size < 0 || name == nullptr) {
+    OPENSSL_free(name);
+    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+  }
+  std::string ret(reinterpret_cast<char const*>(name), name_size);
+  OPENSSL_free(name);
+  return ret;
+}
+
+absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
+    grpc_tls_key_exchange_group group) {
+  switch (group) {
+    case GRPC_TLS_GROUP_SECP256R1:
+      return "P-256";
+    case GRPC_TLS_GROUP_SECP384R1:
+      return "P-384";
+    case GRPC_TLS_GROUP_X25519:
+      return "X25519";
+    case GRPC_TLS_GROUP_X25519_MLKEM768:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "X25519MLKEM768";
+#else
+      return absl::InvalidArgumentError(
+          "X25519_MLKEM768 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_groups_list.");
+#endif
+    case GRPC_TLS_GROUP_UNSPECIFIED:
+      return absl::InvalidArgumentError("Unspecified key exchange group.");
+    default:
+      return absl::InvalidArgumentError("Unknown key exchange group.");
+  }
+}
+
+}  // namespace tsi

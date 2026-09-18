@@ -16,18 +16,14 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>  // IWYU pragma: keep
+#include <grpc/event_engine/slice_buffer.h>
+
 #include <cstring>
 #include <memory>
 #include <string>
 #include <tuple>
-
-#include "absl/functional/any_invocable.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>  // IWYU pragma: keep
-#include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
@@ -36,6 +32,9 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 using testing::AtMost;
 using testing::MockFunction;
@@ -56,16 +55,14 @@ class MockEndpoint
       bool, Read,
       (absl::AnyInvocable<void(absl::Status)> on_read,
        grpc_event_engine::experimental::SliceBuffer* buffer,
-       const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
-           args),
+       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs args),
       (override));
 
   MOCK_METHOD(
       bool, Write,
       (absl::AnyInvocable<void(absl::Status)> on_writable,
        grpc_event_engine::experimental::SliceBuffer* data,
-       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
-           args),
+       grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args),
       (override));
 
   MOCK_METHOD(
@@ -74,6 +71,9 @@ class MockEndpoint
   MOCK_METHOD(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
       GetLocalAddress, (), (const, override));
+
+  MOCK_METHOD(std::shared_ptr<TelemetryInfo>, GetTelemetryInfo, (),
+              (const, override));
 };
 
 class MockActivity : public Activity, public Wakeable {
@@ -156,7 +156,7 @@ TEST_F(PromiseEndpointTest, OneReadFailed) {
   EXPECT_CALL(mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -168,7 +168,7 @@ TEST_F(PromiseEndpointTest, OneReadFailed) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, MutipleReadsSuccessful) {
+TEST_F(PromiseEndpointTest, MultipleReadsSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   activity.Activate();
@@ -293,7 +293,7 @@ TEST_F(PromiseEndpointTest, OneReadSliceFailed) {
   EXPECT_CALL(mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -305,7 +305,7 @@ TEST_F(PromiseEndpointTest, OneReadSliceFailed) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, MutipleReadSlicesSuccessful) {
+TEST_F(PromiseEndpointTest, MultipleReadSlicesSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   activity.Activate();
@@ -430,7 +430,7 @@ TEST_F(PromiseEndpointTest, OneReadByteFailed) {
   EXPECT_CALL(mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -442,7 +442,7 @@ TEST_F(PromiseEndpointTest, OneReadByteFailed) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, MutipleReadBytesSuccessful) {
+TEST_F(PromiseEndpointTest, MultipleReadBytesSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   activity.Activate();
@@ -525,7 +525,8 @@ TEST_F(PromiseEndpointTest, OneWriteSuccessful) {
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).WillOnce(Return(true));
   auto promise = promise_endpoint_->Write(
-      SliceBuffer(Slice::FromCopiedString("hello world")));
+      SliceBuffer(Slice::FromCopiedString("hello world")),
+      PromiseEndpoint::WriteArgs{});
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   EXPECT_EQ(absl::OkStatus(), poll.value());
@@ -537,7 +538,8 @@ TEST_F(PromiseEndpointTest, EmptyWriteIsNoOp) {
   activity.Activate();
   EXPECT_CALL(activity, WakeupRequested).Times(0);
   EXPECT_CALL(mock_endpoint_, Write).Times(0);
-  auto promise = promise_endpoint_->Write(SliceBuffer());
+  auto promise =
+      promise_endpoint_->Write(SliceBuffer(), PromiseEndpoint::WriteArgs{});
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   EXPECT_EQ(absl::OkStatus(), poll.value());
@@ -555,7 +557,8 @@ TEST_F(PromiseEndpointTest, OneWriteFailed) {
             return false;
           }));
   auto promise = promise_endpoint_->Write(
-      SliceBuffer(Slice::FromCopiedString("hello world")));
+      SliceBuffer(Slice::FromCopiedString("hello world")),
+      PromiseEndpoint::WriteArgs{});
   auto poll = promise();
   ASSERT_TRUE(poll.ready());
   EXPECT_EQ(kDummyErrorStatus, poll.value());
@@ -579,7 +582,8 @@ TEST_F(PromiseEndpointTest, OnePendingWriteSuccessful) {
             return false;
           }));
   auto promise = promise_endpoint_->Write(
-      SliceBuffer(Slice::FromCopiedString("hello world")));
+      SliceBuffer(Slice::FromCopiedString("hello world")),
+      PromiseEndpoint::WriteArgs{});
   EXPECT_TRUE(promise().pending());
   // Mock EventEngine write succeeds, and promise resolves.
   write_callback(absl::OkStatus());
@@ -602,7 +606,8 @@ TEST_F(PromiseEndpointTest, OnePendingWriteFailed) {
             return false;
           }));
   auto promise = promise_endpoint_->Write(
-      SliceBuffer(Slice::FromCopiedString("hello world")));
+      SliceBuffer(Slice::FromCopiedString("hello world")),
+      PromiseEndpoint::WriteArgs{});
   EXPECT_TRUE(promise().pending());
   write_callback(kDummyErrorStatus);
   auto poll = promise();
@@ -753,7 +758,7 @@ TEST_F(MultiplePromiseEndpointTest, JoinOneReadSuccessfulOneReadFailed) {
   EXPECT_CALL(second_mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -783,14 +788,14 @@ TEST_F(MultiplePromiseEndpointTest, JoinReadsFailed) {
   EXPECT_CALL(first_mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
   EXPECT_CALL(second_mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -823,10 +828,12 @@ TEST_F(MultiplePromiseEndpointTest, JoinWritesSuccessful) {
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   auto activity = MakeActivity(
       [this] {
-        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer(
-                            Slice::FromCopiedString("hello world"))),
-                        this->second_promise_endpoint_.Write(SliceBuffer(
-                            Slice::FromCopiedString("hello world")))),
+        return Seq(Join(this->first_promise_endpoint_.Write(
+                            SliceBuffer(Slice::FromCopiedString("hello world")),
+                            PromiseEndpoint::WriteArgs{}),
+                        this->second_promise_endpoint_.Write(
+                            SliceBuffer(Slice::FromCopiedString("hello world")),
+                            PromiseEndpoint::WriteArgs{})),
                    [](std::tuple<absl::Status, absl::Status> ret) {
                      // Both writes finish with `absl::OkStatus`.
                      EXPECT_TRUE(std::get<0>(ret).ok());
@@ -850,10 +857,12 @@ TEST_F(MultiplePromiseEndpointTest, JoinOneWriteSuccessfulOneWriteFailed) {
   EXPECT_CALL(on_done, Call(kDummyErrorStatus));
   auto activity = MakeActivity(
       [this] {
-        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer(
-                            Slice::FromCopiedString("hello world"))),
-                        this->second_promise_endpoint_.Write(SliceBuffer(
-                            Slice::FromCopiedString("hello world")))),
+        return Seq(Join(this->first_promise_endpoint_.Write(
+                            SliceBuffer(Slice::FromCopiedString("hello world")),
+                            PromiseEndpoint::WriteArgs{}),
+                        this->second_promise_endpoint_.Write(
+                            SliceBuffer(Slice::FromCopiedString("hello world")),
+                            PromiseEndpoint::WriteArgs{})),
                    [this](std::tuple<absl::Status, absl::Status> ret) {
                      // One write finish with `absl::OkStatus` and the other
                      // write fails.
@@ -884,10 +893,12 @@ TEST_F(MultiplePromiseEndpointTest, JoinWritesFailed) {
   EXPECT_CALL(on_done, Call(kDummyErrorStatus));
   auto activity = MakeActivity(
       [this] {
-        return Seq(Join(this->first_promise_endpoint_.Write(SliceBuffer(
-                            Slice::FromCopiedString("hello world"))),
-                        this->second_promise_endpoint_.Write(SliceBuffer(
-                            Slice::FromCopiedString("hello world")))),
+        return Seq(Join(this->first_promise_endpoint_.Write(
+                            SliceBuffer(Slice::FromCopiedString("hello world")),
+                            PromiseEndpoint::WriteArgs{}),
+                        this->second_promise_endpoint_.Write(
+                            SliceBuffer(Slice::FromCopiedString("hello world")),
+                            PromiseEndpoint::WriteArgs{})),
                    [this](std::tuple<absl::Status, absl::Status> ret) {
                      // Both writes fail with errors.
                      EXPECT_FALSE(std::get<0>(ret).ok());

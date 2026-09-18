@@ -35,7 +35,7 @@ def _not_found_error(original_request):
 def _collect_transitive_dependencies(descriptor, seen_files):
     seen_files.update({descriptor.name: descriptor})
     for dependency in descriptor.dependencies:
-        if not dependency.name in seen_files:
+        if dependency.name not in seen_files:
             # descriptors cannot have circular dependencies
             _collect_transitive_dependencies(dependency, seen_files)
 
@@ -47,9 +47,9 @@ def _file_descriptor_response(descriptor, original_request):
 
     # serialize all descriptors
     serialized_proto_list = []
-    for d_key in descriptors:
+    for d_value in descriptors.values():
         proto = descriptor_pb2.FileDescriptorProto()
-        descriptors[d_key].CopyToProto(proto)
+        d_value.CopyToProto(proto)
         serialized_proto_list.append(proto.SerializeToString())
 
     return _reflection_pb2.ServerReflectionResponse(

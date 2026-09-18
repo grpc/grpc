@@ -15,6 +15,8 @@
 
 # bazelrc for common configuration of gRPC tests
 
+import %workspace%/tools/remote_build/include/enable_bzlmod.bazelrc
+
 build --verbose_failures=true
 
 # without verbose gRPC logs the test outputs are not very useful
@@ -22,3 +24,6 @@ test --test_env=GRPC_VERBOSITY=debug
 
 # print output for tests that fail (default is "summary")
 build --test_output=errors
+
+# Custom checks
+test --config=postmortem

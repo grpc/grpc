@@ -18,34 +18,31 @@
 
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 
-#include <memory>
-#include <string>
-
 #include <google/protobuf/any.pb.h>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "envoy/config/rbac/v3/rbac.upb.h"
-#include "google/protobuf/struct.pb.h"
-#include "gtest/gtest.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_audit_logging.h>
 
+#include <memory>
+#include <string>
+
+#include "envoy/config/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/rbac/audit_loggers/stream/v3/stream.pb.h"
+#include "google/protobuf/struct.pb.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/proto/grpc/testing/xds/v3/audit_logger_stream.pb.h"
-#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
-#include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
-#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
+#include "xds/type/v3/typed_struct.pb.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {
@@ -61,19 +58,41 @@ using ::xds::type::v3::TypedStruct;
 
 constexpr absl::string_view kName = "test_logger";
 
-absl::StatusOr<std::string> ConvertAuditLoggerConfig(
-    const AuditLoggerConfigProto& config) {
-  std::string serialized_config = config.SerializeAsString();
+absl::StatusOr<std::shared_ptr<const experimental::AuditLoggerFactory::Config>>
+ParseAuditLoggerConfig(const AuditLoggerConfigProto& config_proto) {
+  std::string serialized_config = config_proto.SerializeAsString();
   upb::Arena arena;
   upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(), nullptr,
+  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(),
                                             def_pool.ptr(), arena.ptr()};
   auto* upb_config =
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
           serialized_config.data(), serialized_config.size(), arena.ptr());
   ValidationErrors errors;
-  auto config_json = XdsAuditLoggerRegistry().ConvertXdsAuditLoggerConfig(
-      context, upb_config, &errors);
+  auto registry = GrpcXdsBootstrapBuilder::CreateXdsAuditLoggerRegistry();
+  auto config =
+      registry.ParseXdsAuditLoggerConfig(context, upb_config, &errors);
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "validation errors");
+  }
+  return config;
+}
+
+absl::StatusOr<std::string> ConvertAuditLoggerConfig(
+    const AuditLoggerConfigProto& config) {
+  std::string serialized_config = config.SerializeAsString();
+  upb::Arena arena;
+  upb::DefPool def_pool;
+  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(),
+                                            def_pool.ptr(), arena.ptr()};
+  auto* upb_config =
+      envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
+          serialized_config.data(), serialized_config.size(), arena.ptr());
+  ValidationErrors errors;
+  auto registry = GrpcXdsBootstrapBuilder::CreateXdsAuditLoggerRegistry();
+  auto config_json =
+      registry.ConvertXdsAuditLoggerConfig(context, upb_config, &errors);
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");
@@ -81,18 +100,32 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
   return JsonDump(config_json);
 }
 
-class TestAuditLoggerFactory : public AuditLoggerFactory {
+class TestAuditLoggerFactory final : public AuditLoggerFactory {
  public:
+  class Config final : public AuditLoggerFactory::Config {
+   public:
+    explicit Config(std::string config) : config_(std::move(config)) {}
+
+    absl::string_view name() const override { return kName; }
+
+    std::string ToString() const override { return config_; }
+
+   private:
+    std::string config_;
+  };
+
   absl::string_view name() const override { return kName; }
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+
+  absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
     if (json.object().find("bad") != json.object().end()) {
       return absl::InvalidArgumentError("invalid test_logger config");
     }
-    return nullptr;
+    return std::make_shared<Config>(JsonDump(json));
   }
+
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) override {
+      std::shared_ptr<const AuditLoggerFactory::Config>) override {
     Crash("unreachable");
     return nullptr;
   }
@@ -121,6 +154,16 @@ TEST(StdoutLoggerTest, BasicStdoutLogger) {
   EXPECT_EQ(*result, "{\"stdout_logger\":{}}");
 }
 
+TEST(StdoutLoggerTest, ParseBasicStdoutLogger) {
+  AuditLoggerConfigProto config_proto;
+  config_proto.mutable_audit_logger()->mutable_typed_config()->PackFrom(
+      StdoutAuditLog());
+  auto config = ParseAuditLoggerConfig(config_proto);
+  ASSERT_TRUE(config.ok()) << config.status();
+  EXPECT_EQ((*config)->name(), "stdout_logger");
+  EXPECT_EQ((*config)->ToString(), "{}");
+}
+
 //
 // ThirdPartyLoggerTest
 //
@@ -135,6 +178,20 @@ TEST_F(XdsAuditLoggerRegistryTest, ValidThirdPartyLogger) {
   auto result = ConvertAuditLoggerConfig(config);
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(*result, "{\"test_logger\":{\"foo\":\"bar\"}}");
+}
+
+TEST_F(XdsAuditLoggerRegistryTest, ParseValidThirdPartyLogger) {
+  AuditLoggerConfigProto config_proto;
+  TypedStruct logger;
+  logger.set_type_url(absl::StrFormat("myorg/foo/bar/%s", kName));
+  auto* fields = logger.mutable_value()->mutable_fields();
+  (*fields)["foo"].set_string_value("bar");
+  config_proto.mutable_audit_logger()->mutable_typed_config()->PackFrom(logger);
+  auto config = ParseAuditLoggerConfig(config_proto);
+  ASSERT_TRUE(config.ok()) << config.status();
+  ASSERT_NE(*config, nullptr);
+  EXPECT_EQ((*config)->name(), "test_logger");
+  EXPECT_EQ((*config)->ToString(), "{\"foo\":\"bar\"}");
 }
 
 TEST_F(XdsAuditLoggerRegistryTest, InvalidThirdPartyLoggerConfig) {
@@ -154,6 +211,21 @@ TEST_F(XdsAuditLoggerRegistryTest, InvalidThirdPartyLoggerConfig) {
       << result.status();
 }
 
+TEST_F(XdsAuditLoggerRegistryTest, ParseInvalidThirdPartyLoggerConfig) {
+  AuditLoggerConfigProto config_proto;
+  TypedStruct logger;
+  logger.set_type_url(absl::StrFormat("myorg/foo/bar/%s", kName));
+  auto* fields = logger.mutable_value()->mutable_fields();
+  (*fields)["bad"].set_string_value("true");
+  config_proto.mutable_audit_logger()->mutable_typed_config()->PackFrom(logger);
+  auto config = ParseAuditLoggerConfig(config_proto);
+  EXPECT_EQ(config.status(), absl::InvalidArgumentError(
+                                 "validation errors: "
+                                 "[field:audit_logger.typed_config.value"
+                                 "[xds.type.v3.TypedStruct].value[test_logger] "
+                                 "error:invalid test_logger config]"));
+}
+
 //
 // XdsAuditLoggerRegistryTest
 //
@@ -166,6 +238,14 @@ TEST_F(XdsAuditLoggerRegistryTest, EmptyAuditLoggerConfig) {
       << result.status();
 }
 
+TEST_F(XdsAuditLoggerRegistryTest, ParseEmptyAuditLoggerConfig) {
+  auto config = ParseAuditLoggerConfig(AuditLoggerConfigProto());
+  EXPECT_EQ(
+      config.status(),
+      absl::InvalidArgumentError(
+          "validation errors: [field:audit_logger error:field not present]"));
+}
+
 TEST_F(XdsAuditLoggerRegistryTest, MissingTypedConfig) {
   AuditLoggerConfigProto config;
   config.mutable_audit_logger();
@@ -175,6 +255,17 @@ TEST_F(XdsAuditLoggerRegistryTest, MissingTypedConfig) {
             "validation errors: [field:audit_logger.typed_config error:field "
             "not present]")
       << result.status();
+}
+
+TEST_F(XdsAuditLoggerRegistryTest, ParseMissingTypedConfig) {
+  AuditLoggerConfigProto config_proto;
+  config_proto.mutable_audit_logger();
+  auto config = ParseAuditLoggerConfig(config_proto);
+  EXPECT_EQ(
+      config.status(),
+      absl::InvalidArgumentError(
+          "validation errors: [field:audit_logger.typed_config error:field "
+          "not present]"));
 }
 
 TEST_F(XdsAuditLoggerRegistryTest, NoSupportedType) {
@@ -191,6 +282,20 @@ TEST_F(XdsAuditLoggerRegistryTest, NoSupportedType) {
       << result.status();
 }
 
+TEST_F(XdsAuditLoggerRegistryTest, ParseNoSupportedType) {
+  AuditLoggerConfigProto config_proto;
+  config_proto.mutable_audit_logger()->mutable_typed_config()->PackFrom(
+      AuditLoggerConfigProto());
+  auto config = ParseAuditLoggerConfig(config_proto);
+  EXPECT_EQ(
+      config.status(),
+      absl::InvalidArgumentError(
+          "validation errors: "
+          "[field:audit_logger.typed_config.value[envoy.config.rbac.v3.RBAC."
+          "AuditLoggingOptions.AuditLoggerConfig] error:unsupported audit "
+          "logger type]"));
+}
+
 TEST_F(XdsAuditLoggerRegistryTest, NoSupportedTypeButIsOptional) {
   AuditLoggerConfigProto config;
   config.mutable_audit_logger()->mutable_typed_config()->PackFrom(
@@ -199,6 +304,16 @@ TEST_F(XdsAuditLoggerRegistryTest, NoSupportedTypeButIsOptional) {
   auto result = ConvertAuditLoggerConfig(config);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kOk);
   EXPECT_EQ(*result, "null");
+}
+
+TEST_F(XdsAuditLoggerRegistryTest, ParseNoSupportedTypeButIsOptional) {
+  AuditLoggerConfigProto config_proto;
+  config_proto.mutable_audit_logger()->mutable_typed_config()->PackFrom(
+      AuditLoggerConfigProto());
+  config_proto.set_is_optional(true);
+  auto config = ParseAuditLoggerConfig(config_proto);
+  ASSERT_TRUE(config.ok()) << config.status();
+  EXPECT_EQ(*config, nullptr);
 }
 
 }  // namespace

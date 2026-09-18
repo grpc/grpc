@@ -21,9 +21,8 @@
 
 // IWYU pragma: private, include <grpc/slice.h>
 
-#include <stddef.h>
-
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 typedef struct grpc_slice grpc_slice;
 
@@ -74,7 +73,7 @@ struct grpc_slice {
   } data;
 };
 
-#define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 6
+#define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 3
 
 /** Represents an expandable array of slices, to be interpreted as a
    single item. */

@@ -20,16 +20,18 @@
 
 #include "rb_call.h"
 
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/support/alloc.h>
+#include <stdbool.h>
+
 #include "rb_byte_buffer.h"
+/* TODO(nnepal): Include grpc/grpc_security.h for pure ruby call
+ * credentials after rb_call_credentials gets removed */
 #include "rb_call_credentials.h"
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 /* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
 static VALUE grpc_rb_cCall;
@@ -399,7 +401,6 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   long i;
   grpc_slice key_slice;
   grpc_slice value_slice;
-  char* tmp_str = NULL;
 
   if (TYPE(key) == T_SYMBOL) {
     key_slice = grpc_slice_from_static_string(rb_id2name(SYM2ID(key)));
@@ -413,9 +414,11 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   }
 
   if (!grpc_header_key_is_legal(key_slice)) {
-    tmp_str = grpc_slice_to_c_string(key_slice);
+    grpc_slice_unref(key_slice);
     rb_raise(rb_eArgError,
-             "'%s' is an invalid header key, must match [a-z0-9-_.]+", tmp_str);
+             "'%" PRIsVALUE
+             "' is an invalid header key, must match [a-z0-9-_.]+",
+             key);
     return ST_STOP;
   }
 
@@ -427,18 +430,25 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     array_length = RARRAY_LEN(val);
     /* If the value is an array, add capacity for each value in the array */
     for (i = 0; i < array_length; i++) {
-      value_slice = grpc_slice_from_copied_buffer(
-          RSTRING_PTR(rb_ary_entry(val, i)), RSTRING_LEN(rb_ary_entry(val, i)));
+      VALUE val_entry = rb_ary_entry(val, i);
+      if (TYPE(val_entry) != T_STRING) {
+        grpc_slice_unref(key_slice);
+        rb_raise(rb_eTypeError, "Header values in array must be strings");
+        return ST_STOP;
+      }
+      value_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(val_entry),
+                                                  RSTRING_LEN(val_entry));
       if (!grpc_is_binary_header(key_slice) &&
           !grpc_header_nonbin_value_is_legal(value_slice)) {
-        // The value has invalid characters
-        tmp_str = grpc_slice_to_c_string(value_slice);
-        rb_raise(rb_eArgError, "Header value '%s' has invalid characters",
-                 tmp_str);
+        grpc_slice_unref(value_slice);
+        grpc_slice_unref(key_slice);
+        rb_raise(rb_eArgError,
+                 "Header value '%" PRIsVALUE "' has invalid characters",
+                 val_entry);
         return ST_STOP;
       }
       GRPC_RUBY_ASSERT(md_ary->count < md_ary->capacity);
-      md_ary->metadata[md_ary->count].key = key_slice;
+      md_ary->metadata[md_ary->count].key = grpc_slice_ref(key_slice);
       md_ary->metadata[md_ary->count].value = value_slice;
       md_ary->count += 1;
     }
@@ -447,20 +457,23 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
         grpc_slice_from_copied_buffer(RSTRING_PTR(val), RSTRING_LEN(val));
     if (!grpc_is_binary_header(key_slice) &&
         !grpc_header_nonbin_value_is_legal(value_slice)) {
-      // The value has invalid characters
-      tmp_str = grpc_slice_to_c_string(value_slice);
-      rb_raise(rb_eArgError, "Header value '%s' has invalid characters",
-               tmp_str);
+      grpc_slice_unref(value_slice);
+      grpc_slice_unref(key_slice);
+      rb_raise(rb_eArgError,
+               "Header value '%" PRIsVALUE "' has invalid characters", val);
       return ST_STOP;
     }
     GRPC_RUBY_ASSERT(md_ary->count < md_ary->capacity);
-    md_ary->metadata[md_ary->count].key = key_slice;
+    md_ary->metadata[md_ary->count].key = grpc_slice_ref(key_slice);
     md_ary->metadata[md_ary->count].value = value_slice;
     md_ary->count += 1;
   } else {
+    grpc_slice_unref(key_slice);
     rb_raise(rb_eArgError, "Header values must be of type string or array");
     return ST_STOP;
   }
+  /* Release the local reference; each entry now owns its own ref. */
+  grpc_slice_unref(key_slice);
   return ST_CONTINUE;
 }
 
@@ -808,12 +821,6 @@ struct call_run_batch_args {
   run_batch_stack* st;
 };
 
-static void cancel_call_unblock_func(void* arg) {
-  grpc_absl_log(GPR_DEBUG, "GRPC_RUBY: cancel_call_unblock_func");
-  grpc_call* call = (grpc_call*)arg;
-  grpc_call_cancel(call, NULL);
-}
-
 static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
   grpc_rb_fork_unsafe_begin();
   struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
@@ -836,8 +843,7 @@ static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
              grpc_call_error_detail_of(err), err);
   }
   ev = rb_completion_queue_pluck(args->call->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME),
-                                 cancel_call_unblock_func, args->call->wrapped);
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), "call op");
   if (!ev.success) {
     rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
   }

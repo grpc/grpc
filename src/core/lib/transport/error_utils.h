@@ -19,16 +19,15 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
 
-#include <string>
-
-#include "absl/status/status.h"
-
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/http2_errors.h"
 #include "src/core/util/time.h"
+#include "absl/status/status.h"
 
 /// A utility function to get the status code and message to be returned
 /// to the application.  If not set in the top-level message, looks
@@ -40,23 +39,7 @@
 void grpc_error_get_status(grpc_error_handle error,
                            grpc_core::Timestamp deadline,
                            grpc_status_code* code, std::string* message,
-                           grpc_http2_error_code* http_error,
+                           grpc_core::http2::Http2ErrorCode* http_error,
                            const char** error_string);
-
-/// Utility Function to convert a grpc_error_handle  \a error to an
-/// absl::Status. Does NOT consume a ref to grpc_error.
-absl::Status grpc_error_to_absl_status(grpc_error_handle error);
-
-/// Utility function to convert an absl::Status \a status to grpc_error. Note
-/// that this method does not return "special case" errors such as
-/// absl::CancelledError(), with the exception of absl::OkStatus() returned for
-/// \a absl::OkStatus().
-grpc_error_handle absl_status_to_grpc_error(absl::Status status);
-
-/// A utility function to check whether there is a clear status code that
-/// doesn't need to be guessed in \a error. This means that \a error or some
-/// child has grpc_core::StatusIntProperty::kRpcStatus set, or that it is
-/// absl::OkStatus() or absl::CancelledError()
-bool grpc_error_has_clear_grpc_status(grpc_error_handle error);
 
 #endif  // GRPC_SRC_CORE_LIB_TRANSPORT_ERROR_UTILS_H

@@ -20,14 +20,19 @@
 #define GRPC_SRC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
+#include <memory>
+#include <utility>
+
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/socket_factory_posix.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/net/socket_mutator.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #ifndef SO_ZEROCOPY
@@ -46,6 +51,7 @@ struct PosixTcpOptions {
   static constexpr int kDefaultMaxReadChunksize = 4 * 1024 * 1024;
   static constexpr int kZerocpTxEnabledDefault = 0;
   static constexpr int kMaxChunkSize = 32 * 1024 * 1024;
+  static constexpr int kMaxReadBufferSizeUnset = -1;
   static constexpr int kDefaultMaxSends = 4;
   static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;
   // Let the system decide the proper buffer size.
@@ -54,6 +60,7 @@ struct PosixTcpOptions {
   int tcp_read_chunk_size = kDefaultReadChunkSize;
   int tcp_min_read_chunk_size = kDefaultMinReadChunksize;
   int tcp_max_read_chunk_size = kDefaultMaxReadChunksize;
+  int tcp_max_read_buffer_size = kMaxReadBufferSizeUnset;
   int tcp_tx_zerocopy_send_bytes_threshold = kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simultaneous_sends = kDefaultMaxSends;
   int tcp_receive_buffer_size = kReadBufferSizeUnset;
@@ -65,11 +72,13 @@ struct PosixTcpOptions {
   bool allow_reuse_port = false;
   RefCountedPtr<ResourceQuota> resource_quota;
   struct grpc_socket_mutator* socket_mutator = nullptr;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   PosixTcpOptions() = default;
   // Move ctor
   PosixTcpOptions(PosixTcpOptions&& other) noexcept {
     socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
+    event_engine = std::move(other.event_engine);
     CopyIntegerOptions(other);
   }
   // Move assignment
@@ -79,6 +88,7 @@ struct PosixTcpOptions {
     }
     socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
+    event_engine = std::move(other.event_engine);
     CopyIntegerOptions(other);
     return *this;
   }
@@ -88,6 +98,7 @@ struct PosixTcpOptions {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
     }
     resource_quota = other.resource_quota;
+    event_engine = other.event_engine;
     CopyIntegerOptions(other);
   }
   // Copy assignment
@@ -103,6 +114,7 @@ struct PosixTcpOptions {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
     }
     resource_quota = other.resource_quota;
+    event_engine = other.event_engine;
     CopyIntegerOptions(other);
     return *this;
   }
@@ -118,6 +130,7 @@ struct PosixTcpOptions {
     tcp_read_chunk_size = other.tcp_read_chunk_size;
     tcp_min_read_chunk_size = other.tcp_min_read_chunk_size;
     tcp_max_read_chunk_size = other.tcp_max_read_chunk_size;
+    tcp_max_read_buffer_size = other.tcp_max_read_buffer_size;
     tcp_tx_zerocopy_send_bytes_threshold =
         other.tcp_tx_zerocopy_send_bytes_threshold;
     tcp_tx_zerocopy_max_simultaneous_sends =

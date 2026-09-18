@@ -15,9 +15,9 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_FUZZING_CHANNEL_ARGS_H
 #define GRPC_TEST_CORE_TEST_UTIL_FUZZING_CHANNEL_ARGS_H
 
-#include <memory>
-
 #include <grpc/support/port_platform.h>
+
+#include <memory>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -32,6 +32,7 @@ struct FuzzingEnvironment {
   // configuration requests it.
   RefCountedPtr<ResourceQuota> resource_quota =
       MakeResourceQuota("fuzzing_quota");
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 
 // Create ChannelArgs from a fuzzer configuration.

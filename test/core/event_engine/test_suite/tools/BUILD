@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/event_engine/test_suite/tools")
+grpc_package(
+    name = "test/core/event_engine/test_suite/tools",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 # -- Implementations --
 
@@ -24,14 +30,22 @@ grpc_cc_binary(
     name = "windows_event_engine_echo_client",
     testonly = True,
     srcs = ["windows_event_engine_factory.cc"],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "absl/functional:any_invocable",
+    ],
     tags = [
         "bazel_only",
+        "grpc:event_engine_impl",
         "no_linux",
         "no_mac",
     ],
     deps = [
         "echo_client",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//src/core:grpc_check",
         "//src/core:windows_event_engine",
     ],
 )
@@ -41,13 +55,21 @@ grpc_cc_binary(
     name = "posix_event_engine_echo_client",
     testonly = True,
     srcs = ["posix_event_engine_factory.cc"],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/functional:any_invocable",
+    ],
     tags = [
         "bazel_only",
+        "grpc:event_engine_impl",
         "no_windows",
     ],
     deps = [
         "echo_client",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//src/core:grpc_check",
+        "//src/core:iomgr_port",
         "//src/core:posix_event_engine",
     ],
 )
@@ -63,11 +85,24 @@ grpc_cc_library(
         "absl/flags:parse",
         "absl/log:check",
         "absl/log:log",
+        "absl/functional:any_invocable",
+        "absl/strings:str_format",
+        "absl/status",
+        "absl/status:statusor",
     ],
-    language = "C++",
     deps = [
+        "//:config",
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:grpc_resolver",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:channel_args_preconditioning",
         "//src/core:common_event_engine_closures",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
+        "//src/core:memory_quota",
+        "//src/core:notification",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
     ],

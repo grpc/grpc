@@ -19,27 +19,29 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-
-#include <functional>
-#include <string>
-#include <utility>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <functional>
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "src/core/call/call_destination.h"
+#include "src/core/call/call_spine.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -48,20 +50,21 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_final_info.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/message.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 // Minimum and maximum protocol accepted versions.
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
@@ -70,6 +73,13 @@
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
 
 #define GRPC_ARG_TRANSPORT "grpc.internal.transport"
+
+/** A comma separated list of supported transport protocols. If non-empty,
+ allows the client and server to attempt to negotiate transport protocols.
+ NOTE: This is an experimental feature. It is not fully implemented and is not
+ currently functional.
+ TODO(gtcooke94) - update with specific details when implementing. */
+#define GRPC_ARG_TRANSPORT_PROTOCOLS "grpc.internal.transport_protocols"
 
 namespace grpc_core {
 
@@ -107,20 +117,44 @@ class ClientInitialMetadataOutstandingToken {
       : latch_(std::exchange(other.latch_, nullptr)) {}
   ClientInitialMetadataOutstandingToken& operator=(
       ClientInitialMetadataOutstandingToken&& other) noexcept {
+    if (IsMetadataOutstandingTokenRefactorEnabled()) {
+      MaybeSet(false);
+    }
     latch_ = std::exchange(other.latch_, nullptr);
     return *this;
   }
   ~ClientInitialMetadataOutstandingToken() {
-    if (latch_ != nullptr) latch_->Set(false);
+    if (IsMetadataOutstandingTokenRefactorEnabled()) {
+      MaybeSet(false);
+    } else {
+      if (latch_ != nullptr) latch_->Set(false);
+    }
   }
-  void Complete(bool success) { std::exchange(latch_, nullptr)->Set(success); }
+  void Complete(bool success) {
+    if (IsMetadataOutstandingTokenRefactorEnabled()) {
+      MaybeSet(success);
+    } else {
+      if (latch_ != nullptr) std::exchange(latch_, nullptr)->Set(success);
+    }
+  }
 
   // Returns a promise that will resolve when this object (or its moved-from
-  // ancestor) is dropped.
-  auto Wait() { return latch_->Wait(); }
+  // ancestor) is dropped. If the token is Empty(), the promise resolves to
+  // false immediately (when the refactor experiment is enabled).
+  auto Wait() {
+    return If(
+        latch_ != nullptr, [latch = latch_]() { return latch->Wait(); },
+        []() { return Immediate(false); });
+  }
 
  private:
   ClientInitialMetadataOutstandingToken() = default;
+
+  void MaybeSet(bool status) {
+    if (latch_ != nullptr && !latch_->is_set()) {
+      latch_->Set(status);
+    }
+  }
 
   Latch<bool>* latch_ = nullptr;
 };
@@ -366,7 +400,7 @@ struct grpc_transport_stream_op_batch_payload {
     // Will be set by the transport to point to the byte stream containing a
     // received message. Will be nullopt if trailing metadata is received
     // instead of a message.
-    absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
+    std::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
     uint32_t* flags = nullptr;
     // Was this recv_message failed for reasons other than a clean end-of-stream
     bool* call_failed_before_recv_message = nullptr;
@@ -383,11 +417,10 @@ struct grpc_transport_stream_op_batch_payload {
 
   /// Forcefully close this stream.
   /// The HTTP2 semantics should be:
-  /// - server side: if cancel_error has
-  /// grpc_core::StatusIntProperty::kRpcStatus, and trailing metadata has not
-  /// been sent, send trailing metadata with status and message from
-  /// cancel_error (use grpc_error_get_status) followed by a RST_STREAM with
-  /// error=GRPC_CHTTP2_NO_ERROR to force a full close
+  /// - server side: if cancel_error is not UNKNOWN and trailing
+  ///   metadata has not been sent, send trailing metadata with status and
+  //    message from cancel_error (use grpc_error_get_status) followed by a
+  //    RST_STREAM with error=GRPC_CHTTP2_NO_ERROR to force a full close
   /// - at all other times: use grpc_error_get_status to get a status code, and
   ///   convert to a HTTP2 error code using
   ///   grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
@@ -402,6 +435,11 @@ struct grpc_transport_stream_op_batch_payload {
     // This should be set for cancellations that result from malformed client
     // initial metadata.
     bool tarpit = false;
+    // Server-side only: If non-null, the transport sends this trailing
+    // metadata to the client.
+    // NOTE: This metadata bypasses subsequent filters and is sent directly
+    // to the client. Ensure it contains only fields intended for the client.
+    grpc_core::ServerMetadataHandle send_trailing_metadata = nullptr;
   } cancel_stream;
 };
 
@@ -415,12 +453,13 @@ typedef struct grpc_transport_op {
   grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch =
       nullptr;
   /// should the transport be disconnected
-  /// Error contract: the transport that gets this op must cause
-  ///                disconnect_with_error to be unref'ed after processing it
   grpc_error_handle disconnect_with_error;
-  /// what should the goaway contain?
-  /// Error contract: the transport that gets this op must cause
-  ///                goaway_error to be unref'ed after processing it
+  /// should the transport go IDLE
+  /// (used only by client channel, only if disconnect_with_error is set)
+  bool go_idle = false;
+  /// Start a graceful goaway with the specified error message. (The error code
+  /// is ignored since graceful GOAWAYs use a NO_ERROR error code.) Use
+  /// disconnect_with_error if graceful shutdown is not needed.
   grpc_error_handle goaway_error;
   void (*set_accept_stream_fn)(void* user_data, grpc_core::Transport* transport,
                                const void* server_data) = nullptr;
@@ -503,6 +542,58 @@ class ServerTransport;
 
 class Transport : public InternallyRefCounted<Transport> {
  public:
+  // An interface used by channels or servers to watch the transport's state.
+  class StateWatcher : public RefCounted<StateWatcher> {
+   public:
+    ~StateWatcher() override = default;
+
+    // The list of reasons is defined in
+    // https://github.com/grpc/proposal/blob/master/A94-subchannel-otel-metrics.md.
+    // Note that we do not include the "subchannel shutdown" reason
+    // here, since that reason is not generated by the transport.
+    enum DisconnectReason {
+      kUnknown,
+      kGoaway,
+      kConnectionReset,
+      kConnectionTimedOut,
+      kConnectionAborted,
+      kSocketError,
+    };
+
+    struct DisconnectInfo {
+      DisconnectReason reason = kUnknown;
+      std::optional<http2::Http2ErrorCode> http2_error_code;
+      std::optional<Duration> keepalive_time;
+    };
+
+    // Called on disconnection or GOAWAY.  The channel or server must
+    // stop sending traffic to this transport.  The transport will
+    // automatically stop the watch after this.
+    virtual void OnDisconnect(absl::Status status,
+                              DisconnectInfo disconnect_info) = 0;
+
+    // A handle passed to the subchannel by the transport via
+    // OnPeerMaxConcurrentStreamsUpdate().  The subchannel must delete
+    // this handle when it has finished processing the update.
+    class MaxConcurrentStreamsUpdateDoneHandle {
+     public:
+      virtual ~MaxConcurrentStreamsUpdateDoneHandle() = default;
+    };
+
+    // Used on client transports only.
+    // Will be called once as soon as the watch is started to indicate
+    // the current value of the peer's MAX_CONCURRENT_STREAMS setting.
+    // Will then be called again whenever the peer changes this setting.
+    // The on_done handle must be deleted when the implementation is
+    // done processing the update.
+    virtual void OnPeerMaxConcurrentStreamsUpdate(
+        uint32_t max_concurrent_streams,
+        std::unique_ptr<MaxConcurrentStreamsUpdateDoneHandle> on_done) = 0;
+
+    // TODO(roth): Remove this as part of the EventEngine migration.
+    virtual grpc_pollset_set* interested_parties() const = 0;
+  };
+
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
 
@@ -543,6 +634,8 @@ class Transport : public InternallyRefCounted<Transport> {
   // implementation of grpc_transport_perform_op
   virtual void PerformOp(grpc_transport_op* op) = 0;
 
+  // TODO(roth, ctiller): Migrate all callers to the new StartWatch()
+  // API and remove this.
   void StartConnectivityWatch(
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
@@ -556,6 +649,11 @@ class Transport : public InternallyRefCounted<Transport> {
     op->disconnect_with_error = error;
     PerformOp(op);
   }
+
+  virtual void StartWatch(RefCountedPtr<StateWatcher> watcher) = 0;
+  virtual void StopWatch(RefCountedPtr<StateWatcher> watcher) = 0;
+
+  virtual RefCountedPtr<channelz::SocketNode> GetSocketNode() const = 0;
 };
 
 class FilterStackTransport : public Transport {

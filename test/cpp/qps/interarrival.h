@@ -19,12 +19,12 @@
 #ifndef GRPC_TEST_CPP_QPS_INTERARRIVAL_H
 #define GRPC_TEST_CPP_QPS_INTERARRIVAL_H
 
+#include <grpcpp/support/config.h>
+
 #include <chrono>
 #include <cmath>
 #include <random>
 #include <vector>
-
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {

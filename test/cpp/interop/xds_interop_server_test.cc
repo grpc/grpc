@@ -14,15 +14,10 @@
 // limitations under the License.
 //
 
-#include <thread>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
+
+#include <thread>
 
 #include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
@@ -30,6 +25,9 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/xds_interop_server_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace testing {

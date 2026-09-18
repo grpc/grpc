@@ -19,12 +19,12 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
 
+#include <benchmark/benchmark.h>
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <sstream>
-
-#include <benchmark/benchmark.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"

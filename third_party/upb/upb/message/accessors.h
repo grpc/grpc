@@ -8,13 +8,14 @@
 #ifndef UPB_MESSAGE_ACCESSORS_H_
 #define UPB_MESSAGE_ACCESSORS_H_
 
+#include <stdint.h>
+
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/message/array.h"
 #include "upb/message/internal/accessors.h"
 #include "upb/message/map.h"
 #include "upb/message/message.h"
-#include "upb/message/tagged_ptr.h"
 #include "upb/message/value.h"
 #include "upb/mini_table/extension.h"
 #include "upb/mini_table/field.h"
@@ -54,10 +55,6 @@ UPB_API_INLINE bool upb_Message_HasExtension(const upb_Message* msg,
 UPB_API_INLINE upb_MessageValue
 upb_Message_GetField(const upb_Message* msg, const upb_MiniTableField* f,
                      upb_MessageValue default_val);
-
-UPB_API_INLINE upb_TaggedMessagePtr upb_Message_GetTaggedMessagePtr(
-    const upb_Message* msg, const upb_MiniTableField* field,
-    upb_Message* default_val);
 
 UPB_API_INLINE const upb_Array* upb_Message_GetArray(
     const upb_Message* msg, const upb_MiniTableField* f);
@@ -105,8 +102,7 @@ UPB_API_INLINE upb_Map* upb_Message_GetOrCreateMutableMap(
     const upb_MiniTableField* f, upb_Arena* arena);
 
 UPB_API_INLINE upb_Message* upb_Message_GetOrCreateMutableMessage(
-    upb_Message* msg, const upb_MiniTable* mini_table,
-    const upb_MiniTableField* f, upb_Arena* arena);
+    upb_Message* msg, const upb_MiniTableField* f, upb_Arena* arena);
 
 UPB_API_INLINE upb_StringView
 upb_Message_GetString(const upb_Message* msg, const upb_MiniTableField* field,
@@ -120,9 +116,9 @@ UPB_API_INLINE uint64_t upb_Message_GetUInt64(const upb_Message* msg,
                                               const upb_MiniTableField* f,
                                               uint64_t default_val);
 
-UPB_API_INLINE void upb_Message_SetClosedEnum(
-    upb_Message* msg, const upb_MiniTable* msg_mini_table,
-    const upb_MiniTableField* f, int32_t value);
+UPB_API_INLINE void upb_Message_SetClosedEnum(upb_Message* msg,
+                                              const upb_MiniTableField* f,
+                                              int32_t value);
 
 // BaseField Setters ///////////////////////////////////////////////////////////
 
@@ -150,6 +146,10 @@ UPB_API_INLINE void upb_Message_SetBaseFieldInt64(struct upb_Message* msg,
                                                   const upb_MiniTableField* f,
                                                   int64_t value);
 
+UPB_API_INLINE void upb_Message_SetBaseFieldMessage(struct upb_Message* msg,
+                                                    const upb_MiniTableField* f,
+                                                    upb_Message* value);
+
 UPB_API_INLINE void upb_Message_SetBaseFieldString(struct upb_Message* msg,
                                                    const upb_MiniTableField* f,
                                                    upb_StringView value);
@@ -162,11 +162,56 @@ UPB_API_INLINE void upb_Message_SetBaseFieldUInt64(struct upb_Message* msg,
                                                    const upb_MiniTableField* f,
                                                    uint64_t value);
 
+// Extension Getters ///////////////////////////////////////////////////////////
+UPB_API_INLINE bool upb_Message_GetExtensionBool(
+    const upb_Message* msg, const upb_MiniTableExtension* f, bool default_val);
+
+UPB_API_INLINE double upb_Message_GetExtensionDouble(
+    const upb_Message* msg, const upb_MiniTableExtension* f,
+    double default_val);
+
+UPB_API_INLINE float upb_Message_GetExtensionFloat(
+    const upb_Message* msg, const upb_MiniTableExtension* f, float default_val);
+
+UPB_API_INLINE int32_t upb_Message_GetExtensionInt32(
+    const upb_Message* msg, const upb_MiniTableExtension* f,
+    int32_t default_val);
+
+UPB_API_INLINE int64_t upb_Message_GetExtensionInt64(
+    const upb_Message* msg, const upb_MiniTableExtension* f,
+    int64_t default_val);
+
+UPB_API_INLINE uint32_t upb_Message_GetExtensionUInt32(
+    const upb_Message* msg, const upb_MiniTableExtension* f,
+    uint32_t default_val);
+
+UPB_API_INLINE uint64_t upb_Message_GetExtensionUInt64(
+    const upb_Message* msg, const upb_MiniTableExtension* f,
+    uint64_t default_val);
+
+UPB_API_INLINE upb_StringView upb_Message_GetExtensionString(
+    const upb_Message* msg, const upb_MiniTableExtension* f,
+    upb_StringView default_val);
+
+UPB_API_INLINE upb_Message* upb_Message_GetExtensionMessage(
+    const upb_Message* msg, const upb_MiniTableExtension* f,
+    struct upb_Message* default_val);
+
+UPB_API_INLINE const upb_Array* upb_Message_GetExtensionArray(
+    const upb_Message* msg, const upb_MiniTableExtension* f);
+
+UPB_API_INLINE upb_Array* upb_Message_GetExtensionMutableArray(
+    upb_Message* msg, const upb_MiniTableExtension* f);
+
 // Extension Setters ///////////////////////////////////////////////////////////
 
 UPB_API_INLINE bool upb_Message_SetExtension(upb_Message* msg,
                                              const upb_MiniTableExtension* e,
                                              const void* value, upb_Arena* a);
+
+UPB_API_INLINE bool upb_Message_SetExtensionMessage(
+    struct upb_Message* msg, const upb_MiniTableExtension* e,
+    struct upb_Message* value, upb_Arena* a);
 
 UPB_API_INLINE bool upb_Message_SetExtensionBool(
     struct upb_Message* msg, const upb_MiniTableExtension* e, bool value,
@@ -222,6 +267,8 @@ UPB_API_INLINE bool upb_Message_SetInt64(upb_Message* msg,
                                          const upb_MiniTableField* f,
                                          int64_t value, upb_Arena* a);
 
+// Unlike the other similarly-named setters, this function can only be
+// called on base fields. Prefer upb_Message_SetBaseFieldMessage().
 UPB_API_INLINE void upb_Message_SetMessage(upb_Message* msg,
                                            const upb_MiniTableField* f,
                                            upb_Message* value);
@@ -254,12 +301,38 @@ UPB_API_INLINE const upb_MiniTableField* upb_Message_WhichOneof(
     const upb_MiniTableField* f);
 
 // Updates a map entry given an entry message.
-bool upb_Message_SetMapEntry(upb_Map* map, const upb_MiniTable* mini_table,
-                             const upb_MiniTableField* field,
+bool upb_Message_SetMapEntry(upb_Map* map, const upb_MiniTableField* field,
                              upb_Message* map_entry_message, upb_Arena* arena);
 
 #ifdef __cplusplus
 } /* extern "C" */
+#endif
+
+#if defined(__cplusplus)
+// Temporary overloads for functions whose signature has recently changed.
+UPB_DEPRECATE_AND_INLINE()
+inline upb_Message* upb_Message_GetOrCreateMutableMessage(
+    upb_Message* msg, const upb_MiniTable* mini_table,
+    const upb_MiniTableField* f, upb_Arena* arena) {
+  return upb_Message_GetOrCreateMutableMessage(msg, f, arena);
+}
+
+UPB_DEPRECATE_AND_INLINE()
+inline void upb_Message_SetClosedEnum(upb_Message* msg,
+                                      const upb_MiniTable* msg_mini_table,
+                                      const upb_MiniTableField* f,
+                                      int32_t value) {
+  upb_Message_SetClosedEnum(msg, f, value);
+}
+
+UPB_DEPRECATE_AND_INLINE()
+inline bool upb_Message_SetMapEntry(upb_Map* map,
+                                    const upb_MiniTable* mini_table,
+                                    const upb_MiniTableField* field,
+                                    upb_Message* map_entry_message,
+                                    upb_Arena* arena) {
+  return upb_Message_SetMapEntry(map, field, map_entry_message, arena);
+}
 #endif
 
 #include "upb/port/undef.inc"

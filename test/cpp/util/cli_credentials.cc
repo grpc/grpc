@@ -18,14 +18,13 @@
 
 #include "test/cpp/util/cli_credentials.h"
 
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
-
 #include <grpc/slice.h>
 #include <grpcpp/support/slice.h>
 
 #include "src/core/util/crash.h"
 #include "src/core/util/load_file.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_RETIRED_FLAG(bool, enable_ssl, false,
                   "Replaced by --channel_creds_type=ssl.");
@@ -64,7 +63,7 @@ namespace {
 
 const char ACCESS_TOKEN_PREFIX[] = "access_token=";
 constexpr int ACCESS_TOKEN_PREFIX_LEN =
-    sizeof(ACCESS_TOKEN_PREFIX) / sizeof(*ACCESS_TOKEN_PREFIX) - 1;
+    (sizeof(ACCESS_TOKEN_PREFIX) / sizeof(*ACCESS_TOKEN_PREFIX)) - 1;
 
 bool IsAccessToken(const std::string& auth) {
   return auth.length() > ACCESS_TOKEN_PREFIX_LEN &&
@@ -94,8 +93,7 @@ CliCredentials::GetChannelCredentials() const {
     grpc::SslCredentialsOptions ssl_creds_options;
     // TODO(@Capstan): This won't affect Google Default Credentials using SSL.
     if (!absl::GetFlag(FLAGS_ssl_client_cert).empty()) {
-      auto cert = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_cert),
-                                      /*add_null_terminator=*/false);
+      auto cert = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_cert));
       if (!cert.ok()) {
         LOG(ERROR) << "error loading file "
                    << absl::GetFlag(FLAGS_ssl_client_cert) << ": "
@@ -105,8 +103,7 @@ CliCredentials::GetChannelCredentials() const {
       }
     }
     if (!absl::GetFlag(FLAGS_ssl_client_key).empty()) {
-      auto key = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_key),
-                                     /*add_null_terminator=*/false);
+      auto key = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_key));
       if (!key.ok()) {
         LOG(ERROR) << "error loading file "
                    << absl::GetFlag(FLAGS_ssl_client_key) << ": "

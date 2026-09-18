@@ -19,16 +19,16 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_H
 #define GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_H
 
-#include <vector>
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 
+#include <vector>
+
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 // Forward decl of grpc_tcp_server
 typedef struct grpc_tcp_server grpc_tcp_server;

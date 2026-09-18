@@ -51,6 +51,10 @@ Clients should accept these arguments:
 
       Keys must be ASCII only (no `-bin` headers allowed). Values may contain
       any character except semi-colons.
+* -- google_c2p_universe_domain=UNIVERSE_DOMAIN
+    * Universe domain to configure for the google-c2p resolver. Optional,
+      defaults to the empty string in which case we should *not* explicitly
+      configure a universe domain.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
@@ -91,7 +95,7 @@ Procedure:
     set to current timestamp. Timestamp format is irrelevant, and resolution is
     in nanoseconds.
     Client adds a `x-user-ip` header with value `1.2.3.4` to the request.
-    This is done since some proxys such as GFE will not cache requests from
+    This is done since some proxies such as GFE will not cache requests from
     localhost.
     Client marks the request as cacheable by setting the cacheable flag in the
     request context. Longer term this should be driven by the method option
@@ -1005,14 +1009,21 @@ Client asserts:
 ### rpc_soak
 
 The client performs many large_unary RPCs in sequence over the same channel.
-The client records the latency and status of each RPC in some data structure.
-If the test ever consumes `soak_overall_timeout_seconds` seconds and still hasn't
-completed `soak_iterations` RPCs, then the test should discontinue sending RPCs
-as soon as possible. After performing all RPCs, the test should examine
-previously recorded RPC latency and status results in a second pass and fail if
-either:
+The total number of RPCs to execute is controlled by the `soak_iterations` 
+parameter, which defaults to 10. The number of threads used to execute RPCs 
+is controlled by `soak_num_threads`. By default, `soak_num_threads` is set to 1. 
 
-a) not all `soak_iterations` RPCs were completed
+The client records the latency and status of each RPC in 
+thread-specific data structure, which are later aggregated to form the overall 
+results. If the test ever consumes `soak_overall_timeout_seconds` seconds 
+and still hasn't completed `soak_iterations` RPCs, then the test should 
+discontinue sending RPCs as soon as possible. Each thread should independently 
+track its progress and stop once the overall timeout is reached.
+
+After performing all RPCs, the test should examine the previously aggregated RPC
+latency and status results from all threads in a second pass and fail if either:
+
+a) not all `soak_iterations` RPCs were completed across all threads
 
 b) the sum of RPCs that either completed with a non-OK status or exceeded
    `max_acceptable_per_rpc_latency_ms` exceeds `soak_max_failures`
@@ -1029,10 +1040,15 @@ results of each iteration (i.e. RPC) in a format the matches the following
 regexes:
 
 - Upon success:
-  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ succeeded`
+  - `thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: 
+  \S+ succeeded`
 
 - Upon failure:
-  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ failed:`
+  - `thread_id: \d+ soak iteration: \d+ elapsed_ms: \d+ peer: \S+ server_uri: 
+  \S+ failed`
+
+- Thread-specific logs will include the thread_id, helping to track performance
+  across threads.
 
 This test must be configurable via a few different command line flags:
 
@@ -1057,6 +1073,14 @@ This test must be configurable via a few different command line flags:
 * `soak_min_time_ms_between_rpcs`: The minimum time in milliseconds between
   consecutive RPCs. Useful for limiting QPS.
 
+* `soak_num_threads`: Specifies the number of threads to use for concurrently 
+  executing the soak test. Each thread performs `soak_iterations / soak_num_threads`
+  RPCs.
+
+This value defaults to 1 (i.e., no concurrency) but can be 
+  increased for concurrent execution. The total soak_iterations must be 
+  divisible by soak_num_threads.
+
 The following is optional but encouraged to improve debuggability:
 
 * Implementations should log the number of milliseconds that each RPC takes.
@@ -1077,7 +1101,6 @@ latency measurement, but the teardown of that channel should **not** be
 included in that latency measurement (channel teardown semantics differ widely
 between languages). This latency measurement should also be the value that is
 logged and recorded in the latency histogram.
-
 
 ### orca_per_rpc
 [orca_per_rpc]: #orca_per_rpc
@@ -1190,6 +1213,48 @@ for the entire test case) to receive an OOB load report that matches the
 requested load report in step 3. Similar to step 2.
 5. Client half closes the stream, and asserts the streaming call is successful. 
 
+### max_concurrent_streams_connection_scaling
+
+This test verifies that when the maximum concurrent streams limit has been reached
+on the connection, the subchannel scales connections upto the configured limit. This
+test needs to be invoked with --max_concurrent_streams_limit=2 and --service_config_json
+specifying maxConnectionsPerSubchannel of 2.
+
+Server features:
+* [FullDuplexCall][]
+* [Max Concurrent Streams Limit][]
+* [Fill Peer Socket Address][]
+
+Procedure:
+ 1. Client creates a channel to the server.
+
+ 2. Client starts 3 FullDuplexCall rpcs with a request to fill the peer socket address in
+ the response.
+
+    ```
+    {
+      response_parameters:{
+        fill_peer_socket_address: true
+      }
+    }
+    ```
+
+ 3. Client waits for the initial reply from each rpc before starting the next rpc, with the reply 
+ expected be of the format
+
+    ```
+    {
+      peer_socket_address: <peer socket address>
+    }
+    ```
+    
+ 4. Client half-closes the 3 rpcs and asserts the streaming calls are successful.
+
+Client asserts:
+* The peer socket address received for the first two rpcs are the same.
+
+* The peer socket address received for the third rpc is different.
+
 ### Experimental Tests
 
 These tests are not yet standardized, and are not yet implemented in all
@@ -1252,7 +1317,7 @@ Failed TLS hostname verification (ejona?)
 
 Large amount of headers to cause CONTINUATIONs; 63K of 'X's, all in one header.
 
-#### To priorize:
+#### To prioritize:
 
 Start streaming RPC but don't send any requests, server responds
 
@@ -1442,3 +1507,16 @@ will first clear all the previous metrics data, and then add utilization metrics
 from `orca_oob_report` to the `OpenRCAService`.
 The server implementation should use a lock or similar mechanism to allow only
 one client to control the server's out-of-band reports until the end of the RPC.
+
+### Fill peer socket address
+[Fill Peer Socket Address]: #fill-peer-socket-address
+
+If a StreamingInputCallRequest has `fill_peer_socket_address`, then the
+StreamingOutputCallResponse should have peer_socket_address filled with
+the peer address the server sees for the connection.
+
+### Max concurrent streams limit
+[Max Concurrent Streams Limit]: #max-concurrent-streams-limit
+
+If the test server is started with the commandline argument --max_concurrent_streams_limit=N,
+a max concurrent streams limit of N is imposed. This is only implemented by the Java server.

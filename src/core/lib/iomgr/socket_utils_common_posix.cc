@@ -35,6 +35,9 @@
 #else
 #include <netinet/tcp.h>
 #endif
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -43,19 +46,15 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 // set a socket to use zerocopy
 grpc_error_handle grpc_set_socket_zerocopy(int fd) {
@@ -417,7 +416,7 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
 // set a socket using a grpc_socket_mutator
 grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
-  CHECK(mutator);
+  GRPC_CHECK(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd, usage)) {
     return GRPC_ERROR_CREATE("grpc_socket_mutator failed.");
   }

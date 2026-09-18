@@ -19,24 +19,21 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>  // IWYU pragma: keep
 #include <iosfwd>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/avl.h"
 #include "src/core/util/debug_location.h"
@@ -46,15 +43,19 @@
 #include "src/core/util/ref_counted_string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/string_view.h"
 
 // TODO(hork): When we're ready to allow setting via a channel arg from the
 // application, replace this with a macro in
 // include/grpc/impl/codegen/grpc_types.h.
-#define GRPC_INTERNAL_ARG_EVENT_ENGINE "grpc.internal.event_engine"
+#define GRPC_INTERNAL_ARG_EVENT_ENGINE "grpc.experimental.event_engine"
 
 // Channel args are intentionally immutable, to avoid the need for locking.
 
 namespace grpc_core {
+
+class Arena;
 
 // Define a traits object for vtable lookup - allows us to integrate with
 // existing code easily (just define the trait!) and allows some magic in
@@ -89,10 +90,34 @@ struct IsRawPointerTagged {
   static constexpr bool kValue = false;
 };
 template <typename T>
-struct IsRawPointerTagged<T,
-                          absl::void_t<typename T::RawPointerChannelArgTag>> {
+struct IsRawPointerTagged<T, std::void_t<typename T::RawPointerChannelArgTag>> {
   static constexpr bool kValue = true;
 };
+
+// Define a check for shared_ptr supported types, which must extend
+// enable_shared_from_this.
+template <typename T>
+struct SupportedSharedPtrType
+    : std::integral_constant<
+          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
+template <>
+struct SupportedSharedPtrType<grpc_event_engine::experimental::EventEngine>
+    : std::true_type {};
+
+// Specialization for shared_ptr
+// Incurs an allocation because shared_ptr.release is not a thing.
+template <typename T>
+struct is_shared_ptr : std::false_type {};
+template <typename T>
+struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+
+template <typename T, typename = void>
+struct has_channel_args_compare : std::false_type {};
+template <typename T>
+struct has_channel_args_compare<
+    T, std::void_t<decltype(T::ChannelArgsCompare(std::declval<const T*>(),
+                                                  std::declval<const T*>()))>>
+    : std::true_type {};
 }  // namespace channel_args_detail
 
 // Specialization for ref-counted pointers.
@@ -135,25 +160,9 @@ struct ChannelArgTypeTraits<
   };
 };
 
-// Define a check for shared_ptr supported types, which must extend
-// enable_shared_from_this.
 template <typename T>
-struct SupportedSharedPtrType
-    : std::integral_constant<
-          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
-template <>
-struct SupportedSharedPtrType<grpc_event_engine::experimental::EventEngine>
-    : std::true_type {};
-
-// Specialization for shared_ptr
-// Incurs an allocation because shared_ptr.release is not a thing.
-template <typename T>
-struct is_shared_ptr : std::false_type {};
-template <typename T>
-struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
-template <typename T>
-struct ChannelArgTypeTraits<T,
-                            absl::enable_if_t<is_shared_ptr<T>::value, void>> {
+struct ChannelArgTypeTraits<
+    T, absl::enable_if_t<channel_args_detail::is_shared_ptr<T>::value, void>> {
   static void* TakeUnownedPointer(T* p) { return p; }
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
@@ -163,8 +172,15 @@ struct ChannelArgTypeTraits<T,
         [](void* p) { delete static_cast<T*>(p); },
         // compare
         [](void* p1, void* p2) {
-          return QsortCompare(static_cast<const T*>(p1)->get(),
-                              static_cast<const T*>(p2)->get());
+          if constexpr (channel_args_detail::has_channel_args_compare<
+                            typename T::element_type>::value) {
+            return T::element_type::ChannelArgsCompare(
+                static_cast<const T*>(p1)->get(),
+                static_cast<const T*>(p2)->get());
+          } else {
+            return QsortCompare(static_cast<const T*>(p1)->get(),
+                                static_cast<const T*>(p2)->get());
+          }
         },
     };
     return &tbl;
@@ -178,7 +194,7 @@ struct ChannelArgTypeTraits<T,
 // ownership*.
 template <typename T>
 struct ChannelArgTypeTraits<T,
-                            absl::void_t<typename T::RawPointerChannelArgTag>> {
+                            std::void_t<typename T::RawPointerChannelArgTag>> {
   static void* TakeUnownedPointer(T* p) { return p; }
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
@@ -201,7 +217,7 @@ struct ChannelArgPointerShouldBeConst {
 
 template <typename T>
 struct ChannelArgPointerShouldBeConst<
-    T, absl::void_t<decltype(T::ChannelArgUseConstPtr())>> {
+    T, std::void_t<decltype(T::ChannelArgUseConstPtr())>> {
   static constexpr bool kValue = T::ChannelArgUseConstPtr();
 };
 
@@ -211,9 +227,10 @@ struct GetObjectImpl;
 // std::shared_ptr implementation
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
-                             SupportedSharedPtrType<T>::value,
-                         void>> {
+    T,
+    absl::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
+                          channel_args_detail::SupportedSharedPtrType<T>::value,
+                      void>> {
   using Result = T*;
   using ReffedResult = std::shared_ptr<T>;
   using StoredType = std::shared_ptr<T>*;
@@ -234,9 +251,10 @@ struct GetObjectImpl<
 // RefCountedPtr
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
-                             !SupportedSharedPtrType<T>::value,
-                         void>> {
+    T, absl::enable_if_t<
+           !ChannelArgPointerShouldBeConst<T>::kValue &&
+               !channel_args_detail::SupportedSharedPtrType<T>::value,
+           void>> {
   using Result = T*;
   using ReffedResult = RefCountedPtr<T>;
   using StoredType = Result;
@@ -254,9 +272,10 @@ struct GetObjectImpl<
 
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<ChannelArgPointerShouldBeConst<T>::kValue &&
-                             !SupportedSharedPtrType<T>::value,
-                         void>> {
+    T, absl::enable_if_t<
+           ChannelArgPointerShouldBeConst<T>::kValue &&
+               !channel_args_detail::SupportedSharedPtrType<T>::value,
+           void>> {
   using Result = const T*;
   using ReffedResult = RefCountedPtr<const T>;
   using StoredType = Result;
@@ -280,6 +299,11 @@ struct ChannelArgNameTraits {
 template <typename T>
 struct ChannelArgNameTraits<std::shared_ptr<T>> {
   static absl::string_view ChannelArgName() { return T::ChannelArgName(); }
+};
+template <>
+struct ChannelArgTypeTraits<Arena> {
+  static const grpc_arg_pointer_vtable* VTable();
+  static void* TakeUnownedPointer(Arena* p) { return p; }
 };
 // Specialization for the EventEngine
 template <>
@@ -355,8 +379,8 @@ class ChannelArgs {
         : rep_(RefCountedString::Make(s).release(), &string_vtable_) {}
     explicit Value(Pointer p) : rep_(std::move(p)) {}
 
-    absl::optional<int> GetIfInt() const {
-      if (rep_.c_vtable() != &int_vtable_) return absl::nullopt;
+    std::optional<int> GetIfInt() const {
+      if (rep_.c_vtable() != &int_vtable_) return std::nullopt;
       return reinterpret_cast<intptr_t>(rep_.c_pointer());
     }
     RefCountedPtr<RefCountedString> GetIfString() const {
@@ -471,7 +495,7 @@ class ChannelArgs {
           decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
       ChannelArgs>
   Set(absl::string_view name, std::shared_ptr<T> value) const {
-    static_assert(SupportedSharedPtrType<T>::value,
+    static_assert(channel_args_detail::SupportedSharedPtrType<T>::value,
                   "Type T must extend std::enable_shared_from_this to be added "
                   "into ChannelArgs as a shared_ptr<T>");
     auto* store_value = new std::shared_ptr<T>(value);
@@ -490,6 +514,8 @@ class ChannelArgs {
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const;
 
+  channelz::PropertyList ToPropertyList() const;
+
   GRPC_MUST_USE_RESULT ChannelArgs
   RemoveAllKeysWithPrefix(absl::string_view prefix) const;
 
@@ -498,9 +524,9 @@ class ChannelArgs {
     return Get(ChannelArgNameTraits<T>::ChannelArgName()) != nullptr;
   }
 
-  absl::optional<int> GetInt(absl::string_view name) const;
-  absl::optional<absl::string_view> GetString(absl::string_view name) const;
-  absl::optional<std::string> GetOwnedString(absl::string_view name) const;
+  std::optional<int> GetInt(absl::string_view name) const;
+  std::optional<absl::string_view> GetString(absl::string_view name) const;
+  std::optional<std::string> GetOwnedString(absl::string_view name) const;
   // WARNING: this is broken if `name` represents something that was stored as a
   // RefCounted<const T> - we will discard the const-ness.
   void* GetVoidPointer(absl::string_view name) const;
@@ -510,9 +536,9 @@ class ChannelArgs {
     return static_cast<typename GetObjectImpl<T>::StoredType>(
         GetVoidPointer(name));
   }
-  absl::optional<Duration> GetDurationFromIntMillis(
+  std::optional<Duration> GetDurationFromIntMillis(
       absl::string_view name) const;
-  absl::optional<bool> GetBool(absl::string_view name) const;
+  std::optional<bool> GetBool(absl::string_view name) const;
 
   // Object based get/set.
   // Deal with the common case that we set a pointer to an object under
@@ -552,6 +578,10 @@ class ChannelArgs {
   bool operator!=(const ChannelArgs& other) const;
   bool operator<(const ChannelArgs& other) const;
   bool operator==(const ChannelArgs& other) const;
+
+  friend int QsortCompare(const ChannelArgs& lhs, const ChannelArgs& rhs) {
+    return QsortCompare(lhs.args_, rhs.args_);
+  }
 
   // Helpers for commonly accessed things
 
@@ -679,7 +709,7 @@ typedef grpc_core::ChannelArgs (
     const char* target, const grpc_core::ChannelArgs& old_args,
     grpc_channel_stack_type type);
 
-// Should be called only once globaly before grpc is init'ed.
+// Should be called only once globally before grpc is init'ed.
 void grpc_channel_args_set_client_channel_creation_mutator(
     grpc_channel_args_client_channel_creation_mutator cb);
 // This will be called at the creation of each channel.

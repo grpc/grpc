@@ -16,19 +16,18 @@
 
 #include "test/core/test_util/audit_logging_utils.h"
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "src/core/util/json/json_writer.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/util/json/json_writer.h"
 
 namespace grpc_core {
 namespace testing {
@@ -61,13 +60,13 @@ absl::string_view TestAuditLoggerFactory::Config::name() const {
 
 absl::string_view TestAuditLoggerFactory::name() const { return kLoggerName; }
 
-absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
 TestAuditLoggerFactory::ParseAuditLoggerConfig(const Json&) {
   return std::make_unique<Config>();
 }
 
 std::unique_ptr<AuditLogger> TestAuditLoggerFactory::CreateAuditLogger(
-    std::unique_ptr<AuditLoggerFactory::Config>) {
+    std::shared_ptr<const AuditLoggerFactory::Config>) {
   return std::make_unique<TestAuditLogger>(audit_logs_);
 }
 

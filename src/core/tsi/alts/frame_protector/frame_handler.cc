@@ -18,19 +18,17 @@
 
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
 
-#include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
+#include "absl/log/log.h"
 
 // Use little endian to interpret a string of bytes as uint32_t.
 static uint32_t load_32_le(const unsigned char* buffer) {

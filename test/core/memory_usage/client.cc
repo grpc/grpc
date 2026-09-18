@@ -16,21 +16,6 @@
 //
 //
 
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <algorithm>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/credentials.h>
@@ -41,13 +26,27 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/time.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
+#include <algorithm>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/transport/endpoint_transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
 
 static grpc_channel* channel;
 static grpc_completion_queue* cq;
@@ -71,7 +70,7 @@ static fling_call calls[100001];
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 // A call is intentionally divided into two steps. First step is to initiate a
-// call (i.e send and recv metadata). A call is outstanding after we initated,
+// call (i.e send and recv metadata). A call is outstanding after we initiated,
 // so we can measure the call memory usage.
 static void init_ping_pong_request(int call_idx) {
   grpc_metadata_array_init(&calls[call_idx].initial_metadata_recv);
@@ -93,10 +92,10 @@ static void init_ping_pong_request(int call_idx) {
       grpc_slice_from_static_string("/Reflector/reflectUnary"), &hostname,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
-                                              metadata_ops,
-                                              (size_t)(op - metadata_ops),
-                                              tag(call_idx), nullptr));
+  GRPC_CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
+                                                   metadata_ops,
+                                                   (size_t)(op - metadata_ops),
+                                                   tag(call_idx), nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 }
 
@@ -113,9 +112,10 @@ static void finish_ping_pong_request(int call_idx) {
   op->data.recv_status_on_client.status_details = &calls[call_idx].details;
   op++;
 
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call, status_ops,
-                                              (size_t)(op - status_ops),
-                                              tag(call_idx), nullptr));
+  GRPC_CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
+                                                   status_ops,
+                                                   (size_t)(op - status_ops),
+                                                   tag(call_idx), nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_metadata_array_destroy(&calls[call_idx].initial_metadata_recv);
   grpc_metadata_array_destroy(&calls[call_idx].trailing_metadata_recv);
@@ -156,17 +156,17 @@ static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
   calls[call_idx].call = grpc_channel_create_call(
       channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq, call_type, &hostname,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
-                                              snapshot_ops,
-                                              (size_t)(op - snapshot_ops),
-                                              (void*)nullptr, nullptr));
+  GRPC_CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
+                                                   snapshot_ops,
+                                                   (size_t)(op - snapshot_ops),
+                                                   (void*)nullptr, nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   LOG(INFO) << "Call " << call_idx << " status " << calls[call_idx].status
             << " (" << grpc_core::StringViewFromSlice(calls[call_idx].details)
             << ")";
 
-  CHECK_NE(response_payload_recv, nullptr);
+  GRPC_CHECK_NE(response_payload_recv, nullptr);
   grpc_byte_buffer_reader reader;
   grpc_byte_buffer_reader_init(&reader, response_payload_recv);
   grpc_slice response = grpc_byte_buffer_reader_readall(&reader);
@@ -195,7 +195,7 @@ std::pair<MemStats, MemStats> run_test_loop(int iterations, int* call_idx) {
     init_ping_pong_request(*call_idx + i + 1);
   }
 
-  auto peak = std::make_pair(
+  auto peak = std::pair(
       // client
       MemStats::Snapshot(),
       // server
@@ -240,7 +240,7 @@ int main(int argc, char** argv) {
   grpc_slice slice = grpc_slice_from_copied_string("x");
   char* fake_argv[1];
 
-  CHECK_GE(argc, 1);
+  GRPC_CHECK_GE(argc, 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
 
@@ -257,19 +257,19 @@ int main(int argc, char** argv) {
     args_vec.push_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_MINIMAL_STACK), 1));
   }
+  const std::string kChaoticGoodWireFormatPreferences(
+      grpc_core::chaotic_good::WireFormatPreferences());
   if (absl::GetFlag(FLAGS_chaotic_good)) {
     args_vec.push_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0));
+    args_vec.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS),
+        const_cast<char*>(kChaoticGoodWireFormatPreferences.c_str())));
   }
   grpc_channel_args args = {args_vec.size(), args_vec.data()};
 
-  if (absl::GetFlag(FLAGS_chaotic_good)) {
-    channel = grpc_chaotic_good_channel_create(
-        absl::GetFlag(FLAGS_target).c_str(), &args);
-  } else {
-    channel = grpc_channel_create(absl::GetFlag(FLAGS_target).c_str(),
-                                  grpc_insecure_credentials_create(), &args);
-  }
+  channel = grpc_channel_create(absl::GetFlag(FLAGS_target).c_str(),
+                                grpc_insecure_credentials_create(), &args);
 
   int call_idx = 0;
   const int warmup_iterations = absl::GetFlag(FLAGS_warmup);

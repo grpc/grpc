@@ -16,9 +16,9 @@
 //
 //
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 #ifdef GPR_LINUX
 
@@ -35,6 +35,9 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   uint64_t busy = 0, total = 0;
   FILE* fp;
   fp = fopen("/proc/stat", "r");
+  if (fp == nullptr) {
+    return std::pair<uint64_t, uint64_t>(0, 0);
+  }
   uint64_t user, nice, system, idle;
   if (fscanf(fp, "cpu %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64, &user,
              &nice, &system, &idle) != 4) {
@@ -44,7 +47,7 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   fclose(fp);
   busy = user + nice + system;
   total = busy + idle;
-  return std::make_pair(busy, total);
+  return std::pair(busy, total);
 }
 
 }  // namespace load_reporter

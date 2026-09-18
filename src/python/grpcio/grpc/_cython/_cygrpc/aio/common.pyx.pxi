@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import warnings
+import threading
 
-from cpython.version cimport PY_MAJOR_VERSION, PY_MINOR_VERSION
+from cpython.version cimport PY_MINOR_VERSION
 
 TYPE_METADATA_STRING = "Tuple[Tuple[str, Union[str, bytes]]...]"
 
@@ -173,29 +174,89 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
     await future
 
 
-if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
-    def get_working_loop():
-        """Returns a running event loop.
-
-        Due to a defect of asyncio.get_event_loop, its returned event loop might
-        not be set as the default event loop for the main thread.
-        """
+def _loop_policy_try_to_get_default_loop(policy):
+    # TODO(#39518): migrate to asyncio.get_event_loop().
+    with warnings.catch_warnings():
+        # Convert DeprecationWarning to errors so we can capture them with except
         try:
-            return asyncio.get_running_loop()
+            warnings.simplefilter("error", DeprecationWarning)
+            loop = policy.get_event_loop()
+            _LOGGER.debug(f"[_cygrpc] Loaded policy loop: {id(loop)=}")
+            return loop
+        except DeprecationWarning:
+            # Since version 3.12, DeprecationWarning is emitted if there is no
+            # current event loop.
+            return None
         except RuntimeError:
-            with warnings.catch_warnings():
-                # Convert DeprecationWarning to errors so we can capture them with except
-                warnings.simplefilter("error", DeprecationWarning)
-                try:
-                    return asyncio.get_event_loop_policy().get_event_loop()
-                # Since version 3.12, DeprecationWarning is emitted if there is no
-                # current event loop.
-                except DeprecationWarning:
-                    return asyncio.get_event_loop_policy().new_event_loop()
-else:
-    def get_working_loop():
-        """Returns a running event loop."""
-        return asyncio.get_event_loop()
+            # TODO(#40748): fix behavior in non-main threads.
+
+            # In non-main threads, BaseDefaultEventLoopPolicy always throws
+            # when there's no loop set. We'll preserve this behavior for now.
+            if PY_MINOR_VERSION < 14:
+                raise
+
+            # Python 3.14+ throws even in the main loop. We'll keep the behavior
+            # for non-main threads, but create a new loop for the main.
+            if threading.current_thread() is not threading.main_thread():
+                raise
+
+            _LOGGER.debug(
+                f"[_cygrpc] Python 3.14+ loop in main thread custom behavior"
+            )
+            return None
+
+
+def _loop_policy_create_new_loop(policy):
+    # TODO(#39518): migrate to asyncio.new_event_loop().
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        loop = policy.new_event_loop()
+        _LOGGER.debug(f"[_cygrpc] Created policy loop: {id(loop)=}")
+        # TODO(#40748): set the new loop via asyncio.set_event_loop().
+        return loop
+
+
+def _get_event_loop_policy():
+    # TODO(#39518): migrate off of policies, issue deprecations from our side.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        return asyncio.get_event_loop_policy()
+
+
+def _get_or_create_default_loop():
+    # TODO(#39518): migrate off of policies before 3.16.
+    policy = _get_event_loop_policy()
+    if not policy:
+        raise RuntimeError("Couldn't load asyncio.get_event_loop_policy()")
+
+    default_policy_loop = _loop_policy_try_to_get_default_loop(policy)
+    if default_policy_loop is not None:
+        return default_policy_loop
+
+    # TODO(#40748): issue deprecation when the loop is not running.
+    return _loop_policy_create_new_loop(policy)
+
+
+def _get_running_loop():
+    try:
+        loop = asyncio.get_running_loop()
+        _LOGGER.debug(f"[_cygrpc] Loaded running loop: {id(loop)=}")
+        return loop
+    except RuntimeError:
+        return None
+
+
+def get_working_loop():
+    """Returns a running event loop.
+
+    Due to a defect of asyncio.get_event_loop, its returned event loop might
+    not be set as the default event loop for the main thread.
+    """
+    running_loop = _get_running_loop()
+    if running_loop:
+        return running_loop
+
+    return _get_or_create_default_loop()
 
 
 def raise_if_not_valid_trailing_metadata(object metadata):

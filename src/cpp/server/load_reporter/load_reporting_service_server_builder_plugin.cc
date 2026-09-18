@@ -18,11 +18,11 @@
 
 #include "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h"
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
 #include <grpcpp/impl/server_initializer.h>
 #include <grpcpp/server_builder.h>
+
+#include <utility>
 
 namespace grpc {
 namespace load_reporter {

@@ -44,6 +44,8 @@ extern "C" {
 // https://www.openssl.org/docs/man1.1.0/man3/SSL_get_peer_cert_chain.html.
 #define GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME "x509_pem_cert_chain"
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
+#define GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME \
+  "ssl_negotiated_key_exchange_group"
 #define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
 #define GRPC_PEER_DNS_PROPERTY_NAME "peer_dns"
 #define GRPC_PEER_SPIFFE_ID_PROPERTY_NAME "peer_spiffe_id"
@@ -144,6 +146,20 @@ typedef enum { UDS = 0, LOCAL_TCP } grpc_local_connect_type;
 
 /** The TLS versions that are supported by the SSL stack. **/
 typedef enum { TLS1_2, TLS1_3 } grpc_tls_version;
+
+/** TLS key exchange groups. */
+typedef enum {
+  /** Unspecified key exchange group. */
+  GRPC_TLS_GROUP_UNSPECIFIED,
+  /** secp256r1 ECDH key exchange. */
+  GRPC_TLS_GROUP_SECP256R1,
+  /** X25519 ECDH key exchange. */
+  GRPC_TLS_GROUP_X25519,
+  /** X25519_MLKEM768 hybrid key exchange. Post-quantum cryptography. */
+  GRPC_TLS_GROUP_X25519_MLKEM768,
+  /** secp384r1 ECDH key exchange. */
+  GRPC_TLS_GROUP_SECP384R1,
+} grpc_tls_key_exchange_group;
 
 #ifdef __cplusplus
 }

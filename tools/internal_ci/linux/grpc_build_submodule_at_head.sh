@@ -42,26 +42,16 @@ echo ""
 
 # Update bazel for generate_projects
 case "$SUBMODULE_NAME" in
-  abseil-cpp)
-    BAZEL_DEP_NAME="com_google_absl"
+  abseil-cpp|boringssl|protobuf)
+    BAZEL_DEP_PATH="$(pwd)/third_party/${SUBMODULE_NAME}"
+    echo "bazel override_module is set for ${SUBMODULE_NAME} to ${BAZEL_DEP_PATH}"
+    echo "build --override_module=${SUBMODULE_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
+    echo "query --override_module=${SUBMODULE_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
     ;;
-  boringssl)
-    BAZEL_DEP_NAME="boringssl"
-    ;;
-  protobuf)
-    BAZEL_DEP_NAME="com_google_protobuf"
+  *)
+   echo "No bazel dependency is specified so skipping bazel reconfiguration."
     ;;
 esac
-if [ -z "$BAZEL_DEP_NAME" ]
-then
-   echo "No bazel dependency is specified so skipping bazel reconfiguration."
-else
-   BAZEL_DEP_PATH="$(pwd)/third_party/${SUBMODULE_NAME}"
-   echo "bazel override_repository is set for ${BAZEL_DEP_NAME} to ${BAZEL_DEP_PATH}"
-   echo "build --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
-   echo "query --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
-fi
-echo ""
 
 if [ "${SUBMODULE_NAME}" == "abseil-cpp" ]
 then
@@ -70,6 +60,19 @@ fi
 
 if [ "${SUBMODULE_NAME}" == "protobuf" ]
 then
+  # TODO(weizheyuan): Delete this HACK once we upgrade to protobuf 36.
+  #
+  # Force upb codegen for
+  # @com_google_protobuf//upb/reflection:json_enumvalue_options_upb_proto, which is
+  # required to bootstrap compilation of upb runtime.
+  #
+  # The change to BUILD can't be merged to master yet because this target isn't available
+  # in the protobuf we use (35.1), and bazel doesn't allow conditional definition
+  # of targets.
+  #
+  # See also https://github.com/protocolbuffers/protobuf/commit/8111a7473d97d5b199d074c275ef3d083ef5faa9
+  sed -E -i 's/(WELL_KNOWN_PROTO_TARGETS = \[)/\1\n    "json_enumvalue_options",/' BUILD
+
   # update upb
   rm -rf third_party/upb/upb
   cp -r third_party/protobuf/upb third_party/upb
@@ -81,6 +84,12 @@ then
   cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/
 fi
 
+# TODO(sergiitk): remove this logic once the CI uses python3.9+.
+# Note: we set GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS to skip xds-protos
+# generation, which shouldn't bee needed for _at_head jobs.
+# Normally, it doesn't hurt to generate them, but our CI uses python3.8,
+# which grpcio python packages dropped at v1.71.0.
+export GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS="${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-1}"
 tools/buildgen/generate_projects.sh
 
 # commit so that changes are passed to Docker

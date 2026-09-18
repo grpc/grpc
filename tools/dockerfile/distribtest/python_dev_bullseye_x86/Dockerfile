@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM i386/debian:bullseye
+FROM --platform=linux/386 python:3.10-bullseye
 
-RUN apt-get update && apt-get install -y python3 python3-pip
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    build-essential \
+    python3-dev
 
-RUN python3 -m pip install virtualenv==16.7.9
-
-RUN apt-get install -y build-essential
-RUN apt-get install -y python3-dev
+RUN python3 -m pip install virtualenv
 
 # docker is running on a 64-bit machine, so we need to
 # override "uname -m" to report i686 instead of x86_64, otherwise

@@ -18,4 +18,14 @@
 #include "src/core/lib/debug/trace_flags.h"  // IWYU pragma: export
 #include "src/core/lib/debug/trace_impl.h"   // IWYU pragma: export
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int grpc_tracer_set_enabled(const char* name, int enabled);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  // GRPC_SRC_CORE_LIB_DEBUG_TRACE_H

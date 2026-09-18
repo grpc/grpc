@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -19,17 +19,11 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init;
-extern const upb_MiniTable* envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init_ptr;
 extern const upb_MiniTable envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init;
-extern const upb_MiniTable* envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init_ptr;
 extern const upb_MiniTable envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init;
-extern const upb_MiniTable* envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init_ptr;
 extern const upb_MiniTable envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init;
-extern const upb_MiniTable* envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init_ptr;
 extern const upb_MiniTable envoy__config__endpoint__v3__ClusterStats_msg_init;
-extern const upb_MiniTable* envoy__config__endpoint__v3__ClusterStats_msg_init_ptr;
 extern const upb_MiniTable envoy__config__endpoint__v3__ClusterStats__DroppedRequests_msg_init;
-extern const upb_MiniTable* envoy__config__endpoint__v3__ClusterStats__DroppedRequests_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_endpoint_v3_load_report_proto_upb_file_layout;
 
@@ -39,4 +33,4 @@ extern const upb_MiniTableFile envoy_config_endpoint_v3_load_report_proto_upb_fi
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPB_H__UPB_MINITABLE_H_ */

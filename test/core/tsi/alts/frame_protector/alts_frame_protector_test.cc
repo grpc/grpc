@@ -18,17 +18,15 @@
 
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 
-#include <stdbool.h>
-
-#include <gtest/gtest.h>
-
 #include <grpc/support/alloc.h>
+#include <stdbool.h>
 
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "gtest/gtest.h"
 
 const size_t kChannelSize = 32768;
 

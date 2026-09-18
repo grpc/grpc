@@ -15,11 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_ENGINE_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_ENGINE_H
 
-#include <string>
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/authorization/evaluate_args.h"
+#include <string>
+
+#include "src/core/call/evaluate_args.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc_core {

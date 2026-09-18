@@ -19,11 +19,12 @@
 #ifndef GRPC_SRC_CPP_SERVER_CHANNELZ_CHANNELZ_SERVICE_H
 #define GRPC_SRC_CPP_SERVER_CHANNELZ_CHANNELZ_SERVICE_H
 
+#include <grpc/channelz/v1/channelz.grpc.pb.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
 
-#include "src/proto/grpc/channelz/channelz.grpc.pb.h"
+#include "src/proto/grpc/channelz/v2/service.grpc.pb.h"
 
 namespace grpc {
 
@@ -58,6 +59,19 @@ class ChannelzService final : public channelz::v1::Channelz::Service {
   Status GetSocket(ServerContext* unused,
                    const channelz::v1::GetSocketRequest* request,
                    channelz::v1::GetSocketResponse* response) override;
+};
+
+class ChannelzV2Service final : public channelz::v2::Channelz::Service {
+ private:
+  Status QueryEntities(ServerContext*,
+                       const channelz::v2::QueryEntitiesRequest* request,
+                       channelz::v2::QueryEntitiesResponse* response) override;
+  Status GetEntity(ServerContext*,
+                   const channelz::v2::GetEntityRequest* request,
+                   channelz::v2::GetEntityResponse* response) override;
+  Status QueryTrace(
+      ServerContext*, const channelz::v2::QueryTraceRequest* request,
+      ServerWriter<channelz::v2::QueryTraceResponse>* writer) override;
 };
 
 }  // namespace grpc

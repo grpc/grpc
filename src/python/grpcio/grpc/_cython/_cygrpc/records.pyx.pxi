@@ -11,19 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import enum
 
 cdef bytes _slice_bytes(grpc_slice slice):
   cdef void *start = grpc_slice_start_ptr(slice)
   cdef size_t length = grpc_slice_length(slice)
   return (<const char *>start)[:length]
 
-cdef grpc_slice _copy_slice(grpc_slice slice) nogil:
+cdef grpc_slice _copy_slice(grpc_slice slice) noexcept nogil:
   cdef void *start = grpc_slice_start_ptr(slice)
   cdef size_t length = grpc_slice_length(slice)
   return grpc_slice_from_copied_buffer(<const char *>start, length)
 
-cdef grpc_slice _slice_from_bytes(bytes value) nogil:
+cdef grpc_slice _slice_from_bytes(bytes value) noexcept nogil:
   cdef const char *value_ptr
   cdef size_t length
   with gil:
@@ -58,7 +58,7 @@ class WriteFlag:
   no_compress = GRPC_WRITE_NO_COMPRESS
 
 
-class StatusCode:
+class StatusCode(enum.IntEnum):
   ok = GRPC_STATUS_OK
   cancelled = GRPC_STATUS_CANCELLED
   unknown = GRPC_STATUS_UNKNOWN
@@ -98,7 +98,7 @@ class CompletionType:
   operation_complete = GRPC_OP_COMPLETE
 
 
-class OperationType:
+class OperationType(enum.IntEnum):
   send_initial_metadata = GRPC_OP_SEND_INITIAL_METADATA
   send_message = GRPC_OP_SEND_MESSAGE
   send_close_from_client = GRPC_OP_SEND_CLOSE_FROM_CLIENT
@@ -109,10 +109,10 @@ class OperationType:
   receive_close_on_server = GRPC_OP_RECV_CLOSE_ON_SERVER
 
 GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM= (
-  _GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)
+  _GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM).decode()
 
 GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY = (
-  _GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY)
+  _GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY).decode()
 
 class CompressionAlgorithm:
   none = GRPC_COMPRESS_NONE

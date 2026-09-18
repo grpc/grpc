@@ -30,15 +30,16 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
-    'x86_64-linux', 'x86-linux', 'aarch64-linux',
-    'x86_64-darwin', 'arm64-darwin',
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
   ]
   ext.cross_compiling do |spec|
     spec.files = spec.files.select {
       |file| file.start_with?(
         "src/ruby/bin/", "src/ruby/ext/", "src/ruby/lib/", "src/ruby/pb/")
     }
-    spec.files += %w( etc/roots.pem grpc_c.32-msvcrt.ruby grpc_c.64-msvcrt.ruby grpc_c.64-ucrt.ruby )
+    spec.files += %w( etc/roots.pem grpc_c.32-msvcrt.ruby grpc_c.64-ucrt.ruby )
   end
 end
 
@@ -82,13 +83,12 @@ desc 'Build the Windows gRPC DLLs for Ruby. The argument contains the list of pl
 task 'dlls', [:plat] do |t, args|
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   verbose = ENV['V'] || '0'
-  # use env variable to set artifact build paralellism
+  # use env variable to set artifact build parallelism
   nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
   plat_list = args[:plat]
 
   build_configs = [
     { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-ucrt.ruby', platform: 'x64-mingw-ucrt' },
-    { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-msvcrt.ruby', platform: 'x64-mingw32' },
     { cross: 'i686-w64-mingw32', out: 'grpc_c.32-msvcrt.ruby', platform: 'x86-mingw32' }
   ]
   selected_build_configs = []
@@ -104,7 +104,7 @@ task 'dlls', [:plat] do |t, args|
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
-  env += 'CXXFLAGS="-std=c++14 -fno-exceptions" '
+  env += 'CXXFLAGS="-std=c++17 -fno-exceptions" '
   env += 'LDFLAGS=-static '
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
@@ -139,14 +139,16 @@ task 'dlls', [:plat] do |t, args|
 end
 
 desc 'Build the native gem file under rake_compiler_dock. Optionally one can pass argument to build only native gem for a chosen platform.'
-task 'gem:native', [:plat] do |t, args|
+task 'gem:native', [:plat, :build_type] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.3.0', '3.2.0', '3.1.0', '3.0.0'].join(':')
+  target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2']
+  # For presubmits, only build the earliest and latest versions
+  target_ruby_minor_versions = [target_ruby_minor_versions.first, target_ruby_minor_versions.last] if args[:build_type] == 'presubmit'
   selected_plat = "#{args[:plat]}"
 
-  # use env variable to set artifact build paralellism
+  # use env variable to set artifact build parallelism
   nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
 
   # propagate env variables with ccache configuration to the rake-compiler-dock docker container
@@ -157,7 +159,11 @@ task 'gem:native', [:plat] do |t, args|
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
   supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
-  supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'aarch64-linux', 'x86_64-darwin', 'arm64-darwin']
+  supported_unix_platforms = [
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
+  ]
   supported_platforms = supported_windows_platforms + supported_unix_platforms
 
   if selected_plat.empty?
@@ -177,6 +183,8 @@ task 'gem:native', [:plat] do |t, args|
     end
   end
 
+  require 'rake_compiler_dock'
+
   # Create the windows dlls or create the empty placeholders
   Rake::Task['dlls'].execute(plat: windows_platforms)
 
@@ -184,20 +192,21 @@ task 'gem:native', [:plat] do |t, args|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle && \
+      bundle update --all && \
       bundle exec rake clean && \
+      (ccache --show-stats || true) && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
-        RUBY_CC_VERSION=#{ruby_cc_versions} \
+        RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
-        GRPC_RUBY_BUILD_PROCS=#{nproc_override}
+        GRPC_RUBY_BUILD_PROCS=#{nproc_override} && \
+      (ccache --show-stats || true)
     EOT
   end
 
   # Truncate grpc_c.*.ruby files because they're for Windows only and we don't want
   # them to take up space in the gems that don't target windows.
   File.truncate('grpc_c.32-msvcrt.ruby', 0)
-  File.truncate('grpc_c.64-msvcrt.ruby', 0)
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
   `mkdir -p src/ruby/nativedebug/symbols`
@@ -205,7 +214,11 @@ task 'gem:native', [:plat] do |t, args|
   # Currently we hit "objcopy: grpc_c.bundle: file format not recognized"
   # TODO(apolcyn): make debug symbols work on aarch64 linux.
   # Currently we hit "objcopy: Unable to recognise the format of the input file `grpc_c.so'"
-  unix_platforms_without_debug_symbols = ['x86_64-darwin', 'arm64-darwin', 'aarch64-linux']
+  unix_platforms_without_debug_symbols = [
+    'x86_64-linux-musl', 'x86-linux-musl',
+    'aarch64-linux-gnu', 'aarch64-linux-musl', 'x86_64-darwin',
+    'arm64-darwin'
+  ]
 
   unix_platforms.each do |plat|
     if unix_platforms_without_debug_symbols.include?(plat)
@@ -213,17 +226,27 @@ task 'gem:native', [:plat] do |t, args|
     else
       debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
     end
+    makefile_system_override = ''
+    if plat =~ /darwin/
+      # When cross-compiling c-core for macos from linux, we need to overwrite
+      # SYSTEM for our Makefile to work. Note this is not needed for mingw b/c
+      # C-core is built in a separate command.
+      makefile_system_override = 'Darwin'
+    end
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle && \
+      bundle update --all && \
       bundle exec rake clean && \
       export GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR=#{debug_symbols_dir} && \
+      (ccache --show-stats || true) && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
-        RUBY_CC_VERSION=#{ruby_cc_versions} \
+        RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
-        GRPC_RUBY_BUILD_PROCS=#{nproc_override}
+        GRPC_RUBY_BUILD_PROCS=#{nproc_override} \
+        SYSTEM=#{makefile_system_override} && \
+      (ccache --show-stats || true)
     EOT
   end
   # Generate debug symbol packages to complement the native libraries we just built
@@ -231,6 +254,87 @@ task 'gem:native', [:plat] do |t, args|
     unless unix_platforms_without_debug_symbols.include?(plat)
       `bash src/ruby/nativedebug/build_package.sh #{plat}`
       `cp src/ruby/nativedebug/pkg/*.gem pkg/`
+    end
+  end
+end
+
+desc 'Publish native debug rubygems to GCS'
+task 'publish:native_debug', [:gem_dir] do |_t, args|
+  require 'digest'
+  require 'rubygems/package'
+  require 'open3'
+  require 'shellwords'
+
+  # Helper to log and execute commands. Usage: run_cmd.call('gcloud', 'storage', 'ls', gcs_base)
+  run_cmd = lambda do |*cmd_parts|
+    puts "Executing: #{Shellwords.join(cmd_parts)}"
+    success = system(*cmd_parts)
+    fail "Command failed: #{Shellwords.join(cmd_parts)}" unless success
+  end
+
+  gem_dir = File.expand_path(args[:gem_dir] || 'build/ruby/nativedebug')
+  force_upload = ENV['REUPLOAD'].to_s.downcase == 'true'
+  gcs_bucket = 'gs://packages.grpc.io'
+  gcs_base = "#{gcs_bucket}/grpc-ruby-native-debug-symbols"
+
+  fail "Directory '#{gem_dir}' not found" unless Dir.exist?(gem_dir)
+
+  gem_files = Dir["#{gem_dir}/*native-debug*.gem"]
+  fail "No native-debug gems found in '#{gem_dir}'" if gem_files.empty?
+
+  puts 'Checking google cloud storage availability and bucket access.'
+  run_cmd.call('gcloud', 'storage', 'buckets', 'describe', gcs_bucket)
+
+  gems_by_version = gem_files.group_by do |path|
+    full_version = Gem::Package.new(path).spec.version.to_s
+    match = full_version.match(/^(\d+\.\d+\.\d+(?:\.pre\d+)?)/)
+    fail "Unexpected version format: #{full_version}" unless match
+    match[1]
+  rescue StandardError => e
+    fail "Error: Cannot extract metadata from #{File.basename(path)}. Is it a valid gem? (#{e.message})"
+  end
+
+  Dir.chdir(gem_dir) do
+    gems_by_version.each do |base_version, version_gem_files|
+      puts "Processing base version #{base_version}."
+
+      gcs_version_path = "#{gcs_base}/v#{base_version}"
+
+      # Check only for existence of gems
+      stdout, _stderr, status = Open3.capture3('gcloud', 'storage', 'ls', "#{gcs_version_path}/*.gem")
+      has_gems = status.success? && !stdout.strip.empty?
+
+      if has_gems && !force_upload
+        puts "Skipping v#{base_version}. Gems already exist in #{gcs_version_path}. Use 'REUPLOAD=true' to overwrite"
+        next
+      end
+
+      if force_upload && has_gems
+        puts "Force upload enabled. Clearing existing files in #{gcs_version_path}."
+        run_cmd.call('gcloud', 'storage', 'rm', "#{gcs_version_path}/*.gem", "#{gcs_version_path}/checksums.txt")
+      end
+
+      begin
+        # Generate checksums only for the gems belonging to this version
+        File.open('checksums.txt', 'w') do |f|
+          version_gem_files.each do |gem_path|
+            gem_name = File.basename(gem_path)
+            checksum = Digest::SHA256.file(gem_name).hexdigest
+            f.puts "#{checksum}  #{gem_name}"
+          end
+        end
+
+        puts 'Verifying checksums.'
+        run_cmd.call('sha256sum', '-c', 'checksums.txt')
+
+        # Upload all gems and the checksums file
+        files_to_upload = version_gem_files.map { |f| File.basename(f) } + ['checksums.txt']
+        run_cmd.call('gcloud', 'storage', 'cp', *files_to_upload, "#{gcs_version_path}/")
+      ensure
+        FileUtils.rm_f('checksums.txt')
+      end
+
+      puts "Successfully published version #{base_version}."
     end
   end
 end

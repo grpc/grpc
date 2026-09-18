@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import threading
 
 g_interrupt_check_period_ms = 200
 
@@ -20,11 +21,29 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
   cdef gpr_timespec c_increment
   cdef gpr_timespec c_timeout
   cdef gpr_timespec c_deadline
+  cdef bint is_main_thread
   c_increment = gpr_time_from_millis(g_interrupt_check_period_ms, GPR_TIMESPAN)
   if deadline is None:
     c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
   else:
     c_deadline = _timespec_from_time(deadline)
+
+  is_main_thread = threading.current_thread() is threading.main_thread()
+
+  if not is_main_thread:
+    with nogil:
+      while True:
+        c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
+        if gpr_time_cmp(c_timeout, c_deadline) > 0:
+          c_timeout = c_deadline
+
+        c_event = grpc_completion_queue_next(c_completion_queue, c_timeout, NULL)
+
+        if (c_event.type != GRPC_QUEUE_TIMEOUT or
+            gpr_time_cmp(c_timeout, c_deadline) == 0):
+          break
+
+    return c_event
 
   while True:
     with nogil:

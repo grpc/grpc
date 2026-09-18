@@ -62,7 +62,7 @@ atexit.register(cleanup_processes)
 
 
 def _process_wait_with_timeout(process, timeout=WAIT_CHECK_DEFAULT_TIMEOUT):
-    """A funciton to mimic 3.3+ only timeout argument in process.wait."""
+    """A function to mimic 3.3+ only timeout argument in process.wait."""
     deadline = datetime.datetime.now() + timeout
     while (process.poll() is None) and (datetime.datetime.now() < deadline):
         time.sleep(WAIT_CHECK_INTERVAL.total_seconds())

@@ -54,23 +54,28 @@ EXCLUDED_TARGETS=(
   "-//src/objective-c/..."
   "-//third_party/objective_c/..."
 
-  # Targets here need C++17 to build via a different configuration, so this is
-  # done separately
-  "-//fuzztest/..."
-
   # This could be a legitmate failure due to bitrot.
   "-//src/proto/grpc/testing:test_gen_proto"
 
   # Analyzing windows toolchains when running on linux results in an error.
   # Since bazel distribtests are run on linux, we exclude the windows RBE toolchains.
-  "-//third_party/toolchains/rbe_windows_bazel_6.3.2_vs2019/..."
+  "-//third_party/toolchains/rbe_windows_vs2022_bazel7/..."
   "-//third_party/toolchains:rbe_windows_default_toolchain_suite"
 
-  # TODO(jtattermusch): add back once fixed
-  "-//examples/android/binder/..."
+  # A bunch of stuff in the CEL repo doesn't seem to work right in this
+  # context.  But we only use protos from here, and the rest of the
+  # build won't work if this doesn't, so it doesn't seem necessary to
+  # test it here.
+  "-//third_party/cel-spec/..."
 
   # Exclude bazelified tests as they contain some bazel hackery
   "-//tools/bazelify_tests/..."
+
+  # Also exclude the artifact_gen tooling, which again contains some bazel hackery
+  "-//tools/artifact_gen/..."
+
+  # Exclude the codegen gen_experiments tooling, which contains some bazel hackery
+  "-//tools/codegen/core/..."
 )
 
 FAILED_TESTS=""
@@ -86,8 +91,7 @@ do
   SHARD_RAN=""
   if [ "${TEST_SHARD}" == "buildtest" ] ; then
     tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-    tools/bazel build "${ACTION_ENV_FLAG}" --build_tag_filters='-experiment_variation' -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
-    tools/bazel build "${ACTION_ENV_FLAG}" --config fuzztest --build_tag_filters='-experiment_variation' -- //fuzztest/... || FAILED_TESTS="${FAILED_TESTS}fuzztest_buildtest "
+    tools/bazel build "${ACTION_ENV_FLAG}" --build_tag_filters='-experiment_variation' -- :all "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
     SHARD_RAN="true"
   fi
 

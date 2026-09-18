@@ -14,12 +14,10 @@
 
 #include "src/core/lib/promise/arena_promise.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+
 #include <array>
 #include <memory>
-
-#include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -27,6 +25,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_context.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -88,6 +87,28 @@ TEST(ArenaPromiseTest, AllocatedUniquePtrWorks) {
       [x = std::move(x)]() mutable { return Poll<Ptr>(std::move(x)); });
   ArenaPromise<Ptr> p(std::move(initial_promise));
   EXPECT_EQ(*p().value(), 42);
+}
+
+struct NonTriviallyRelocatable {
+  NonTriviallyRelocatable() : self_ptr(this) {}
+  NonTriviallyRelocatable(NonTriviallyRelocatable&&) noexcept
+      : self_ptr(this) {}
+  NonTriviallyRelocatable* self_ptr;
+
+  bool ok() const { return this == self_ptr; }
+};
+
+TEST(ArenaPromiseTest, NonTriviallyRelocatable) {
+  ExecCtx exec_ctx;
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  TestContext<Arena> context(arena.get());
+  ArenaPromise<bool> p1(
+      [ntr = NonTriviallyRelocatable()] { return Poll<bool>(ntr.ok()); });
+  auto p2 = std::move(p1);
+  ASSERT_TRUE(p2().value());
+  ArenaPromise<bool> p3;
+  p3 = std::move(p2);
+  ASSERT_TRUE(p3().value());
 }
 
 }  // namespace grpc_core

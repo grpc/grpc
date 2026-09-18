@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/examine_stack.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -33,11 +33,11 @@ void SetCurrentStackTraceProvider(
   g_current_stack_trace_provider = current_stack_trace_provider;
 }
 
-absl::optional<std::string> GetCurrentStackTrace() {
+std::optional<std::string> GetCurrentStackTrace() {
   if (g_current_stack_trace_provider != nullptr) {
     return g_current_stack_trace_provider();
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 }  // namespace grpc_core
