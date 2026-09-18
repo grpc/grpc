@@ -42,6 +42,7 @@ INSTALL_REQUIRES = (
     "google-auth>=1.17.2",
     "requests>=2.14.2",
     "absl-py>=1.4.0",
+    "functions-framework>=3.0.0",
 )
 
 COMMAND_CLASS = {

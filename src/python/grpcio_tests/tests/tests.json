@@ -5,6 +5,7 @@
   "tests.csds.csds_test.TestCsds",
   "tests.csds.csds_test.TestCsdsStream",
   "tests.fork._fork_interop_test.ForkInteropTest",
+  "tests.fork._functions_framework_test.FunctionsFrameworkForkTest",
   "tests.health_check._health_servicer_test.HealthServicerBackwardsCompatibleWatchTest",
   "tests.health_check._health_servicer_test.HealthServicerTest",
   "tests.interop._insecure_intraop_test.InsecureIntraopTest",
