@@ -620,6 +620,15 @@ struct PeerString {
   static std::string DisplayValue(const ValueType& x);
 };
 
+// Annotation added by a server transport to note the local address of the
+// connection.
+struct LocalAddressString {
+  static absl::string_view DebugKey() { return "LocalAddressString"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = Slice;
+  static std::string DisplayValue(const ValueType& x);
+};
+
 // Annotation added by various systems to describe the reason for a failure.
 struct GrpcStatusContext {
   static absl::string_view DebugKey() { return "GrpcStatusContext"; }
@@ -1774,6 +1783,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::LbPolicyDrop,
     grpc_core::PeerString, grpc_core::GrpcStatusContext,
+    grpc_core::LocalAddressString,
     grpc_core::GrpcStatusFromWire, grpc_core::GrpcCallWasCancelled,
     grpc_core::WaitForReady, grpc_core::IsTransparentRetry,
     grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit,

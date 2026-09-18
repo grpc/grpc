@@ -311,6 +311,9 @@ class TestMultipleServiceImpl : public RpcService {
     if (request->has_param() && request->param().echo_peer()) {
       response->mutable_param()->set_peer(context->peer());
     }
+    if (request->has_param() && request->param().echo_local_address()) {
+      response->mutable_param()->set_local_address(context->peer());
+    }
     return Status::OK;
   }
 

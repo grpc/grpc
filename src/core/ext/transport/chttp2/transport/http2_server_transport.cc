@@ -713,6 +713,8 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
         GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata "
                                   "SpawnPushServerInitialMetadata";
         metadata->Set(PeerString(), read_context_.peer_string());
+        metadata->Set(LocalAddressString(),
+                      read_context_.local_address_string());
         return IncomingStream(std::move(metadata), read_context_.GetStreamId());
       }
       return Http2Status::Ok();
