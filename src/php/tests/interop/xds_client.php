@@ -19,7 +19,7 @@
 
 /**
  * This is the PHP xDS Interop test client. This script is meant to be run by
- * the main xDS Interep test runner "run_xds_tests.py", not to be run
+ * the main xDS Interop test runner "run_xds_tests.py", not to be run
  * by itself standalone.
  */
 $autoload_path = realpath(dirname(__FILE__).'/../../vendor/autoload.php');
