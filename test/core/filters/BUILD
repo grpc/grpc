@@ -401,6 +401,9 @@ grpc_cc_benchmark(
 grpc_cc_test(
     name = "ext_proc_message_test",
     srcs = ["ext_proc_message_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:multi-domain.pem",
+    ],
     external_deps = [
         "@com_google_protobuf//upb/mem",
         "gtest",
@@ -412,8 +415,14 @@ grpc_cc_test(
         "//:envoy_service_ext_proc_upb",
         "//:grpc",
         "//:grpc++",
+        "//:grpc_credentials_util",
+        "//:transport_auth_context",
+        "//src/core:channel_args",
+        "//src/core:endpoint_info_handshaker",
+        "//src/core:evaluate_args",
         "//src/core:ext_proc_messages",
         "//src/core:upb_utils",
+        "//test/core/test_util:grpc_test_util",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",

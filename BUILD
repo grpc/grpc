@@ -1179,6 +1179,7 @@ grpc_cc_library(
         "google_api_expr_v1alpha1_syntax_upb",
         "gpr",
         "grpc_mock_cel",
+        "//src/core:evaluate_args",
         "//src/core:grpc_authorization_base",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
@@ -5061,7 +5062,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
-        "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
         "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.cc",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.cc",
         "//src/core:ext/transport/chttp2/transport/frame_data.cc",
@@ -5076,7 +5076,6 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/writing.cc",
     ],
     hdrs = [
-        "//src/core:ext/transport/chttp2/transport/bin_decoder.h",
         "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.h",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.h",
         "//src/core:ext/transport/chttp2/transport/frame_data.h",
@@ -5596,7 +5595,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto"],
+    deps = ["@grpc_proto//:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5736,6 +5735,11 @@ grpc_cc_proto_library(
 )
 
 grpc_cc_proto_library(
+    name = "health_cc_proto",
+    deps = ["@grpc_proto//:health_proto"],
+)
+
+grpc_cc_proto_library(
     name = "load_balancer_cc_proto",
     deps = ["@grpc_proto//:grpclb_load_balancer_proto"],
 )
@@ -5773,6 +5777,12 @@ grpc_cc_grpc_library(
     name = "rls_config_cc_grpc",
     srcs = ["@grpc_proto//:rls_config_proto"],
     deps = [":rls_config_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "health_cc_grpc",
+    srcs = ["@grpc_proto//:health_proto"],
+    deps = [":health_cc_proto"],
 )
 
 grpc_cc_grpc_library(
