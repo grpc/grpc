@@ -188,7 +188,7 @@ template <typename T, typename Callable>
 struct ChooseImplForCallable<
     T, Callable,
     std::enable_if_t<!std::is_empty<Callable>::value &&
-                      (sizeof(Callable) > sizeof(ArgType))>> {
+                     (sizeof(Callable) > sizeof(ArgType))>> {
   static void Make(Callable&& callable, VtableAndArg<T>* out) {
     out->vtable = &AllocatedCallable<T, Callable>::vtable;
     ArgAsPtr<Callable>(&out->arg) = GetContext<Arena>()->template New<Callable>(
@@ -200,7 +200,7 @@ template <typename T, typename Callable>
 struct ChooseImplForCallable<
     T, Callable,
     std::enable_if_t<!std::is_empty<Callable>::value &&
-                      (sizeof(Callable) <= sizeof(ArgType))>> {
+                     (sizeof(Callable) <= sizeof(ArgType))>> {
   static void Make(Callable&& callable, VtableAndArg<T>* out) {
     out->vtable = &Inlined<T, Callable>::vtable;
     Construct(reinterpret_cast<Callable*>(&out->arg),
@@ -209,8 +209,8 @@ struct ChooseImplForCallable<
 };
 
 template <typename T, typename Callable>
-struct ChooseImplForCallable<
-    T, Callable, std::enable_if_t<std::is_empty<Callable>::value>> {
+struct ChooseImplForCallable<T, Callable,
+                             std::enable_if_t<std::is_empty<Callable>::value>> {
   static void Make(Callable&&, VtableAndArg<T>* out) {
     out->vtable = &SharedCallable<T, Callable>::vtable;
   }

@@ -1111,7 +1111,7 @@ struct InterceptFinalize<Derived, void (Call::*)(const grpc_call_final_info*,
 
 template <typename Derived>
 std::enable_if_t<std::is_empty<FilterCallData<Derived>>::value,
-                  FilterCallData<Derived>*>
+                 FilterCallData<Derived>*>
 MakeFilterCall(Derived*) {
   static FilterCallData<Derived> call{nullptr};
   return &call;
@@ -1119,7 +1119,7 @@ MakeFilterCall(Derived*) {
 
 template <typename Derived>
 std::enable_if_t<!std::is_empty<FilterCallData<Derived>>::value,
-                  FilterCallData<Derived>*>
+                 FilterCallData<Derived>*>
 MakeFilterCall(Derived* derived) {
   return GetContext<Arena>()->ManagedNew<FilterCallData<Derived>>(derived);
 }
@@ -2375,8 +2375,8 @@ struct ChannelFilterWithFlagsMethods {
 // };
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
 std::enable_if_t<std::is_base_of<ChannelFilter, F>::value &&
-                      !std::is_base_of<ImplementChannelFilterTag, F>::value,
-                  grpc_channel_filter>
+                     !std::is_base_of<ImplementChannelFilterTag, F>::value,
+                 grpc_channel_filter>
 MakePromiseBasedFilter() {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
 
@@ -2414,7 +2414,7 @@ MakePromiseBasedFilter() {
 
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
 std::enable_if_t<std::is_base_of<ImplementChannelFilterTag, F>::value,
-                  grpc_channel_filter>
+                 grpc_channel_filter>
 MakePromiseBasedFilter() {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
 

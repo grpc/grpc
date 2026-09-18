@@ -121,7 +121,7 @@ class ParsedMetadata {
   ParsedMetadata(
       Which,
       std::enable_if_t<metadata_detail::HasSimpleMemento<Which>::value,
-                        typename Which::MementoType>
+                       typename Which::MementoType>
           value,
       uint32_t transport_size)
       : vtable_(ParsedMetadata::template TrivialTraitVTable<Which>()),

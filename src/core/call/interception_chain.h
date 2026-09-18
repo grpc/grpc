@@ -211,7 +211,7 @@ class InterceptionChainBuilder final {
   // Add a filter that is an interceptor - one that can hijack calls.
   template <typename T>
   std::enable_if_t<std::is_base_of<Interceptor, T>::value,
-                    InterceptionChainBuilder&>
+                   InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
     AddInterceptor(T::Create(
         args_, {FilterInstanceId(FilterTypeId<T>()), std::move(config)}));

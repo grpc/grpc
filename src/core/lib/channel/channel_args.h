@@ -229,8 +229,8 @@ template <typename T>
 struct GetObjectImpl<
     T,
     std::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
-                          channel_args_detail::SupportedSharedPtrType<T>::value,
-                      void>> {
+                         channel_args_detail::SupportedSharedPtrType<T>::value,
+                     void>> {
   using Result = T*;
   using ReffedResult = std::shared_ptr<T>;
   using StoredType = std::shared_ptr<T>*;
@@ -251,10 +251,10 @@ struct GetObjectImpl<
 // RefCountedPtr
 template <typename T>
 struct GetObjectImpl<
-    T, std::enable_if_t<
-           !ChannelArgPointerShouldBeConst<T>::kValue &&
-               !channel_args_detail::SupportedSharedPtrType<T>::value,
-           void>> {
+    T,
+    std::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
+                         !channel_args_detail::SupportedSharedPtrType<T>::value,
+                     void>> {
   using Result = T*;
   using ReffedResult = RefCountedPtr<T>;
   using StoredType = Result;
@@ -272,10 +272,10 @@ struct GetObjectImpl<
 
 template <typename T>
 struct GetObjectImpl<
-    T, std::enable_if_t<
-           ChannelArgPointerShouldBeConst<T>::kValue &&
-               !channel_args_detail::SupportedSharedPtrType<T>::value,
-           void>> {
+    T,
+    std::enable_if_t<ChannelArgPointerShouldBeConst<T>::kValue &&
+                         !channel_args_detail::SupportedSharedPtrType<T>::value,
+                     void>> {
   using Result = const T*;
   using ReffedResult = RefCountedPtr<const T>;
   using StoredType = Result;
