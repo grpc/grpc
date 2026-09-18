@@ -148,6 +148,10 @@ class TestAuthContext(AioTestBase):
                     _SERVER_HOST_OVERRIDE.encode("ascii")
                 ],
                 "ssl_tls_version": [b"TLSv1.3"],
+                "x509_local_dns": [b"*.test.google.fr"],
+                "x509_local_subject": [
+                    b"CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US"
+                ],
             },
             auth_ctx,
         )
