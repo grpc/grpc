@@ -5449,6 +5449,7 @@ grpc_cc_library(
     hdrs = [
         "util/json/json.h",
     ],
+    visibility = ["//bazel:json_reader_legacy"],
     deps = ["//:gpr"],
 )
 
