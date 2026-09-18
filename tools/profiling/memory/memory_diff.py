@@ -120,6 +120,7 @@ def _run():
         [
             "tools/bazel",
             "build",
+            "--bazelrc=tools/remote_build/include/absl_copts.bazelrc",
             "-c",
             "opt",
             "test/core/memory_usage/memory_usage_test",
