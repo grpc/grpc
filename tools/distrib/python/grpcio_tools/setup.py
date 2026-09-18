@@ -272,6 +272,14 @@ if "win32" in sys.platform:
 elif "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (("HAVE_PTHREAD", 1),)
 
+# Set macro and tags for building with Limited API
+if sys.version_info >= (3, 12):
+    DEFINE_MACROS += (("Py_LIMITED_API", "0x030C00F0"),)
+    API_TAG = "cp312"
+else:
+    DEFINE_MACROS += (("Py_LIMITED_API", "0x030A00F0"),)
+    API_TAG = "cp310"
+
 
 def package_data():
     tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace(".", os.path.sep)
@@ -322,6 +330,7 @@ def extension_modules():
         define_macros=list(DEFINE_MACROS),
         extra_compile_args=list(EXTRA_COMPILE_ARGS),
         extra_link_args=list(EXTRA_LINK_ARGS),
+        py_limited_api=True,
     )
     extensions = [plugin_ext]
     if BUILD_WITH_CYTHON:
@@ -345,4 +354,9 @@ if __name__ == "__main__":
         cmdclass={
             "build_ext": BuildExt,
         },
+        options={
+            "bdist_wheel": {
+                "py_limited_api": API_TAG
+            }
+        }
     )
