@@ -477,6 +477,41 @@ static void test_send_close_from_client_on_server() {
   cleanup_test();
 }
 
+static void test_send_close_from_client_twice() {
+  LOG(INFO) << "test_send_close_from_client_twice";
+
+  grpc_op* op;
+  prepare_test(1);
+
+  op = g_state.ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  GRPC_CHECK_EQ(GRPC_CALL_OK,
+                grpc_call_start_batch(g_state.call, g_state.ops,
+                                      (size_t)(op - g_state.ops),
+                                      grpc_core::CqVerifier::tag(1), nullptr));
+  g_state.cqv->Expect(grpc_core::CqVerifier::tag(1), true);
+  g_state.cqv->Verify();
+
+  op = g_state.ops;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  GRPC_CHECK(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+             grpc_call_start_batch(g_state.call, g_state.ops,
+                                   (size_t)(op - g_state.ops),
+                                   grpc_core::CqVerifier::tag(1), nullptr));
+  cleanup_test();
+}
+
 static void test_recv_status_on_client_from_server() {
   LOG(INFO) << "test_recv_status_on_client_from_server";
 
@@ -709,6 +744,7 @@ int main(int argc, char** argv) {
   test_recv_close_on_server_from_client();
   test_recv_status_on_client_twice();
   test_send_close_from_client_on_server();
+  test_send_close_from_client_twice();
   test_recv_status_on_client_from_server();
   test_send_status_from_server_with_invalid_flags();
   test_too_many_trailing_metadata();
