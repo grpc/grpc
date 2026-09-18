@@ -1,0 +1,2 @@
+# Needed for compiling certain tests with abseil when using older compilers (e.g. gcc 10.2)
+--cxxopt=-Wno-invalid-partial-specialization
