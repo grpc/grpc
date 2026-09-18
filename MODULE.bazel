@@ -35,10 +35,6 @@ bazel_dep(name = "abseil-cpp", version = "20260526.0", repo_name = "com_google_a
 single_version_override(
     module_name = "abseil-cpp",
     version = "20260526.0",
-    patch_strip = 1,
-    patches = [
-        "//bazel:absl.patch",
-    ],
 )
 
 bazel_dep(name = "grpc-proto", version = "0.0.0-20240627-ec30f58.bcr.1", repo_name = "grpc_proto")
