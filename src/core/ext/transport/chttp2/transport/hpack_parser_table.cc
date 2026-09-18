@@ -192,7 +192,7 @@ void HPackTable::AddLargerThanCurrentTableSize() {
 std::string HPackTable::TestOnlyDynamicTableAsString() const {
   std::string out;
   entries_.ForEach([&out](uint32_t i, const Memento& m) {
-    if (m.parse_status == nullptr) {
+    if (m.parse_status.get() == nullptr) {
       absl::StrAppend(&out, i, ": ", m.md.DebugString(), "\n");
     } else {
       absl::StrAppend(&out, i, ": ", m.parse_status->Materialize().ToString(),

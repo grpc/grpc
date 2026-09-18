@@ -541,6 +541,9 @@ grpc_cc_test(
     srcs = ["hpack_parser_test.cc"],
     external_deps = [
         "absl/cleanup",
+        "absl/log:log_entry",
+        "absl/log:log_sink",
+        "absl/log:log_sink_registry",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
@@ -555,6 +558,8 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
         "//:hpack_parser",
         "//:ref_counted_ptr",
         "//src/core:arena",
