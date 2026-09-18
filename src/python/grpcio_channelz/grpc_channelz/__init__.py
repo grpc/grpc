@@ -11,3 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+try:
+    # pylint: disable=ungrouped-imports
+    from grpc_channelz._grpcio_metadata import __version__
+except ImportError:
+    __version__ = "dev0"
