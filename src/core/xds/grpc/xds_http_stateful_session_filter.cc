@@ -58,11 +58,6 @@ void XdsHttpStatefulSessionFilterFactory::PopulateSymtab(
       symtab);
 }
 
-const grpc_channel_filter* XdsHttpStatefulSessionFilterFactory::channel_filter()
-    const {
-  return &StatefulSessionFilter::kFilterVtable;
-}
-
 void XdsHttpStatefulSessionFilterFactory::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {
