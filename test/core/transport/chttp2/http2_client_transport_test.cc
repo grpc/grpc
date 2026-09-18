@@ -399,7 +399,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
 TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   ExecCtx ctx;
   // 1. Initialize the transport and exchange settings.
-  InitTransport(GetChannelArgs());
+  // 2. Disable BDP because it alters the order of the writes.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   // 1. Client starts a new stream and sends Initial Metadata and half-closes
@@ -1391,7 +1392,8 @@ TEST_F(Http2ClientTransportTest, TestDestructionWithStalledStreamInQueue) {
 TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
   ExecCtx ctx;
   // 1. Initialize the transport and exchange settings.
-  InitTransport(GetChannelArgs());
+  // 2. Disable BDP because it alters the order of the writes.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   StrictMock<MockFunction<void()>> on_done;
