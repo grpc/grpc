@@ -556,7 +556,7 @@ HPackParser::String::StringResult HPackParser::String::ParseBinary(
       case State::kBinary:
         // Binary, we're done
         {
-          size_t wire_len = decompressed.size();
+          size_t wire_len = decompressed.size() + 1;
           return StringResult{HpackParseStatus::kOk, wire_len,
                               String(std::move(decompressed))};
         }
