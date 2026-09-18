@@ -12,10 +12,17 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
+  '#11': ===
+  '#12': Protobuf Upgrade
+  '#13': IMPORTANT! We need to update 'protobuf_version' manually when upgrading protobuf.
+  '#14': The versions below can be retrieved from third_party/protobuf/version.json.
   core_version: 57.0.0
   csharp_major_version: 2
   g_stands_for: gimbal
-  protobuf_version: 5.35.1
+  protobuf_version:
+    csharp: 3.35.1
+    objectivec: 5.35.1
+    python: 7.35.1
   supported_python_versions:
   - '3.10'
   - '3.11'
