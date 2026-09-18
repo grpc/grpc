@@ -25,7 +25,6 @@ EXPECTED_NAMES = {
     "src/proto/grpc/status": "status",
     "src/proto/grpc/testing": "testing",
     "src/proto/grpc/testing/duplicate": "duplicate",
-    "src/proto/grpc/lb/v1": "lb",
     "src/proto/grpc/testing/xds": "xds",
     "src/proto/grpc/testing/xds/v3": "xds_v3",
     "src/proto/grpc/core": "core",
