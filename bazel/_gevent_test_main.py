@@ -26,74 +26,36 @@ threadpool = gevent.hub.get_hub().threadpool
 threadpool.maxsize = 1024
 threadpool.size = 32
 
-import traceback, signal
-from typing import Sequence
-
-
-import grpc.experimental.gevent
-grpc.experimental.gevent.init_gevent()
-
-import gevent
-import greenlet
 import datetime
-
-import grpc
-import unittest
-import sys
 import os
-import pkgutil
-import importlib
+import signal
+import sys
+import traceback
+import unittest
 
-def trace_callback(event, args):
-    if event in ("switch", "throw"):
-        origin, target = args
-        sys.stderr.write("{} Transfer from {} to {} with {}\n".format(datetime.datetime.now(), origin, target, event))
-    else:
-        sys.stderr.write("Unknown event {}.\n".format(event))
-    sys.stderr.flush()
+import greenlet
+import grpc
+import grpc.experimental.gevent
 
-if os.getenv("GREENLET_TRACE") is not None:
-    greenlet.settrace(trace_callback)
+try:
+    from bazel._single_loader import SingleLoader
+except ImportError:
+    from _single_loader import SingleLoader
 
-def debug(sig, frame):
-    d={'_frame':frame}
-    d.update(frame.f_globals)
-    d.update(frame.f_locals)
-
-    sys.stderr.write("Traceback:\n{}".format("\n".join(traceback.format_stack(frame))))
-    import gevent.util; gevent.util.print_run_info()
-    sys.stderr.flush()
-
-signal.signal(signal.SIGTERM, debug)
-
-
-class SingleLoader:
-    def __init__(self, pattern: str):
-        loader = unittest.TestLoader()
-        self.suite = unittest.TestSuite()
-        tests = []
-        for importer, module_name, is_package in pkgutil.walk_packages([os.path.dirname(os.path.relpath(__file__))]):
-            if pattern in module_name:
-                spec = importer.find_spec(module_name)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                tests.append(loader.loadTestsFromModule(module))
-        if len(tests) != 1:
-            raise AssertionError("Expected only 1 test module. Found {}".format(tests))
-        self.suite.addTest(tests[0])
-
-
-    def loadTestsFromNames(self, names: Sequence[str], module: str = None) -> unittest.TestSuite:
-        return self.suite
+grpc.experimental.gevent.init_gevent()
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 2:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
+    if len(sys.argv) < 3:
+        print(
+            f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH", file=sys.stderr
+        )
+        sys.exit(1)
 
     target_module = sys.argv[1]
+    unittest_path = sys.argv[2]
 
-    loader = SingleLoader(target_module)
+    loader = SingleLoader(target_module, unittest_path)
     runner = unittest.TextTestRunner()
 
     result = gevent.spawn(runner.run, loader.suite)
