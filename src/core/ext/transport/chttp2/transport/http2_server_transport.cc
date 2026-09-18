@@ -2153,10 +2153,12 @@ Http2ServerTransport::Http2ServerTransport(
           &memory_owner_),
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
+      stats_tracker_(channel_args),
       tarpit_manager_(channel_args) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor Begin";
 
   // Initialize the general party and write party.
+  read_context_.SetHttp2StatsCollector(stats_tracker_.stats_collector_shared());
   RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<EventEngine>(event_engine_.get());
   transport_party_ = Party::Make(std::move(party_arena));

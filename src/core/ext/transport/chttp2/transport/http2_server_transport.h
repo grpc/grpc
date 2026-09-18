@@ -49,6 +49,7 @@
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
+#include "src/core/ext/transport/chttp2/transport/transport_stats_tracker.h"
 #include "src/core/ext/transport/chttp2/transport/writable_streams.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -776,6 +777,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+  TransportStatsTracker stats_tracker_;
   TarpitManager tarpit_manager_;
 };
 
