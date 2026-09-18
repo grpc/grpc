@@ -2703,6 +2703,8 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
+  grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
@@ -2710,8 +2712,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-  grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
-  grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
