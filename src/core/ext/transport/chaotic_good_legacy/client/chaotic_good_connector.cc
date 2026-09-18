@@ -65,6 +65,7 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using grpc_event_engine::experimental::EventEngine;
@@ -165,7 +166,8 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
   explicit SettingsHandshake(ConnectPromiseEndpointResult connect_result)
       : connect_result_(std::move(connect_result)) {}
 
-  auto Handshake(chaotic_good_frame::Settings client_settings) {
+  auto Handshake(chaotic_good_frame::Settings client_settings,
+                 uint32_t max_receive_message_length) {
     SettingsFrame frame;
     frame.body = client_settings;
     SliceBuffer send_buffer;
@@ -182,8 +184,18 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
         [](Slice frame_header) {
           return FrameHeader::Parse(frame_header.data());
         },
-        [this](FrameHeader frame_header) {
+        [this, max_receive_message_length](
+            FrameHeader frame_header) -> absl::StatusOr<FrameHeader> {
+          if (frame_header.payload_length > max_receive_message_length) {
+            return absl::ResourceExhaustedError(absl::StrCat(
+                "CLIENT handshake: Received message larger than max (",
+                frame_header.payload_length, " vs. ",
+                max_receive_message_length, ")"));
+          }
           server_header_ = frame_header;
+          return frame_header;
+        },
+        [this](FrameHeader frame_header) {
           return connect_result_.endpoint.Read(frame_header.payload_length);
         },
         [this](SliceBuffer payload) {
@@ -203,12 +215,14 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
 
 auto ConnectChaoticGood(EventEngine::ResolvedAddress addr,
                         const ChannelArgs& channel_args, Timestamp deadline,
-                        chaotic_good_frame::Settings client_settings) {
+                        chaotic_good_frame::Settings client_settings,
+                        uint32_t max_receive_message_length) {
   return TrySeq(
       ConnectPromiseEndpoint(addr, channel_args, deadline),
-      [client_settings](ConnectPromiseEndpointResult connect_result) {
+      [client_settings, max_receive_message_length](
+          ConnectPromiseEndpointResult connect_result) {
         return MakeRefCounted<SettingsHandshake>(std::move(connect_result))
-            ->Handshake(client_settings);
+            ->Handshake(client_settings, max_receive_message_length);
       });
 }
 
@@ -236,11 +250,13 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
             ConnectChaoticGood(
                 resolved_addr, result_notifier_ptr->args.channel_args,
                 Timestamp::Now() + Duration::FromSecondsAsDouble(kTimeoutSecs),
-                std::move(client_settings)),
+                std::move(client_settings),
+                result_notifier_ptr->config.max_receive_message_length()),
             [resolved_addr,
              result_notifier_ptr](ConnectChaoticGoodResult result) {
               auto connector = MakeRefCounted<ConnectionCreator>(
-                  resolved_addr, result.connect_result.channel_args);
+                  resolved_addr, result.connect_result.channel_args,
+                  result_notifier_ptr->config.max_receive_message_length());
               auto parse_status =
                   result_notifier_ptr->config.ReceiveServerIncomingSettings(
                       result.server_settings, *connector);
@@ -277,7 +293,7 @@ PendingConnection ChaoticGoodConnector::ConnectionCreator::Connect(
       Map(ConnectChaoticGood(
               address_, args_,
               Timestamp::Now() + Duration::FromSecondsAsDouble(kTimeoutSecs),
-              std::move(settings)),
+              std::move(settings), max_receive_message_length_),
           [](absl::StatusOr<ConnectChaoticGoodResult> result)
               -> absl::StatusOr<PromiseEndpoint> {
             if (!result.ok()) return result.status();
