@@ -15,14 +15,34 @@
 #include "src/core/call/client_call.h"
 
 #include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/status.h>
+#include <grpc/support/time.h>
+#include <string.h>
 
+#include <memory>
+#include <optional>
+#include <utility>
+
+#include "src/core/call/call_destination.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
-#include "absl/status/status.h"
+#include "test/core/end2end/cq_verifier.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -286,6 +306,68 @@ TEST(ClientCallTest, NoOpRegression1) {
              connections { write_size: 1 write_size: 0 write_size: 2147483647 }
            }
       )pb"));
+}
+
+CLIENT_CALL_TEST(DoubleSendCloseFromClient) {
+  grpc_call* call = InitCall(CallOptions());
+  grpc_op ops[2];
+  memset(ops, 0, sizeof(ops));
+  ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
+  ops[0].data.send_initial_metadata.count = 0;
+  ops[0].data.send_initial_metadata.metadata = nullptr;
+  ops[1].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+
+  grpc_call_error err1 =
+      grpc_call_start_batch(call, ops, 2, CqVerifier::tag(1), nullptr);
+  EXPECT_EQ(err1, GRPC_CALL_OK);
+
+  grpc_op ops2[1];
+  memset(ops2, 0, sizeof(ops2));
+  ops2[0].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  grpc_call_error err2 =
+      grpc_call_start_batch(call, ops2, 1, CqVerifier::tag(2), nullptr);
+  EXPECT_EQ(err2, GRPC_CALL_ERROR_TOO_MANY_OPERATIONS);
+
+  Expect(1, true);
+  TickThroughCqExpectations();
+
+  SpawnTestSeq(
+      handler(), "pull-initial-metadata",
+      [this]() { return handler().PullClientInitialMetadata(); },
+      [](ValueOrFailure<ClientMetadataHandle> md) {
+        CHECK(md.ok());
+        return Immediate(Empty{});
+      });
+  WaitForAllPendingWork();
+}
+
+CLIENT_CALL_TEST(DoubleSendInitialMetadata) {
+  grpc_call* call = InitCall(CallOptions());
+  grpc_op ops[1];
+  memset(ops, 0, sizeof(ops));
+  ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
+  ops[0].data.send_initial_metadata.count = 0;
+  ops[0].data.send_initial_metadata.metadata = nullptr;
+
+  grpc_call_error err1 =
+      grpc_call_start_batch(call, ops, 1, CqVerifier::tag(1), nullptr);
+  EXPECT_EQ(err1, GRPC_CALL_OK);
+
+  grpc_call_error err2 =
+      grpc_call_start_batch(call, ops, 1, CqVerifier::tag(2), nullptr);
+  EXPECT_EQ(err2, GRPC_CALL_ERROR_TOO_MANY_OPERATIONS);
+
+  Expect(1, true);
+  TickThroughCqExpectations();
+
+  SpawnTestSeq(
+      handler(), "pull-initial-metadata",
+      [this]() { return handler().PullClientInitialMetadata(); },
+      [](ValueOrFailure<ClientMetadataHandle> md) {
+        CHECK(md.ok());
+        return Immediate(Empty{});
+      });
+  WaitForAllPendingWork();
 }
 
 }  // namespace grpc_core
