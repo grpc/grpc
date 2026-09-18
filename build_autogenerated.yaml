@@ -33561,12 +33561,13 @@ external_proto_libraries:
   urls:
   - https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip
 - destination: third_party/grpc-proto
-  hash: 5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33
+  hash: 6aaa807572edfe307eaddc15161ce684d02d054e3fca36b38993efc85575ddfa
   proto_prefix: third_party/grpc-proto/
   strip_path_prefix: ''
-  strip_prefix: grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f
+  strip_prefix: grpc-proto-dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f
   urls:
-  - https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
+  - https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
 - destination: third_party/protoc-gen-validate
   hash: e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
   proto_prefix: third_party/protoc-gen-validate/

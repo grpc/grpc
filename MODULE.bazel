@@ -38,6 +38,16 @@ single_version_override(
 )
 
 bazel_dep(name = "grpc-proto", version = "0.0.0-20240627-ec30f58.bcr.1", repo_name = "grpc_proto")
+archive_override(
+    module_name = "grpc-proto",
+    integrity = "sha256-aqqAdXLt/jB+rdwVFhzmhNAtBU4/yjaziZPvyFV13fo=",
+    strip_prefix = "grpc-proto-dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz",
+        "https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz",
+    ],
+)
+
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
