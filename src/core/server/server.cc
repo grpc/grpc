@@ -1506,6 +1506,21 @@ std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
   return channels;
 }
 
+void Server::BroadcastShutdownToConnectionsLocked(
+    bool send_goaway, grpc_error_handle force_disconnect) {
+  for (const OrphanablePtr<ServerTransport>& transport : connections_) {
+    grpc_transport_op op;
+    op.goaway_error =
+        send_goaway
+            ? grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
+                                 StatusIntProperty::kHttp2Error,
+                                 static_cast<int>(Http2ErrorCode::kNoError))
+            : absl::OkStatus();
+    op.disconnect_with_error = force_disconnect;
+    transport->PerformOp(&op);
+  }
+}
+
 void Server::ListenerDestroyDone(void* arg, grpc_error_handle /*error*/) {
   Server* server = static_cast<Server*>(arg);
   MutexLock lock(&server->mu_global_);
@@ -1537,7 +1552,6 @@ void DonePublishedShutdown(void* /*done_arg*/, grpc_cq_completion* storage) {
 //    -- Once there are no more calls in progress, the channel is closed.
 void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   ChannelBroadcaster broadcaster;
-  absl::flat_hash_set<OrphanablePtr<ServerTransport>> removing_connections;
   {
     // Wait for startup to be finished.  Locks mu_global.
     MutexLock lock(&mu_global_);
@@ -1557,7 +1571,6 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
     }
     last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
     broadcaster.FillChannelsLocked(GetChannelsLocked());
-    removing_connections.swap(connections_);
     // Collect all unregistered then registered calls.
     {
       MutexLock lock(&mu_call_);
@@ -1567,6 +1580,11 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   }
   StopListening();
   broadcaster.BroadcastShutdown(/*send_goaway=*/true, absl::OkStatus());
+  {
+    MutexLock lock(&mu_global_);
+    BroadcastShutdownToConnectionsLocked(/*send_goaway=*/true,
+                                         absl::OkStatus());
+  }
 }
 
 void Server::StopListening() {
@@ -1589,6 +1607,11 @@ void Server::CancelAllCalls() {
   }
   broadcaster.BroadcastShutdown(
       /*send_goaway=*/false, GRPC_ERROR_CREATE("Cancelling all calls"));
+  {
+    MutexLock lock(&mu_global_);
+    BroadcastShutdownToConnectionsLocked(
+        /*send_goaway=*/false, GRPC_ERROR_CREATE("Cancelling all calls"));
+  }
 }
 
 void Server::SendGoaways() {
@@ -1598,6 +1621,11 @@ void Server::SendGoaways() {
     broadcaster.FillChannelsLocked(GetChannelsLocked());
   }
   broadcaster.BroadcastShutdown(/*send_goaway=*/true, absl::OkStatus());
+  {
+    MutexLock lock(&mu_global_);
+    BroadcastShutdownToConnectionsLocked(/*send_goaway=*/true,
+                                         absl::OkStatus());
+  }
 }
 
 void Server::Orphan() {
