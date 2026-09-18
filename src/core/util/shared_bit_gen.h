@@ -47,15 +47,16 @@ class SharedBitGen {
   SharedBitGen& operator=(SharedBitGen&&) = default;
 
   using result_type = absl::BitGen::result_type;
-  result_type operator()() { return bit_gen_(); }
+  result_type operator()() { return GetBitGen()(); }
 
   static constexpr auto min() { return absl::BitGen::min(); }
   static constexpr auto max() { return absl::BitGen::max(); }
 
  private:
-  // TODO(ctiller): Perhaps use per-cpu storage? Would add additional overhead
-  // for the mutex acquisition.
-  static thread_local absl::BitGen bit_gen_;
+  static absl::BitGen& GetBitGen() {
+    thread_local absl::BitGen bit_gen;
+    return bit_gen;
+  }
 };
 #endif  // defined(GRPC_CPU_INTENSIVE_BITGEN)
 

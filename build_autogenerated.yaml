@@ -2256,7 +2256,6 @@ libs:
   - src/core/util/postmortem_emit.cc
   - src/core/util/random_early_detection.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -3502,7 +3501,6 @@ libs:
   - src/core/util/postmortem_emit.cc
   - src/core/util/random_early_detection.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -5424,7 +5422,6 @@ libs:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -5767,7 +5764,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -6161,7 +6157,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -6857,7 +6852,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -7199,7 +7193,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -7407,7 +7400,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -8051,7 +8043,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -8294,7 +8285,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -9335,7 +9325,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -9915,7 +9904,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -12977,7 +12965,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -14043,7 +14030,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -14322,7 +14308,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -14552,7 +14537,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -14780,7 +14764,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -15045,7 +15028,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -16299,7 +16281,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -16946,7 +16927,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -17235,7 +17215,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -17465,7 +17444,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -17738,7 +17716,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -17998,7 +17975,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -18254,7 +18230,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -18670,7 +18645,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -18878,7 +18852,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -19054,7 +19027,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -19281,7 +19253,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -19469,7 +19440,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -19973,7 +19943,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -20440,7 +20409,6 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/resource_quota/periodic_update_test.cc
@@ -20684,7 +20652,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -21197,7 +21164,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -21413,7 +21379,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -21598,7 +21563,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -21796,7 +21760,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -21979,7 +21942,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -22523,7 +22485,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -22703,7 +22664,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -23114,7 +23074,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -23514,7 +23473,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -23852,7 +23810,6 @@ targets:
   headers:
   - src/core/util/shared_bit_gen.h
   src:
-  - src/core/util/shared_bit_gen.cc
   - test/core/util/shared_bit_gen_test.cc
   deps:
   - gtest
@@ -24287,7 +24244,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -24474,7 +24430,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -24877,7 +24832,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -25196,7 +25150,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -25381,7 +25334,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -25748,7 +25700,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -26621,7 +26572,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -26878,7 +26828,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -27115,7 +27064,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -27292,7 +27240,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -28002,7 +27949,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -28223,7 +28169,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
@@ -28547,7 +28492,6 @@ targets:
   - src/core/util/per_cpu.cc
   - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/uri.cc
