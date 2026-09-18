@@ -253,6 +253,8 @@ class Server : public ServerInterface,
     void RemoveLogicalConnection(
         ListenerInterface::LogicalConnection* connection);
 
+    void DrainConnections(Duration grace_period);
+
     const MemoryQuotaRefPtr& memory_quota() const { return memory_quota_; }
 
     const ConnectionQuotaRefPtr& connection_quota() const {
@@ -289,7 +291,11 @@ class Server : public ServerInterface,
       grpc_core::Timestamp timestamp;
     };
 
-    void DrainConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+    void DrainConnectionsDueToConfigChangeLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+    void DrainConnectionsLocked(Duration grace_period)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     void OnDrainGraceTimer();
 

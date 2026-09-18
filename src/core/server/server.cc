@@ -103,7 +103,7 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
     MutexLock lock(&listener_state_->mu_);
     connection_manager_to_destroy = listener_state_->connection_manager_;
     listener_state_->connection_manager_ = std::move(connection_manager);
-    listener_state_->DrainConnectionsLocked();
+    listener_state_->DrainConnectionsDueToConfigChangeLocked();
     if (listener_state_->server_->ShutdownCalled()) {
       return;
     }
@@ -117,7 +117,7 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
 void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
   MutexLock lock(&listener_state_->mu_);
   listener_state_->is_serving_ = false;
-  listener_state_->DrainConnectionsLocked();
+  listener_state_->DrainConnectionsDueToConfigChangeLocked();
 }
 
 //
@@ -173,6 +173,7 @@ void Server::ListenerState::Stop() {
     GRPC_CHECK_NE(server_->config_fetcher(), nullptr);
     server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
   }
+// FIXME: need some signal when v1 filter stack has finished being destroyed
   GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, server_.get(),
                     grpc_schedule_on_exec_ctx);
   listener_->SetOnDestroyDone(&destroy_done_);
@@ -279,10 +280,21 @@ void Server::ListenerState::RemoveLogicalConnection(
   }
 }
 
-void Server::ListenerState::DrainConnectionsLocked() {
-  if (connections_.empty()) {
-    return;
-  }
+void Server::ListenerState::DrainConnections(Duration grace_period) {
+  MutexLock lock(&mu_);
+  DrainConnectionsLocked(grace_period);
+}
+
+void Server::ListenerState::DrainConnectionsDueToConfigChangeLocked() {
+  DrainConnectionsLocked(
+      server_->channel_args()
+          .GetDurationFromIntMillis(
+              GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
+          .value_or(Duration::Minutes(10)));
+}
+
+void Server::ListenerState::DrainConnectionsLocked(Duration grace_period) {
+  if (connections_.empty()) return;
   // Send GOAWAYs on the transports so that they disconnect when existing
   // RPCs finish.
   for (auto& connection : connections_) {
@@ -293,12 +305,7 @@ void Server::ListenerState::DrainConnectionsLocked() {
   connections_to_be_drained.connections = std::move(connections_);
   connections_.clear();
   connections_to_be_drained.timestamp =
-      Timestamp::Now() +
-      std::max(Duration::Zero(),
-               server_->channel_args()
-                   .GetDurationFromIntMillis(
-                       GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
-                   .value_or(Duration::Minutes(10)));
+      Timestamp::Now() + std::max(Duration::Zero(), grace_period);
   MaybeStartNewGraceTimerLocked();
 }
 
