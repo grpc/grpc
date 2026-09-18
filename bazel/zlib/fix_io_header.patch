@@ -1,0 +1,17 @@
+# Required by bazel builds to find unix io functions such as
+# read(), write(), etc.
+#
+# Without this header build fails due to -Wimplicit-function-declaration.
+diff --git a/gzguts.h b/gzguts.h
+index 266305d..2224ee9 100644
+--- a/gzguts.h
++++ b/gzguts.h
+@@ -49,6 +49,8 @@
+ #if defined(__TURBOC__) || defined(_MSC_VER) || defined(_WIN32)
+ #  include <io.h>
+ #  include <sys/stat.h>
++#elif defined(__linux__) || defined(__APPLE__)
++#  include <unistd.h>
+ #endif
+ 
+ #if defined(_WIN32) && !defined(WIDECHAR)
