@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:19-bookworm
+FROM silkeh/clang:21-trixie
 
 RUN apt update && apt -y upgrade && apt install -y build-essential curl git time wget zip && apt clean
 #=================
@@ -32,19 +32,16 @@ RUN git config --global protocol.file.allow always
 RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip \
-  python3-setuptools \
-  python3-yaml \
+  python3-venv \
   && apt-get clean
 
-# use pinned version of pip to avoid sudden breakages
-# Some newer distros that have already implemented PEP 668. Use of
-# --break-system-packages is to workaround that. We should look into using
-# virtualenv in Dockerfile though.
-RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
+# Use system python to bootstrap virtualenv and activate it
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
-# but since our python2 usage is deprecated, we should get rid of it.
-RUN python3 -m pip install six==1.16.0
+# Install/upgrade basic requirements inside the virtualenv
+RUN pip install --upgrade pip setuptools pyyaml
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
