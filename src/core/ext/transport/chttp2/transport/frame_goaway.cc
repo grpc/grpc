@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/slice/byte_source.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
@@ -66,83 +67,86 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
                                                   grpc_chttp2_stream* /*s*/,
                                                   const grpc_slice& slice,
                                                   int is_last) {
-  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
-  const uint8_t* cur = beg;
   grpc_chttp2_goaway_parser* p =
       static_cast<grpc_chttp2_goaway_parser*>(parser);
 
+  grpc_core::ByteSource src(slice);
+
   switch (p->state) {
     case GRPC_CHTTP2_GOAWAY_LSI0:
-      if (cur == end) {
+      if (auto v = src.ReadU8()) {
+        p->last_stream_id = static_cast<uint32_t>(*v) << 24;
+      } else {
         p->state = GRPC_CHTTP2_GOAWAY_LSI0;
         return absl::OkStatus();
       }
-      p->last_stream_id = (static_cast<uint32_t>(*cur)) << 24;
-      ++cur;
       [[fallthrough]];
     case GRPC_CHTTP2_GOAWAY_LSI1:
-      if (cur == end) {
+      if (auto v = src.ReadU8()) {
+        p->last_stream_id |= static_cast<uint32_t>(*v) << 16;
+      } else {
         p->state = GRPC_CHTTP2_GOAWAY_LSI1;
         return absl::OkStatus();
       }
-      p->last_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
-      ++cur;
       [[fallthrough]];
     case GRPC_CHTTP2_GOAWAY_LSI2:
-      if (cur == end) {
+      if (auto v = src.ReadU8()) {
+        p->last_stream_id |= static_cast<uint32_t>(*v) << 8;
+      } else {
         p->state = GRPC_CHTTP2_GOAWAY_LSI2;
         return absl::OkStatus();
       }
-      p->last_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
-      ++cur;
       [[fallthrough]];
     case GRPC_CHTTP2_GOAWAY_LSI3:
-      if (cur == end) {
+      if (auto v = src.ReadU8()) {
+        p->last_stream_id |= static_cast<uint32_t>(*v);
+      } else {
         p->state = GRPC_CHTTP2_GOAWAY_LSI3;
         return absl::OkStatus();
       }
-      p->last_stream_id |= (static_cast<uint32_t>(*cur));
-      ++cur;
       [[fallthrough]];
     case GRPC_CHTTP2_GOAWAY_ERR0:
-      if (cur == end) {
+      if (auto v = src.ReadU8()) {
+        p->error_code = static_cast<uint32_t>(*v) << 24;
+      } else {
         p->state = GRPC_CHTTP2_GOAWAY_ERR0;
         return absl::OkStatus();
       }
-      p->error_code = (static_cast<uint32_t>(*cur)) << 24;
-      ++cur;
       [[fallthrough]];
     case GRPC_CHTTP2_GOAWAY_ERR1:
-      if (cur == end) {
+      if (auto v = src.ReadU8()) {
+        p->error_code |= static_cast<uint32_t>(*v) << 16;
+      } else {
         p->state = GRPC_CHTTP2_GOAWAY_ERR1;
         return absl::OkStatus();
       }
-      p->error_code |= (static_cast<uint32_t>(*cur)) << 16;
-      ++cur;
       [[fallthrough]];
     case GRPC_CHTTP2_GOAWAY_ERR2:
-      if (cur == end) {
+      if (auto v = src.ReadU8()) {
+        p->error_code |= static_cast<uint32_t>(*v) << 8;
+      } else {
         p->state = GRPC_CHTTP2_GOAWAY_ERR2;
         return absl::OkStatus();
       }
-      p->error_code |= (static_cast<uint32_t>(*cur)) << 8;
-      ++cur;
       [[fallthrough]];
     case GRPC_CHTTP2_GOAWAY_ERR3:
-      if (cur == end) {
+      if (auto v = src.ReadU8()) {
+        p->error_code |= static_cast<uint32_t>(*v);
+      } else {
         p->state = GRPC_CHTTP2_GOAWAY_ERR3;
         return absl::OkStatus();
       }
-      p->error_code |= (static_cast<uint32_t>(*cur));
-      ++cur;
       [[fallthrough]];
-    case GRPC_CHTTP2_GOAWAY_DEBUG:
+    case GRPC_CHTTP2_GOAWAY_DEBUG: {
+      size_t debug_remaining = src.remaining();
       if (grpc_core::IsPh2Perf01Enabled()) {
-        if (end != cur) {
-          p->debug_slice_buffer.AppendIndexed(
-              grpc_core::Slice::FromCopiedBuffer(
-                  cur, static_cast<size_t>(end - cur)));
+        if (debug_remaining > 0) {
+          auto sp = src.ReadSpan(debug_remaining);
+          if (sp.has_value()) {
+            p->debug_slice_buffer.AppendIndexed(
+                grpc_core::Slice::FromCopiedBuffer(
+                    reinterpret_cast<const char*>(sp->data()), sp->size()));
+          }
         }
         GRPC_CHECK(p->debug_slice_buffer.Length() <= p->debug_length);
         p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
@@ -161,12 +165,14 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
           p->debug_slice_buffer.Clear();
         }
       } else {
-        if (end != cur) {
-          memcpy(p->debug_data + p->debug_pos, cur,
-                 static_cast<size_t>(end - cur));
+        if (debug_remaining > 0) {
+          auto sp = src.ReadSpan(debug_remaining);
+          if (sp.has_value()) {
+            memcpy(p->debug_data + p->debug_pos, sp->data(), sp->size());
+          }
         }
-        GRPC_CHECK((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
-        p->debug_pos += static_cast<uint32_t>(end - cur);
+        GRPC_CHECK(debug_remaining < UINT32_MAX - p->debug_pos);
+        p->debug_pos += static_cast<uint32_t>(debug_remaining);
         p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
         if (is_last) {
           t->http2_ztrace_collector.Append([p]() {
@@ -182,6 +188,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
         }
       }
       return absl::OkStatus();
+    }
   }
   GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
 }
