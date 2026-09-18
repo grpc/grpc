@@ -22,12 +22,12 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from envoy.config.core.v3 import base_pb2 as envoy_dot_config_dot_core_dot_v3_dot_base__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioning__pb2
-from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nAenvoy/extensions/resource_monitors/fixed_heap/v3/fixed_heap.proto\x12\x30\x65nvoy.extensions.resource_monitors.fixed_heap.v3\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\x80\x01\n\x0f\x46ixedHeapConfig\x12$\n\x13max_heap_size_bytes\x18\x01 \x01(\x04\x42\x07\xfa\x42\x04\x32\x02 \x00:G\x9a\xc5\x88\x1e\x42\n@envoy.config.resource_monitor.fixed_heap.v2alpha.FixedHeapConfigB\xc0\x01\n>io.envoyproxy.envoy.extensions.resource_monitors.fixed_heap.v3B\x0e\x46ixedHeapProtoP\x01Zdgithub.com/envoyproxy/go-control-plane/envoy/extensions/resource_monitors/fixed_heap/v3;fixed_heapv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nAenvoy/extensions/resource_monitors/fixed_heap/v3/fixed_heap.proto\x12\x30\x65nvoy.extensions.resource_monitors.fixed_heap.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\"\xc1\x01\n\x0f\x46ixedHeapConfig\x12\x1b\n\x13max_heap_size_bytes\x18\x01 \x01(\x04\x12H\n\x1bmax_heap_size_bytes_runtime\x18\x02 \x01(\x0b\x32#.envoy.config.core.v3.RuntimeUInt64:G\x9a\xc5\x88\x1e\x42\n@envoy.config.resource_monitor.fixed_heap.v2alpha.FixedHeapConfigB\xc0\x01\n>io.envoyproxy.envoy.extensions.resource_monitors.fixed_heap.v3B\x0e\x46ixedHeapProtoP\x01Zdgithub.com/envoyproxy/go-control-plane/envoy/extensions/resource_monitors/fixed_heap/v3;fixed_heapv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,10 +35,8 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.resource_m
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n>io.envoyproxy.envoy.extensions.resource_monitors.fixed_heap.v3B\016FixedHeapProtoP\001Zdgithub.com/envoyproxy/go-control-plane/envoy/extensions/resource_monitors/fixed_heap/v3;fixed_heapv3\272\200\310\321\006\002\020\002'
-  _globals['_FIXEDHEAPCONFIG'].fields_by_name['max_heap_size_bytes']._loaded_options = None
-  _globals['_FIXEDHEAPCONFIG'].fields_by_name['max_heap_size_bytes']._serialized_options = b'\372B\0042\002 \000'
   _globals['_FIXEDHEAPCONFIG']._loaded_options = None
   _globals['_FIXEDHEAPCONFIG']._serialized_options = b'\232\305\210\036B\n@envoy.config.resource_monitor.fixed_heap.v2alpha.FixedHeapConfig'
-  _globals['_FIXEDHEAPCONFIG']._serialized_start=211
-  _globals['_FIXEDHEAPCONFIG']._serialized_end=339
+  _globals['_FIXEDHEAPCONFIG']._serialized_start=219
+  _globals['_FIXEDHEAPCONFIG']._serialized_end=412
 # @@protoc_insertion_point(module_scope)

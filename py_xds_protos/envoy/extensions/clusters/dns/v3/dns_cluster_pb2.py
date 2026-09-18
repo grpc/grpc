@@ -29,7 +29,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n2envoy/extensions/clusters/dns/v3/dns_cluster.proto\x12 envoy.extensions.clusters.dns.v3\x1a$envoy/config/core/v3/extension.proto\x1a\x31\x65nvoy/extensions/clusters/common/dns/v3/dns.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xdc\x04\n\nDnsCluster\x12\x41\n\x10\x64ns_refresh_rate\x18\x03 \x01(\x0b\x32\x19.google.protobuf.DurationB\x0c\xfa\x42\t\xaa\x01\x06*\x04\x10\xc0\x84=\x12Z\n\x18\x64ns_failure_refresh_rate\x18\x04 \x01(\x0b\x32\x38.envoy.extensions.clusters.dns.v3.DnsCluster.RefreshRate\x12\x17\n\x0frespect_dns_ttl\x18\x05 \x01(\x08\x12\x37\n\ndns_jitter\x18\x06 \x01(\x0b\x32\x19.google.protobuf.DurationB\x08\xfa\x42\x05\xaa\x01\x02\x32\x00\x12M\n\x19typed_dns_resolver_config\x18\x07 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfig\x12S\n\x11\x64ns_lookup_family\x18\x08 \x01(\x0e\x32\x38.envoy.extensions.clusters.common.dns.v3.DnsLookupFamily\x12(\n all_addresses_in_single_endpoint\x18\t \x01(\x08\x1a\x8e\x01\n\x0bRefreshRate\x12@\n\rbase_interval\x18\x01 \x01(\x0b\x32\x19.google.protobuf.DurationB\x0e\xfa\x42\x0b\xaa\x01\x08\x08\x01*\x04\x10\xc0\x84=\x12=\n\x0cmax_interval\x18\x02 \x01(\x0b\x32\x19.google.protobuf.DurationB\x0c\xfa\x42\t\xaa\x01\x06*\x04\x10\xc0\x84=B\x9a\x01\n.io.envoyproxy.envoy.extensions.clusters.dns.v3B\x0f\x44nsClusterProtoP\x01ZMgithub.com/envoyproxy/go-control-plane/envoy/extensions/clusters/dns/v3;dnsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n2envoy/extensions/clusters/dns/v3/dns_cluster.proto\x12 envoy.extensions.clusters.dns.v3\x1a$envoy/config/core/v3/extension.proto\x1a\x31\x65nvoy/extensions/clusters/common/dns/v3/dns.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xa1\x05\n\nDnsCluster\x12\x41\n\x10\x64ns_refresh_rate\x18\x03 \x01(\x0b\x32\x19.google.protobuf.DurationB\x0c\xfa\x42\t\xaa\x01\x06*\x04\x10\xc0\x84=\x12Z\n\x18\x64ns_failure_refresh_rate\x18\x04 \x01(\x0b\x32\x38.envoy.extensions.clusters.dns.v3.DnsCluster.RefreshRate\x12\x17\n\x0frespect_dns_ttl\x18\x05 \x01(\x08\x12\x37\n\ndns_jitter\x18\x06 \x01(\x0b\x32\x19.google.protobuf.DurationB\x08\xfa\x42\x05\xaa\x01\x02\x32\x00\x12M\n\x19typed_dns_resolver_config\x18\x07 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfig\x12S\n\x11\x64ns_lookup_family\x18\x08 \x01(\x0e\x32\x38.envoy.extensions.clusters.common.dns.v3.DnsLookupFamily\x12(\n all_addresses_in_single_endpoint\x18\t \x01(\x08\x12\x43\n\x14\x64ns_min_refresh_rate\x18\n \x01(\x0b\x32\x19.google.protobuf.DurationB\n\xfa\x42\x07\xaa\x01\x04\x32\x02\x08\x01\x1a\x8e\x01\n\x0bRefreshRate\x12@\n\rbase_interval\x18\x01 \x01(\x0b\x32\x19.google.protobuf.DurationB\x0e\xfa\x42\x0b\xaa\x01\x08\x08\x01*\x04\x10\xc0\x84=\x12=\n\x0cmax_interval\x18\x02 \x01(\x0b\x32\x19.google.protobuf.DurationB\x0c\xfa\x42\t\xaa\x01\x06*\x04\x10\xc0\x84=B\x9a\x01\n.io.envoyproxy.envoy.extensions.clusters.dns.v3B\x0f\x44nsClusterProtoP\x01ZMgithub.com/envoyproxy/go-control-plane/envoy/extensions/clusters/dns/v3;dnsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -45,8 +45,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_DNSCLUSTER'].fields_by_name['dns_refresh_rate']._serialized_options = b'\372B\t\252\001\006*\004\020\300\204='
   _globals['_DNSCLUSTER'].fields_by_name['dns_jitter']._loaded_options = None
   _globals['_DNSCLUSTER'].fields_by_name['dns_jitter']._serialized_options = b'\372B\005\252\001\0022\000'
+  _globals['_DNSCLUSTER'].fields_by_name['dns_min_refresh_rate']._loaded_options = None
+  _globals['_DNSCLUSTER'].fields_by_name['dns_min_refresh_rate']._serialized_options = b'\372B\007\252\001\0042\002\010\001'
   _globals['_DNSCLUSTER']._serialized_start=266
-  _globals['_DNSCLUSTER']._serialized_end=870
-  _globals['_DNSCLUSTER_REFRESHRATE']._serialized_start=728
-  _globals['_DNSCLUSTER_REFRESHRATE']._serialized_end=870
+  _globals['_DNSCLUSTER']._serialized_end=939
+  _globals['_DNSCLUSTER_REFRESHRATE']._serialized_start=797
+  _globals['_DNSCLUSTER_REFRESHRATE']._serialized_end=939
 # @@protoc_insertion_point(module_scope)
