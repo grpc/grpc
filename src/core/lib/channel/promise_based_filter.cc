@@ -938,6 +938,13 @@ bool BaseCallData::ReceiveMessage::IsIdle() const {
   }
 }
 
+void BaseCallData::ReceiveMessage::CloseInboundPipe() {
+  if (state_ == State::kIdle || state_ == State::kCancelledWhilstIdle) {
+    interceptor()->Push()->Close();
+    state_ = State::kCancelled;
+  }
+}
+
 void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
                                                       bool allow_push_to_pipe) {
   GRPC_TRACE_LOG(channel, INFO)
@@ -2326,6 +2333,12 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
           receive_message()->Done(
               *batch->payload->send_trailing_metadata.send_trailing_metadata,
               &flusher, /* discard_buffered_message */ true);
+        } else if (receive_message() != nullptr &&
+                   receive_message()->IsIdle()) {
+          // Server ends the RPC with OK status and is no longer reading
+          // messages: close the inbound messages pipe with clean EOF so filters
+          // observe client half-close.
+          receive_message()->CloseInboundPipe();
         }
         if (send_message() != nullptr && !send_message()->IsIdle()) {
           send_trailing_state_ = SendTrailingState::kQueuedBehindSendMessage;
@@ -2664,6 +2677,13 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   }
   if (receive_message() != nullptr) {
     receive_message()->WakeInsideCombiner(flusher, true);
+  }
+  if (receive_message() != nullptr && receive_message()->IsIdle() &&
+      (send_trailing_state_ == SendTrailingState::kQueued ||
+       send_trailing_state_ == SendTrailingState::kQueuedBehindSendMessage ||
+       send_trailing_state_ ==
+           SendTrailingState::kQueuedButHaventClosedSends)) {
+    receive_message()->CloseInboundPipe();
   }
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
