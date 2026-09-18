@@ -166,6 +166,42 @@ TEST_F(TlsSecurityConnectorTest,
 }
 
 TEST_F(TlsSecurityConnectorTest,
+       MultipleIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
+  PemKeyCertPairList multiple_identity_pairs;
+  multiple_identity_pairs.emplace_back(
+      testing::GetFileContents(SERVER_KEY_PATH_0),
+      testing::GetFileContents(SERVER_CERT_PATH_0));
+  multiple_identity_pairs.emplace_back(
+      testing::GetFileContents(SERVER_KEY_PATH_1),
+      testing::GetFileContents(SERVER_CERT_PATH_1));
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kIdentityCertName, nullptr,
+                               multiple_identity_pairs);
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(provider);
+  options->set_identity_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs new_args;
+  RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
+  EXPECT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
+            multiple_identity_pairs);
+}
+
+TEST_F(TlsSecurityConnectorTest,
        SystemRootsWhenCreateChannelSecurityConnector) {
   // Create options watching for no certificates.
   RefCountedPtr<grpc_tls_credentials_options> root_options =
