@@ -201,6 +201,7 @@ libs:
   - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
+  - src/core/call/evaluate_args.h
   - src/core/call/filter_fusion.h
   - src/core/call/interception_chain.h
   - src/core/call/message.h
@@ -324,7 +325,6 @@ libs:
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
-  - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
@@ -367,6 +367,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/read_context.h
+  - src/core/ext/transport/chttp2/transport/reclaimer.h
   - src/core/ext/transport/chttp2/transport/security_frame.h
   - src/core/ext/transport/chttp2/transport/stream.h
   - src/core/ext/transport/chttp2/transport/stream_data_queue.h
@@ -662,6 +663,8 @@ libs:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h
   - src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h
@@ -680,8 +683,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb.h
@@ -1131,7 +1132,6 @@ libs:
   - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/authorization/matchers.h
@@ -1404,6 +1404,7 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/evaluate_args.cc
   - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
@@ -1527,7 +1528,6 @@ libs:
   - src/core/ext/transport/chttp2/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
-  - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
@@ -1560,6 +1560,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  - src/core/ext/transport/chttp2/transport/reclaimer.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -1710,6 +1711,7 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
@@ -1719,7 +1721,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
@@ -2090,7 +2091,6 @@ libs:
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/audit_logging.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/authorization/matchers.cc
@@ -2495,6 +2495,7 @@ libs:
   - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
+  - src/core/call/evaluate_args.h
   - src/core/call/filter_fusion.h
   - src/core/call/interception_chain.h
   - src/core/call/message.h
@@ -2576,7 +2577,6 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
-  - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
@@ -2619,6 +2619,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/read_context.h
+  - src/core/ext/transport/chttp2/transport/reclaimer.h
   - src/core/ext/transport/chttp2/transport/security_frame.h
   - src/core/ext/transport/chttp2/transport/stream.h
   - src/core/ext/transport/chttp2/transport/stream_data_queue.h
@@ -2648,6 +2649,8 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
@@ -2664,8 +2667,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/validate/validate.upb.h
@@ -2892,7 +2893,6 @@ libs:
   - src/core/lib/resource_tracker/resource_tracker.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -3068,6 +3068,7 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/evaluate_args.cc
   - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
@@ -3145,7 +3146,6 @@ libs:
   - src/core/ext/transport/chttp2/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
-  - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
@@ -3178,6 +3178,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  - src/core/ext/transport/chttp2/transport/reclaimer.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -3195,6 +3196,7 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
@@ -3203,7 +3205,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/validate/validate.upb_minitable.c
   - src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
@@ -3380,7 +3381,6 @@ libs:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -4741,6 +4741,7 @@ libs:
   - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
+  - src/core/call/evaluate_args.h
   - src/core/call/interception_chain.h
   - src/core/call/message.h
   - src/core/call/metadata.h
@@ -5005,7 +5006,6 @@ libs:
   - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
@@ -5133,6 +5133,7 @@ libs:
   - src/core/call/call_spine.cc
   - src/core/call/call_state.cc
   - src/core/call/client_call.cc
+  - src/core/call/evaluate_args.cc
   - src/core/call/interception_chain.cc
   - src/core/call/message.cc
   - src/core/call/metadata.cc
@@ -5343,7 +5344,6 @@ libs:
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/audit_logging.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
@@ -6406,13 +6406,13 @@ targets:
   - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/async_end2end_test.cc
@@ -6642,16 +6642,6 @@ targets:
   - linux
   - posix
   - mac
-- name: bin_decoder_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_decoder_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: bin_encoder_test
   gtest: true
   build: test
@@ -9509,7 +9499,6 @@ targets:
   src:
   - src/proto/grpc/channelz/v2/channelz.proto
   - src/proto/grpc/channelz/v2/property_list.proto
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -9517,6 +9506,7 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/core/util/json/json_util.cc
@@ -12723,7 +12713,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/security/evaluate_args_test.cc
+  - test/core/call/evaluate_args_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13317,6 +13307,7 @@ targets:
   deps:
   - gtest
   - grpc++
+  - grpc_test_util
 - name: factory_test
   gtest: true
   build: test
@@ -15816,13 +15807,13 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.h
   - test/cpp/end2end/test_service_impl.h
   src:
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/health_service_end2end_test.cc
@@ -20862,7 +20853,6 @@ targets:
   - test/cpp/interop/xds_interop_server_lib.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/istio_echo.proto
   - src/proto/grpc/testing/messages.proto
@@ -20970,6 +20960,7 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto

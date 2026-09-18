@@ -14,6 +14,7 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
+#include <grpc/health/v1/health.grpc.pb.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/time.h>
@@ -67,7 +68,6 @@
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
-#include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"

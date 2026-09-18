@@ -36,6 +36,7 @@
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/transport/auth_context.h"
@@ -308,6 +309,15 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(
           ctx.get(), GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME,
           prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name,
+                      TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+          prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SSL_TLS_VERSION_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(),
+                                     GRPC_SSL_TLS_VERSION_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(
           ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
