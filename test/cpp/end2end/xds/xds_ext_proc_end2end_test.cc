@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <google/protobuf/wrappers.pb.h>
 #include <grpc/support/string_util.h>
 
 #include <map>
@@ -38,11 +37,11 @@
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
-#include "test/cpp/end2end/xds/xds_utils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
