@@ -597,9 +597,9 @@ class CLanguage:
                     "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
-        elif compiler == "clang19":
+        elif compiler == "clang21":
             return (
-                "clang_19",
+                "clang_21",
                 self._clang_cmake_configure_extra_args()
                 + [
                     "-DCMAKE_CXX_STANDARD=17",
@@ -1734,7 +1734,7 @@ argp.add_argument(
         "gcc14",
         "gcc_musl",
         "clang14",
-        "clang19",
+        "clang21",
         # TODO: Automatically populate from supported version
         "python3.10",
         "python3.11",
