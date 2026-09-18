@@ -326,6 +326,7 @@ GPR_PUBLIC_HDRS = [
 ]
 
 GRPC_PUBLIC_HDRS = [
+    "include/grpc/server_call_hook.h",
     "include/grpc/grpc_audit_logging.h",
     "include/grpc/grpc_crl_provider.h",
     "include/grpc/private_key_signer.h",
