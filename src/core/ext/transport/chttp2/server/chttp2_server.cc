@@ -811,10 +811,10 @@ void PassiveListenerImpl::Init(RefCountedPtr<Server> server,
 
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
-  GRPC_CHECK_NE(server_.get(), nullptr);
   RefCountedPtr<NewChttp2ServerListener> new_listener;
   {
     MutexLock lock(&mu_);
+    GRPC_CHECK_NE(server_.get(), nullptr);
     if (listener_ != nullptr) {
       new_listener =
           listener_->RefIfNonZero().TakeAsSubclass<NewChttp2ServerListener>();
@@ -829,9 +829,13 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
-  GRPC_CHECK_NE(server_.get(), nullptr);
   ExecCtx exec_ctx;
-  auto& args = server_->channel_args();
+  ChannelArgs args;
+  {
+    MutexLock lock(&mu_);
+    GRPC_CHECK_NE(server_.get(), nullptr);
+    args = server_->channel_args();
+  }
   auto* supports_fd = QueryExtension<EventEngineSupportsFdExtension>(
       args.GetObjectRef<EventEngine>().get());
   if (supports_fd == nullptr) {
