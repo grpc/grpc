@@ -802,6 +802,13 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
 
 namespace experimental {
 
+void PassiveListenerImpl::Init(RefCountedPtr<Server> server,
+                               NewChttp2ServerListener* listener) {
+  MutexLock lock(&mu_);
+  server_ = std::move(server);
+  listener_ = listener;
+}
+
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
   GRPC_CHECK_NE(server_.get(), nullptr);
@@ -952,10 +959,9 @@ absl::Status grpc_server_add_passive_listener(
                   .SetObject(std::move(sc))
                   .Set(GRPC_ARG_USE_V3_STACK,
                        grpc_core::http2::ShouldEnablePh2Server());
-  passive_listener->listener_ =
+  passive_listener->Init(
+      server->Ref(),
       grpc_core::NewChttp2ServerListener::CreateForPassiveListener(
-          server, args, passive_listener);
-
-  passive_listener->server_ = server->Ref();
+          server, args, passive_listener));
   return absl::OkStatus();
 }
