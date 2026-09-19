@@ -108,6 +108,7 @@ extern TraceFlag ring_hash_lb_trace;
 extern TraceFlag rls_lb_trace;
 extern TraceFlag round_robin_trace;
 extern TraceFlag secure_endpoint_trace;
+extern TraceFlag server_trace;
 extern TraceFlag server_channel_trace;
 extern TraceFlag server_config_selector_interceptor_trace;
 extern TraceFlag stateful_session_filter_trace;

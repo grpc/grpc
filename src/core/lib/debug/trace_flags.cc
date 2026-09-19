@@ -110,6 +110,7 @@ TraceFlag ring_hash_lb_trace(false, "ring_hash_lb");
 TraceFlag rls_lb_trace(false, "rls_lb");
 TraceFlag round_robin_trace(false, "round_robin");
 TraceFlag secure_endpoint_trace(false, "secure_endpoint");
+TraceFlag server_trace(false, "server");
 TraceFlag server_channel_trace(false, "server_channel");
 TraceFlag server_config_selector_interceptor_trace(
     false, "server_config_selector_interceptor");
@@ -197,6 +198,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"rls_lb", &rls_lb_trace},
           {"round_robin", &round_robin_trace},
           {"secure_endpoint", &secure_endpoint_trace},
+          {"server", &server_trace},
           {"server_channel", &server_channel_trace},
           {"server_config_selector_interceptor",
            &server_config_selector_interceptor_trace},

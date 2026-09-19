@@ -160,7 +160,9 @@ void Server::ListenerState::Start() {
 }
 
 void Server::ListenerState::Stop() {
-LOG(INFO) << "==> [server " << server_.get() << "] ListenerState::Stop()";
+  GRPC_TRACE_LOG(server, INFO)
+      << "==> [server " << server_.get() << "ListenerState " << this
+      << "] ListenerState::Stop()";
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections;
   {
@@ -284,7 +286,9 @@ void Server::ListenerState::OnHandshakeDone(
 
 void Server::ListenerState::RemoveLogicalConnection(
     ListenerInterface::LogicalConnection* connection) {
-LOG(INFO) << "==> [server " << server_.get() << "] RemoveLogicalConnection()";
+  GRPC_TRACE_LOG(server, INFO)
+      << "==> [server " << server_.get() << "ListenerState " << this
+      << "] RemoveLogicalConnection()";
   OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
   {
     // Remove the connection if it wasn't already removed.
@@ -324,7 +328,9 @@ void Server::ListenerState::DrainConnectionsDueToConfigChangeLocked() {
 }
 
 void Server::ListenerState::DrainConnectionsLocked(Duration grace_period) {
-LOG(INFO) << "==> [server " << server_.get() << "] DrainConnectionsLocked()";
+  GRPC_TRACE_LOG(server, INFO)
+      << "==> [server " << server_.get() << "ListenerState " << this
+      << "] DrainConnectionsLocked()";
   if (connections_.empty()) return;
   // Send GOAWAYs on the transports so that they disconnect when existing
   // RPCs finish.
@@ -340,7 +346,9 @@ LOG(INFO) << "==> [server " << server_.get() << "] DrainConnectionsLocked()";
 }
 
 void Server::ListenerState::OnDrainGraceTimer() {
-LOG(INFO) << "==> [server " << server_.get() << "] OnDrainGraceTimer()";
+  GRPC_TRACE_LOG(server, INFO)
+      << "==> [server " << server_.get() << "ListenerState " << this
+      << "] OnDrainGraceTimer()";
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections_to_be_drained;
   {
@@ -1497,7 +1505,8 @@ void Server::FailCall(size_t cq_idx, RequestedCall* rc,
 // Before calling MaybeFinishShutdown(), we must hold mu_global_ and not
 // hold mu_call_.
 void Server::MaybeFinishShutdown() {
-LOG(INFO) << "==> [server " << this << "] MaybeFinishShutdown()";
+  GRPC_TRACE_LOG(server, INFO)
+      << "==> [server " << this << "] MaybeFinishShutdown()";
   if (!ShutdownReady() || shutdown_published_) {
     return;
   }
@@ -1520,7 +1529,7 @@ LOG(INFO) << "==> [server " << this << "] MaybeFinishShutdown()";
     }
     return;
   }
-LOG(INFO) << "FINISHING SHUTDOWN";
+  GRPC_TRACE_LOG(server, INFO) << "Finishing shutdown";
   shutdown_published_ = true;
   for (auto& shutdown_tag : shutdown_tags_) {
     Ref().release();
@@ -1551,7 +1560,8 @@ std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
 
 void Server::ListenerDestroyDone(void* arg, grpc_error_handle /*error*/) {
   Server* server = static_cast<Server*>(arg);
-LOG(INFO) << "==> [server " << server << "] ListenerDestroyDone()";
+  GRPC_TRACE_LOG(server, INFO)
+      << "==> [server " << server << "] ListenerDestroyDone()";
   MutexLock lock(&server->mu_global_);
   server->listeners_destroyed_++;
   server->MaybeFinishShutdown();

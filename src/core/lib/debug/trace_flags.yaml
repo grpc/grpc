@@ -283,6 +283,9 @@ security_connector_refcount:
   debug_only: true
   default: false
   description: Refcounting for security connectors (part of channel credentials).
+server:
+  default: false
+  description: Server operations.
 server_channel:
   default: false
   description: Lightweight trace of significant server channel events.
