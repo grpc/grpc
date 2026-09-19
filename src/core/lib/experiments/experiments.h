@@ -138,6 +138,7 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
+inline bool IsServerConnectionTrackingEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -233,6 +234,7 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
+inline bool IsServerConnectionTrackingEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -328,6 +330,7 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
+inline bool IsServerConnectionTrackingEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -398,6 +401,7 @@ enum ExperimentIds {
   kExperimentIdSecureEndpointOffloadLargeReads,
   kExperimentIdSecureEndpointOffloadLargeWrites,
   kExperimentIdSecureEndpointReadCoalescing,
+  kExperimentIdServerConnectionTracking,
   kExperimentIdSkipClearPeerOnCancellation,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -627,6 +631,10 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SECURE_ENDPOINT_READ_COALESCING
 inline bool IsSecureEndpointReadCoalescingEnabled() {
   return IsExperimentEnabled<kExperimentIdSecureEndpointReadCoalescing>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_CONNECTION_TRACKING
+inline bool IsServerConnectionTrackingEnabled() {
+  return IsExperimentEnabled<kExperimentIdServerConnectionTracking>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SKIP_CLEAR_PEER_ON_CANCELLATION
 inline bool IsSkipClearPeerOnCancellationEnabled() {
