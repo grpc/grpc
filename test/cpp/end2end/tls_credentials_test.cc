@@ -312,7 +312,61 @@ TEST_F(TlsCredentialsTest, ExportedKeyingMaterial) {
                          client_properties[0].length());
 
   EXPECT_FALSE(client_ekm.empty());
+  // Ensure that implementation doesn't just derive a null-filled buffer.
+  EXPECT_THAT(client_ekm, ::testing::Not(::testing::Each('\0')));
   EXPECT_EQ(service.server_ekm(), client_ekm);
+}
+
+// Both peers must configure the same label to derive the same value, so a
+// label mismatch must produce different keying material on each side. This
+// also ensures the label is actually an input to the derivation.
+TEST_F(TlsCredentialsTest, ExportedKeyingMaterialWithDifferentLabelsDiffers) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  EkmCapturingService service;
+  const std::string kServerEkmLabel = "server_label";
+  const std::string kClientEkmLabel = "client_label";
+  constexpr size_t kEkmLength = 32;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr, &kServerEkmLabel,
+              kEkmLength, &service);
+  });
+  notification.WaitForNotification();
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_verify_server_certs(false);
+  tls_options.set_exported_keying_material_options(kClientEkmLabel, kEkmLength);
+
+  std::shared_ptr<Channel> channel =
+      grpc::CreateChannel(server_addr_, TlsCredentials(tls_options));
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  ASSERT_TRUE(result.ok()) << "Echo failed: " << result.error_code() << ", "
+                           << result.error_message() << ", "
+                           << result.error_details();
+
+  std::shared_ptr<const AuthContext> client_auth_context =
+      context.auth_context();
+  ASSERT_NE(client_auth_context, nullptr);
+  std::vector<grpc::string_ref> client_properties =
+      client_auth_context->FindPropertyValues(
+          GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
+  ASSERT_EQ(client_properties.size(), 1u);
+  std::string client_ekm(client_properties[0].data(),
+                         client_properties[0].length());
+  std::string server_ekm = service.server_ekm();
+  ASSERT_EQ(client_ekm.length(), kEkmLength);
+  ASSERT_EQ(server_ekm.length(), kEkmLength);
+  EXPECT_NE(client_ekm, server_ekm);
 }
 
 TEST_F(TlsCredentialsTest, ExportedKeyingMaterialNotConfigured) {
