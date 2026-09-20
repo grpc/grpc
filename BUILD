@@ -267,6 +267,20 @@ config_setting(
     constraint_values = ["@platforms//os:windows"],
 )
 
+# Windows targets built with a GCC-style driver (MinGW), which links system
+# libraries via -l<lib> rather than -defaultlib:<lib>.lib.
+config_setting(
+    name = "windows_mingw_clang",
+    constraint_values = ["@platforms//os:windows"],
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "clang"},
+)
+
+config_setting(
+    name = "windows_mingw_gcc",
+    constraint_values = ["@platforms//os:windows"],
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "mingw-gcc"},
+)
+
 config_setting(
     name = "mac",
     constraint_values = ["@platforms//os:macos"],
