@@ -46,12 +46,14 @@ class FakeStreamingCallEventHandler
     : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
  public:
   explicit FakeStreamingCallEventHandler(
-      absl::Notification* on_status_received = nullptr)
-      : on_status_received_(on_status_received) {}
+      absl::Notification* on_status_received = nullptr,
+      absl::Status* status = nullptr)
+      : on_status_received_(on_status_received), status_(status) {}
 
   void OnRequestSent(bool /*ok*/) override {}
   void OnRecvMessage(absl::string_view /*payload*/) override {}
-  void OnStatusReceived(absl::Status /*status*/) override {
+  void OnStatusReceived(absl::Status status) override {
+    if (status_ != nullptr) *status_ = std::move(status);
     if (on_status_received_ != nullptr) {
       on_status_received_->Notify();
     }
@@ -59,6 +61,7 @@ class FakeStreamingCallEventHandler
 
  private:
   absl::Notification* on_status_received_;
+  absl::Status* status_;
 };
 
 class GrpcXdsTransportTest : public ::testing::Test {
@@ -213,15 +216,45 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
   auto transport = factory_->GetTransport(target, &status);
   ASSERT_TRUE(status.ok()) << status.ToString();
   absl::Notification on_status_received;
+  absl::Status call_status;
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
-      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received));
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status));
   ASSERT_NE(call, nullptr);
   exec_ctx.Flush();
   on_status_received.WaitForNotification();
+  // Nothing is listening on server_uri_, but this overload defaults to
+  // wait-for-ready, so the call stays queued until the deadline instead of
+  // failing when the connection attempt fails.
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kDeadlineExceeded)
+      << call_status;
   // Orphan the call after status is received. This invokes Orphan(), which
   // cleans up the call and releases the initial reference.
   call.reset();
+}
+
+TEST_F(GrpcXdsTransportTest, StreamingCallWithoutWaitForReadyFails) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
+      /*wait_for_ready=*/false);
+  ASSERT_NE(call, nullptr);
+  exec_ctx.Flush();
+  // Nothing is listening on server_uri_, so the call fails as soon as the
+  // connection attempt fails, rather than being queued until the deadline.
+  on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
 }
 
 class GrpcXdsServerTargetTest : public ::testing::Test {
