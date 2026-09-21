@@ -99,6 +99,8 @@ BANNED_EXCEPT = {
     "absl::variant": [],
     "absl::get": [],
     "absl::get_if": [],
+    "absl::enable_if": [],
+    "absl::enable_if_t": [],
     "absl::has_alternative": [],
     # Use `std::optional` and friends instead.
     "absl::optional": [
