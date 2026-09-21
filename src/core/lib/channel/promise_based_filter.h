@@ -1967,6 +1967,10 @@ class BaseCallData : public Activity,
     std::optional<PipeSender<MessageHandle>::PushType> push_;
     std::optional<PipeReceiverNextType<MessageHandle>> next_;
     absl::Status completed_status_;
+    // Status carried by the server trailing metadata that cancelled this
+    // recv_message, if any.  Only used when the
+    // recv_message_cancelled_status_fix experiment is enabled.
+    absl::Status cancelled_status_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
         MakeMemberClosure<ReceiveMessage, &ReceiveMessage::OnComplete>(this);
