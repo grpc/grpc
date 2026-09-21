@@ -80,7 +80,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
     grpc_call_credentials* call_creds,
     const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-    Duration timeout)
+    Duration timeout, bool wait_for_ready)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
   Timestamp deadline = (timeout == Duration::Infinity())
                            ? Timestamp::InfFuture()
@@ -117,8 +117,10 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   op->data.send_initial_metadata.count = send_initial_metadata_.size();
   op->data.send_initial_metadata.metadata =
       send_initial_metadata_.empty() ? nullptr : send_initial_metadata_.data();
-  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
+  op->flags = wait_for_ready
+                  ? (GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+                     GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)
+                  : 0;
   op->reserved = nullptr;
   ++op;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -446,11 +448,12 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::StopConnectivityFailureWatch(
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     const char* method,
-    std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+    std::unique_ptr<StreamingCall::EventHandler> event_handler,
+    bool wait_for_ready) {
   return MakeOrphanable<GrpcStreamingCall>(
       factory_.WeakRef(DEBUG_LOCATION, "StreamingCall"), channel_->channel(),
       method, std::move(event_handler), call_creds_.get(), initial_metadata_,
-      timeout_);
+      timeout_, wait_for_ready);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {

@@ -222,7 +222,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        bool wait_for_ready) override;
 
     void ResetBackoff() override {}
 

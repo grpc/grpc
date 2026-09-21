@@ -82,11 +82,22 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     virtual void StopConnectivityFailureWatch(
         const RefCountedPtr<ConnectivityFailureWatcher>& watcher) = 0;
 
-    // Create a streaming call on this transport for the specified method.
+    // Create a streaming call on this transport for the specified method,
+    // with wait-for-ready enabled.
     // Events on the stream will be reported to event_handler.
+    OrphanablePtr<StreamingCall> CreateStreamingCall(
+        const char* method,
+        std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+      return CreateStreamingCall(method, std::move(event_handler),
+                                 /*wait_for_ready=*/true);
+    }
+
+    // Same as above, but if wait_for_ready is false, the call fails
+    // instead of being queued when the transport is not connected.
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler) = 0;
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        bool wait_for_ready) = 0;
 
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;

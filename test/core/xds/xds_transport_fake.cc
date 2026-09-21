@@ -278,7 +278,8 @@ void FakeXdsTransportFactory::FakeXdsTransport::StopConnectivityFailureWatch(
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
-    std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+    std::unique_ptr<StreamingCall::EventHandler> event_handler,
+    bool /*wait_for_ready*/) {
   auto call = MakeOrphanable<FakeStreamingCall>(
       WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler));
   MutexLock lock(&mu_);
