@@ -939,6 +939,7 @@ bool BaseCallData::ReceiveMessage::IsIdle() const {
 }
 
 void BaseCallData::ReceiveMessage::CloseInboundPipe() {
+  if (!IsPromiseFilterServerHalfCloseEnabled()) return;
   if (state_ == State::kIdle || state_ == State::kCancelledWhilstIdle) {
     interceptor()->Push()->Close();
     state_ = State::kCancelled;
@@ -2675,7 +2676,8 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   // Server ends the RPC with OK status and is no longer reading messages:
   // close the inbound messages pipe with clean EOF so filters observe client
   // half-close.
-  if (receive_message() != nullptr && receive_message()->IsIdle() &&
+  if (IsPromiseFilterServerHalfCloseEnabled() && receive_message() != nullptr &&
+      receive_message()->IsIdle() &&
       (send_trailing_state_ == SendTrailingState::kQueued ||
        send_trailing_state_ == SendTrailingState::kQueuedBehindSendMessage ||
        send_trailing_state_ ==

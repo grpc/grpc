@@ -879,6 +879,9 @@ class FakeServerCallStack {
 // (client half-close) to filters observing client-to-server messages.
 TEST(RecvMessageFilterBypassTest,
      ServerEndsRpcOkClosesInboundPipeWithHalfCloseInCombiner) {
+  if (!IsPromiseFilterServerHalfCloseEnabled()) {
+    GTEST_SKIP() << "Test fail without experiment";
+  }
   ExecCtx exec_ctx;
   FakeServerCallStack env;
   // 1) Start recv_initial_metadata batch on the server call stack.
@@ -903,6 +906,7 @@ TEST(RecvMessageFilterBypassTest,
 
 int main(int argc, char** argv) {
   grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
+  grpc_core::ForceEnableExperiment("promise_filter_server_half_close", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestGrpcScope grpc_scope;
