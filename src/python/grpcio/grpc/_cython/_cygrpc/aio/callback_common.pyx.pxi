@@ -75,11 +75,12 @@ class ExecuteBatchError(InternalError):
 
 
 class StartBatchError(ExecuteBatchError):
-    """Raised when Core refuses to start a batch.
+    """Raised when grpc_call_start_batch rejects a batch.
 
-    This is different from a batch that Core accepted and later failed. When
-    an accepted batch fails, Core ends the RPC and delivers its status. When
-    Core refuses a batch, the RPC continues unchanged and no status follows.
+    The batch was never started. Unlike an ExecuteBatchError from a batch that
+    Core accepted and then failed, this does not mean that the RPC is
+    finishing, and Core will not necessarily deliver a status that explains
+    the failure.
     """
 
 

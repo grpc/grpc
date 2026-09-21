@@ -499,21 +499,25 @@ class _StreamRequestMixin(Call[RequestType, ResponseType]):
         try:
             await self._cython_call.send_serialized_message(serialized_request)
         except cygrpc.StartBatchError as err:
-            # Core refused to start the write. The RPC continues unchanged, so
-            # this is a local failure, and the RPC is ended with INTERNAL.
-            self._cython_call.set_internal_error(str(err))
+            # Core rejected the batch outright, so no status is on its way to
+            # explain the failure. Synthesize one so that waiters do not hang
+            # (#34148), but do not replace the status of an RPC that has
+            # already finished.
+            if not self.done():
+                self._cython_call.set_internal_error(str(err))
             await self._raise_for_status()
         except cygrpc.InternalError:
-            # Core accepted the write and then failed it. Core only fails an
-            # accepted write while the RPC is ending: the peer finished the
-            # RPC, or it was cancelled, or its deadline passed. In each case
-            # the RPC's status is on its way, and that status is the outcome
-            # the caller should see. Recording INTERNAL here would overwrite
-            # the status that the peer sent, so wait for the status and raise
-            # it instead.
+            # Core accepted the batch and then failed it, which means the RPC
+            # is finishing: the peer ended it early, the deadline passed, or
+            # it was cancelled. Core reports the reason through the
+            # receive-status operation that the response side of every
+            # stream-request RPC awaits. A synthesized INTERNAL status would
+            # hide that reason (grpc/grpc#36066), so wait for the status and
+            # raise it instead.
             await self._raise_for_status()
-            # _raise_for_status returned, so the RPC finished with OK. Treat
-            # this like any other write after the RPC has finished.
+            # _raise_for_status returned, so the status is OK: the peer
+            # finished before reading this message. Treat this like any other
+            # write after the RPC has finished.
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
         except asyncio.CancelledError:
             if not self.cancelled():
@@ -529,16 +533,6 @@ class _StreamRequestMixin(Call[RequestType, ResponseType]):
             self._done_writing_flag = True
             try:
                 await self._cython_call.send_receive_close()
-            except cygrpc.StartBatchError as err:
-                # Core refused to start the half-close; see _write.
-                self._cython_call.set_internal_error(str(err))
-                await self._raise_for_status()
-            except cygrpc.InternalError:
-                # Core accepted the half-close and then failed it, so the RPC
-                # is ending and its status is on its way; see _write. If the
-                # RPC finished with OK there is nothing left to do. If it
-                # failed, the caller gets its status.
-                await self._raise_for_status()
             except asyncio.CancelledError:
                 if not self.cancelled():
                     self.cancel()
