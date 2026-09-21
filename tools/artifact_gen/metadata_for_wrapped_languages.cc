@@ -94,6 +94,16 @@ auto MakePhpConfig(const nlohmann::json& config,
   for (const auto& lib : config["libs"]) {
     lib_maps[lib["name"]] = &lib;
   }
+  auto map_alias = [&](const std::string& alias, const std::string& original) {
+    auto it = lib_maps.find(original);
+    if (it != lib_maps.end()) {
+      lib_maps[alias] = it->second;
+    }
+  };
+  map_alias("upb_descriptor_lib",
+            "@com_google_protobuf//upb/reflection:descriptor_upb_proto");
+  map_alias("address_sorting", "third_party/address_sorting:address_sorting");
+  map_alias("re2", "@com_googlesource_code_re2//:re2");
   std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
   std::set<std::string> php_full_deps;
   for (const auto& dep : php_deps) {

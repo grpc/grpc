@@ -184,6 +184,16 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "upb_mini_descriptor_lib"
     },
+    "@com_google_protobuf//upb/mini_table:mini_table": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_mini_table_lib"
+    },
+    "@com_google_protobuf//upb/reflection:descriptor_upb_proto": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_descriptor_lib"
+    },
     "@com_google_protobuf//upb/text:text": {
         "language": "c",
         "build": "all",
@@ -511,7 +521,7 @@ class ArtifactGen {
       // deps is not properly fetched from bazel query for upb_c_proto_library
       // target so add the upb dependency manually
       bazel_rule.deps = {
-          "@com_google_protobuf//upb:descriptor_upb_proto",
+          "@com_google_protobuf//upb/reflection:descriptor_upb_proto",
           "@com_google_protobuf//"
           "upb:generated_code_support"
           "give_permission_to_break_me",
@@ -591,7 +601,8 @@ class ArtifactGen {
   }
 
   void PatchDescriptorUpbProtoLibrary() {
-    auto it = rules_.find("@com_google_protobuf//upb:descriptor_upb_proto");
+    auto it = rules_.find(
+        "@com_google_protobuf//upb/reflection:descriptor_upb_proto");
     if (it == rules_.end()) return;
     auto& bazel_rule = it->second;
     bazel_rule.srcs.push_back(
@@ -712,6 +723,10 @@ class ArtifactGen {
       lib_names.push_back(it.key());
     }
     for (const auto& lib_name : lib_names) {
+      if (LookupRule(lib_name) == nullptr) {
+        LOG(INFO) << "Skipping pre-declared library " << lib_name;
+        continue;
+      }
       auto lib_dict = CreateTargetFromBazelRule(lib_name);
       lib_dict.update(test_metadata_[lib_name]);
       build_metadata_[lib_name] = lib_dict;
