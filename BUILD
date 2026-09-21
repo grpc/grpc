@@ -267,8 +267,6 @@ config_setting(
     constraint_values = ["@platforms//os:windows"],
 )
 
-# Windows targets built with a GCC-style driver (MinGW), which links system
-# libraries via -l<lib> rather than -defaultlib:<lib>.lib.
 config_setting(
     name = "windows_mingw_clang",
     constraint_values = ["@platforms//os:windows"],
