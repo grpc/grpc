@@ -392,6 +392,17 @@ def grpc_deps():
             ],
         )
 
+    if "autosharding" not in native.existing_rules():
+        http_archive(
+            name = "autosharding",
+            sha256 = "12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2",
+            strip_prefix = "autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
+                "https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
+            ],
+        )
+
     # Building grpc with openssl is only supported when using bzlmod. Workspaces
     # are deprecated, so just create a dummy repo so that the grpc targets build
     # when using workspaces.
