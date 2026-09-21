@@ -398,6 +398,17 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
+# Setup external proto library at third_party/autosharding if it doesn't exist
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/autosharding AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/autosharding.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/autosharding
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz
+    https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz
+    12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2
+    autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7
+  )
+endif()
 # Setup external proto library at third_party/cel-spec if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
@@ -436,10 +447,10 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/grpc-proto AND gRPC_DOWNL
   # Download the archive via HTTP, validate the checksum, and extract to third_party/grpc-proto.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/grpc-proto
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz
-    https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz
-    5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33
-    grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
+    https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
+    6aaa807572edfe307eaddc15161ce684d02d054e3fca36b38993efc85575ddfa
+    grpc-proto-dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f
   )
 endif()
 # Setup external proto library at third_party/protoc-gen-validate if it doesn't exist

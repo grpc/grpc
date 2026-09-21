@@ -5689,6 +5689,16 @@ grpc_upb_proto_reflection_library(
     deps = ["@grpc_proto//:channelz_proto"],
 )
 
+grpc_upb_proto_library(
+    name = "autosharding_upb",
+    deps = ["@autosharding//:autosharding_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "autosharding_upbdefs",
+    deps = ["@autosharding//:autosharding_proto"],
+)
+
 WELL_KNOWN_PROTO_TARGETS = [
     "any",
     "duration",
@@ -5750,6 +5760,11 @@ grpc_cc_proto_library(
     deps = ["@grpc_proto//:grpclb_load_reporter_proto"],
 )
 
+grpc_cc_proto_library(
+    name = "autosharding_cc_proto",
+    deps = ["@autosharding//:autosharding_proto"],
+)
+
 grpc_cc_grpc_library(
     name = "reflection_v1_cc_grpc",
     srcs = ["@grpc_proto//:reflection_proto"],
@@ -5796,4 +5811,10 @@ grpc_cc_grpc_library(
     name = "load_reporter_cc_grpc",
     srcs = ["@grpc_proto//:grpclb_load_reporter_proto"],
     deps = [":load_reporter_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "autosharding_cc_grpc",
+    srcs = ["@autosharding//:autosharding_proto"],
+    deps = [":autosharding_cc_proto"],
 )
