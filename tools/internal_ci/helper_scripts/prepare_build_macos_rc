@@ -99,6 +99,8 @@ brew_install_with_retry() {
 brew config
 
 if $is_sonoma; then
+  brew update-reset
+  brew upgrade || true
   brew_install_with_retry cmake
   brew_install_with_retry ccache
   export PATH="/opt/homebrew/bin::${PATH}"
