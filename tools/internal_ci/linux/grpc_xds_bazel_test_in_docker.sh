@@ -64,14 +64,14 @@ python -m grpc_tools.protoc \
     "$PROTO_SOURCE_DIR"/messages.proto \
     "$PROTO_SOURCE_DIR"/empty.proto
 
-HEALTH_PROTO_SOURCE_DIR=src/proto/grpc/health/v1
-HEALTH_PROTO_DEST_DIR=${TOOLS_DIR}/${HEALTH_PROTO_SOURCE_DIR}
+HEALTH_PROTO_SOURCE_DIR=src/python/grpcio_health_checking/grpc_health/v1
+HEALTH_PROTO_DEST_DIR=${TOOLS_DIR}/grpc_health/v1
 mkdir -p ${HEALTH_PROTO_DEST_DIR}
-touch "$TOOLS_DIR"/src/proto/grpc/health/__init__.py
-touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
+touch "$TOOLS_DIR"/grpc_health/__init__.py
+touch "$TOOLS_DIR"/grpc_health/v1/__init__.py
 
 python -m grpc_tools.protoc \
-    --proto_path=. \
+    --proto_path=src/python/grpcio_health_checking \
     --python_out=${TOOLS_DIR} \
     --grpc_python_out=${TOOLS_DIR} \
     ${HEALTH_PROTO_SOURCE_DIR}/health.proto

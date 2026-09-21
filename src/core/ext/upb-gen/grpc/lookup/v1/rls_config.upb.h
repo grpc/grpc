@@ -700,12 +700,12 @@ UPB_INLINE char* grpc_lookup_v1_HttpKeyBuilder_serialize_ex(const grpc_lookup_v1
   return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_clear_host_patterns(grpc_lookup_v1_HttpKeyBuilder* msg) {
-  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView const* grpc_lookup_v1_HttpKeyBuilder_host_patterns(const grpc_lookup_v1_HttpKeyBuilder* msg,
                                                   size_t* size) {
-  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -719,7 +719,7 @@ UPB_INLINE upb_StringView const* grpc_lookup_v1_HttpKeyBuilder_host_patterns(con
 //
 UPB_INLINE const upb_Array* _grpc_lookup_v1_HttpKeyBuilder_host_patterns_upb_array(
     const grpc_lookup_v1_HttpKeyBuilder* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -729,7 +729,7 @@ UPB_INLINE const upb_Array* _grpc_lookup_v1_HttpKeyBuilder_host_patterns_upb_arr
 
 UPB_INLINE upb_Array* _grpc_lookup_v1_HttpKeyBuilder_host_patterns_mutable_upb_array(
     grpc_lookup_v1_HttpKeyBuilder* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -738,12 +738,12 @@ UPB_INLINE upb_Array* _grpc_lookup_v1_HttpKeyBuilder_host_patterns_mutable_upb_a
   return arr;
 }
 UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_clear_path_patterns(grpc_lookup_v1_HttpKeyBuilder* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView const* grpc_lookup_v1_HttpKeyBuilder_path_patterns(const grpc_lookup_v1_HttpKeyBuilder* msg,
                                                   size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -757,7 +757,7 @@ UPB_INLINE upb_StringView const* grpc_lookup_v1_HttpKeyBuilder_path_patterns(con
 //
 UPB_INLINE const upb_Array* _grpc_lookup_v1_HttpKeyBuilder_path_patterns_upb_array(
     const grpc_lookup_v1_HttpKeyBuilder* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -767,7 +767,7 @@ UPB_INLINE const upb_Array* _grpc_lookup_v1_HttpKeyBuilder_path_patterns_upb_arr
 
 UPB_INLINE upb_Array* _grpc_lookup_v1_HttpKeyBuilder_path_patterns_mutable_upb_array(
     grpc_lookup_v1_HttpKeyBuilder* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -776,12 +776,12 @@ UPB_INLINE upb_Array* _grpc_lookup_v1_HttpKeyBuilder_path_patterns_mutable_upb_a
   return arr;
 }
 UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_clear_query_parameters(grpc_lookup_v1_HttpKeyBuilder* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 0, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 12, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const grpc_lookup_v1_NameMatcher* const* grpc_lookup_v1_HttpKeyBuilder_query_parameters(const grpc_lookup_v1_HttpKeyBuilder* msg,
                                                   size_t* size) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 0, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 12, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -796,7 +796,7 @@ UPB_INLINE const grpc_lookup_v1_NameMatcher* const* grpc_lookup_v1_HttpKeyBuilde
 //
 UPB_INLINE const upb_Array* _grpc_lookup_v1_HttpKeyBuilder_query_parameters_upb_array(
     const grpc_lookup_v1_HttpKeyBuilder* msg, size_t* size) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 0, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 12, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -807,7 +807,7 @@ UPB_INLINE const upb_Array* _grpc_lookup_v1_HttpKeyBuilder_query_parameters_upb_
 
 UPB_INLINE upb_Array* _grpc_lookup_v1_HttpKeyBuilder_query_parameters_mutable_upb_array(
     grpc_lookup_v1_HttpKeyBuilder* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 0, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 12, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -817,12 +817,12 @@ UPB_INLINE upb_Array* _grpc_lookup_v1_HttpKeyBuilder_query_parameters_mutable_up
   return arr;
 }
 UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_clear_headers(grpc_lookup_v1_HttpKeyBuilder* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 32), 0, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const grpc_lookup_v1_NameMatcher* const* grpc_lookup_v1_HttpKeyBuilder_headers(const grpc_lookup_v1_HttpKeyBuilder* msg,
                                                   size_t* size) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 32), 0, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -837,7 +837,7 @@ UPB_INLINE const grpc_lookup_v1_NameMatcher* const* grpc_lookup_v1_HttpKeyBuilde
 //
 UPB_INLINE const upb_Array* _grpc_lookup_v1_HttpKeyBuilder_headers_upb_array(
     const grpc_lookup_v1_HttpKeyBuilder* msg, size_t* size) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 32), 0, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -848,7 +848,7 @@ UPB_INLINE const upb_Array* _grpc_lookup_v1_HttpKeyBuilder_headers_upb_array(
 
 UPB_INLINE upb_Array* _grpc_lookup_v1_HttpKeyBuilder_headers_mutable_upb_array(
     grpc_lookup_v1_HttpKeyBuilder* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 32), 0, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -858,11 +858,11 @@ UPB_INLINE upb_Array* _grpc_lookup_v1_HttpKeyBuilder_headers_mutable_upb_array(
   return arr;
 }
 UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_clear_constant_keys(grpc_lookup_v1_HttpKeyBuilder* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 0, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE size_t grpc_lookup_v1_HttpKeyBuilder_constant_keys_size(const grpc_lookup_v1_HttpKeyBuilder* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 0, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   return map ? _upb_Map_Size(map) : 0;
@@ -870,7 +870,7 @@ UPB_INLINE size_t grpc_lookup_v1_HttpKeyBuilder_constant_keys_size(const grpc_lo
 
 UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_get(const grpc_lookup_v1_HttpKeyBuilder* msg,
                                       upb_StringView key, upb_StringView* val) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 0, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
@@ -881,7 +881,7 @@ UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_next(const grpc_look
                                        upb_StringView* key,
                                        upb_StringView* val,
                                        size_t* iter) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 0, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
@@ -896,22 +896,34 @@ UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_next(const grpc_look
 // and ~ a upb_Map for mutable.
 //
 UPB_INLINE const upb_Map* _grpc_lookup_v1_HttpKeyBuilder_constant_keys_upb_map(grpc_lookup_v1_HttpKeyBuilder* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 0, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   return upb_Message_GetMap(UPB_UPCAST(msg), &field);
 }
 
 UPB_INLINE upb_Map* _grpc_lookup_v1_HttpKeyBuilder_constant_keys_mutable_upb_map(
     grpc_lookup_v1_HttpKeyBuilder* msg, upb_Arena* a) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 0, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field,
                                             0, 0, a);
 }
+UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_clear_method(grpc_lookup_v1_HttpKeyBuilder* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_StringView grpc_lookup_v1_HttpKeyBuilder_method(const grpc_lookup_v1_HttpKeyBuilder* msg) {
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE upb_StringView* grpc_lookup_v1_HttpKeyBuilder_mutable_host_patterns(grpc_lookup_v1_HttpKeyBuilder* msg,
                                               size_t* size) {
-  upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -925,13 +937,13 @@ UPB_INLINE upb_StringView* grpc_lookup_v1_HttpKeyBuilder_mutable_host_patterns(g
 UPB_INLINE upb_StringView* grpc_lookup_v1_HttpKeyBuilder_resize_host_patterns(grpc_lookup_v1_HttpKeyBuilder* msg,
                                              size_t size,
                                              upb_Arena* arena) {
-  upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (upb_StringView*)upb_Message_ResizeArrayUninitialized(
       UPB_UPCAST(msg), &field, size, arena);
 }
 UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_add_host_patterns(grpc_lookup_v1_HttpKeyBuilder* msg, upb_StringView val,
                                       upb_Arena* arena) {
-  upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -944,7 +956,7 @@ UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_add_host_patterns(grpc_lookup_v1_H
 }
 UPB_INLINE upb_StringView* grpc_lookup_v1_HttpKeyBuilder_mutable_path_patterns(grpc_lookup_v1_HttpKeyBuilder* msg,
                                               size_t* size) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -958,13 +970,13 @@ UPB_INLINE upb_StringView* grpc_lookup_v1_HttpKeyBuilder_mutable_path_patterns(g
 UPB_INLINE upb_StringView* grpc_lookup_v1_HttpKeyBuilder_resize_path_patterns(grpc_lookup_v1_HttpKeyBuilder* msg,
                                              size_t size,
                                              upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (upb_StringView*)upb_Message_ResizeArrayUninitialized(
       UPB_UPCAST(msg), &field, size, arena);
 }
 UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_add_path_patterns(grpc_lookup_v1_HttpKeyBuilder* msg, upb_StringView val,
                                       upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -977,7 +989,7 @@ UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_add_path_patterns(grpc_lookup_v1_H
 }
 UPB_INLINE grpc_lookup_v1_NameMatcher** grpc_lookup_v1_HttpKeyBuilder_mutable_query_parameters(grpc_lookup_v1_HttpKeyBuilder* msg,
                                               size_t* size) {
-  upb_MiniTableField field = {3, UPB_SIZE(16, 24), 0, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 12, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -992,14 +1004,14 @@ UPB_INLINE grpc_lookup_v1_NameMatcher** grpc_lookup_v1_HttpKeyBuilder_mutable_qu
 UPB_INLINE grpc_lookup_v1_NameMatcher** grpc_lookup_v1_HttpKeyBuilder_resize_query_parameters(grpc_lookup_v1_HttpKeyBuilder* msg,
                                              size_t size,
                                              upb_Arena* arena) {
-  upb_MiniTableField field = {3, UPB_SIZE(16, 24), 0, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 12, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   return (grpc_lookup_v1_NameMatcher**)upb_Message_ResizeArrayUninitialized(
       UPB_UPCAST(msg), &field, size, arena);
 }
 UPB_INLINE struct grpc_lookup_v1_NameMatcher* grpc_lookup_v1_HttpKeyBuilder_add_query_parameters(
     grpc_lookup_v1_HttpKeyBuilder* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {3, UPB_SIZE(16, 24), 0, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 12, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -1016,7 +1028,7 @@ UPB_INLINE struct grpc_lookup_v1_NameMatcher* grpc_lookup_v1_HttpKeyBuilder_add_
 }
 UPB_INLINE grpc_lookup_v1_NameMatcher** grpc_lookup_v1_HttpKeyBuilder_mutable_headers(grpc_lookup_v1_HttpKeyBuilder* msg,
                                               size_t* size) {
-  upb_MiniTableField field = {4, UPB_SIZE(20, 32), 0, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1031,14 +1043,14 @@ UPB_INLINE grpc_lookup_v1_NameMatcher** grpc_lookup_v1_HttpKeyBuilder_mutable_he
 UPB_INLINE grpc_lookup_v1_NameMatcher** grpc_lookup_v1_HttpKeyBuilder_resize_headers(grpc_lookup_v1_HttpKeyBuilder* msg,
                                              size_t size,
                                              upb_Arena* arena) {
-  upb_MiniTableField field = {4, UPB_SIZE(20, 32), 0, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   return (grpc_lookup_v1_NameMatcher**)upb_Message_ResizeArrayUninitialized(
       UPB_UPCAST(msg), &field, size, arena);
 }
 UPB_INLINE struct grpc_lookup_v1_NameMatcher* grpc_lookup_v1_HttpKeyBuilder_add_headers(
     grpc_lookup_v1_HttpKeyBuilder* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {4, UPB_SIZE(20, 32), 0, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__NameMatcher_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -1054,7 +1066,7 @@ UPB_INLINE struct grpc_lookup_v1_NameMatcher* grpc_lookup_v1_HttpKeyBuilder_add_
   return sub;
 }
 UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_constant_keys_clear(grpc_lookup_v1_HttpKeyBuilder* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 0, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return;
@@ -1063,7 +1075,7 @@ UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_constant_keys_clear(grpc_lookup_v1
 
 UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_set(grpc_lookup_v1_HttpKeyBuilder* msg, upb_StringView key,
                                       upb_StringView val, upb_Arena* a) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 0, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(
       UPB_UPCAST(msg), &field, 0, 0, a);
@@ -1072,11 +1084,15 @@ UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_set(grpc_lookup_v1_H
 }
 
 UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_delete(grpc_lookup_v1_HttpKeyBuilder* msg, upb_StringView key) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 0, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 0, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
+}
+UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_set_method(grpc_lookup_v1_HttpKeyBuilder* msg, upb_StringView value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 
 /* grpc.lookup.v1.RouteLookupConfig */
