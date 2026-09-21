@@ -96,6 +96,9 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 #================
 # C# dependencies
 
+# TODO(weizheyuan/asheshvidyut): Either modify this or deprecate C# support.
+#
+# This will break for debian >= 13 due to apt-key deprecation.
 # Install mono
 RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
 RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
