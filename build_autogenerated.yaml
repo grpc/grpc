@@ -33539,6 +33539,13 @@ targets:
   - posix
   - mac
 external_proto_libraries:
+- destination: third_party/autosharding
+  hash: 12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2
+  proto_prefix: third_party/autosharding/
+  strip_path_prefix: ''
+  strip_prefix: autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7
+  urls:
+  - https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz
 - destination: third_party/cel-spec
   hash: 13583c5a312861648449845b709722676a3c9b43396b6b8e9cbe4538feb74ad2
   proto_prefix: third_party/cel-spec/
