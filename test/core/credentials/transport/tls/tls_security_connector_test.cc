@@ -101,6 +101,10 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     }
   }
 
+  bool has_cached_client_handshaker_factory(TlsCredentials* credential) {
+    return credential->HasCachedClientHandshakerFactoryForTesting();
+  }
+
   std::shared_ptr<tsi::RootCertInfo> root_cert_1_;
   std::shared_ptr<tsi::RootCertInfo> root_cert_0_;
   PemKeyCertPairList identity_pairs_1_;
@@ -1316,7 +1320,7 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(f1, f2);
   EXPECT_EQ(tsi_ssl_client_handshaker_factory_get_ssl_ctx_for_testing(f1),
             tsi_ssl_client_handshaker_factory_get_ssl_ctx_for_testing(f2));
-  EXPECT_TRUE(credential->HasCachedClientHandshakerFactoryForTesting());
+  EXPECT_TRUE(has_cached_client_handshaker_factory(credential.get()));
 }
 
 TEST_F(TlsSecurityConnectorTest, FactorySharedAcrossConnectorsWithSystemRoots) {
@@ -1337,7 +1341,7 @@ TEST_F(TlsSecurityConnectorTest, FactorySharedAcrossConnectorsWithSystemRoots) {
   ASSERT_NE(f1, nullptr);
   ASSERT_NE(f2, nullptr);
   EXPECT_EQ(f1, f2);
-  EXPECT_TRUE(credential->HasCachedClientHandshakerFactoryForTesting());
+  EXPECT_TRUE(has_cached_client_handshaker_factory(credential.get()));
 }
 
 TEST_F(TlsSecurityConnectorTest, FactoryNotSharedAcrossDifferentSessionCaches) {
@@ -1533,7 +1537,7 @@ TEST_F(TlsSecurityConnectorTest,
     ASSERT_NE(connectors[i], nullptr);
     EXPECT_EQ(GetClientFactory(connectors[i]), expected);
   }
-  EXPECT_TRUE(credential->HasCachedClientHandshakerFactoryForTesting());
+  EXPECT_TRUE(has_cached_client_handshaker_factory(credential.get()));
 }
 
 }  // namespace testing

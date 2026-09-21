@@ -38,6 +38,13 @@
 #include "src/core/util/unique_type_name.h"
 #include "absl/base/thread_annotations.h"
 
+namespace grpc_core {
+class TlsChannelSecurityConnector;
+namespace testing {
+class TlsSecurityConnectorTest;
+}  // namespace testing
+}  // namespace grpc_core
+
 class TlsCredentials final : public grpc_channel_credentials {
  public:
   explicit TlsCredentials(
@@ -55,10 +62,16 @@ class TlsCredentials final : public grpc_channel_credentials {
 
   grpc_tls_credentials_options* options() const { return options_.get(); }
 
+ private:
+  friend class grpc_core::TlsChannelSecurityConnector;
+  friend class grpc_core::testing::TlsSecurityConnectorTest;
+
   struct HandshakerFactoryResult {
     grpc_security_status status;
     TsiSslClientHandshakerFactoryPtr factory;
   };
+
+  int cmp_impl(const grpc_channel_credentials* other) const override;
 
   // Returns a refcounted tsi_ssl_client_handshaker_factory keyed by
   // (root_cert_info identity, identity_certs, ssl_session_cache). Other
@@ -99,9 +112,6 @@ class TlsCredentials final : public grpc_channel_credentials {
 
   bool HasCachedClientHandshakerFactoryForTesting()
       ABSL_LOCKS_EXCLUDED(factory_cache_mu_);
-
- private:
-  int cmp_impl(const grpc_channel_credentials* other) const override;
 
   bool CacheMatchesLocked(
       const std::shared_ptr<tsi::RootCertInfo>& root_cert_info,
