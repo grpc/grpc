@@ -92,6 +92,7 @@ EXTERNAL_LINKS = {
     "@envoy_api//": "",
     "@opencensus_proto//": "",
     "@grpc_proto//": "",
+    "@autosharding//": "",
 }
 
 EXTERNAL_PROTO_LIBRARIES = {
@@ -122,6 +123,10 @@ EXTERNAL_PROTO_LIBRARIES = {
     "grpc_proto": ExternalProtoLibrary(
         destination="third_party/grpc-proto",
         proto_prefix="third_party/grpc-proto/",
+    ),
+    "autosharding": ExternalProtoLibrary(
+        destination="third_party/autosharding",
+        proto_prefix="third_party/autosharding/",
     ),
 }
 
@@ -760,6 +765,14 @@ def _expand_upb_proto_library_rules(bazel_rules):
             srcs = []
             hdrs = []
             for proto_src in protos:
+                # The descriptor.proto's upb-generated files are already provided
+                # by upb_descriptor_lib (see _patch_descriptor_upb_proto_library).
+                if bazel_rule[
+                    "generator_function"
+                ] == "grpc_upb_proto_library" and proto_src.endswith(
+                    ":descriptor.proto"
+                ):
+                    continue
                 prefix_to_strip = _prefix_to_strip(proto_src)
                 if prefix_to_strip is not None:
                     if not proto_src.startswith(prefix_to_strip):
@@ -825,6 +838,9 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
         )
         bazel_rule["hdrs"].append(
             ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h"
+        )
+        bazel_rule["hdrs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h"
         )
 
     bazel_rule = bazel_rules.get(

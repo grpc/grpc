@@ -524,6 +524,64 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "autosharding_config_test",
+    srcs = ["autosharding_config_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    tags = [
+        "no_test_ios",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:config",
+        "//:grpc",
+        "//:ref_counted_ptr",
+        "//src/core:down_cast",
+        "//src/core:grpc_lb_policy_autosharding",
+        "//src/core:json_reader",
+        "//src/core:lb_policy",
+        "//src/core:lb_policy_registry",
+        "//src/core:time",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "autosharding_test",
+    srcs = ["autosharding_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/container:flat_hash_set",
+        "absl/status",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    tags = [
+        "lb_unit_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":lb_policy_test_lib",
+        "//:endpoint_addresses",
+        "//:gpr",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:grpc_lb_policy_autosharding",
+        "//src/core:json",
+        "//src/core:lb_policy",
+        "//src/core:time",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_cc_benchmark(
     name = "bm_picker",
     srcs = ["bm_picker.cc"],

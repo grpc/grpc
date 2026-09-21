@@ -647,8 +647,6 @@ libs:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -1171,6 +1169,7 @@ libs:
   - src/core/lib/transport/transport_framing_endpoint_extension.h
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
+  - src/core/load_balancing/autosharding/autosharding.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -1703,7 +1702,6 @@ libs:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -2132,6 +2130,7 @@ libs:
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
+  - src/core/load_balancing/autosharding/autosharding.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -2635,8 +2634,6 @@ libs:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -2928,6 +2925,7 @@ libs:
   - src/core/lib/transport/transport_framing_endpoint_extension.h
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
+  - src/core/load_balancing/autosharding/autosharding.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -3189,7 +3187,6 @@ libs:
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -3418,6 +3415,7 @@ libs:
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
+  - src/core/load_balancing/autosharding/autosharding.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -3679,6 +3677,7 @@ libs:
   public_headers: []
   headers:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
@@ -6463,6 +6462,33 @@ targets:
   - grpc++
   - grpc_authorization_provider
   - grpc_test_util
+- name: autosharding_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/load_balancing/autosharding_config_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+- name: autosharding_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/load_balancing/lb_policy_test_lib.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/load_balancing/autosharding_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
 - name: avl_test
   gtest: true
   build: test
@@ -8421,8 +8447,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -8560,7 +8584,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -13104,8 +13127,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -13277,7 +13298,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -29436,8 +29456,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -29632,7 +29650,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -31473,8 +31490,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -31632,7 +31647,6 @@ targets:
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -33508,6 +33522,13 @@ targets:
   - posix
   - mac
 external_proto_libraries:
+- destination: third_party/autosharding
+  hash: 12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2
+  proto_prefix: third_party/autosharding/
+  strip_path_prefix: ''
+  strip_prefix: autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7
+  urls:
+  - https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz
 - destination: third_party/cel-spec
   hash: 13583c5a312861648449845b709722676a3c9b43396b6b8e9cbe4538feb74ad2
   proto_prefix: third_party/cel-spec/
@@ -33530,12 +33551,12 @@ external_proto_libraries:
   urls:
   - https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip
 - destination: third_party/grpc-proto
-  hash: 5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33
+  hash: 6aaa807572edfe307eaddc15161ce684d02d054e3fca36b38993efc85575ddfa
   proto_prefix: third_party/grpc-proto/
   strip_path_prefix: ''
-  strip_prefix: grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f
+  strip_prefix: grpc-proto-dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f
   urls:
-  - https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz
+  - https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
 - destination: third_party/protoc-gen-validate
   hash: e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
   proto_prefix: third_party/protoc-gen-validate/
