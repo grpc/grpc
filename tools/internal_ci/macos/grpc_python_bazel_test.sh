@@ -46,6 +46,8 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
+brew install pipx
+
 # This is added to resolve imports not found errors like
 # ImportError: cannot import name 'auth' from 'google'
 # Tests which fails when workaround is not executed are listed below -
@@ -56,7 +58,7 @@ BAZEL_REMOTE_CACHE_ARGS=(
 # //src/python/grpcio_tests/tests_aio/interop:local_interop_test
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
-python3 -m pip install -r requirements.bazel.lock
+python3 -m pipx install -r requirements.bazel.lock
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
