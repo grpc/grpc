@@ -342,6 +342,16 @@ struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "x-envoy-peer-metadata"; }
 };
 
+// x-envoy-auth-failure-mode-allowed metadata trait for ext_authz failure mode
+// allow.
+struct XEnvoyAuthFailureModeAllowedMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = true;
+  static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "x-envoy-auth-failure-mode-allowed"; }
+};
+
 // x-forwarded-for metadata trait for HTTP connect.
 struct XForwardedForMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kPublishToApp = true;
@@ -592,6 +602,14 @@ struct GrpcStreamNetworkState {
     kNotSeenByServer,
   };
   static std::string DisplayValue(ValueType x);
+};
+
+// Annotation added to indicate that the LB policy dropped the call.
+struct LbPolicyDrop {
+  static absl::string_view DebugKey() { return "LbPolicyDrop"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = bool;
+  static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
 };
 
 // Annotation added by a server transport to note the peer making a request.
@@ -1749,14 +1767,16 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
-    grpc_core::XEnvoyPeerMetadata, grpc_core::XForwardedForMetadata,
-    grpc_core::XForwardedHostMetadata, grpc_core::W3CTraceParentMetadata,
+    grpc_core::XEnvoyPeerMetadata,
+    grpc_core::XEnvoyAuthFailureModeAllowedMetadata,
+    grpc_core::XForwardedForMetadata, grpc_core::XForwardedHostMetadata,
+    grpc_core::W3CTraceParentMetadata,
     // Non-encodable things
-    grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
-    grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
-    grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::IsTransparentRetry, grpc_core::GrpcTrailersOnly,
-    grpc_core::GrpcTarPit,
+    grpc_core::GrpcStreamNetworkState, grpc_core::LbPolicyDrop,
+    grpc_core::PeerString, grpc_core::GrpcStatusContext,
+    grpc_core::GrpcStatusFromWire, grpc_core::GrpcCallWasCancelled,
+    grpc_core::WaitForReady, grpc_core::IsTransparentRetry,
+    grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit,
     grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 

@@ -541,36 +541,34 @@ class CrlUtils : public ::testing::Test {
   }
 
   void SetUp() override {
-    absl::StatusOr<Slice> root_crl = LoadFile(kValidCrl, false);
+    absl::StatusOr<Slice> root_crl = LoadFile(kValidCrl);
     ASSERT_EQ(root_crl.status(), absl::OkStatus()) << root_crl.status();
     root_crl_ = ReadCrl(root_crl->as_string_view());
-    absl::StatusOr<Slice> intermediate_crl = LoadFile(kIntermediateCrl, false);
+    absl::StatusOr<Slice> intermediate_crl = LoadFile(kIntermediateCrl);
     ASSERT_EQ(intermediate_crl.status(), absl::OkStatus())
         << intermediate_crl.status();
     intermediate_crl_ = ReadCrl(intermediate_crl->as_string_view());
-    absl::StatusOr<Slice> invalid_signature_crl =
-        LoadFile(kModifiedSignature, false);
+    absl::StatusOr<Slice> invalid_signature_crl = LoadFile(kModifiedSignature);
     ASSERT_EQ(invalid_signature_crl.status(), absl::OkStatus())
         << invalid_signature_crl.status();
     invalid_signature_crl_ = ReadCrl(invalid_signature_crl->as_string_view());
-    absl::StatusOr<Slice> akid_crl = LoadFile(kCrlWithAkid, false);
+    absl::StatusOr<Slice> akid_crl = LoadFile(kCrlWithAkid);
     ASSERT_EQ(akid_crl.status(), absl::OkStatus()) << akid_crl.status();
     akid_crl_ = ReadCrl(akid_crl->as_string_view());
 
-    absl::StatusOr<Slice> root_ca = LoadFile(kCrlIssuer, false);
+    absl::StatusOr<Slice> root_ca = LoadFile(kCrlIssuer);
     ASSERT_EQ(root_ca.status(), absl::OkStatus());
     root_ca_ = ReadPemCert(root_ca->as_string_view());
-    absl::StatusOr<Slice> intermediate_ca =
-        LoadFile(kIntermediateCrlIssuer, false);
+    absl::StatusOr<Slice> intermediate_ca = LoadFile(kIntermediateCrlIssuer);
     ASSERT_EQ(intermediate_ca.status(), absl::OkStatus());
     intermediate_ca_ = ReadPemCert(intermediate_ca->as_string_view());
-    absl::StatusOr<Slice> leaf_cert = LoadFile(kLeafCert, false);
+    absl::StatusOr<Slice> leaf_cert = LoadFile(kLeafCert);
     ASSERT_EQ(leaf_cert.status(), absl::OkStatus());
     leaf_cert_ = ReadPemCert(leaf_cert->as_string_view());
-    absl::StatusOr<Slice> evil_ca = LoadFile(kEvilCa, false);
+    absl::StatusOr<Slice> evil_ca = LoadFile(kEvilCa);
     ASSERT_EQ(evil_ca.status(), absl::OkStatus());
     evil_ca_ = ReadPemCert(evil_ca->as_string_view());
-    absl::StatusOr<Slice> ca_with_akid = LoadFile(kCaWithAkid, false);
+    absl::StatusOr<Slice> ca_with_akid = LoadFile(kCaWithAkid);
     ASSERT_EQ(ca_with_akid.status(), absl::OkStatus());
     ca_with_akid_ = ReadPemCert(ca_with_akid->as_string_view());
   }
@@ -612,7 +610,7 @@ TEST_F(CrlUtils, VerifySignatureModifiedSignature) {
 }
 
 TEST_F(CrlUtils, VerifySignatureModifiedContent) {
-  absl::StatusOr<Slice> crl_slice = LoadFile(kModifiedContent, false);
+  absl::StatusOr<Slice> crl_slice = LoadFile(kModifiedContent);
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
   EXPECT_EQ(crl, nullptr);

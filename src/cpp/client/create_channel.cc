@@ -20,12 +20,12 @@
 #include <grpc/status.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/impl/call.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
-#include <grpcpp/virtual_channel.h>
 
 #include <memory>
 #include <string>
@@ -61,13 +61,9 @@ std::shared_ptr<grpc::Channel> CreateCustomChannel(
                              ClientInterceptorFactoryInterface>>());
 }
 
-namespace experimental {
-std::shared_ptr<grpc::Channel> CreateVirtualChannel(grpc::internal::Call call) {
-  return CreateVirtualChannel(call, grpc::ChannelArguments());
-}
-
+namespace internal {
 std::shared_ptr<grpc::Channel> CreateVirtualChannel(
-    grpc::internal::Call call, const grpc::ChannelArguments& args,
+    Call call, const grpc::ChannelArguments& args,
     absl::AnyInvocable<void()> goaway_callback) {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ChannelArgs core_args =
@@ -82,6 +78,9 @@ std::shared_ptr<grpc::Channel> CreateVirtualChannel(
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>());
 }
+}  // namespace internal
+
+namespace experimental {
 
 /// Create a new \em custom \a Channel pointing to \a target with \a
 /// interceptors being invoked per call.

@@ -522,21 +522,17 @@ static void fd_unref(grpc_fd* fd) { unref_by(fd, 2); }
 static grpc_error_handle fd_shutdown_error(grpc_fd* fd) {
   if (!fd->shutdown) {
     return absl::OkStatus();
-  } else {
-    return grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING("FD shutdown", &fd->shutdown_error, 1),
-        grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
   }
+  absl::Status status = absl::UnavailableError("FD shutdown");
+  grpc_core::StatusAddChild(&status, fd->shutdown_error);
+  return status;
 }
 
 static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
                              grpc_closure* closure) {
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, closure,
-        grpc_error_set_int(GRPC_ERROR_CREATE("FD shutdown"),
-                           grpc_core::StatusIntProperty::kRpcStatus,
-                           GRPC_STATUS_UNAVAILABLE));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                            absl::UnavailableError("FD shutdown"));
   } else if (*st == CLOSURE_NOT_READY) {
     // not ready ==> switch to a waiting state by setting the closure
     *st = closure;

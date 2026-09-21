@@ -282,7 +282,7 @@
         protobuf_gen_files.add(src)
   %>
 
-  cmake_minimum_required(VERSION 3.16)
+  cmake_minimum_required(VERSION 3.22)
 
   set(PACKAGE_NAME          "grpc")
   set(PACKAGE_VERSION       "${settings.cpp_version}")
@@ -304,7 +304,7 @@
   set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
   set(gRPC_INSTALL_CMAKEDIR "lib/cmake/<%text>${PACKAGE_NAME}</%text>" CACHE STRING "Installation directory for cmake config files")
   set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
-  set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE STRING "The maximum number of processes for MSVC /MP option")
+  set(gRPC_BUILD_MSVC_MP_COUNT -1 CACHE STRING "The maximum number of processes for MSVC /MP option")
 
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -318,14 +318,6 @@
   endif()
   set(gRPC_INSTALL <%text>${gRPC_INSTALL_default}</%text> CACHE BOOL
       "Generate installation target")
-
-  # We can install dependencies from submodules if we're running
-  # CMake v3.13 or newer.
-  if(CMAKE_VERSION VERSION_LESS 3.13)
-    set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE OFF)
-  else()
-    set(_gRPC_INSTALL_SUPPORTED_FROM_MODULE ON)
-  endif()
 
   # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
   # "module": build the dependency using sources from git submodule (under third_party)
@@ -551,7 +543,7 @@
   # generated with the necessary __declspec annotations.
   set(gRPC_UPB_GEN_DUPL_SRC
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
+    src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   )
 
@@ -653,7 +645,7 @@
     # Copy the proto file to a centralized location, with the correct import
     # path. For example, health proto has package name grpc.health.v1, the bash
     # equivalent would be:
-    #   cp src/proto/grpc/health/v1/health.proto <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1</%text>
+    #   cp third_party/grpc-proto/grpc/health/v1/health.proto <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1</%text>
     file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
     file(COPY <%text>${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION}</%text> DESTINATION <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
 
@@ -721,7 +713,7 @@
     DEPENDS tools_c tools_cxx)
 
   % for src in sorted(protobuf_gen_files):
-  % if not (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
+  % if not ((src.startswith('third_party/') and not src.startswith('third_party/grpc-proto/')) or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
@@ -732,7 +724,7 @@
   # in the third_party directory as long as test builds are disabled.
   if (gRPC_BUILD_TESTS)
   % for src in sorted(protobuf_gen_files):
-  % if (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
+  % if ((src.startswith('third_party/') and not src.startswith('third_party/grpc-proto/')) or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
@@ -877,27 +869,39 @@
     set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
       COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
     )<%
-    dll_annotations = []
+    private_dll_annotations = []
+    interface_dll_annotations = []
     if lib.name in gpr_libs:
-      dll_annotations.append("GPR_DLL_EXPORTS")
+      private_dll_annotations.append("GPR_DLL_EXPORTS")
+      interface_dll_annotations.append("GPR_DLL_IMPORTS")
     if lib.name in grpc_libs:
-      dll_annotations.append("GRPC_DLL_EXPORTS")
+      private_dll_annotations.append("GRPC_DLL_EXPORTS")
+      interface_dll_annotations.append("GRPC_DLL_IMPORTS")
     if lib.name in grpcxx_libs:
-      dll_annotations.append("GRPCXX_DLL_EXPORTS")
+      private_dll_annotations.append("GRPCXX_DLL_EXPORTS")
+      interface_dll_annotations.append("GRPCXX_DLL_IMPORTS")
     if set(gpr_libs) & set(lib.transitive_deps):
-      dll_annotations.append("GPR_DLL_IMPORTS")
+      private_dll_annotations.append("GPR_DLL_IMPORTS")
     if set(grpc_libs) & set(lib.transitive_deps):
-      dll_annotations.append("GRPC_DLL_IMPORTS")
+      private_dll_annotations.append("GRPC_DLL_IMPORTS")
     if set(grpcxx_libs) & set(lib.transitive_deps):
-      dll_annotations.append("GRPCXX_DLL_IMPORTS")
+      private_dll_annotations.append("GRPCXX_DLL_IMPORTS")
     %>
-    % if dll_annotations:
+    % if private_dll_annotations or interface_dll_annotations:
     if(BUILD_SHARED_LIBS)
       target_compile_definitions(${lib.name}
+    % if private_dll_annotations:
       PRIVATE
-    % for definition in dll_annotations:
+    % for definition in private_dll_annotations:
         "${definition}"
     % endfor
+    % endif
+    % if interface_dll_annotations:
+      INTERFACE
+    % for definition in interface_dll_annotations:
+        "${definition}"
+    % endfor
+    % endif
       )
     endif()
     % endif
@@ -1110,6 +1114,16 @@
     set(PC_REQUIRES_PRIVATE "<%text>${requires_private}</%text>")
     set(PC_LIB "<%text>${libs}</%text>")
     set(PC_LIBS_PRIVATE "<%text>${libs_private}</%text>")
+    set(PC_CFLAGS "")
+    if(WIN32 AND BUILD_SHARED_LIBS)
+      if(name STREQUAL "gpr")
+        set(PC_CFLAGS "-DGPR_DLL_IMPORTS")
+      elseif(name STREQUAL "gRPC" OR name STREQUAL "gRPC unsecure")
+        set(PC_CFLAGS "-DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+      elseif(name MATCHES "^gRPC\\+\\+")
+        set(PC_CFLAGS "-DGRPCXX_DLL_IMPORTS -DGRPC_DLL_IMPORTS -DGPR_DLL_IMPORTS")
+      endif()
+    endif()
     set(output_filepath "<%text>${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}</%text>")
     configure_file(
       "<%text>${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in</%text>"

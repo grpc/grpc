@@ -176,21 +176,21 @@ RUN python3.14 -m ensurepip && \
     python3.14 -m pip install coverage
 
 #=================
-# Compile CPython 3.15.0b2 from source
+# Compile CPython 3.15.0rc1 from source
 
 RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.15.0/Python-3.15.0b2.tgz && \
-    tar xzvf Python-3.15.0b2.tgz && \
-    cd Python-3.15.0b2 && \
+    wget -q https://www.python.org/ftp/python/3.15.0/Python-3.15.0rc1.tgz && \
+    tar xzvf Python-3.15.0rc1.tgz && \
+    cd Python-3.15.0rc1 && \
     ./configure && \
     make -j4 && \
     make install
 
 RUN cd /tmp && \
-    echo "69d75754b49b261165faf1faac9e670e  Python-3.15.0b2.tgz" > checksum.md5 && \
+    echo "f1b833d716083c87dd70cb4f71fefd07  Python-3.15.0rc1.tgz" > checksum.md5 && \
     md5sum -c checksum.md5
 
 RUN python3.15 -m ensurepip && \
@@ -213,10 +213,12 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+# Install cmake from bullseye-backports
+# Note that this step should be only used for Debian 11 (bullseye) images.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
+    apt-get update && \
+    apt-get install -y -t bullseye-backports cmake
 
 #=================
 # Install ccache

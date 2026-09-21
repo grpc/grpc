@@ -294,6 +294,7 @@ struct Http2FrameCountTracker {
 http2::Http2Status ValidateSettingsValues(
     std::vector<Http2SettingsFrame::Setting>& list);
 
+// The checks in this function MUST be done before the frame payload is read.
 http2::Http2Status ValidateFrameHeader(
     const uint32_t max_frame_size_setting,
     const bool incoming_header_in_progress,
@@ -397,6 +398,8 @@ inline constexpr absl::string_view kSettingsTimeout =
     "timeout. Connection will be closed";
 inline constexpr absl::string_view kLastStreamClosed =
     "Closing last stream and cannot create any more streams.";
+inline constexpr absl::string_view kReceivedStreamAfterGoaway =
+    "Received new stream after GOAWAY was received.";
 inline constexpr absl::string_view kFirstSettingsFrameClient =
     "RFC9113: The server connection preface consists of a potentially empty "
     "SETTINGS frame that MUST be the first frame the server sends in the "
@@ -443,12 +446,15 @@ inline constexpr absl::string_view kFailedToEnqueueStream =
 inline constexpr absl::string_view kStreamCreationFailed =
     "gRPC Transport Error : Stream creation failed";
 
+inline constexpr uint32_t kDefaultMaxPendingInducedFrames = 10000u;
+
 // Security frame related limits and errors
 inline constexpr uint32_t kMaxSecurityFrameSize = 16u * 1024u;
 inline constexpr int kMinMaxSecurityFrameSize = 0;
 inline constexpr absl::string_view kSecurityFrameTooLarge =
     "gRPC Transport Error : Security frame is larger than the maximum allowed "
     "size : ";
+
 }  // namespace GrpcErrors
 
 }  // namespace grpc_core

@@ -16,7 +16,6 @@
 
 #include "src/core/xds/grpc/xds_endpoint_parser.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,7 +46,6 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"

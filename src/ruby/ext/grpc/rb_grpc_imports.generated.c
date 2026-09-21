@@ -44,6 +44,7 @@ grpc_compression_options_disable_algorithm_type grpc_compression_options_disable
 grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 grpc_service_account_jwt_access_credentials_create_type grpc_service_account_jwt_access_credentials_create_import;
 grpc_external_account_credentials_create_type grpc_external_account_credentials_create_import;
+grpc_gdch_service_account_credentials_create_type grpc_gdch_service_account_credentials_create_import;
 grpc_google_refresh_token_credentials_create_type grpc_google_refresh_token_credentials_create_import;
 grpc_access_token_credentials_create_type grpc_access_token_credentials_create_import;
 grpc_google_iam_credentials_create_type grpc_google_iam_credentials_create_import;
@@ -148,6 +149,7 @@ grpc_server_credentials_release_type grpc_server_credentials_release_import;
 grpc_channel_create_type grpc_channel_create_import;
 grpc_lame_client_channel_create_type grpc_lame_client_channel_create_import;
 grpc_channel_destroy_type grpc_channel_destroy_import;
+grpc_channel_args_arg_vtable_type grpc_channel_args_arg_vtable_import;
 grpc_call_cancel_type grpc_call_cancel_import;
 grpc_call_cancel_with_status_type grpc_call_cancel_with_status_import;
 grpc_call_failed_before_recv_message_type grpc_call_failed_before_recv_message_import;
@@ -333,6 +335,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_compression_options_is_algorithm_enabled_import = (grpc_compression_options_is_algorithm_enabled_type) GetProcAddress(library, "grpc_compression_options_is_algorithm_enabled");
   grpc_service_account_jwt_access_credentials_create_import = (grpc_service_account_jwt_access_credentials_create_type) GetProcAddress(library, "grpc_service_account_jwt_access_credentials_create");
   grpc_external_account_credentials_create_import = (grpc_external_account_credentials_create_type) GetProcAddress(library, "grpc_external_account_credentials_create");
+  grpc_gdch_service_account_credentials_create_import = (grpc_gdch_service_account_credentials_create_type) GetProcAddress(library, "grpc_gdch_service_account_credentials_create");
   grpc_google_refresh_token_credentials_create_import = (grpc_google_refresh_token_credentials_create_type) GetProcAddress(library, "grpc_google_refresh_token_credentials_create");
   grpc_access_token_credentials_create_import = (grpc_access_token_credentials_create_type) GetProcAddress(library, "grpc_access_token_credentials_create");
   grpc_google_iam_credentials_create_import = (grpc_google_iam_credentials_create_type) GetProcAddress(library, "grpc_google_iam_credentials_create");
@@ -437,6 +440,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channel_create_import = (grpc_channel_create_type) GetProcAddress(library, "grpc_channel_create");
   grpc_lame_client_channel_create_import = (grpc_lame_client_channel_create_type) GetProcAddress(library, "grpc_lame_client_channel_create");
   grpc_channel_destroy_import = (grpc_channel_destroy_type) GetProcAddress(library, "grpc_channel_destroy");
+  grpc_channel_args_arg_vtable_import = (grpc_channel_args_arg_vtable_type) GetProcAddress(library, "grpc_channel_args_arg_vtable");
   grpc_call_cancel_import = (grpc_call_cancel_type) GetProcAddress(library, "grpc_call_cancel");
   grpc_call_cancel_with_status_import = (grpc_call_cancel_with_status_type) GetProcAddress(library, "grpc_call_cancel_with_status");
   grpc_call_failed_before_recv_message_import = (grpc_call_failed_before_recv_message_type) GetProcAddress(library, "grpc_call_failed_before_recv_message");

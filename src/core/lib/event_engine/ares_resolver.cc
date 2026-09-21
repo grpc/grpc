@@ -60,11 +60,13 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/address_sorting_init.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/base/call_once.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
@@ -79,7 +81,57 @@
 
 namespace grpc_event_engine::experimental {
 
+std::vector<EventEngine::ResolvedAddress> SortAddresses(
+    const std::vector<EventEngine::ResolvedAddress>& addresses) {
+  address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
+      gpr_zalloc(sizeof(address_sorting_sortable) * addresses.size()));
+  for (size_t i = 0; i < addresses.size(); i++) {
+    sortables[i].user_data =
+        const_cast<EventEngine::ResolvedAddress*>(&addresses[i]);
+    memcpy(&sortables[i].dest_addr.addr, addresses[i].address(),
+           addresses[i].size());
+    sortables[i].dest_addr.len = addresses[i].size();
+  }
+  address_sorting_rfc_6724_sort(sortables, addresses.size());
+  std::vector<EventEngine::ResolvedAddress> sorted_addresses;
+  sorted_addresses.reserve(addresses.size());
+  for (size_t i = 0; i < addresses.size(); ++i) {
+    sorted_addresses.emplace_back(
+        *static_cast<EventEngine::ResolvedAddress*>(sortables[i].user_data));
+  }
+  gpr_free(sortables);
+  return sorted_addresses;
+}
+
 namespace {
+
+absl::Status AresInit() {
+  if (ShouldUseAresDnsResolver()) {
+    // ares_library_init and ares_library_cleanup are currently no-op except
+    // under Windows. Calling them may cause race conditions when other parts of
+    // the binary calls these functions concurrently.
+#ifdef GPR_WINDOWS
+    int status = ares_library_init(ARES_LIB_INIT_ALL);
+    if (status != ARES_SUCCESS) {
+      return GRPC_ERROR_CREATE(
+          absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
+    }
+#endif  // GPR_WINDOWS
+  }
+  return absl::OkStatus();
+}
+
+absl::once_flag init_flag;
+
+void AresOnceInit() {
+  grpc_core::AddressSortingInitOnce();
+  absl::call_once(init_flag, []() {
+    auto status = AresInit();
+    if (!status.ok()) {
+      VLOG(2) << "AresInit failed: " << status.message();
+    }
+  });
+}
 
 // A hard limit on the number of records (A/AAAA or SRV) we may get from a
 // single response. This is to be defensive to prevent a bad DNS response from
@@ -149,28 +201,6 @@ absl::Status SetRequestDNSServer(absl::string_view dns_server,
     return AresStatusToAbslStatus(status, ares_strerror(status));
   }
   return absl::OkStatus();
-}
-
-std::vector<EventEngine::ResolvedAddress> SortAddresses(
-    const std::vector<EventEngine::ResolvedAddress>& addresses) {
-  address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
-      gpr_zalloc(sizeof(address_sorting_sortable) * addresses.size()));
-  for (size_t i = 0; i < addresses.size(); i++) {
-    sortables[i].user_data =
-        const_cast<EventEngine::ResolvedAddress*>(&addresses[i]);
-    memcpy(&sortables[i].dest_addr.addr, addresses[i].address(),
-           addresses[i].size());
-    sortables[i].dest_addr.len = addresses[i].size();
-  }
-  address_sorting_rfc_6724_sort(sortables, addresses.size());
-  std::vector<EventEngine::ResolvedAddress> sorted_addresses;
-  sorted_addresses.reserve(addresses.size());
-  for (size_t i = 0; i < addresses.size(); ++i) {
-    sorted_addresses.emplace_back(
-        *static_cast<EventEngine::ResolvedAddress*>(sortables[i].user_data));
-  }
-  gpr_free(sortables);
-  return sorted_addresses;
 }
 
 struct QueryArg {
@@ -253,6 +283,7 @@ AresResolver::CreateAresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine) {
   ares_channel channel;
+  AresOnceInit();
   absl::Status status =
       InitAresChannel(dns_server, *polled_fd_factory, &channel);
   if (!status.ok()) {
@@ -276,6 +307,7 @@ AresResolver::AresResolver(
 #endif  // GRPC_ENABLE_FORK_SUPPORT
       event_engine_(std::move(event_engine)) {
   (void)dns_server;  // Used whether or not compiled with fork support
+  AresOnceInit();
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
 }
 
@@ -951,36 +983,8 @@ bool ShouldUseAresDnsResolver() {
         // defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
-absl::Status AresInit() {
-  if (ShouldUseAresDnsResolver()) {
-    // ares_library_init and ares_library_cleanup are currently no-op except
-    // under Windows. Calling them may cause race conditions when other parts of
-    // the binary calls these functions concurrently.
-#ifdef GPR_WINDOWS
-    int status = ares_library_init(ARES_LIB_INIT_ALL);
-    if (status != ARES_SUCCESS) {
-      return GRPC_ERROR_CREATE(
-          absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
-    }
-#endif  // GPR_WINDOWS
-  }
-  return absl::OkStatus();
-}
-void AresShutdown() {
-  if (ShouldUseAresDnsResolver()) {
-    // ares_library_init and ares_library_cleanup are currently no-op except
-    // under Windows. Calling them may cause race conditions when other parts of
-    // the binary calls these functions concurrently.
-#ifdef GPR_WINDOWS
-    ares_library_cleanup();
-#endif  // GPR_WINDOWS
-  }
-}
-
 #else  // GRPC_ARES == 1
 
 bool ShouldUseAresDnsResolver() { return false; }
-absl::Status AresInit() { return absl::OkStatus(); }
-void AresShutdown() {}
 
 #endif  // GRPC_ARES == 1

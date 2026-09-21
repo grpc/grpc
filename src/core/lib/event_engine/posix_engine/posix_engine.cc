@@ -466,13 +466,17 @@ void PosixEventEngine::CancelAllPendingTimers() {
 PosixEventEngine::~PosixEventEngine() {
   {
     grpc_core::MutexLock lock(&mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
-      for (auto handle : known_handles_) {
+    auto pending_handles = known_handles_;
+    for (auto handle : pending_handles) {
+      if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
         LOG(ERROR) << "(event_engine) PosixEventEngine:" << this
                    << " uncleared TaskHandle at shutdown:"
                    << HandleToString(handle);
       }
+      CancelInternal(handle);
     }
+    // Prevent new timers from being scheduled on this EventEngine.
+    disallow_new_timers_ = true;
     GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
   }
 #if defined(GRPC_POSIX_SOCKET_TCP)

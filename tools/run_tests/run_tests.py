@@ -558,11 +558,9 @@ class CLanguage:
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
+            return ("debian12", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10":
             return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10.2":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",
@@ -1033,7 +1031,7 @@ class RubyLanguage:
         return [["tools/run_tests/helper_scripts/post_tests_ruby.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/ruby_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/ruby_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
@@ -1284,7 +1282,7 @@ class Sanity:
             return [
                 self.config.job_spec(
                     cmd["script"].split() + self.args.script_args,
-                    timeout_seconds=80 * 60,
+                    timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
                 )
@@ -1730,8 +1728,6 @@ argp.add_argument(
         "default",
         # The gcc:10 docker image which is 10.5 as of May 2026.
         "gcc10",
-        # Uses debian11 docker image which comes with gcc 10.2
-        "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
         "gcc12_openssl309",

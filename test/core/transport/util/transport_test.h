@@ -58,7 +58,8 @@ class TransportTest : public ::testing::Test {
     return CoreConfiguration::Get()
         .channel_args_preconditioning()
         .PreconditionChannelArgs(nullptr)
-        .Set(GRPC_ARG_ENABLE_CHANNELZ, true);
+        .Set(GRPC_ARG_ENABLE_CHANNELZ, true)
+        .Set("grpc.http2.ping_on_rst_stream_percent", 0);
   }
 
   RefCountedPtr<Arena> MakeArena() {

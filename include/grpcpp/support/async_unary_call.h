@@ -240,7 +240,7 @@ class ClientAsyncResponseReader final
     internal::ClientAsyncResponseReaderHelper::StartCall(context_, single_buf_);
   }
 
-  /// See \a ClientAsyncResponseReaderInterface::ReadInitialMetadata for
+  /// See ClientAsyncResponseReaderInterface::ReadInitialMetadata for
   /// semantics.
   ///
   /// Side effect:
@@ -253,7 +253,7 @@ class ClientAsyncResponseReader final
     initial_metadata_read_ = true;
   }
 
-  /// See \a ClientAsyncResponseReaderInterface::Finish for semantics.
+  /// See ClientAsyncResponseReaderInterface::Finish for semantics.
   ///
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
@@ -300,7 +300,7 @@ class ServerAsyncResponseWriter final
   explicit ServerAsyncResponseWriter(grpc::ServerContext* ctx)
       : call_(), ctx_(ctx) {}
 
-  /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
+  /// See ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
   /// Side effect:
   ///   The initial metadata that will be sent to the client from this op will

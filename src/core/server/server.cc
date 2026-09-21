@@ -1323,9 +1323,7 @@ grpc_error_handle Server::SetupTransport(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
         channel_stack_type);
-    if (!destination.ok()) {
-      return absl_status_to_grpc_error(destination.status());
-    }
+    if (!destination.ok()) return destination.status();
     t->SetCallDestination(std::move(*destination));
     MutexLock lock(&mu_global_);
     if (ShutdownCalled()) {
@@ -1347,9 +1345,7 @@ grpc_error_handle Server::SetupTransport(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
         channel_stack_type);
-    if (!channel.ok()) {
-      return absl_status_to_grpc_error(channel.status());
-    }
+    if (!channel.ok()) return channel.status();
     GRPC_CHECK(*channel != nullptr);
     auto* channel_stack = (*channel)->channel_stack();
     GRPC_CHECK(channel_stack != nullptr);

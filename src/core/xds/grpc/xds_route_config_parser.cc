@@ -54,7 +54,6 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
@@ -71,8 +70,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
@@ -245,73 +242,8 @@ void RouteHeaderMatchersParse(const XdsResourceType::DecodeContext& context,
                                         absl::StrCat(".headers[", i, "]"));
     const envoy_config_route_v3_HeaderMatcher* header = headers[i];
     GRPC_CHECK_NE(header, nullptr);
-    const std::string name =
-        UpbStringToStdString(envoy_config_route_v3_HeaderMatcher_name(header));
-    const bool invert_match =
-        envoy_config_route_v3_HeaderMatcher_invert_match(header);
-    if (envoy_config_route_v3_HeaderMatcher_has_string_match(header)) {
-      ValidationErrors::ScopedField field(errors, ".string_match");
-      auto string_matcher = StringMatcherParse(
-          context, envoy_config_route_v3_HeaderMatcher_string_match(header),
-          errors);
-      route->matchers.header_matchers.emplace_back(
-          HeaderMatcher::CreateFromStringMatcher(
-              name, std::move(string_matcher), invert_match));
-      continue;
-    }
-    HeaderMatcher::Type type;
-    std::string match_string;
-    int64_t range_start = 0;
-    int64_t range_end = 0;
-    bool present_match = false;
-    bool case_sensitive = true;
-    if (envoy_config_route_v3_HeaderMatcher_has_exact_match(header)) {
-      type = HeaderMatcher::Type::kExact;
-      match_string = UpbStringToStdString(
-          envoy_config_route_v3_HeaderMatcher_exact_match(header));
-    } else if (envoy_config_route_v3_HeaderMatcher_has_prefix_match(header)) {
-      type = HeaderMatcher::Type::kPrefix;
-      match_string = UpbStringToStdString(
-          envoy_config_route_v3_HeaderMatcher_prefix_match(header));
-    } else if (envoy_config_route_v3_HeaderMatcher_has_suffix_match(header)) {
-      type = HeaderMatcher::Type::kSuffix;
-      match_string = UpbStringToStdString(
-          envoy_config_route_v3_HeaderMatcher_suffix_match(header));
-    } else if (envoy_config_route_v3_HeaderMatcher_has_contains_match(header)) {
-      type = HeaderMatcher::Type::kContains;
-      match_string = UpbStringToStdString(
-          envoy_config_route_v3_HeaderMatcher_contains_match(header));
-    } else if (envoy_config_route_v3_HeaderMatcher_has_safe_regex_match(
-                   header)) {
-      const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
-          envoy_config_route_v3_HeaderMatcher_safe_regex_match(header);
-      GRPC_CHECK_NE(regex_matcher, nullptr);
-      type = HeaderMatcher::Type::kSafeRegex;
-      match_string = UpbStringToStdString(
-          envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
-    } else if (envoy_config_route_v3_HeaderMatcher_has_range_match(header)) {
-      type = HeaderMatcher::Type::kRange;
-      const envoy_type_v3_Int64Range* range_matcher =
-          envoy_config_route_v3_HeaderMatcher_range_match(header);
-      GRPC_CHECK_NE(range_matcher, nullptr);
-      range_start = envoy_type_v3_Int64Range_start(range_matcher);
-      range_end = envoy_type_v3_Int64Range_end(range_matcher);
-    } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
-      type = HeaderMatcher::Type::kPresent;
-      present_match = envoy_config_route_v3_HeaderMatcher_present_match(header);
-    } else {
-      errors->AddError("invalid header matcher");
-      continue;
-    }
-    absl::StatusOr<HeaderMatcher> header_matcher =
-        HeaderMatcher::Create(name, type, match_string, range_start, range_end,
-                              present_match, invert_match, case_sensitive);
-    if (!header_matcher.ok()) {
-      errors->AddError(absl::StrCat("cannot create header matcher: ",
-                                    header_matcher.status().message()));
-    } else {
-      route->matchers.header_matchers.emplace_back(std::move(*header_matcher));
-    }
+    route->matchers.header_matchers.emplace_back(
+        ParseXdsHeaderMatcher(context, header, errors));
   }
 }
 
@@ -369,6 +301,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     auto* extension_to_use = &*extension;
     std::optional<XdsExtension> nested_extension;
     bool is_optional = false;
+    bool disabled = false;
     if (extension->type == "envoy.config.route.v3.FilterConfig") {
       absl::string_view* serialized_config =
           std::get_if<absl::string_view>(&extension->value);
@@ -382,9 +315,10 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
         errors->AddError("could not parse FilterConfig");
         continue;
       }
+      disabled = envoy_config_route_v3_FilterConfig_disabled(filter_config);
+      any = envoy_config_route_v3_FilterConfig_config(filter_config);
       is_optional =
           envoy_config_route_v3_FilterConfig_is_optional(filter_config);
-      any = envoy_config_route_v3_FilterConfig_config(filter_config);
       extension->validation_fields.emplace_back(errors, ".config");
       nested_extension = ExtractXdsExtension(context, any, errors);
       if (!nested_extension.has_value()) continue;
@@ -393,22 +327,22 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     const auto& http_filter_registry =
         DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
-    const XdsHttpFilterImpl* filter_impl =
+    const XdsHttpFilterFactory* factory =
         http_filter_registry.GetFilterForOverrideType(extension_to_use->type);
-    if (filter_impl == nullptr) {
+    if (factory == nullptr) {
       if (!is_optional) errors->AddError("unsupported filter type");
       continue;
     }
     auto& entry = typed_per_filter_config[std::string(key)];
-    entry.config_proto_type = filter_impl->OverrideConfigProtoName();
-    std::optional<Json> filter_config =
-        filter_impl->GenerateFilterConfigOverride(key, context,
-                                                  *extension_to_use, errors);
+    entry.config_proto_type = factory->OverrideConfigProtoName();
+    entry.disabled = disabled;
+    std::optional<Json> filter_config = factory->GenerateFilterConfigOverride(
+        key, context, *extension_to_use, errors);
     if (filter_config.has_value()) {
       entry.config = std::move(*filter_config);
     }
-    entry.filter_config = filter_impl->ParseOverrideConfig(
-        key, context, *extension_to_use, errors);
+    entry.filter_config =
+        factory->ParseOverrideConfig(key, context, *extension_to_use, errors);
   }
   return typed_per_filter_config;
 }

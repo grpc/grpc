@@ -19,24 +19,45 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 
+#include <grpc/event_engine/event_engine.h>
+
+#include <algorithm>
 #include <cstdint>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <queue>
 #include <string>
 #include <type_traits>
+#include <utility>
+#include <variant>
+#include <vector>
 
+#include "src/core/call/metadata.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "absl/log/log.h"
-#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -75,7 +96,7 @@ inline bool ShouldEnablePh2Server() {
   return IsPh2ServerEnabled() || IsPh2ClientServerEnabled();
 }
 
-// TODO(akshitpatel) [PH2][P3] : Write a way to measure the total size of a
+// TODO(akshitpatel) [PH2][P5] : Write a way to measure the total size of a
 // transport object. Reference :
 // https://github.com/grpc/grpc/pull/41294/files#diff-c685cc4847f228327938326e2a45083a2d0845bacff0ac004bd802027a670c4e
 
@@ -91,7 +112,7 @@ template <typename T, typename Tracker>
 inline Http2Status ValidateMetadataFrameState(
     T& frame, Stream& stream, Tracker& incoming_headers,
     const uint32_t max_header_list_size) {
-  if (stream.IsStreamHalfClosedRemote()) {
+  if (stream.IsClosedForReads()) {
     return incoming_headers.ParseAndDiscardHeaders(
         std::move(frame.payload), frame.end_headers,
         Http2Status::Http2StreamError(
@@ -153,6 +174,11 @@ uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args);
 
 uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args);
 
+// Returns the percentage of RST streams on which we should send a ping.
+// Always returns 0 for client transport.
+uint8_t GetPingOnRstStreamPercent(const ChannelArgs& channel_args,
+                                  bool is_client);
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 
@@ -183,7 +209,321 @@ void MaybeAddTransportWindowUpdateFrame(
 
 void MaybeAddStreamWindowUpdateFrame(Stream& stream, FrameSender& frame_sender);
 
+// ===========================================================================
+// 3-Stage Transport Shutdown State Machine
+// ===========================================================================
+// Transport shutdown progresses through three distinct stages to ensure
+// thread-safe, lock-free (where possible), and protocol-compliant cleanup.
 //
+// Stage 1: Shutdown Initiated
+//   Triggered by MaybeSpawnCloseTransport(). Rejects new external watches
+//   and immediately clears stream_list_ (Snapshot 1) to stop read/write
+//   processing for active streams.
+//   Note: MaybeSpawnCloseTransport is invoked from both transport party and
+//   other threads (Orphan flow).
+//
+// Stage 2: Party Shutdown Initiated (Party Lockdown)
+//   Triggered when the CloseTransport promise starts running on the transport
+//   party. Thread-confined to the party (no locks/atomics needed).
+//   Clears stream_list_ again (Snapshot 2) to capture raced streams, and
+//   causes the transport to immediately reject any new or queued streams
+//   (via InitializeStream() on client, or IncomingStream() on server).
+//
+// Stage 3: Shutdown Completed (Final Termination)
+//   Triggered when CloseTransport() finishes (GOAWAY sent or timed out on
+//   client). Wakes up and cancels all remaining promises on the transport
+//   party.
+// ===========================================================================
+class TransportShutdownTracker {
+ public:
+  TransportShutdownTracker() = default;
+
+  // Transport shutdown is not copyable or movable.
+  TransportShutdownTracker(const TransportShutdownTracker&) = delete;
+  TransportShutdownTracker& operator=(const TransportShutdownTracker&) = delete;
+  TransportShutdownTracker(TransportShutdownTracker&&) = delete;
+  TransportShutdownTracker& operator=(TransportShutdownTracker&&) = delete;
+
+  // Stage 1: Shutdown Initiated
+  void InitiateShutdown(const Mutex& mu) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+    shutdown_initiated_ = true;
+  }
+  bool IsShutdownInitiated(const Mutex& mu) const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+    return shutdown_initiated_;
+  }
+
+  // Stage 2: Party Shutdown Initiated (Party Lockdown)
+  void InitiatePartyShutdown() { party_shutdown_initiated_ = true; }
+  bool IsPartyShutdownInitiated() const { return party_shutdown_initiated_; }
+
+  // Stage 3: Shutdown Completed (Final Termination)
+  void MarkShutdownComplete() { shutdown_completed_latch_.Set(); }
+  auto WaitShutdownComplete() { return shutdown_completed_latch_.Wait(); }
+
+ private:
+  bool shutdown_initiated_ = false;
+  bool party_shutdown_initiated_ = false;
+  Latch<void> shutdown_completed_latch_;
+};
+
+// Represents a stream queued for tarpitting and its scheduled expiration time.
+// The payload variant defines the terminal action to perform once the tarpit
+// duration elapses:
+// - OutgoingResetPayload: sends a delayed RST_STREAM.
+// - OutgoingTrailingMetadataPayload: sends delayed server trailing metadata.
+// - IncomingResetPayload: Stream closure triggered by Client sending an
+//   RST_STREAM.
+// The functions in this class are not thread-safe.
+class TarpitEntry {
+ public:
+  struct OutgoingResetPayload {
+    absl::Status trailing_metadata_status;
+    uint32_t http2_error_code = 0;
+  };
+
+  struct OutgoingTrailingMetadataPayload {
+    ServerMetadataHandle metadata;
+  };
+
+  struct IncomingResetPayload {
+    absl::Status status;
+  };
+
+  TarpitEntry(TarpitEntry&&) = default;
+  TarpitEntry& operator=(TarpitEntry&&) = default;
+  TarpitEntry(const TarpitEntry&) = delete;
+  TarpitEntry& operator=(const TarpitEntry&) = delete;
+
+  // Factory methods for constructing tarpit entries from producers across
+  // different parties.
+  static TarpitEntry CreateOutgoingReset(const uint32_t stream_id,
+                                         const uint32_t http2_error_code,
+                                         absl::Status trailing_metadata_status,
+                                         const Timestamp expire_time) {
+    return TarpitEntry(stream_id,
+                       OutgoingResetPayload{std::move(trailing_metadata_status),
+                                            http2_error_code},
+                       expire_time);
+  }
+  static TarpitEntry CreateOutgoingTrailingMetadata(
+      const uint32_t stream_id, ServerMetadataHandle metadata,
+      const Timestamp expire_time) {
+    return TarpitEntry(stream_id,
+                       OutgoingTrailingMetadataPayload{std::move(metadata)},
+                       expire_time);
+  }
+  static TarpitEntry CreateIncomingReset(const uint32_t stream_id,
+                                         absl::Status status,
+                                         const Timestamp expire_time) {
+    return TarpitEntry(stream_id, IncomingResetPayload{std::move(status)},
+                       expire_time);
+  }
+
+  Timestamp GetExpireTime() const { return expire_time_; }
+  uint32_t GetStreamId() const { return stream_id_; }
+
+  bool IsOutgoingReset() const {
+    return std::holds_alternative<OutgoingResetPayload>(payload_);
+  }
+  bool IsOutgoingTrailingMetadata() const {
+    return std::holds_alternative<OutgoingTrailingMetadataPayload>(payload_);
+  }
+  bool IsIncomingReset() const {
+    return std::holds_alternative<IncomingResetPayload>(payload_);
+  }
+
+  // Consumes and extracts the payload when executing the post-tarpit action.
+  // Returns std::nullopt if the payload type does not match.
+  std::optional<OutgoingResetPayload> TakeOutgoingResetPayload() {
+    OutgoingResetPayload* const p =
+        std::get_if<OutgoingResetPayload>(&payload_);
+    if (p != nullptr) {
+      return std::move(*p);
+    }
+    return std::nullopt;
+  }
+  std::optional<OutgoingTrailingMetadataPayload>
+  TakeOutgoingTrailingMetadataPayload() {
+    OutgoingTrailingMetadataPayload* const p =
+        std::get_if<OutgoingTrailingMetadataPayload>(&payload_);
+    if (p != nullptr) {
+      return std::move(*p);
+    }
+    return std::nullopt;
+  }
+  std::optional<IncomingResetPayload> TakeIncomingResetPayload() {
+    IncomingResetPayload* const p =
+        std::get_if<IncomingResetPayload>(&payload_);
+    if (p != nullptr) {
+      return std::move(*p);
+    }
+    return std::nullopt;
+  }
+
+  std::string DebugString() const;
+
+  bool operator>(const TarpitEntry& other) const {
+    return expire_time_ > other.expire_time_;
+  }
+
+ private:
+  using Payload =
+      std::variant<OutgoingResetPayload, OutgoingTrailingMetadataPayload,
+                   IncomingResetPayload>;
+
+  TarpitEntry(const uint32_t stream_id, Payload payload,
+              const Timestamp expire_time)
+      : stream_id_(stream_id),
+        expire_time_(expire_time),
+        payload_(std::move(payload)) {}
+
+  uint32_t stream_id_ = 0;
+  Timestamp expire_time_ = Timestamp::InfPast();
+  Payload payload_;
+};
+
+class TarpitQueue {
+ public:
+  TarpitQueue() = default;
+  TarpitQueue(const TarpitQueue&) = delete;
+  TarpitQueue& operator=(const TarpitQueue&) = delete;
+  TarpitQueue(TarpitQueue&&) = default;
+  TarpitQueue& operator=(TarpitQueue&&) = default;
+
+  bool IsEmpty() const { return entries_.empty(); }
+  size_t Size() const { return entries_.size(); }
+
+  const TarpitEntry& Top() const {
+    GRPC_DCHECK(!entries_.empty());
+    return entries_.front();
+  }
+
+  void Push(TarpitEntry entry) {
+    entries_.push_back(std::move(entry));
+    std::push_heap(entries_.begin(), entries_.end(), std::greater<>());
+  }
+
+  TarpitEntry Pop() {
+    GRPC_DCHECK(!entries_.empty());
+    std::pop_heap(entries_.begin(), entries_.end(), std::greater<>());
+    TarpitEntry top_entry = std::move(entries_.back());
+    entries_.pop_back();
+    return top_entry;
+  }
+
+  void Clear() { entries_.clear(); }
+
+ private:
+  std::vector<TarpitEntry> entries_;
+};
+
+class TarpitManager {
+ public:
+  explicit TarpitManager(const ChannelArgs& channel_args);
+
+  ~TarpitManager() = default;
+
+  // TarpitManager is neither copyable nor movable.
+  TarpitManager(const TarpitManager&) = delete;
+  TarpitManager& operator=(const TarpitManager&) = delete;
+  TarpitManager(TarpitManager&&) = delete;
+  TarpitManager& operator=(TarpitManager&&) = delete;
+
+  //----------------------------------------------------------------------------
+  // Off-Party Producer Methods (Can be called from any thread/party)
+  //----------------------------------------------------------------------------
+
+  // Producer APIs called by the transport to enqueue delayed stream actions.
+  //
+  // Note:
+  // - Callers MUST verify allow_tarpit() is true before invoking these APIs.
+  // - Returns StatusFlag::kFailure if the MPSC channel is closed or full, in
+  //   which case the caller MUST initiate transport teardown (connection
+  //   error). In theory the MPSC queue can never be full , because it cannot
+  //   have more than MAX_CONCURRENT_STREAMS number of streams in it.
+
+  // Sends a delayed RST_STREAM.
+  StatusFlag RequestCloseStream(uint32_t stream_id,
+                                uint32_t reset_stream_error_code,
+                                absl::Status trailing_metadata_status);
+
+  // Sends delayed server trailing metadata.
+  StatusFlag StartTarpitTrailers(uint32_t stream_id,
+                                 ServerMetadataHandle metadata);
+
+  // Performs delayed stream closure following an incoming RST_STREAM.
+  StatusFlag RequestTarpitIncomingReset(uint32_t stream_id,
+                                        absl::Status status);
+
+  //----------------------------------------------------------------------------
+  // Transport-Party Confined Methods (Must be run on TransportParty)
+  //----------------------------------------------------------------------------
+
+  // Prepares an incoming Stream on the transport party by marking the stream
+  // tarpitted and initiating read-silencing. Returns the StreamStateChange to
+  // be handled by the server transport.
+  StreamStateChange OnTarpit(Stream& stream);
+
+  void AddToQueue(TarpitEntry&& entry);
+  std::vector<TarpitEntry> OnTimerExpired();
+  void Shutdown();
+
+  channelz::PropertyList ChannelzProperties() const;
+
+  bool allow_tarpit() const { return allow_tarpit_; }
+
+  auto NextMessage() { return receiver_.Next(); }
+
+  // Returns a promise that waits for the earliest expiration time of tarpitted
+  // streams, or suspends if the queue is empty.
+  auto WaitForTimerExpire() {
+    return If(
+        [this]() -> Poll<bool> {
+          if (GPR_UNLIKELY(shutdown_)) {
+            return false;
+          }
+          if (tarpit_queue_.IsEmpty()) {
+            empty_queue_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+            return Pending{};
+          }
+          return true;
+        },
+        [this]() {
+          // Sleep at least for kMinTarpitSleepDuration to avoid potential
+          // busy-looping if there are lot of entries with expiration time in
+          // near future. This works for the tarpit use case as this guarantees
+          // we would close stream strictly after the expiration time.
+          return Sleep(std::max(tarpit_queue_.Top().GetExpireTime(),
+                                Timestamp::Now() + kMinTarpitSleepDuration));
+        },
+        []() -> Poll<absl::Status> {
+          return absl::CancelledError("TarpitManager shutdown");
+        });
+  }
+
+ private:
+  static constexpr Duration kMinTarpitSleepDuration =
+      Duration::Milliseconds(10);
+
+  Duration GetTarpitDuration() const;
+
+  const bool allow_tarpit_ = true;
+  const Duration min_tarpit_duration_;
+  const Duration max_tarpit_duration_;
+  bool shutdown_ = false;
+
+  MpscReceiver<TarpitEntry> receiver_;
+  MpscSender<TarpitEntry> sender_;
+
+  // Queue ordered by earliest expiration time for pending tarpitted streams.
+  TarpitQueue tarpit_queue_;
+
+  // Waker for resuming WaitForTimerExpire when transitioning from an empty
+  // queue to a non-empty queue.
+  Waker empty_queue_waker_;
+};
+
 }  // namespace http2
 }  // namespace grpc_core
 

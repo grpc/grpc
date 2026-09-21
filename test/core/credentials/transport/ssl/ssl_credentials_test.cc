@@ -44,23 +44,24 @@ TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
   const size_t num_pairs = 3;
 
   {
-    std::vector<tsi_ssl_pem_key_cert_pair> tsi_pairs =
-        grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, 0);
-    ASSERT_EQ(tsi_pairs.size(), 0);
+    grpc_core::PemKeyCertPairList key_cert_pairs =
+        grpc_convert_grpc_to_key_cert_pairs(grpc_pairs, 0);
+    ASSERT_EQ(key_cert_pairs.size(), 0);
   }
 
   {
-    std::vector<tsi_ssl_pem_key_cert_pair> tsi_pairs =
-        grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, num_pairs);
+    grpc_core::PemKeyCertPairList key_cert_pairs =
+        grpc_convert_grpc_to_key_cert_pairs(grpc_pairs, num_pairs);
 
-    ASSERT_NE(tsi_pairs.size(), 0);
+    ASSERT_NE(key_cert_pairs.size(), 0);
     for (size_t i = 0; i < num_pairs; i++) {
-      EXPECT_THAT(tsi_pairs[i].private_key, ::testing::VariantWith<std::string>(
-                                                grpc_pairs[i].private_key));
-      ASSERT_EQ(
-          strncmp(grpc_pairs[i].cert_chain, tsi_pairs[i].cert_chain.c_str(),
-                  strlen(grpc_pairs[i].cert_chain)),
-          0);
+      EXPECT_THAT(
+          key_cert_pairs[i].private_key(),
+          ::testing::VariantWith<std::string>(grpc_pairs[i].private_key));
+      ASSERT_EQ(strncmp(grpc_pairs[i].cert_chain,
+                        key_cert_pairs[i].cert_chain().c_str(),
+                        strlen(grpc_pairs[i].cert_chain)),
+                0);
     }
   }
 }

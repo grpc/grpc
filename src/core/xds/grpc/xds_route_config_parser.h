@@ -29,13 +29,10 @@
 
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
-#include "re2/re2.h"
 #include "src/core/call/status_util.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/xds_client/xds_client.h"

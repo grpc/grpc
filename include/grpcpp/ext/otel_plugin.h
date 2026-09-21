@@ -99,6 +99,10 @@ class OpenTelemetryPluginBuilder {
   static constexpr absl::string_view
       kServerCallRcvdTotalCompressedMessageSizeInstrumentName =
           "grpc.server.call.rcvd_total_compressed_message_size";
+  static constexpr absl::string_view kClientHandshakesInstrumentName =
+      "grpc.client.tls.handshakes";
+  static constexpr absl::string_view kServerHandshakesInstrumentName =
+      "grpc.server.tls.handshakes";
 
   /// Experimental Retry Metrics
   static constexpr absl::string_view kClientCallRetriesInstrumentName =

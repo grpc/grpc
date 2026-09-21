@@ -5,7 +5,9 @@ android {
     ndkVersion "29.0.14206865"
     defaultConfig {
         applicationId "io.grpc.android.cpp.helloworldexample"
-        minSdkVersion 21
+        // API Level 24 or above for ftello()/fseeko() support.
+        // See https://android.googlesource.com/platform/bionic/+/refs/heads/main/docs/32-bit-abi.md
+        minSdkVersion 24
         // noinspection ExpiredTargetSDKVersion
         targetSdkVersion 26
         versionCode 1

@@ -70,6 +70,7 @@
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "src/core/util/useful.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -478,6 +479,7 @@ struct grpc_tcp {
   explicit grpc_tcp(const grpc_core::PosixTcpOptions& tcp_options)
       : min_read_chunk_size(tcp_options.tcp_min_read_chunk_size),
         max_read_chunk_size(tcp_options.tcp_max_read_chunk_size),
+        max_read_buffer_size(tcp_options.tcp_max_read_buffer_size),
         tcp_zerocopy_send_ctx(
             tcp_options.tcp_tx_zerocopy_max_simultaneous_sends,
             tcp_options.tcp_tx_zerocopy_send_bytes_threshold) {}
@@ -492,6 +494,7 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
+  int max_read_buffer_size;
 
   // garbage after the last read
   grpc_slice_buffer last_read_buffer;
@@ -736,15 +739,15 @@ static void finish_estimate(grpc_tcp* tcp) {
     tcp->target_length =
         0.99 * tcp->target_length + 0.01 * tcp->bytes_read_this_round;
   }
+  // Opt-in: if a maximum read buffer size has been configured, clamp the
+  // adaptive target so that occasional large reads do not leave a permanently
+  // high read-buffer high-watermark. When unset (max_read_buffer_size < 0) the
+  // behavior is unchanged.
+  if (tcp->max_read_buffer_size >= 0 &&
+      tcp->target_length > static_cast<double>(tcp->max_read_buffer_size)) {
+    tcp->target_length = static_cast<double>(tcp->max_read_buffer_size);
+  }
   tcp->bytes_read_this_round = 0;
-}
-
-static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error) {
-  return grpc_error_set_int(src_error,
-                            // All tcp errors are marked with UNAVAILABLE so
-                            // that application may choose to retry.
-                            grpc_core::StatusIntProperty::kRpcStatus,
-                            GRPC_STATUS_UNAVAILABLE);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -975,10 +978,10 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       // 0 read size ==> end of stream
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
       if (read_bytes == 0) {
-        *error = tcp_annotate_error(absl::InternalError("Socket closed"));
+        *error = absl::UnavailableError("Socket closed");
       } else {
-        *error = tcp_annotate_error(absl::InternalError(
-            absl::StrCat("recvmsg:", grpc_core::StrError(saved_errno))));
+        *error = absl::UnavailableError(
+            absl::StrCat("recvmsg:", grpc_core::StrError(saved_errno)));
       }
       return true;
     }
@@ -1126,7 +1129,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     tcp_trace_read(tcp, tcp_read_error);
   } else {
     if (!tcp->memory_owner.is_valid() && error.ok()) {
-      tcp_read_error = tcp_annotate_error(absl::InternalError("Socket closed"));
+      tcp_read_error = absl::UnavailableError("Socket closed");
     } else {
       tcp_read_error = error;
     }
@@ -1563,6 +1566,11 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
   }
 }
 
+static absl::Status OSError(int err, absl::string_view call_name) {
+  return absl::UnavailableError(
+      absl::StrCat(call_name, ": ", grpc_core::StrError(err), " (", err, ")"));
+}
+
 // returns true if done, false if pending; if returning true, *error is set
 static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
                                   grpc_error_handle* error) {
@@ -1625,7 +1633,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"));
+        *error = OSError(saved_errno, "sendmsg");
         tcp_shutdown_buffer_list(tcp);
         return true;
       }
@@ -1735,7 +1743,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
         }
         return false;
       } else {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"));
+        *error = OSError(saved_errno, "sendmsg");
         grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
         return true;
@@ -1833,7 +1841,7 @@ static void tcp_write(
   if (buf->length == 0) {
     grpc_core::Closure::Run(DEBUG_LOCATION, cb,
                             grpc_fd_is_shutdown(tcp->em_fd)
-                                ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"))
+                                ? absl::UnavailableError("EOF")
                                 : absl::OkStatus());
     tcp_shutdown_buffer_list(tcp);
     return;

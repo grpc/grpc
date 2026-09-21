@@ -89,7 +89,8 @@
 //   failure (in which case the call will be aborted).
 //   useful for cases where the exact metadata returned needs to be customized.
 // It's also acceptable to return a promise that resolves to the
-// relevant return type listed above.
+// relevant return type listed above (except for OnClientToServerHalfClose
+// and OnServerTrailingMetadata, which must be synchronous).
 //
 // OnFinalize is added to intercept call finalization.
 // It must have one of the signatures:
@@ -1983,7 +1984,8 @@ class CallFilters {
     return flag;
   }
   // Client: Fetch server initial metadata
-  // Returns a promise that resolves to ValueOrFailure<ServerMetadataHandle>
+  // Returns a promise that resolves to
+  // ValueOrFailure<std::optional<ServerMetadataHandle>>
   GRPC_MUST_USE_RESULT auto PullServerInitialMetadata() {
     return Seq(
         [this]() {

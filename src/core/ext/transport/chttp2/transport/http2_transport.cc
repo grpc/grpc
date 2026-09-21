@@ -21,18 +21,24 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <climits>
+#include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
@@ -42,16 +48,22 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "src/core/util/useful.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+
+#define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
+  "grpc.http2.ping_on_rst_stream_percent"
 
 namespace grpc_core {
 namespace http2 {
@@ -144,7 +156,7 @@ std::string TransportChannelArgs::DebugString() const {
 void ReadChannelArgs(const ChannelArgs& channel_args,
                      TransportChannelArgs& args, Http2Settings& local_settings,
                      chttp2::TransportFlowControl& flow_control,
-                     bool is_client) {
+                     const bool is_client) {
   ReadSettingsFromChannelArgs(channel_args, local_settings, flow_control,
                               is_client);
 
@@ -279,6 +291,14 @@ uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args) {
             static_cast<int>(GrpcErrors::kMaxSecurityFrameSize)));
 }
 
+uint8_t GetPingOnRstStreamPercent(const ChannelArgs& channel_args,
+                                  const bool is_client) {
+  if (is_client) return 0;
+  return Clamp(channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
+                   .value_or(1),
+               0, 100);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 
@@ -288,10 +308,12 @@ RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
     const ChannelArgs& args) {
   if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    auto local_addr = grpc_event_engine::experimental::ResolvedAddressToString(
-        event_engine_endpoint->GetLocalAddress());
-    auto peer_addr = grpc_event_engine::experimental::ResolvedAddressToString(
-        event_engine_endpoint->GetPeerAddress());
+    absl::StatusOr<std::string> local_addr =
+        grpc_event_engine::experimental::ResolvedAddressToString(
+            event_engine_endpoint->GetLocalAddress());
+    absl::StatusOr<std::string> peer_addr =
+        grpc_event_engine::experimental::ResolvedAddressToString(
+            event_engine_endpoint->GetPeerAddress());
     GRPC_HTTP2_COMMON_DLOG << "CreateChannelzSocketNode: local_addr: "
                            << local_addr.value_or("unknown")
                            << " peer_addr: " << peer_addr.value_or("unknown");
@@ -324,6 +346,7 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
                                     Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);
   if (frame_header.length > 0) {
+    flow_control.OnReceiveDataFrame(frame_header.length);
     if (stream == nullptr) {
       // This flow control bookkeeping needs to happen even though the stream is
       // gone because otherwise we will go out-of-sync with the peer.
@@ -348,6 +371,8 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
       chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
           &stream->GetStreamFlowControl());
       absl::Status fc_status = stream_fc.RecvData(frame_header.length);
+      // TODO(tjagtap) [PH2][P1][FlowControl] This is a HACK. Fix this.
+      stream_fc.HackIncrementPendingSize(frame_header.length);
       chttp2::FlowControlAction action = stream_fc.MakeAction();
       GRPC_HTTP2_COMMON_DLOG
           << "ProcessIncomingDataFrameFlowControl Stream RecvData status: "
@@ -360,8 +385,6 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
             Http2ErrorCode::kFlowControlError,
             std::string(fc_status.message()));
       }
-      // TODO(tjagtap) [PH2][P1][FlowControl] This is a HACK. Fix this.
-      stream_fc.HackIncrementPendingSize(frame_header.length);
       return action;
     }
   }
@@ -455,6 +478,156 @@ void MaybeAddStreamWindowUpdateFrame(Stream& stream,
           Http2WindowUpdateFrame{stream.GetStreamId(), increment});
     }
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TarpitEntry implementation
+
+std::string TarpitEntry::DebugString() const {
+  std::string payload_str;
+  const OutgoingResetPayload* const reset =
+      std::get_if<OutgoingResetPayload>(&payload_);
+  const OutgoingTrailingMetadataPayload* const trailers =
+      std::get_if<OutgoingTrailingMetadataPayload>(&payload_);
+  const IncomingResetPayload* const incoming_reset =
+      std::get_if<IncomingResetPayload>(&payload_);
+  if (reset != nullptr) {
+    payload_str = absl::StrCat(
+        "OutgoingReset(error_code=", reset->http2_error_code,
+        ", status=", reset->trailing_metadata_status.ToString(), ")");
+  } else if (trailers != nullptr) {
+    payload_str = absl::StrCat("OutgoingTrailingMetadata(",
+                               trailers->metadata != nullptr
+                                   ? trailers->metadata->DebugString()
+                                   : "null",
+                               ")");
+  } else if (incoming_reset != nullptr) {
+    payload_str = absl::StrCat(
+        "IncomingReset(status=", incoming_reset->status.ToString(), ")");
+  } else {
+    payload_str = "unknown type";
+  }
+  return absl::StrCat("TarpitEntry{stream_id=", stream_id_,
+                      ", expire_time=", expire_time_.ToString(),
+                      ", payload=", payload_str, "}");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TarpitManager implementation
+
+TarpitManager::TarpitManager(const ChannelArgs& channel_args)
+    : allow_tarpit_(
+          channel_args.GetBool(GRPC_ARG_HTTP_ALLOW_TARPIT).value_or(true)),
+      min_tarpit_duration_(
+          channel_args
+              .GetDurationFromIntMillis(GRPC_ARG_HTTP_TARPIT_MIN_DURATION_MS)
+              .value_or(Duration::Milliseconds(100))),
+      max_tarpit_duration_(
+          channel_args
+              .GetDurationFromIntMillis(GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS)
+              .value_or(Duration::Seconds(1))),
+      receiver_(std::numeric_limits<size_t>::max()),
+      sender_(receiver_.MakeSender()) {
+  GRPC_CHECK_LE(min_tarpit_duration_, max_tarpit_duration_);
+}
+
+Duration TarpitManager::GetTarpitDuration() const {
+  return TarpitDuration(static_cast<int>(min_tarpit_duration_.millis()),
+                        static_cast<int>(max_tarpit_duration_.millis()));
+}
+
+StatusFlag TarpitManager::RequestCloseStream(
+    const uint32_t stream_id, const uint32_t reset_stream_error_code,
+    absl::Status trailing_metadata_status) {
+  GRPC_DCHECK(allow_tarpit_);
+  GRPC_DCHECK_NE(stream_id, kInvalidStreamId);
+  GRPC_HTTP2_COMMON_DLOG << "TarpitManager::RequestCloseStream Stream id: "
+                         << stream_id << " reset_stream_error_code: "
+                         << reset_stream_error_code
+                         << " trailing_metadata_status: "
+                         << trailing_metadata_status;
+  const Timestamp expire_time = Timestamp::Now() + GetTarpitDuration();
+  TarpitEntry entry = TarpitEntry::CreateOutgoingReset(
+      stream_id, reset_stream_error_code, std::move(trailing_metadata_status),
+      expire_time);
+  const StatusFlag status =
+      sender_.UnbufferedImmediateSend(std::move(entry), 1);
+  return status;
+}
+
+StatusFlag TarpitManager::StartTarpitTrailers(const uint32_t stream_id,
+                                              ServerMetadataHandle metadata) {
+  GRPC_DCHECK(allow_tarpit_);
+  GRPC_DCHECK_NE(stream_id, kInvalidStreamId);
+  GRPC_HTTP2_COMMON_DLOG << "TarpitManager::StartTarpitTrailers Stream id: "
+                         << stream_id;
+  const Timestamp expire_time = Timestamp::Now() + GetTarpitDuration();
+  TarpitEntry entry = TarpitEntry::CreateOutgoingTrailingMetadata(
+      stream_id, std::move(metadata), expire_time);
+  const StatusFlag status =
+      sender_.UnbufferedImmediateSend(std::move(entry), 1);
+  return status;
+}
+
+StatusFlag TarpitManager::RequestTarpitIncomingReset(const uint32_t stream_id,
+                                                     absl::Status status) {
+  GRPC_DCHECK(allow_tarpit_);
+  GRPC_DCHECK_NE(stream_id, kInvalidStreamId);
+  GRPC_HTTP2_COMMON_DLOG
+      << "TarpitManager::RequestTarpitIncomingReset Stream id: " << stream_id
+      << " status: " << status;
+
+  const Timestamp expire_time = Timestamp::Now() + GetTarpitDuration();
+  TarpitEntry entry = TarpitEntry::CreateIncomingReset(
+      stream_id, std::move(status), expire_time);
+  const StatusFlag send_status =
+      sender_.UnbufferedImmediateSend(std::move(entry), 1);
+  return send_status;
+}
+
+StreamStateChange TarpitManager::OnTarpit(Stream& stream) {
+  stream.SetTarpitActive();
+  return stream.OnInitiateReset(absl::CancelledError("Stream tarpitted"));
+}
+
+void TarpitManager::AddToQueue(TarpitEntry&& entry) {
+  if (GPR_UNLIKELY(shutdown_)) {
+    return;
+  }
+  tarpit_queue_.Push(std::forward<TarpitEntry>(entry));
+  empty_queue_waker_.Wakeup();
+}
+
+std::vector<TarpitEntry> TarpitManager::OnTimerExpired() {
+  const Timestamp now = Timestamp::Now();
+  std::vector<TarpitEntry> expired_entries;
+  while (!tarpit_queue_.IsEmpty() &&
+         tarpit_queue_.Top().GetExpireTime() <= now) {
+    expired_entries.push_back(tarpit_queue_.Pop());
+  }
+  return expired_entries;
+}
+
+void TarpitManager::Shutdown() {
+  shutdown_ = true;
+  tarpit_queue_.Clear();
+  receiver_.MarkClosed();
+  empty_queue_waker_.Wakeup();
+}
+
+channelz::PropertyList TarpitManager::ChannelzProperties() const {
+  channelz::PropertyList properties;
+  properties.Set("allow_tarpit", allow_tarpit_)
+      .Set("min_tarpit_duration", min_tarpit_duration_)
+      .Set("max_tarpit_duration", max_tarpit_duration_)
+      .Set("is_shutdown", shutdown_)
+      .Set("current_tarpitted_streams_count", tarpit_queue_.Size())
+      .Set("is_queue_empty", tarpit_queue_.IsEmpty());
+  if (!tarpit_queue_.IsEmpty()) {
+    properties.Set("earliest_expiration_time",
+                   tarpit_queue_.Top().GetExpireTime());
+  }
+  return properties;
 }
 
 }  // namespace http2

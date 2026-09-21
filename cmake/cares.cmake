@@ -26,7 +26,7 @@ if(gRPC_CARES_PROVIDER STREQUAL "module")
 
   if(TARGET c-ares)
     set(_gRPC_CARES_LIBRARIES c-ares)
-    if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+    if(gRPC_INSTALL)
       install(TARGETS c-ares EXPORT gRPCTargets
         RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
         LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -34,10 +34,6 @@ if(gRPC_CARES_PROVIDER STREQUAL "module")
     endif()
   endif()
 
-  if(gRPC_INSTALL AND NOT _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_CARES_PROVIDER is \"module\" and CMake version (${CMAKE_VERSION}) is less than 3.13.")
-    set(gRPC_INSTALL FALSE)
-  endif()
 elseif(gRPC_CARES_PROVIDER STREQUAL "package")
   find_package(c-ares 1.13.0 REQUIRED)
   if(TARGET c-ares::cares)

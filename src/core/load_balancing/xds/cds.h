@@ -17,9 +17,13 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_XDS_CDS_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_XDS_CDS_H
 
+#include <memory>
 #include <vector>
 
+#include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_config.h"
+#include "src/core/util/ref_counted_string.h"
+#include "src/core/xds/grpc/xds_endpoint.h"
 
 namespace grpc_core {
 
@@ -51,6 +55,23 @@ class CdsChildNameState {
  private:
   std::vector<size_t /*child_number*/> priority_child_numbers_;
   size_t next_available_child_number_ = 0;
+};
+
+class CdsPriorityEndpointIterator final : public EndpointAddressesIterator {
+ public:
+  CdsPriorityEndpointIterator(
+      RefCountedStringValue cluster_name, bool use_http_connect,
+      std::shared_ptr<const XdsEndpointResource> endpoints,
+      std::vector<size_t /*child_number*/> priority_child_numbers);
+
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+      const override;
+
+ private:
+  RefCountedStringValue cluster_name_;
+  bool use_http_connect_;
+  std::shared_ptr<const XdsEndpointResource> endpoints_;
+  std::vector<size_t /*child_number*/> priority_child_numbers_;
 };
 
 }  // namespace grpc_core

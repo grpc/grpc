@@ -284,9 +284,8 @@ void LegacyChannelIdleFilter::StartIdleTimer() {
 
 void LegacyChannelIdleFilter::CloseChannel(absl::string_view reason) {
   auto* op = grpc_make_transport_op(nullptr);
-  op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE(reason), StatusIntProperty::ChannelConnectivityState,
-      GRPC_CHANNEL_IDLE);
+  op->disconnect_with_error = GRPC_ERROR_CREATE(reason);
+  op->go_idle = true;
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);
@@ -305,14 +304,19 @@ void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
 
-  builder->channel_init()
-      ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
-      .FloatToTop()
-      .ExcludeFromMinimalStack()
-      .If([](const ChannelArgs& channel_args) {
-        return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
-            .enable();
-      });
+  auto& max_age_registration =
+      builder->channel_init()
+          ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
+          .ExcludeFromMinimalStack()
+          .If([](const ChannelArgs& channel_args) {
+            return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
+                .enable();
+          });
+  if (IsFixV3FilterStackServerSideOrderingEnabled()) {
+    max_age_registration.SinkToBottom();
+  } else {
+    max_age_registration.FloatToTop();
+  }
 }
 
 LegacyMaxAgeFilter::LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,

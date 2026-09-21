@@ -534,4 +534,24 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
   }
 }
 
+namespace {
+class ChildChannelArgsOption : public ServerBuilderOption {
+ public:
+  explicit ChildChannelArgsOption(const ChannelArguments& args) : args_(args) {}
+  void UpdateArguments(ChannelArguments* args) override {
+    args->SetChildChannelArgs(args_);
+  }
+  void UpdatePlugins(
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>* /*plugins*/) override {
+  }
+
+ private:
+  ChannelArguments args_;
+};
+}  // namespace
+
+ServerBuilder& ServerBuilder::SetChildChannelArgs(
+    const ChannelArguments& args) {
+  return SetOption(std::make_unique<ChildChannelArgsOption>(args));
+}
 }  // namespace grpc

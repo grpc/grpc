@@ -173,6 +173,11 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   RefCountedPtr<FakeStreamingCall> WaitForStream(
       const XdsBootstrap::XdsServerTarget& server, const char* method);
 
+  // Returns an existing transport or creates a new one.
+  RefCountedPtr<XdsTransport> GetTransport(
+      const XdsBootstrap::XdsServerTarget& server,
+      absl::Status* status) override;
+
   void Orphaned() override;
 
  private:
@@ -234,11 +239,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
         active_calls_ ABSL_GUARDED_BY(&mu_);
   };
-
-  // Returns an existing transport or creates a new one.
-  RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServerTarget& server,
-      absl::Status* /*status*/) override;
 
   // Returns an existing transport, if any, or nullptr.
   RefCountedPtr<FakeXdsTransport> GetTransport(

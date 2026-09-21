@@ -93,6 +93,11 @@ class XdsTestType {
     return *this;
   }
 
+  XdsTestType& set_filter_on_server() {
+    filter_on_server_ = true;
+    return *this;
+  }
+
   XdsTestType& set_bootstrap_source(BootstrapSource bootstrap_source) {
     bootstrap_source_ = bootstrap_source;
     return *this;
@@ -116,6 +121,7 @@ class XdsTestType {
   HttpFilterConfigLocation filter_config_setup() const {
     return filter_config_setup_;
   }
+  bool filter_on_server() const { return filter_on_server_; }
   BootstrapSource bootstrap_source() const { return bootstrap_source_; }
   ::envoy::config::rbac::v3::RBAC_Action rbac_action() const {
     return rbac_action_;
@@ -133,6 +139,7 @@ class XdsTestType {
     if (filter_config_setup_ == kHttpFilterConfigInRoute) {
       retval += "FilterPerRouteOverride";
     }
+    if (filter_on_server_) retval += "FilterOnServer";
     if (bootstrap_source_ == kBootstrapFromFile) {
       retval += "BootstrapFromFile";
     } else if (bootstrap_source_ == kBootstrapFromEnvVar) {
@@ -164,6 +171,7 @@ class XdsTestType {
   bool enable_rds_testing_ = false;
   bool use_csds_streaming_ = false;
   HttpFilterConfigLocation filter_config_setup_ = kHttpFilterConfigInListener;
+  bool filter_on_server_ = false;
   BootstrapSource bootstrap_source_ = kBootstrapFromChannelArg;
   ::envoy::config::rbac::v3::RBAC_Action rbac_action_ =
       ::envoy::config::rbac::v3::RBAC_Action_LOG;
@@ -214,32 +222,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   class ServerThread {
    public:
     // A status notifier for xDS-enabled servers.
-    //
-    // TODO(yashykt): This notifier records the most recent state seen
-    // for every URI and then lets the caller wait until the status for
-    // that URI is the expected one.  If we are expecting an update that
-    // has the same status as the previous one, then we really have no
-    // way of knowing whether the second update has actually been sent.
-    // A better approach here would be to queue the updates received by
-    // the notifier and then have a method to get the next update from
-    // the queue, if any.
-    // Also, we should change the callers to check not just the status
-    // but also the corresponding error message, so that we can verify
-    // that we're emitting useful error messages for our users.
     class XdsServingStatusNotifier
         : public grpc::XdsServerServingStatusNotifierInterface {
      public:
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
 
-      GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
-          const std::string& uri, grpc::StatusCode expected_status,
-          absl::Duration timeout = absl::Seconds(10));
+      std::optional<absl::Status> GetNextStatus(const std::string& uri,
+                                                absl::Time deadline);
 
      private:
       grpc_core::Mutex mu_;
-      grpc_core::CondVar cond_;
-      std::map<std::string, grpc::Status> status_map ABSL_GUARDED_BY(mu_);
+      grpc_core::CondVar* cond_ ABSL_GUARDED_BY(&mu_) = nullptr;
+      std::map<std::string, std::deque<absl::Status>> status_map_
+          ABSL_GUARDED_BY(&mu_);
     };
 
     // If use_xds_enabled_server is true, the server will use xDS.
@@ -257,17 +253,19 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     void Start();
     void Shutdown();
 
-    std::string target() const { return absl::StrCat("localhost:", port_); }
+    std::string target() const { return grpc_core::LocalIpAndPort(port_); }
 
     int port() const { return port_; }
 
-    XdsServingStatusNotifier* notifier() { return &notifier_; }
+    std::optional<absl::Status> GetNextStatus(absl::Time deadline) {
+      return notifier_.GetNextStatus(grpc_core::LocalIpAndPort(port_),
+                                     deadline);
+    }
 
-    GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
-        grpc::StatusCode expected_status,
+    std::optional<absl::Status> GetNextStatus(
         absl::Duration timeout = absl::Seconds(10)) {
-      return notifier_.WaitOnServingStatusChange(
-          grpc_core::LocalIpAndPort(port_), expected_status, timeout);
+      return GetNextStatus(absl::Now() +
+                           (timeout * grpc_test_slowdown_factor()));
     }
 
     void set_allow_put_requests(bool allow_put_requests) {
@@ -798,20 +796,24 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       StatusCode expected_status, absl::string_view expected_message_prefix,
       const RpcOptions& rpc_options = RpcOptions());
 
-  // A class for running a long-running RPC using the callback API.
-  class LongRunningRpc {
+  // A class for running an RPC asynchronously using the callback API.
+  class AsyncRpc {
    public:
     // Starts the RPC.
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
-                  const RpcOptions& rpc_options =
-                      RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
-                          1 * 1000 * 1000));
+                  const RpcOptions& rpc_options = RpcOptions());
 
     // Cancels the RPC.
     void CancelRpc();
 
     // Gets the RPC's status.  Blocks if the RPC is not yet complete.
     Status GetStatus();
+
+    std::multimap<std::string, std::string> GetServerInitialMetadata();
+    std::multimap<std::string, std::string> GetServerTrailingMetadata();
+
+    // Not safe to call until after GetStatus() returns.
+    grpc_core::Duration elapsed_time() const { return elapsed_time_; }
 
    private:
     EchoRequest request_;
@@ -820,20 +822,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     grpc_core::Mutex mu_;
     grpc_core::CondVar cv_;
     std::optional<Status> status_ ABSL_GUARDED_BY(&mu_);
+    grpc_core::Timestamp start_time_;
+    grpc_core::Duration elapsed_time_;
   };
-
-  // Starts a set of concurrent RPCs.
-  // TODO(roth): Change this to use LongRunningRpc.
-  struct ConcurrentRpc {
-    ClientContext context;
-    Status status;
-    grpc_core::Duration elapsed_time;
-    EchoResponse response;
-  };
-  std::vector<std::unique_ptr<ConcurrentRpc>> SendConcurrentRpcs(
-      const grpc_core::DebugLocation& debug_location,
-      grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
-      const RpcOptions& rpc_options);
 
   //
   // Waiting for individual backends to be seen by the client

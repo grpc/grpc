@@ -26,6 +26,7 @@
 #include <grpcpp/impl/channel_interface.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/support/callback_common.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 
@@ -36,6 +37,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/log/absl_check.h"
 
 namespace grpc {
@@ -473,6 +475,12 @@ inline void ClientCallbackUnary::BindReactor(ClientUnaryReactor* reactor) {
   reactor->BindCall(this);
 }
 
+namespace internal {
+std::shared_ptr<Channel> CreateVirtualChannel(
+    Call call, const ChannelArguments& args,
+    absl::AnyInvocable<void()> goaway_callback);
+}  // namespace internal
+
 namespace experimental {
 /// \a ClientSessionReactor is a reactor-style interface for a session RPC.
 /// This will be activated as any other reactor-based RPC, by calling
@@ -481,7 +489,7 @@ class ClientSessionReactor : public grpc::internal::ClientReactor {
  public:
   void StartCall() { call_->StartCall(); }
   void OnDone(const grpc::Status& /*s*/) override {}
-  virtual void OnSessionReady(grpc::internal::Call call) = 0;
+  virtual void OnSessionReady(std::shared_ptr<Channel> virtual_channel) = 0;
   virtual void OnSessionAcknowledged(bool /*ok*/) {}
   virtual void OnGracefulShutdown() {}
 
@@ -1294,6 +1302,27 @@ class ClientCallbackUnaryFactory {
 
 namespace experimental {
 namespace internal {
+
+class SessionReactorTracker {
+ public:
+  explicit SessionReactorTracker(ClientSessionReactor* reactor)
+      : reactor_(reactor) {}
+  void Invalidate() {
+    grpc::internal::MutexLock lock(&mu_);
+    reactor_ = nullptr;
+  }
+  void OnGracefulShutdown() {
+    grpc::internal::MutexLock lock(&mu_);
+    if (reactor_ != nullptr) {
+      reactor_->OnGracefulShutdown();
+    }
+  }
+
+ private:
+  grpc::internal::Mutex mu_;
+  ClientSessionReactor* reactor_ ABSL_GUARDED_BY(mu_);
+};
+
 class ClientCallbackSessionImpl final : public ClientCallbackSession {
  public:
   // always allocated against a call arena, no memory free required
@@ -1307,6 +1336,12 @@ class ClientCallbackSessionImpl final : public ClientCallbackSession {
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { ABSL_CHECK(false); }
+
+  ~ClientCallbackSessionImpl() override {
+    if (tracker_ != nullptr) {
+      tracker_->Invalidate();
+    }
+  }
 
   void StartCall() override {
     send_tag_.Set(
@@ -1342,8 +1377,13 @@ class ClientCallbackSessionImpl final : public ClientCallbackSession {
                             grpc::internal::Call call,
                             grpc::ClientContext* context,
                             const Request* request,
-                            grpc::experimental::ClientSessionReactor* reactor)
-      : context_(context), call_(call), reactor_(reactor) {
+                            grpc::experimental::ClientSessionReactor* reactor,
+                            grpc::ChannelArguments virtual_args)
+      : context_(context),
+        call_(call),
+        reactor_(reactor),
+        virtual_args_(virtual_args),
+        tracker_(std::make_shared<SessionReactorTracker>(reactor)) {
     this->BindReactor(reactor);
     ABSL_CHECK(
         send_ops_.SendMessagePtr(request, channel->memory_allocator()).ok());
@@ -1351,7 +1391,10 @@ class ClientCallbackSessionImpl final : public ClientCallbackSession {
 
   void OnSendDone(bool ok) {
     if (ok) {
-      reactor_->OnSessionReady(call_);
+      auto virtual_channel = grpc::internal::CreateVirtualChannel(
+          call_, virtual_args_,
+          [tracker = tracker_]() { tracker->OnGracefulShutdown(); });
+      reactor_->OnSessionReady(std::move(virtual_channel));
     }
     MaybeFinish();
   }
@@ -1379,6 +1422,8 @@ class ClientCallbackSessionImpl final : public ClientCallbackSession {
   grpc::ClientContext* context_;
   grpc::internal::Call call_;
   grpc::experimental::ClientSessionReactor* reactor_;
+  grpc::ChannelArguments virtual_args_;
+  std::shared_ptr<SessionReactorTracker> tracker_;
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage>
       send_ops_;
@@ -1401,7 +1446,8 @@ class ClientCallbackSessionFactory {
   static void Create(grpc::ChannelInterface* channel,
                      const grpc::internal::RpcMethod& method,
                      grpc::ClientContext* context, const Request* request,
-                     grpc::experimental::ClientSessionReactor* reactor) {
+                     grpc::experimental::ClientSessionReactor* reactor,
+                     grpc::ChannelArguments virtual_args) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -1410,7 +1456,7 @@ class ClientCallbackSessionFactory {
     new (grpc_call_arena_alloc(call.call(), sizeof(ClientCallbackSessionImpl)))
         ClientCallbackSessionImpl(channel, call, context,
                                   static_cast<const BaseRequest*>(request),
-                                  reactor);
+                                  reactor, std::move(virtual_args));
   }
 
   template <class RequestType, class ResponseType>

@@ -134,9 +134,8 @@ class TestFilterFailOnClientInitialMetadata
       std::optional<absl::string_view> failure_mode =
           md.GetStringValue(kFailureMode, &failure_mode_buffer);
       if (failure_mode.has_value() && *failure_mode == "true") {
-        return grpc_error_set_int(
-            absl::PermissionDeniedError("More failure that's not preventable."),
-            StatusIntProperty::kRpcStatus, GRPC_STATUS_PERMISSION_DENIED);
+        return absl::PermissionDeniedError(
+            "More failure that's not preventable.");
       }
       return absl::OkStatus();
     }

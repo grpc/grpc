@@ -61,8 +61,7 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
 namespace {
 
 absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
-  auto policy_slice =
-      LoadFile(std::string(policy_path), /*add_null_terminator=*/false);
+  auto policy_slice = LoadFile(std::string(policy_path));
   if (!policy_slice.ok()) {
     return absl::InvalidArgumentError(policy_slice.status().ToString());
   }

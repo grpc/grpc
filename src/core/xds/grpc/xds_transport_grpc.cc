@@ -78,6 +78,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
+    grpc_call_credentials* call_creds,
     const std::vector<std::pair<std::string, std::string>>& initial_metadata,
     Duration timeout)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
@@ -91,6 +92,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
       /*authority=*/std::nullopt, deadline,
       /*registered_method=*/true, /*arena_init_function=*/std::nullopt);
   GRPC_CHECK_NE(call_, nullptr);
+  // Set call creds, if any.
+  if (call_creds != nullptr) grpc_call_set_credentials(call_, call_creds);
   // Init data associated with the call.
   grpc_metadata_array_init(&initial_metadata_recv_);
   grpc_metadata_array_init(&trailing_metadata_recv_);
@@ -141,10 +144,10 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   op->flags = 0;
   op->reserved = nullptr;
   ++op;
-  // This callback signals the end of the call, so it relies on the initial
-  // ref instead of a new ref. When it's invoked, it's the initial ref that is
-  // unreffed.
-  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
+  // Ref will be released in the callback.
+  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived,
+                    this->Ref(DEBUG_LOCATION, "OnStatusReceived").release(),
+                    nullptr);
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
@@ -172,8 +175,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Orphan() {
   // Otherwise, we are here because xds_client has to orphan a failed call,
   // in which case the following cancellation will be a no-op.
   grpc_call_cancel_internal(call_);
-  // Note that the initial ref is held by OnStatusReceived(), so the
-  // corresponding unref happens there instead of here.
+  Unref(DEBUG_LOCATION, "Orphan");
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
@@ -301,6 +303,32 @@ RefCountedPtr<Channel> CreateXdsChannel(
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config(), certificate_provider_store);
+  ChannelArgs channel_args = args;
+  const grpc_channel_args* child_args =
+      args.GetPointer<grpc_channel_args>(GRPC_ARG_CHILD_CHANNEL_ARGS);
+  if (child_args != nullptr) {
+    channel_args = ChannelArgs::FromC(child_args).UnionWith(args);
+  }
+  return RefCountedPtr<Channel>(Channel::FromC(
+      grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
+                          channel_args.ToC().get())));
+}
+
+std::string GetChannelKey(const GrpcXdsServerInterface& server) {
+  std::string result = "{server_uri=";
+  absl::StrAppend(&result, server.server_uri());
+  if (server.channel_creds_config() != nullptr) {
+    absl::StrAppend(
+        &result,
+        ", channel_creds={type=", server.channel_creds_config()->type(),
+        ", config=", server.channel_creds_config()->ToString(), "}");
+  }
+  absl::StrAppend(&result, "}");
+  return result;
+}
+
+RefCountedPtr<grpc_call_credentials> GetCallCredsForTransport(
+    const GrpcXdsServerInterface& server) {
   RefCountedPtr<grpc_call_credentials> call_creds;
   for (const auto& call_creds_config : server.call_creds_configs()) {
     RefCountedPtr<grpc_call_credentials> creds =
@@ -313,29 +341,7 @@ RefCountedPtr<Channel> CreateXdsChannel(
           std::move(call_creds), std::move(creds));
     }
   }
-  if (call_creds != nullptr) {
-    channel_creds = MakeRefCounted<grpc_composite_channel_credentials>(
-        std::move(channel_creds), std::move(call_creds));
-  }
-  return RefCountedPtr<Channel>(Channel::FromC(grpc_channel_create(
-      server.server_uri().c_str(), channel_creds.get(), args.ToC().get())));
-}
-
-std::string GetChannelKey(const GrpcXdsServerInterface& server) {
-  std::string result = "{server_uri=";
-  absl::StrAppend(&result, server.server_uri());
-  if (server.channel_creds_config() != nullptr) {
-    absl::StrAppend(
-        &result,
-        ", channel_creds={type=", server.channel_creds_config()->type(),
-        ", config=", server.channel_creds_config()->ToString(), "}");
-  }
-  for (const auto& call_creds_config : server.call_creds_configs()) {
-    absl::StrAppend(&result, ", call_creds={type=", call_creds_config->type(),
-                    ", config=", call_creds_config->ToString(), "}");
-  }
-  absl::StrAppend(&result, "}");
-  return result;
+  return call_creds;
 }
 
 }  // namespace
@@ -367,19 +373,19 @@ class GrpcXdsTransportFactory::SharedChannel final
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-    RefCountedPtr<SharedChannel> channel,
-    const XdsBootstrap::XdsServerTarget& server, absl::Status* status)
+    RefCountedPtr<SharedChannel> channel, const GrpcXdsServerInterface& server,
+    absl::Status* status)
     : XdsTransport(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount)
                        ? "GrpcXdsTransport"
                        : nullptr),
       factory_(std::move(factory)),
       key_(server.Key()),
-      channel_(std::move(channel)) {
+      channel_(std::move(channel)),
+      call_creds_(GetCallCredsForTransport(server)),
+      initial_metadata_(server.initial_metadata()),
+      timeout_(server.timeout()) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[GrpcXdsTransport " << this << "] created";
-  const auto& grpc_server = DownCast<const GrpcXdsServerInterface&>(server);
-  initial_metadata_ = grpc_server.initial_metadata();
-  timeout_ = grpc_server.timeout();
   if (channel_->channel()->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
   }
@@ -443,7 +449,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     std::unique_ptr<StreamingCall::EventHandler> event_handler) {
   return MakeOrphanable<GrpcStreamingCall>(
       factory_.WeakRef(DEBUG_LOCATION, "StreamingCall"), channel_->channel(),
-      method, std::move(event_handler), initial_metadata_, timeout_);
+      method, std::move(event_handler), call_creds_.get(), initial_metadata_,
+      timeout_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
@@ -500,20 +507,23 @@ GrpcXdsTransportFactory::GetTransport(
     auto channel_it = channels_.find(channel_key);
     RefCountedPtr<SharedChannel> channel;
     if (channel_it != channels_.end()) {
-      channel = channel_it->second->Ref();
-    } else {
+      GRPC_TRACE_LOG(xds_client, INFO) << "[GrpcXdsTransportFactory " << this
+                                       << "] found cached SharedChannel";
+      channel = channel_it->second->RefIfNonZero();
+    }
+    if (channel == nullptr) {
       RefCountedPtr<Channel> raw_channel =
           CreateXdsChannel(args_, *certificate_provider_store_, grpc_server);
       GRPC_CHECK(raw_channel != nullptr);
       channel = MakeRefCounted<SharedChannel>(
           channel_key, std::move(raw_channel),
           WeakRefAsSubclass<GrpcXdsTransportFactory>());
-      channels_.emplace(channel_key, channel.get());
+      channels_[channel_key] = channel.get();
     }
     transport = MakeRefCounted<GrpcXdsTransport>(
         WeakRefAsSubclass<GrpcXdsTransportFactory>(), std::move(channel),
-        server, status);
-    transports_.emplace(std::move(key), transport.get());
+        grpc_server, status);
+    transports_[std::move(key)] = transport.get();
   }
   return transport;
 }

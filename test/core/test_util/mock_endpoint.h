@@ -24,6 +24,8 @@
 
 #include <memory>
 
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/endpoint.h"
 
 namespace grpc_event_engine {
@@ -51,7 +53,7 @@ class MockEndpointController
  public:
   // Factory method ensures this class is always a shared_ptr.
   static std::shared_ptr<MockEndpointController> Create(
-      std::shared_ptr<EventEngine> engine);
+      std::shared_ptr<EventEngine> engine, int fd = -1);
 
   ~MockEndpointController() override;
 
@@ -71,7 +73,7 @@ class MockEndpointController
 
  private:
   explicit MockEndpointController(std::shared_ptr<EventEngine> engine);
-  void InitMockGrpcEndpoint();
+  void InitMockGrpcEndpoint(int fd);
 
   std::shared_ptr<EventEngine> engine_;
   grpc_core::Mutex mu_;
@@ -82,10 +84,15 @@ class MockEndpointController
   grpc_endpoint* mock_grpc_endpoint_;
 };
 
-class MockEndpoint : public EventEngine::Endpoint {
+class MockEndpoint
+    : public ExtendedType<EventEngine::Endpoint, EndpointSupportsFdExtension> {
  public:
+  // When using a MockEndpoint in a test, don't construct it directly. Instead
+  // call TakeCEndpoint on the MockEndpointController.
   explicit MockEndpoint(
       std::shared_ptr<BaseMockEndpointController> endpoint_control);
+  explicit MockEndpoint(
+      std::shared_ptr<BaseMockEndpointController> endpoint_control, int fd);
   ~MockEndpoint() override = default;
 
   // ---- overrides ----
@@ -95,6 +102,9 @@ class MockEndpoint : public EventEngine::Endpoint {
              SliceBuffer* data, WriteArgs args) override;
   const EventEngine::ResolvedAddress& GetPeerAddress() const override;
   const EventEngine::ResolvedAddress& GetLocalAddress() const override;
+  int GetWrappedFd() override;
+  void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
+                    on_release_fd) override;
 
   std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
     return nullptr;
@@ -104,6 +114,7 @@ class MockEndpoint : public EventEngine::Endpoint {
   std::shared_ptr<BaseMockEndpointController> endpoint_control_;
   EventEngine::ResolvedAddress peer_addr_;
   EventEngine::ResolvedAddress local_addr_;
+  int fd_;
 };
 
 }  // namespace experimental

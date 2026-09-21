@@ -27,6 +27,7 @@
 #include <string>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
@@ -191,7 +192,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   // successful.
   absl::Status UpdateRoot(std::shared_ptr<tsi::RootCertInfo> root_certificates);
   absl::Status UpdateIdentityKeyCertPair(
-      const PemKeyCertPairList& pem_key_cert_pairs);
+      const KeyCertPairsOrSelector& key_cert_pairs_or_selector);
 
  private:
   struct WatcherInfo {
@@ -205,15 +206,15 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   }
   absl::Status Update(
       std::optional<std::shared_ptr<tsi::RootCertInfo>> root_cert_info,
-      std::optional<const PemKeyCertPairList> pem_key_cert_pairs);
+      std::optional<const KeyCertPairsOrSelector> key_cert_pairs_or_selector);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 
-  // Guards pem_key_cert_pairs_, root_certificates_ and watcher_info_.
+  // Guards identities_, root_certificates_ and watcher_info_.
   mutable Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
-  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
+  KeyCertPairsOrSelector key_cert_pairs_or_selector_ ABSL_GUARDED_BY(mu_);
   absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>> root_certificates_
       ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher

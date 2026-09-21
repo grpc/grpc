@@ -105,9 +105,6 @@ static grpc_core::Duration NextAllowedPingInterval(grpc_chttp2_transport* t) {
     // The gRPC keepalive spec doesn't call for any throttling on the server
     // side, but we are adding some throttling for protection anyway, unless
     // we are doing a graceful GOAWAY in which case we don't want to wait.
-    if (grpc_core::IsMultipingEnabled()) {
-      return grpc_core::Duration::Seconds(1);
-    }
     return t->keepalive_time == grpc_core::Duration::Infinity()
                ? grpc_core::Duration::Seconds(20)
                : t->keepalive_time / 2;
