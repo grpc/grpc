@@ -99,8 +99,37 @@ brew_install_with_retry() {
 brew config
 
 if $is_sonoma; then
-  brew update-reset
-  brew upgrade || true
+  export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
+
+  # Pin Homebrew and homebrew/core to the last known-good Sonoma snapshot
+  # (from before Homebrew dropped macOS 14 Sonoma Tier 1 bottle support).
+  HOMEBREW_REPO="$(brew --repository)"
+  HOMEBREW_PINNED_COMMIT="70badad488056fb48cf687aa777f2880aac58fe9"
+  if [[ "$(git -C "${HOMEBREW_REPO}" rev-parse HEAD 2>/dev/null || true)" != "${HOMEBREW_PINNED_COMMIT}" ]]; then
+    if [[ -d /Users/kbuilder/brew-git ]]; then
+      git -C "${HOMEBREW_REPO}" fetch --depth 1 /Users/kbuilder/brew-git "${HOMEBREW_PINNED_COMMIT}"
+    else
+      git -C "${HOMEBREW_REPO}" fetch --depth 1 https://github.com/Homebrew/brew.git "${HOMEBREW_PINNED_COMMIT}"
+    fi
+    git -C "${HOMEBREW_REPO}" checkout -f "${HOMEBREW_PINNED_COMMIT}"
+  fi
+
+  HOMEBREW_CORE_DIR="${HOMEBREW_REPO}/Library/Taps/homebrew/homebrew-core"
+  HOMEBREW_CORE_PINNED_COMMIT="3aa5cf1d47f4fda4decbfc999ea919cd499a204e"
+  if [[ -d /Users/kbuilder/homebrew-core-git ]] && [[ ! -d "${HOMEBREW_CORE_DIR}" ]]; then
+    git clone /Users/kbuilder/homebrew-core-git "${HOMEBREW_CORE_DIR}"
+  fi
+  if [[ ! -d "${HOMEBREW_CORE_DIR}" ]]; then
+    mkdir -p "${HOMEBREW_CORE_DIR}"
+    git -C "${HOMEBREW_CORE_DIR}" init
+    git -C "${HOMEBREW_CORE_DIR}" remote add origin https://github.com/Homebrew/homebrew-core.git
+  fi
+  if [[ "$(git -C "${HOMEBREW_CORE_DIR}" rev-parse HEAD 2>/dev/null || true)" != "${HOMEBREW_CORE_PINNED_COMMIT}" ]]; then
+    git -C "${HOMEBREW_CORE_DIR}" fetch --depth 1 https://github.com/Homebrew/homebrew-core.git "${HOMEBREW_CORE_PINNED_COMMIT}"
+    git -C "${HOMEBREW_CORE_DIR}" checkout -f "${HOMEBREW_CORE_PINNED_COMMIT}"
+  fi
+
+  brew config
   brew_install_with_retry cmake
   brew_install_with_retry ccache
   export PATH="/opt/homebrew/bin::${PATH}"
