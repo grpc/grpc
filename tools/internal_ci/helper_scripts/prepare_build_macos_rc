@@ -103,7 +103,6 @@ if $is_sonoma; then
   export PIP_BREAK_SYSTEM_PACKAGES=1
 
   # Pin Homebrew to version 5.0.5 and homebrew/core to the matching Sonoma snapshot
-  # (from before Homebrew dropped macOS 14 Sonoma Tier 1 bottle support).
   HOMEBREW_REPO="$(brew --repository)"
   git -C "${HOMEBREW_REPO}" fetch --depth 1 https://github.com/Homebrew/brew.git tag 5.0.5
   git -C "${HOMEBREW_REPO}" checkout -f 5.0.5
