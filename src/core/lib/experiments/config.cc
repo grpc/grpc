@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <atomic>
 #include <map>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -158,6 +159,11 @@ Experiments LoadExperimentsFromConfigVariable() {
   return LoadExperimentsFromConfigVariableInner();
 }
 
+std::mutex* ExperimentsMutex() {
+  static NoDestruct<std::mutex> mu;
+  return &*mu;
+}
+
 Experiments& ExperimentsSingleton() {
   // One time initialization:
   static NoDestruct<Experiments> experiments{
@@ -167,8 +173,11 @@ Experiments& ExperimentsSingleton() {
 }  // namespace
 
 void TestOnlyReloadExperimentsFromConfigVariables() {
-  ExperimentFlags::TestOnlyClear();
-  ExperimentsSingleton() = LoadExperimentsFromConfigVariable();
+  {
+    std::lock_guard<std::mutex> lock(*ExperimentsMutex());
+    ExperimentsSingleton() = LoadExperimentsFromConfigVariable();
+    ExperimentFlags::TestOnlyClear();
+  }
   PrintExperimentsList();
 }
 
@@ -186,6 +195,7 @@ bool ExperimentFlags::LoadFlagsAndCheck(size_t experiment_id) {
                 "kNumExperiments must be less than "
                 "kNumExperimentFlagsWords*kFlagsPerWord; if this fails then "
                 "make kNumExperimentFlagsWords bigger.");
+  std::lock_guard<std::mutex> lock(*ExperimentsMutex());
   const auto& experiments = ExperimentsSingleton();
   uint64_t building[kNumExperimentFlagsWords];
   for (size_t i = 0; i < kNumExperimentFlagsWords; i++) {
