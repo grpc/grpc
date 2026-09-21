@@ -54,7 +54,14 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
       // the EventHandler::OnRequestSent() method will be called.
       // Only one message will be in flight at a time; subsequent
       // messages will not be sent until this one is done.
-      virtual void SendMessage(std::string payload) = 0;
+      //
+      // If send_half_close is true, the client-side half-close is sent in
+      // the same batch as the message, in which case SendHalfClose() must
+      // not be called afterwards.
+      void SendMessage(std::string payload) {
+        SendMessage(std::move(payload), /*send_half_close=*/false);
+      }
+      virtual void SendMessage(std::string payload, bool send_half_close) = 0;
 
       // Starts a recv_message operation on the stream.
       virtual void StartRecvMessage() = 0;
@@ -85,10 +92,20 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     // Create a streaming call on this transport for the specified method,
     // with wait-for-ready enabled.
     // Events on the stream will be reported to event_handler.
+    //
+    // If start_upon_send_message is true, the send_initial_metadata op is
+    // not started when the call is created; instead, it is started by the
+    // first call to SendMessage().  This allows a unary call to send
+    // initial metadata, the request message, and the half-close in a single
+    // batch:
+    //   auto call = transport->CreateStreamingCall(
+    //       method, std::move(handler), /*start_upon_send_message=*/true);
+    //   call->SendMessage(payload, /*send_half_close=*/true);
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler) {
       return CreateStreamingCall(method, std::move(event_handler),
+                                 /*start_upon_send_message=*/false,
                                  /*wait_for_ready=*/true);
     }
 
@@ -97,7 +114,7 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        bool wait_for_ready) = 0;
+        bool start_upon_send_message, bool wait_for_ready) = 0;
 
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;

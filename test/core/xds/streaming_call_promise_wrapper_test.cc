@@ -85,17 +85,22 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
     WaitForSingleOwner(std::move(event_engine_));
   }
 
-  void InitStream(bool auto_complete_messages_from_client = true) {
+  void InitStream(bool auto_complete_messages_from_client = true,
+                  bool start_upon_send_message = false) {
     transport_factory_->SetAutoCompleteMessagesFromClient(
         auto_complete_messages_from_client);
     absl::Status status;
     transport_ = transport_factory_->GetTransport(*target_, &status);
     ASSERT_TRUE(status.ok()) << status;
     ASSERT_NE(transport_, nullptr);
-    wrapper_ =
-        MakeRefCounted<XdsStreamingCallPromiseWrapper>(*transport_, kMethod);
+    wrapper_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
+        *transport_, kMethod, start_upon_send_message);
     stream_ = transport_factory_->WaitForStream(*target_, kMethod);
-    ASSERT_NE(stream_, nullptr);
+    if (start_upon_send_message) {
+      ASSERT_EQ(stream_, nullptr);
+    } else {
+      ASSERT_NE(stream_, nullptr);
+    }
   }
 
   std::shared_ptr<FuzzingEventEngine> event_engine_;
@@ -257,6 +262,68 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, SendHalfClose) {
   wrapper_->SendHalfClose();
   event_engine_->TickUntilIdle();
   EXPECT_TRUE(stream_->half_closed());
+}
+
+TEST_F(XdsStreamingCallPromiseWrapperTest, PushMessageWithSendHalfClose) {
+  InitStream();
+  bool send_completed = false;
+  auto activity = MakeActivity(
+      [this, &send_completed] {
+        return Map(
+            wrapper_->PushMessage(kClientMessage, /*send_half_close=*/true),
+            [&](StatusFlag status) {
+              EXPECT_TRUE(status.ok());
+              send_completed = true;
+              return absl::OkStatus();
+            });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_TRUE(send_completed);
+  EXPECT_EQ(stream_->WaitForMessageFromClient(), kClientMessage);
+  EXPECT_TRUE(stream_->half_closed());
+}
+
+TEST_F(XdsStreamingCallPromiseWrapperTest, StartUponSendMessage) {
+  InitStream(/*auto_complete_messages_from_client=*/true,
+             /*start_upon_send_message=*/true);
+  std::optional<std::string> received_message;
+  auto pull_activity = MakeActivity(
+      [this, &received_message] {
+        return Map(wrapper_->PullMessage(),
+                   [&](const std::optional<std::string>& res) {
+                     received_message = res;
+                     return absl::OkStatus();
+                   });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(transport_factory_->WaitForStream(*target_, kMethod), nullptr);
+  bool send_completed = false;
+  auto push_activity = MakeActivity(
+      [this, &send_completed] {
+        return Map(
+            wrapper_->PushMessage(kClientMessage, /*send_half_close=*/true),
+            [&](StatusFlag status) {
+              EXPECT_TRUE(status.ok());
+              send_completed = true;
+              return absl::OkStatus();
+            });
+      },
+      InlineWakeupScheduler(),
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_TRUE(send_completed);
+  stream_ = transport_factory_->WaitForStream(*target_, kMethod);
+  ASSERT_NE(stream_, nullptr);
+  EXPECT_EQ(stream_->WaitForMessageFromClient(), kClientMessage);
+  EXPECT_TRUE(stream_->half_closed());
+  stream_->SendMessageToClient(kServerMessage);
+  event_engine_->TickUntilIdle();
+  ASSERT_TRUE(received_message.has_value());
+  EXPECT_EQ(*received_message, kServerMessage);
 }
 
 TEST_F(XdsStreamingCallPromiseWrapperTest, ConcurrentStatusAndPullMessage) {
