@@ -26,6 +26,14 @@ typedef struct grpc_health_v1_HealthCheckResponse {
   upb_Message UPB_PRIVATE(base);
 } grpc_health_v1_HealthCheckResponse;
 
+typedef struct grpc_health_v1_HealthListRequest {
+  upb_Message UPB_PRIVATE(base);
+} grpc_health_v1_HealthListRequest;
+
+typedef struct grpc_health_v1_HealthListResponse {
+  upb_Message UPB_PRIVATE(base);
+} grpc_health_v1_HealthListResponse;
+
 
 typedef enum {
   grpc_health_v1_HealthCheckResponse_UNKNOWN = 0,
@@ -146,6 +154,170 @@ UPB_INLINE int32_t grpc_health_v1_HealthCheckResponse_status(const grpc_health_v
 UPB_INLINE void grpc_health_v1_HealthCheckResponse_set_status(grpc_health_v1_HealthCheckResponse* msg, int32_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+
+/* grpc.health.v1.HealthListRequest */
+UPB_INLINE grpc_health_v1_HealthListRequest* grpc_health_v1_HealthListRequest_new(upb_Arena* arena) {
+  return (grpc_health_v1_HealthListRequest*)_upb_Message_New(&grpc__health__v1__HealthListRequest_msg_init, arena);
+}
+UPB_INLINE grpc_health_v1_HealthListRequest* grpc_health_v1_HealthListRequest_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
+  grpc_health_v1_HealthListRequest* ret = grpc_health_v1_HealthListRequest_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__health__v1__HealthListRequest_msg_init, NULL, 0,
+                 arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE grpc_health_v1_HealthListRequest* grpc_health_v1_HealthListRequest_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  grpc_health_v1_HealthListRequest* ret = grpc_health_v1_HealthListRequest_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__health__v1__HealthListRequest_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* grpc_health_v1_HealthListRequest_serialize(const grpc_health_v1_HealthListRequest* msg,
+                                      upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListRequest_msg_init, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* grpc_health_v1_HealthListRequest_serialize_ex(const grpc_health_v1_HealthListRequest* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListRequest_msg_init, options, arena, &ptr, len);
+  return ptr;
+}
+
+
+/* grpc.health.v1.HealthListResponse */
+UPB_INLINE grpc_health_v1_HealthListResponse* grpc_health_v1_HealthListResponse_new(upb_Arena* arena) {
+  return (grpc_health_v1_HealthListResponse*)_upb_Message_New(&grpc__health__v1__HealthListResponse_msg_init, arena);
+}
+UPB_INLINE grpc_health_v1_HealthListResponse* grpc_health_v1_HealthListResponse_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
+  grpc_health_v1_HealthListResponse* ret = grpc_health_v1_HealthListResponse_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__health__v1__HealthListResponse_msg_init, NULL, 0,
+                 arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE grpc_health_v1_HealthListResponse* grpc_health_v1_HealthListResponse_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  grpc_health_v1_HealthListResponse* ret = grpc_health_v1_HealthListResponse_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__health__v1__HealthListResponse_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* grpc_health_v1_HealthListResponse_serialize(const grpc_health_v1_HealthListResponse* msg,
+                                      upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListResponse_msg_init, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* grpc_health_v1_HealthListResponse_serialize_ex(const grpc_health_v1_HealthListResponse* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &grpc__health__v1__HealthListResponse_msg_init, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void grpc_health_v1_HealthListResponse_clear_statuses(grpc_health_v1_HealthListResponse* msg) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE size_t grpc_health_v1_HealthListResponse_statuses_size(const grpc_health_v1_HealthListResponse* msg) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthListResponse__StatusesEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthCheckResponse_msg_init);
+  const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  return map ? _upb_Map_Size(map) : 0;
+}
+
+UPB_INLINE bool grpc_health_v1_HealthListResponse_statuses_get(const grpc_health_v1_HealthListResponse* msg,
+                                      upb_StringView key, grpc_health_v1_HealthCheckResponse** val) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthListResponse__StatusesEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthCheckResponse_msg_init);
+  const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  if (!map) return false;
+  return _upb_Map_Get(map, &key, 0, val, sizeof(grpc_health_v1_HealthCheckResponse*));
+}
+
+UPB_INLINE bool grpc_health_v1_HealthListResponse_statuses_next(const grpc_health_v1_HealthListResponse* msg,
+                                       upb_StringView* key,
+                                       const grpc_health_v1_HealthCheckResponse** val,
+                                       size_t* iter) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthListResponse__StatusesEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthCheckResponse_msg_init);
+  const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
+}
+
+// and ~ a upb_Map for mutable.
+//
+UPB_INLINE const upb_Map* _grpc_health_v1_HealthListResponse_statuses_upb_map(grpc_health_v1_HealthListResponse* msg) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthListResponse__StatusesEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthCheckResponse_msg_init);
+  return upb_Message_GetMap(UPB_UPCAST(msg), &field);
+}
+
+UPB_INLINE upb_Map* _grpc_health_v1_HealthListResponse_statuses_mutable_upb_map(
+    grpc_health_v1_HealthListResponse* msg, upb_Arena* a) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthListResponse__StatusesEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthCheckResponse_msg_init);
+  return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field,
+                                            0, sizeof(grpc_health_v1_HealthCheckResponse*), a);
+}
+
+UPB_INLINE void grpc_health_v1_HealthListResponse_statuses_clear(grpc_health_v1_HealthListResponse* msg) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthListResponse__StatusesEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthCheckResponse_msg_init);
+  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  if (!map) return;
+  _upb_Map_Clear(map);
+}
+
+UPB_INLINE bool grpc_health_v1_HealthListResponse_statuses_set(grpc_health_v1_HealthListResponse* msg, upb_StringView key,
+                                      grpc_health_v1_HealthCheckResponse* val, upb_Arena* a) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthListResponse__StatusesEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthCheckResponse_msg_init);
+  upb_Map* map = _upb_Message_GetOrCreateMutableMap(
+      UPB_UPCAST(msg), &field, 0, sizeof(val), a);
+  return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
+         kUpb_MapInsertStatus_OutOfMemory;
+}
+
+UPB_INLINE bool grpc_health_v1_HealthListResponse_statuses_delete(grpc_health_v1_HealthListResponse* msg, upb_StringView key) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthListResponse__StatusesEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__health__v1__HealthCheckResponse_msg_init);
+  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  if (!map) return false;
+  return _upb_Map_Delete(map, &key, 0, NULL);
 }
 
 #ifdef __cplusplus
