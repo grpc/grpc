@@ -946,6 +946,7 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_outlier_detection",
         "//src/core:grpc_lb_policy_pick_first",
         "//src/core:grpc_lb_policy_priority",
+        "//src/core:grpc_lb_policy_autosharding",
         "//src/core:grpc_lb_policy_ring_hash",
         "//src/core:grpc_lb_policy_round_robin",
         "//src/core:grpc_lb_policy_weighted_round_robin",
@@ -1179,6 +1180,7 @@ grpc_cc_library(
         "google_api_expr_v1alpha1_syntax_upb",
         "gpr",
         "grpc_mock_cel",
+        "//src/core:evaluate_args",
         "//src/core:grpc_authorization_base",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
@@ -2288,9 +2290,9 @@ grpc_cc_library(
         ":gpr",
         ":grpc++",
         ":lb_load_reporter",
+        ":load_reporter_cc_grpc",
         "//src/core:grpc_check",
         "//src/core:sync",
-        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
@@ -2337,9 +2339,9 @@ grpc_cc_library(
         "gpr",
         "lb_get_cpu_stats",
         "lb_load_data_store",
+        ":load_reporter_cc_grpc",
         "//src/core:grpc_check",
         "//src/core:sync",
-        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
@@ -5061,7 +5063,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
-        "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
         "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.cc",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.cc",
         "//src/core:ext/transport/chttp2/transport/frame_data.cc",
@@ -5076,7 +5077,6 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/writing.cc",
     ],
     hdrs = [
-        "//src/core:ext/transport/chttp2/transport/bin_decoder.h",
         "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.h",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.h",
         "//src/core:ext/transport/chttp2/transport/frame_data.h",
@@ -5596,7 +5596,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto"],
+    deps = ["@grpc_proto//:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5616,7 +5616,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto"],
+    deps = ["@grpc_proto//:grpclb_load_balancer_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5745,6 +5745,21 @@ grpc_cc_proto_library(
     deps = ["@grpc_proto//:rls_config_proto"],
 )
 
+grpc_cc_proto_library(
+    name = "health_cc_proto",
+    deps = ["@grpc_proto//:health_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "load_balancer_cc_proto",
+    deps = ["@grpc_proto//:grpclb_load_balancer_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "load_reporter_cc_proto",
+    deps = ["@grpc_proto//:grpclb_load_reporter_proto"],
+)
+
 grpc_cc_grpc_library(
     name = "reflection_v1_cc_grpc",
     srcs = ["@grpc_proto//:reflection_proto"],
@@ -5784,4 +5799,22 @@ grpc_cc_grpc_library(
     name = "rls_config_cc_grpc",
     srcs = ["@grpc_proto//:rls_config_proto"],
     deps = [":rls_config_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "health_cc_grpc",
+    srcs = ["@grpc_proto//:health_proto"],
+    deps = [":health_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "load_balancer_cc_grpc",
+    srcs = ["@grpc_proto//:grpclb_load_balancer_proto"],
+    deps = [":load_balancer_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "load_reporter_cc_grpc",
+    srcs = ["@grpc_proto//:grpclb_load_reporter_proto"],
+    deps = [":load_reporter_cc_proto"],
 )

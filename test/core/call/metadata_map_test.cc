@@ -180,6 +180,7 @@ std::vector<std::string> GetAllowList() {
           std::string(LbTokenMetadata::key()),
           std::string(TeMetadata::key()),
           std::string(UserAgentMetadata::key()),
+          std::string(XEnvoyAuthFailureModeAllowedMetadata::key()),
           std::string(XEnvoyPeerMetadata::key()),
           std::string(GrpcCallWasCancelled::DebugKey()),
           std::string(GrpcRegisteredMethod::DebugKey()),
@@ -203,40 +204,42 @@ TEST(DebugStringBuilderTest, TestAllAllowListed) {
   }
 
   // All values which are allow listed should be added as is.
-  EXPECT_EQ(builder_add_allow_list.TakeOutput(),
-            "content-type: content-type, "
-            "endpoint-load-metrics-bin: endpoint-load-metrics-bin, "
-            "grpc-accept-encoding: grpc-accept-encoding, "
-            "grpc-encoding: grpc-encoding, "
-            "grpc-internal-encoding-request: grpc-internal-encoding-request, "
-            "grpclb_client_stats: grpclb_client_stats, "
-            "grpc-message: grpc-message, "
-            "grpc-previous-rpc-attempts: grpc-previous-rpc-attempts, "
-            "grpc-retry-pushback-ms: grpc-retry-pushback-ms, "
-            "grpc-server-stats-bin: grpc-server-stats-bin, "
-            "grpc-status: grpc-status, "
-            "grpc-tags-bin: grpc-tags-bin, "
-            "grpc-timeout: grpc-timeout, "
-            "grpc-trace-bin: grpc-trace-bin, "
-            "host: host, :authority: :authority, "
-            ":method: :method, "
-            ":path: :path, "
-            ":scheme: :scheme, "
-            ":status: :status, "
-            "lb-cost-bin: lb-cost-bin, "
-            "lb-token: lb-token, "
-            "te: te, "
-            "user-agent: user-agent, "
-            "x-envoy-peer-metadata: x-envoy-peer-metadata, "
-            "GrpcCallWasCancelled: GrpcCallWasCancelled, "
-            "GrpcRegisteredMethod: GrpcRegisteredMethod, "
-            "GrpcStatusContext: GrpcStatusContext, "
-            "GrpcStatusFromWire: GrpcStatusFromWire, "
-            "GrpcStreamNetworkState: GrpcStreamNetworkState, "
-            "GrpcTarPit: GrpcTarPit, "
-            "GrpcTrailersOnly: GrpcTrailersOnly, "
-            "PeerString: PeerString, "
-            "WaitForReady: WaitForReady");
+  EXPECT_EQ(
+      builder_add_allow_list.TakeOutput(),
+      "content-type: content-type, "
+      "endpoint-load-metrics-bin: endpoint-load-metrics-bin, "
+      "grpc-accept-encoding: grpc-accept-encoding, "
+      "grpc-encoding: grpc-encoding, "
+      "grpc-internal-encoding-request: grpc-internal-encoding-request, "
+      "grpclb_client_stats: grpclb_client_stats, "
+      "grpc-message: grpc-message, "
+      "grpc-previous-rpc-attempts: grpc-previous-rpc-attempts, "
+      "grpc-retry-pushback-ms: grpc-retry-pushback-ms, "
+      "grpc-server-stats-bin: grpc-server-stats-bin, "
+      "grpc-status: grpc-status, "
+      "grpc-tags-bin: grpc-tags-bin, "
+      "grpc-timeout: grpc-timeout, "
+      "grpc-trace-bin: grpc-trace-bin, "
+      "host: host, :authority: :authority, "
+      ":method: :method, "
+      ":path: :path, "
+      ":scheme: :scheme, "
+      ":status: :status, "
+      "lb-cost-bin: lb-cost-bin, "
+      "lb-token: lb-token, "
+      "te: te, "
+      "user-agent: user-agent, "
+      "x-envoy-auth-failure-mode-allowed: x-envoy-auth-failure-mode-allowed, "
+      "x-envoy-peer-metadata: x-envoy-peer-metadata, "
+      "GrpcCallWasCancelled: GrpcCallWasCancelled, "
+      "GrpcRegisteredMethod: GrpcRegisteredMethod, "
+      "GrpcStatusContext: GrpcStatusContext, "
+      "GrpcStatusFromWire: GrpcStatusFromWire, "
+      "GrpcStreamNetworkState: GrpcStreamNetworkState, "
+      "GrpcTarPit: GrpcTarPit, "
+      "GrpcTrailersOnly: GrpcTrailersOnly, "
+      "PeerString: PeerString, "
+      "WaitForReady: WaitForReady");
 }
 
 TEST(DebugStringBuilderTest, TestAllRedacted) {
@@ -284,6 +287,7 @@ std::vector<std::string> GetEncodableHeaders() {
           std::string(LbCostBinMetadata::key()),
           std::string(LbTokenMetadata::key()),
           std::string(TeMetadata::key()),
+          std::string(XEnvoyAuthFailureModeAllowedMetadata::key()),
       // clang-format on
   };
 }

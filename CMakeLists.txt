@@ -152,7 +152,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
-  absl_hardening
   absl_has_ostream_operator
   absl_hash
   absl_hash_container_defaults
@@ -164,7 +163,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
-  absl_internal_optional_ref
   absl_iterator_traits_internal
   absl_kernel_timeout_internal
   absl_layout
@@ -192,6 +190,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_log_severity
   absl_log_sink
   absl_log_sink_registry
+  absl_low_level_hash
   absl_malloc_internal
   absl_memory
   absl_no_destructor
@@ -224,7 +223,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_internal_traits
   absl_random_internal_uniform_helper
   absl_random_internal_wide_multiply
-  absl_random_mocking_access
   absl_random_random
   absl_random_seed_gen_exception
   absl_random_seed_sequences
@@ -233,7 +231,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_raw_hash_set_resize_impl
   absl_raw_logging_internal
   absl_sample_recorder
-  absl_source_location
   absl_span
   absl_spinlock_wait
   absl_stacktrace
@@ -244,9 +241,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_strerror
   absl_string_view
   absl_strings
-  absl_strings_append_and_overwrite
   absl_strings_internal
-  absl_strings_resize_and_overwrite
   absl_symbolize
   absl_synchronization
   absl_throw_delegate
@@ -500,7 +495,7 @@ if(BUILD_SHARED_LIBS AND WIN32)
 # generated with the necessary __declspec annotations.
 set(gRPC_UPB_GEN_DUPL_SRC
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
+  src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
 )
 
@@ -602,7 +597,7 @@ function(protobuf_generate_grpc_cpp_with_import_path_correction FILE_LOCATION IM
   # Copy the proto file to a centralized location, with the correct import
   # path. For example, health proto has package name grpc.health.v1, the bash
   # equivalent would be:
-  #   cp src/proto/grpc/health/v1/health.proto ${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1
+  #   cp third_party/grpc-proto/grpc/health/v1/health.proto ${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1
   file(MAKE_DIRECTORY ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION} DESTINATION ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
 
@@ -698,13 +693,13 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/v2/service.proto src/proto/grpc/channelz/v2/service.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/health/v1/health.proto src/proto/grpc/health/v1/health.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/lb/v1/load_balancer.proto src/proto/grpc/lb/v1/load_balancer.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/grpc-proto/grpc/channelz/v1/channelz.proto grpc/channelz/v1/channelz.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/grpc-proto/grpc/health/v1/health.proto grpc/health/v1/health.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/grpc-proto/grpc/lb/v1/load_balancer.proto grpc/lb/v1/load_balancer.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/grpc-proto/grpc/lookup/v1/rls.proto grpc/lookup/v1/rls.proto
@@ -1338,6 +1333,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
   add_dependencies(buildtests_cxx authorization_policy_provider_test)
+  add_dependencies(buildtests_cxx autosharding_config_test)
+  add_dependencies(buildtests_cxx autosharding_test)
   add_dependencies(buildtests_cxx avl_test)
   add_dependencies(buildtests_cxx aws_request_signer_test)
   add_dependencies(buildtests_cxx backend_metrics_lb_policy_test)
@@ -1357,7 +1354,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx bdp_estimator_test)
   endif()
-  add_dependencies(buildtests_cxx bin_decoder_test)
   add_dependencies(buildtests_cxx bin_encoder_test)
   add_dependencies(buildtests_cxx bitset_test)
   add_dependencies(buildtests_cxx blackboard_test)
@@ -2271,6 +2267,7 @@ add_library(grpc
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/evaluate_args.cc
   src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
@@ -2394,7 +2391,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/chttp2_plugin.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
@@ -2578,6 +2574,8 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c
+  src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
+  src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
@@ -2587,8 +2585,6 @@ add_library(grpc
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
@@ -2958,7 +2954,6 @@ add_library(grpc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/security/authorization/matchers.cc
@@ -3000,6 +2995,7 @@ add_library(grpc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/address_filtering.cc
+  src/core/load_balancing/autosharding/autosharding.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -3476,6 +3472,7 @@ add_library(grpc_unsecure
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/evaluate_args.cc
   src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
@@ -3553,7 +3550,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/chttp2_plugin.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
@@ -3604,6 +3600,8 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
+  src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
@@ -3612,8 +3610,6 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/validate/validate.upb_minitable.c
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
@@ -3789,7 +3785,6 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -3827,6 +3822,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/address_filtering.cc
+  src/core/load_balancing/autosharding/autosharding.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -6073,6 +6069,7 @@ add_library(grpc_authorization_provider
   src/core/call/call_spine.cc
   src/core/call/call_state.cc
   src/core/call/client_call.cc
+  src/core/call/evaluate_args.cc
   src/core/call/interception_chain.cc
   src/core/call/message.cc
   src/core/call/metadata.cc
@@ -6283,7 +6280,6 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
-  src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
@@ -8558,10 +8554,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(async_end2end_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -8586,6 +8578,10 @@ add_executable(async_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -8803,6 +8799,97 @@ target_link_libraries(authorization_policy_provider_test
   gtest
   grpc++
   grpc_authorization_provider
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(autosharding_config_test
+  test/core/load_balancing/autosharding_config_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(autosharding_config_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(autosharding_config_test PUBLIC cxx_std_17)
+target_include_directories(autosharding_config_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(autosharding_config_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(autosharding_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/autosharding_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(autosharding_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(autosharding_test PUBLIC cxx_std_17)
+target_include_directories(autosharding_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(autosharding_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -9379,48 +9466,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(bin_decoder_test
-  test/core/transport/chttp2/bin_decoder_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(bin_decoder_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(bin_decoder_test PUBLIC cxx_std_17)
-target_include_directories(bin_decoder_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(bin_decoder_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -12922,10 +12967,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -12954,6 +12995,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -17096,7 +17141,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
-  test/core/security/evaluate_args_test.cc
+  test/core/call/evaluate_args_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17933,6 +17978,7 @@ target_link_libraries(ext_proc_message_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++
+  grpc_test_util
 )
 
 
@@ -21040,10 +21086,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpclb_api_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/grpclb/grpclb_api_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21088,10 +21134,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(grpclb_end2end_test
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -21116,6 +21158,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/grpc/lb/v1/load_balancer.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -21577,10 +21623,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(health_service_end2end_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -21605,6 +21647,10 @@ add_executable(health_service_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
@@ -28532,10 +28578,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(pre_stop_hook_server_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
@@ -28964,6 +29006,10 @@ add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/grpc/health/v1/health.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h

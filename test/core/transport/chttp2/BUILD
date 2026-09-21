@@ -224,26 +224,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bin_decoder_test",
-    srcs = ["bin_decoder_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:chttp2_bin_encoder",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_transport_chttp2",
-        "//src/core:slice",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "frame_test",
     srcs = ["frame_test.cc"],
     external_deps = [
@@ -796,6 +776,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
+        "gtest",
     ],
     deps = [
         ":http2_frame_test_helper",
