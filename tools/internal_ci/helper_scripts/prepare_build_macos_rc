@@ -101,17 +101,17 @@ brew config
 if $is_sonoma; then
   export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
 
-  # Pin Homebrew and homebrew/core to the last known-good Sonoma snapshot
+  # Pin Homebrew to version 5.0.5 and homebrew/core to the matching Sonoma snapshot
   # (from before Homebrew dropped macOS 14 Sonoma Tier 1 bottle support).
   HOMEBREW_REPO="$(brew --repository)"
-  HOMEBREW_PINNED_COMMIT="70badad488056fb48cf687aa777f2880aac58fe9"
-  if [[ "$(git -C "${HOMEBREW_REPO}" rev-parse HEAD 2>/dev/null || true)" != "${HOMEBREW_PINNED_COMMIT}" ]]; then
+  HOMEBREW_PINNED_VERSION="5.0.5"
+  if [[ "$(git -C "${HOMEBREW_REPO}" describe --tags --exact-match 2>/dev/null || true)" != "${HOMEBREW_PINNED_VERSION}" ]]; then
     if [[ -d /Users/kbuilder/brew-git ]]; then
-      git -C "${HOMEBREW_REPO}" fetch --depth 1 /Users/kbuilder/brew-git "${HOMEBREW_PINNED_COMMIT}"
+      git -C "${HOMEBREW_REPO}" fetch --depth 1 /Users/kbuilder/brew-git tag "${HOMEBREW_PINNED_VERSION}"
     else
-      git -C "${HOMEBREW_REPO}" fetch --depth 1 https://github.com/Homebrew/brew.git "${HOMEBREW_PINNED_COMMIT}"
+      git -C "${HOMEBREW_REPO}" fetch --depth 1 https://github.com/Homebrew/brew.git tag "${HOMEBREW_PINNED_VERSION}"
     fi
-    git -C "${HOMEBREW_REPO}" checkout -f "${HOMEBREW_PINNED_COMMIT}"
+    git -C "${HOMEBREW_REPO}" checkout -f "${HOMEBREW_PINNED_VERSION}"
   fi
 
   HOMEBREW_CORE_DIR="${HOMEBREW_REPO}/Library/Taps/homebrew/homebrew-core"
