@@ -77,6 +77,7 @@ EXCLUDE_DIRS=(
   tools/dockerfile/distribtest/csharp_dotnet5_x64
   tools/dockerfile/interoptest/grpc_interop_go1.8
   tools/dockerfile/interoptest/grpc_interop_go1.11
+  tools/dockerfile/interoptest/grpc_interop_go1.16 # uses debian bullseye
 )
 
 # a list of docker directories that are based on ARM64 base images
