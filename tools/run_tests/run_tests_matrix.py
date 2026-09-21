@@ -376,7 +376,7 @@ def _create_portability_test_jobs(
         "gcc14",
         "gcc_musl",
         "clang14",
-        "clang21",
+        "clang19",
     ]:
         test_jobs += _generate_jobs(
             languages=["c", "c++"],
