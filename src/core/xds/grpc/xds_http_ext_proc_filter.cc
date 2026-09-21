@@ -107,10 +107,7 @@ ExtProcFilter::ProcessingMode ParseProcessingMode(
     const envoy_extensions_filters_http_ext_proc_v3_ProcessingMode* proto,
     ValidationErrors* errors) {
   ExtProcFilter::ProcessingMode processing_mode;
-  if (proto == nullptr) {
-    errors->AddError("field not set");
-    return processing_mode;
-  }
+  if (proto == nullptr) return processing_mode;
   {
     ValidationErrors::ScopedField field(errors, ".request_header_mode");
     processing_mode.send_request_headers = ParseHeaderProcessingMode(
@@ -410,13 +407,12 @@ RefCountedPtr<const FilterConfig> XdsHttpExtProcFilterFactory::MergeConfigs(
   if (const auto* target =
           std::get_if<GrpcXdsServerTarget>(&config->channel_info);
       target != nullptr) {
-    std::string key = target->Key();
-    config->channel_info =
-        blackboard.GetOrSet<ExtProcFilter::ExtProcChannel>(key, [&]() {
-          std::shared_ptr<const XdsBootstrap::XdsServerTarget> target_shared =
-              std::make_shared<GrpcXdsServerTarget>(*target);
+    config->channel_info = blackboard.GetOrSet<ExtProcFilter::ExtProcChannel>(
+        target->Key(), [&]() {
+          absl::Status status;
+          auto transport = transport_factory.GetTransport(*target, &status);
           return MakeRefCounted<ExtProcFilter::ExtProcChannel>(
-              std::move(target_shared), transport_factory.Ref());
+              *target, std::move(transport));
         });
   }
   return config;
