@@ -100,6 +100,7 @@ brew config
 
 if $is_sonoma; then
   export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
+  export PIP_BREAK_SYSTEM_PACKAGES=1
 
   # Pin Homebrew to version 5.0.5 and homebrew/core to the matching Sonoma snapshot
   # (from before Homebrew dropped macOS 14 Sonoma Tier 1 bottle support).
@@ -132,7 +133,7 @@ if $is_sonoma; then
   brew config
   brew_install_with_retry cmake
   brew_install_with_retry ccache
-  export PATH="/opt/homebrew/bin::${PATH}"
+  export PATH="${HOME}/.pyenv/shims:/opt/homebrew/bin::${PATH}"
   cmake --version
 fi
 
