@@ -297,11 +297,11 @@ OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
-    bool start_upon_send_message, bool wait_for_ready) {
+    StreamingCall::Options options) {
   auto call = MakeOrphanable<FakeStreamingCall>(
       WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler),
-      start_upon_send_message, wait_for_ready);
-  if (!start_upon_send_message) {
+      options);
+  if (!options.start_upon_send_message) {
     RegisterStream(method, call->Ref().TakeAsSubclass<FakeStreamingCall>());
   }
   return call;

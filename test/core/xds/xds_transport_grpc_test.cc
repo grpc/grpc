@@ -248,7 +248,8 @@ TEST_F(GrpcXdsTransportTest, StreamingCallWithoutWaitForReadyFails) {
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
                                                       &call_status),
-      /*start_upon_send_message=*/false, /*wait_for_ready=*/false);
+      XdsTransportFactory::XdsTransport::StreamingCall::Options()
+          .set_wait_for_ready(false));
   ASSERT_NE(call, nullptr);
   exec_ctx.Flush();
   // Nothing is listening on server_uri_, so the call fails as soon as the
@@ -274,7 +275,9 @@ TEST_F(GrpcXdsTransportTest, UnaryCall) {
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
                                                       &call_status),
-      /*start_upon_send_message=*/true, /*wait_for_ready=*/false);
+      XdsTransportFactory::XdsTransport::StreamingCall::Options()
+          .set_start_upon_send_message(true)
+          .set_wait_for_ready(false));
   ASSERT_NE(call, nullptr);
   call->StartRecvMessage();
   call->SendMessage("request", /*send_half_close=*/true);
@@ -301,7 +304,8 @@ TEST_F(GrpcXdsTransportTest, UnaryCallWithWaitForReady) {
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
                                                       &call_status),
-      /*start_upon_send_message=*/true, /*wait_for_ready=*/true);
+      XdsTransportFactory::XdsTransport::StreamingCall::Options()
+          .set_start_upon_send_message(true));
   ASSERT_NE(call, nullptr);
   call->StartRecvMessage();
   call->SendMessage("request", /*send_half_close=*/true);
@@ -328,7 +332,9 @@ TEST_F(GrpcXdsTransportTest, UnaryCallOrphanedBeforeSendMessage) {
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
-      /*start_upon_send_message=*/true, /*wait_for_ready=*/false);
+      XdsTransportFactory::XdsTransport::StreamingCall::Options()
+          .set_start_upon_send_message(true)
+          .set_wait_for_ready(false));
   ASSERT_NE(call, nullptr);
   call.reset();
   exec_ctx.Flush();

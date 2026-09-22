@@ -80,10 +80,10 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
     grpc_call_credentials* call_creds,
     const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-    Duration timeout, bool start_upon_send_message, bool wait_for_ready)
+    Duration timeout, StreamingCall::Options options)
     : factory_(std::move(factory)),
       event_handler_(std::move(event_handler)),
-      wait_for_ready_(wait_for_ready) {
+      wait_for_ready_(options.wait_for_ready) {
   Timestamp deadline = (timeout == Duration::Infinity())
                            ? Timestamp::InfFuture()
                            : Timestamp::Now() + timeout;
@@ -116,7 +116,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   // Start batch for recv_initial_metadata (and send_initial_metadata, unless
   // the caller asked us to wait until the first message is sent).
   OpList op_list;
-  if (!start_upon_send_message) {
+  if (!options.start_upon_send_message) {
     sent_initial_metadata_ = true;
     AddSendInitialMetadataOp(op_list);
   }
@@ -479,11 +479,11 @@ OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
-    bool start_upon_send_message, bool wait_for_ready) {
+    StreamingCall::Options options) {
   return MakeOrphanable<GrpcStreamingCall>(
       factory_.WeakRef(DEBUG_LOCATION, "StreamingCall"), channel_->channel(),
       method, std::move(event_handler), call_creds_.get(), initial_metadata_,
-      timeout_, start_upon_send_message, wait_for_ready);
+      timeout_, options);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {

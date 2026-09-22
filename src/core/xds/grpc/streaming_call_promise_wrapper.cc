@@ -54,13 +54,12 @@ class XdsStreamingCallPromiseWrapper::EventHandler final
 };
 
 XdsStreamingCallPromiseWrapper::XdsStreamingCallPromiseWrapper(
-    XdsTransport& transport, const char* method, bool start_upon_send_message,
-    bool wait_for_ready) {
+    XdsTransport& transport, const char* method,
+    XdsTransport::StreamingCall::Options options) {
   auto internal_event_handler = std::make_unique<EventHandler>(
       WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>());
-  call_ =
-      transport.CreateStreamingCall(method, std::move(internal_event_handler),
-                                    start_upon_send_message, wait_for_ready);
+  call_ = transport.CreateStreamingCall(
+      method, std::move(internal_event_handler), options);
 }
 
 Poll<StatusFlag> XdsStreamingCallPromiseWrapper::PollPushMessage() {

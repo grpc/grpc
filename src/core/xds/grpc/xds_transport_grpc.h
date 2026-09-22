@@ -98,7 +98,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
-      bool start_upon_send_message, bool wait_for_ready) override;
+      StreamingCall::Options options) override;
 
   void ResetBackoff() override;
 
@@ -128,7 +128,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
       grpc_call_credentials* call_creds,
       const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-      Duration timeout, bool start_upon_send_message, bool wait_for_ready);
+      Duration timeout, StreamingCall::Options options);
   ~GrpcStreamingCall() override;
 
   void Orphan() override;

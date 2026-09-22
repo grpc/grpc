@@ -95,7 +95,10 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
     ASSERT_TRUE(status.ok()) << status;
     ASSERT_NE(transport_, nullptr);
     wrapper_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
-        *transport_, kMethod, start_upon_send_message, wait_for_ready);
+        *transport_, kMethod,
+        XdsTransportFactory::XdsTransport::StreamingCall::Options()
+            .set_start_upon_send_message(start_upon_send_message)
+            .set_wait_for_ready(wait_for_ready));
     stream_ = transport_factory_->WaitForStream(*target_, kMethod);
     if (start_upon_send_message) {
       ASSERT_EQ(stream_, nullptr);

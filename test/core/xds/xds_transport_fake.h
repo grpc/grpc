@@ -59,14 +59,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     FakeStreamingCall(
         WeakRefCountedPtr<FakeXdsTransport> transport, const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        bool start_upon_send_message, bool wait_for_ready)
+        StreamingCall::Options options)
         : transport_(std::move(transport)),
           method_(method),
           event_engine_(transport_->factory()->event_engine_),
           event_handler_(
               MakeRefCounted<RefCountedEventHandler>(std::move(event_handler))),
-          wait_for_ready_(wait_for_ready),
-          started_(!start_upon_send_message) {}
+          wait_for_ready_(options.wait_for_ready),
+          started_(!options.start_upon_send_message) {}
 
     ~FakeStreamingCall() override;
 
@@ -235,7 +235,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        bool start_upon_send_message, bool wait_for_ready) override;
+        StreamingCall::Options options) override;
 
     void ResetBackoff() override {}
 
