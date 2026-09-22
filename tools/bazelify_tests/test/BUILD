@@ -326,7 +326,7 @@ grpc_build_artifact_task(
 # C# distribtests
 
 grpc_run_distribtest_test(
-    name = "distribtest_csharp_linux_x64_debian11",
+    name = "distribtest_csharp_linux_x64_debian12",
     # depend on the C# packages
     artifact_deps = [
         "package_csharp_linux",
