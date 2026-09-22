@@ -76,12 +76,12 @@ struct grpc_closure {
 // extra tracing and debugging for grpc_closure. This incurs a decent amount of
 // overhead per closure, so it must be enabled at compile time.
 #ifndef NDEBUG
+  const char* file_created;
+  const char* file_initiated;
+  int line_created;
+  int line_initiated;
   bool scheduled;
   bool run;  // true = run, false = scheduled
-  const char* file_created;
-  int line_created;
-  const char* file_initiated;
-  int line_initiated;
 #endif
 
   std::string DebugString() const;
