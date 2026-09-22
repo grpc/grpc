@@ -226,9 +226,9 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
 // shutdown() syscall on that fd)
 void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
                                                bool releasing_fd) {
-  grpc_core::StatusSetInt(
-      &why, grpc_core::StatusIntProperty::kRpcStatus,
-      absl::IsCancelled(why) ? GRPC_STATUS_CANCELLED : GRPC_STATUS_UNAVAILABLE);
+  if (!absl::IsCancelled(why)) {
+    why = absl::UnavailableError(why.message());
+  }
   if (read_closure_.SetShutdown(why)) {
     if (releasing_fd) {
       auto result = poller_->posix_interface().EpollCtlDel(

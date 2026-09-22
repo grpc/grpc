@@ -25,7 +25,6 @@
 
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -89,9 +88,6 @@ struct grpc_tcp_server {
 
   // List of closures passed to shutdown_starting_add().
   grpc_closure_list shutdown_starting{nullptr, nullptr};
-
-  // List of closures passed to shutdown_ending_add().
-  grpc_closure_list shutdown_ending{nullptr, nullptr};
 
   // shutdown callback
   grpc_closure* shutdown_complete = nullptr;

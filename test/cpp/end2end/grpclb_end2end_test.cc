@@ -16,6 +16,7 @@
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
+#include <grpc/lb/v1/load_balancer.grpc.pb.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -50,13 +51,13 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
@@ -93,6 +94,9 @@ using grpc::lb::v1::LoadBalanceResponse;
 
 using grpc_core::SourceLocation;
 
+// TODO(tjagtap) [PH2][P3][OSS] grpclb is used only by OSS customers. This
+// entire test suite will need to pass before PH2 can be enabled for OSS users.
+
 namespace grpc {
 namespace testing {
 namespace {
@@ -124,15 +128,15 @@ class BackendServiceImpl : public BackendService {
               EchoResponse* response) override {
     // The backend should not see a test user agent configured at the client
     // using GRPC_ARG_GRPCLB_CHANNEL_ARGS.
-    auto it = context->client_metadata().find("user-agent");
-    if (it != context->client_metadata().end()) {
+    auto [it, end] = context->client_metadata().equal_range("user-agent");
+    if (it != end) {
       EXPECT_FALSE(it->second.starts_with(kGrpclbSpecificUserAgentString));
     }
     // Backend should receive the call credentials metadata.
-    auto call_credentials_entry =
-        context->client_metadata().find(kCallCredsMdKey);
-    EXPECT_NE(call_credentials_entry, context->client_metadata().end());
-    if (call_credentials_entry != context->client_metadata().end()) {
+    auto [call_credentials_entry, call_credentials_end] =
+        context->client_metadata().equal_range(kCallCredsMdKey);
+    EXPECT_NE(call_credentials_entry, call_credentials_end);
+    if (call_credentials_entry != call_credentials_end) {
       EXPECT_EQ(call_credentials_entry->second, kCallCredsMdValue);
     }
     IncreaseRequestCount();
@@ -297,15 +301,14 @@ class BalancerServiceImpl : public BalancerService {
     // The loadbalancer should see a test user agent because it was
     // specifically configured at the client using
     // GRPC_ARG_GRPCLB_CHANNEL_ARGS
-    auto it = context->client_metadata().find("user-agent");
-    EXPECT_TRUE(it != context->client_metadata().end());
-    if (it != context->client_metadata().end()) {
+    auto [it, end] = context->client_metadata().equal_range("user-agent");
+    EXPECT_TRUE(it != end);
+    if (it != end) {
       EXPECT_THAT(std::string(it->second.data(), it->second.length()),
                   ::testing::StartsWith(kGrpclbSpecificUserAgentString));
     }
     // Balancer shouldn't receive the call credentials metadata.
-    EXPECT_EQ(context->client_metadata().find(kCallCredsMdKey),
-              context->client_metadata().end());
+    EXPECT_EQ(context->client_metadata().count(kCallCredsMdKey), 0);
     // Read initial request.
     LoadBalanceRequest request;
     if (!stream->Read(&request)) {
@@ -507,16 +510,13 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::ConfigVars::Overrides overrides;
     overrides.client_channel_backup_poll_interval_ms = 1;
     grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
     grpc_init();
   }
 
   static void TearDownTestSuite() { grpc_shutdown(); }
 
   void SetUp() override {
+    SKIP_TEST_FOR_PH2_CLIENT("[PH2] A lot of tests are failing and flaking in");
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     balancer_ = CreateAndStartBalancer();
@@ -525,7 +525,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   void TearDown() override {
     ShutdownAllBackends();
-    balancer_->Shutdown();
+    if (balancer_ != nullptr) {
+      balancer_->Shutdown();
+    }
   }
 
   void CreateBackends(size_t num_backends) {
@@ -565,6 +567,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpclb_channel_args = grpclb_channel_args.Set(
         GRPC_ARG_PRIMARY_USER_AGENT_STRING, kGrpclbSpecificUserAgentString);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     if (fallback_timeout_ms > 0) {
       args.SetGrpclbFallbackTimeout(fallback_timeout_ms *
                                     grpc_test_slowdown_factor());

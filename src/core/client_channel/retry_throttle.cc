@@ -22,10 +22,10 @@
 #include <cstdint>
 #include <limits>
 
+#include "src/core/client_channel/retry_service_config.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
-namespace internal {
 
 namespace {
 
@@ -69,11 +69,6 @@ RefCountedPtr<RetryThrottler> RetryThrottler::Create(
       max_milli_tokens, milli_token_ratio, initial_milli_tokens);
   if (previous != nullptr) previous->SetReplacement(throttle_data);
   return throttle_data;
-}
-
-UniqueTypeName RetryThrottler::Type() {
-  static UniqueTypeName::Factory factory("retry_throttle");
-  return factory.Create();
 }
 
 RetryThrottler::RetryThrottler(uintptr_t max_milli_tokens,
@@ -130,5 +125,22 @@ void RetryThrottler::RecordSuccess() {
                                  std::numeric_limits<intptr_t>::max())));
 }
 
-}  // namespace internal
+void RetryThrottlerChannelArgsUpdater::Update(
+    const ServiceConfig& service_config, ChannelArgs& args) {
+  // Get retry throttling parameters from service config.
+  const auto* config = static_cast<const RetryGlobalConfig*>(
+      service_config.GetGlobalParsedConfig(
+          RetryServiceConfigParser::ParserIndex()));
+  if (config == nullptr) {
+    throttler_.reset();  // No throttling config.
+    return;
+  }
+  // Create a new throttler that replaces the current throttler and add
+  // it to channel args.
+  throttler_ = RetryThrottler::Create(config->max_milli_tokens(),
+                                      config->milli_token_ratio(),
+                                      std::move(throttler_));
+  args = args.SetObject(throttler_);
+}
+
 }  // namespace grpc_core

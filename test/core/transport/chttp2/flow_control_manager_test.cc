@@ -48,12 +48,15 @@ TEST_P(FlowControlManagerTest, ActOnFlowControlActionSettings) {
   const uint32_t initial_preferred_receive_crypto_message_size =
       settings.preferred_receive_crypto_message_size();
 
-  action.set_send_initial_window_update(urgency, initial_window_size + 10);
-  action.set_send_max_frame_size_update(urgency, max_frame_size + 10);
-  action.set_preferred_rx_crypto_frame_size_update(urgency, kTestMaxFrameSize);
+  action.test_only_set_send_initial_window_update(urgency,
+                                                  initial_window_size + 10);
+  action.test_only_set_send_max_frame_size_update(urgency, max_frame_size + 10);
+  action.test_only_set_preferred_rx_crypto_frame_size_update(
+      enable_preferred_rx_crypto_frame_advertisement ? urgency
+                                                     : kNoActionNeeded,
+      kTestMaxFrameSize);
 
-  ActOnFlowControlActionSettings(
-      action, settings, enable_preferred_rx_crypto_frame_advertisement);
+  ActOnFlowControlActionSettings(action, settings);
 
   EXPECT_EQ(settings.initial_window_size(), initial_window_size + 10);
   EXPECT_EQ(settings.max_frame_size(), max_frame_size + 10);
@@ -83,15 +86,14 @@ TEST(FlowControlManagerTest, ActOnFlowControlActionSettingsNoActionNeeded) {
   const uint32_t preferred_receive_crypto_message_size =
       settings.preferred_receive_crypto_message_size();
 
-  action.set_send_initial_window_update(kNoActionNeeded,
-                                        initial_window_size + 10);
-  action.set_send_max_frame_size_update(kNoActionNeeded, max_frame_size + 10);
-  action.set_preferred_rx_crypto_frame_size_update(
+  action.test_only_set_send_initial_window_update(kNoActionNeeded,
+                                                  initial_window_size + 10);
+  action.test_only_set_send_max_frame_size_update(kNoActionNeeded,
+                                                  max_frame_size + 10);
+  action.test_only_set_preferred_rx_crypto_frame_size_update(
       kNoActionNeeded, preferred_receive_crypto_message_size + 10);
 
-  ActOnFlowControlActionSettings(
-      action, settings,
-      /*enable_preferred_rx_crypto_frame_advertisement=*/true);
+  ActOnFlowControlActionSettings(action, settings);
 
   EXPECT_EQ(settings.initial_window_size(), initial_window_size);
   EXPECT_EQ(settings.max_frame_size(), max_frame_size);
@@ -108,9 +110,7 @@ TEST(FlowControlManagerTest, ActOnFlowControlActionSettingsNoAction) {
   const uint32_t preferred_receive_crypto_message_size =
       settings.preferred_receive_crypto_message_size();
 
-  ActOnFlowControlActionSettings(
-      action, settings,
-      /*enable_preferred_rx_crypto_frame_advertisement=*/true);
+  ActOnFlowControlActionSettings(action, settings);
 
   EXPECT_EQ(settings.initial_window_size(), initial_window_size);
   EXPECT_EQ(settings.max_frame_size(), max_frame_size);
@@ -118,9 +118,52 @@ TEST(FlowControlManagerTest, ActOnFlowControlActionSettingsNoAction) {
             preferred_receive_crypto_message_size);
 }
 
+TEST(FlowControlManagerTest, GetStreamFlowControlTokens) {
+  chttp2::TransportFlowControl transport_flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
+  Http2Settings peer_settings;
+
+  // Initial state: stream delta 0, initial window 65535.
+  EXPECT_EQ(chttp2::kDefaultWindow,
+            GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+
+  // Send 1000 bytes, stream delta becomes -1000.
+  // 65535 - 1000 = 64535
+  {
+    chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd(
+        &stream_flow_control);
+    sfc_upd.SentData(1000);
+  }
+  EXPECT_EQ(chttp2::kDefaultWindow - 1000,
+            GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+
+  // Receive stream window update of 500, stream delta becomes -500.
+  // 65535 - 1000 + 500 = 65035
+  {
+    chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd(
+        &stream_flow_control);
+    sfc_upd.RecvUpdate(500);
+  }
+  EXPECT_EQ(chttp2::kDefaultWindow - 500,
+            GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+
+  // If peer settings initial window size changes.
+  // 1000 - 500 = 500
+  peer_settings.SetInitialWindowSize(1000);
+  EXPECT_EQ(500,
+            GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+
+  // If stream flow control tokens becomes negative, it's clamped to 0.
+  // 100 - 500 = -400
+  peer_settings.SetInitialWindowSize(100);
+  EXPECT_EQ(0, GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+}
+
 TEST(FlowControlManagerTest, GetMaxPermittedDequeue) {
   chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
   Http2Settings peer_settings;  // The defaults are fine for our tests.

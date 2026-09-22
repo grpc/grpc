@@ -19,6 +19,7 @@
 #include <initializer_list>
 #include <utility>
 
+#include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -54,7 +55,7 @@ std::vector<uint8_t> Serialize(Frames... f) {
   DoTheseThings({(frames.emplace_back(std::move(f)), 1)...});
   SliceBuffer temp;
   Serialize(absl::Span<Http2Frame>(frames), temp);
-  auto slice = temp.JoinIntoSlice();
+  Slice slice = temp.JoinIntoSlice();
   return std::vector<uint8_t>(slice.begin(), slice.end());
 }
 
@@ -88,10 +89,11 @@ Http2Frame ParseFrame(I... i) {
   buffer.Append(Slice::FromCopiedBuffer(ByteVec(i...)));
   uint8_t hdr[9];
   buffer.MoveFirstNBytesIntoBuffer(9, hdr);
-  auto frame_hdr = Http2FrameHeader::Parse(hdr);
+  Http2FrameHeader frame_hdr = Http2FrameHeader::Parse(hdr);
   EXPECT_EQ(frame_hdr.length, buffer.Length())
       << "frame_hdr=" << frame_hdr.ToString();
-  auto r = ParseFramePayload(frame_hdr, std::move(buffer));
+  ValueOrHttp2Status<Http2Frame> r =
+      ParseFramePayload(frame_hdr, std::move(buffer));
   EXPECT_TRUE(r.IsOk()) << r.DebugString();
   return std::move(r.value());
 }
@@ -102,11 +104,12 @@ Http2Status ValidateFrame(I... i) {
   buffer.Append(Slice::FromCopiedBuffer(ByteVec(i...)));
   uint8_t hdr[9];
   buffer.MoveFirstNBytesIntoBuffer(9, hdr);
-  auto frame_hdr = Http2FrameHeader::Parse(hdr);
+  Http2FrameHeader frame_hdr = Http2FrameHeader::Parse(hdr);
   EXPECT_EQ(frame_hdr.length, buffer.Length())
       << "frame_hdr=" << frame_hdr.ToString();
 
-  auto frame = ParseFramePayload(frame_hdr, std::move(buffer));
+  ValueOrHttp2Status<Http2Frame> frame =
+      ParseFramePayload(frame_hdr, std::move(buffer));
   return (frame.IsOk()
               ? Http2Status::Ok()
               : ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
@@ -1105,7 +1108,7 @@ TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
                     /* Stream Identifier (31 bits) */ 0x7f, 0xff, 0xff, 0xff,
                     /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
       Http2StatusIs(
-          Http2Status::Http2ErrorType::kStreamError,
+          Http2Status::Http2ErrorType::kConnectionError,
           Http2ErrorCode::kProtocolError,
           absl::StrCat(
               RFC9113::kWindowSizeIncrement,
@@ -1113,19 +1116,26 @@ TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
 }
 
 TEST(Frame, GrpcHeaderTest) {
-  constexpr uint8_t kFlags = 15;
   constexpr uint32_t kLength = 1111111;
 
-  SliceBuffer payload;
-  EXPECT_EQ(payload.Length(), 0);
+  auto verify_header = [](const uint32_t flags, const uint32_t expected_flags,
+                          const uint32_t length) {
+    SliceBuffer payload;
+    EXPECT_EQ(payload.Length(), 0);
+    AppendGrpcHeaderToSliceBuffer(payload, flags, length);
+    EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
 
-  AppendGrpcHeaderToSliceBuffer(payload, kFlags, kLength);
-  EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
+    ValueOrHttp2Status<GrpcMessageHeader> header = ExtractGrpcHeader(payload);
+    EXPECT_TRUE(header.IsOk());
+    EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
+    EXPECT_EQ(header.value().flags, expected_flags);
+    EXPECT_EQ(header.value().length, length);
+  };
 
-  GrpcMessageHeader header = ExtractGrpcHeader(payload);
-  EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
-  EXPECT_EQ(header.flags, kFlags);
-  EXPECT_EQ(header.length, kLength);
+  verify_header(/*flags=*/0, /*expected_flags=*/0, kLength);
+  verify_header(/*flags=*/GRPC_WRITE_INTERNAL_COMPRESS,
+                /*expected_flags=*/GRPC_WRITE_INTERNAL_COMPRESS, kLength);
+  verify_header(/*flags=*/10, /*expected_flags=*/0, kLength);
 }
 
 TEST(Frame, ValidateSettingsValuesInvalidInitialWindowSize) {
@@ -1182,31 +1192,68 @@ TEST(Frame, ValidateSettingsValuesValidSettings) {
   EXPECT_TRUE(ValidateSettingsValues(settings).IsOk());
 }
 
-TEST(Frame, ValidateFrameHeaderTest) {
+class ValidateFrameHeaderTest : public ::testing::TestWithParam<bool> {};
+
+TEST_P(ValidateFrameHeaderTest, ValidateFrameHeader) {
+  const bool is_client = GetParam();
+  constexpr uint32_t kLastStreamId = 1;
+  Http2FrameCountTracker tracker;
+
   // Valid frame header
   Http2FrameHeader header{/*length=*/10, /*type=kData */ 0, /*flags=*/0,
                           /*stream_id=*/1};
   EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/false,
-                                  /*incoming_header_stream_id=*/0, header)
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true, tracker,
+                                  GrpcErrors::kMaxSecurityFrameSize)
                   .IsOk());
 
   // Frame size larger than max frame size setting
   header = {/*length=*/101, /*type=kData */ 0, /*flags=*/0, /*stream_id=*/1};
   EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/false,
-                                  /*incoming_header_stream_id=*/0, header),
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true, tracker,
+                                  GrpcErrors::kMaxSecurityFrameSize),
               Http2StatusIs(
                   Http2Status::Http2ErrorType::kConnectionError,
                   Http2ErrorCode::kFrameSizeError,
                   absl::StrCat(RFC9113::kFrameSizeLargerThanMaxFrameSizeSetting,
                                ", Current Size = 101, Max Size = 100")));
 
+  // Step: Test frame size exactly equal to max frame size setting.
+  // Expected outcome: Validation should succeed because it's within the limit.
+  header = {/*length=*/100u, /*type=kData*/ 0u, /*flags=*/0u, /*stream_id=*/1u};
+  EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100u,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0u, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true, tracker,
+                                  GrpcErrors::kMaxSecurityFrameSize)
+                  .IsOk());
+
+  // Step: Test frame size exactly one less than max frame size setting.
+  // Expected outcome: Validation should succeed because it's within the limit.
+  header = {/*length=*/99u, /*type=kData*/ 0u, /*flags=*/0u, /*stream_id=*/1u};
+  EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100u,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0u, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true, tracker,
+                                  GrpcErrors::kMaxSecurityFrameSize)
+                  .IsOk());
+
   // Header in progress, but current frame is not continuation
   header = {/*length=*/10, /*type=kData */ 0, /*flags=*/0, /*stream_id=*/1};
   EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,
-                                  /*incoming_header_stream_id=*/1, header),
+                                  /*incoming_header_stream_id=*/1, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true, tracker,
+                                  GrpcErrors::kMaxSecurityFrameSize),
               Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
                             Http2ErrorCode::kProtocolError,
                             RFC9113::kAssemblerContiguousSequenceError));
@@ -1216,7 +1263,10 @@ TEST(Frame, ValidateFrameHeaderTest) {
             /*stream_id=*/3};
   EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,
-                                  /*incoming_header_stream_id=*/1, header),
+                                  /*incoming_header_stream_id=*/1, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true, tracker,
+                                  GrpcErrors::kMaxSecurityFrameSize),
               Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
                             Http2ErrorCode::kProtocolError,
                             RFC9113::kAssemblerContiguousSequenceError));
@@ -1226,9 +1276,192 @@ TEST(Frame, ValidateFrameHeaderTest) {
             /*stream_id=*/1};
   EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,
-                                  /*incoming_header_stream_id=*/1, header)
+                                  /*incoming_header_stream_id=*/1, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true, tracker,
+                                  GrpcErrors::kMaxSecurityFrameSize)
                   .IsOk());
+
+  if (is_client) {
+    // Received a data frame with a stream id larger than the last stream id
+    // sent
+    header = {/*length=*/10, /*type=kData*/ 0, /*flags=*/0, /*stream_id=*/5};
+    EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                    /*incoming_header_in_progress=*/false,
+                                    /*incoming_header_stream_id=*/0, header,
+                                    kLastStreamId, is_client,
+                                    /*is_first_settings_processed=*/true,
+                                    tracker, GrpcErrors::kMaxSecurityFrameSize),
+                Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                              Http2ErrorCode::kProtocolError,
+                              RFC9113::kUnknownStreamId));
+
+    // Step: Received a data frame to client with stream id exactly equal to the
+    // last stream id. Expected outcome: Validation should succeed because it's
+    // not larger than the last stream id.
+    header = {/*length=*/10u, /*type=kData*/ 0u, /*flags=*/0u,
+              /*stream_id=*/1u};
+    EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100u,
+                                    /*incoming_header_in_progress=*/false,
+                                    /*incoming_header_stream_id=*/0u, header,
+                                    kLastStreamId, is_client,
+                                    /*is_first_settings_processed=*/true,
+                                    tracker, GrpcErrors::kMaxSecurityFrameSize)
+                    .IsOk());
+
+    // Step: Received a data frame to client with stream id less than the last
+    // stream id. Expected outcome: Validation should succeed because it's not
+    // larger than the last stream id.
+    header = {/*length=*/10u, /*type=kData*/ 0u, /*flags=*/0u,
+              /*stream_id=*/1u};
+    EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100u,
+                                    /*incoming_header_in_progress=*/false,
+                                    /*incoming_header_stream_id=*/0u, header,
+                                    /*last_stream_id=*/3u, is_client,
+                                    /*is_first_settings_processed=*/true,
+                                    tracker, GrpcErrors::kMaxSecurityFrameSize)
+                    .IsOk());
+  }
+
+  // If first settings frame is not received, and we receive a data frame,
+  // it is a protocol error.
+  header = {/*length=*/10, /*type=kData*/ 0, /*flags=*/0, /*stream_id=*/1};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/false,
+                                  tracker, GrpcErrors::kMaxSecurityFrameSize),
+              Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kProtocolError,
+                            is_client ? RFC9113::kFirstSettingsFrameClient
+                                      : RFC9113::kFirstSettingsFrameServer));
+
+  // If first settings frame is not processed, and we receive a SETTINGS frame,
+  // it is valid.
+  header = {/*length=*/0, /*type=kSettings*/ 4, /*flags=*/0, /*stream_id=*/0};
+  EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/false,
+                                  tracker, GrpcErrors::kMaxSecurityFrameSize)
+                  .IsOk());
+  // If first settings frame is not processed, and we receive a SETTINGS ACK
+  // frame, it is NOT valid.
+  header = {/*length=*/0, /*type=kSettings*/ 4, /*flags=*/1, /*stream_id=*/0};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/false,
+                                  tracker, GrpcErrors::kMaxSecurityFrameSize),
+              Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kProtocolError,
+                            is_client ? RFC9113::kFirstSettingsFrameClient
+                                      : RFC9113::kFirstSettingsFrameServer));
+
+  // Step: Test security frame size exactly equal to 16KB maximum limit.
+  // Also test that all flags are set to 1. These flags should be ignored.
+  // Expected outcome: Validation should succeed because it is within the limit.
+  header = {/*length=*/16384u, /*type=kCustomSecurity*/ 200u, /*flags=*/0xffu,
+            /*stream_id=*/0u};
+  EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/65535u,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0u, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true, tracker,
+                                  GrpcErrors::kMaxSecurityFrameSize)
+                  .IsOk());
+
+  // Step: Test security frame size exceeding 16KB by 1 byte.
+  // Expected outcome: Validation should fail with kFrameSizeError.
+  header = {/*length=*/16385u, /*type=kCustomSecurity*/ 200u, /*flags=*/0u,
+            /*stream_id=*/0u};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/65535u,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0u, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true, tracker,
+                                  GrpcErrors::kMaxSecurityFrameSize),
+              Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kFrameSizeError,
+                            absl::StrCat(GrpcErrors::kSecurityFrameTooLarge,
+                                         GrpcErrors::kMaxSecurityFrameSize,
+                                         ", Received size : 16385")));
 }
+
+// Validates that exceeding maximum limits for empty DATA frames, empty
+// CONTINUATION frames, and SETTINGS frames correctly returns an InternalError.
+TEST_P(ValidateFrameHeaderTest, Http2FrameCountTrackerLimits) {
+  const bool is_client = GetParam();
+  constexpr uint32_t kLastStreamId = 1;
+
+  // Step 1: Test too many zero-length data frames limit.
+  // Checks that a flood of zero-length data frames triggers an InternalError.
+  {
+    Http2FrameCountTracker data_tracker;
+    data_tracker.noop_data_frames = kMaxNoopDataFrames - 5;
+    Http2FrameHeader data_header{/*length=*/0, /*type=kData*/ 0, /*flags=*/0,
+                                 /*stream_id=*/1};
+    for (int i = data_tracker.noop_data_frames;
+         i < static_cast<int>(kMaxNoopDataFrames) - 1; ++i) {
+      EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                      /*incoming_header_in_progress=*/false,
+                                      /*incoming_header_stream_id=*/0,
+                                      data_header, kLastStreamId, is_client,
+                                      /*is_first_settings_processed=*/true,
+                                      data_tracker,
+                                      GrpcErrors::kMaxSecurityFrameSize)
+                      .IsOk());
+    }
+    Http2Status status = ValidateFrameHeader(
+        /*max_frame_size_setting=*/100,
+        /*incoming_header_in_progress=*/false,
+        /*incoming_header_stream_id=*/0, data_header, kLastStreamId, is_client,
+        /*is_first_settings_processed=*/true, data_tracker,
+        GrpcErrors::kMaxSecurityFrameSize);
+    EXPECT_THAT(status,
+                Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                              Http2ErrorCode::kInternalError,
+                              GrpcErrors::kTooManyZeroLengthDataFrames));
+  }
+
+  // Step 2: Test too many zero-length continuation frames limit.
+  // Checks that a flood of empty continuation frames triggers an InternalError.
+  {
+    Http2FrameCountTracker continuation_tracker;
+    Http2FrameHeader continuation_header{/*length=*/0, /*type=kContinuation*/ 9,
+                                         /*flags=*/0, /*stream_id=*/1};
+    for (int i = 0; i < 127; ++i) {
+      EXPECT_TRUE(ValidateFrameHeader(
+                      /*max_frame_size_setting=*/100,
+                      /*incoming_header_in_progress=*/true,
+                      /*incoming_header_stream_id=*/1, continuation_header,
+                      kLastStreamId, is_client,
+                      /*is_first_settings_processed=*/true,
+                      continuation_tracker, GrpcErrors::kMaxSecurityFrameSize)
+                      .IsOk());
+    }
+    Http2Status status = ValidateFrameHeader(
+        /*max_frame_size_setting=*/100,
+        /*incoming_header_in_progress=*/true,
+        /*incoming_header_stream_id=*/1, continuation_header, kLastStreamId,
+        is_client,
+        /*is_first_settings_processed=*/true, continuation_tracker,
+        GrpcErrors::kMaxSecurityFrameSize);
+    EXPECT_THAT(status, Http2StatusIs(
+                            Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kInternalError,
+                            GrpcErrors::kTooManyZeroLengthContinuationFrames));
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(ValidateFrameHeader, ValidateFrameHeaderTest,
+                         ::testing::Bool(),
+                         [](const ::testing::TestParamInfo<bool>& info) {
+                           return info.param ? "Client" : "Server";
+                         });
 
 TEST(FrameSize, Http2FrameSizeTest) {
   constexpr absl::string_view kPayload = "hello";

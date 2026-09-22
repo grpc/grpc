@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/util",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -43,12 +47,16 @@ grpc_cc_library(
     hdrs = [
         "proto_reflection_descriptor_database.h",
     ],
-    external_deps = ["absl/log:log"],
+    external_deps = [
+        "absl/log:log",
+        "absl/container:flat_hash_map",
+        "absl/container:flat_hash_set",
+    ],
     deps = [
         "//:gpr",
         "//:grpc++",
         "//:grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//:reflection_v1alpha_cc_grpc",
     ],
 )
 
@@ -111,6 +119,8 @@ grpc_cc_library(
     ],
     deps = [
         "//:channelz",
+        "//:channelz_cc_grpc",
+        "//:channelz_cc_proto",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -119,7 +129,6 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
-        "//src/proto/grpc/channelz:channelz_proto",
     ],
 )
 
@@ -129,10 +138,13 @@ grpc_cc_library(
     hdrs = GRPCXX_TESTUTIL_HDRS,
     external_deps = [
         "protobuf",
+        "absl/memory",
     ],
     deps = [
+        "//:grpc++_config_proto",
         "//:grpc++_unsecure",
         "//:subprocess",
+        "//src/core:grpc_fake_credentials",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
@@ -169,9 +181,9 @@ grpc_cc_library(
         "//:grpc++",
         "//:grpc++_config_proto",
         "//:grpc_slice",
+        "//:reflection_v1alpha_cc_grpc",
         "//src/core:grpc_check",
         "//src/core:load_file",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
 
@@ -322,6 +334,8 @@ grpc_cc_test(
         "time_test.cc",
     ],
     external_deps = [
+        "absl/base",
+        "absl/time",
         "gtest",
     ],
     uses_event_engine = False,
@@ -332,6 +346,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc++",
         "//:grpc++_base",
+        "//src/core:time_precise",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -394,7 +409,7 @@ grpc_cc_binary(
         ":grpc_cli_utils",
         ":test_config",
         "//:grpc++",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//:reflection_v1alpha_cc_grpc",
     ],
 )
 
@@ -406,15 +421,22 @@ grpc_cc_binary(
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
+        "absl/strings:str_format",
+        "protobuf",
     ],
     tags = [
         "no_windows",  # unistd.h
     ],
     deps = [
+        "//:channelz_cc_proto",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/core:grpc_check",
+        "//src/core:json",
+        "//src/core:json_writer",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -431,6 +453,7 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/strings",
         "gtest",
     ],
     flaky = True,
@@ -444,14 +467,38 @@ grpc_cc_test(
         "no_windows",  # unistd.h
     ],
     deps = [
+        "//:channelz_cc_grpc",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/core:env",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "channelz_util",
+    testonly = 1,
+    srcs = [
+        "channelz_util.cc",
+    ],
+    hdrs = [
+        "channelz_util.h",
+    ],
+    external_deps = [
+        "protobuf",
+        "absl/strings",
+    ],
+    deps = [
+        "//:channelz",
+        "//src/core:down_cast",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -516,6 +563,7 @@ grpc_cc_library(
         "get_grpc_test_runfile_dir.h",
     ],
     external_deps = [
+        "absl/strings",
     ],
     deps = [
         "//src/core:env",

@@ -16,8 +16,6 @@
 
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 
-#include <grpc/support/json.h>
-
 #include <string>
 #include <utility>
 #include <variant>
@@ -25,10 +23,6 @@
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
-#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_writer.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
@@ -38,28 +32,79 @@
 
 namespace grpc_core {
 
-absl::string_view XdsHttpGcpAuthnFilter::ConfigProtoName() const {
+absl::string_view XdsHttpGcpAuthnFilterFactory::ConfigProtoName() const {
   return "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig";
 }
 
-absl::string_view XdsHttpGcpAuthnFilter::OverrideConfigProtoName() const {
+absl::string_view XdsHttpGcpAuthnFilterFactory::OverrideConfigProtoName()
+    const {
   return "";
 }
 
-void XdsHttpGcpAuthnFilter::PopulateSymtab(upb_DefPool* symtab) const {
+void XdsHttpGcpAuthnFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_getmsgdef(
       symtab);
 }
 
-namespace {
+const grpc_channel_filter* XdsHttpGcpAuthnFilterFactory::channel_filter()
+    const {
+  return &GcpAuthenticationFilter::kFilterVtable;
+}
 
-Json::Object ValidateFilterConfig(
+void XdsHttpGcpAuthnFilterFactory::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const FilterConfig> config) const {
+  builder.AddFilter<GcpAuthenticationFilter>(std::move(config));
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilterFactory::MergeConfigs(
+    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig> /*virtual_host_override_config*/,
+    RefCountedPtr<const FilterConfig> /*route_override_config*/,
+    RefCountedPtr<const FilterConfig> /*cluster_weight_override_config*/,
+    XdsTransportFactory& /*transport_factory*/, Blackboard& blackboard) const {
+  // Make a copy of the parsed config.
+  const auto& parsed_config =
+      DownCast<const GcpAuthenticationFilter::Config&>(*top_level_config);
+  auto new_config = MakeRefCounted<GcpAuthenticationFilter::Config>();
+  new_config->instance_name = parsed_config.instance_name;
+  new_config->cache_size = parsed_config.cache_size;
+  // Get the cache from the blackboard, adding it if necessary.
+  bool constructed = false;
+  new_config->cache = blackboard.GetOrSet<
+      GcpAuthenticationFilter::CallCredentialsCache>(
+      new_config->instance_name, [&]() {
+        constructed = true;
+        return MakeRefCounted<GcpAuthenticationFilter::CallCredentialsCache>(
+            new_config->cache_size);
+      });
+  // If we didn't just construct the cache object, make sure it has the
+  // right size.
+  if (!constructed) new_config->cache->SetMaxSize(new_config->cache_size);
+  return new_config;
+}
+
+RefCountedPtr<const FilterConfig>
+XdsHttpGcpAuthnFilterFactory::ParseTopLevelConfig(
     absl::string_view instance_name,
-    const envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig*
-        gcp_auth,
-    ValidationErrors* errors) {
-  Json::Object config = {
-      {"filter_instance_name", Json::FromString(std::string(instance_name))}};
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse GCP auth filter config");
+    return nullptr;
+  }
+  auto* gcp_auth =
+      envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena);
+  if (gcp_auth == nullptr) {
+    errors->AddError("could not parse GCP auth filter config");
+    return nullptr;
+  }
+  auto config = MakeRefCounted<GcpAuthenticationFilter::Config>();
+  config->instance_name = std::string(instance_name);
   const auto* cache_config =
       envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_cache_config(
           gcp_auth);
@@ -73,91 +118,17 @@ Json::Object ValidateFilterConfig(
     ValidationErrors::ScopedField field(errors, ".cache_config.cache_size");
     errors->AddError("must be greater than 0");
   }
-  config["cache_size"] = Json::FromNumber(cache_size);
+  config->cache_size = cache_size;
   return config;
 }
 
-}  // namespace
-
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpGcpAuthnFilter::GenerateFilterConfig(
-    absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
-      std::get_if<absl::string_view>(&extension.value);
-  if (serialized_filter_config == nullptr) {
-    errors->AddError("could not parse GCP auth filter config");
-    return std::nullopt;
-  }
-  auto* gcp_auth =
-      envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_parse(
-          serialized_filter_config->data(), serialized_filter_config->size(),
-          context.arena);
-  if (gcp_auth == nullptr) {
-    errors->AddError("could not parse GCP auth filter config");
-    return std::nullopt;
-  }
-  return FilterConfig{ConfigProtoName(), Json::FromObject(ValidateFilterConfig(
-                                             instance_name, gcp_auth, errors))};
-}
-
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
+RefCountedPtr<const FilterConfig>
+XdsHttpGcpAuthnFilterFactory::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* errors) const {
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
   errors->AddError("GCP auth filter does not support config override");
-  return std::nullopt;
-}
-
-void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<GcpAuthenticationFilter>(nullptr);
-}
-
-const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
-  return &GcpAuthenticationFilter::kFilter;
-}
-
-ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(
-    const ChannelArgs& args) const {
-  return args.Set(GRPC_ARG_PARSE_GCP_AUTHENTICATION_METHOD_CONFIG, 1);
-}
-
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpGcpAuthnFilter::GenerateMethodConfig(
-    const FilterConfig& /*hcm_filter_config*/,
-    const FilterConfig* /*filter_config_override*/) const {
-  return ServiceConfigJsonEntry{"", ""};
-}
-
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpGcpAuthnFilter::GenerateServiceConfig(
-    const FilterConfig& hcm_filter_config) const {
-  return ServiceConfigJsonEntry{"gcp_authentication",
-                                JsonDump(hcm_filter_config.config)};
-}
-
-void XdsHttpGcpAuthnFilter::UpdateBlackboard(
-    const FilterConfig& hcm_filter_config, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) const {
-  ValidationErrors errors;
-  auto config = LoadFromJson<GcpAuthenticationParsedConfig::Config>(
-      hcm_filter_config.config, JsonArgs(), &errors);
-  CHECK(errors.ok()) << errors.message("filter config validation failed");
-  RefCountedPtr<GcpAuthenticationFilter::CallCredentialsCache> cache;
-  if (old_blackboard != nullptr) {
-    cache = old_blackboard->Get<GcpAuthenticationFilter::CallCredentialsCache>(
-        config.filter_instance_name);
-  }
-  if (cache != nullptr) {
-    cache->SetMaxSize(config.cache_size);
-  } else {
-    cache = MakeRefCounted<GcpAuthenticationFilter::CallCredentialsCache>(
-        config.cache_size);
-  }
-  CHECK_NE(new_blackboard, nullptr);
-  new_blackboard->Set(config.filter_instance_name, std::move(cache));
+  return nullptr;
 }
 
 }  // namespace grpc_core

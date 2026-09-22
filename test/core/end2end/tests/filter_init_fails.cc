@@ -51,9 +51,7 @@ namespace {
 
 grpc_error_handle init_call_elem(grpc_call_element* /*elem*/,
                                  const grpc_call_element_args* /*args*/) {
-  return grpc_error_set_int(GRPC_ERROR_CREATE("access denied"),
-                            StatusIntProperty::kRpcStatus,
-                            GRPC_STATUS_PERMISSION_DENIED);
+  return absl::PermissionDeniedError("access denied");
 }
 
 void destroy_call_elem(grpc_call_element* /*elem*/,
@@ -63,9 +61,7 @@ void destroy_call_elem(grpc_call_element* /*elem*/,
 grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
                                     grpc_channel_element_args* args) {
   if (args->channel_args.GetBool("channel_init_fails").value_or(false)) {
-    return grpc_error_set_int(
-        GRPC_ERROR_CREATE("Test channel filter init error"),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_INVALID_ARGUMENT);
+    return absl::InvalidArgumentError("Test channel filter init error");
   }
   return absl::OkStatus();
 }
@@ -95,7 +91,11 @@ void RegisterFilter(grpc_channel_stack_type type) {
 
 CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ServerFilterChannelInitFails) {
   SKIP_IF_V3();
-  RegisterFilter(GRPC_SERVER_CHANNEL);
+  if (test_config()->feature_mask & FEATURE_MASK_IS_VIRTUAL_RPC) {
+    RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL);
+  } else {
+    RegisterFilter(GRPC_SERVER_CHANNEL);
+  }
   InitClient(ChannelArgs());
   InitServer(DefaultServerArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -122,7 +122,11 @@ CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
   SKIP_IF_FUZZING();
   SKIP_IF_V3();
 
-  RegisterFilter(GRPC_SERVER_CHANNEL);
+  if (test_config()->feature_mask & FEATURE_MASK_IS_VIRTUAL_RPC) {
+    RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL);
+  } else {
+    RegisterFilter(GRPC_SERVER_CHANNEL);
+  }
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -141,8 +145,12 @@ CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
 
 CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
   SKIP_IF_V3();
-  RegisterFilter(GRPC_CLIENT_CHANNEL);
-  RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
+  if (test_config()->feature_mask & FEATURE_MASK_IS_VIRTUAL_RPC) {
+    RegisterFilter(GRPC_CLIENT_VIRTUAL_CHANNEL);
+  } else {
+    RegisterFilter(GRPC_CLIENT_CHANNEL);
+    RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
+  }
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -162,8 +170,12 @@ CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
 CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
-  RegisterFilter(GRPC_CLIENT_CHANNEL);
-  RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
+  if (test_config()->feature_mask & FEATURE_MASK_IS_VIRTUAL_RPC) {
+    RegisterFilter(GRPC_CLIENT_VIRTUAL_CHANNEL);
+  } else {
+    RegisterFilter(GRPC_CLIENT_CHANNEL);
+    RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
+  }
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -219,6 +231,7 @@ CORE_END2END_TEST(CoreClientChannelTests,
 
 CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
   SKIP_IF_V3();
+  SKIP_IF_VIRTUAL();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;

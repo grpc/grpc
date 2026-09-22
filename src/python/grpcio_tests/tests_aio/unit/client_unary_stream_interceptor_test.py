@@ -456,28 +456,136 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
         self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
         await channel.close()
 
-    async def test_exception_raised_by_interceptor(self):
-        class InterceptorException(Exception):
-            pass
 
-        class Interceptor(aio.UnaryStreamClientInterceptor):
-            async def intercept_unary_stream(
-                self, continuation, client_call_details, request
-            ):
-                raise InterceptorException
+class _InterceptorException(Exception):
+    pass
 
-        channel = aio.insecure_channel(
-            UNREACHABLE_TARGET, interceptors=[Interceptor()]
+
+class _UnaryStreamExceptionRaisingInterceptor(aio.UnaryStreamClientInterceptor):
+    async def intercept_unary_stream(
+        self, continuation, client_call_details, request
+    ):
+        raise _InterceptorException()
+
+
+class TestUnaryStreamClientInterceptorCustomException(AioTestBase):
+
+    async def setUp(self):
+        self._channel = aio.insecure_channel(
+            UNREACHABLE_TARGET,
+            interceptors=[_UnaryStreamExceptionRaisingInterceptor()],
         )
-        request = messages_pb2.StreamingOutputCallRequest()
-        stub = test_pb2_grpc.TestServiceStub(channel)
-        call = stub.StreamingOutputCall(request)
+        self._stub = test_pb2_grpc.TestServiceStub(self._channel)
+        self._request = messages_pb2.StreamingOutputCallRequest()
 
-        with self.assertRaises(InterceptorException):
-            async for response in call:
+    async def tearDown(self):
+        await self._channel.close()
+
+    async def test_exception_raised_correctly(self):
+        call = self._stub.StreamingOutputCall(self._request)
+
+        with self.assertRaises(_InterceptorException):
+            async for _ in call:
                 pass
 
-        await channel.close()
+    async def test_done_callbacks_triggered_when_registered_early(self):
+        call = self._stub.StreamingOutputCall(self._request)
+        validation = inject_callbacks(call)
+
+        with self.assertRaises(_InterceptorException):
+            async for _ in call:
+                pass
+
+        await validation
+
+    async def test_done_callbacks_triggered_when_registered_late(self):
+        call = self._stub.StreamingOutputCall(self._request)
+
+        with self.assertRaises(_InterceptorException):
+            async for _ in call:
+                pass
+
+        validation = inject_callbacks(call)
+
+        await validation
+
+    async def test_call_states_on_interceptor_exception(self):
+        call = self._stub.StreamingOutputCall(self._request)
+
+        # Before exception (task scheduled but not run)
+        self.assertFalse(call.done())
+        self.assertFalse(call.cancelled())
+
+        with self.assertRaises(_InterceptorException):
+            async for _ in call:
+                pass
+
+        # After exception
+        self.assertTrue(call.done())
+        self.assertFalse(call.cancelled())
+        self.assertFalse(call.cancel())
+
+
+class _RecordingUnaryStreamInterceptor(aio.UnaryStreamClientInterceptor):
+    def __init__(self, record):
+        self.record = record
+
+    async def intercept_unary_stream(
+        self, continuation, client_call_details, request_iter
+    ):
+        method = client_call_details.method
+        if isinstance(method, bytes):
+            method = method.decode()
+        self.record.append(("unary-stream", method))
+        return await continuation(client_call_details, request_iter)
+
+
+class TestInterceptedUnaryStreamCallWithRegisteredMethods(AioTestBase):
+    _REQUEST = b"\x00\x00\x00"
+    _RESPONSE = b"\x00\x00\x00"
+    _SERVICE_NAME = "test"
+    _METHOD_NAME = "UnaryStream"
+
+    async def setUp(self):
+        self._server = aio.server()
+        self._port = self._server.add_insecure_port("[::]:0")
+        self._method_handlers = {
+            self._METHOD_NAME: grpc.unary_stream_rpc_method_handler(
+                self._unary_stream_handler
+            )
+        }
+        self._server.add_registered_method_handlers(
+            self._SERVICE_NAME, self._method_handlers
+        )
+        await self._server.start()
+
+    async def tearDown(self):
+        await self._server.stop(0)
+
+    async def _unary_stream_handler(self, unused_request, unused_context):
+        for _ in range(_NUM_STREAM_RESPONSES):
+            yield self._RESPONSE
+
+    async def test_unary_stream_interceptor(self):
+        record = []
+        fully_qualified_method = f"/{self._SERVICE_NAME}/{self._METHOD_NAME}"
+
+        async with grpc.aio.insecure_channel(
+            f"localhost:{self._port}",
+            interceptors=[_RecordingUnaryStreamInterceptor(record)],
+        ) as channel:
+            multi_callable = channel.unary_stream(
+                fully_qualified_method, _registered_method=True
+            )
+            responses = []
+            async for response in multi_callable(self._REQUEST):
+                responses.append(response)
+
+            self.assertEqual(len(responses), _NUM_STREAM_RESPONSES)
+            self.assertEqual(len(record), 1)
+            self.assertEqual(
+                record[0], ("unary-stream", fully_qualified_method)
+            )
 
 
 if __name__ == "__main__":

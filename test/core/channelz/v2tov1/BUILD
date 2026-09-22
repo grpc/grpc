@@ -21,7 +21,13 @@ load(
     "grpc_fuzz_test",
 )
 
-grpc_package(name = "test/core/channelz/v2tov1")
+grpc_package(
+    name = "test/core/channelz/v2tov1",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -33,7 +39,6 @@ grpc_fuzz_test(
         "fuzztest",
         "fuzztest_main",
         "absl/log:check",
-        "@com_google_protobuf//upb/mem",
     ],
     deps = [
         "//:channelz_property_list_upb",
@@ -44,6 +49,7 @@ grpc_fuzz_test(
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
@@ -59,13 +65,13 @@ grpc_fuzz_test(
         "fuzztest_main",
     ],
     deps = [
+        "//:channelz_cc_proto",
         "//:channelz_upb",
         "//:channelz_upbdefs",
         "//:grpc",
         "//src/core:channelz_v2tov1_convert",
         "//src/core:json",
         "//src/core:json_reader",
-        "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/test_util:grpc_test_util",

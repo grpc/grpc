@@ -23,7 +23,7 @@
 #include <vector>
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
-    defined(GPR_APPLE)
+    defined(GPR_APPLE) || defined(GPR_NETBSD) || defined(GPR_OPENBSD)
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -59,15 +59,21 @@ const char* kCertDirectories[] = {""};
 #elif defined(GPR_APPLE)    // endif GPR_FREEBSD
 const char* kCertFiles[] = {"/etc/ssl/cert.pem"};
 const char* kCertDirectories[] = {""};
-#endif                      // GPR_APPLE
+#elif defined(GPR_NETBSD)   // endif GPR_APPLE
+const char* kCertFiles[] = {"/etc/openssl/certs/ca-certificates.crt"};
+const char* kCertDirectories[] = {"/etc/openssl/certs"};
+#elif defined(GPR_OPENBSD)  // endif GPR_NETBSD
+const char* kCertFiles[] = {"/etc/ssl/cert.pem"};
+const char* kCertDirectories[] = {""};
+#endif                      // GPR_OPENBSD
 
-grpc_slice GetSystemRootCerts() {
+Slice GetSystemRootCerts() {
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
-    auto slice = LoadFile(kCertFiles[i], /*add_null_terminator=*/true);
-    if (slice.ok()) return slice->TakeCSlice();
+    auto slice = LoadFile(kCertFiles[i]);
+    if (slice.ok()) return std::move(*slice);
   }
-  return grpc_empty_slice();
+  return Slice();
 }
 
 }  // namespace
@@ -83,14 +89,13 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
   }
 }
 
-grpc_slice CreateRootCertsBundle(const char* certs_directory) {
-  grpc_slice bundle_slice = grpc_empty_slice();
+Slice CreateRootCertsBundle(const char* certs_directory) {
   if (certs_directory == nullptr) {
-    return bundle_slice;
+    return Slice();
   }
   DIR* ca_directory = opendir(certs_directory);
   if (ca_directory == nullptr) {
-    return bundle_slice;
+    return Slice();
   }
   struct FileData {
     char path[MAXPATHLEN];
@@ -134,12 +139,11 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
       close(file_descriptor);
     }
   }
-  bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);
-  return bundle_slice;
+  return Slice(grpc_slice_new(bundle_string, bytes_read, gpr_free));
 }
 
-grpc_slice LoadSystemRootCerts() {
-  grpc_slice result = grpc_empty_slice();
+Slice LoadSystemRootCerts() {
+  Slice result;
   // Prioritize user-specified custom directory if flag is set.
   auto custom_dir = ConfigVars::Get().SystemSslRootsDir();
   if (!custom_dir.empty()) {
@@ -147,13 +151,13 @@ grpc_slice LoadSystemRootCerts() {
   }
   // If the custom directory is empty/invalid/not specified, fallback to
   // distribution-specific directory.
-  if (GRPC_SLICE_IS_EMPTY(result)) {
+  if (result.empty()) {
     result = GetSystemRootCerts();
   }
-  if (GRPC_SLICE_IS_EMPTY(result)) {
+  if (result.empty()) {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(kCertDirectories); i++) {
       result = CreateRootCertsBundle(kCertDirectories[i]);
-      if (!GRPC_SLICE_IS_EMPTY(result)) {
+      if (!result.empty()) {
         break;
       }
     }
@@ -163,4 +167,5 @@ grpc_slice LoadSystemRootCerts() {
 
 }  // namespace grpc_core
 
-#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
+#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE ||
+        // GPR_NETNSD || GPR_OPENBSD

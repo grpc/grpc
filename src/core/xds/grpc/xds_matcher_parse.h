@@ -17,9 +17,11 @@
 
 #include <memory>
 
-#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
 
 namespace grpc_core {
@@ -32,7 +34,8 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher* matcher,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& matcher_context, ValidationErrors* errors);
+    const UniqueTypeName& matcher_context, bool allow_keep_matching,
+    ValidationErrors* errors);
 
 }  // namespace grpc_core
 

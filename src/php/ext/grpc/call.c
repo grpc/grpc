@@ -84,7 +84,11 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
     if (php_grpc_zend_hash_find(array_hash, str_key, key_len, (void **)&data)
         == SUCCESS) {
       if (Z_TYPE_P(data) != IS_ARRAY) {
+#if PHP_VERSION_ID >= 80500
+        zend_throw_exception(zend_ce_exception,
+#else
         zend_throw_exception(zend_exception_get_default(TSRMLS_C),
+#endif
                              "Metadata hash somehow contains wrong types.",
                              1 TSRMLS_CC);
         efree(str_key);
@@ -328,6 +332,14 @@ PHP_METHOD(Call, startBatch) {
     if (key_type != HASH_KEY_IS_LONG || key != NULL) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                            "batch keys must be integers", 1 TSRMLS_CC);
+      goto cleanup;
+    }
+
+    // We shouldn't hit this as there are 0-7 valid op codes.
+    // Adding this as a safeguard against incorrect usage of this method.
+    if (op_num >= 8) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "Too many operations in batch", 1 TSRMLS_CC);
       goto cleanup;
     }
 

@@ -49,7 +49,7 @@ TEST_P(MiniTableTest, AllScalarTypes) {
   upb::Arena arena;
   upb::MtDataEncoder e;
   ASSERT_TRUE(e.StartMessage(0));
-  int count = 0;
+  uint32_t count = 0;
   for (int i = kUpb_FieldType_Double; i < kUpb_FieldType_SInt64; i++) {
     ASSERT_TRUE(e.PutField(static_cast<upb_FieldType>(i), i, 0));
     count++;
@@ -62,7 +62,7 @@ TEST_P(MiniTableTest, AllScalarTypes) {
   absl::flat_hash_set<size_t> offsets;
   for (int i = 0; i < 16; i++) {
     const upb_MiniTableField* f = &table->UPB_PRIVATE(fields)[i];
-    EXPECT_EQ(i + 1, upb_MiniTableField_Number(f));
+    EXPECT_EQ(i + 1u, upb_MiniTableField_Number(f));
     EXPECT_TRUE(upb_MiniTableField_IsScalar(f));
     EXPECT_TRUE(offsets.insert(f->UPB_PRIVATE(offset)).second);
     EXPECT_TRUE(f->UPB_PRIVATE(offset) < table->UPB_PRIVATE(size));
@@ -74,7 +74,7 @@ TEST_P(MiniTableTest, AllRepeatedTypes) {
   upb::Arena arena;
   upb::MtDataEncoder e;
   ASSERT_TRUE(e.StartMessage(0));
-  int count = 0;
+  uint32_t count = 0;
   for (int i = kUpb_FieldType_Double; i < kUpb_FieldType_SInt64; i++) {
     ASSERT_TRUE(e.PutField(static_cast<upb_FieldType>(i), i,
                            kUpb_FieldModifier_IsRepeated));
@@ -88,7 +88,7 @@ TEST_P(MiniTableTest, AllRepeatedTypes) {
   absl::flat_hash_set<size_t> offsets;
   for (int i = 0; i < 16; i++) {
     const upb_MiniTableField* f = &table->UPB_PRIVATE(fields)[i];
-    EXPECT_EQ(i + 1, upb_MiniTableField_Number(f));
+    EXPECT_EQ(i + 1u, upb_MiniTableField_Number(f));
     EXPECT_TRUE(upb_MiniTableField_IsArray(f));
     EXPECT_TRUE(offsets.insert(f->UPB_PRIVATE(offset)).second);
     EXPECT_TRUE(f->UPB_PRIVATE(offset) < table->UPB_PRIVATE(size));
@@ -100,10 +100,10 @@ TEST_P(MiniTableTest, Skips) {
   upb::Arena arena;
   upb::MtDataEncoder e;
   ASSERT_TRUE(e.StartMessage(0));
-  int count = 0;
-  std::vector<int> field_numbers;
+  uint32_t count = 0;
+  std::vector<uint32_t> field_numbers;
   for (int i = 0; i < 25; i++) {
-    int field_number = 1 << i;
+    uint32_t field_number = 1u << i;
     field_numbers.push_back(field_number);
     ASSERT_TRUE(e.PutField(kUpb_FieldType_Float, field_number, 0));
     count++;
@@ -129,7 +129,7 @@ TEST_P(MiniTableTest, AllScalarTypesOneof) {
   upb::Arena arena;
   upb::MtDataEncoder e;
   ASSERT_TRUE(e.StartMessage(0));
-  int count = 0;
+  uint32_t count = 0;
   for (int i = kUpb_FieldType_Double; i < kUpb_FieldType_SInt64; i++) {
     ASSERT_TRUE(e.PutField(static_cast<upb_FieldType>(i), i, 0));
     count++;
@@ -146,7 +146,7 @@ TEST_P(MiniTableTest, AllScalarTypesOneof) {
   absl::flat_hash_set<size_t> offsets;
   for (int i = 0; i < 16; i++) {
     const upb_MiniTableField* f = &table->UPB_PRIVATE(fields)[i];
-    EXPECT_EQ(i + 1, upb_MiniTableField_Number(f));
+    EXPECT_EQ(i + 1u, upb_MiniTableField_Number(f));
     EXPECT_TRUE(upb_MiniTableField_IsScalar(f));
     // For a oneof all fields have the same offset.
     EXPECT_EQ(table->UPB_PRIVATE(fields)[0].UPB_PRIVATE(offset),
@@ -227,7 +227,7 @@ TEST(MiniTableEnumTest, Enum) {
   }
 }
 
-TEST_P(MiniTableTest, SubsInitializedToEmpty) {
+TEST(MiniTableTest, SubsInitializedToNull) {
   upb::Arena arena;
   upb::MtDataEncoder e;
   // Create mini table with 2 message fields.
@@ -235,14 +235,14 @@ TEST_P(MiniTableTest, SubsInitializedToEmpty) {
   ASSERT_TRUE(e.PutField(kUpb_FieldType_Message, 15, 0));
   ASSERT_TRUE(e.PutField(kUpb_FieldType_Message, 16, 0));
   upb::Status status;
-  upb_MiniTable* table = _upb_MiniTable_Build(
-      e.data().data(), e.data().size(), GetParam(), arena.ptr(), status.ptr());
+  upb_MiniTable* table = upb_MiniTable_Build(e.data().data(), e.data().size(),
+                                             arena.ptr(), status.ptr());
   ASSERT_NE(nullptr, table);
   EXPECT_EQ(upb_MiniTable_FieldCount(table), 2);
-  EXPECT_FALSE(upb_MiniTable_FieldIsLinked(
-      table, upb_MiniTable_GetFieldByIndex(table, 0)));
-  EXPECT_FALSE(upb_MiniTable_FieldIsLinked(
-      table, upb_MiniTable_GetFieldByIndex(table, 1)));
+  EXPECT_FALSE(
+      upb_MiniTable_FieldIsLinked(upb_MiniTable_GetFieldByIndex(table, 0)));
+  EXPECT_FALSE(
+      upb_MiniTable_FieldIsLinked(upb_MiniTable_GetFieldByIndex(table, 1)));
 }
 
 TEST(MiniTableEnumTest, PositiveAndNegative) {

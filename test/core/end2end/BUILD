@@ -17,7 +17,18 @@ load("//test/core/end2end:grpc_core_end2end_test.bzl", "grpc_core_end2end_test_s
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/end2end")
+grpc_package(
+    name = "test/core/end2end",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
+
+config_setting(
+    name = "grpc_running_in_pr",
+    values = {"define": "grpc_running_in_pr=true"},
+)
 
 # grpc_core_end2end_test_suite() currently needs to consume the source for tests directly.
 exports_files(
@@ -167,6 +178,7 @@ grpc_cc_library(
             "fixtures/h2_ssl_cred_reload_fixture.h",
             "fixtures/h2_ssl_tls_common.h",
             "fixtures/h2_tls_common.h",
+            "fixtures/http_common_secure_fixtures.h",
             "fixtures/inproc_fixture.h",
             "fixtures/local_util.h",
             "fixtures/secure_fixture.h",
@@ -175,11 +187,16 @@ grpc_cc_library(
         ],
         defines =
             (["GRPC_END2END_TEST_INCLUDE_FUZZER"] if fuzz else []) +
-            ([] if gtest else ["GRPC_END2END_TEST_NO_GTEST"]),
+            ([] if gtest else ["GRPC_END2END_TEST_NO_GTEST"]) +
+            select({
+                ":grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
+                "//conditions:default": [],
+            }),
         external_deps = [
             "absl/functional:any_invocable",
             "absl/log:check",
             "absl/log:log",
+            "absl/log:globals",
             "absl/memory",
             "absl/meta:type_traits",
             "absl/random",
@@ -365,7 +382,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:grpc_resolver_dns_ares",
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:default_event_engine",
@@ -446,9 +462,11 @@ grpc_cc_test(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:globals",
         "absl/log:log",
         "absl/memory",
         "absl/meta:type_traits",
+        "absl/random",
         "absl/strings",
         "gtest",
     ],
@@ -578,6 +596,25 @@ grpc_core_end2end_test_suite(
         "//src/core:metrics",
         "//src/core:slice_buffer",
         "//src/core:sync",
+    ],
+)
+
+grpc_core_end2end_test_suite(
+    name = "end2end_vrpc",
+    config_src = "end2end_vrpc_config.cc",
+    tags = [
+        "grpc:no-internal-poller",
+    ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:context",
+        "//src/core:metrics",
+        "//src/core:resource_quota",
+        "//src/core:session_endpoint",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
+        "//src/core:virtual_channel",
     ],
 )
 

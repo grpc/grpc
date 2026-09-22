@@ -38,7 +38,7 @@ TRAILING_METADATA = (
 )
 
 
-class QueueDriver(object):
+class QueueDriver:
     def __init__(self, condition, completion_queue):
         self._condition = condition
         self._completion_queue = completion_queue
@@ -96,7 +96,7 @@ SUCCESSFUL_OPERATION_RESULT = OperationResult(
 )
 
 
-class RpcTest(object):
+class RpcTest:
     def setUp(self):
         self.server_completion_queue = cygrpc.CompletionQueue()
         self.server = cygrpc.Server([(b"grpc.so_reuseport", 0)], False)

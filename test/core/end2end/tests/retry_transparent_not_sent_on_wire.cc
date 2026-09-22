@@ -79,9 +79,7 @@ class FailFirstTenCallsFilter {
         if (!batch->cancel_stream) {
           grpc_transport_stream_op_batch_finish_with_failure(
               batch,
-              grpc_error_set_int(
-                  GRPC_ERROR_CREATE("FailFirstTenCallsFilter failing batch"),
-                  StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
+              absl::UnavailableError("FailFirstTenCallsFilter failing batch"),
               calld->call_combiner_);
           return;
         }
@@ -179,7 +177,7 @@ CORE_END2END_TEST(RetryTests, RetryTransparentNotSentOnWire) {
   Expect(2, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
+  EXPECT_EQ(server_status.message(), "");
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), "foo");

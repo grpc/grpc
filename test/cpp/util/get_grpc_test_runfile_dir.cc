@@ -15,6 +15,7 @@
 #include "test/cpp/util/get_grpc_test_runfile_dir.h"
 
 #include "src/core/util/env.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 
@@ -23,7 +24,9 @@ std::optional<std::string> GetGrpcTestRunFileDir() {
   if (!test_srcdir.has_value()) {
     return std::nullopt;
   }
-  return *test_srcdir + "/com_github_grpc_grpc";
+  std::optional<std::string> workspace = grpc_core::GetEnv("TEST_WORKSPACE");
+  return absl::StrCat(*test_srcdir, "/",
+                      workspace.value_or("com_github_grpc_grpc"));
 }
 
 }  // namespace grpc

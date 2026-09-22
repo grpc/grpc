@@ -22,6 +22,29 @@ but these are still valid feature requests.
 In order to protect both you and ourselves, you will need to sign the
 [Contributor License Agreement](https://identity.linuxfoundation.org/projects/cncf).
 
+## Generative AI Policy
+
+AI tools have the ability to produce more code than is possible for the gRPC
+team to read, understand, review, and accept into the repository.  For this
+reason, we request that all contributions adhere to the following rules:
+
+1. **No AI-Generated Interactions:** All communication in the repo must be
+   authored by a human.  _Exception: AIs may be used for directed writing
+   assistance or translation._  Absolutely no automated agents are allowed to
+   directly publish to GitHub.
+
+2. **Author Ownership and Accountability:** Code contributions are expected to
+   be fully owned and understood by the human contributor.  If the code was
+   produced by generative AI, the author is expected to have reviewed and
+   understood it in its entirety before submitting it for review.  This includes
+   all content: production code, tests, examples, tools, etc.
+
+In addition to the above requirements, any AI-assisted contributions must also
+comply with the [Linux Foundation Generative AI
+Policy](https://www.linuxfoundation.org/legal/generative-ai).  This includes
+confirming that all contributions are legally allowed to be contributed to the
+gRPC project under the applicable license terms.
+
 ## Cloning the repository
 
 Before starting any development work you will need a local copy of the gRPC
@@ -124,15 +147,14 @@ How to get your contributions merged smoothly and quickly.
 
 ## Obtaining Commit Access
 
-We grant Commit Access to contributors based on the following criteria: *
-Sustained contribution to the gRPC project. * Deep understanding of the areas
-contributed to, and good consideration of various reliability, usability and
-performance tradeoffs. * Contributions demonstrate that obtaining Commit Access
-will significantly reduce friction for the contributors or others.
+We grant Commit Access to contributors based on the following criteria: 
+- Sustained contribution to the gRPC project.
+- Deep understanding of the areas contributed to, and good consideration of various reliability, usability and performance tradeoffs.
+- Contributions demonstrate that obtaining Commit Access will significantly reduce friction for the contributors or others.
 
-In addition to submitting PRs, a Contributor with Commit Access can: * Review
-PRs and merge once other checks and criteria pass. * Triage bugs and PRs and
-assign appropriate labels and reviewers.
+In addition to submitting PRs, a Contributor with Commit Access can: 
+- Review PRs and merge once other checks and criteria pass.
+- Triage bugs and PRs and assign appropriate labels and reviewers.
 
 ### Obtaining Commit Access without Code Contributions
 

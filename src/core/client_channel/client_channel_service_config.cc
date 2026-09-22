@@ -16,12 +16,11 @@
 
 #include "src/core/client_channel/client_channel_service_config.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <optional>
 #include <utility>
 
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -49,6 +48,21 @@ ClientChannelGlobalParsedConfig::HealthCheckConfig::JsonLoader(
 }
 
 //
+// ClientChannelGlobalParsedConfig::ConnectionScaling
+//
+
+const JsonLoaderInterface*
+ClientChannelGlobalParsedConfig::ConnectionScaling::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<ConnectionScaling>()
+          .OptionalField("maxConnectionsPerSubchannel",
+                         &ConnectionScaling::max_connections_per_subchannel)
+          .Finish();
+  return loader;
+}
+
+//
 // ClientChannelGlobalParsedConfig
 //
 
@@ -63,6 +77,8 @@ const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader(
               &ClientChannelGlobalParsedConfig::parsed_deprecated_lb_policy_)
           .OptionalField("healthCheckConfig",
                          &ClientChannelGlobalParsedConfig::health_check_config_)
+          .OptionalField("connectionScaling",
+                         &ClientChannelGlobalParsedConfig::connection_scaling_)
           .Finish();
   return loader;
 }

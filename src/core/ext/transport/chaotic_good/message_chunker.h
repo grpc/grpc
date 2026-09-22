@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_MESSAGE_CHUNKER_H
 
 #include <cstdint>
+#include <utility>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
@@ -125,12 +126,19 @@ class MessageChunker {
           frame.message = std::move(message);
           frame.stream_id = stream_id;
           uint32_t tokens = FrameMpscTokens(frame);
-          return output.Send(OutgoingFrame{std::move(frame), nullptr}, tokens);
+          return output.Send(OutgoingFrame{std::move(frame), call_tracer},
+                             tokens);
         });
   }
 
   uint32_t max_chunk_size() const { return max_chunk_size_; }
   uint32_t alignment() const { return alignment_; }
+
+  void AddData(channelz::DataSink sink) {
+    sink.AddData("message_chunker", channelz::PropertyList()
+                                        .Set("max_chunk_size", max_chunk_size_)
+                                        .Set("alignment", alignment_));
+  }
 
  private:
   bool ShouldChunk(Message& message) {

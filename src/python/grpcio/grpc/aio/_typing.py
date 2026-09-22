@@ -20,24 +20,34 @@ from typing import (
     Iterable,
     Sequence,
     Tuple,
+    TypeAlias,
     TypeVar,
     Union,
 )
 
-from grpc._cython.cygrpc import EOF
+from grpc._cython.cygrpc import _EOF
 
+# pylint: disable=unused-import
 from ._metadata import Metadata
 from ._metadata import MetadataKey
+from ._metadata import MetadataType
 from ._metadata import MetadataValue
+from ._metadata import MetadatumType
+
+# pylint: enable=unused-import
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
-SerializingFunction = Callable[[Any], bytes]
-DeserializingFunction = Callable[[bytes], Any]
-MetadatumType = Tuple[MetadataKey, MetadataValue]
-MetadataType = Union[Metadata, Sequence[MetadatumType]]
+
+SerializerInputType_contra = TypeVar(
+    "SerializerInputType_contra", contravariant=True
+)
+DeserializerOutputType_co = TypeVar("DeserializerOutputType_co", covariant=True)
+SerializingFunction = Callable[[SerializerInputType_contra], bytes]
+DeserializingFunction = Callable[[bytes], DeserializerOutputType_co]
+
 ChannelArgumentType = Sequence[Tuple[str, Any]]
-EOFType = type(EOF)
+EOFType: TypeAlias = _EOF
 DoneCallbackType = Callable[[Any], None]
-RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
-ResponseIterableType = AsyncIterable[Any]
+RequestIterableType = Union[Iterable[RequestType], AsyncIterable[RequestType]]
+ResponseIterableType = AsyncIterable[ResponseType]

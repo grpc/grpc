@@ -18,6 +18,8 @@ import contextlib
 import enum
 import logging
 import sys
+import typing
+from typing import Any, Protocol
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -260,35 +262,41 @@ class StatusCode(enum.Enum):
       DATA_LOSS: Unrecoverable data loss or corruption.
     """
 
-    OK = (_cygrpc.StatusCode.ok, "ok")
-    CANCELLED = (_cygrpc.StatusCode.cancelled, "cancelled")
-    UNKNOWN = (_cygrpc.StatusCode.unknown, "unknown")
-    INVALID_ARGUMENT = (_cygrpc.StatusCode.invalid_argument, "invalid argument")
+    OK = (int(_cygrpc.StatusCode.ok), "ok")
+    CANCELLED = (int(_cygrpc.StatusCode.cancelled), "cancelled")
+    UNKNOWN = (int(_cygrpc.StatusCode.unknown), "unknown")
+    INVALID_ARGUMENT = (
+        int(_cygrpc.StatusCode.invalid_argument),
+        "invalid argument",
+    )
     DEADLINE_EXCEEDED = (
-        _cygrpc.StatusCode.deadline_exceeded,
+        int(_cygrpc.StatusCode.deadline_exceeded),
         "deadline exceeded",
     )
-    NOT_FOUND = (_cygrpc.StatusCode.not_found, "not found")
-    ALREADY_EXISTS = (_cygrpc.StatusCode.already_exists, "already exists")
+    NOT_FOUND = (int(_cygrpc.StatusCode.not_found), "not found")
+    ALREADY_EXISTS = (int(_cygrpc.StatusCode.already_exists), "already exists")
     PERMISSION_DENIED = (
-        _cygrpc.StatusCode.permission_denied,
+        int(_cygrpc.StatusCode.permission_denied),
         "permission denied",
     )
     RESOURCE_EXHAUSTED = (
-        _cygrpc.StatusCode.resource_exhausted,
+        int(_cygrpc.StatusCode.resource_exhausted),
         "resource exhausted",
     )
     FAILED_PRECONDITION = (
-        _cygrpc.StatusCode.failed_precondition,
+        int(_cygrpc.StatusCode.failed_precondition),
         "failed precondition",
     )
-    ABORTED = (_cygrpc.StatusCode.aborted, "aborted")
-    OUT_OF_RANGE = (_cygrpc.StatusCode.out_of_range, "out of range")
-    UNIMPLEMENTED = (_cygrpc.StatusCode.unimplemented, "unimplemented")
-    INTERNAL = (_cygrpc.StatusCode.internal, "internal")
-    UNAVAILABLE = (_cygrpc.StatusCode.unavailable, "unavailable")
-    DATA_LOSS = (_cygrpc.StatusCode.data_loss, "data loss")
-    UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, "unauthenticated")
+    ABORTED = (int(_cygrpc.StatusCode.aborted), "aborted")
+    OUT_OF_RANGE = (int(_cygrpc.StatusCode.out_of_range), "out of range")
+    UNIMPLEMENTED = (int(_cygrpc.StatusCode.unimplemented), "unimplemented")
+    INTERNAL = (int(_cygrpc.StatusCode.internal), "internal")
+    UNAVAILABLE = (int(_cygrpc.StatusCode.unavailable), "unavailable")
+    DATA_LOSS = (int(_cygrpc.StatusCode.data_loss), "data loss")
+    UNAUTHENTICATED = (
+        int(_cygrpc.StatusCode.unauthenticated),
+        "unauthenticated",
+    )
 
 
 #############################  gRPC Status  ################################
@@ -428,8 +436,8 @@ class ClientCallDetails(abc.ABC):
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
       wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip.
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip.
     """
 
 
@@ -575,7 +583,7 @@ class StreamStreamClientInterceptor(abc.ABC):
 ############  Authentication & Authorization Interfaces & Classes  #############
 
 
-class ChannelCredentials(object):
+class ChannelCredentials:
     """An encapsulation of the data required to create a secure Channel.
 
     This class has no supported interface - it exists to define the type of its
@@ -584,11 +592,13 @@ class ChannelCredentials(object):
     secure_channel requires an instance of this class.
     """
 
+    _credentials: _cygrpc.ChannelCredentials
+
     def __init__(self, credentials):
         self._credentials = credentials
 
 
-class CallCredentials(object):
+class CallCredentials:
     """An encapsulation of the data required to assert an identity over a call.
 
     A CallCredentials has to be used with secure Channel, otherwise the
@@ -644,7 +654,7 @@ class AuthMetadataPlugin(abc.ABC):
         raise NotImplementedError()
 
 
-class ServerCredentials(object):
+class ServerCredentials:
     """An encapsulation of the data required to open a secure port on a Server.
 
     This class has no supported interface - it exists to define the type of its
@@ -655,7 +665,7 @@ class ServerCredentials(object):
         self._credentials = credentials
 
 
-class ServerCertificateConfiguration(object):
+class ServerCertificateConfiguration:
     """A certificate configuration for use with an SSL-enabled Server.
 
     Instances of this class can be returned in the certificate configuration
@@ -697,8 +707,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -731,8 +741,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -765,8 +775,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -802,8 +812,8 @@ class UnaryStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -839,8 +849,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -874,8 +884,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -908,8 +918,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -945,8 +955,8 @@ class StreamStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -1182,8 +1192,8 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """Set the compression algorithm to be used for the entire call.
 
         Args:
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
         """
         raise NotImplementedError()
 
@@ -1358,13 +1368,17 @@ class RpcMethodHandler(abc.ABC):
     """
 
 
-class HandlerCallDetails(abc.ABC):
+@typing.runtime_checkable
+class HandlerCallDetails(Protocol):
     """Describes an RPC that has just arrived for service.
 
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
     """
+
+    method: str
+    invocation_metadata: Any
 
 
 class GenericRpcHandler(abc.ABC):
@@ -2203,8 +2217,8 @@ def server(
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This compression algorithm will be used for the
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden.
       xds: If set to true, retrieves server configuration via xDS. This is an
         EXPERIMENTAL option.

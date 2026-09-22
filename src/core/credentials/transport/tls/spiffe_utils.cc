@@ -210,7 +210,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
     if (!x5c->empty()) {
       ValidationErrors::ScopedField field(errors, "[0]");
       std::string pem_cert = AddPemBlockWrapping((*x5c)[0]);
-      auto certs = ParsePemCertificateChain(pem_cert);
+      auto certs = tsi::ParsePemCertificateChain(pem_cert);
       if (!certs.ok()) {
         errors->AddError(certs.status().ToString());
       } else {
@@ -310,7 +310,7 @@ absl::Status SpiffeBundle::CreateX509Stack() {
   root_stack_ = std::make_unique<STACK_OF(X509)*>(sk_X509_new_null());
   absl::Status status = absl::OkStatus();
   for (const auto& pem_cert : roots_) {
-    auto cert = ParsePemCertificateChain(AddPemBlockWrapping(pem_cert));
+    auto cert = tsi::ParsePemCertificateChain(AddPemBlockWrapping(pem_cert));
     if (!cert.status().ok()) {
       status = cert.status();
       break;
@@ -345,7 +345,7 @@ void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
 
 absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
     absl::string_view file_path) {
-  auto slice = LoadFile(file_path.data(), /*add_null_terminator=*/false);
+  auto slice = LoadFile(file_path.data());
   GRPC_RETURN_IF_ERROR(slice.status());
   auto json = JsonParse(slice->as_string_view());
   GRPC_RETURN_IF_ERROR(json.status());

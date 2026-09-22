@@ -16,37 +16,19 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_x64/Dockerfile.inja`!!!
 
-FROM quay.io/pypa/manylinux2014_x86_64:2025.07.14-5
+FROM quay.io/pypa/manylinux2014_x86_64:2026.08.15-1
 
-# TODO: simplify the list of third_party modules list
-# NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
-# current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule
 RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/abseil-cpp && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/benchmark && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/boringssl-with-bazel && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/envoy-api && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googleapis && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googletest && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opencensus-proto && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry-cpp && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protobuf && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protoc-gen-validate && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/re2 && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
+  git config --global --add safe.directory '/var/local/jenkins/grpc/.git/modules/third_party/*'
 
 #=================
 # Install ccache
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.11.3 \
     && mkdir build && cd build \
@@ -57,20 +39,13 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 #===================================
 # Install Python build requirements
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1'
+  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp315-cp315/bin/pip install --upgrade 'cython==3.1.1'
 
-
-# TODO(jtattermusch): revisit which of the deps are really required
-# Specifically, `libffi-devel` is needed because the `cryptography` package's
-# dependency `cffi` lacks Python 3.14 supported wheels (as of Aug 2025), causing
-# a source install that fails due to a missing `libffi-devel` package in the
-# manylinux docker images.
-RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel libffi-devel
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH

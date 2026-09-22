@@ -23,6 +23,8 @@
 #include <limits.h>
 #include <stdint.h>
 
+#include <algorithm>
+#include <cstddef>
 #include <iosfwd>
 #include <optional>
 #include <string>
@@ -36,8 +38,11 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -57,6 +62,9 @@ class TransportFlowControl;
 class StreamFlowControl;
 
 enum class StallEdge { kNoChange, kStalled, kUnstalled };
+
+#define GRPC_HTTP2_FLOW_CONTROL_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
@@ -95,6 +103,8 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
                Urgency::UPDATE_IMMEDIATELY;
   }
 
+  std::string ImmediateUpdateReasons() const;
+
   // Returns the value of SETTINGS_INITIAL_WINDOW_SIZE that we will send to the
   // peer.
   uint32_t initial_window_size() const { return initial_window_size_; }
@@ -105,6 +115,43 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
   uint32_t preferred_rx_crypto_frame_size() const {
     return preferred_rx_crypto_frame_size_;
   }
+
+  FlowControlAction& test_only_set_send_initial_window_update(Urgency u,
+                                                              uint32_t update) {
+    return set_send_initial_window_update(u, update);
+  }
+  FlowControlAction& test_only_set_send_max_frame_size_update(Urgency u,
+                                                              uint32_t update) {
+    return set_send_max_frame_size_update(u, update);
+  }
+  FlowControlAction& test_only_set_preferred_rx_crypto_frame_size_update(
+      Urgency u, uint32_t update) {
+    return set_preferred_rx_crypto_frame_size_update(u, update);
+  }
+
+  static const char* UrgencyString(Urgency u);
+  std::string DebugString() const;
+
+  void AssertEmpty() { GRPC_CHECK(*this == FlowControlAction()); }
+
+  bool operator==(const FlowControlAction& other) const {
+    return send_stream_update_ == other.send_stream_update_ &&
+           send_transport_update_ == other.send_transport_update_ &&
+           send_initial_window_update_ == other.send_initial_window_update_ &&
+           send_max_frame_size_update_ == other.send_max_frame_size_update_ &&
+           (send_initial_window_update_ == Urgency::NO_ACTION_NEEDED ||
+            initial_window_size_ == other.initial_window_size_) &&
+           (send_max_frame_size_update_ == Urgency::NO_ACTION_NEEDED ||
+            max_frame_size_ == other.max_frame_size_) &&
+           (preferred_rx_crypto_frame_size_update_ ==
+                Urgency::NO_ACTION_NEEDED ||
+            preferred_rx_crypto_frame_size_ ==
+                other.preferred_rx_crypto_frame_size_);
+  }
+
+ private:
+  friend class StreamFlowControl;
+  friend class TransportFlowControl;
 
   FlowControlAction& set_send_stream_update(Urgency u) {
     send_stream_update_ = u;
@@ -133,27 +180,6 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
     return *this;
   }
 
-  static const char* UrgencyString(Urgency u);
-  std::string DebugString() const;
-
-  void AssertEmpty() { GRPC_CHECK(*this == FlowControlAction()); }
-
-  bool operator==(const FlowControlAction& other) const {
-    return send_stream_update_ == other.send_stream_update_ &&
-           send_transport_update_ == other.send_transport_update_ &&
-           send_initial_window_update_ == other.send_initial_window_update_ &&
-           send_max_frame_size_update_ == other.send_max_frame_size_update_ &&
-           (send_initial_window_update_ == Urgency::NO_ACTION_NEEDED ||
-            initial_window_size_ == other.initial_window_size_) &&
-           (send_max_frame_size_update_ == Urgency::NO_ACTION_NEEDED ||
-            max_frame_size_ == other.max_frame_size_) &&
-           (preferred_rx_crypto_frame_size_update_ ==
-                Urgency::NO_ACTION_NEEDED ||
-            preferred_rx_crypto_frame_size_ ==
-                other.preferred_rx_crypto_frame_size_);
-  }
-
- private:
   Urgency send_stream_update_ = Urgency::NO_ACTION_NEEDED;
   Urgency send_transport_update_ = Urgency::NO_ACTION_NEEDED;
   Urgency send_initial_window_update_ = Urgency::NO_ACTION_NEEDED;
@@ -172,11 +198,16 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action);
 // This class manages the flow control at a connection level.
 class TransportFlowControl final {
  public:
-  explicit TransportFlowControl(absl::string_view name, bool enable_bdp_probe,
+  explicit TransportFlowControl(absl::string_view peer_name,
+                                bool enable_bdp_probe,
                                 MemoryOwner* memory_owner);
   ~TransportFlowControl() {}
 
   bool bdp_probe() const { return enable_bdp_probe_; }
+  bool ph2_enable_rx_crypto() const { return ph2_enable_rx_crypto_; }
+  void set_ph2_enable_rx_crypto(const bool enable) {
+    ph2_enable_rx_crypto_ = enable;
+  }
 
   // Returns a non-zero announce if we should send a transport update to our
   // peer, else returns zero; writing_anyway indicates if a write would happen
@@ -207,6 +238,8 @@ class TransportFlowControl final {
 
     IncomingUpdateContext(const IncomingUpdateContext&) = delete;
     IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext(IncomingUpdateContext&&) = delete;
+    IncomingUpdateContext& operator=(IncomingUpdateContext&&) = delete;
 
     // Reads the flow control data and returns an actionable struct that will
     // tell the transport exactly what it needs to do.
@@ -253,12 +286,16 @@ class TransportFlowControl final {
    public:
     explicit OutgoingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
 
+    OutgoingUpdateContext(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext& operator=(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext(OutgoingUpdateContext&&) = delete;
+    OutgoingUpdateContext& operator=(OutgoingUpdateContext&&) = delete;
+
     // Call this function when a transport-level WINDOW_UPDATE frame is received
     // from peer to increase remote window.
     void RecvUpdate(uint32_t size) { tfc_->remote_window_ += size; }
 
     // Finish the update and check whether we became stalled or unstalled.
-    // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
     StallEdge Finish() {
       bool is_stalled = tfc_->remote_window_ <= 0;
       if (is_stalled != was_stalled_) {
@@ -279,23 +316,21 @@ class TransportFlowControl final {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let the transport change its parameters.
-  // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
+  // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
-  int64_t target_window() const;
-  int64_t target_frame_size() const { return target_frame_size_; }
-  int64_t target_preferred_rx_crypto_frame_size() const {
-    return target_preferred_rx_crypto_frame_size_;
+  int64_t test_only_target_window() const { return target_window(); }
+  int64_t test_only_target_frame_size() const { return target_frame_size(); }
+  int64_t test_only_target_preferred_rx_crypto_frame_size() const {
+    return target_preferred_rx_crypto_frame_size();
   }
 
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
 
-  uint32_t acked_init_window() const { return acked_init_window_; }
-  uint32_t queued_init_window() const { return target_initial_window_size_; }
-  uint32_t sent_init_window() const { return sent_init_window_; }
+  uint32_t test_only_acked_init_window() const { return acked_init_window(); }
+  uint32_t test_only_sent_init_window() const { return sent_init_window(); }
 
-  // Call after settings have been sent to peer.
-  // TODO(tjagtap) [PH2][P1] Check if usage of this is correct in PH2
+  // Call after you prepare and queue a settings frame to send to the peer.
   void FlushedSettings() { sent_init_window_ = queued_init_window(); }
 
   // Updates the initial window size that we have acknowledged from the peer.
@@ -311,10 +346,10 @@ class TransportFlowControl final {
 
   // Getters
   int64_t remote_window() const { return remote_window_; }
-  int64_t announced_window() const { return announced_window_; }
+  int64_t test_only_announced_window() const { return announced_window(); }
 
-  int64_t announced_stream_total_over_incoming_window() const {
-    return announced_stream_total_over_incoming_window_;
+  int64_t test_only_announced_stream_total_over_incoming_window() const {
+    return announced_stream_total_over_incoming_window();
   }
 
   // A snapshot of the flow control stats to export.
@@ -332,6 +367,7 @@ class TransportFlowControl final {
     int64_t bdp_accumulator;
     int64_t bdp_estimate;
     double bdp_bw_est;
+    bool bdp_ping_blocked;
 
     std::string ToString() const;
     channelz::PropertyList ChannelzProperties() const {
@@ -348,6 +384,7 @@ class TransportFlowControl final {
           .Set("announced_stream_total_over_incoming_window",
                announced_stream_total_over_incoming_window)
           .Set("bdp_accumulator", bdp_accumulator)
+          .Set("bdp_ping_blocked", bdp_ping_blocked)
           .Set("bdp_estimate", bdp_estimate)
           .Set("bdp_bw_est", bdp_bw_est);
     }
@@ -367,9 +404,79 @@ class TransportFlowControl final {
     stats.announced_stream_total_over_incoming_window =
         announced_stream_total_over_incoming_window();
     stats.bdp_accumulator = bdp_estimator_.accumulator();
+    stats.bdp_ping_blocked = bdp_ping_blocked_;
     stats.bdp_estimate = bdp_estimator_.EstimateBdp();
     stats.bdp_bw_est = bdp_estimator_.EstimateBandwidth();
     return stats;
+  }
+
+  void AddStreamToWindowUpdateList(const uint32_t stream_id) {
+    window_update_list_.insert(stream_id);
+  }
+  absl::flat_hash_set<uint32_t> DrainWindowUpdateList() {
+    return std::exchange(window_update_list_, {});
+  }
+  size_t window_update_list_size() const { return window_update_list_.size(); }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // BDP Ping related functions.
+
+  // The current implementation of BDP relies on the assumption that our
+  // transport will not send out a new ping till it has received an ACK for the
+  // previous ping.
+
+  // CHTTP2 reference : schedule_bdp_ping_locked
+  void ScheduleBdpPing() {
+    GRPC_DCHECK(enable_bdp_probe_);
+    bdp_estimator_.SchedulePing();
+  }
+
+  // CHTTP2 reference : start_bdp_ping_locked
+  void StartBdpPing() {
+    // TODO(tjagtap) : [PH2][P1] : Reset the keepalive ping timer
+    bdp_estimator_.StartPing();
+  }
+
+  // CHTTP2 reference : finish_bdp_ping_locked
+  Duration CompleteBdpPing() {
+    return bdp_estimator_.CompletePing() - Timestamp::Now();
+  }
+
+  // CHTTP2 reference : init_data_frame_parser
+  void OnReceiveDataFrame(const uint32_t bytes) {
+    if (enable_bdp_probe_) {
+      bdp_estimator_.AddIncomingBytes(bytes);
+      if (bdp_ping_blocked_ && (bytes > 0)) {
+        // Once we receive a data frame, we can start sending BDP pings again.
+        bdp_ping_blocked_ = false;
+        bdp_waker_.Wakeup();
+      }
+    }
+  }
+
+  // CHTTP2 reference : grpc_chttp2_transport::bdp_ping_blocked
+  bool IsBdpPingBlocked() const { return bdp_ping_blocked_; }
+
+  auto WaitForBdpActivation() {
+    GRPC_HTTP2_FLOW_CONTROL_DLOG
+        << "TransportFlowControl::WaitForBdpActivation Factory";
+    return [this]() -> Poll<absl::Status> {
+      GRPC_DCHECK(enable_bdp_probe_);
+      if (bdp_estimator_.accumulator() == 0) {
+        // Block BDP ping till we receive data in a DATA frame on the transport.
+        bdp_ping_blocked_ = true;
+      }
+      if (bdp_ping_blocked_) {
+        bdp_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+        GRPC_HTTP2_FLOW_CONTROL_DLOG
+            << "TransportFlowControl::WaitForBdpActivation Pending";
+        return Pending{};
+      }
+      GRPC_HTTP2_FLOW_CONTROL_DLOG
+          << "TransportFlowControl::WaitForBdpActivation Resolved";
+      ScheduleBdpPing();
+      return absl::OkStatus();
+    };
   }
 
  private:
@@ -382,6 +489,18 @@ class TransportFlowControl final {
   }
 
   double TargetInitialWindowSizeBasedOnMemoryPressureAndBdp() const;
+  int64_t target_window() const;
+  int64_t target_frame_size() const { return target_frame_size_; }
+  int64_t target_preferred_rx_crypto_frame_size() const {
+    return target_preferred_rx_crypto_frame_size_;
+  }
+  uint32_t acked_init_window() const { return acked_init_window_; }
+  uint32_t queued_init_window() const { return target_initial_window_size_; }
+  uint32_t sent_init_window() const { return sent_init_window_; }
+  int64_t announced_window() const { return announced_window_; }
+  int64_t announced_stream_total_over_incoming_window() const {
+    return announced_stream_total_over_incoming_window_;
+  }
 
   static void UpdateSetting(absl::string_view name, int64_t* desired_value,
                             uint32_t new_desired_value,
@@ -403,10 +522,12 @@ class TransportFlowControl final {
   /// incoming_window = total_over - max(bdp - total_under, 0)
   int64_t announced_stream_total_over_incoming_window_ = 0;
 
-  /// should we probe bdp?
+  //  Transport level channel argument GRPC_ARG_HTTP2_BDP_PROBE decides if we
+  //  should probe for bdp.
   const bool enable_bdp_probe_;
-
-  // bdp estimation
+  // CHTTP2 reference : grpc_chttp2_transport::bdp_ping_blocked
+  bool bdp_ping_blocked_;
+  Waker bdp_waker_;
   BdpEstimator bdp_estimator_;
 
   int64_t remote_window_ = kDefaultWindow;
@@ -417,6 +538,14 @@ class TransportFlowControl final {
   int64_t announced_window_ = kDefaultWindow;
   uint32_t acked_init_window_ = kDefaultWindow;
   uint32_t sent_init_window_ = kDefaultWindow;
+  absl::flat_hash_set<uint32_t> window_update_list_;
+
+  // Preferred_rx_crypto_frame_sizes are advertised to the peer
+  // For CHTTP2, this is always true.
+  // For PH2, this is set by the transport based on the channel arg
+  // GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE.
+  // TODO(tjagtap) [PH2][CHTTP2] Edit comment when CHTTP2 is getting deleted.
+  bool ph2_enable_rx_crypto_ = true;
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
@@ -424,8 +553,15 @@ class TransportFlowControl final {
 class StreamFlowControl final {
  public:
   explicit StreamFlowControl(TransportFlowControl* tfc);
+  // TODO(ritulb) : [PH2][P5] :  When CHTTP2 is removed, delete this
+  // destructor(no-op).
   ~StreamFlowControl() {
     tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
+  }
+
+  void OnStreamClosed() {
+    tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
+    announced_window_delta_ = 0;
   }
 
   // Track an update to the incoming flow control counters - that is how many
@@ -435,6 +571,11 @@ class StreamFlowControl final {
    public:
     explicit IncomingUpdateContext(StreamFlowControl* sfc)
         : tfc_upd_(sfc->tfc_), sfc_(sfc) {}
+
+    IncomingUpdateContext(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext(IncomingUpdateContext&&) = delete;
+    IncomingUpdateContext& operator=(IncomingUpdateContext&&) = delete;
 
     FlowControlAction MakeAction() {
       return sfc_->UpdateAction(tfc_upd_.MakeAction());
@@ -455,7 +596,7 @@ class StreamFlowControl final {
     // `min_progress_size` bytes to make progress on reading the current stream.
     // An example usage of this would be, say we receive the first 1000 bytes of
     // a 2000 byte gRPC message, we can call SetMinProgressSize(1000)
-    // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
+    // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
     void SetMinProgressSize(int64_t min_progress_size) {
       sfc_->min_progress_size_ = min_progress_size;
     }
@@ -466,6 +607,14 @@ class StreamFlowControl final {
     // whether to send a WINDOW_UPDATE to the peer.
     // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
     void SetPendingSize(int64_t pending_size);
+
+    // This is a hack in place till SetPendingSize is fully plumbed. This hack
+    // function just pretends that the application needs more bytes. Since we
+    // dont actually know how many bytes the application needs, we just want to
+    // refill the used up tokens. The only way to refill used up tokens is to
+    // call this function for each DATA frame.
+    // TODO(tjagtap) [PH2][P1] Remove hack after SetPendingSize is plumbed.
+    void HackIncrementPendingSize(int64_t pending_size);
 
    private:
     TransportFlowControl::IncomingUpdateContext tfc_upd_;
@@ -478,6 +627,11 @@ class StreamFlowControl final {
    public:
     explicit OutgoingUpdateContext(StreamFlowControl* sfc)
         : tfc_upd_(sfc->tfc_), sfc_(sfc) {}
+
+    OutgoingUpdateContext(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext& operator=(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext(OutgoingUpdateContext&&) = delete;
+    OutgoingUpdateContext& operator=(OutgoingUpdateContext&&) = delete;
 
     // Call this when a WINDOW_UPDATE frame is received from peer for this
     // stream, to increase send window.
@@ -513,8 +667,10 @@ class StreamFlowControl final {
   }
 
   int64_t remote_window_delta() const { return remote_window_delta_; }
-  int64_t announced_window_delta() const { return announced_window_delta_; }
-  int64_t min_progress_size() const { return min_progress_size_; }
+  int64_t test_only_announced_window_delta() const {
+    return announced_window_delta_;
+  }
+  int64_t test_only_min_progress_size() const { return min_progress_size_; }
 
   // A snapshot of the flow control stats to export.
   struct Stats {
@@ -528,11 +684,30 @@ class StreamFlowControl final {
 
   Stats stats() const {
     Stats stats;
-    stats.min_progress_size = min_progress_size();
+    stats.min_progress_size = min_progress_size_;
     stats.remote_window_delta = remote_window_delta();
-    stats.announced_window_delta = announced_window_delta();
+    stats.announced_window_delta = announced_window_delta_;
     stats.pending_size = pending_size_;
     return stats;
+  }
+
+  void ReportIfStalled(const bool is_client, const uint32_t stream_id,
+                       const Http2Settings& peer_settings) const {
+    if (remote_window_delta() + peer_settings.initial_window_size() <= 0 ||
+        tfc_->remote_window_ == 0) {
+      GRPC_HTTP2_FLOW_CONTROL_DLOG
+          << "PH2 " << (is_client ? "CLIENT" : "SERVER")
+          << " Flow Control Stalled :"
+          << " Settings { peer initial window size="
+          << peer_settings.initial_window_size()
+          << "}, Transport {remote_window=" << tfc_->remote_window()
+          << ", transport announced_window=" << tfc_->announced_window()
+          << "}, Stream {stream_id=" << stream_id
+          << ", remote_window_delta=" << remote_window_delta()
+          << ", remote_window_delta() + peer_settings.initial_window_size() ="
+          << (remote_window_delta() + peer_settings.initial_window_size())
+          << " }";
+    }
   }
 
  private:

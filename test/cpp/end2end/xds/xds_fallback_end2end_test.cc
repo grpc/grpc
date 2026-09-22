@@ -148,11 +148,11 @@ TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrFormat(
           "empty address list \\(LDS resource server.example.com: "
-          "xDS channel for server localhost:%d: "
+          "xDS channel for server %s: "
           "xDS call failed with no responses received; "
           "status: RESOURCE_EXHAUSTED: test forced ADS stream failure "
           "\\(node ID:xds_end2end_test\\)\\)",
-          fallback_balancer_->port()));
+          fallback_balancer_->target()));
 }
 
 TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {
@@ -259,10 +259,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

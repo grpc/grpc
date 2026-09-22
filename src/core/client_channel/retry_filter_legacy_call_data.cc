@@ -293,9 +293,8 @@ namespace {
 void StartBatchInCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* lb_call =
-      static_cast<ClientChannelFilter::FilterBasedLoadBalancedCall*>(
-          batch->handler_private.extra_arg);
+  auto* lb_call = static_cast<ClientChannelFilter::LoadBalancedCall*>(
+      batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   lb_call->StartTransportStreamOpBatch(batch);
 }
@@ -654,9 +653,7 @@ void RetryFilter::LegacyCallData::CallAttempt::OnPerAttemptRecvTimerLocked(
     // TODO(roth): When implementing hedging, we should not cancel the
     // current attempt.
     call_attempt->MaybeAddBatchForCancelOp(
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE("retry perAttemptRecvTimeout exceeded"),
-            StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED),
+        absl::CancelledError("retry perAttemptRecvTimeout exceeded"),
         &closures);
     // Check whether we should retry.
     if (call_attempt->ShouldRetry(/*status=*/std::nullopt,
@@ -961,14 +958,10 @@ void GetCallStatus(
     std::optional<GrpcStreamNetworkState::ValueType>* stream_network_state) {
   if (!error.ok()) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
-    intptr_t value = 0;
-    if (grpc_error_get_int(error, StatusIntProperty::kLbPolicyDrop, &value) &&
-        value != 0) {
-      *is_lb_drop = true;
-    }
   } else {
-    *status = *md_batch->get(GrpcStatusMetadata());
+    *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   }
+  *is_lb_drop = md_batch->get(LbPolicyDrop()).value_or(false);
   *server_pushback = md_batch->get(GrpcRetryPushbackMsMetadata());
   *stream_network_state = md_batch->get(GrpcStreamNetworkState());
 }
@@ -1137,10 +1130,7 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
       CallCombinerClosureList closures;
       // Cancel call attempt.
       call_attempt->MaybeAddBatchForCancelOp(
-          error.ok() ? grpc_error_set_int(
-                           GRPC_ERROR_CREATE("call attempt failed"),
-                           StatusIntProperty::kRpcStatus, GRPC_STATUS_CANCELLED)
-                     : error,
+          error.ok() ? absl::CancelledError("call attempt failed") : error,
           &closures);
       // For transparent retries, add a closure to immediately start a new
       // call attempt.
@@ -1626,7 +1616,7 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
   call_attempt_->StartRetriableBatches();
 }
 
-OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
+OrphanablePtr<ClientChannelFilter::LoadBalancedCall>
 RetryFilter::LegacyCallData::CreateLoadBalancedCall(
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
   grpc_call_element_args args = {owning_call_,     nullptr,
@@ -1917,6 +1907,8 @@ void RetryFilter::LegacyCallData::OnRetryTimerLocked(
   if (calld->retry_timer_handle_ != TaskHandle::kInvalid) {
     calld->retry_timer_handle_ = TaskHandle::kInvalid;
     calld->CreateCallAttempt(/*is_transparent_retry=*/false);
+  } else {
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner_, "retry timer cancelled");
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnRetryTimer");
 }

@@ -18,7 +18,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/ext/filters/logging")
+grpc_package(
+    name = "test/cpp/ext/filters/logging",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "logging_test_library",

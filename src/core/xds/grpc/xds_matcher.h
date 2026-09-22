@@ -105,6 +105,7 @@ class XdsMatcher {
     bool operator!=(const OnMatch& other) const { return !(*this == other); }
 
     bool FindMatches(const MatchContext& context, Result& result) const;
+    void ForEachAction(absl::FunctionRef<void(const Action&)> func) const;
     std::string ToString() const;
 
     std::variant<std::unique_ptr<Action>, std::unique_ptr<XdsMatcher>> action;
@@ -125,6 +126,12 @@ class XdsMatcher {
   // considered successful.
   virtual bool FindMatches(const MatchContext& context,
                            Result& result) const = 0;
+
+  // Calls func for each action in the matcher.  This can be used to
+  // initialize data structures that the caller needs for matching after
+  // the matcher tree has already been constructed.
+  virtual void ForEachAction(
+      absl::FunctionRef<void(const Action&)> func) const = 0;
 };
 
 //
@@ -189,7 +196,7 @@ class XdsMatcherList : public XdsMatcher {
 
   // Factory method for creating a SinglePredicate.
   template <typename InputType, typename MatcherType>
-  static absl::enable_if_t<
+  static std::enable_if_t<
       std::is_same<typename InputType::ProducedType,
                    typename MatcherType::ConsumedType>::value,
       std::unique_ptr<Predicate>>
@@ -203,7 +210,7 @@ class XdsMatcherList : public XdsMatcher {
   // Alternative template specialization to return null in the case where
   // the input produces a different type than the matcher consumes.
   template <typename InputType, typename MatcherType>
-  static absl::enable_if_t<
+  static std::enable_if_t<
       !std::is_same<typename InputType::ProducedType,
                     typename MatcherType::ConsumedType>::value,
       std::unique_ptr<Predicate>>
@@ -223,6 +230,8 @@ class XdsMatcherList : public XdsMatcher {
   bool Equals(const XdsMatcher& other) const override;
   std::string ToString() const override;
   bool FindMatches(const MatchContext& context, Result& result) const override;
+  void ForEachAction(
+      absl::FunctionRef<void(const Action&)> func) const override;
 
  private:
   template <typename T>
@@ -401,6 +410,8 @@ class XdsMatcherExactMap : public XdsMatcher {
   bool Equals(const XdsMatcher& other) const override;
   std::string ToString() const override;
   bool FindMatches(const MatchContext& context, Result& result) const override;
+  void ForEachAction(
+      absl::FunctionRef<void(const Action&)> func) const override;
 
  private:
   std::unique_ptr<InputValue<absl::string_view>> input_;
@@ -420,6 +431,8 @@ class XdsMatcherPrefixMap : public XdsMatcher {
   bool Equals(const XdsMatcher& other) const override;
   std::string ToString() const override;
   bool FindMatches(const MatchContext& context, Result& result) const override;
+  void ForEachAction(
+      absl::FunctionRef<void(const Action&)> func) const override;
 
  private:
   TrieLookupTree<XdsMatcher::OnMatch> root_;

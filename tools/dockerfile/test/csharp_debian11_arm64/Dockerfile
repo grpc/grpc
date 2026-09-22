@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:11
+FROM --platform=linux/arm64/v8 arm64v8/debian:11
 
 #=================
 # Basic C core dependencies
@@ -87,11 +87,16 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
+#=================
+# Install cmake from bullseye-backports
+# Note that this step should be only used for Debian 11 (bullseye) images.
+
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
+    apt-get update && \
+    apt-get install -y -t bullseye-backports cmake
+
 #================
 # C# dependencies
-
-# cmake >=3.6 needed to build grpc_csharp_ext
-RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 # Install mono
 RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
@@ -135,7 +140,7 @@ RUN mkdir warmup \
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.11.3 \
     && mkdir build && cd build \

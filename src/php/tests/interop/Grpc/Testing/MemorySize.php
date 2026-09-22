@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>grpc.testing.MemorySize</code>
@@ -47,7 +47,7 @@ class MemorySize extends \Google\Protobuf\Internal\Message
      * @param int|string $var
      * @return $this
      */
-    public function setRss($var)
+    public function setRss(int|string $var)
     {
         GPBUtil::checkInt64($var);
         $this->rss = $var;

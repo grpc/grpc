@@ -45,8 +45,8 @@ Count  Language         Client   Server   Categories
     5  ruby                               scalable
     4  csharp                    c++      scalable
     4  dotnet                    c++      scalable
-    4  php7                      c++      scalable
-    4  php7_protobuf_c           c++      scalable
+    4  php8                      c++      scalable
+    4  php8_protobuf_c           c++      scalable
     3  python_asyncio            c++      scalable
     2  ruby                      c++      scalable
     2  python                    c++      scalable
@@ -317,7 +317,7 @@ This approach is much more involved than using the gRPC OSS benchmarks framework
 
 In general the benchmark workers and driver build scripts expect
 [linux_performance_worker_init.sh](../../gce/linux_performance_worker_init.sh)
-to have been ran already.
+to have been run already.
 
 ### To run benchmarks locally:
 

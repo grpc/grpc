@@ -15,6 +15,11 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONFIG_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONFIG_H
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/grpc_types.h>
+
+#include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
@@ -23,6 +28,7 @@
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "absl/container/flat_hash_set.h"
 
 namespace grpc_core {
@@ -37,6 +43,8 @@ namespace chaotic_good {
   "grpc.chaotic_good.inlined_payload_size_threshold"
 #define GRPC_ARG_CHAOTIC_GOOD_SCHEDULER_CONFIG \
   "grpc.chaotic_good.scheduler_config"
+#define GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS \
+  "grpc.chaotic_good.data_connections"
 
 // Transport configuration.
 // Most of our configuration is derived from channel args, and then exchanged
@@ -45,10 +53,10 @@ namespace chaotic_good {
 class Config {
  public:
   explicit Config(
-      const ChannelArgs& channel_args,
+      const ChannelArgs& channel_args, bool is_server = false,
       std::initializer_list<chaotic_good_frame::Settings::Features>
           supported_features = {chaotic_good_frame::Settings::CHUNKING})
-      : supported_features_(supported_features) {
+      : supported_features_(supported_features), is_server_(is_server) {
     decode_alignment_ =
         std::max(1, channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_ALIGNMENT)
                         .value_or(decode_alignment_));
@@ -71,6 +79,30 @@ class Config {
                .value_or(inline_payload_size_threshold_));
     tracing_enabled_ =
         channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false);
+    int max_recv_size = channel_args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)
+                            .value_or(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
+    if (max_recv_size < 0) {
+      max_receive_message_length_ = std::numeric_limits<uint32_t>::max();
+    } else {
+      max_receive_message_length_ = static_cast<uint32_t>(max_recv_size);
+    }
+
+    // Extract connection target count based on mode and a single option
+    auto data_connections_arg =
+        channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS);
+    if (is_server_) {
+      num_data_connections_ =
+          data_connections_arg.has_value()
+              ? std::max(0, *data_connections_arg)
+              : 1;  // Server desired defaults to 1 connection if absent
+    } else {
+      num_data_connections_ =
+          data_connections_arg.has_value()
+              ? std::max(0, *data_connections_arg)
+              : std::numeric_limits<int32_t>::max();  // Client desired
+                                                      // defaults to unlimited
+                                                      // capping if absent
+    }
   }
 
   Config(const Config&) = delete;
@@ -155,6 +187,7 @@ class Config {
     options.inlined_payload_size_threshold = inline_payload_size_threshold_;
     options.scheduler_config = scheduler_config_;
     options.enable_tracing = tracing_enabled_;
+    options.max_receive_message_length = max_receive_message_length_;
     return options;
   }
 
@@ -178,12 +211,17 @@ class Config {
   uint32_t inline_payload_size_threshold() const {
     return inline_payload_size_threshold_;
   }
+  uint32_t max_receive_message_length() const {
+    return max_receive_message_length_;
+  }
+  int32_t num_data_connections() const { return num_data_connections_; }
 
   std::string ToString() const {
-    return absl::StrCat(GRPC_DUMP_ARGS(tracing_enabled_, encode_alignment_,
-                                       decode_alignment_, max_send_chunk_size_,
-                                       max_recv_chunk_size_,
-                                       inline_payload_size_threshold_));
+    return absl::StrCat(GRPC_DUMP_ARGS(
+        tracing_enabled_, encode_alignment_, decode_alignment_,
+        max_send_chunk_size_, max_recv_chunk_size_,
+        inline_payload_size_threshold_, max_receive_message_length_,
+        num_data_connections_, is_server_));
   }
 
   template <typename Sink>
@@ -203,6 +241,12 @@ class Config {
   void PrepareOutgoingSettings(chaotic_good_frame::Settings& settings) const {
     settings.set_alignment(decode_alignment_);
     settings.set_max_chunk_size(max_recv_chunk_size_);
+    if (IsChaoticGoodSendSupportedFeaturesEnabled()) {
+      for (auto feature : supported_features_) {
+        settings.add_supported_features(feature);
+      }
+    }
+    settings.set_num_data_connections(num_data_connections_);
   }
 
   // Receive a settings frame from our peer and integrate its settings with our
@@ -216,6 +260,19 @@ class Config {
       max_recv_chunk_size_ = 0;
       max_send_chunk_size_ = 0;
     }
+    if (is_server_) {
+      int32_t client_limit = settings.has_num_data_connections()
+                                 ? settings.num_data_connections()
+                                 : std::numeric_limits<int32_t>::max();
+      num_data_connections_ =
+          std::max(0, std::min(num_data_connections_, client_limit));
+    } else {
+      if (settings.has_num_data_connections()) {
+        num_data_connections_ = std::max(0, settings.num_data_connections());
+      } else {
+        num_data_connections_ = settings.connection_id_size();
+      }
+    }
     return absl::OkStatus();
   }
 
@@ -225,10 +282,13 @@ class Config {
   uint32_t max_send_chunk_size_ = 1024 * 1024;
   uint32_t max_recv_chunk_size_ = 1024 * 1024;
   uint32_t inline_payload_size_threshold_ = 8 * 1024;
+  uint32_t max_receive_message_length_ = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   std::string scheduler_config_;
   std::vector<PendingConnection> pending_data_endpoints_;
   absl::flat_hash_set<chaotic_good_frame::Settings::Features>
       supported_features_;
+  int32_t num_data_connections_ = std::numeric_limits<int32_t>::max();
+  bool is_server_ = false;
 };
 
 }  // namespace chaotic_good

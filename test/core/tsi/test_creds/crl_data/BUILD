@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+package(features = [
+    "layering_check",
+    "parse_headers",
+])
+
 licenses(["notice"])
 
 exports_files([
@@ -20,6 +25,8 @@ exports_files([
     "revoked.pem",
     "valid.key",
     "valid.pem",
+    "valid_cert.der",
+    "valid_key.der",
     "leaf_signed_by_intermediate.key",
     "leaf_signed_by_intermediate.pem",
     "leaf_and_intermediate_chain.pem",

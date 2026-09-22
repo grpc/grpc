@@ -372,16 +372,28 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     const Json::Object& object = json.object();
     auto it_additional_info = object.find("additionalInfo");
     ASSERT_NE(it_additional_info, object.end());
-    ASSERT_EQ(it_additional_info->second.type(), Json::Type::kObject);
-    const Json::Object& additional_info = it_additional_info->second.object();
-    auto it_test_data = additional_info.find("testData");
-    ASSERT_NE(it_test_data, additional_info.end());
-    ASSERT_EQ(it_test_data->second.type(), Json::Type::kObject);
-    const Json::Object& test_data = it_test_data->second.object();
-    auto it = test_data.find("test");
-    ASSERT_NE(it, test_data.end());
-    ASSERT_EQ(it->second.type(), Json::Type::kString);
-    EXPECT_EQ(it->second.string(), "yes");
+    ASSERT_EQ(it_additional_info->second.type(), Json::Type::kArray);
+    const Json::Array& additional_info = it_additional_info->second.array();
+    bool found = false;
+    for (const auto& item : additional_info) {
+      ASSERT_EQ(item.type(), Json::Type::kObject);
+      const Json::Object& item_obj = item.object();
+      auto it_name = item_obj.find("name");
+      if (it_name != item_obj.end() &&
+          it_name->second.type() == Json::Type::kString &&
+          it_name->second.string() == "testData") {
+        found = true;
+        auto it_value = item_obj.find("value");
+        ASSERT_NE(it_value, item_obj.end());
+        ASSERT_EQ(it_value->second.type(), Json::Type::kObject);
+        const Json::Object& test_data = it_value->second.object();
+        auto it = test_data.find("test");
+        ASSERT_NE(it, test_data.end());
+        ASSERT_EQ(it->second.type(), Json::Type::kString);
+        EXPECT_EQ(it->second.string(), "yes");
+      }
+    }
+    EXPECT_TRUE(found);
   }
   // Render again without the data source
   {
@@ -390,10 +402,17 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     const Json::Object& object = json.object();
     auto it = object.find("additionalInfo");
     if (it != object.end()) {
-      ASSERT_EQ(it->second.type(), Json::Type::kObject);
-      const Json::Object& additional_info = it->second.object();
-      auto it_test_data = additional_info.find("testData");
-      EXPECT_EQ(it_test_data, additional_info.end());
+      ASSERT_EQ(it->second.type(), Json::Type::kArray);
+      const Json::Array& additional_info = it->second.array();
+      for (const auto& item : additional_info) {
+        ASSERT_EQ(item.type(), Json::Type::kObject);
+        const Json::Object& item_obj = item.object();
+        auto it_name = item_obj.find("name");
+        if (it_name != item_obj.end() &&
+            it_name->second.type() == Json::Type::kString) {
+          EXPECT_NE(it_name->second.string(), "testData");
+        }
+      }
     }
   }
 }
@@ -636,6 +655,28 @@ TEST(ChannelzTextEncodeTest, BasicTraceEvent) {
       channelz::TextEncode(reinterpret_cast<upb_Message*>(event),
                            grpc_channelz_v2_TraceEvent_getmsgdef);
   EXPECT_NE(encoded.length(), 0) << encoded;
+}
+
+// Verifies that large trace events exceeding the internal stack buffer
+// are encoded completely without truncating trailing characters.
+TEST(ChannelzTextEncodeTest, LargeTraceEventDoesNotTruncateLastByte) {
+  upb::Arena arena;
+  grpc_channelz_v2_TraceEvent* event =
+      grpc_channelz_v2_TraceEvent_new(arena.ptr());
+  // Long enough that the encoded text exceeds the 10240-byte stack buffer
+  // in TextEncode(), forcing the heap fallback path.
+  std::string long_description(20000, 'a');
+  grpc_channelz_v2_TraceEvent_set_description(
+      event, upb_StringView_FromString(long_description.c_str()));
+  std::string encoded =
+      channelz::TextEncode(reinterpret_cast<upb_Message*>(event),
+                           grpc_channelz_v2_TraceEvent_getmsgdef);
+  // Sanity check that we actually exercised the >10240-byte fallback path.
+  ASSERT_GT(encoded.size(), 10240u);
+  // The fallback path must not silently corrupt the final byte of the
+  // encoded text into a NUL character.
+  EXPECT_EQ(encoded.find('\0'), std::string::npos)
+      << "encoded text unexpectedly contains an embedded NUL byte";
 }
 
 }  // namespace testing

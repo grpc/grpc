@@ -18,31 +18,85 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
+
+#include <algorithm>
+#include <climits>
+#include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
+#include <vector>
 
-#include "src/core/call/call_spine.h"
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/promise/mpsc.h"
-#include "src/core/lib/promise/party.h"
-#include "src/core/lib/transport/promise_endpoint.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/useful.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+
+#define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
+  "grpc.http2.ping_on_rst_stream_percent"
 
 namespace grpc_core {
 namespace http2 {
+
+// All Promise Based HTTP2 Transport TODOs have the tag
+// [PH2][Pn] where n = 0 to 5.
+// This helps to maintain the uniformity for quick lookup and fixing.
+//
+// [PH2][P0] MUST be fixed before the current PR is submitted.
+// [PH2][P1] MUST be fixed before the current sub-project is considered
+//           complete.
+// [PH2][P2] MUST be fixed before the current Milestone is considered
+//           complete.
+// [PH2][P3] MUST be fixed before Milestone 3 is considered complete.
+// [PH2][P4] Can be fixed after roll out begins. Evaluate these during
+//           Milestone 4. Either do the TODOs or delete them.
+// [PH2][P5] Can be fixed after roll out begins. Evaluate these during
+//           Milestone 4. Either do the TODOs or delete them.
+// [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
+//            in parallel.
+// [PH2][CHTTP2] This TODO is a part of CHTTP2 deletion.
+// [PH2][Px][FCV3] This TODO is related to Flow Control plumbing with the
+// Application and the Call V3 stack.
+
+constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
+constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
+constexpr bool kDefaultKeepalivePermitWithoutCalls = false;
+constexpr bool kDefaultEnablePreferredRxCryptoFrameAdvertisement = false;
+constexpr bool kDefaultAckPings = true;
+
+constexpr Duration kClientKeepaliveTime = Duration::Infinity();
+
+constexpr Duration kServerKeepaliveTime = Duration::Hours(2);
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -50,18 +104,103 @@ namespace http2 {
 // familiar with the PH2 project (Moving chttp2 to promises.)
 
 ///////////////////////////////////////////////////////////////////////////////
-// Settings and ChannelArgs helpers
+// Read and Write helpers
+
+// This is only called by the HTTP2 Server Transport to validate the incoming
+// connection preface. Since a server does not send a connection preface, this
+// validation is not needed for the client transport.
+Http2Status ValidateIncomingConnectionPreface(
+    const absl::StatusOr<Slice>& status) {
+  if (!status.ok()) {
+    return ToHttpOkOrConnError(status.status());
+  } else if (status.value() !=
+             Slice::FromStaticString(GRPC_CHTTP2_CLIENT_CONNECT_STRING)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(RFC9113::kFirstSettingsFrameServer));
+  }
+  return Http2Status::Ok();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Settings helpers
 
 void InitLocalSettings(Http2Settings& settings, const bool is_client) {
   if (is_client) {
     // gRPC has never supported PUSH_PROMISE and we have no plan to do so in the
-    // future.
+    // future. We are not setting this to false for Server to be consistent
+    // with the legacy CHTTP2 transport.
     settings.SetEnablePush(false);
     // This is to make it double-sure that server cannot initiate a stream.
     settings.SetMaxConcurrentStreams(0);
   }
   settings.SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
   settings.SetAllowTrueBinaryMetadata(true);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Channel Args helpers
+
+std::string TransportChannelArgs::DebugString() const {
+  return absl::StrCat(
+      "keepalive_time: ", keepalive_time,
+      " keepalive_timeout: ", keepalive_timeout,
+      " ping_timeout: ", ping_timeout, " settings_timeout: ", settings_timeout,
+      " keepalive_permit_without_calls: ", keepalive_permit_without_calls,
+      " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
+      " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
+      " initial_sequence_number: ", initial_sequence_number,
+      " test_only_ack_pings: ", test_only_ack_pings);
+}
+
+void ReadChannelArgs(const ChannelArgs& channel_args,
+                     TransportChannelArgs& args, Http2Settings& local_settings,
+                     chttp2::TransportFlowControl& flow_control,
+                     const bool is_client) {
+  ReadSettingsFromChannelArgs(channel_args, local_settings, flow_control,
+                              is_client);
+
+  args.max_header_list_size_soft_limit =
+      GetSoftLimitFromChannelArgs(channel_args);
+  args.keepalive_time = std::max(
+      Duration::Milliseconds(1),
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
+          .value_or(is_client ? kClientKeepaliveTime : kServerKeepaliveTime));
+  args.keepalive_timeout = std::max(
+      Duration::Zero(),
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
+          .value_or(args.keepalive_time == Duration::Infinity()
+                        ? Duration::Infinity()
+                        : kDefaultKeepaliveTimeout));
+  args.ping_timeout =
+      std::max(Duration::Zero(),
+               channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
+                   .value_or(args.keepalive_time == Duration::Infinity()
+                                 ? Duration::Infinity()
+                                 : kDefaultPingTimeout));
+  args.settings_timeout =
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
+          .value_or(std::max(args.keepalive_timeout * 2, Duration::Minutes(1)));
+
+  args.keepalive_permit_without_calls =
+      channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+          .value_or(kDefaultKeepalivePermitWithoutCalls);
+
+  args.max_usable_hpack_table_size =
+      channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
+
+  args.initial_sequence_number =
+      channel_args.GetInt(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER).value_or(-1);
+  if (args.initial_sequence_number >= 0 &&
+      (args.initial_sequence_number & 1) == 0) {
+    LOG(ERROR) << "Initial sequence number MUST be odd. Ignoring the value.";
+    args.initial_sequence_number = -1;
+  }
+
+  args.test_only_ack_pings =
+      channel_args.GetBool("grpc.http2.ack_pings").value_or(kDefaultAckPings);
+
+  GRPC_HTTP2_COMMON_DLOG << "ChannelArgs: " << args.DebugString();
 }
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
@@ -104,9 +243,12 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
         channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1));
   }
 
-  if (channel_args
+  const bool enable_preferred_crypto =
+      channel_args
           .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
-          .value_or(false)) {
+          .value_or(kDefaultEnablePreferredRxCryptoFrameAdvertisement);
+  flow_control.set_ph2_enable_rx_crypto(enable_preferred_crypto);
+  if (enable_preferred_crypto) {
     local_settings.SetPreferredReceiveCryptoMessageSize(INT_MAX);
   }
 
@@ -135,6 +277,28 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << "}";
 }
 
+uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args) {
+  return Clamp(
+      channel_args.GetInt("grpc.http2.max_requests_per_read").value_or(32), 1,
+      10000);
+}
+
+uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args) {
+  return static_cast<uint32_t>(
+      Clamp(channel_args.GetInt(GRPC_ARG_MAX_SECURITY_FRAME_SIZE)
+                .value_or(GrpcErrors::kMaxSecurityFrameSize),
+            GrpcErrors::kMinMaxSecurityFrameSize,
+            static_cast<int>(GrpcErrors::kMaxSecurityFrameSize)));
+}
+
+uint8_t GetPingOnRstStreamPercent(const ChannelArgs& channel_args,
+                                  const bool is_client) {
+  if (is_client) return 0;
+  return Clamp(channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)
+                   .value_or(1),
+               0, 100);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 
@@ -144,10 +308,12 @@ RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
     const ChannelArgs& args) {
   if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    auto local_addr = grpc_event_engine::experimental::ResolvedAddressToString(
-        event_engine_endpoint->GetLocalAddress());
-    auto peer_addr = grpc_event_engine::experimental::ResolvedAddressToString(
-        event_engine_endpoint->GetPeerAddress());
+    absl::StatusOr<std::string> local_addr =
+        grpc_event_engine::experimental::ResolvedAddressToString(
+            event_engine_endpoint->GetLocalAddress());
+    absl::StatusOr<std::string> peer_addr =
+        grpc_event_engine::experimental::ResolvedAddressToString(
+            event_engine_endpoint->GetPeerAddress());
     GRPC_HTTP2_COMMON_DLOG << "CreateChannelzSocketNode: local_addr: "
                            << local_addr.value_or("unknown")
                            << " peer_addr: " << peer_addr.value_or("unknown");
@@ -175,11 +341,12 @@ void ProcessOutgoingDataFrameFlowControl(
 }
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
                                     chttp2::TransportFlowControl& flow_control,
-                                    RefCountedPtr<Stream> stream) {
+                                    Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);
   if (frame_header.length > 0) {
+    flow_control.OnReceiveDataFrame(frame_header.length);
     if (stream == nullptr) {
       // This flow control bookkeeping needs to happen even though the stream is
       // gone because otherwise we will go out-of-sync with the peer.
@@ -188,6 +355,9 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
           &flow_control);
       absl::Status fc_status = transport_fc.RecvData(frame_header.length);
       chttp2::FlowControlAction action = transport_fc.MakeAction();
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingDataFrameFlowControl Transport RecvData status: "
+          << fc_status << " action: " << action.DebugString();
       if (!fc_status.ok()) {
         LOG(ERROR) << "Flow control error: " << fc_status.message();
         // RFC9113 : A receiver MAY respond with a stream error or connection
@@ -199,9 +369,14 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
       return action;
     } else {
       chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
-          &stream->flow_control);
+          &stream->GetStreamFlowControl());
       absl::Status fc_status = stream_fc.RecvData(frame_header.length);
+      // TODO(tjagtap) [PH2][P1][FlowControl] This is a HACK. Fix this.
+      stream_fc.HackIncrementPendingSize(frame_header.length);
       chttp2::FlowControlAction action = stream_fc.MakeAction();
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingDataFrameFlowControl Stream RecvData status: "
+          << fc_status << " action: " << action.DebugString();
       if (!fc_status.ok()) {
         LOG(ERROR) << "Flow control error: " << fc_status.message();
         // RFC9113 : A receiver MAY respond with a stream error or connection
@@ -216,23 +391,243 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
   return chttp2::FlowControlAction();
 }
 
-void ProcessIncomingWindowUpdateFrameFlowControl(
+bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream) {
+    chttp2::TransportFlowControl& flow_control, Stream* stream) {
   if (frame.stream_id != 0) {
     if (stream != nullptr) {
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingWindowUpdateFrameFlowControl stream "
+          << frame.stream_id << " increment " << frame.increment;
       chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
-          &stream->flow_control);
+          &stream->GetStreamFlowControl());
       fc_update.RecvUpdate(frame.increment);
     } else {
       // If stream id is non zero, and stream is nullptr, maybe the stream was
-      // closed. Ignore this WINDOW_UPDATE frame. Do nothing.
+      // closed. Ignore this WINDOW_UPDATE frame.
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingWindowUpdateFrameFlowControl stream "
+          << frame.stream_id << " not found. Ignoring.";
     }
   } else {
+    GRPC_HTTP2_COMMON_DLOG
+        << "ProcessIncomingWindowUpdateFrameFlowControl transport increment "
+        << frame.increment;
     chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
         &flow_control);
     fc_update.RecvUpdate(frame.increment);
+    if (fc_update.Finish() == chttp2::StallEdge::kUnstalled) {
+      // If transport moves from kStalled to kUnstalled, streams blocked by
+      // transport flow control will become writable. Return true to trigger a
+      // write cycle and attempt to send data from these streams.
+      // Although it's possible no streams were blocked, triggering an
+      // unnecessary write cycle in that super-rare case is acceptable.
+      GRPC_HTTP2_COMMON_DLOG << "ProcessIncomingWindowUpdateFrameFlowControl "
+                                "Transport Unstalled";
+      return true;
+    }
   }
+  return false;
+}
+
+void MaybeAddTransportWindowUpdateFrame(
+    chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender) {
+  // Known Limitation:
+  // 1. writing_anyway is set to true always. This might cause the write cycle
+  // to just write 1 window update frame in one entire iteration of the
+  // Multiplexer Loop, making it wasteful. In most of the scenarios this is fine
+  // as TriggerWriteCycle is only invoked from code points that want to write
+  // frames on the wire.
+  // 2. This is because we write control frames before we write HEADER and DATA
+  // frames. So we don't know if we are going to write or not when we call
+  // this function.
+  // 3. Setting writing_anyway to false always might be a problem, because we
+  // would rather send a WINDOW_UPDATE frame with a small increment, than not
+  // send it at all.
+  // 4. In the future if we want to fix this, we need to call
+  // MaybeAddTransportWindowUpdateFrame once while writing control frames, and
+  // once after all the DATA and HEADER frames are written for the current write
+  // cycle.
+  uint32_t window_size =
+      flow_control.DesiredAnnounceSize(/*writing_anyway=*/true);
+  if (window_size > 0) {
+    GRPC_HTTP2_COMMON_DLOG
+        << "MaybeGetWindowUpdateFrames Transport Window Update : "
+        << window_size;
+    frame_sender.AddRegularFrame(
+        Http2WindowUpdateFrame{/*stream_id=*/0, window_size});
+    flow_control.SentUpdate(window_size);
+  }
+}
+
+void MaybeAddStreamWindowUpdateFrame(Stream& stream,
+                                     FrameSender& frame_sender) {
+  GRPC_HTTP2_COMMON_DLOG << "MaybeAddStreamWindowUpdateFrame stream="
+                         << stream.GetStreamId()
+                         << " CanSendWindowUpdateFrames="
+                         << stream.CanSendWindowUpdateFrames();
+  if (stream.CanSendWindowUpdateFrames()) {
+    const uint32_t increment = stream.GetStreamFlowControl().MaybeSendUpdate();
+    GRPC_HTTP2_COMMON_DLOG
+        << "MaybeAddStreamWindowUpdateFrame MaybeSendUpdate { "
+        << stream.GetStreamId() << ", " << increment << " }"
+        << (increment == 0 ? ". The frame will NOT be sent for increment 0"
+                           : "");
+    if (increment > 0) {
+      frame_sender.AddRegularFrame(
+          Http2WindowUpdateFrame{stream.GetStreamId(), increment});
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TarpitEntry implementation
+
+std::string TarpitEntry::DebugString() const {
+  std::string payload_str;
+  const OutgoingResetPayload* const reset =
+      std::get_if<OutgoingResetPayload>(&payload_);
+  const OutgoingTrailingMetadataPayload* const trailers =
+      std::get_if<OutgoingTrailingMetadataPayload>(&payload_);
+  const IncomingResetPayload* const incoming_reset =
+      std::get_if<IncomingResetPayload>(&payload_);
+  if (reset != nullptr) {
+    payload_str = absl::StrCat(
+        "OutgoingReset(error_code=", reset->http2_error_code,
+        ", status=", reset->trailing_metadata_status.ToString(), ")");
+  } else if (trailers != nullptr) {
+    payload_str = absl::StrCat("OutgoingTrailingMetadata(",
+                               trailers->metadata != nullptr
+                                   ? trailers->metadata->DebugString()
+                                   : "null",
+                               ")");
+  } else if (incoming_reset != nullptr) {
+    payload_str = absl::StrCat(
+        "IncomingReset(status=", incoming_reset->status.ToString(), ")");
+  } else {
+    payload_str = "unknown type";
+  }
+  return absl::StrCat("TarpitEntry{stream_id=", stream_id_,
+                      ", expire_time=", expire_time_.ToString(),
+                      ", payload=", payload_str, "}");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TarpitManager implementation
+
+TarpitManager::TarpitManager(const ChannelArgs& channel_args)
+    : allow_tarpit_(
+          channel_args.GetBool(GRPC_ARG_HTTP_ALLOW_TARPIT).value_or(true)),
+      min_tarpit_duration_(
+          channel_args
+              .GetDurationFromIntMillis(GRPC_ARG_HTTP_TARPIT_MIN_DURATION_MS)
+              .value_or(Duration::Milliseconds(100))),
+      max_tarpit_duration_(
+          channel_args
+              .GetDurationFromIntMillis(GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS)
+              .value_or(Duration::Seconds(1))),
+      receiver_(std::numeric_limits<size_t>::max()),
+      sender_(receiver_.MakeSender()) {
+  GRPC_CHECK_LE(min_tarpit_duration_, max_tarpit_duration_);
+}
+
+Duration TarpitManager::GetTarpitDuration() const {
+  return TarpitDuration(static_cast<int>(min_tarpit_duration_.millis()),
+                        static_cast<int>(max_tarpit_duration_.millis()));
+}
+
+StatusFlag TarpitManager::RequestCloseStream(
+    const uint32_t stream_id, const uint32_t reset_stream_error_code,
+    absl::Status trailing_metadata_status) {
+  GRPC_DCHECK(allow_tarpit_);
+  GRPC_DCHECK_NE(stream_id, kInvalidStreamId);
+  GRPC_HTTP2_COMMON_DLOG << "TarpitManager::RequestCloseStream Stream id: "
+                         << stream_id << " reset_stream_error_code: "
+                         << reset_stream_error_code
+                         << " trailing_metadata_status: "
+                         << trailing_metadata_status;
+  const Timestamp expire_time = Timestamp::Now() + GetTarpitDuration();
+  TarpitEntry entry = TarpitEntry::CreateOutgoingReset(
+      stream_id, reset_stream_error_code, std::move(trailing_metadata_status),
+      expire_time);
+  const StatusFlag status =
+      sender_.UnbufferedImmediateSend(std::move(entry), 1);
+  return status;
+}
+
+StatusFlag TarpitManager::StartTarpitTrailers(const uint32_t stream_id,
+                                              ServerMetadataHandle metadata) {
+  GRPC_DCHECK(allow_tarpit_);
+  GRPC_DCHECK_NE(stream_id, kInvalidStreamId);
+  GRPC_HTTP2_COMMON_DLOG << "TarpitManager::StartTarpitTrailers Stream id: "
+                         << stream_id;
+  const Timestamp expire_time = Timestamp::Now() + GetTarpitDuration();
+  TarpitEntry entry = TarpitEntry::CreateOutgoingTrailingMetadata(
+      stream_id, std::move(metadata), expire_time);
+  const StatusFlag status =
+      sender_.UnbufferedImmediateSend(std::move(entry), 1);
+  return status;
+}
+
+StatusFlag TarpitManager::RequestTarpitIncomingReset(const uint32_t stream_id,
+                                                     absl::Status status) {
+  GRPC_DCHECK(allow_tarpit_);
+  GRPC_DCHECK_NE(stream_id, kInvalidStreamId);
+  GRPC_HTTP2_COMMON_DLOG
+      << "TarpitManager::RequestTarpitIncomingReset Stream id: " << stream_id
+      << " status: " << status;
+
+  const Timestamp expire_time = Timestamp::Now() + GetTarpitDuration();
+  TarpitEntry entry = TarpitEntry::CreateIncomingReset(
+      stream_id, std::move(status), expire_time);
+  const StatusFlag send_status =
+      sender_.UnbufferedImmediateSend(std::move(entry), 1);
+  return send_status;
+}
+
+StreamStateChange TarpitManager::OnTarpit(Stream& stream) {
+  stream.SetTarpitActive();
+  return stream.OnInitiateReset(absl::CancelledError("Stream tarpitted"));
+}
+
+void TarpitManager::AddToQueue(TarpitEntry&& entry) {
+  if (GPR_UNLIKELY(shutdown_)) {
+    return;
+  }
+  tarpit_queue_.Push(std::forward<TarpitEntry>(entry));
+  empty_queue_waker_.Wakeup();
+}
+
+std::vector<TarpitEntry> TarpitManager::OnTimerExpired() {
+  const Timestamp now = Timestamp::Now();
+  std::vector<TarpitEntry> expired_entries;
+  while (!tarpit_queue_.IsEmpty() &&
+         tarpit_queue_.Top().GetExpireTime() <= now) {
+    expired_entries.push_back(tarpit_queue_.Pop());
+  }
+  return expired_entries;
+}
+
+void TarpitManager::Shutdown() {
+  shutdown_ = true;
+  tarpit_queue_.Clear();
+  receiver_.MarkClosed();
+  empty_queue_waker_.Wakeup();
+}
+
+channelz::PropertyList TarpitManager::ChannelzProperties() const {
+  channelz::PropertyList properties;
+  properties.Set("allow_tarpit", allow_tarpit_)
+      .Set("min_tarpit_duration", min_tarpit_duration_)
+      .Set("max_tarpit_duration", max_tarpit_duration_)
+      .Set("is_shutdown", shutdown_)
+      .Set("current_tarpitted_streams_count", tarpit_queue_.Size())
+      .Set("is_queue_empty", tarpit_queue_.IsEmpty());
+  if (!tarpit_queue_.IsEmpty()) {
+    properties.Set("earliest_expiration_time",
+                   tarpit_queue_.Top().GetExpireTime());
+  }
+  return properties;
 }
 
 }  // namespace http2

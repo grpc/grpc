@@ -29,6 +29,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -44,7 +45,6 @@
 #include "src/core/util/load_file.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
-#include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
@@ -124,7 +124,7 @@ void rtrim(std::string& s) {
 
 uint64_t ParseUlimitMemLockFromFile(std::string file_name) {
   static std::string kHardMemlockPrefix = "* hard memlock";
-  auto result = grpc_core::LoadFile(file_name, false);
+  auto result = grpc_core::LoadFile(file_name);
   if (!result.ok()) {
     return 0;
   }
@@ -136,10 +136,11 @@ uint64_t ParseUlimitMemLockFromFile(std::string file_name) {
     return 0;
   }
   // Find position of next newline after prefix.
-  size_t end = file_contents.find(start, '\n');
+  size_t end = file_contents.find('\n', start);
   // Extract substring between prefix and next newline.
+  size_t value_start = start + kHardMemlockPrefix.length() + 1;
   auto memlock_value_string = file_contents.substr(
-      start + kHardMemlockPrefix.length() + 1, end - start);
+      value_start, end == std::string::npos ? end : end - value_start);
   rtrim(memlock_value_string);
   if (memlock_value_string == "unlimited" ||
       memlock_value_string == "infinity") {
@@ -215,10 +216,10 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 absl::Status PosixOSError(const PosixErrorOr<int64_t>& error_no,
                           absl::string_view call_name) {
   if (error_no.IsPosixError()) {
-    return absl::UnknownError(
+    return absl::UnavailableError(
         absl::StrCat(call_name, ": ", error_no.StrError()));
   }
-  return absl::UnknownError(
+  return absl::UnavailableError(
       absl::StrCat(call_name, ": Wrong file descriptor generation"));
 }
 
@@ -279,13 +280,15 @@ void PosixEndpointImpl::FinishEstimate() {
   } else {
     target_length_ = 0.99 * target_length_ + 0.01 * bytes_read_this_round_;
   }
+  // Opt-in: if a maximum read buffer size has been configured, clamp the
+  // adaptive target so that occasional large reads do not leave a permanently
+  // high read-buffer high-watermark. When unset (max_read_buffer_size_ < 0)
+  // the behavior is unchanged.
+  if (max_read_buffer_size_ >= 0 &&
+      target_length_ > static_cast<double>(max_read_buffer_size_)) {
+    target_length_ = static_cast<double>(max_read_buffer_size_);
+  }
   bytes_read_this_round_ = 0;
-}
-
-absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
-  grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
-                          GRPC_STATUS_UNAVAILABLE);
-  return src_error;
 }
 
 // Returns true if data available to read or error other than EAGAIN.
@@ -296,6 +299,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   struct iovec iov[MAX_READ_IOVEC];
   size_t total_read_bytes = 0;
   size_t iov_len = std::min<size_t>(MAX_READ_IOVEC, incoming_buffer_->Count());
+  size_t slice_idx = iov_len;
 #ifdef GRPC_LINUX_ERRQUEUE
   constexpr size_t cmsg_alloc_space =
       CMSG_SPACE(sizeof(scm_timestamping)) + CMSG_SPACE(sizeof(int));
@@ -364,14 +368,11 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       incoming_buffer_->Clear();
       if (res.IsWrongGenerationError()) {
         status = absl::CancelledError("Closed on fork");
-        grpc_core::StatusSetInt(&status,
-                                grpc_core::StatusIntProperty::kRpcStatus,
-                                GRPC_STATUS_CANCELLED);
       } else if (read_bytes == 0) {
-        status = TcpAnnotateError(absl::InternalError("Socket closed"));
+        status = absl::UnavailableError("Socket closed");
       } else {
-        status = TcpAnnotateError(absl::InternalError(
-            absl::StrCat("recvmsg:", grpc_core::StrError(errno))));
+        status =
+            absl::UnavailableError(absl::StrCat("recvmsg:", res.StrError()));
       }
       return true;
     }
@@ -419,6 +420,19 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       ++j;
     }
     iov_len = j;
+    // For cases where incoming_buffer_->Count() > MAX_READ_IOVEC, if the
+    // previous read resulted in a partial read, the previous loop remaining -=
+    // iov[i].iov_len; may execute for all of the IOVs. In that case iov_len
+    // would be 0. For this case, we need to add ptrs to the remaining
+    // slices in incoming_buffer_ to the IOV entries.
+    while (iov_len < MAX_READ_IOVEC && slice_idx < incoming_buffer_->Count()) {
+      MutableSlice& slice = internal::SliceCast<MutableSlice>(
+          incoming_buffer_->MutableSliceAt(slice_idx));
+      iov[iov_len].iov_base = slice.begin();
+      iov[iov_len].iov_len = slice.length();
+      iov_len++;
+      slice_idx++;
+    }
   } while (true);
 
   if (inq_ == 0) {
@@ -495,21 +509,18 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   // TODO(ctiller): Check if supported by OS.
   // TODO(ctiller): Allow some adjustments instead of hardcoding things.
 
-  static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
   static constexpr int kRcvLowatThreshold = 16 * 1024;
 
   int remaining = std::min({static_cast<int>(incoming_buffer_->Length()),
-                            kRcvLowatMax, min_progress_size_});
+                            rcv_lowat_max_, min_progress_size_});
 
   // Setting SO_RCVLOWAT for small quantities does not save on CPU.
-  if (remaining < kRcvLowatThreshold) {
-    remaining = 0;
-  }
-
-  // If zerocopy is off, wake shortly before the full RPC is here. More can
-  // show up partway through recvmsg() since it takes a while to copy data.
-  // So an early wakeup aids latency.
-  if (!tcp_zerocopy_send_ctx_->Enabled() && remaining > 0) {
+  if (remaining < 2 * kRcvLowatThreshold) {
+    remaining = 1;
+  } else {
+    // Decrement remaining by kRcvLowatThreshold. This would have the effect of
+    // waking up a little early. It would help with latency because some bytes
+    // may arrive while we execute the recvmsg syscall after waking up.
     remaining -= kRcvLowatThreshold;
   }
 
@@ -578,11 +589,17 @@ bool PosixEndpointImpl::HandleReadLocked(absl::Status& status) {
     }
   } else {
     if (!memory_owner_.is_valid() && status.ok()) {
-      status = TcpAnnotateError(absl::UnknownError("Shutting down endpoint"));
+      status = absl::UnavailableError("Shutting down endpoint");
     }
     incoming_buffer_->Clear();
     last_read_buffer_.Clear();
   }
+  // Update rcv lowat needs to be called at the end of the current read
+  // operation to ensure the right SO_RCVLOWAT value is set for the next read.
+  // Otherwise the next endpoint read operation may get stuck indefinitely
+  // because the previously set rcv lowat value will persist and the socket may
+  // erroneously considered to not be ready for read.
+  UpdateRcvLowat();
   return true;
 }
 
@@ -626,7 +643,6 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   Ref().release();
   if (is_first_read_) {
     read_cb_ = std::move(on_read);
-    UpdateRcvLowat();
     // Endpoint read called for the very first time. Register read callback
     // with the polling engine.
     is_first_read_ = false;
@@ -634,7 +650,6 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     handle_->NotifyOnRead(on_read_);
   } else if (inq_ == 0) {
     read_cb_ = std::move(on_read);
-    UpdateRcvLowat();
     lock.Release();
     // Upper layer asked to read more but we know there is no pending data to
     // read from previous reads. So, wait for POLLIN.
@@ -662,6 +677,12 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
       Unref();
       return false;
     }
+    // Update rcv lowat needs to be called at the end of the current read
+    // operation to ensure the right SO_RCVLOWAT value is set for the next read.
+    // Otherwise the next endpoint read operation may get stuck indefinitely
+    // because the previously set rcv lowat value will persist and the socket
+    // may erroneously considered to not be ready for read.
+    UpdateRcvLowat();
     // Read succeeded immediately. Return true and don't run the on_read
     // callback.
     incoming_buffer_ = nullptr;
@@ -892,7 +913,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   traced_buffers_.AddNewEntry(
       static_cast<uint32_t>(bytes_counter_ + sending_length),
       &poller_->posix_interface(), handle_->WrappedFd(),
-      std::move(outgoing_buffer_write_event_sink_).value());
+      std::move(*outgoing_buffer_write_event_sink_));
   outgoing_buffer_write_event_sink_.reset();
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
@@ -940,6 +961,7 @@ void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
 void PosixEndpointImpl::TcpShutdownTracedBufferList() {
   if (outgoing_buffer_write_event_sink_.has_value()) {
     traced_buffers_.Shutdown(std::move(outgoing_buffer_write_event_sink_));
+    outgoing_buffer_write_event_sink_.reset();
   }
 }
 
@@ -1031,7 +1053,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        status = TcpAnnotateError(PosixOSError(send_status, "sendmsg"));
+        status = PosixOSError(send_status, "sendmsg");
         return true;
       }
     }
@@ -1127,13 +1149,14 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
         }
         return false;
       } else {
-        status = TcpAnnotateError(PosixOSError(send_result, "sendmsg"));
+        status = PosixOSError(send_result, "sendmsg");
         outgoing_buffer_->Clear();
         return true;
       }
     }
 
     GRPC_CHECK_EQ(outgoing_byte_idx_, 0u);
+    GRPC_CHECK_LE((static_cast<size_t>(*send_result)), sending_length);
     bytes_counter_ += *send_result;
     trailing = sending_length - static_cast<size_t>(*send_result);
     while (trailing > 0) {
@@ -1202,7 +1225,7 @@ bool PosixEndpointImpl::Write(
     GRPC_TRACE_LOG(event_engine_endpoint, INFO)
         << "Endpoint[" << this << "]: Write skipped";
     if (handle_->IsHandleShutdown()) {
-      status = TcpAnnotateError(absl::InternalError("EOF"));
+      status = absl::UnavailableError("EOF");
       engine_->Run(
           [on_writable = std::move(on_writable), status, this]() mutable {
             GRPC_TRACE_LOG(event_engine_endpoint, INFO)
@@ -1261,8 +1284,6 @@ void PosixEndpointImpl::MaybeShutdown(
     handle_->SetHasError();
   }
   on_release_fd_ = std::move(on_release_fd);
-  grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
-                          GRPC_STATUS_UNAVAILABLE);
   handle_->ShutdownHandle(why);
   read_mu_.Lock();
   memory_owner_.Reset();
@@ -1270,7 +1291,7 @@ void PosixEndpointImpl::MaybeShutdown(
   Unref();
 }
 
-PosixEndpointImpl ::~PosixEndpointImpl() {
+PosixEndpointImpl::~PosixEndpointImpl() {
   FileDescriptor release_fd;
   handle_->OrphanHandle(on_done_,
                         on_release_fd_ == nullptr ? nullptr : &release_fd, "");
@@ -1296,6 +1317,28 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   FileDescriptor fd = handle_->WrappedFd();
   GRPC_CHECK(options.resource_quota != nullptr);
   auto& posix_interface = poller_->posix_interface();
+  int rcvbuf_size = 0;
+  socklen_t len = sizeof(rcvbuf_size);
+  auto err =
+      posix_interface.GetSockOpt(fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf_size, &len);
+  if (err.ok()) {
+    rcv_lowat_max_ = rcvbuf_size / 2;
+  } else {
+    rcv_lowat_max_ = 512 * 1024;
+    LOG(ERROR) << "getsockopt(SO_RCVBUF) failed: " << err.StrError()
+               << ", defaulting rcv_lowat_max_ to " << rcv_lowat_max_;
+  }
+  int rcvlowat_default = 0;
+  socklen_t rcvlowat_len = sizeof(rcvlowat_default);
+  auto rcvlowat_err = posix_interface.GetSockOpt(
+      fd, SOL_SOCKET, SO_RCVLOWAT, &rcvlowat_default, &rcvlowat_len);
+  if (rcvlowat_err.ok()) {
+    set_rcvlowat_ = rcvlowat_default;
+  } else {
+    set_rcvlowat_ = 1;
+    LOG(ERROR) << "getsockopt(SO_RCVLOWAT) failed: " << rcvlowat_err.StrError()
+               << ", defaulting set_rcvlowat_ to " << set_rcvlowat_;
+  }
   auto peer_addr_string = posix_interface.PeerAddressString(fd);
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
@@ -1312,6 +1355,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   bytes_read_this_round_ = 0;
   min_read_chunk_size_ = options.tcp_min_read_chunk_size;
   max_read_chunk_size_ = options.tcp_max_read_chunk_size;
+  max_read_buffer_size_ = options.tcp_max_read_buffer_size;
   bool zerocopy_enabled =
       options.tcp_tx_zero_copy_enabled && poller_->CanTrackErrors();
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -1327,7 +1371,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                  << "ulimit value is not set. Use ulimit -l <value> to set its "
                  << "value.";
     } else {
-      if (posix_interface.SetSockOpt(fd, SOL_SOCKET, SO_ZEROCOPY, 1).ok()) {
+      if (!posix_interface.SetSockOpt(fd, SOL_SOCKET, SO_ZEROCOPY, 1).ok()) {
         zerocopy_enabled = false;
         LOG(ERROR) << "Failed to set zerocopy options on the socket.";
       }

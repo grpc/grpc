@@ -417,10 +417,9 @@ class GrpcLb final : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    // A subchannel call tracker that unrefs the GrpcLbClientStats object
-    // in the case where the subchannel call is never actually started,
-    // since the client load reporting filter will not be able to do it
-    // in that case.
+    // A subchannel call tracker that holds a ref to the
+    // GrpcLbClientStats object, to ensure that it still exists when the
+    // client load reporting filter sees it and takes its own ref to it.
     class SubchannelCallTracker final : public SubchannelCallTrackerInterface {
      public:
       SubchannelCallTracker(
@@ -428,16 +427,6 @@ class GrpcLb final : public LoadBalancingPolicy {
           std::unique_ptr<SubchannelCallTrackerInterface> original_call_tracker)
           : client_stats_(std::move(client_stats)),
             original_call_tracker_(std::move(original_call_tracker)) {}
-
-      void Start() override {
-        if (original_call_tracker_ != nullptr) {
-          original_call_tracker_->Start();
-        }
-        // If we're actually starting the subchannel call, then the
-        // client load reporting filter will take ownership of the ref
-        // passed down to it via metadata.
-        client_stats_.release();
-      }
 
       void Finish(FinishArgs args) override {
         if (original_call_tracker_ != nullptr) {
@@ -891,7 +880,8 @@ GrpcLb::BalancerCallState::BalancerCallState(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
       /*cq=*/nullptr, grpclb_policy_->interested_parties(),
       Slice::FromStaticString("/grpc.lb.v1.LoadBalancer/BalanceLoad"),
-      /*authority=*/std::nullopt, deadline, /*registered_method=*/true);
+      /*authority=*/std::nullopt, deadline, /*registered_method=*/true,
+      /*arena_init_function=*/std::nullopt);
   // Init the LB call request payload.
   upb::Arena arena;
   grpc_slice request_payload_slice = GrpcLbRequestCreate(

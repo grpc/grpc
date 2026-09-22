@@ -61,7 +61,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
@@ -94,6 +93,14 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return frame_transport_->ctx()->socket_node;
   }
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
 
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override;
@@ -106,6 +113,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     MessageReassembly message_reassembly;
     Party::SpawnSerializer* spawn_serializer =
         call.party()->MakeSpawnSerializer();
+    bool client_half_closed = false;
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream> >;
 
@@ -146,7 +154,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
                            MessageChunkFrame frame);
     auto SendCallInitialMetadataAndBody(
         uint32_t stream_id, CallInitiator call_initiator,
-        std::shared_ptr<TcpCallTracer> call_tracer);
+        std::shared_ptr<TcpCallTracer> call_tracer,
+        std::optional<ServerMetadataHandle> md);
     auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator,
                       std::shared_ptr<TcpCallTracer> call_tracer);
     auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);

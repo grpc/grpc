@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable google__protobuf__Any_msg_init;
-extern const upb_MiniTable* google__protobuf__Any_msg_init_ptr;
 
 extern const upb_MiniTableFile google_protobuf_any_proto_upb_file_layout;
 

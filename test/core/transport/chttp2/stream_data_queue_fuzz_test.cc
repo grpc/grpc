@@ -16,12 +16,46 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
+
+#include <cstdint>
+#include <limits>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
+#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -37,6 +71,7 @@ class SimpleQueueFuzzTest : public YodelTest {
   using YodelTest::YodelTest;
 
   Party* GetParty() { return party_.get(); }
+  Arena* GetArena() { return party_->arena(); }
 
   void InitParty() {
     auto party_arena = SimpleArenaAllocator(0)->MakeArena();
@@ -48,8 +83,9 @@ class SimpleQueueFuzzTest : public YodelTest {
   auto EnqueueAndCheckSuccess(SimpleQueue<int>& queue, int data, int tokens) {
     return Map([&queue, data,
                 tokens]() mutable { return queue.Enqueue(data, tokens); },
-               [](absl::StatusOr<bool> result) {
-                 EXPECT_EQ(result.status(), absl::OkStatus());
+               [data, tokens](bool result) {
+                 LOG(INFO) << "Enqueue done for data with tokens: " << data
+                           << " tokens: " << tokens << " result: " << result;
                });
   }
 
@@ -81,7 +117,7 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
   // dequeues 100 entries. This test asserts the following:
   // 1. All enqueues and dequeues are successful.
   // 2. The dequeue data is the same as the enqueue data.
-  SimpleQueue<int> queue(/*max_tokens=*/100);
+  SimpleQueue<int> queue(GetArena(), /*max_tokens=*/100);
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -146,6 +182,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
 
   Party* GetParty() { return party_.get(); }
   Party* GetParty2() { return party2_.get(); }
+  Arena* GetArena() { return party_->arena(); }
 
   void InitParty() {
     auto party_arena = SimpleArenaAllocator(0)->MakeArena();
@@ -182,19 +219,25 @@ class StreamDataQueueFuzzTest : public YodelTest {
     return messages;
   }
 
+  http2::WriteCycle& GetWriteCycle() {
+    return transport_write_context_.GetWriteCycle();
+  }
+
   class AssembleFrames {
    public:
     explicit AssembleFrames(const uint32_t stream_id,
                             const bool allow_true_binary_metadata)
-        : header_assembler_(allow_true_binary_metadata) {
+        : header_assembler_(/*is_client=*/true) {
       header_assembler_.SetStreamId(stream_id);
+      header_assembler_.MaybeSetAllowTrueBinaryMetadataAcked(
+          allow_true_binary_metadata);
     }
     void operator()(Http2HeaderFrame frame) {
-      auto status = header_assembler_.AppendHeaderFrame(std::move(frame));
+      auto status = header_assembler_.AppendFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2ContinuationFrame frame) {
-      auto status = header_assembler_.AppendContinuationFrame(std::move(frame));
+      auto status = header_assembler_.AppendFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2DataFrame frame) {
@@ -227,7 +270,6 @@ class StreamDataQueueFuzzTest : public YodelTest {
       ValueOrHttp2Status<ClientMetadataHandle> status_or_metadata =
           header_assembler_.ReadMetadata(
               parser_, /*is_initial_metadata=*/true,
-              /*is_client=*/true,
               /*max_header_list_size_soft_limit=*/
               default_settings_.max_header_list_size(),
               /*max_header_list_size_hard_limit=*/
@@ -254,17 +296,35 @@ class StreamDataQueueFuzzTest : public YodelTest {
     Http2Settings default_settings_;
   };
 
+  void MaybeFlushWriteBuffer() {
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool unused;
+      SliceBuffer discard = GetWriteCycle().SerializeRegularFrames({unused});
+    }
+  }
+
  private:
   void InitCoreConfiguration() override {}
-  void InitTest() override { InitParty(); }
+  void InitTest() override {
+    InitParty();
+    transport_write_context_.StartWriteCycle();
+    bool unused;
+    // Discard the connection preface
+    SliceBuffer discard =
+        transport_write_context_.GetWriteCycle().SerializeRegularFrames(
+            {unused});
+  }
+
   void Shutdown() override {
     party_.reset();
     party2_.reset();
+    transport_write_context_.EndWriteCycle();
   }
 
   RefCountedPtr<Party> party_;
   RefCountedPtr<Party> party2_;
   HPackCompressor encoder_;
+  http2::TransportWriteContext transport_write_context_{/*is_client=*/true};
 };
 
 // TODO(akshitpatel) : [PH2][P3] : Add a test for server side.
@@ -288,9 +348,11 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
   EXPECT_CALL(on_dequeue_done, Call());
   HPackCompressor encoder;
   StreamDataQueue<ClientMetadataHandle> stream_data_queue(
+      GetArena(),
       /*is_client=*/true,
-      /*queue_size=*/queue_size, /*allow_true_binary_metadata=*/true);
-  stream_data_queue.SetStreamId(stream_id);
+      /*queue_size=*/queue_size);
+  stream_data_queue.SetStreamId(stream_id,
+                                /*allow_true_binary_metadata_peer=*/true);
   std::vector<MessageHandle> messages_to_be_sent = TestMessages(num_messages);
   std::vector<MessageHandle> messages_copy = TestMessages(num_messages);
   std::vector<MessageHandle> dequeued_messages;
@@ -352,15 +414,23 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
               return absl::OkStatus();
             },
             [this, &stream_data_queue, &assembler, &dequeued_messages] {
+              http2::FrameSender frame_sender =
+                  GetWriteCycle().GetFrameSender();
+              GRPC_UNUSED
               typename StreamDataQueue<ClientMetadataHandle>::DequeueResult
-                  frames = stream_data_queue.DequeueFrames(
-                      max_tokens, max_frame_length, GetEncoder(),
+                  result = stream_data_queue.DequeueFrames(
+                      max_tokens, max_frame_length, /*stream_fc_tokens=*/
+                      std::numeric_limits<uint32_t>::max(), GetEncoder(),
+                      frame_sender,
                       /*can_send_reset_stream=*/true);
-
-              for (auto& frame : frames.frames) {
+              for (auto& frame : GetWriteCycle().TestOnlyUrgentFrames()) {
+                std::visit(assembler, std::move(frame));
+              }
+              for (auto& frame : GetWriteCycle().TestOnlyRegularFrames()) {
                 std::visit(assembler, std::move(frame));
               }
               assembler.GetMessages(dequeued_messages);
+              MaybeFlushWriteBuffer();
               return Map(
                   Sleep(Duration::Seconds(1)),
                   [](auto) -> LoopCtl<absl::Status> { return Continue{}; });

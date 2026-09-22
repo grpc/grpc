@@ -21,9 +21,11 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/impl/proto_utils.h>
+#include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/server_interceptor.h>
 
 #include <memory>
@@ -32,6 +34,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
@@ -84,9 +87,7 @@ class LoggingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_TRUE(req.message().find("Hello") == 0);
     }
     if (methods->QueryInterceptionHookPoint(
@@ -259,9 +260,10 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
 
 TEST_F(ServerInterceptorsEnd2endSyncUnaryTest, UnaryTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
-  auto channel =
-      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel = grpc::CreateCustomChannel(server_address_,
+                                           InsecureChannelCredentials(), args);
   MakeCall(channel);
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
@@ -302,9 +304,10 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
 
 TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ClientStreamingTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
-  auto channel =
-      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel = grpc::CreateCustomChannel(server_address_,
+                                           InsecureChannelCredentials(), args);
   MakeClientStreamingCall(channel);
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
@@ -312,9 +315,10 @@ TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ClientStreamingTest) {
 
 TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ServerStreamingTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
-  auto channel =
-      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel = grpc::CreateCustomChannel(server_address_,
+                                           InsecureChannelCredentials(), args);
   MakeServerStreamingCall(channel);
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
@@ -322,9 +326,10 @@ TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ServerStreamingTest) {
 
 TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, BidiStreamingTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
-  auto channel =
-      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel = grpc::CreateCustomChannel(server_address_,
+                                           InsecureChannelCredentials(), args);
   MakeBidiStreamingCall(channel);
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
@@ -353,8 +358,9 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  auto channel =
-      grpc::CreateChannel(server_address, InsecureChannelCredentials());
+  ApplyCommonChannelArguments(args);
+  auto channel = grpc::CreateCustomChannel(server_address,
+                                           InsecureChannelCredentials(), args);
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
 
   EchoRequest send_request;
@@ -425,8 +431,9 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  auto channel =
-      grpc::CreateChannel(server_address, InsecureChannelCredentials());
+  ApplyCommonChannelArguments(args);
+  auto channel = grpc::CreateCustomChannel(server_address,
+                                           InsecureChannelCredentials(), args);
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
 
   EchoRequest send_request;
@@ -506,8 +513,9 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  auto channel =
-      grpc::CreateChannel(server_address, InsecureChannelCredentials());
+  ApplyCommonChannelArguments(args);
+  auto channel = grpc::CreateCustomChannel(server_address,
+                                           InsecureChannelCredentials(), args);
   GenericStub generic_stub(channel);
 
   const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
@@ -610,8 +618,9 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  std::shared_ptr<Channel> channel =
-      grpc::CreateChannel(server_address, InsecureChannelCredentials());
+  ApplyCommonChannelArguments(args);
+  std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+      server_address, InsecureChannelCredentials(), args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
   EchoRequest send_request;
@@ -662,8 +671,9 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  std::shared_ptr<Channel> channel =
-      grpc::CreateChannel(server_address, InsecureChannelCredentials());
+  ApplyCommonChannelArguments(args);
+  std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+      server_address, InsecureChannelCredentials(), args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
   EchoRequest send_request;

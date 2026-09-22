@@ -156,7 +156,6 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
         subchannel_call_tracker;
     auto address = ExpectPickComplete(picker, {}, {}, &subchannel_call_tracker);
     if (address.has_value()) {
-      subchannel_call_tracker->Start();
       FakeMetadata metadata({});
       FakeBackendMetricAccessor backend_metric_accessor({});
       LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {

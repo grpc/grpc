@@ -83,6 +83,8 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return socket_node_;
   }
+  void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(RefCountedPtr<StateWatcher> watcher) override;
 
   void StartCall(CallHandler call_handler) override;
   void AbortWithError();
@@ -134,6 +136,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_client", GRPC_CHANNEL_READY};
+  RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(mu_);
   MessageChunker message_chunker_;
   RefCountedPtr<channelz::SocketNode> socket_node_;
   std::unique_ptr<ChannelzDataSource> channelz_data_source_;

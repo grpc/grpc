@@ -15,7 +15,7 @@
 import http2_base_server
 
 
-class TestcaseRstStreamAfterHeader(object):
+class TestcaseRstStreamAfterHeader:
     """
     In response to an incoming request, this test sends headers, followed by
     a reset stream frame. Client asserts that the RPC failed.

@@ -53,6 +53,8 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     Transport* transport = nullptr;
     // Channel args to be passed to filters.
     ChannelArgs channel_args;
+    // Initial MAX_CONCURRENT_STREAMS value.
+    uint32_t max_concurrent_streams;
 
     void Reset() {
       if (transport != nullptr) {

@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc_security.h>
+
 #include "fuzztest/fuzztest.h"
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/transport/auth_context.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/handshake/test_handshake.h"
@@ -40,7 +45,26 @@ void BasicHandshakeSucceeds(const fuzzing_event_engine::Actions& actions) {
   if (!grpc_event_engine::experimental::IsSaneTimerEnvironment()) {
     GTEST_SKIP() << "Needs most EventEngine experiments enabled";
   }
-  CHECK_OK(TestHandshake(BaseChannelArgs(), BaseChannelArgs(), actions));
+  auto status_or_args =
+      TestHandshake(BaseChannelArgs(), BaseChannelArgs(), actions);
+  ASSERT_TRUE(status_or_args.ok());
+  auto args = status_or_args.value();
+
+  RefCountedPtr<grpc_auth_context> client_auth_context =
+      std::get<0>(args).GetObjectRef<grpc_auth_context>();
+  RefCountedPtr<grpc_auth_context> server_auth_context =
+      std::get<1>(args).GetObjectRef<grpc_auth_context>();
+  RefCountedPtr<grpc_security_connector> client_security_connector =
+      std::get<0>(args).GetObjectRef<grpc_security_connector>();
+  RefCountedPtr<grpc_security_connector> server_security_connector =
+      std::get<1>(args).GetObjectRef<grpc_security_connector>();
+  if (client_auth_context != nullptr && server_auth_context != nullptr) {
+    EXPECT_EQ(client_auth_context->protocol(), server_auth_context->protocol());
+    EXPECT_EQ(client_security_connector->type().name(),
+              client_auth_context->protocol());
+    EXPECT_EQ(server_security_connector->type().name(),
+              server_auth_context->protocol());
+  }
 }
 FUZZ_TEST(HandshakerFuzzer, BasicHandshakeSucceeds);
 

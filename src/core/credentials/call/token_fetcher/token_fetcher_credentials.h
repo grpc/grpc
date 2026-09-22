@@ -55,7 +55,11 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     Timestamp ExpirationTime() const { return expiration_; }
 
     // Adds the token to the call's client initial metadata.
-    void AddTokenToClientInitialMetadata(ClientMetadata& metadata) const;
+    virtual void AddTokenToClientInitialMetadata(ClientMetadata& metadata);
+
+   protected:
+    // Returns the token's value.
+    const Slice& token() const { return token_; }
 
    private:
     Slice token_;
@@ -66,6 +70,8 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
   void Orphaned() override;
 
+  // TODO(roth): Change internal code to not override this method and then
+  // change it to 'final'.
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
       ClientMetadataHandle initial_metadata,
       const GetRequestMetadataArgs* args) override;
@@ -96,7 +102,6 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   struct QueuedCall : public RefCounted<QueuedCall> {
     std::atomic<bool> done{false};
     Waker waker;
-    grpc_polling_entity* pollent;
     ClientMetadataHandle md;
     absl::StatusOr<RefCountedPtr<Token>> result;
   };
@@ -174,6 +179,49 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   OrphanablePtr<FetchState> fetch_state_ ABSL_GUARDED_BY(&mu_);
 
   grpc_polling_entity pollent_ ABSL_GUARDED_BY(&mu_);
+};
+
+// A base class for fetching tokens via an HTTP request.
+// Subclasses must implement StartHttpRequest() and ExtractToken().
+class HttpTokenFetcherCredentials : public TokenFetcherCredentials {
+ public:
+  // Starts an HTTP request.
+  virtual OrphanablePtr<HttpRequest> StartHttpRequest(
+      grpc_polling_entity* pollent, Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) = 0;
+
+  // Extracts a token from the HTTP response.
+  // This will be called only if the HTTP status code was 200 (OK).
+  virtual absl::StatusOr<RefCountedPtr<Token>> ExtractToken(
+      const grpc_http_response& response) = 0;
+
+ private:
+  // State held for a pending HTTP request.
+  class HttpFetchRequest : public TokenFetcherCredentials::FetchRequest {
+   public:
+    HttpFetchRequest(
+        WeakRefCountedPtr<HttpTokenFetcherCredentials> creds,
+        Timestamp deadline,
+        absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done);
+
+    ~HttpFetchRequest() override { grpc_http_response_destroy(&response_); }
+
+    void Orphan() override;
+
+   private:
+    static void OnHttpResponse(void* arg, grpc_error_handle error);
+
+    WeakRefCountedPtr<HttpTokenFetcherCredentials> creds_;
+    absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done_;
+    grpc_closure on_http_response_;
+    OrphanablePtr<HttpRequest> http_request_;
+    grpc_http_response response_;
+  };
+
+  OrphanablePtr<FetchRequest> FetchToken(
+      Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
+      final;
 };
 
 }  // namespace grpc_core

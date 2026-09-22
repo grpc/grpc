@@ -14,7 +14,13 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/memory_usage")
+grpc_package(
+    name = "test/core/memory_usage",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 

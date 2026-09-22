@@ -19,7 +19,7 @@ if (PHP_GRPC != "no") {
     "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
     "/I"+configure_module_dirname+"\\third_party\\abseil-cpp "+
     "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include "+
-    "/I"+configure_module_dirname+"\\third_party\\boringssl-with-bazel\\src\\include "+
+    "/I"+configure_module_dirname+"\\third_party\\boringssl-with-bazel\\include "+
     "/I"+configure_module_dirname+"\\third_party\\re2 "+
     "/I"+configure_module_dirname+"\\third_party\\upb "+
     "/I"+configure_module_dirname+"\\third_party\\utf8_range "+

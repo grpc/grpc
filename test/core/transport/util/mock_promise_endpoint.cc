@@ -25,6 +25,9 @@
 #include "src/core/util/notification.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/time/clock.h"
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 using grpc_event_engine::experimental::EventEngine;
@@ -201,6 +204,54 @@ void MockPromiseEndpoint::ExpectWrite(
             if (::testing::Test::HasFailure()) {
               ADD_FAILURE_AT(whence.file(), whence.line())
                   << "Failure in ExpectWrite";
+            }
+            if (schedule_on_event_engine != nullptr) {
+              schedule_on_event_engine->Run(
+                  [on_writable = std::move(on_writable)]() mutable {
+                    on_writable(absl::OkStatus());
+                  });
+              return false;
+            } else {
+              return true;
+            }
+          }));
+}
+
+void MockPromiseEndpoint::ExpectWriteAndRunMetricsSink(
+    std::initializer_list<EventEngineSlice> slices,
+    EventEngine* schedule_on_event_engine,
+    std::vector<
+        grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric>
+        metrics,
+    DebugLocation whence) {
+  SliceBuffer expect;
+  for (auto&& slice : slices) {
+    expect.Append(grpc_event_engine::experimental::internal::SliceCast<Slice>(
+        slice.Copy()));
+  }
+  EXPECT_CALL(*endpoint, Write)
+      .InSequence(write_sequence)
+      .WillOnce(WithArgs<0, 1, 2>(
+          [expect = expect.JoinIntoString(), schedule_on_event_engine,
+           metrics = std::move(metrics), whence](
+              absl::AnyInvocable<void(absl::Status)> on_writable,
+              grpc_event_engine::experimental::SliceBuffer* buffer,
+              grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs
+                  args) mutable {
+            SliceBuffer tmp;
+            grpc_slice_buffer_swap(buffer->c_slice_buffer(),
+                                   tmp.c_slice_buffer());
+            EXPECT_EQ(tmp.JoinIntoString(), expect);
+            if (::testing::Test::HasFailure()) {
+              ADD_FAILURE_AT(whence.file(), whence.line())
+                  << "Failure in ExpectWriteAndRunMetricsSink";
+            }
+            auto metrics_sink = args.TakeMetricsSink();
+            if (metrics_sink.has_value()) {
+              auto cb = metrics_sink->TakeEventCallback();
+              cb(grpc_event_engine::experimental::EventEngine::Endpoint::
+                     WriteEvent::kSendMsg,
+                 absl::Now(), std::move(metrics));
             }
             if (schedule_on_event_engine != nullptr) {
               schedule_on_event_engine->Run(

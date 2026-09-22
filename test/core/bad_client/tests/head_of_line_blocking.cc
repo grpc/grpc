@@ -29,6 +29,7 @@
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 static const char prefix[] =
     "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
@@ -50,7 +51,7 @@ static const char prefix[] =
     // data frame for stream 1: advertise a 10000 byte payload (that we won't
     // fulfill)
     "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
-    "\x01\x00\x00\x27\x10"
+    "\x00\x00\x00\x27\x10"
     // stream 3 headers: generated from server_registered_method.headers in this
     // directory
     "\x00\x00\xd0\x01\x04\x00\x00\x00\x03"
@@ -67,7 +68,7 @@ static const char prefix[] =
     // data frame for stream 3: advertise a 10000 byte payload (that we will
     // fulfill)
     "\x00\x00\x05\x00\x00\x00\x00\x00\x03"
-    "\x01\x00\x00\x27\x10"
+    "\x00\x00\x00\x27\x10"
     "";
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
@@ -111,6 +112,7 @@ static void addbuf(const void* data, size_t len) {
 int main(int argc, char** argv) {
   int i;
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
 
 #define NUM_FRAMES 10

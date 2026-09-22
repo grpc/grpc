@@ -14,12 +14,9 @@
 # limitations under the License.
 """Run tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import ast
 import collections
-import glob
 import itertools
 import json
 import logging
@@ -30,21 +27,14 @@ import platform
 import random
 import re
 import shlex
-import socket
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
-import uuid
-
-import six
-from six.moves import urllib
+import urllib
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.start_port_server as start_port_server
-import python_utils.watch_dirs as watch_dirs
 
 try:
     from python_utils.upload_test_results import upload_results_to_bq
@@ -112,7 +102,7 @@ def _print_debug_info_epilogue(dockerfile_dir=None):
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
-class Config(object):
+class Config:
     def __init__(
         self,
         config,
@@ -166,6 +156,14 @@ class Config(object):
             timeout_retries=1 if flaky or args.allow_flakes else 0,
         )
 
+    def __repr__(self):
+        return (
+            f"<Config build_config={self.build_config}"
+            f" environ={self.environ} tool_prefix={self.tool_prefix}"
+            f" timeout_multiplier={self.timeout_multiplier}"
+            f" iomgr_platform={self.iomgr_platform}>"
+        )
+
 
 def get_c_tests(travis, test_lang):
     out = []
@@ -194,7 +192,7 @@ def _check_arch(arch, supported_archs):
 
 
 def _is_use_docker_child():
-    """Returns True if running running as a --use_docker child."""
+    """Returns True if running as a --use_docker child."""
     return True if os.getenv("DOCKER_RUN_SCRIPT_COMMAND") else False
 
 
@@ -268,7 +266,7 @@ def _pypy_pattern_function(major):
         raise ValueError("Unknown PyPy major version")
 
 
-class CLanguage(object):
+class CLanguage:
     def __init__(self, lang_suffix, test_lang):
         self.lang_suffix = lang_suffix
         self.platform = platform_string()
@@ -560,19 +558,9 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc8":
-            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10.2":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10.2_openssl102":
-            return (
-                "debian11_openssl102",
-                [
-                    "-DgRPC_SSL_PROVIDER=package",
-                    "-DCMAKE_CXX_STANDARD=17",
-                ],
-            )
+            return ("debian12", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc10":
+            return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl111":
             return (
                 "debian11_openssl111",
@@ -593,9 +581,9 @@ class CLanguage(object):
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "clang11":
+        elif compiler == "clang14":
             return (
-                "clang_11",
+                "clang_14",
                 self._clang_cmake_configure_extra_args()
                 + [
                     "-DCMAKE_CXX_STANDARD=17",
@@ -622,7 +610,7 @@ class CLanguage(object):
         return self.lang_suffix
 
 
-class Php8Language(object):
+class Php8Language:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -666,7 +654,7 @@ class PythonConfig(
     """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
 
 
-class PythonLanguage(object):
+class PythonLanguage:
     _TEST_SPECS_FILE = {
         "native": ["src/python/grpcio_tests/tests/tests.json"],
         "asyncio": ["src/python/grpcio_tests/tests_aio/tests.json"],
@@ -694,7 +682,7 @@ class PythonLanguage(object):
                     self.config.job_spec(
                         [
                             python_config.python_path,
-                            "tools/distrib/python/xds_protos/generated_file_import_test.py",
+                            "py_xds_protos/generated_file_import_test.py",
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
@@ -810,13 +798,6 @@ class PythonLanguage(object):
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python39_config = _python_config_generator(
-            name="py39",
-            major="3",
-            minor="9",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python310_config = _python_config_generator(
             name="py310",
             major="3",
@@ -852,6 +833,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python315_config = _python_config_generator(
+            name="py315",
+            major="3",
+            minor="15",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -861,26 +849,24 @@ class PythonLanguage(object):
 
         if args.compiler == "default":
             if os.name == "nt":
-                return (python39_config,)
+                return (python310_config,)
             elif os.uname()[0] == "Darwin":
                 # NOTE(rbellevi): Testing takes significantly longer on
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
-                return (python39_config,)
+                return (python310_config,)
             elif platform.machine() == "aarch64":
                 # Currently the python_debian11_default_arm64 docker image
-                # only has python3.9 installed (and that seems sufficient
+                # only has python3.10 installed (and that seems sufficient
                 # for arm64 testing)
-                return (python39_config,)
+                return (python310_config,)
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python39_config,
-                    python312_config,
+                    python310_config,
                     python314_config,
+                    python315_config,
                 )
-        elif args.compiler == "python3.9":
-            return (python39_config,)
         elif args.compiler == "python3.10":
             return (python310_config,)
         elif args.compiler == "python3.11":
@@ -891,6 +877,8 @@ class PythonLanguage(object):
             return (python313_config,)
         elif args.compiler == "python3.14":
             return (python314_config,)
+        elif args.compiler == "python3.15":
+            return (python315_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -899,12 +887,12 @@ class PythonLanguage(object):
             return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python39_config,
                 python310_config,
                 python311_config,
                 python312_config,
                 python313_config,
                 python314_config,
+                python315_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -913,7 +901,7 @@ class PythonLanguage(object):
         return "python"
 
 
-class RubyLanguage(object):
+class RubyLanguage:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1035,7 +1023,7 @@ class RubyLanguage(object):
         return [["tools/run_tests/helper_scripts/post_tests_ruby.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/ruby_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/ruby_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
@@ -1043,7 +1031,7 @@ class RubyLanguage(object):
         return "ruby"
 
 
-class CSharpLanguage(object):
+class CSharpLanguage:
     def __init__(self):
         self.platform = platform_string()
 
@@ -1075,7 +1063,7 @@ class CSharpLanguage(object):
         for test_runtime in self.test_runtimes:
             if test_runtime == "coreclr":
                 assembly_extension = ".dll"
-                assembly_subdir = "bin/%s/netcoreapp3.1" % msbuild_config
+                assembly_subdir = "bin/%s/net6.0" % msbuild_config
                 runtime_cmd = ["dotnet", "exec"]
             elif test_runtime == "mono":
                 assembly_extension = ".exe"
@@ -1090,7 +1078,7 @@ class CSharpLanguage(object):
             else:
                 raise Exception('Illegal runtime "%s" was specified.')
 
-            for assembly in six.iterkeys(tests_by_assembly):
+            for assembly in tests_by_assembly:
                 assembly_file = "src/csharp/%s/%s/%s%s" % (
                     assembly,
                     assembly_subdir,
@@ -1149,7 +1137,7 @@ class CSharpLanguage(object):
         return "csharp"
 
 
-class ObjCLanguage(object):
+class ObjCLanguage:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1257,7 +1245,7 @@ class ObjCLanguage(object):
         return "objc"
 
 
-class Sanity(object):
+class Sanity:
     def __init__(self, config_file):
         self.config_file = config_file
 
@@ -1280,9 +1268,12 @@ class Sanity(object):
                 # under docker we already have the right version of bazel
                 # so we can just disable the wrapper.
                 environ["DISABLE_BAZEL_WRAPPER"] = "true"
+
+            # Important! Individual job's timeout HAS NO EFFECT if greater than
+            # test suite's timeout, see _create_test_jobs in run_tests_matrix.py
             return [
                 self.config.job_spec(
-                    cmd["script"].split(),
+                    cmd["script"].split() + self.args.script_args,
                     timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
@@ -1482,7 +1473,7 @@ def _calculate_num_runs_failures(list_of_results):
     return num_runs, num_failures
 
 
-class BuildAndRunError(object):
+class BuildAndRunError:
     """Represents error type in _build_and_run."""
 
     BUILD = object()
@@ -1535,7 +1526,7 @@ def _build_and_run(
                 )
             )
         )
-        # When running on travis, we want out test runs to be as similar as possible
+        # When running on travis, we want our test runs to be as similar as possible
         # for reproducibility purposes.
         if args.travis and args.max_time <= 0:
             massaged_one_run = sorted(one_run, key=lambda x: x.cpu_cost)
@@ -1727,22 +1718,21 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        "gcc8",
-        "gcc10.2",
-        "gcc10.2_openssl102",
+        # The gcc:10 docker image which is 10.5 as of May 2026.
+        "gcc10",
         "gcc10.2_openssl111",
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
-        "clang11",
+        "clang14",
         "clang19",
         # TODO: Automatically populate from supported version
-        "python3.9",
         "python3.10",
         "python3.11",
         "python3.12",
         "python3.13",
         "python3.14",
+        "python3.15",
         "pypy",
         "pypy3",
         "python_alpine",
@@ -1845,6 +1835,12 @@ argp.add_argument(
     default=[],
     action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
+)
+argp.add_argument(
+    "--script_args",
+    default=[],
+    action="append",
+    help="Extra arguments passed to test script. Currently only supported for sanity scripts. Can be used multiple times.",
 )
 args = argp.parse_args()
 

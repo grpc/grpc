@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>grpc.testing.LoadBalancerStatsResponse</code>
@@ -75,7 +75,7 @@ class LoadBalancerStatsResponse extends \Google\Protobuf\Internal\Message
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
      */
-    public function setRpcsByPeer($var)
+    public function setRpcsByPeer(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::INT32);
         $this->rpcs_by_peer = $arr;
@@ -101,7 +101,7 @@ class LoadBalancerStatsResponse extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setNumFailures($var)
+    public function setNumFailures(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->num_failures = $var;
@@ -123,7 +123,7 @@ class LoadBalancerStatsResponse extends \Google\Protobuf\Internal\Message
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
      */
-    public function setRpcsByMethod($var)
+    public function setRpcsByMethod(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\LoadBalancerStatsResponse\RpcsByPeer::class);
         $this->rpcs_by_method = $arr;
@@ -149,7 +149,7 @@ class LoadBalancerStatsResponse extends \Google\Protobuf\Internal\Message
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
      */
-    public function setMetadatasByPeer($var)
+    public function setMetadatasByPeer(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\LoadBalancerStatsResponse\MetadataByPeer::class);
         $this->metadatas_by_peer = $arr;

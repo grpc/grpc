@@ -72,6 +72,13 @@ grpc::string_ref TlsCustomVerificationCheckRequest::verified_root_cert_subject()
              : "";
 }
 
+grpc::string_ref
+TlsCustomVerificationCheckRequest::negotiated_key_exchange_group() const {
+  return c_request_->peer_info.negotiated_key_exchange_group != nullptr
+             ? c_request_->peer_info.negotiated_key_exchange_group
+             : "";
+}
+
 std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::uri_names()
     const {
   std::vector<grpc::string_ref> uri_names;

@@ -17,13 +17,18 @@
 //
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 
+#include <utility>
+
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -84,23 +89,18 @@ auto KeepaliveManager::MaybeSendKeepAlivePing() {
              }));
 }
 
-void KeepaliveManager::Spawn(Party* party) {
-  if (!IsKeepAliveNeeded()) {
-    GRPC_HTTP2_KEEPALIVE_LOG << "Not spawning keepalive loop.";
-    return;
-  }
-  keep_alive_spawned_ = true;
+bool KeepaliveManager::IsKeepAliveLoopNeeded() {
+  return IsKeepAliveNeeded() && !keep_alive_spawned_;
+}
 
-  party->Spawn("KeepAliveLoop", Loop([this]() {
-                 return TrySeq(
-                     Sleep(keepalive_time_),
-                     [this]() { return MaybeSendKeepAlivePing(); },
-                     []() -> LoopCtl<absl::Status> { return Continue(); });
-               }),
-               [](auto status) {
-                 GRPC_HTTP2_KEEPALIVE_LOG << "KeepAlive end with status: "
-                                          << status;
-               });
+Promise<absl::Status> KeepaliveManager::KeepaliveLoop() {
+  GRPC_HTTP2_KEEPALIVE_LOG << "KeepaliveManager::KeepaliveLoop Spawning.";
+  keep_alive_spawned_ = true;
+  return Loop([this]() {
+    return TrySeq(
+        Sleep(keepalive_time_), [this]() { return MaybeSendKeepAlivePing(); },
+        []() -> LoopCtl<absl::Status> { return Continue(); });
+  });
 }
 }  // namespace http2
 }  // namespace grpc_core

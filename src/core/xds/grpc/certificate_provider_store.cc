@@ -131,7 +131,8 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   return MakeRefCounted<CertificateProviderWrapper>(
-      factory->CreateCertificateProvider(definition.config), Ref(), name);
+      factory->CreateCertificateProvider(definition.config),
+      RefAsSubclass<CertificateProviderStore>(), name);
 }
 
 void CertificateProviderStore::ReleaseCertificateProvider(

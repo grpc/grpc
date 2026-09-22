@@ -13,8 +13,6 @@
 # limitations under the License.
 """Example gRPC client that gets/sets metadata (HTTP2 headers)"""
 
-from __future__ import print_function
-
 import logging
 
 import grpc

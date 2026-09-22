@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
-grpc_package(name = "test/core/client_channel")
+grpc_package(
+    name = "test/core/client_channel",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -59,8 +65,8 @@ grpc_fuzz_test(
 )
 
 grpc_fuzz_test(
-    name = "connected_subchannel_test",
-    srcs = ["connected_subchannel_test.cc"],
+    name = "subchannel_test",
+    srcs = ["subchannel_test.cc"],
     external_deps = [
         "fuzztest",
         "fuzztest_main",
@@ -101,14 +107,16 @@ grpc_fuzz_test(
         "fuzztest",
         "fuzztest_main",
         "absl/log:log",
+        "absl/status",
         "gtest",
         "absl/strings",
     ],
     deps = [
         "//:grpc",
-        "//src/core:resource_quota",
+        "//src/core:channel_args",
         "//src/core:retry_interceptor",
-        "//test/core/call/yodel:yodel_test",
+        "//test/core/filters:filter_matchers",
+        "//test/core/filters:filter_test",
     ],
 )
 
@@ -149,6 +157,7 @@ grpc_cc_test(
         "//src/core:service_config_parser",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -240,5 +249,32 @@ grpc_fuzz_test(
     deps = [
         "//src/core:json_reader",
         "//src/core:retry_interceptor",
+    ],
+)
+
+grpc_cc_test(
+    name = "subchannel_metrics_test",
+    size = "small",
+    srcs = ["subchannel_metrics_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc",
+        "//:grpc_client_channel",
+        "//src/core:instrument",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "subchannel_stream_limiter_test",
+    srcs = ["subchannel_stream_limiter_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_client_channel",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

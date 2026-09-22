@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport/tls")
+grpc_package(
+    name = "test/core/credentials/transport/tls",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "tls_credentials_test",
@@ -296,6 +302,31 @@ grpc_cc_test(
         "//src/core:json_reader",
         "//src/core:load_file",
         "//src/core:spiffe_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_tls_certificate_selector_test",
+    srcs = ["grpc_tls_certificate_selector_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data:valid.key",
+        "//test/core/tsi/test_creds/crl_data:valid.pem",
+        "//test/core/tsi/test_creds/crl_data:valid_cert.der",
+        "//test/core/tsi/test_creds/crl_data:valid_key.der",
+    ],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "libssl",
+        "libcrypto",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_tls_certificate_selector",
         "//test/core/test_util:grpc_test_util",
     ],
 )

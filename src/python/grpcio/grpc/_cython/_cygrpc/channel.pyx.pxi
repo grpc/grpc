@@ -107,14 +107,17 @@ cdef class _ChannelState:
 
 cdef class CallHandle:
 
-  def __cinit__(self, _ChannelState channel_state, object method):
+  def __cinit__(self, object channel, object method):
     self.method = method
     cpython.Py_INCREF(method)
     # Note that since we always pass None for host, we set the
     # second-to-last parameter of grpc_channel_register_call to a fixed
     # NULL value.
     self.c_call_handle = grpc_channel_register_call(
-      channel_state.c_channel, <const char *>method, NULL, NULL)
+      <grpc_channel*>cpython.PyLong_AsVoidPtr(channel),
+      <const char *>method,
+      NULL,
+      NULL)
 
   def __dealloc__(self):
     cpython.Py_DECREF(self.method)
@@ -463,7 +466,7 @@ cdef _close(Channel channel, grpc_status_code code, object details,
         while not _calls_drained(state):
           event = channel.next_call_event()
           if event.completion_type == CompletionType.queue_timeout:
-              continue  
+              continue
           event.tag(event)
       else:
         while state.integrated_call_states:
@@ -485,8 +488,25 @@ cdef _close(Channel channel, grpc_status_code code, object details,
 
 
 cdef _calls_drained(_ChannelState state):
-  return not (state.integrated_call_states or state.segregated_call_states or
-              state.connectivity_due)
+  return not (state.integrated_call_states or state.segregated_call_states)
+
+cdef _cancel_all_calls(Channel channel, grpc_status_code code, object details):
+  cdef _ChannelState state = channel._state
+  cdef _CallState call_state
+  encoded_details = _encode(details)
+  with state.condition:
+    for call_state in set(state.integrated_call_states.values()):
+      grpc_call_cancel_with_status(
+          call_state.c_call, code, encoded_details, NULL)
+    for call_state in state.segregated_call_states:
+      grpc_call_cancel_with_status(
+          call_state.c_call, code, encoded_details, NULL)
+    while not _calls_drained(state):
+      event = channel.next_call_event()
+      if event.completion_type == CompletionType.queue_timeout:
+          continue
+      event.tag(event)
+
 
 cdef class Channel:
 
@@ -500,6 +520,7 @@ cdef class Channel:
         grpc_completion_queue_create_for_next(NULL))
     self._state.c_connectivity_completion_queue = (
         grpc_completion_queue_create_for_next(NULL))
+    arguments = arguments + (("grpc.fork_epoch", get_fork_epoch()),)
     self._arguments = arguments
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     c_channel_credentials = (
@@ -566,6 +587,9 @@ cdef class Channel:
   def close_on_fork(self, code, details):
     _close(self, code, details, True)
 
+  def cancel_calls_on_fork(self, code, details):
+    _cancel_all_calls(self, code, details)
+
   def get_registered_call_handle(self, method):
     """
     Get or registers a call handler for a method.
@@ -576,8 +600,9 @@ cdef class Channel:
       method: Required, the method name for the RPC.
 
     Returns:
-      The registered call handle pointer in the form of a Python Long. 
+      The registered call handle pointer in the form of a Python Long.
     """
-    if method not in self._registered_call_handles.keys():
-      self._registered_call_handles[method] = CallHandle(self._state, method)
+    if method not in self._registered_call_handles:
+      self._registered_call_handles[method] = CallHandle(
+        cpython.PyLong_FromVoidPtr(self._state.c_channel), method)
     return self._registered_call_handles[method].call_handle

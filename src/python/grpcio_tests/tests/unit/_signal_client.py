@@ -13,8 +13,6 @@
 # limitations under the License.
 """Client for testing responsiveness to signals."""
 
-from __future__ import print_function
-
 import argparse
 import functools
 import logging

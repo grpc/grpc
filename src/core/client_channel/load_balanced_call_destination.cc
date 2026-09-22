@@ -135,11 +135,9 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
                  "pick";
           return Continue{};
         }
-        // If the LB policy returned a call tracker, inform it that the
-        // call is starting and add it to context, so that we can notify
-        // it when the call finishes.
+        // If the LB policy returned a call tracker, add it to context, so
+        // that we can notify it when the call finishes.
         if (complete_pick->subchannel_call_tracker != nullptr) {
-          complete_pick->subchannel_call_tracker->Start();
           SetContext(complete_pick->subchannel_call_tracker.release());
         }
         // Apply metadata mutations, if any.
@@ -181,9 +179,11 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "client_channel: " << GetContext<Activity>()->DebugTag()
             << " pick dropped: " << drop_pick->status;
-        return grpc_error_set_int(MaybeRewriteIllegalStatusCode(
-                                      std::move(drop_pick->status), "LB drop"),
-                                  StatusIntProperty::kLbPolicyDrop, 1);
+        // TODO(roth): Need to set the LbPolicyDrop trait in server
+        // trailing metadata, so that the retry interceptor can know not
+        // to retry.
+        return MaybeRewriteIllegalStatusCode(std::move(drop_pick->status),
+                                             "LB drop");
       });
 }
 

@@ -94,6 +94,41 @@ namespace grpc_core {
 namespace testing {
 
 class LoadBalancingPolicyTest : public ::testing::Test {
+ public:
+  // Converts an address URI into a grpc_resolved_address.
+  static grpc_resolved_address MakeAddress(absl::string_view address_uri) {
+    auto uri = URI::Parse(address_uri);
+    GRPC_CHECK(uri.ok());
+    grpc_resolved_address address;
+    GRPC_CHECK(grpc_parse_uri(*uri, &address));
+    return address;
+  }
+
+  static std::vector<grpc_resolved_address> MakeAddressList(
+      absl::Span<const absl::string_view> addresses) {
+    std::vector<grpc_resolved_address> addrs;
+    for (const absl::string_view& address : addresses) {
+      addrs.emplace_back(MakeAddress(address));
+    }
+    return addrs;
+  }
+
+  static EndpointAddresses MakeEndpointAddresses(
+      absl::Span<const absl::string_view> addresses,
+      const ChannelArgs& args = ChannelArgs()) {
+    return EndpointAddresses(MakeAddressList(addresses), args);
+  }
+
+  static std::vector<EndpointAddresses>
+  MakeEndpointAddressesListFromAddressList(
+      absl::Span<const absl::string_view> addresses) {
+    std::vector<EndpointAddresses> endpoints;
+    for (const absl::string_view address : addresses) {
+      endpoints.emplace_back(MakeAddress(address), ChannelArgs());
+    }
+    return endpoints;
+  }
+
  protected:
   using EventEngine = grpc_event_engine::experimental::EventEngine;
   using FuzzingEventEngine =
@@ -141,31 +176,33 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       class WatcherWrapper : public AsyncConnectivityStateWatcherInterface {
        public:
         WatcherWrapper(
-            std::shared_ptr<WorkSerializer> work_serializer,
+            SubchannelState* state,
             std::unique_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
-            : AsyncConnectivityStateWatcherInterface(
-                  std::move(work_serializer)),
+            : AsyncConnectivityStateWatcherInterface(state->work_serializer()),
+              state_(state),
               watcher_(std::move(watcher)) {}
 
         WatcherWrapper(
-            std::shared_ptr<WorkSerializer> work_serializer,
+            SubchannelState* state,
             std::shared_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
-            : AsyncConnectivityStateWatcherInterface(
-                  std::move(work_serializer)),
+            : AsyncConnectivityStateWatcherInterface(state->work_serializer()),
+              state_(state),
               watcher_(std::move(watcher)) {}
 
         void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                        const absl::Status& status) override {
-          LOG(INFO) << "notifying watcher: state="
-                    << ConnectivityStateName(new_state) << " status=" << status;
+          LOG(INFO) << "notifying watcher for " << state_->address_
+                    << ": state=" << ConnectivityStateName(new_state)
+                    << " status=" << status;
           watcher_->OnConnectivityStateChange(new_state, status);
         }
 
        private:
+        SubchannelState* state_;
         std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher_;
       };
@@ -175,8 +212,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               SubchannelInterface::ConnectivityStateWatcherInterface>
               watcher) override {
         auto* watcher_ptr = watcher.get();
-        auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-            state_->work_serializer(), std::move(watcher));
+        auto watcher_wrapper =
+            MakeOrphanable<WatcherWrapper>(state_, std::move(watcher));
         watcher_map_[watcher_ptr] = watcher_wrapper.get();
         state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                           std::move(watcher_wrapper));
@@ -215,7 +252,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
           auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-              state_->work_serializer(), std::move(connectivity_watcher));
+              state_, std::move(connectivity_watcher));
           health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
@@ -283,7 +320,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               << location.file() << ":" << location.line();
           break;
         case GRPC_CHANNEL_READY:
-          ASSERT_EQ(to_state, GRPC_CHANNEL_IDLE)
+          ASSERT_THAT(to_state, ::testing::AnyOf(
+                                    GRPC_CHANNEL_IDLE, GRPC_CHANNEL_CONNECTING,
+                                    GRPC_CHANNEL_TRANSIENT_FAILURE))
               << ConnectivityStateName(from_state) << "=>"
               << ConnectivityStateName(to_state) << "\n"
               << location.file() << ":" << location.line();
@@ -702,30 +741,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return status_or_config.value();
   }
 
-  // Converts an address URI into a grpc_resolved_address.
-  static grpc_resolved_address MakeAddress(absl::string_view address_uri) {
-    auto uri = URI::Parse(address_uri);
-    GRPC_CHECK(uri.ok());
-    grpc_resolved_address address;
-    GRPC_CHECK(grpc_parse_uri(*uri, &address));
-    return address;
-  }
-
-  std::vector<grpc_resolved_address> MakeAddressList(
-      absl::Span<const absl::string_view> addresses) {
-    std::vector<grpc_resolved_address> addrs;
-    for (const absl::string_view& address : addresses) {
-      addrs.emplace_back(MakeAddress(address));
-    }
-    return addrs;
-  }
-
-  EndpointAddresses MakeEndpointAddresses(
-      absl::Span<const absl::string_view> addresses,
-      const ChannelArgs& args = ChannelArgs()) {
-    return EndpointAddresses(MakeAddressList(addresses), args);
-  }
-
   // Constructs an update containing a list of endpoints.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const EndpointAddresses> endpoints,
@@ -737,15 +752,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     update.config = std::move(config);
     update.args = std::move(args);
     return update;
-  }
-
-  std::vector<EndpointAddresses> MakeEndpointAddressesListFromAddressList(
-      absl::Span<const absl::string_view> addresses) {
-    std::vector<EndpointAddresses> endpoints;
-    for (const absl::string_view address : addresses) {
-      endpoints.emplace_back(MakeAddress(address), ChannelArgs());
-    }
-    return endpoints;
   }
 
   // Convenient overload that takes a flat address list.
@@ -900,7 +906,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           EXPECT_EQ(status, expected_status)
               << location.file() << ":" << location.line();
         },
-        location);
+        {}, {}, location);
   }
 
   // Waits for the LB policy to fail a connection attempt.  There can be
@@ -926,7 +932,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               << ConnectivityStateName(update.state) << " at "
               << location.file() << ":" << location.line();
           check_status(update.status);
-          ExpectPickFail(update.picker.get(), check_status, location);
+          ExpectPickFail(update.picker.get(), check_status, {}, {}, location);
           retval = update.state == GRPC_CHANNEL_TRANSIENT_FAILURE;
           return false;  // Stop.
         },
@@ -1026,7 +1032,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           subchannel_call_tracker,
       absl::string_view address, absl::Status status = absl::OkStatus()) {
-    subchannel_call_tracker->Start();
     FakeMetadata metadata({});
     FakeBackendMetricAccessor backend_metric_accessor({});
     LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
@@ -1314,12 +1319,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     LOG(INFO) << "Done with endpoint address change";
   }
 
-  // Requests a picker on picker and expects a Fail result.
+  // Requests a pick on picker and expects a Fail result.
   // The failing status is passed to check_status.
   void ExpectPickFail(LoadBalancingPolicy::SubchannelPicker* picker,
                       std::function<void(const absl::Status&)> check_status,
+                      const CallAttributes& call_attributes = {},
+                      const std::map<std::string, std::string>& metadata = {},
                       SourceLocation location = SourceLocation()) {
-    auto pick_result = DoPick(picker);
+    auto pick_result = DoPick(picker, call_attributes, metadata);
     auto* fail =
         std::get_if<LoadBalancingPolicy::PickResult::Fail>(&pick_result.result);
     ASSERT_NE(fail, nullptr) << PickResultString(pick_result) << " at "

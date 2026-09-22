@@ -139,8 +139,30 @@ class ConfigQuery {
       exclude_features_ |= FEATURE_MASK_DO_NOT_GTEST;
     }
     exclude_experiments_except_for_configs_.insert(
-        {ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport,
-         {GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG}});
+        {ExperimentIds::kExperimentIdPh2Client,
+         {GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FAKE_SECURITY,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_INSECURE_CREDENTIALS,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FULLSTACK_LOCAL_IPV4,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FULLSTACK_LOCAL_IPV6,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_PROXY,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_TLS12,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_TLS13,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK_TLS12,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK_TLS13,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_CRED_RELOAD_TLS12,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_CRED_RELOAD_TLS13,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_CERT_WATCHER_PROVIDER_ASYNC_VERIFIER_TLS13,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_CERT_WATCHER_PROVIDER_SYNC_VERIFIER_TLS12,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_STATIC_PROVIDER_ASYNC_VERIFIER_TLS13,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY}});
+    exclude_experiments_except_for_configs_.insert(
+        {ExperimentIds::kExperimentIdPh2Server,
+         {GRPC_HTTP2_CHTTP2_CLIENT_PH2_SERVER_CONFIG}});
+    exclude_experiments_except_for_configs_.insert(
+        {ExperimentIds::kExperimentIdPh2ClientServer,
+         {GRPC_HTTP2_PH2_CLIENT_PH2_SERVER_CONFIG}});
   }
   ConfigQuery(const ConfigQuery&) = delete;
   ConfigQuery& operator=(const ConfigQuery&) = delete;
@@ -214,7 +236,7 @@ class ConfigQuery {
   uint32_t enforce_features_ = 0;
   uint32_t exclude_features_ = 0;
 
-  // TODO(tjagtap) : [PH2][P3] Consider deprecating allowed_names_ and
+  // TODO(tjagtap) : [PH2][P5] Consider deprecating allowed_names_ and
   // excluded_names_ in favour of include_test_suites , include_specific_tests
   // and exclude_specific_tests
   // This is poor design because the suite knows about the config. So when we

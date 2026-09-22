@@ -209,6 +209,16 @@ TEST(TlsCertificateVerifierTest, VerifiedRootCertSubjectVerifierFailsMismatch) {
             "VerifiedRootCertSubjectVerifier failed");
 }
 
+TEST(TlsCertificateVerifierTest, NegotiatedKeyExchangeGroupProperty) {
+  grpc_tls_custom_verification_check_request request = {};
+  constexpr char kExpectedGroup[] = "X25519";
+  request.peer_info.negotiated_key_exchange_group = kExpectedGroup;
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  EXPECT_EQ(cpp_request.negotiated_key_exchange_group(), kExpectedGroup);
+  request.peer_info.negotiated_key_exchange_group = nullptr;
+  EXPECT_EQ(cpp_request.negotiated_key_exchange_group(), "");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

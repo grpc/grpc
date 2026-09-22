@@ -193,8 +193,8 @@ class XdsServerTlsTest : public XdsEnd2endTest {
     // Add a callback to save the JWT token seen on the xDS server.
     balancer_->ads_service()->SetCallCredsCallback(
         [&](const AdsServiceImpl::ClientMetadataType& md) {
-          auto it = md.find("authorization");
-          ASSERT_TRUE(it != md.end());
+          auto [it, end] = md.equal_range("authorization");
+          ASSERT_TRUE(it != end);
           absl::string_view value(it->second.data(), it->second.size());
           grpc_core::MutexLock lock(&mu_);
           seen_token_ = std::string(absl::StripPrefix(value, "Bearer "));
@@ -1145,8 +1145,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   // Start backends and wait for them to start serving.
   StartAllBackends();
   for (const auto& backend : backends_) {
-    ASSERT_TRUE(backend->notifier()->WaitOnServingStatusChange(
-        grpc_core::LocalIpAndPort(backend->port()), grpc::StatusCode::OK));
+    ASSERT_EQ(backend->GetNextStatus(), absl::OkStatus());
   }
   // Make sure everything works.
   WaitForAllBackends(DEBUG_LOCATION);
@@ -1379,6 +1378,35 @@ TEST_P(XdsMetricsTest, MetricValues) {
                     kMetricConnected, {target, kXdsServer}, {}),
                 ::testing::Optional(0));
   }
+}
+
+TEST_P(XdsMetricsTest, SubchannelMetricsHaveLocalityAndBackendServiceLabels) {
+  const std::string target = kServerName;
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
+                        {"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded",
+          {target, kDefaultClusterName, LocalityNameString("locality0")}),
+      ::testing::Optional(::testing::Gt(0)));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded",
+          {target, kDefaultClusterName, LocalityNameString("locality1")}),
+      ::testing::Optional(::testing::Gt(0)));
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections",
+                  {target, "none", kDefaultClusterName,
+                   LocalityNameString("locality0")}),
+              ::testing::Optional(::testing::Gt(0)));
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections",
+                  {target, "none", kDefaultClusterName,
+                   LocalityNameString("locality1")}),
+              ::testing::Optional(::testing::Gt(0)));
 }
 
 //
@@ -1697,10 +1725,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

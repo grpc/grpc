@@ -164,6 +164,21 @@ void PromiseFormatterImpl(const grpc::channelz::v2::Promise& promise,
                       std::string(indent, ' '), ")");
       break;
     }
+    case grpc::channelz::v2::Promise::kForEachPromise: {
+      const auto& for_each = promise.for_each_promise();
+      absl::StrAppend(&out, "ForEach(\n", std::string(indent + 2, ' '),
+                      FormatFactory(for_each.reader_factory()), ", ",
+                      FormatFactory(for_each.action_factory()));
+      if (for_each.has_reader_promise()) {
+        absl::StrAppend(&out, ",\n", std::string(indent + 2, ' '));
+        PromiseFormatterImpl(for_each.reader_promise(), out, indent + 2);
+      } else if (for_each.has_action_promise()) {
+        absl::StrAppend(&out, ",\n", std::string(indent + 2, ' '));
+        PromiseFormatterImpl(for_each.action_promise(), out, indent + 2);
+      }
+      absl::StrAppend(&out, "\n", std::string(indent, ' '), ")");
+      break;
+    }
     case grpc::channelz::v2::Promise::kIfPromise: {
       const auto& if_p = promise.if_promise();
       absl::StrAppend(&out, "If(", if_p.condition() ? "true" : "false", ", ",
@@ -262,7 +277,7 @@ bool PromiseFormatter(Environment&, google::protobuf::Any value,
                       layout::Element& element) {
   grpc::channelz::v2::Promise promise;
   if (!value.UnpackTo(&promise)) return false;
-  element.AppendText(layout::Intent::kData, grpc_zviz::Format(promise));
+  element.AppendText(layout::Intent::kCode, grpc_zviz::Format(promise));
   return true;
 }
 

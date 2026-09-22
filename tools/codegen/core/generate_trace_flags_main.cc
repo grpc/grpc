@@ -24,6 +24,7 @@
 ABSL_FLAG(std::vector<std::string>, trace_flags_yaml, {},
           "Path to the trace flags yaml file(s).");
 ABSL_FLAG(std::string, header_path, "", "Path to the header file.");
+ABSL_FLAG(std::string, header_prefix, "", "Prefix to the header file.");
 ABSL_FLAG(std::string, cpp_path, "", "Path to the cpp file.");
 ABSL_FLAG(std::string, markdown_path, "", "Path to the markdown file.");
 
@@ -34,6 +35,7 @@ int main(int argc, char** argv) {
   const std::string header_path = absl::GetFlag(FLAGS_header_path);
   const std::string cpp_path = absl::GetFlag(FLAGS_cpp_path);
   const std::string markdown_path = absl::GetFlag(FLAGS_markdown_path);
+  const std::string header_prefix = absl::GetFlag(FLAGS_header_prefix);
   if (!header_path.empty()) {
     std::string header = grpc_generator::GenerateHeader(trace_flags_yaml);
     if (!header.empty()) {
@@ -42,7 +44,8 @@ int main(int argc, char** argv) {
     }
   }
   if (!cpp_path.empty()) {
-    std::string cpp = grpc_generator::GenerateCpp(trace_flags_yaml);
+    std::string cpp =
+        grpc_generator::GenerateCpp(trace_flags_yaml, header_prefix);
     if (!cpp.empty()) {
       std::ofstream cpp_file(cpp_path);
       cpp_file << cpp;

@@ -206,9 +206,9 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   }
 
   template <typename T, typename... Args>
-  absl::enable_if_t<std::is_same<typename T::RefCountedUnrefBehaviorType,
-                                 UnrefCallDtor>::value,
-                    RefCountedPtr<T>>
+  std::enable_if_t<std::is_same<typename T::RefCountedUnrefBehaviorType,
+                                UnrefCallDtor>::value,
+                   RefCountedPtr<T>>
   MakeRefCounted(Args&&... args) {
     return RefCountedPtr<T>(New<T>(std::forward<Args>(args)...));
   }
@@ -419,7 +419,7 @@ class ArenaSpsc {
     T result = std::move(next->value);
     Destruct(&next->value);
     tail_.store(next, std::memory_order_release);
-    return result;
+    return std::move(result);
   }
 
   T* Peek() {
@@ -494,7 +494,7 @@ inline void UnrefDestroy::operator()(const Arena* arena) const {
 namespace promise_detail {
 
 template <typename T>
-class Context<T, absl::void_t<decltype(ArenaContextType<T>::Destroy)>> {
+class Context<T, std::void_t<decltype(ArenaContextType<T>::Destroy)>> {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T* get() {
     return GetContext<Arena>()->GetContext<T>();

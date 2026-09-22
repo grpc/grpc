@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <cmath>
 #include <memory>
 #include <optional>
 #include <set>
@@ -32,6 +33,7 @@
 #include <vector>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -76,6 +78,8 @@ namespace {
 
 constexpr absl::string_view kPickFirst = "pick_first";
 
+// TODO(https://github.com/grpc/grpc/issues/40835): Remove metrics after 1.84.0
+// release. Metrics functionality was moved from pick_first to subchannel.
 const auto kMetricDisconnections =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.disconnections",
@@ -390,13 +394,16 @@ class PickFirst final : public LoadBalancingPolicy {
   // Lateset update args.
   UpdateArgs latest_update_args_;
   // The list of subchannels that we're currently trying to connect to.
-  // Will generally be null when selected_ is set, except when we get a
-  // resolver update and need to check initial connectivity states for
-  // the new list to decide whether we keep using the existing
-  // connection or go IDLE.
+  // Will generally be null when selected_ is set, except for two cases:
+  // - When we get a resolver update and need to check initial connectivity
+  //   states for the new list to decide whether we keep using the existing
+  //   connection or go IDLE.
+  // - When the selected subchannel transitions from READY to CONNECTING
+  //   or TRANSIENT_FAILURE (instead of IDLE), in which case we create a
+  //   new subchannel list and start connecting with a Happy Eyeballs pass.
   OrphanablePtr<SubchannelList> subchannel_list_;
   // Selected subchannel.  Will generally be null when subchannel_list_
-  // is non-null, with the exception mentioned above.
+  // is non-null, with the exceptions mentioned above.
   OrphanablePtr<SubchannelList::SubchannelData::SubchannelState> selected_;
   // Health watcher for the selected subchannel.
   SubchannelInterface::ConnectivityStateWatcherInterface* health_watcher_ =
@@ -535,8 +542,33 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       // Shuffle the list if needed.
       auto config = static_cast<PickFirstConfig*>(args.config.get());
       if (config->shuffle_addresses()) {
-        SharedBitGen g;
-        absl::c_shuffle(endpoints, g);
+        if (PfWeightedShufflingEnabled()) {
+          struct WeightedEndpoint {
+            EndpointAddresses endpoint;
+            double key;
+          };
+          std::vector<WeightedEndpoint> weighted_endpoints;
+          weighted_endpoints.reserve(endpoints.size());
+          SharedBitGen g;
+          for (auto& endpoint : endpoints) {
+            double e = absl::Exponential<double>(g);
+            int weight_arg =
+                endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+            double weight = weight_arg <= 0 ? 1.0 : weight_arg;
+            double key = (weight == 1.0) ? e : (e / weight);
+            weighted_endpoints.push_back({std::move(endpoint), key});
+          }
+          std::sort(weighted_endpoints.begin(), weighted_endpoints.end(),
+                    [](const WeightedEndpoint& a, const WeightedEndpoint& b) {
+                      return a.key < b.key;
+                    });
+          for (size_t i = 0; i < weighted_endpoints.size(); ++i) {
+            endpoints[i] = std::move(weighted_endpoints[i].endpoint);
+          }
+        } else {
+          SharedBitGen g;
+          absl::c_shuffle(endpoints, g);
+        }
       }
       // Flatten the list so that we have one address per endpoint.
       // While we're iterating, also determine the desired address family
@@ -612,10 +644,6 @@ void PickFirst::GoIdle() {
   UnsetSelectedSubchannel();
   // Drop the current subchannel list, if any.
   subchannel_list_.reset();
-  // Request a re-resolution.
-  // TODO(qianchengz): We may want to request re-resolution in
-  // ExitIdleLocked() instead.
-  channel_control_helper()->RequestReresolution();
   // Enter idle.
   UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
               MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
@@ -780,8 +808,30 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   stats_plugins.AddCounter(kMetricDisconnections, 1,
                            {pick_first_->channel_control_helper()->GetTarget()},
                            {});
-  // Report IDLE.
-  pick_first_->GoIdle();
+  // TODO(roth): We may want to request re-resolution in
+  // ExitIdleLocked() instead, at least if we go IDLE below.
+  pick_first_->channel_control_helper()->RequestReresolution();
+  // If the subchannel went to CONNECTING or TRANSIENT_FAILURE, we go
+  // back to CONNECTING and start a new Happy Eyeballs pass.
+  // Otherwise, go IDLE.
+  if (new_state == GRPC_CHANNEL_CONNECTING ||
+      new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    pick_first_->UpdateState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                             MakeRefCounted<QueuePicker>(nullptr));
+    pick_first_->AttemptToConnectUsingLatestUpdateArgsLocked();
+    // Unset the selected subchannel, so that when we see the initial
+    // connectivity state notifications for the subchannels in the new
+    // subchannel list, we don't think it was caused by a resolver
+    // update and go IDLE if none of the subchannels report READY.
+    //
+    // Note that we do this *after* creating the new subchannel list,
+    // which will have taken a new ref to the originally selected
+    // subchannel.  This ensures that we don't destroy and recreate the
+    // subchannel, thus preserving the backoff state inside the subchannel.
+    pick_first_->UnsetSelectedSubchannel();
+  } else {
+    pick_first_->GoIdle();
+  }
 }
 
 //
@@ -1137,6 +1187,10 @@ class PickFirstFactory final : public LoadBalancingPolicyFactory {
 };
 
 }  // namespace
+
+bool PfWeightedShufflingEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
+}
 
 void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(

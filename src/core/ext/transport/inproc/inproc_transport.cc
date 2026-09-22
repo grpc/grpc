@@ -94,6 +94,9 @@ class InprocServerTransport final : public ServerTransport {
     ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   }
 
+  void StartWatch(RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(RefCountedPtr<StateWatcher>) override {}
+
   void Disconnect(absl::Status error) {
     RefCountedPtr<ConnectedState> connected_state;
     {
@@ -222,6 +225,9 @@ class InprocClientTransport final : public ClientTransport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
 
+  void StartWatch(RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(RefCountedPtr<StateWatcher>) override {}
+
  private:
   ~InprocClientTransport() override {
     server_transport_->Disconnect(
@@ -246,11 +252,7 @@ InprocServerTransport::MakeClientTransport() {
 RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
   LOG(ERROR) << why << ": " << error.message();
-  intptr_t integer;
-  grpc_status_code status = GRPC_STATUS_INTERNAL;
-  if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {
-    status = static_cast<grpc_status_code>(integer);
-  }
+  grpc_status_code status = static_cast<grpc_status_code>(error.code());
   return RefCountedPtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
       nullptr, status, std::string(why).c_str())));
 }

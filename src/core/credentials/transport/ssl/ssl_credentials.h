@@ -37,7 +37,7 @@
 
 class grpc_ssl_credentials : public grpc_channel_credentials {
  public:
-  grpc_ssl_credentials(const char* pem_root_certs,
+  grpc_ssl_credentials(std::string pem_root_certs,
                        grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
                        const grpc_ssl_verify_peer_options* verify_options);
 
@@ -64,7 +64,7 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
         static_cast<const grpc_channel_credentials*>(this), other);
   }
 
-  void build_config(const char* pem_root_certs,
+  void build_config(std::string pem_root_certs,
                     grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
                     const grpc_ssl_verify_peer_options* verify_options);
 
@@ -74,7 +74,7 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
   // that there is a session cache. If a session cache is used, a new handshaker
   // factory will be created and used that contains that session cache.
   grpc_security_status InitializeClientHandshakerFactory(
-      const grpc_ssl_config* config, const char* pem_root_certs,
+      const grpc_ssl_config* config, std::string pem_root_certs,
       const tsi_ssl_root_certs_store* root_store,
       tsi_ssl_session_cache* ssl_session_cache,
       tsi_ssl_client_handshaker_factory** handshaker_factory);
@@ -88,19 +88,20 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
 struct grpc_ssl_server_certificate_config {
   grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
   size_t num_key_cert_pairs = 0;
-  char* pem_root_certs = nullptr;
+  std::string pem_root_certs;
+
+  ~grpc_ssl_server_certificate_config();
 };
 
 struct grpc_ssl_server_certificate_config_fetcher {
   grpc_ssl_server_certificate_config_callback cb = nullptr;
-  void* user_data;
+  void* user_data = nullptr;
 };
 
 class grpc_ssl_server_credentials final : public grpc_server_credentials {
  public:
   explicit grpc_ssl_server_credentials(
       const grpc_ssl_server_credentials_options& options);
-  ~grpc_ssl_server_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_core::ChannelArgs& /* args */) override;
@@ -129,7 +130,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
 
  private:
   void build_config(
-      const char* pem_root_certs,
+      std::string pem_root_certs,
       grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
       grpc_ssl_client_certificate_request_type client_certificate_request);
 
@@ -137,8 +138,14 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
   grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher_;
 };
 
-tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
+grpc_core::PemKeyCertPairList grpc_convert_grpc_to_key_cert_pairs(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs);
+
+// Compares the leaf certificate of the peer in two auth contexts.
+// Returns true if both contexts have the same leaf certificate (PEM).
+// Returns false otherwise.
+bool SslLeafHashComparator(const grpc_auth_context* ctx1,
+                           const grpc_auth_context* ctx2);
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SSL_SSL_CREDENTIALS_H

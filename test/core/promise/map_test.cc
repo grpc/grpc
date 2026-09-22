@@ -21,6 +21,8 @@
 #include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -90,6 +92,47 @@ TEST(MapTest, NestedMaps) {
   auto result = promise();
   EXPECT_THAT(result, IsReady());
   EXPECT_EQ(result, Poll<int>(31));
+}
+
+TEST(MapTest, NestedMapWithPending) {
+  std::string execution_order;
+  bool pending = true;
+
+  auto nested_map =
+      Map(Map(
+              // Inner promise (yields Pending once, then resolves)
+              [&execution_order, &pending]() -> Poll<int> {
+                if (pending) {
+                  absl::StrAppend(&execution_order, "P");
+                  return Pending{};
+                }
+                absl::StrAppend(&execution_order, "1");
+                return 10;
+              },
+              // 2. Inner mapping function (Takes 10)
+              [&execution_order](int val) {
+                absl::StrAppend(&execution_order, "2");
+                return val * 2;  // Passes 20 to the outer map
+              }),
+          // 3. Outer mapping function (Takes 20)
+          [&execution_order](int nested_result) {
+            absl::StrAppend(&execution_order, "3");
+            return nested_result * 2;  // Returns 40 finally
+          });
+
+  // Once pending is returned all other steps are skipped.
+  auto result1 = nested_map();
+  EXPECT_TRUE(result1.pending());
+  EXPECT_STREQ(execution_order.c_str(), "P");
+
+  execution_order.clear();
+  pending = false;
+
+  // On second poll, inner promise resolves and the rest of the map executes.
+  auto result2 = nested_map();
+  EXPECT_TRUE(result2.ready());
+  EXPECT_STREQ(execution_order.c_str(), "123");
+  EXPECT_EQ(result2.value(), 40);
 }
 
 TEST(MapTest, NestedMapsWithDifferentTypes) {

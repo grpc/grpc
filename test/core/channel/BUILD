@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/channel")
+grpc_package(
+    name = "test/core/channel",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -135,6 +141,31 @@ grpc_cc_test(
         "//src/core:arena",
         "//src/core:channel_args",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "v3_bridge_test",
+    srcs = ["v3_bridge_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "absl/log:check",
+        "absl/synchronization",
+        "absl/time",
+        "gtest",
+    ],
+    deps = [
+        "//:debug_location",
+        "//:gpr",
+        "//:grpc_base",
+        "//src/core:arena",
+        "//src/core:call_spine",
+        "//src/core:experiments",
+        "//src/core:memory_quota",
+        "//src/core:metadata",
+        "//src/core:resource_quota",
+        "//src/core:wait_for_single_owner",
+        "//test/core/promise:poll_matcher",
     ],
 )
 

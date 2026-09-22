@@ -75,7 +75,15 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
 
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
+    void MutateSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
+        grpc_metadata_batch* send_trailing_metadata) override {
+      GRPC_CHECK(
+          !grpc_core::IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+      MutateSendTrailingMetadata(send_trailing_metadata);
+    }
+    void MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const grpc_core::Message& send_message) override;
     void RecordSendCompressedMessage(
@@ -105,14 +113,19 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
     class TcpCallTracer;
 
     void PopulateLabelInjectors(grpc_metadata_batch* metadata);
+    void SetOptionalLabelImpl(
+        OptionalLabelKey key,
+        std::variant<grpc_core::RefCountedStringValue, absl::string_view>
+            value);
 
     ClientCallTracerInterface* const parent_;
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
     // Avoid std::map to avoid per-call allocations.
-    std::array<grpc_core::RefCountedStringValue,
-               static_cast<size_t>(OptionalLabelKey::kSize)>
+    std::array<
+        std::variant<grpc_core::RefCountedStringValue, absl::string_view>,
+        static_cast<size_t>(OptionalLabelKey::kSize)>
         optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;

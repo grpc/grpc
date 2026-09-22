@@ -49,7 +49,11 @@ class StringMatcher {
   StringMatcher& operator=(const StringMatcher& other);
   StringMatcher(StringMatcher&& other) noexcept;
   StringMatcher& operator=(StringMatcher&& other) noexcept;
+
   bool operator==(const StringMatcher& other) const;
+  bool operator!=(const StringMatcher& other) const {
+    return !(*this == other);
+  }
 
   bool Match(absl::string_view value) const;
 
@@ -120,7 +124,11 @@ class HeaderMatcher {
   HeaderMatcher& operator=(const HeaderMatcher& other);
   HeaderMatcher(HeaderMatcher&& other) noexcept;
   HeaderMatcher& operator=(HeaderMatcher&& other) noexcept;
+
   bool operator==(const HeaderMatcher& other) const;
+  bool operator!=(const HeaderMatcher& other) const {
+    return !(*this == other);
+  }
 
   const std::string& name() const { return name_; }
 

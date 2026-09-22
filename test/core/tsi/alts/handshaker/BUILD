@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/tsi/alts/handshaker")
+grpc_package(
+    name = "test/core/tsi/alts/handshaker",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "alts_handshaker_service_api_test_lib",
@@ -33,10 +39,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "alts_handshaker_client_test",
     srcs = ["alts_handshaker_client_test.cc"],
-    external_deps = [
-        "gtest",
-        "@com_google_protobuf//upb/mem",
-    ],
+    external_deps = ["gtest"],
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:alts_handshaker_upb_proto",
@@ -48,18 +51,14 @@ grpc_cc_test(
         "//:tsi_base",
         "//src/core:env",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
 grpc_cc_test(
     name = "alts_tsi_handshaker_test",
     srcs = ["alts_tsi_handshaker_test.cc"],
-    external_deps = [
-        "gtest",
-        "@com_google_protobuf//upb/base",
-        "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/message",
-    ],
+    external_deps = ["gtest"],
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:alts_upb",
@@ -70,21 +69,22 @@ grpc_cc_test(
         "//:tsi_alts_credentials",
         "//:tsi_base",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/message",
     ],
 )
 
 grpc_cc_test(
     name = "alts_tsi_utils_test",
     srcs = ["alts_tsi_utils_test.cc"],
-    external_deps = [
-        "gtest",
-        "@com_google_protobuf//upb/mem",
-    ],
+    external_deps = ["gtest"],
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:grpc",
         "//:tsi_alts_credentials",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 

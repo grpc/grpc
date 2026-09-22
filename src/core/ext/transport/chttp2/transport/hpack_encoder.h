@@ -50,6 +50,26 @@ class HPackCompressor;
 
 namespace hpack_encoder_detail {
 
+struct HPackWriter {
+  GRPC_MUST_USE_RESULT
+  static uint32_t EmitLitHdrWithNonBinaryStringKeyIncIdx(
+      Slice key_slice, Slice value_slice, SliceBuffer& output,
+      HPackEncoderTable& table);
+  GRPC_MUST_USE_RESULT
+  static uint32_t EmitLitHdrWithBinaryStringKeyIncIdx(
+      Slice key_slice, Slice value_slice, SliceBuffer& output,
+      HPackEncoderTable& table, bool use_true_binary_metadata);
+  static void EmitLitHdrWithBinaryStringKeyNotIdx(
+      Slice key_slice, Slice value_slice, SliceBuffer& output,
+      bool use_true_binary_metadata);
+  static void EmitLitHdrWithBinaryStringKeyNotIdx(
+      uint32_t key_index, Slice value_slice, SliceBuffer& output,
+      bool use_true_binary_metadata);
+  static void EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice key_slice,
+                                                     Slice value_slice,
+                                                     SliceBuffer& output);
+};
+
 class Encoder {
  public:
   Encoder(HPackCompressor* compressor, bool use_true_binary_metadata,
@@ -407,9 +427,84 @@ void Encoder::Encode(MetadataTrait,
           EncodeWith(MetadataTrait(), value, this);
 }
 
+inline uint32_t Encoder::EmitLitHdrWithNonBinaryStringKeyIncIdx(
+    Slice key_slice, Slice value_slice) {
+  return HPackWriter::EmitLitHdrWithNonBinaryStringKeyIncIdx(
+      std::move(key_slice), std::move(value_slice), output_,
+      compressor_->table_);
+}
+
+inline void Encoder::EmitLitHdrWithBinaryStringKeyNotIdx(Slice key_slice,
+                                                         Slice value_slice) {
+  HPackWriter::EmitLitHdrWithBinaryStringKeyNotIdx(
+      std::move(key_slice), std::move(value_slice), output_,
+      use_true_binary_metadata_);
+}
+
+inline uint32_t Encoder::EmitLitHdrWithBinaryStringKeyIncIdx(
+    Slice key_slice, Slice value_slice) {
+  return HPackWriter::EmitLitHdrWithBinaryStringKeyIncIdx(
+      std::move(key_slice), std::move(value_slice), output_,
+      compressor_->table_, use_true_binary_metadata_);
+}
+
+inline void Encoder::EmitLitHdrWithBinaryStringKeyNotIdx(uint32_t key_index,
+                                                         Slice value_slice) {
+  HPackWriter::EmitLitHdrWithBinaryStringKeyNotIdx(
+      key_index, std::move(value_slice), output_, use_true_binary_metadata_);
+}
+
+inline void Encoder::EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice key_slice,
+                                                            Slice value_slice) {
+  HPackWriter::EmitLitHdrWithNonBinaryStringKeyNotIdx(
+      std::move(key_slice), std::move(value_slice), output_);
+}
+
 inline HPackEncoderTable& Encoder::hpack_table() { return compressor_->table_; }
 
 }  // namespace hpack_encoder_detail
+
+// Class to encode metadata in uncompressed and un-indexed form.
+class RawEncoder {
+ public:
+  explicit RawEncoder(bool is_true_binary_metadata);
+
+  void Encode(const Slice& key, const Slice& value);
+
+  // Status MUST be encoded at most once.
+  void Encode(GrpcStatusMetadata, grpc_status_code status);
+
+  // Message MUST be encoded at most once.
+  void Encode(GrpcMessageMetadata, const Slice& message);
+
+  template <typename MetadataTraits>
+  void Encode(const MetadataTraits&,
+              const typename MetadataTraits::ValueType& value);
+
+  uint32_t Length() const { return buffer_.Length(); }
+  void Flush(grpc_slice_buffer* output_buffer) &&;
+
+ private:
+  bool CheckLength(size_t length);
+  void MaybeAppend(SliceBuffer&& buffer);
+
+  // Size limit on all the key values combined. This is set to the minimum
+  // frame size that HTTP/2 can send. This is done to avoid sending a
+  // CONTINUATION frame in all cases.
+  static constexpr uint32_t kMaxSize = (1 << 14u);
+  static constexpr uint32_t kMaxKeyValueSize = /*2kb*/ 2 * 1024u;
+  bool status_encoded_ = false;
+  bool message_encoded_ = false;
+  const bool is_true_binary_metadata_ = false;
+  SliceBuffer buffer_;
+};
+
+template <typename MetadataTraits>
+void RawEncoder::Encode(const MetadataTraits&,
+                        const typename MetadataTraits::ValueType& value) {
+  Encode(Slice::FromCopiedString(MetadataTraits::key()),
+         MetadataValueAsSlice<MetadataTraits>(value).Ref());
+}
 
 }  // namespace grpc_core
 

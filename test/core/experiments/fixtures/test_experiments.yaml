@@ -29,3 +29,9 @@
   description: Test Experiment 4
   expiry: 2022/01/30
   owner: blah3@abc.com
+- name: test_experiment_5
+  description: Test Experiment 5
+  expiry: 2026/01/30
+  owner: alishananda@google.com
+  platforms: [windows]
+  test_tags: [experiments_tag_test]

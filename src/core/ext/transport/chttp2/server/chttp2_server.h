@@ -26,11 +26,14 @@
 
 #include <functional>
 
+#include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/server/server.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -42,8 +45,6 @@ struct AcceptorDeleter {
     }
   }
 };
-
-class Chttp2ServerListener;
 
 namespace testing {
 class Chttp2ServerListenerTestPeer;
@@ -83,7 +84,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       friend class grpc_core::testing::HandshakingStateTestPeer;
 
       void OnTimeoutLocked();
-      static void OnReceiveSettings(void* arg, grpc_error_handle /* error */);
+      void OnReceiveSettings();
       void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
 
       RefCountedPtr<ActiveConnection> const connection_;
@@ -98,7 +99,6 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
       std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
           timer_handle_;
-      grpc_closure on_receive_settings_;
     };
 
     ActiveConnection(RefCountedPtr<Server::ListenerState> listener_state,
@@ -132,7 +132,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     // Set by HandshakingState before the handshaking begins and set to a valid
     // transport when handshaking is done successfully.
     std::variant<OrphanablePtr<HandshakingState>,
-                 RefCountedPtr<grpc_chttp2_transport>>
+                 RefCountedPtr<grpc_chttp2_transport>,
+                 RefCountedPtr<http2::Http2ServerTransport>>
         state_;
     grpc_closure on_close_;
     bool shutdown_ = false;
@@ -205,6 +206,11 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
         .GetObject<grpc_event_engine::experimental::EventEngine>();
   }
 
+  RefCountedPtr<MitigationEngine> mitigation_engine() const {
+    auto* provider = args_.GetObject<MitigationEngineProvider>();
+    return provider != nullptr ? provider->GetEngine() : nullptr;
+  }
+
   grpc_tcp_server* tcp_server_ = nullptr;
   grpc_resolved_address resolved_address_;
   RefCountedPtr<Server::ListenerState> listener_state_;
@@ -231,6 +237,9 @@ namespace experimental {
 // details.
 class PassiveListenerImpl final : public PassiveListener {
  public:
+  // Called by grpc_server_add_passive_listener().
+  void Init(RefCountedPtr<Server> server, NewChttp2ServerListener* listener);
+
   absl::Status AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override ABSL_LOCKS_EXCLUDED(mu_);
@@ -241,17 +250,10 @@ class PassiveListenerImpl final : public PassiveListener {
   void ListenerDestroyed() ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
-  // note: the grpc_core::Server redundant namespace qualification is
-  // required for older gcc versions.
-  friend absl::Status(::grpc_server_add_passive_listener)(
-      grpc_core::Server* server, grpc_server_credentials* credentials,
-      std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>
-          passive_listener);
-
   Mutex mu_;
   // Data members will be populated when initialized.
-  RefCountedPtr<Server> server_;
-  std::variant<Chttp2ServerListener*, NewChttp2ServerListener*> listener_;
+  RefCountedPtr<Server> server_ ABSL_GUARDED_BY(mu_);
+  NewChttp2ServerListener* listener_ ABSL_GUARDED_BY(mu_) = nullptr;
 };
 
 }  // namespace experimental

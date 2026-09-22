@@ -54,10 +54,10 @@ class TestAuditLoggerFactory : public experimental::AuditLoggerFactory {
       : audit_logs_(audit_logs) {}
 
   absl::string_view name() const override;
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+  absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const experimental::Json&) override;
   std::unique_ptr<experimental::AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) override;
+      std::shared_ptr<const AuditLoggerFactory::Config>) override;
 
  private:
   std::vector<std::string>* audit_logs_;

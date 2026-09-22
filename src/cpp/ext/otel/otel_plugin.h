@@ -39,8 +39,10 @@
 #include "opentelemetry/trace/tracer.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/match.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
@@ -48,6 +50,8 @@
 
 namespace grpc {
 namespace internal {
+
+bool IsOpenTelemetryLabelOptional(absl::string_view label_key);
 
 // An iterable container interface that can be used as a return type for the
 // OpenTelemetry plugin's label injector.
@@ -89,7 +93,9 @@ class LabelsInjector {
   // false when callback returns false.
   virtual bool AddOptionalLabels(
       bool is_client,
-      absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
+          optional_labels,
       opentelemetry::nostd::function_ref<
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>
@@ -99,8 +105,9 @@ class LabelsInjector {
   // produce through the AddOptionalLabels method.
   virtual size_t GetOptionalLabelsSize(
       bool is_client,
-      absl::Span<const grpc_core::RefCountedStringValue> optional_labels)
-      const = 0;
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
+          optional_labels) const = 0;
 };
 
 class InternalOpenTelemetryPluginOption
@@ -119,6 +126,7 @@ class InternalOpenTelemetryPluginOption
 absl::string_view OpenTelemetryMethodKey();
 absl::string_view OpenTelemetryStatusKey();
 absl::string_view OpenTelemetryTargetKey();
+absl::string_view OpenTelemetryCustomLabelKey();
 
 class OpenTelemetryPluginBuilderImpl {
  public:
@@ -240,11 +248,32 @@ class OpenTelemetryPluginImpl
           channel_scope_filter);
   ~OpenTelemetryPluginImpl() override;
 
+  grpc_core::RefCountedPtr<grpc_core::CollectionScope> GetCollectionScope()
+      const override {
+    return collection_scope_;
+  }
+
+  static absl::string_view GetOptionalLabelValue(
+      const std::variant<grpc_core::RefCountedStringValue, absl::string_view>&
+          v) {
+    return grpc_core::Match(
+        v,
+        [](const grpc_core::RefCountedStringValue& value) {
+          return value.as_string_view();
+        },
+        [](absl::string_view value) { return value; });
+  }
+
  private:
   class ClientCallTracerInterface;
   class KeyValueIterable;
   class NPCMetricsKeyValueIterable;
   class ServerCallTracerInterface;
+  class ExporterCallback;
+  template <class Exporter>
+  class ExporterCallbackImpl;
+  class CounterExporter;
+  class ExportedMetricKeyValueIterable;
 
   // Creates a convenience wrapper to help iterate over only those plugin
   // options that are active over a given channel/server.
@@ -455,6 +484,7 @@ class OpenTelemetryPluginImpl
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
+
   void RecordHistogram(
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
@@ -477,6 +507,9 @@ class OpenTelemetryPluginImpl
   bool IsInstrumentEnabled(
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle)
       const override;
+
+  void QueryMetrics(absl::Span<const absl::string_view> metrics,
+                    grpc_core::MetricsSink& sink);
 
   const absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>&
   server_selector() const {
@@ -565,6 +598,8 @@ class OpenTelemetryPluginImpl
   absl::AnyInvocable<bool(
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
+  std::vector<std::unique_ptr<ExporterCallback>> exporter_callbacks_;
+  grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope_;
 };
 
 class GrpcTextMapCarrier

@@ -28,30 +28,31 @@
 namespace grpc_core {
 namespace experimental {
 
-class StdoutAuditLogger : public AuditLogger {
+class StdoutAuditLogger final : public AuditLogger {
  public:
   StdoutAuditLogger() = default;
   absl::string_view name() const override { return "stdout_logger"; }
   void Log(const AuditContext&) override;
 };
 
-class StdoutAuditLoggerFactory : public AuditLoggerFactory {
+class StdoutAuditLoggerFactory final : public AuditLoggerFactory {
  public:
-  class Config : public AuditLoggerFactory::Config {
+  class Config final : public AuditLoggerFactory::Config {
    public:
     Config() = default;
     absl::string_view name() const override;
     std::string ToString() const override;
   };
+
   StdoutAuditLoggerFactory() = default;
 
   absl::string_view name() const override;
 
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+  absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override;
 
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) override;
+      std::shared_ptr<const AuditLoggerFactory::Config> config) override;
 };
 
 }  // namespace experimental

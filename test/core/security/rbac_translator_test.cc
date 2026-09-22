@@ -82,16 +82,16 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     std::string config_dump_;
   };
   absl::string_view name() const override { return kLoggerName; }
-  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+  absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
     // Config with a field "bad" will be considered invalid.
     if (json.object().find("bad") != json.object().end()) {
       return absl::InvalidArgumentError("bad logger config.");
     }
-    return std::make_unique<TestAuditLoggerConfig>(JsonDump(json));
+    return std::make_shared<TestAuditLoggerConfig>(JsonDump(json));
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) override {
+      std::shared_ptr<const AuditLoggerFactory::Config>) override {
     // This test target should never need to create a logger.
     Crash("unreachable");
     return nullptr;
@@ -1080,9 +1080,9 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionNone) {
   ASSERT_TRUE(rbacs.ok());
   EXPECT_EQ(rbacs->allow_policy.name, "authz");
   EXPECT_EQ(rbacs->allow_policy.audit_condition, Rbac::AuditCondition::kNone);
-  EXPECT_TRUE(
-      absl::StartsWith(rbacs->allow_policy.ToString(),
-                       "Rbac name=authz action=Allow audit_condition=None"));
+  EXPECT_THAT(rbacs->allow_policy.ToString(),
+              ::testing::StartsWith(
+                  "Rbac{name=authz, action=Allow, audit_condition=None, "));
 }
 
 TEST_F(GenerateRbacPoliciesTest, AuditConditionOnDeny) {
@@ -1159,11 +1159,11 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionOnAllowWithAuditLoggers) {
   EXPECT_EQ(rbacs->allow_policy.logger_configs.at(1)->ToString(),
             "{\"bar\":true}");
   EXPECT_EQ(rbacs->allow_policy.ToString(),
-            "Rbac name=authz action=Allow audit_condition=OnAllow{\n{\n  "
-            "policy_name=allow_policy\n  Policy  {\n    Permissions{any}\n    "
-            "Principals{any}\n  }\n}\n{\n  "
-            "audit_logger=test_logger\n{\"foo\":true}\n}\n{\n  "
-            "audit_logger=test_logger\n{\"bar\":true}\n}\n}");
+            "Rbac{name=authz, action=Allow, audit_condition=OnAllow, "
+            "policies={allow_policy={permissions={any}, principals={any}}}, "
+            "audit_loggers={"
+            "test_logger={\"foo\":true}, "
+            "test_logger={\"bar\":true}}}");
 }
 
 TEST_F(GenerateRbacPoliciesTest,

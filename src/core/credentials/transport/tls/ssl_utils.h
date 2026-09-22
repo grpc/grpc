@@ -24,14 +24,17 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <openssl/x509.h>
 #include <stddef.h>
 
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -39,6 +42,7 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 // --- Util ---
@@ -85,28 +89,27 @@ const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols,
 
 // Initialize TSI SSL server/client handshaker factory.
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* key_cert_pair,
-    std::shared_ptr<RootCertInfo> root_cert_info,
+    const grpc_core::PemKeyCertPair* key_cert_pair,
+    std::shared_ptr<tsi::RootCertInfo> root_cert_info,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
-    std::shared_ptr<RootCertInfo> root_cert_info,
+    grpc_core::KeyCertPairsOrSelector key_cert_pairs,
+    std::shared_ptr<tsi::RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
-// Free the memory occupied by key cert pairs.
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
-                                             size_t num_key_cert_pairs);
 // Exposed for testing only.
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     const tsi_peer* peer, const char* transport_security_type);
@@ -118,6 +121,7 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
 
 // --- Default SSL Root Store. ---
 namespace grpc_core {
+bool IsPrivateKeyEmpty(const PrivateKey& private_key);
 
 // The class implements default SSL root store.
 class DefaultSslRootStore {
@@ -126,12 +130,11 @@ class DefaultSslRootStore {
   static const tsi_ssl_root_certs_store* GetRootStore();
 
   // Gets the default PEM root certificate.
-  static const char* GetPemRootCerts();
+  static absl::string_view GetPemRootCerts();
 
- protected:
-  // Returns default PEM root certificates in nullptr terminated grpc_slice.
-  // This function is protected instead of private, so that it can be tested.
-  static grpc_slice ComputePemRootCerts();
+  // Returns default PEM root certificates.
+  // DO NOT USE -- exposed for testing purposes only.
+  static Slice ComputePemRootCerts();
 
  private:
   // Construct me not!
@@ -147,48 +150,13 @@ class DefaultSslRootStore {
   static tsi_ssl_root_certs_store* default_root_store_;
 
   // Default PEM root certificates.
-  static grpc_slice default_pem_root_certs_;
+  static Slice default_pem_root_certs_;
 };
 
-class PemKeyCertPair {
- public:
-  PemKeyCertPair(absl::string_view private_key, absl::string_view cert_chain)
-      : private_key_(private_key), cert_chain_(cert_chain) {}
-
-  // Movable.
-  PemKeyCertPair(PemKeyCertPair&& other) noexcept {
-    private_key_ = std::move(other.private_key_);
-    cert_chain_ = std::move(other.cert_chain_);
-  }
-  PemKeyCertPair& operator=(PemKeyCertPair&& other) noexcept {
-    private_key_ = std::move(other.private_key_);
-    cert_chain_ = std::move(other.cert_chain_);
-    return *this;
-  }
-
-  // Copyable.
-  PemKeyCertPair(const PemKeyCertPair& other)
-      : private_key_(other.private_key()), cert_chain_(other.cert_chain()) {}
-  PemKeyCertPair& operator=(const PemKeyCertPair& other) {
-    private_key_ = other.private_key();
-    cert_chain_ = other.cert_chain();
-    return *this;
-  }
-
-  bool operator==(const PemKeyCertPair& other) const {
-    return this->private_key() == other.private_key() &&
-           this->cert_chain() == other.cert_chain();
-  }
-
-  const std::string& private_key() const { return private_key_; }
-  const std::string& cert_chain() const { return cert_chain_; }
-
- private:
-  std::string private_key_;
-  std::string cert_chain_;
-};
-
-using PemKeyCertPairList = std::vector<PemKeyCertPair>;
+// Checks whether `std::vector<PemKeyCertPair>` in the variant is empty, or the
+// `CertficateSelector` is nullptr.
+bool IsKeyCertPairsOrSelectorEmpty(
+    const KeyCertPairsOrSelector& key_cert_pairs_or_selector);
 
 }  // namespace grpc_core
 

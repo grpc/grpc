@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/iomgr",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )  # Useful for third party devs to test their io manager implementation.
 
@@ -124,12 +128,16 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:iomgr",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -172,110 +180,6 @@ grpc_cc_test(
         "//src/core:iomgr_port",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "resolve_address_using_ares_resolver_posix_test",
-    srcs = ["resolve_address_posix_test.cc"],
-    args = [
-        "--resolver=ares",
-    ],
-    external_deps = [
-        "absl/flags:flag",
-        "absl/flags:parse",
-        "absl/log:log",
-        "absl/strings:str_format",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = ["no_windows"],
-    deps = [
-        "//:config_vars",
-        "//:gpr",
-        "//:grpc",
-        "//:iomgr",
-        "//src/core:env",
-        "//src/core:event_engine_shim",
-        "//src/core:time",
-        "//src/core:useful",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "resolve_address_using_native_resolver_posix_test",
-    srcs = ["resolve_address_posix_test.cc"],
-    args = [
-        "--resolver=native",
-    ],
-    external_deps = [
-        "absl/flags:flag",
-        "absl/flags:parse",
-        "absl/log:log",
-        "absl/strings",
-        "absl/strings:str_format",
-        "gtest",
-    ],
-    tags = ["no_windows"],
-    deps = [
-        "//:config_vars",
-        "//:gpr",
-        "//:grpc",
-        "//:iomgr",
-        "//src/core:env",
-        "//src/core:event_engine_shim",
-        "//src/core:time",
-        "//src/core:useful",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "resolve_address_using_ares_resolver_test",
-    srcs = ["resolve_address_test.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = [
-        # Requires ares
-        "grpc:broken-internally",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/test_util:fake_udp_and_tcp_server",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-        "//test/cpp/util:test_config",
-    ],
-)
-
-grpc_cc_test(
-    name = "resolve_address_using_native_resolver_test",
-    srcs = ["resolve_address_test.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-        "absl/strings",
-        "gtest",
-    ],
-    tags = [
-        # Requires ares
-        "grpc:broken-internally",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/test_util:fake_udp_and_tcp_server",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-        "//test/cpp/util:test_config",
     ],
 )
 

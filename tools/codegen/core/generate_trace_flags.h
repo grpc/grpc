@@ -23,7 +23,8 @@
 namespace grpc_generator {
 
 std::string GenerateHeader(const std::vector<std::string>& trace_flags_yaml);
-std::string GenerateCpp(const std::vector<std::string>& trace_flags_yaml);
+std::string GenerateCpp(const std::vector<std::string>& trace_flags_yaml,
+                        const std::string& header_prefix);
 std::string GenerateMarkdown(const std::vector<std::string>& trace_flags_yaml);
 
 }  // namespace grpc_generator

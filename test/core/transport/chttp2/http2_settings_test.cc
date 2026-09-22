@@ -14,6 +14,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 
+#include <cstdint>
+#include <optional>
+#include <utility>
+#include <vector>
+
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -415,6 +421,23 @@ TEST(Http2SettingsTest, WireIdToNameWorks) {
             "GRPC_PREFERRED_RECEIVE_MESSAGE_SIZE");
   EXPECT_EQ(Http2Settings::WireIdToName(65029), "GRPC_ALLOW_SECURITY_FRAME");
   EXPECT_EQ(Http2Settings::WireIdToName(65030), "UNKNOWN (65030)");
+}
+
+TEST(Http2SettingsTest, IsKnownSettingIdWorks) {
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(1));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(2));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(3));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(4));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(5));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(6));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(65027));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(65028));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(65029));
+
+  EXPECT_FALSE(Http2Settings::IsKnownSettingId(0));
+  EXPECT_FALSE(Http2Settings::IsKnownSettingId(7));
+  EXPECT_FALSE(Http2Settings::IsKnownSettingId(65026));
+  EXPECT_FALSE(Http2Settings::IsKnownSettingId(65030));
 }
 
 TEST(Http2SettingsTest, ApplyHeaderTableSizeWorks) {

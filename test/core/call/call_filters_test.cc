@@ -14,9 +14,16 @@
 
 #include "src/core/call/call_filters.h"
 
+#include <string>
 #include <vector>
 
+#include "src/core/channelz/property_list.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/property_list.pb.h"
+#include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "test/core/promise/poll_matcher.h"
+#include "upb/mem/arena.h"
+#include "upb/text/encode.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -24,6 +31,47 @@ using testing::Mock;
 using testing::StrictMock;
 
 namespace grpc_core {
+
+namespace {
+grpc::channelz::v2::PropertyTable ToCppProto(channelz::PropertyTable table) {
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_PropertyTable* upb_table =
+      grpc_channelz_v2_PropertyTable_new(arena);
+  table.FillUpbProto(upb_table, arena);
+  size_t len;
+  char* buf = grpc_channelz_v2_PropertyTable_serialize(upb_table, arena, &len);
+  grpc::channelz::v2::PropertyTable cpp_table;
+  EXPECT_TRUE(cpp_table.ParseFromArray(buf, static_cast<int>(len)));
+  upb_Arena_Free(arena);
+  return cpp_table;
+}
+
+int FindColumn(const grpc::channelz::v2::PropertyTable& table,
+               absl::string_view column) {
+  for (int i = 0; i < table.columns_size(); ++i) {
+    if (table.columns(i) == column) return i;
+  }
+  return -1;
+}
+
+const grpc::channelz::v2::PropertyValue& GetCell(
+    const grpc::channelz::v2::PropertyTable& table, int row,
+    absl::string_view column) {
+  int col_idx = FindColumn(table, column);
+  EXPECT_GE(col_idx, 0) << " column " << column;
+  EXPECT_GE(row, 0);
+  EXPECT_LT(row, table.rows_size());
+  EXPECT_LT(col_idx, table.rows(row).value_size());
+  return table.rows(row).value(col_idx);
+}
+
+grpc::channelz::v2::PropertyTable GetFiltersTable(
+    const grpc::channelz::v2::PropertyTable& table, int row) {
+  grpc::channelz::v2::PropertyTable filters;
+  EXPECT_TRUE(GetCell(table, row, "filters").any_value().UnpackTo(&filters));
+  return filters;
+}
+}  // namespace
 
 namespace {
 // A mock activity that can be activated and deactivated.
@@ -1113,6 +1161,9 @@ TEST(CallFiltersTest, CanBuildStack) {
       void OnServerToClientMessage(Message&) {}
       void OnServerTrailingMetadata(ServerMetadata&) {}
       void OnFinalize(const grpc_call_final_info*) {}
+      channelz::PropertyList ChannelzProperties() {
+        return channelz::PropertyList();
+      }
     };
   };
   CallFilters::StackBuilder builder;
@@ -1146,6 +1197,9 @@ TEST(CallFiltersTest, UnaryCall) {
       }
       void OnFinalize(const grpc_call_final_info*, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnFinalize"));
+      }
+      channelz::PropertyList ChannelzProperties() {
+        return channelz::PropertyList();
       }
       std::unique_ptr<int> i = std::make_unique<int>(3);
     };
@@ -1240,6 +1294,9 @@ TEST(CallFiltersTest, UnaryCallWithMultiStack) {
       void OnFinalize(const grpc_call_final_info*, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnFinalize"));
       }
+      channelz::PropertyList ChannelzProperties() {
+        return channelz::PropertyList();
+      }
       std::unique_ptr<int> i = std::make_unique<int>(3);
     };
 
@@ -1308,6 +1365,71 @@ TEST(CallFiltersTest, UnaryCallWithMultiStack) {
                   "f2:OnServerToClientMessage", "f1:OnServerToClientMessage",
                   "f2:OnServerTrailingMetadata", "f1:OnServerTrailingMetadata",
                   "f1:OnFinalize", "f2:OnFinalize"));
+}
+
+struct ChannelzFilter1 {
+  struct Call {
+    char c;
+    static const inline NoInterceptor OnClientInitialMetadata;
+    static const inline NoInterceptor OnServerInitialMetadata;
+    static const inline NoInterceptor OnClientToServerMessage;
+    static const inline NoInterceptor OnClientToServerHalfClose;
+    static const inline NoInterceptor OnServerToClientMessage;
+    static const inline NoInterceptor OnServerTrailingMetadata;
+    static const inline NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", 1);
+    }
+  };
+};
+
+struct ChannelzFilter2 {
+  struct Call {
+    void* p;
+    static const inline NoInterceptor OnClientInitialMetadata;
+    static const inline NoInterceptor OnServerInitialMetadata;
+    static const inline NoInterceptor OnClientToServerMessage;
+    static const inline NoInterceptor OnClientToServerHalfClose;
+    static const inline NoInterceptor OnServerToClientMessage;
+    static const inline NoInterceptor OnServerTrailingMetadata;
+    static const inline NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", 2);
+    }
+  };
+};
+
+TEST(CallFiltersTest, ChannelzProperties) {
+  CallFilters::StackBuilder builder1;
+  ChannelzFilter1 f1;
+  builder1.Add(&f1);
+  CallFilters::StackBuilder builder2;
+  ChannelzFilter2 f2;
+  builder2.Add(&f2);
+
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  CallFilters filters(Arena::MakePooledForOverwrite<ClientMetadata>());
+  filters.AddStack(builder1.Build());
+  filters.AddStack(builder2.Build());
+  filters.Start();
+  promise_detail::Context<Arena> ctx(arena.get());
+
+  auto table = ToCppProto(filters.ChannelzProperties());
+  ASSERT_EQ(table.rows_size(), 2);
+
+  // Check stack1
+  EXPECT_EQ(GetCell(table, 0, "call_data_offset").uint64_value(), 0);
+  auto f1_filters = GetFiltersTable(table, 0);
+  ASSERT_EQ(f1_filters.rows_size(), 1);
+  EXPECT_EQ(GetCell(f1_filters, 0, "call_data_offset").uint64_value(), 0);
+  EXPECT_EQ(GetCell(f1_filters, 0, "filter_id").int64_value(), 1);
+
+  // Check stack2
+  EXPECT_GT(GetCell(table, 1, "call_data_offset").uint64_value(), 0);
+  auto f2_filters = GetFiltersTable(table, 1);
+  ASSERT_EQ(f2_filters.rows_size(), 1);
+  EXPECT_EQ(GetCell(f2_filters, 0, "call_data_offset").uint64_value(), 0);
+  EXPECT_EQ(GetCell(f2_filters, 0, "filter_id").int64_value(), 2);
 }
 
 }  // namespace grpc_core

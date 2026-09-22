@@ -43,6 +43,7 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
@@ -92,6 +93,15 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     }
     ConfigBuilder& SetErrorUtilizationPenalty(float value) {
       json_["errorUtilizationPenalty"] = Json::FromNumber(value);
+      return *this;
+    }
+    ConfigBuilder& SetMetricNamesForComputingUtilization(
+        std::vector<std::string>& metric_names) {
+      Json::Array array;
+      for (const auto& name : metric_names) {
+        array.emplace_back(Json::FromString(name));
+      }
+      json_["metricNamesForComputingUtilization"] = Json::FromArray(array);
       return *this;
     }
 
@@ -168,14 +178,19 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     return absl::StrJoin(pick_map, ",", absl::PairFormatter("="));
   }
 
-  static BackendMetricData MakeBackendMetricData(double app_utilization,
-                                                 double qps, double eps,
-                                                 double cpu_utilization = 0) {
+  static BackendMetricData MakeBackendMetricData(
+      double app_utilization, double qps, double eps,
+      double cpu_utilization = 0, double mem_utilization = 0,
+      std::map<absl::string_view, double> named_metrics = {},
+      std::map<absl::string_view, double> utilization = {}) {
     BackendMetricData b;
     b.cpu_utilization = cpu_utilization;
+    b.mem_utilization = mem_utilization;
     b.application_utilization = app_utilization;
     b.qps = qps;
     b.eps = eps;
+    b.named_metrics = std::move(named_metrics);
+    b.utilization = std::move(utilization);
     return b;
   }
 
@@ -202,7 +217,6 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       const auto& address = picks[i];
       auto& subchannel_call_tracker = subchannel_call_trackers[i];
       if (subchannel_call_tracker != nullptr) {
-        subchannel_call_tracker->Start();
         std::optional<BackendMetricData> backend_metric_data;
         auto it = backend_metrics.find(address);
         if (it != backend_metrics.end()) {
@@ -210,8 +224,11 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
           backend_metric_data->qps = it->second.qps;
           backend_metric_data->eps = it->second.eps;
           backend_metric_data->cpu_utilization = it->second.cpu_utilization;
+          backend_metric_data->mem_utilization = it->second.mem_utilization;
           backend_metric_data->application_utilization =
               it->second.application_utilization;
+          backend_metric_data->named_metrics = it->second.named_metrics;
+          backend_metric_data->utilization = it->second.utilization;
         }
         FakeMetadata metadata({});
         FakeBackendMetricAccessor backend_metric_accessor(
@@ -232,8 +249,10 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       backend_metric_data.qps = p.second.qps;
       backend_metric_data.eps = p.second.eps;
       backend_metric_data.cpu_utilization = p.second.cpu_utilization;
+      backend_metric_data.mem_utilization = p.second.mem_utilization;
       backend_metric_data.application_utilization =
           p.second.application_utilization;
+      backend_metric_data.named_metrics = p.second.named_metrics;
       subchannel->SendOobBackendMetricReport(backend_metric_data);
     }
   }
@@ -427,6 +446,181 @@ TEST_F(WeightedRoundRobinTest, AppUtilOverCpuUtil) {
                                              /*qps=*/100.0, /*eps=*/0.0,
                                              /*cpu_utilization=*/0.5)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledCpuUtilization) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"cpu_utilization"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: cpu=0.9, weight ~ 1.1
+  // Addr 1: cpu=0.1, weight ~ 10
+  // Ratio 1:9
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.1)}},
+      {{kAddresses[0], 1},
+       {kAddresses[1], 9},
+       {kAddresses[2], 5}});  // Addr 2 gets average
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMemUtilization) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"mem_utilization"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: mem=0.9, weight ~ 1.1
+  // Addr 1: mem=0.1, weight ~ 10
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.1)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledAppUtilization) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"application_utilization"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Checks that we use application_utilization when specified in the list of
+  // custom metric names.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.1,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledNamedMetric) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"named_metrics.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9
+  // Addr 1: foo=0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {{"foo", 0.1}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledUtilizationMetric) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"utilization.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9
+  // Addr 1: foo=0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {}, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {}, {{"foo", 0.1}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMultipleMetricsMax) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  // Checks that we take the MAX of the specified metrics.
+  std::vector<std::string> metric_names = {"named_metrics.foo",
+                                           "named_metrics.bar"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9, bar=0.1 -> max 0.9
+  // Addr 1: foo=0.1, bar=0.1 -> max 0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.0,
+                                             {{"foo", 0.9}, {"bar", 0.1}})},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.0,
+                                             {{"foo", 0.1}, {"bar", 0.1}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledFallbackPriority) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"named_metrics.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9, app=0.1, cpu=0.1
+  // Uses foo (0.9). Weight: 100/0.9 = 111.1
+  // Addr 1: foo=-1.0 (ignored), app=0.9, cpu=0.1
+  // Falls back to app (0.9). Weight: 100/0.9 = 111.1
+  // Addr 2: foo=0.0 (ignored), app=0.0 (ignored), cpu=0.45
+  // Falls back to cpu (0.45). Weight: 100/0.45 = 222.2
+  // We expect weights in ratio 1:1:2.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(
+            /*app_utilization=*/0.1, /*qps=*/100.0, /*eps=*/0.0,
+            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(
+            /*app_utilization=*/0.9, /*qps=*/100.0, /*eps=*/0.0,
+            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", -1.0}})},
+       {kAddresses[2], MakeBackendMetricData(
+                           /*app_utilization=*/0.0, /*qps=*/100.0, /*eps=*/0.0,
+                           /*cpu_utilization=*/0.45, /*mem_utilization=*/0.0,
+                           {{"foo", 0.0}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 2}});
 }
 
 TEST_F(WeightedRoundRobinTest, Eps) {

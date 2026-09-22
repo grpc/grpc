@@ -17,12 +17,18 @@
 
 #include <memory>
 
-#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
+
+// A boolean channel arg indicating whether we're using the v3 filter stack.
+#define GRPC_ARG_USE_V3_STACK "grpc.internal.use_v3_stack"
+
+// A boolean channel arg indicating whether the filter stack is for the
+// server side.
+#define GRPC_ARG_IS_SERVER_FILTER_STACK "grpc.internal.is_server_filter_stack"
 
 namespace grpc_core {
 
@@ -58,12 +64,10 @@ class FilterArgs {
              grpc_channel_element* channel_element,
              size_t (*channel_stack_filter_instance_number)(
                  grpc_channel_stack*, grpc_channel_element*),
-             RefCountedPtr<const FilterConfig> config = nullptr,
-             const Blackboard* blackboard = nullptr)
+             RefCountedPtr<const FilterConfig> config = nullptr)
       : impl_(ChannelStackBased{channel_stack, channel_element,
                                 channel_stack_filter_instance_number}),
-        config_(std::move(config)),
-        blackboard_(blackboard) {}
+        config_(std::move(config)) {}
   // While we're moving to call-v3 we need to have access to
   // grpc_channel_stack & friends here. That means that we can't rely on this
   // type signature from interception_chain.h, which means that we need a way
@@ -71,11 +75,8 @@ class FilterArgs {
   // TODO(ctiller): remove this once we're fully on call-v3
   // NOLINTNEXTLINE(google-explicit-constructor)
   FilterArgs(size_t instance_id,
-             RefCountedPtr<const FilterConfig> config = nullptr,
-             const Blackboard* blackboard = nullptr)
-      : impl_(V3Based{instance_id}),
-        config_(std::move(config)),
-        blackboard_(blackboard) {}
+             RefCountedPtr<const FilterConfig> config = nullptr)
+      : impl_(V3Based{instance_id}), config_(std::move(config)) {}
 
   ABSL_DEPRECATED("Direct access to channel stack is deprecated")
   grpc_channel_stack* channel_stack() const {
@@ -89,8 +90,8 @@ class FilterArgs {
   // 0 0 0 1 1 0 2.
   // This is useful for filters that need to store per-instance data in a
   // parallel data structure.
-  // TODO(roth): Remove this once server side is migrated to the new
-  // approach for handling xDS filter configs.
+  // TODO(roth): Remove this when removing the
+  // xds_server_filter_chain_per_route experiment.
   size_t instance_id() const {
     return Match(
         impl_,
@@ -103,24 +104,21 @@ class FilterArgs {
 
   RefCountedPtr<const FilterConfig> config() const { return config_; }
 
-  // Gets the filter state associated with a particular type and key.
-  template <typename T>
-  RefCountedPtr<T> GetState(const std::string& key) const {
-    if (blackboard_ == nullptr) return nullptr;
-    return blackboard_->Get<T>(key);
-  }
-
  private:
   friend class ChannelFilter;
 
   struct ChannelStackBased {
     grpc_channel_stack* channel_stack;
     grpc_channel_element* channel_element;
+    // TODO(roth): Remove this when removing the
+    // xds_server_filter_chain_per_route experiment.
     size_t (*channel_stack_filter_instance_number)(grpc_channel_stack*,
                                                    grpc_channel_element*);
   };
 
   struct V3Based {
+    // TODO(roth): Remove this when removing the
+    // xds_server_filter_chain_per_route experiment.
     size_t instance_id;
   };
 
@@ -128,7 +126,6 @@ class FilterArgs {
   Impl impl_;
 
   const RefCountedPtr<const FilterConfig> config_;
-  const Blackboard* blackboard_ = nullptr;
 };
 
 }  // namespace grpc_core

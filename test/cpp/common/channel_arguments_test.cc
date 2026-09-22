@@ -16,10 +16,15 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include <memory>
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/net/socket_mutator.h"
 #include "src/core/util/useful.h"
@@ -252,6 +257,43 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
   EXPECT_TRUE(found);
 }
 
+TEST_F(ChannelArgumentsTest, SetEventEngine) {
+  VerifyDefaultChannelArgs();
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
+
+  channel_args_.SetPointerWithVtable(
+      GRPC_ARG_EVENT_ENGINE, &engine,
+      grpc_event_engine::experimental::grpc_event_engine_arg_vtable());
+
+  grpc_channel_args args;
+  channel_args_.SetChannelArgs(&args);
+
+  grpc_core::ChannelArgs channel_args = grpc_core::ChannelArgs::FromC(args);
+
+  EXPECT_TRUE(
+      channel_args
+          .ContainsObject<grpc_event_engine::experimental::EventEngine>());
+}
+
+TEST_F(ChannelArgumentsTest, SetChildChannelArgs) {
+  VerifyDefaultChannelArgs();
+  ChannelArguments child_args;
+  child_args.SetInt("child_key", 42);
+  channel_args_.SetChildChannelArgs(child_args);
+  grpc_channel_args args;
+  channel_args_.SetChannelArgs(&args);
+  // Verify that child channel args pointer exists in parent args.
+  const grpc_channel_args* extracted_child_args =
+      grpc_channel_args_find_pointer<grpc_channel_args>(
+          &args, GRPC_ARG_CHILD_CHANNEL_ARGS);
+  ASSERT_NE(extracted_child_args, nullptr);
+  // The number of args should be 2, since GRPC_ARG_PRIMARY_USER_AGENT_STRING is
+  // added automatically.
+  EXPECT_EQ(extracted_child_args->num_args, 2);
+  EXPECT_EQ(grpc_channel_args_find_integer(extracted_child_args, "child_key",
+                                           {-1, 0, INT32_MAX}),
+            42);
+}
 }  // namespace testing
 }  // namespace grpc
 

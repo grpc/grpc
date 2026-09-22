@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/transport/benchmarks",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
 )
 
 grpc_cc_benchmark(

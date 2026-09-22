@@ -21,7 +21,7 @@ namespace grpc_sleuth {
 
 // Version number for the sleuth tool. Update with the current epoch with each
 // change and keep it monotonically increasing.
-constexpr int64_t kSleuthVersion = 1761265538LL;
+constexpr int64_t kSleuthVersion = 1763407621LL;
 
 }  // namespace grpc_sleuth
 

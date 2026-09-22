@@ -22,7 +22,13 @@ load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/util")
+grpc_package(
+    name = "test/core/util",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "directory_reader_test",
@@ -57,35 +63,12 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "tdigest_test",
-    srcs = ["tdigest_test.cc"],
-    external_deps = [
-        "gtest",
-        "absl/random",
-        "absl/container:flat_hash_map",
-        "benchmark",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//src/core:tdigest",
-    ],
-)
-
-grpc_cc_benchmark(
-    name = "bm_tdigest",
-    srcs = ["bm_tdigest.cc"],
-    monitoring = HISTORY,
-    deps = [
-        "//src/core:tdigest",
-    ],
-)
-
 grpc_cc_benchmark(
     name = "bm_latent_see",
     srcs = ["bm_latent_see.cc"],
     external_deps = [
+        "absl/log:globals",
+        "absl/base:log_severity",
     ],
     monitoring = HISTORY,
     deps = [
@@ -368,7 +351,6 @@ grpc_cc_test(
         "absl/status",
         "absl/strings",
         "absl/time",
-        "@com_google_protobuf//upb/mem",
     ],
     tags = ["error_tests"],
     uses_event_engine = False,
@@ -379,6 +361,7 @@ grpc_cc_test(
         "//src/core:experiments",
         "//src/core:status_helper",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
@@ -550,6 +533,8 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//src/core:validation_errors",
         "//test/core/test_util:grpc_test_util",
@@ -896,17 +881,6 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:wait_for_single_owner",
     ],
-)
-
-grpc_fuzz_test(
-    name = "tdigest_fuzztest",
-    srcs = ["tdigest_fuzztest.cc"],
-    external_deps = [
-        "fuzztest",
-        "fuzztest_main",
-        "gtest",
-    ],
-    deps = ["//src/core:tdigest"],
 )
 
 grpc_fuzz_test(

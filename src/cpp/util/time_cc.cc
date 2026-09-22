@@ -21,6 +21,10 @@
 
 #include <chrono>
 #include <cstdint>
+#include <ctime>
+
+#include "absl/log/check.h"
+#include "absl/time/time.h"
 
 // IWYU pragma: no_include <ratio>
 
@@ -74,6 +78,49 @@ system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
   tp +=
       duration_cast<system_clock::time_point::duration>(nanoseconds(t.tv_nsec));
   return tp;
+}
+
+absl::Time TimeFromGprTimespec(gpr_timespec time) {
+  if (!gpr_time_cmp(time, gpr_inf_future(time.clock_type))) {
+    return absl::InfiniteFuture();
+  }
+  if (!gpr_time_cmp(time, gpr_inf_past(time.clock_type))) {
+    return absl::InfinitePast();
+  }
+  time = gpr_convert_clock_type(time, GPR_CLOCK_REALTIME);
+  timespec ts;
+  ts.tv_sec = static_cast<decltype(ts.tv_sec)>(time.tv_sec);
+  ts.tv_nsec = static_cast<decltype(ts.tv_nsec)>(time.tv_nsec);
+  return absl::TimeFromTimespec(ts);
+}
+
+gpr_timespec GprTimeSpecFromTime(absl::Time time) {
+  TimePoint<absl::Time> at(time);
+  return at.raw_time();
+}
+
+absl::Duration DurationFromGprTimespec(gpr_timespec time) {
+  CHECK_EQ(time.clock_type, GPR_TIMESPAN);
+  timespec ts;
+  ts.tv_sec = static_cast<decltype(ts.tv_sec)>(time.tv_sec);
+  ts.tv_nsec = static_cast<decltype(ts.tv_nsec)>(time.tv_nsec);
+  return absl::DurationFromTimespec(ts);
+}
+
+gpr_timespec GprTimeSpecFromDuration(absl::Duration duration) {
+  if (absl::time_internal::IsInfiniteDuration(duration)) {
+    if (duration > absl::ZeroDuration()) {
+      return gpr_inf_future(GPR_TIMESPAN);
+    } else {
+      return gpr_inf_past(GPR_TIMESPAN);
+    }
+  }
+  gpr_timespec gpr_ts;
+  timespec ts = absl::ToTimespec(duration);
+  gpr_ts.tv_sec = static_cast<decltype(gpr_ts.tv_sec)>(ts.tv_sec);
+  gpr_ts.tv_nsec = static_cast<decltype(gpr_ts.tv_nsec)>(ts.tv_nsec);
+  gpr_ts.clock_type = GPR_TIMESPAN;
+  return gpr_ts;
 }
 
 }  // namespace grpc

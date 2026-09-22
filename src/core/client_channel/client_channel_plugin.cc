@@ -32,7 +32,7 @@ namespace grpc_core {
 
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
   internal::ClientChannelServiceConfigParser::Register(builder);
-  internal::RetryServiceConfigParser::Register(builder);
+  RetryServiceConfigParser::Register(builder);
   builder->channel_init()
       ->RegisterV2Filter<ClientChannelFilter>(GRPC_CLIENT_CHANNEL)
       .Terminal();

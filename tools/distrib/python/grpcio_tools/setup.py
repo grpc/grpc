@@ -31,36 +31,20 @@ from setuptools.command import build_ext
 
 # TODO(atash) add flag to disable Cython use
 
-_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath("."))
 
 import _parallel_compile_patch
 import _spawn_patch
 import protoc_lib_deps
-import python_version
 
 import grpc_version
+import python_version
 
-_EXT_INIT_SYMBOL = None
-if sys.version_info[0] == 2:
-    _EXT_INIT_SYMBOL = "init_protoc_compiler"
-else:
-    _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
+_EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
-
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
-]
-
-PY3 = sys.version_info.major == 3
 
 
 def _env_bool_value(env_name, default):
@@ -93,7 +77,7 @@ def check_linker_need_libatomic():
     )
     cxx = os.environ.get("CXX", "c++")
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++17", "-"],
+        shlex.split(cxx) + ["-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -104,7 +88,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++17", "-", "-latomic"],
+        shlex.split(cxx) + ["-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -202,6 +186,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # Required to build upb from protobuf 33.x
+        # https://github.com/grpc/grpc/issues/41951
+        EXTRA_ENV_COMPILE_ARGS += " /Zc:preprocessor"
     elif "linux" in sys.platform:
         # GCC by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
@@ -219,7 +206,7 @@ if EXTRA_ENV_LINK_ARGS is None:
     # This is needed for protobuf/main.cc
     if "win32" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " Shell32.lib"
-    # NOTE(rbellevi): Clang on Mac OS will make all static symbols (both
+    # NOTE(rbellevi): Clang on MacOS will make all static symbols (both
     # variables and objects) global weak symbols. When a process loads the
     # protobuf wheel's shared object library before loading *this* C extension,
     # the runtime linker will prefer the protobuf module's version of symbols.
@@ -268,6 +255,7 @@ CC_INCLUDES = [
     os.path.normpath(include_dir) for include_dir in protoc_lib_deps.CC_INCLUDES
 ]
 PROTO_INCLUDE = os.path.normpath(protoc_lib_deps.PROTO_INCLUDE)
+PROTO_PATH_PREFIX = os.path.normpath("google/protobuf")
 
 GRPC_PYTHON_TOOLS_PACKAGE = "grpc_tools"
 GRPC_PYTHON_PROTO_RESOURCES_NAME = "_proto"
@@ -292,10 +280,11 @@ def package_data():
     )
     proto_files = []
     for proto_file in PROTO_FILES:
+        proto_file_path = proto_file[proto_file.find(PROTO_PATH_PREFIX) :]
         source = os.path.join(PROTO_INCLUDE, proto_file)
-        target = os.path.join(proto_resources_path, proto_file)
+        target = os.path.join(proto_resources_path, proto_file_path)
         relative_target = os.path.join(
-            GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file
+            GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file_path
         )
         try:
             os.makedirs(os.path.dirname(target))
@@ -343,36 +332,17 @@ def extension_modules():
         return extensions
 
 
-setuptools.setup(
-    name="grpcio-tools",
-    version=grpc_version.VERSION,
-    description="Protobuf code generator for gRPC",
-    long_description_content_type="text/x-rst",
-    long_description=open(_README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    project_urls={
-        "Source Code": "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools",
-        "Bug Tracker": "https://github.com/grpc/grpc/issues",
-    },
-    license="Apache License 2.0",
-    classifiers=CLASSIFIERS,
-    ext_modules=extension_modules(),
-    packages=setuptools.find_packages("."),
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=[
-        "protobuf>=6.31.1,<7.0.0",
-        "grpcio>={version}".format(version=grpc_version.VERSION),
-        "setuptools>=77.0.1",
-    ],
-    package_data=package_data(),
-    cmdclass={
-        "build_ext": BuildExt,
-    },
-    entry_points={
-        "console_scripts": [
-            "python-grpc-tools-protoc = grpc_tools.protoc:entrypoint",
+if __name__ == "__main__":
+    setuptools.setup(
+        ext_modules=extension_modules(),
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=[
+            "protobuf>=7.35.1,<8.0.0",
+            "grpcio>={version}".format(version=grpc_version.VERSION),
+            "setuptools>=77.0.1",
         ],
-    },
-)
+        package_data=package_data(),
+        cmdclass={
+            "build_ext": BuildExt,
+        },
+    )

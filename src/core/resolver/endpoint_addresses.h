@@ -45,6 +45,9 @@
 // Backend service name associated with the addresses.
 #define GRPC_ARG_BACKEND_SERVICE "grpc.internal.backend_service"
 
+// Locality name associated with the addresses.
+#define GRPC_ARG_LB_LOCALITY "grpc.internal.lb_locality"
+
 namespace grpc_core {
 
 // A list of addresses for a given endpoint with an associated set of channel

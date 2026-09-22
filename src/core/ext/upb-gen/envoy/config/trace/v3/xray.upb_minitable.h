@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__trace__v3__XRayConfig_msg_init;
-extern const upb_MiniTable* envoy__config__trace__v3__XRayConfig_msg_init_ptr;
 extern const upb_MiniTable envoy__config__trace__v3__XRayConfig__SegmentFields_msg_init;
-extern const upb_MiniTable* envoy__config__trace__v3__XRayConfig__SegmentFields_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_trace_v3_xray_proto_upb_file_layout;
 

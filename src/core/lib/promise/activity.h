@@ -99,8 +99,9 @@ class Waker {
   }
 
   // Wake the underlying activity.
+  // A Waker object can only be woken up once. Calling Wakeup() or WakeupAsync()
+  // consumes the waker, rendering subsequent calls no-ops.
   void Wakeup() { Take().Wakeup(); }
-
   void WakeupAsync() { Take().WakeupAsync(); }
 
   template <typename H>

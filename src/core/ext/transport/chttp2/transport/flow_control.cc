@@ -99,12 +99,33 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action) {
   return out << action.DebugString();
 }
 
-TransportFlowControl::TransportFlowControl(absl::string_view name,
+std::string FlowControlAction::ImmediateUpdateReasons() const {
+  std::string result;
+  if (send_stream_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_stream_update,");
+  }
+  if (send_transport_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_transport_update,");
+  }
+  if (send_initial_window_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_initial_window_update,");
+  }
+  if (send_max_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_max_frame_size_update,");
+  }
+  if (preferred_rx_crypto_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "preferred_rx_crypto_frame_size_update,");
+  }
+  return result;
+}
+
+TransportFlowControl::TransportFlowControl(absl::string_view peer_name,
                                            bool enable_bdp_probe,
                                            MemoryOwner* memory_owner)
     : memory_owner_(memory_owner),
       enable_bdp_probe_(enable_bdp_probe),
-      bdp_estimator_(name) {}
+      bdp_ping_blocked_(true),
+      bdp_estimator_(peer_name) {}
 
 uint32_t TransportFlowControl::DesiredAnnounceSize(bool writing_anyway) const {
   const uint32_t target_announced_window =
@@ -295,7 +316,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                         Http2Settings::max_max_frame_size()),
                   &action, &FlowControlAction::set_send_max_frame_size_update);
 
-    if (IsTcpFrameSizeTuningEnabled()) {
+    if (IsTcpFrameSizeTuningEnabled() && ph2_enable_rx_crypto_) {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
       // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
       // peer that we have tcp frame size tuning enabled and we inform it of our
@@ -328,6 +349,7 @@ std::string TransportFlowControl::Stats::ToString() const {
                       " announced_stream_total_over_incoming_window: ",
                       announced_stream_total_over_incoming_window,
                       " bdp_accumulator: ", bdp_accumulator,
+                      " bdp_ping_blocked: ", bdp_ping_blocked,
                       " bdp_estimate: ", bdp_estimate,
                       " bdp_bw_est: ", bdp_bw_est);
 }
@@ -382,6 +404,19 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
     action.set_send_stream_update(urgency);
   }
   return action;
+}
+
+void StreamFlowControl::IncomingUpdateContext::HackIncrementPendingSize(
+    int64_t pending_size) {
+  GRPC_CHECK_GE(pending_size, 0);
+  SetMinProgressSize(1u);
+  if (sfc_->pending_size_.has_value()) {
+    int64_t final_size = Clamp(sfc_->pending_size_.value() + pending_size,
+                               int64_t{0}, kMaxWindowUpdateSize);
+    *sfc_->pending_size_ = final_size;
+  } else {
+    sfc_->pending_size_ = pending_size;
+  }
 }
 
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(

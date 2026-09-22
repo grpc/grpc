@@ -14,11 +14,13 @@
 """Abstract base classes for Channel objects and Multicallable objects."""
 
 import abc
+from types import TracebackType
 from typing import Generic, Optional
 
 import grpc
+from typing_extensions import Self
 
-from . import _base_call
+from . import _base_call  # pyright: ignore[reportPrivateUsage]
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
@@ -52,8 +54,8 @@ class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           A UnaryUnaryCall object.
@@ -90,8 +92,8 @@ class UnaryStreamMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           A UnaryStreamCall object.
@@ -103,19 +105,19 @@ class UnaryStreamMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
         """
 
 
-class StreamUnaryMultiCallable(abc.ABC):
+class StreamUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
     """Enables asynchronous invocation of a client-streaming RPC."""
 
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: Optional[RequestIterableType] = None,
+        request_iterator: Optional[RequestIterableType[RequestType]] = None,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> _base_call.StreamUnaryCall:
+    ) -> _base_call.StreamUnaryCall[RequestType, ResponseType]:
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -128,8 +130,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           A StreamUnaryCall object.
@@ -141,19 +143,19 @@ class StreamUnaryMultiCallable(abc.ABC):
         """
 
 
-class StreamStreamMultiCallable(abc.ABC):
+class StreamStreamMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
     """Enables asynchronous invocation of a bidirectional-streaming RPC."""
 
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: Optional[RequestIterableType] = None,
+        request_iterator: Optional[RequestIterableType[RequestType]] = None,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> _base_call.StreamStreamCall:
+    ) -> _base_call.StreamStreamCall[RequestType, ResponseType]:
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -166,8 +168,8 @@ class StreamStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           A StreamStreamCall object.
@@ -188,7 +190,7 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         """Starts an asynchronous context manager.
 
         Returns:
@@ -196,7 +198,12 @@ class Channel(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
@@ -271,10 +278,12 @@ class Channel(abc.ABC):
     def unary_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
-    ) -> UnaryUnaryMultiCallable:
+    ) -> UnaryUnaryMultiCallable[RequestType, ResponseType]:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
         Args:
@@ -295,10 +304,12 @@ class Channel(abc.ABC):
     def unary_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
-    ) -> UnaryStreamMultiCallable:
+    ) -> UnaryStreamMultiCallable[RequestType, ResponseType]:
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
         Args:
@@ -319,10 +330,12 @@ class Channel(abc.ABC):
     def stream_unary(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
-    ) -> StreamUnaryMultiCallable:
+    ) -> StreamUnaryMultiCallable[RequestType, ResponseType]:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
         Args:
@@ -343,10 +356,12 @@ class Channel(abc.ABC):
     def stream_stream(
         self,
         method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        request_serializer: Optional[SerializingFunction[RequestType]] = None,
+        response_deserializer: Optional[
+            DeserializingFunction[ResponseType]
+        ] = None,
         _registered_method: Optional[bool] = False,
-    ) -> StreamStreamMultiCallable:
+    ) -> StreamStreamMultiCallable[RequestType, ResponseType]:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
         Args:

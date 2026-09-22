@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__metrics__v3__MetricsServiceConfig_msg_init;
-extern const upb_MiniTable* envoy__config__metrics__v3__MetricsServiceConfig_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_metrics_v3_metrics_service_proto_upb_file_layout;
 

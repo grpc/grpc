@@ -1,43 +1,38 @@
-dl.field-list > dt {
-    word-break: keep-all !important;
-}
-.document {
-  width: 90% !important;
-  margin: 0 auto;
-  display: flex;
-}
-.sphinxsidebar {
-    overflow-y: scroll;
-    top: 0;
-    bottom: 0;
-    width: 35% !important;
-    flex-shrink: 0 !important;
-    min-width: 340px !important;
-    position: unset !important;
-}
-.bodywrapper {
-  margin: auto !important;
-}
-.body {
-  max-width: 100% !important;
-  min-width: 800px !important;
-}
-.footer {
-  margin: 20px 50px 30px auto !important;
+html[data-theme="dark"] {
+  --pst-color-target: color-mix(in srgb, var(--pst-color-surface), purple 10%)
 }
 
-@media (max-width: 875px) {
-  .document {
-    flex-direction: column;
+/* Sidebar Widths */
+.bd-sidebar-primary {
+  width: 17%;
+}
+
+.bd-sidebar-secondary {
+  width: 30%;
+}
+
+@media (max-width: 960px) {
+
+  /* Ensure long function/method signatures wrap on mobile */
+  dt.sig {
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    word-break: break-all !important;
+    /* Force break for very long identifiers */
   }
-  .sphinxsidebar {
-    width: 100% !important;
-    background: white !important;
+
+  /* Add a bit of indentation for wrapped lines to keep them readable */
+  dt.sig-object {
+    padding-left: 1em;
+    text-indent: -1em;
   }
-  .sphinxsidebar a {
-    color: #444 !important;
-  }
-  .sphinxsidebar h3, .sphinxsidebar h4, .sphinxsidebar p, .sphinxsidebar h3 a {
-    color: #444 !important;
+}
+
+/* Mobile Sidebar Widths */
+@media (max-width: 960px) {
+
+  .bd-sidebar-primary,
+  .bd-sidebar-secondary {
+    width: 75% !important;
   }
 }

@@ -34,7 +34,6 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt gets ABORTED but is over limit, so no retry is done
 CORE_END2END_TEST(RetryTests, RetryThrottled) {
-  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

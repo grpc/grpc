@@ -53,6 +53,7 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/buffer_list.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -69,6 +70,7 @@
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "src/core/util/useful.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -477,6 +479,7 @@ struct grpc_tcp {
   explicit grpc_tcp(const grpc_core::PosixTcpOptions& tcp_options)
       : min_read_chunk_size(tcp_options.tcp_min_read_chunk_size),
         max_read_chunk_size(tcp_options.tcp_max_read_chunk_size),
+        max_read_buffer_size(tcp_options.tcp_max_read_buffer_size),
         tcp_zerocopy_send_ctx(
             tcp_options.tcp_tx_zerocopy_max_simultaneous_sends,
             tcp_options.tcp_tx_zerocopy_send_bytes_threshold) {}
@@ -491,6 +494,7 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
+  int max_read_buffer_size;
 
   // garbage after the last read
   grpc_slice_buffer last_read_buffer;
@@ -735,15 +739,15 @@ static void finish_estimate(grpc_tcp* tcp) {
     tcp->target_length =
         0.99 * tcp->target_length + 0.01 * tcp->bytes_read_this_round;
   }
+  // Opt-in: if a maximum read buffer size has been configured, clamp the
+  // adaptive target so that occasional large reads do not leave a permanently
+  // high read-buffer high-watermark. When unset (max_read_buffer_size < 0) the
+  // behavior is unchanged.
+  if (tcp->max_read_buffer_size >= 0 &&
+      tcp->target_length > static_cast<double>(tcp->max_read_buffer_size)) {
+    tcp->target_length = static_cast<double>(tcp->max_read_buffer_size);
+  }
   tcp->bytes_read_this_round = 0;
-}
-
-static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error) {
-  return grpc_error_set_int(src_error,
-                            // All tcp errors are marked with UNAVAILABLE so
-                            // that application may choose to retry.
-                            grpc_core::StatusIntProperty::kRpcStatus,
-                            GRPC_STATUS_UNAVAILABLE);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -753,8 +757,10 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   grpc_slice_buffer_destroy(&tcp->last_read_buffer);
-  tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
-                        GRPC_ERROR_CREATE("endpoint destroyed"));
+  if (!grpc_core::IsBufferListDeletionPrepEnabled()) {
+    tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
+                          GRPC_ERROR_CREATE("endpoint destroyed"));
+  }
   tcp->outgoing_buffer_arg = nullptr;
   delete tcp;
 }
@@ -968,13 +974,14 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     }
 
     if (read_bytes <= 0) {
+      int saved_errno = errno;
       // 0 read size ==> end of stream
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
       if (read_bytes == 0) {
-        *error = tcp_annotate_error(absl::InternalError("Socket closed"));
+        *error = absl::UnavailableError("Socket closed");
       } else {
-        *error = tcp_annotate_error(absl::InternalError(
-            absl::StrCat("recvmsg:", grpc_core::StrError(errno))));
+        *error = absl::UnavailableError(
+            absl::StrCat("recvmsg:", grpc_core::StrError(saved_errno)));
       }
       return true;
     }
@@ -1122,7 +1129,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     tcp_trace_read(tcp, tcp_read_error);
   } else {
     if (!tcp->memory_owner.is_valid() && error.ok()) {
-      tcp_read_error = tcp_annotate_error(absl::InternalError("Socket closed"));
+      tcp_read_error = absl::UnavailableError("Socket closed");
     } else {
       tcp_read_error = error;
     }
@@ -1278,8 +1285,11 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   *sent_length = length;
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(length)) {
-    tcp->tb_list.AddNewEntry(static_cast<uint32_t>(tcp->bytes_counter + length),
-                             tcp->fd, tcp->outgoing_buffer_arg);
+    if (!grpc_core::IsBufferListDeletionPrepEnabled()) {
+      tcp->tb_list.AddNewEntry(
+          static_cast<uint32_t>(tcp->bytes_counter + length), tcp->fd,
+          tcp->outgoing_buffer_arg);
+    }
     tcp->outgoing_buffer_arg = nullptr;
   }
   return true;
@@ -1367,7 +1377,9 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     LOG(ERROR) << "Unexpected control message";
     return cmsg;
   }
-  tcp->tb_list.ProcessTimestamp(serr, opt_stats, tss);
+  if (!grpc_core::IsBufferListDeletionPrepEnabled()) {
+    tcp->tb_list.ProcessTimestamp(serr, opt_stats, tss);
+  }
   return next_cmsg;
 }
 
@@ -1554,6 +1566,11 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
   }
 }
 
+static absl::Status OSError(int err, absl::string_view call_name) {
+  return absl::UnavailableError(
+      absl::StrCat(call_name, ": ", grpc_core::StrError(err), " (", err, ")"));
+}
+
 // returns true if done, false if pending; if returning true, *error is set
 static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
                                   grpc_error_handle* error) {
@@ -1616,7 +1633,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"));
+        *error = OSError(saved_errno, "sendmsg");
         tcp_shutdown_buffer_list(tcp);
         return true;
       }
@@ -1726,7 +1743,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
         }
         return false;
       } else {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"));
+        *error = OSError(saved_errno, "sendmsg");
         grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
         return true;
@@ -1824,7 +1841,7 @@ static void tcp_write(
   if (buf->length == 0) {
     grpc_core::Closure::Run(DEBUG_LOCATION, cb,
                             grpc_fd_is_shutdown(tcp->em_fd)
-                                ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"))
+                                ? absl::UnavailableError("EOF")
                                 : absl::OkStatus());
     tcp_shutdown_buffer_list(tcp);
     return;
@@ -1917,9 +1934,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 grpc_endpoint* grpc_tcp_create(
     grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
     absl::string_view peer_string) {
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
-      !grpc_event_engine::experimental::
-          EventEngineExperimentDisabledForPython()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
     // Create an EventEngine endpoint when creating the transport.
     auto* engine =
         reinterpret_cast<grpc_event_engine::experimental::EventEngine*>(
@@ -1947,9 +1962,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   GRPC_CHECK(!grpc_event_engine::experimental::UsePollsetAlternative())
       << "This function must not be called when the pollset_alternative "
          "experiment is enabled. This is a bug.";
-  GRPC_CHECK(
-      !grpc_core::IsEventEngineForAllOtherEndpointsEnabled() ||
-      grpc_event_engine::experimental::EventEngineExperimentDisabledForPython())
+  GRPC_CHECK(!grpc_core::IsEventEngineForAllOtherEndpointsEnabled())
       << "The event_engine_for_all_other_endpoints experiment should prevent "
          "this method from being called. This is a bug.";
   grpc_tcp* tcp = new grpc_tcp(options);

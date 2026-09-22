@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport")
+grpc_package(
+    name = "test/core/credentials/transport",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "security_connector_test",
@@ -48,6 +54,8 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:config",
         "//:gpr",
@@ -57,7 +65,14 @@ grpc_cc_test(
         "//src/core:grpc_fake_credentials",
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_tls_credentials",
+        "//src/core:xds_certificate_provider_store",
+        "//src/core:xds_credentials",
+        "//src/core:xds_file_watcher_certificate_provider_factory",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/google_default/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/tls/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/xds/v3:pkg_cc_proto",
     ],
 )

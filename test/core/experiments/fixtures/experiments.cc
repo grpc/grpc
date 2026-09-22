@@ -30,6 +30,8 @@ const char* const description_test_experiment_3 = "Test Experiment 3";
 const char* const additional_constraints_test_experiment_3 = "{}";
 const char* const description_test_experiment_4 = "Test Experiment 4";
 const char* const additional_constraints_test_experiment_4 = "{}";
+const char* const description_test_experiment_5 = "Test Experiment 5";
+const char* const additional_constraints_test_experiment_5 = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -49,6 +51,8 @@ const ExperimentMetadata g_test_experiment_metadata[] = {
      true},
     {"test_experiment_4", description_test_experiment_4,
      additional_constraints_test_experiment_4, nullptr, 0, true, true},
+    {"test_experiment_5", description_test_experiment_5,
+     additional_constraints_test_experiment_5, nullptr, 0, false, true},
 };
 
 }  // namespace grpc_core
@@ -63,6 +67,8 @@ const char* const description_test_experiment_3 = "Test Experiment 3";
 const char* const additional_constraints_test_experiment_3 = "{}";
 const char* const description_test_experiment_4 = "Test Experiment 4";
 const char* const additional_constraints_test_experiment_4 = "{}";
+const char* const description_test_experiment_5 = "Test Experiment 5";
+const char* const additional_constraints_test_experiment_5 = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -82,6 +88,8 @@ const ExperimentMetadata g_test_experiment_metadata[] = {
      true},
     {"test_experiment_4", description_test_experiment_4,
      additional_constraints_test_experiment_4, nullptr, 0, true, true},
+    {"test_experiment_5", description_test_experiment_5,
+     additional_constraints_test_experiment_5, nullptr, 0, false, true},
 };
 
 }  // namespace grpc_core
@@ -96,6 +104,8 @@ const char* const description_test_experiment_3 = "Test Experiment 3";
 const char* const additional_constraints_test_experiment_3 = "{}";
 const char* const description_test_experiment_4 = "Test Experiment 4";
 const char* const additional_constraints_test_experiment_4 = "{}";
+const char* const description_test_experiment_5 = "Test Experiment 5";
+const char* const additional_constraints_test_experiment_5 = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -117,6 +127,8 @@ const ExperimentMetadata g_test_experiment_metadata[] = {
      true},
     {"test_experiment_4", description_test_experiment_4,
      additional_constraints_test_experiment_4, nullptr, 0, false, true},
+    {"test_experiment_5", description_test_experiment_5,
+     additional_constraints_test_experiment_5, nullptr, 0, false, true},
 };
 
 }  // namespace grpc_core

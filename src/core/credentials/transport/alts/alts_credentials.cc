@@ -90,7 +90,7 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url, bool enable_untrusted_alts) {
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
-    VLOG(1) << "ALTS creds ignored. Not running on GCP and untrusted ALTS "
+    VLOG(2) << "ALTS creds ignored. Not running on GCP and untrusted ALTS "
                "is not enabled.";
     return nullptr;
   }
@@ -101,7 +101,7 @@ grpc_server_credentials* grpc_alts_server_credentials_create_customized(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url, bool enable_untrusted_alts) {
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
-    VLOG(1) << "ALTS server creds ignored. Not running on GCP and untrusted "
+    VLOG(2) << "ALTS server creds ignored. Not running on GCP and untrusted "
                "ALTS is not enabled.";
     return nullptr;
   }

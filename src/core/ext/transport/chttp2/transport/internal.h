@@ -34,6 +34,7 @@
 #include <utility>
 #include <variant>
 
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -64,12 +65,14 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/stats.h"
@@ -91,6 +94,9 @@
 // First bit of the reference count, stored in the high order bits (with the low
 //   bits being used for flags defined above)
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
+
+constexpr uint32_t kMaxSecurityFrameSize = 16u * 1024u;
+constexpr int kMinMaxSecurityFrameSize = 0;
 
 // streams are kept in various linked lists depending on what things need to
 // happen to them... this enum labels each list
@@ -228,6 +234,9 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
+constexpr uint16_t kMaxNoopDataFrames = 16384u;
+constexpr uint16_t kMaxNoopContinuationFrames = 128u;
+
 struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
                                      public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
@@ -285,8 +294,21 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void PerformOp(grpc_transport_op* op) override;
   // Callback for transport framing endpoint extension to send security frames
   // received directly from the endpoint on wire.
-  void WriteSecurityFrame(grpc_core::SliceBuffer* data);
+  void WriteSecurityFrame(grpc_core::SliceBuffer data);
   void WriteSecurityFrameLocked(grpc_core::SliceBuffer* data);
+
+  void StartWatch(grpc_core::RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(grpc_core::RefCountedPtr<StateWatcher> watcher) override;
+
+  void NotifyStateWatcherOnDisconnectLocked(
+      absl::Status status, StateWatcher::DisconnectInfo disconnect_info);
+
+  void OnPeerMaxConcurrentStreamsUpdateComplete();
+  void MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
+  void NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
+
+  void MaybeNotifyOnReceiveSettingsLocked(
+      absl::StatusOr<uint32_t> max_concurrent_streams);
 
   // We depend on the ep being available for the life of the transport in
   // at least one place - event callback in WriteEventSink. Hence, this should
@@ -300,6 +322,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       transport_framing_endpoint_extension = nullptr;
 
   grpc_core::MemoryOwner memory_owner;
+  grpc_core::StreamQuotaRefPtr stream_quota;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
   grpc_core::InstrumentStorageRefPtr<grpc_core::ResourceQuotaDomain>
@@ -316,7 +339,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // starts a connectivity watch.
   grpc_pollset_set* interested_parties_until_recv_settings = nullptr;
 
-  grpc_closure* notify_on_receive_settings = nullptr;
+  absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> notify_on_receive_settings;
   grpc_closure* notify_on_close = nullptr;
 
   /// has the upper layer closed the transport?
@@ -375,7 +398,12 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* accept_stream_cb_user_data;
 
+  // There should be only a single watcher in use at any given time.
+  grpc_core::RefCountedPtr<StateWatcher> watcher;
+  uint32_t last_reported_max_concurrent_streams;
+  bool max_concurrent_streams_notification_in_flight;
   /// connectivity tracking
+  // TODO(roth): Get rid of this in favor of the new state watcher.
   grpc_core::ConnectivityStateTracker state_tracker;
 
   /// data to write now
@@ -437,6 +465,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   /// parser for goaway frames
   grpc_chttp2_goaway_parser goaway_parser;
   // parser for secure frames
+  uint32_t max_security_frame_size;
   grpc_chttp2_security_frame_parser security_frame_parser;
 
   grpc_core::chttp2::TransportFlowControl flow_control;
@@ -451,6 +480,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   uint8_t incoming_frame_flags = 0;
   uint8_t header_eof = 0;
   bool is_first_frame = true;
+  uint16_t noop_continuation_frames = 0u;
+  uint16_t noop_data_frames = 0u;
   uint32_t expect_continuation_stream_id = 0;
   uint32_t incoming_frame_size = 0;
 
@@ -512,6 +543,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Duration keepalive_timeout;
   /// number of stream objects currently allocated by this transport
   std::atomic<size_t> streams_allocated{0};
+  uint32_t max_deallocating_streams = 0;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
@@ -596,6 +628,11 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Timestamp last_ztrace_time = grpc_core::Timestamp::InfPast();
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
+
+  std::optional<uint32_t> max_recv_message_length;
+
+  grpc_auth_context* auth_context = nullptr;
+  grpc_core::RefCountedPtr<grpc_core::MitigationEngine> mitigation_engine;
 };
 
 typedef enum {
@@ -683,6 +720,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch trailing_metadata_buffer;
 
   grpc_slice_buffer frame_storage;  // protected by t combiner
+  size_t num_frames = 0;            // protected by t combiner
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
@@ -742,6 +780,9 @@ struct grpc_chttp2_stream {
   // The last time a stream window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
+
+  bool message_size_limit_exceeded = false;
+  std::optional<uint32_t> max_recv_message_length;
 };
 
 /// Transport writing call flow:
@@ -856,6 +897,11 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s);
 #endif
 
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id);
+grpc_error_handle grpc_chttp2_increase_num_pending_induced_frames(
+    grpc_chttp2_transport* t);
+
+void grpc_chttp2_close_transport_locked(grpc_chttp2_transport* t,
+                                        grpc_error_handle error);
 
 /// Sends GOAWAY with error code ENHANCE_YOUR_CALM and additional debug data
 /// resembling "too_many_pings" followed by immediately closing the connection.
@@ -872,8 +918,10 @@ void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t);
 void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
                                       grpc_chttp2_stream* s);
 
-void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                               grpc_error_handle due_to_error, bool tarpit);
+void grpc_chttp2_cancel_stream(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    grpc_error_handle due_to_error, bool tarpit,
+    grpc_core::ServerMetadataHandle send_trailing_metadata = nullptr);
 
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
                                                       grpc_chttp2_stream* s);

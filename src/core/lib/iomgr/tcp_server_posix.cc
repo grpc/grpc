@@ -61,7 +61,6 @@
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/systemd_utils.h"
@@ -91,12 +90,6 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 static void finish_shutdown(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   GRPC_CHECK(s->shutdown);
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
-  } else {
-    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
-  }
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
@@ -218,7 +211,7 @@ static grpc_error_handle CreateEventEngineListener(
         std::move(accept_cb),
         [s, shutdown_complete](absl::Status status) {
           grpc_event_engine::experimental::RunEventEngineClosure(
-              shutdown_complete, absl_status_to_grpc_error(status));
+              shutdown_complete, status);
           finish_shutdown(s);
         },
         config,
@@ -246,7 +239,7 @@ static grpc_error_handle CreateEventEngineListener(
         [s, ee = keeper, shutdown_complete](absl::Status status) {
           GRPC_CHECK_EQ(gpr_atm_no_barrier_load(&s->refs.count), 0);
           grpc_event_engine::experimental::RunEventEngineClosure(
-              shutdown_complete, absl_status_to_grpc_error(status));
+              shutdown_complete, status);
           finish_shutdown(s);
         },
         config,
@@ -285,8 +278,6 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown = false;
   s->shutdown_starting.head = nullptr;
   s->shutdown_starting.tail = nullptr;
-  s->shutdown_ending.head = nullptr;
-  s->shutdown_ending.tail = nullptr;
   if (!grpc_event_engine::experimental::UseEventEngineListener()) {
     s->shutdown_complete = shutdown_complete;
   } else {
@@ -340,7 +331,7 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
       // Do not unlink if there is a pre-allocated FD
-      if (grpc_tcp_server_pre_allocated_fd(s) <= 0) {
+      if (grpc_tcp_server_pre_allocated_fd(s) < 0) {
         grpc_unlink_if_unix_domain_socket(&sp->addr);
       }
       GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
@@ -651,7 +642,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
             if (!listen_fd.ok()) {
               return;
             }
-            GRPC_DCHECK_GT(*listen_fd, 0);
+            GRPC_DCHECK_GE(*listen_fd, 0);
             s->listen_fd_to_index_map.insert_or_assign(
                 *listen_fd, std::tuple(s->n_bind_ports, fd_index++));
           });
@@ -706,7 +697,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
 
   /* Do not unlink if there are pre-allocated FDs, or it will stop
      working after the first client connects */
-  if (grpc_tcp_server_pre_allocated_fd(s) <= 0) {
+  if (grpc_tcp_server_pre_allocated_fd(s) < 0) {
     grpc_unlink_if_unix_domain_socket(addr);
   }
 
@@ -844,19 +835,16 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
   gpr_mu_unlock(&s->mu);
 }
 
-static void tcp_server_shutdown_ending_add(grpc_tcp_server* s,
-                                           grpc_closure* shutdown_ending) {
-  gpr_mu_lock(&s->mu);
-  grpc_closure_list_append(&s->shutdown_ending, shutdown_ending,
-                           absl::OkStatus());
-  gpr_mu_unlock(&s->mu);
-}
-
 static void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(s);
     gpr_mu_lock(&s->mu);
-    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
+    if (grpc_core::ExecCtx::Get() == nullptr) {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
+    } else {
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
+    }
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(s);
   }
@@ -985,7 +973,6 @@ grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
     tcp_server_port_fd,
     tcp_server_ref,
     tcp_server_shutdown_starting_add,
-    tcp_server_shutdown_ending_add,
     tcp_server_unref,
     tcp_server_shutdown_listeners,
     tcp_server_pre_allocated_fd,

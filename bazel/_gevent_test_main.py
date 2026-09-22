@@ -67,7 +67,7 @@ def debug(sig, frame):
 signal.signal(signal.SIGTERM, debug)
 
 
-class SingleLoader(object):
+class SingleLoader:
     def __init__(self, pattern: str):
         loader = unittest.TestLoader()
         self.suite = unittest.TestSuite()

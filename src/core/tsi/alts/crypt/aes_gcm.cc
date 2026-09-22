@@ -364,15 +364,14 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
     if (aad_length == 0) {
       continue;
     }
-    size_t aad_bytes_read = 0;
+    int aad_bytes_read = 0;
     if (aad == nullptr) {
       aes_gcm_format_errors("aad is nullptr.", error_details);
       return GRPC_STATUS_INVALID_ARGUMENT;
     }
-    if (!EVP_EncryptUpdate(aes_gcm_crypter->ctx, nullptr,
-                           reinterpret_cast<int*>(&aad_bytes_read), aad,
+    if (!EVP_EncryptUpdate(aes_gcm_crypter->ctx, nullptr, &aad_bytes_read, aad,
                            static_cast<int>(aad_length)) ||
-        aad_bytes_read != aad_length) {
+        static_cast<size_t>(aad_bytes_read) != aad_length) {
       aes_gcm_format_errors("Setting authenticated associated data failed",
                             error_details);
       return GRPC_STATUS_INTERNAL;
@@ -514,15 +513,14 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
     if (aad_length == 0) {
       continue;
     }
-    size_t aad_bytes_read = 0;
+    int aad_bytes_read = 0;
     if (aad == nullptr) {
       aes_gcm_format_errors("aad is nullptr.", error_details);
       return GRPC_STATUS_INVALID_ARGUMENT;
     }
-    if (!EVP_DecryptUpdate(aes_gcm_crypter->ctx, nullptr,
-                           reinterpret_cast<int*>(&aad_bytes_read), aad,
+    if (!EVP_DecryptUpdate(aes_gcm_crypter->ctx, nullptr, &aad_bytes_read, aad,
                            static_cast<int>(aad_length)) ||
-        aad_bytes_read != aad_length) {
+        static_cast<size_t>(aad_bytes_read) != aad_length) {
       aes_gcm_format_errors("Setting authenticated associated data failed.",
                             error_details);
       return GRPC_STATUS_INTERNAL;
@@ -552,7 +550,7 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
       memset(plaintext_vec.iov_base, 0x00, plaintext_vec.iov_len);
       return GRPC_STATUS_INVALID_ARGUMENT;
     }
-    size_t bytes_written = 0;
+    int bytes_written = 0;
     size_t bytes_to_write = ciphertext_length;
     // Don't include the tag
     if (bytes_to_write > total_ciphertext_length - kAesGcmTagLength) {
@@ -564,14 +562,13 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
           error_details);
       return GRPC_STATUS_INVALID_ARGUMENT;
     }
-    if (!EVP_DecryptUpdate(aes_gcm_crypter->ctx, plaintext,
-                           reinterpret_cast<int*>(&bytes_written), ciphertext,
-                           static_cast<int>(bytes_to_write))) {
+    if (!EVP_DecryptUpdate(aes_gcm_crypter->ctx, plaintext, &bytes_written,
+                           ciphertext, static_cast<int>(bytes_to_write))) {
       aes_gcm_format_errors("Decrypting ciphertext failed.", error_details);
       memset(plaintext_vec.iov_base, 0x00, plaintext_vec.iov_len);
       return GRPC_STATUS_INTERNAL;
     }
-    if (bytes_written > ciphertext_length) {
+    if (static_cast<size_t>(bytes_written) > ciphertext_length) {
       aes_gcm_format_errors("More bytes written than expected.", error_details);
       memset(plaintext_vec.iov_base, 0x00, plaintext_vec.iov_len);
       return GRPC_STATUS_INTERNAL;

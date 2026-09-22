@@ -31,6 +31,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
@@ -404,7 +405,7 @@ void GrpcMemoryAllocatorImpl::Replenish() {
 
 grpc_slice GrpcMemoryAllocatorImpl::MakeSlice(MemoryRequest request) {
   auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
-  void* p = malloc(size);
+  void* p = gpr_malloc(size);
   new (p) SliceRefCount(shared_from_this(), size);
   grpc_slice slice;
   slice.refcount = static_cast<SliceRefCount*>(p);
@@ -557,7 +558,9 @@ void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.
   if (prior >= 0 && prior < static_cast<intptr_t>(amount)) {
-    if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
+    if (reclaimer_activity_ != nullptr) {
+      EnsureRunInExecCtx([this]() { reclaimer_activity_->ForceWakeup(); });
+    }
   }
 
   if (IsFreeLargeAllocatorEnabled()) {

@@ -31,11 +31,15 @@
 #include "absl/strings/string_view.h"
 
 void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser* p) {
-  p->debug_data = nullptr;
+  if (!grpc_core::IsPh2Perf01Enabled()) {
+    p->debug_data = nullptr;
+  }
 }
 
 void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser* p) {
-  gpr_free(p->debug_data);
+  if (!grpc_core::IsPh2Perf01Enabled()) {
+    gpr_free(p->debug_data);
+  }
 }
 
 grpc_error_handle grpc_chttp2_goaway_parser_begin_frame(
@@ -45,10 +49,14 @@ grpc_error_handle grpc_chttp2_goaway_parser_begin_frame(
         absl::StrFormat("goaway frame too short (%d bytes)", length));
   }
 
-  gpr_free(p->debug_data);
   p->debug_length = length - 8;
-  p->debug_data = static_cast<char*>(gpr_malloc(p->debug_length));
-  p->debug_pos = 0;
+  if (grpc_core::IsPh2Perf01Enabled()) {
+    p->debug_slice_buffer.Clear();
+  } else {
+    gpr_free(p->debug_data);
+    p->debug_data = static_cast<char*>(gpr_malloc(p->debug_length));
+    p->debug_pos = 0;
+  }
   p->state = GRPC_CHTTP2_GOAWAY_LSI0;
   return absl::OkStatus();
 }
@@ -130,24 +138,48 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       ++cur;
       [[fallthrough]];
     case GRPC_CHTTP2_GOAWAY_DEBUG:
-      if (end != cur) {
-        memcpy(p->debug_data + p->debug_pos, cur,
-               static_cast<size_t>(end - cur));
-      }
-      GRPC_CHECK((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
-      p->debug_pos += static_cast<uint32_t>(end - cur);
-      p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
-      if (is_last) {
-        t->http2_ztrace_collector.Append([p]() {
-          return grpc_core::H2GoAwayTrace<true>{
-              p->last_stream_id, p->error_code,
-              std::string(absl::string_view(p->debug_data, p->debug_length))};
-        });
-        grpc_chttp2_add_incoming_goaway(
-            t, p->error_code, p->last_stream_id,
-            absl::string_view(p->debug_data, p->debug_length));
-        gpr_free(p->debug_data);
-        p->debug_data = nullptr;
+      if (grpc_core::IsPh2Perf01Enabled()) {
+        if (end != cur) {
+          p->debug_slice_buffer.AppendIndexed(
+              grpc_core::Slice::FromCopiedBuffer(
+                  cur, static_cast<size_t>(end - cur)));
+        }
+        GRPC_CHECK(p->debug_slice_buffer.Length() <= p->debug_length);
+        p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
+        if (is_last) {
+          std::string debug_str = p->debug_slice_buffer.JoinIntoString();
+
+          grpc_chttp2_add_incoming_goaway(t, p->error_code, p->last_stream_id,
+                                          absl::string_view(debug_str));
+
+          t->http2_ztrace_collector.Append(
+              [last_stream_id = p->last_stream_id, error_code = p->error_code,
+               debug_str = std::move(debug_str)]() mutable {
+                return grpc_core::H2GoAwayTrace<true>{
+                    last_stream_id, error_code, std::move(debug_str)};
+              });
+          p->debug_slice_buffer.Clear();
+        }
+      } else {
+        if (end != cur) {
+          memcpy(p->debug_data + p->debug_pos, cur,
+                 static_cast<size_t>(end - cur));
+        }
+        GRPC_CHECK((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
+        p->debug_pos += static_cast<uint32_t>(end - cur);
+        p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
+        if (is_last) {
+          t->http2_ztrace_collector.Append([p]() {
+            return grpc_core::H2GoAwayTrace<true>{
+                p->last_stream_id, p->error_code,
+                std::string(absl::string_view(p->debug_data, p->debug_length))};
+          });
+          grpc_chttp2_add_incoming_goaway(
+              t, p->error_code, p->last_stream_id,
+              absl::string_view(p->debug_data, p->debug_length));
+          gpr_free(p->debug_data);
+          p->debug_data = nullptr;
+        }
       }
       return absl::OkStatus();
   }

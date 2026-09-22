@@ -18,7 +18,13 @@ load("//test/cpp/qps:qps_benchmark_script.bzl", "json_run_localhost_batch", "qps
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/qps")
+grpc_package(
+    name = "test/cpp/qps",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "parse_json",
@@ -49,12 +55,14 @@ grpc_cc_library(
         "server_async.cc",
         "server_callback.cc",
         "server_sync.cc",
+        "session_util.cc",
     ],
     hdrs = [
         "client.h",
         "qps_server_builder.h",
         "qps_worker.h",
         "server.h",
+        "session_util.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -62,11 +70,13 @@ grpc_cc_library(
         "absl/log:log",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/synchronization",
     ],
     deps = [
         ":histogram",
         ":interarrival",
         ":usage_timer",
+        "//:generic_stub_session_hdrs",
         "//:gpr",
         "//:grpc",
         "//:grpc++",

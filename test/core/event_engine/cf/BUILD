@@ -14,6 +14,11 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
+package(features = [
+    "layering_check",
+    "parse_headers",
+])
+
 licenses(["notice"])
 
 grpc_cc_library(
@@ -46,6 +51,7 @@ grpc_cc_test(
     srcs = ["cf_engine_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/time",
         "gtest",
     ],
     tags = [

@@ -22,10 +22,13 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 
+#include <atomic>
+
 #include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
+#include "test/cpp/qps/session_util.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "absl/log/log.h"
 
@@ -35,6 +38,12 @@ namespace testing {
 class BenchmarkCallbackServiceImpl final
     : public BenchmarkService::CallbackService {
  public:
+  explicit BenchmarkCallbackServiceImpl(bool is_virtual = false) {
+    if (is_virtual) {
+      grpc::experimental::SetVirtualService(this);
+    }
+  }
+
   grpc::ServerUnaryReactor* UnaryCall(grpc::CallbackServerContext* context,
                                       const SimpleRequest* request,
                                       SimpleResponse* response) override {
@@ -82,6 +91,77 @@ class BenchmarkCallbackServiceImpl final
     return new Reactor;
   }
 
+  grpc::ServerReadReactor<grpc::testing::SimpleRequest>* StreamingFromClient(
+      grpc::CallbackServerContext* /*context*/,
+      grpc::testing::SimpleResponse* response) override {
+    class Reactor
+        : public grpc::ServerReadReactor<grpc::testing::SimpleRequest> {
+     public:
+      explicit Reactor(grpc::testing::SimpleResponse* response)
+          : response_(response) {
+        StartRead(&request_);
+      }
+
+      void OnReadDone(bool ok) override {
+        if (!ok) {
+          Finish(SetResponse(&request_, response_));
+          return;
+        }
+        StartRead(&request_);
+      }
+
+      void OnDone() override { delete this; }
+
+     private:
+      SimpleRequest request_;
+      SimpleResponse* response_;
+    };
+    return new Reactor(response);
+  }
+
+  grpc::ServerWriteReactor<grpc::testing::SimpleResponse>* StreamingFromServer(
+      grpc::CallbackServerContext* /*context*/,
+      const SimpleRequest* request) override {
+    class Reactor
+        : public grpc::ServerWriteReactor<grpc::testing::SimpleResponse> {
+     public:
+      explicit Reactor(const SimpleRequest* request) {
+        finished_.clear();
+        auto s = SetResponse(request, &response_);
+        if (!s.ok()) {
+          if (!finished_.test_and_set()) {
+            Finish(s);
+          }
+          return;
+        }
+        StartWrite(&response_);
+      }
+
+      void OnWriteDone(bool ok) override {
+        if (!ok) {
+          if (!finished_.test_and_set()) {
+            Finish(grpc::Status::OK);
+          }
+          return;
+        }
+        StartWrite(&response_);
+      }
+
+      void OnCancel() override {
+        if (!finished_.test_and_set()) {
+          Finish(grpc::Status::CANCELLED);
+        }
+      }
+
+      void OnDone() override { delete this; }
+
+     private:
+      SimpleResponse response_;
+      std::atomic_flag finished_;
+    };
+    return new Reactor(request);
+  }
+
  private:
   static Status SetResponse(const SimpleRequest* request,
                             SimpleResponse* response) {
@@ -98,26 +178,56 @@ class BenchmarkCallbackServiceImpl final
 
 class CallbackServer final : public grpc::testing::Server {
  public:
-  explicit CallbackServer(const ServerConfig& config) : Server(config) {
-    std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
+  explicit CallbackServer(const ServerConfig& config)
+      : Server(config), service_(config.use_session()) {
+    if (config.use_session()) {
+      std::unique_ptr<ServerBuilder> inner_builder = CreateQpsServerBuilder();
+      ApplyConfigToBuilder(config, inner_builder.get());
+      inner_builder->RegisterService(&service_);
+      inner_server_ = inner_builder->BuildAndStart();
 
-    auto port_num = port();
-    // Negative port number means inproc server, so no listen port needed
-    if (port_num >= 0) {
-      std::string server_address = grpc_core::JoinHostPort("::", port_num);
-      builder->AddListeningPort(
-          server_address, Server::CreateServerCredentials(config), &port_num);
+      std::unique_ptr<ServerBuilder> outer_builder = CreateQpsServerBuilder();
+      ApplyConfigToBuilder(config, outer_builder.get());
+      auto port_num = port();
+      if (port_num >= 0) {
+        std::string server_address = grpc_core::JoinHostPort("::", port_num);
+        outer_builder->AddListeningPort(
+            server_address, Server::CreateServerCredentials(config), &port_num);
+      }
+      outer_service_ = std::make_unique<OuterSessionService>(&service_);
+      outer_builder->RegisterService(outer_service_.get());
+      impl_ = outer_builder->BuildAndStart();
+    } else {
+      std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
+
+      auto port_num = port();
+      // Negative port number means inproc server, so no listen port needed
+      if (port_num >= 0) {
+        std::string server_address = grpc_core::JoinHostPort("::", port_num);
+        builder->AddListeningPort(
+            server_address, Server::CreateServerCredentials(config), &port_num);
+      }
+
+      ApplyConfigToBuilder(config, builder.get());
+
+      builder->RegisterService(&service_);
+
+      impl_ = builder->BuildAndStart();
     }
 
-    ApplyConfigToBuilder(config, builder.get());
-
-    builder->RegisterService(&service_);
-
-    impl_ = builder->BuildAndStart();
     if (impl_ == nullptr) {
-      LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
+      LOG(ERROR) << "Server: Fail to BuildAndStart";
     } else {
-      LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
+      LOG(INFO) << "Server: BuildAndStart";
+    }
+  }
+
+  ~CallbackServer() override {
+    if (impl_) {
+      impl_->Shutdown();
+    }
+    if (inner_server_) {
+      inner_server_->Shutdown();
     }
   }
 
@@ -128,6 +238,8 @@ class CallbackServer final : public grpc::testing::Server {
 
  private:
   BenchmarkCallbackServiceImpl service_;
+  std::unique_ptr<OuterSessionService> outer_service_;
+  std::unique_ptr<grpc::Server> inner_server_;
   std::unique_ptr<grpc::Server> impl_;
 };
 

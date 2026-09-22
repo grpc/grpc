@@ -108,25 +108,28 @@ class ClientRpcInfo {
 
  private:
   static_assert(Type::UNARY ==
-                    static_cast<Type>(internal::RpcMethod::NORMAL_RPC),
+                    static_cast<Type>(grpc::internal::RpcMethod::NORMAL_RPC),
                 "violated expectation about Type enum");
-  static_assert(Type::CLIENT_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::CLIENT_STREAMING),
-                "violated expectation about Type enum");
-  static_assert(Type::SERVER_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::SERVER_STREAMING),
-                "violated expectation about Type enum");
-  static_assert(Type::BIDI_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
-                "violated expectation about Type enum");
+  static_assert(
+      Type::CLIENT_STREAMING ==
+          static_cast<Type>(grpc::internal::RpcMethod::CLIENT_STREAMING),
+      "violated expectation about Type enum");
+  static_assert(
+      Type::SERVER_STREAMING ==
+          static_cast<Type>(grpc::internal::RpcMethod::SERVER_STREAMING),
+      "violated expectation about Type enum");
+  static_assert(
+      Type::BIDI_STREAMING ==
+          static_cast<Type>(grpc::internal::RpcMethod::BIDI_STREAMING),
+      "violated expectation about Type enum");
 
   // Default constructor should only be used by ClientContext
   ClientRpcInfo() = default;
 
   // Constructor will only be called from ClientContext
-  ClientRpcInfo(grpc::ClientContext* ctx, internal::RpcMethod::RpcType type,
-                const char* method, const char* suffix_for_stats,
-                grpc::ChannelInterface* channel)
+  ClientRpcInfo(grpc::ClientContext* ctx,
+                grpc::internal::RpcMethod::RpcType type, const char* method,
+                const char* suffix_for_stats, grpc::ChannelInterface* channel)
       : ctx_(ctx),
         type_(static_cast<Type>(type)),
         method_(method),
@@ -152,15 +155,15 @@ class ClientRpcInfo {
     // interceptor factor returns nullptr.
     size_t num_interceptors =
         creators.size() +
-        (internal::g_global_client_stats_interceptor_factory != nullptr) +
-        (internal::g_global_client_interceptor_factory != nullptr);
+        (grpc::internal::g_global_client_stats_interceptor_factory != nullptr) +
+        (grpc::internal::g_global_client_interceptor_factory != nullptr);
     if (interceptor_pos > num_interceptors) {
       // No interceptors to register
       return;
     }
-    if (internal::g_global_client_stats_interceptor_factory != nullptr) {
+    if (grpc::internal::g_global_client_stats_interceptor_factory != nullptr) {
       interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          internal::g_global_client_stats_interceptor_factory
+          grpc::internal::g_global_client_stats_interceptor_factory
               ->CreateClientInterceptor(this)));
       --interceptor_pos;
     }
@@ -174,9 +177,9 @@ class ClientRpcInfo {
             std::unique_ptr<experimental::Interceptor>(interceptor));
       }
     }
-    if (internal::g_global_client_interceptor_factory != nullptr) {
+    if (grpc::internal::g_global_client_interceptor_factory != nullptr) {
       interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          internal::g_global_client_interceptor_factory
+          grpc::internal::g_global_client_interceptor_factory
               ->CreateClientInterceptor(this)));
     }
   }
@@ -191,7 +194,7 @@ class ClientRpcInfo {
   bool hijacked_ = false;
   size_t hijacked_interceptor_ = 0;
 
-  friend class internal::InterceptorBatchMethodsImpl;
+  friend class grpc::internal::InterceptorBatchMethodsImpl;
   friend class grpc::ClientContext;
 };
 

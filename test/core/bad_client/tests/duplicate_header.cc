@@ -26,6 +26,7 @@
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 #define PFX_STR                      \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
@@ -133,16 +134,24 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   grpc_call_unref(s);
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-
+TEST(DuplicateHeaderTest, TwoHeaders) {
   /* Verify that sending multiple headers doesn't segfault */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR HEADER_STR HEADER_STR PAYLOAD_STR, 0);
+}
+
+TEST(DuplicateHeaderTest, ThreeHeaders) {
+  /* Verify that sending multiple headers doesn't segfault */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR HEADER_STR HEADER_STR HEADER_STR PAYLOAD_STR,
                            0);
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
+  int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return result;
 }

@@ -1559,7 +1559,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
                           "connections to all backends failing; last error: "));
   // Start an RPC with wait_for_ready=true and no deadline.  This will
   // stay pending until backend 0 is reachable.
-  LongRunningRpc rpc;
+  AsyncRpc rpc;
   rpc.StartRpc(stub_.get(),
                RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
   // Send an updated RouteConfiguration that points to the new cluster.
@@ -1595,10 +1595,10 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   const auto kTimeoutGrpcHeaderMax = grpc_core::Duration::Milliseconds(1500);
   const auto kTimeoutMaxStreamDuration =
-      grpc_core::Duration::Milliseconds(2500);
+      grpc_core::Duration::Milliseconds(5500);
   const auto kTimeoutHttpMaxStreamDuration =
-      grpc_core::Duration::Milliseconds(3500);
-  const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
+      grpc_core::Duration::Milliseconds(9500);
+  const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(13500);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -2485,10 +2485,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

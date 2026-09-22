@@ -16,11 +16,26 @@
 ctypedef queue[grpc_event] cpp_event_queue
 
 
-IF UNAME_SYSNAME == "Windows":
-    cdef extern from "winsock2.h" nogil:
-        ctypedef uint32_t WIN_SOCKET "SOCKET"
-        WIN_SOCKET win_socket "socket" (int af, int type, int protocol)
-        int win_socket_send "send" (WIN_SOCKET s, const char *buf, int len, int flags)
+cdef extern from *:
+    """
+    #ifdef _WIN32
+    #include <winsock2.h>
+    #else
+    #include <unistd.h>
+    #endif
+
+    static void _unified_socket_write_impl(int fd) {
+    #ifdef _WIN32
+        send((SOCKET)fd, "1", 1, 0);
+    #else
+        // Discard the return value via a variable to satisfy
+        // __attribute__((warn_unused_result)) under -Werror=unused-result.
+        ssize_t rc = write(fd, "1", 1);
+        (void)rc;
+    #endif
+    }
+    """
+    inline void _unified_socket_write_impl(int fd) nogil
 
 
 cdef void _unified_socket_write(int fd) noexcept nogil
@@ -39,7 +54,7 @@ cdef class _BoundEventLoop:
 
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
-    cdef bint _shutdown
+    cdef atomic[bint] _shutdown
     cdef cpp_event_queue _queue
     cdef mutex _queue_mutex
     cdef object _poller_thread  # threading.Thread

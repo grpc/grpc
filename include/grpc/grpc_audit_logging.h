@@ -78,11 +78,11 @@ class AuditLoggerFactory {
   virtual ~AuditLoggerFactory() = default;
   virtual absl::string_view name() const = 0;
 
-  virtual absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
+  virtual absl::StatusOr<std::shared_ptr<const Config>> ParseAuditLoggerConfig(
       const Json& json) = 0;
 
   virtual std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::unique_ptr<AuditLoggerFactory::Config>) = 0;
+      std::shared_ptr<const Config> config) = 0;
 };
 
 // Registers an audit logger factory. This should only be called during

@@ -2,7 +2,7 @@
 # For a full list of supported rules, see https://docs.astral.sh/ruff/rules/
 # For a full list of options, see https://docs.astral.sh/ruff/settings/
 
-target-version = "py39"
+target-version = "py310"
 
 [lint]
 ignore = [
@@ -21,6 +21,7 @@ ignore = [
     "ARG002",  # Unused method argument: {name}
     "B024",    # {name} is an abstract base class, but it has no abstract methods or properties
     "B904",    # Within an except* clause, raise exceptions with raise ... from err or raise ... from None to distinguish them from errors in exception handling
+    "B905",    # Ignore zip() calls missing the strict parameter
     "BLE001",  # Do not catch blind exception: {name}
     "C408",    # Unnecessary {kind}() call (rewrite as a literal)
     "C901",    # {name} is too complex ({complexity} > {max_complexity})
@@ -95,6 +96,7 @@ ignore = [
     "TRY401",  # Redundant exception object included in logging.exception call
     "UP004",   # Class {name} inherits from object
     "UP006",   # Use {to} instead of {from} for type annotation
+    "UP007",   # Use `X | Y` for type annotations
     "UP008",   # Use super() instead of super(__class__, self)
     "UP010",   # Unnecessary __future__ import {import} for target Python version
     "UP015",   # Unnecessary mode argument
@@ -107,6 +109,7 @@ ignore = [
     "UP035",   # Import from {target} instead: {names}
     "UP036",   # Version block is outdated for minimum Python version
     "UP037",   # Remove quotes from type annotation
+    "UP045",   # Use Optional[X], instead of X|None
     "YTT201",  # sys.version_info[0] == 3 referenced (python4), use >=
     "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
 ]

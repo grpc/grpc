@@ -537,10 +537,10 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   ConnectionAttemptInjector injector;
   auto hold0 = injector.AddHold(backends_[0]->port());
   auto hold1 = injector.AddHold(backends_[1]->port());
-  // Start long-running RPC in the background.
+  // Start an RPC in the background.
   // This will trigger the channel to start connecting.
   // Increase timeout to account for subchannel connection delays.
-  LongRunningRpc rpc;
+  AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(2000));
   // Tell channel to start connecting.
   channel_->GetState(/*try_to_connect=*/true);
@@ -1077,10 +1077,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

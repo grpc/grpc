@@ -70,6 +70,8 @@ typedef struct grpc_call_create_args {
 
   grpc_core::Timestamp send_deadline;
   bool registered_method;  // client_only
+
+  std::optional<absl::FunctionRef<void(grpc_core::Arena*)>> arena_init_function;
 } grpc_call_create_args;
 
 namespace grpc_core {
@@ -79,9 +81,22 @@ struct ArenaContextType<census_context> {
   static void Destroy(census_context*) {}
 };
 
+struct ParentCallContext {
+  RefCountedPtr<Arena> arena;
+};
+
+template <>
+struct ArenaContextType<ParentCallContext> {
+  static void Destroy(ParentCallContext* p) { p->~ParentCallContext(); }
+};
+
 class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
-                 Closure /* for deadlines */ {
+                 Closure /* for deadlines */,
+             public channelz::DataSource
+/* for channelz - derived implementations must call
+   SourceConstructed/SourceDestructing */
+{
  public:
   Arena* arena() const { return arena_.get(); }
   bool is_client() const { return is_client_; }
@@ -94,6 +109,12 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
                                      void* notify_tag,
                                      bool is_notify_tag_closure) = 0;
+  // Posts an immediate failed completion for notify_tag without going through
+  // the transport. Used when a batch is rejected before any state is committed
+  // (e.g. invalid metadata), so the caller still receives a CQ event.
+  virtual void FailBatchImmediately(void* notify_tag,
+                                    bool is_notify_tag_closure,
+                                    grpc_error_handle error) = 0;
   virtual bool failed_before_recv_message() const = 0;
   virtual bool is_trailers_only() const = 0;
   virtual absl::string_view GetServerAuthority() const = 0;
@@ -202,6 +223,8 @@ class Call : public CppImplOf<Call, grpc_call>,
 
   virtual void SetIncomingCompressionAlgorithm(
       grpc_compression_algorithm algorithm) = 0;
+
+  void AddData(channelz::DataSink sink) override;
 
  private:
   const RefCountedPtr<Arena> arena_;

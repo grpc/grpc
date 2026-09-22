@@ -10,9 +10,7 @@
 #define SRC_PROTO_GRPC_CHANNELZ_V2_PROPERTY_LIST_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
-
 #include "src/proto/grpc/channelz/v2/property_list.upb_minitable.h"
-
 #include "google/protobuf/any.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/empty.upb_minitable.h"
@@ -24,14 +22,34 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef struct grpc_channelz_v2_PropertyList {
+  upb_Message UPB_PRIVATE(base);
+} grpc_channelz_v2_PropertyList;
 
-typedef struct grpc_channelz_v2_PropertyList { upb_Message UPB_PRIVATE(base); } grpc_channelz_v2_PropertyList;
-typedef struct grpc_channelz_v2_PropertyList_Element { upb_Message UPB_PRIVATE(base); } grpc_channelz_v2_PropertyList_Element;
-typedef struct grpc_channelz_v2_PropertyGrid { upb_Message UPB_PRIVATE(base); } grpc_channelz_v2_PropertyGrid;
-typedef struct grpc_channelz_v2_PropertyGrid_Row { upb_Message UPB_PRIVATE(base); } grpc_channelz_v2_PropertyGrid_Row;
-typedef struct grpc_channelz_v2_PropertyTable { upb_Message UPB_PRIVATE(base); } grpc_channelz_v2_PropertyTable;
-typedef struct grpc_channelz_v2_PropertyTable_Row { upb_Message UPB_PRIVATE(base); } grpc_channelz_v2_PropertyTable_Row;
-typedef struct grpc_channelz_v2_PropertyValue { upb_Message UPB_PRIVATE(base); } grpc_channelz_v2_PropertyValue;
+typedef struct grpc_channelz_v2_PropertyList_Element {
+  upb_Message UPB_PRIVATE(base);
+} grpc_channelz_v2_PropertyList_Element;
+
+typedef struct grpc_channelz_v2_PropertyGrid {
+  upb_Message UPB_PRIVATE(base);
+} grpc_channelz_v2_PropertyGrid;
+
+typedef struct grpc_channelz_v2_PropertyGrid_Row {
+  upb_Message UPB_PRIVATE(base);
+} grpc_channelz_v2_PropertyGrid_Row;
+
+typedef struct grpc_channelz_v2_PropertyTable {
+  upb_Message UPB_PRIVATE(base);
+} grpc_channelz_v2_PropertyTable;
+
+typedef struct grpc_channelz_v2_PropertyTable_Row {
+  upb_Message UPB_PRIVATE(base);
+} grpc_channelz_v2_PropertyTable_Row;
+
+typedef struct grpc_channelz_v2_PropertyValue {
+  upb_Message UPB_PRIVATE(base);
+} grpc_channelz_v2_PropertyValue;
+
 struct google_protobuf_Any;
 struct google_protobuf_Duration;
 struct google_protobuf_Empty;
@@ -40,47 +58,50 @@ struct google_protobuf_Timestamp;
 
 
 /* grpc.channelz.v2.PropertyList */
-
 UPB_INLINE grpc_channelz_v2_PropertyList* grpc_channelz_v2_PropertyList_new(upb_Arena* arena) {
   return (grpc_channelz_v2_PropertyList*)_upb_Message_New(&grpc__channelz__v2__PropertyList_msg_init, arena);
 }
-UPB_INLINE grpc_channelz_v2_PropertyList* grpc_channelz_v2_PropertyList_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE grpc_channelz_v2_PropertyList* grpc_channelz_v2_PropertyList_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   grpc_channelz_v2_PropertyList* ret = grpc_channelz_v2_PropertyList_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyList_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE grpc_channelz_v2_PropertyList* grpc_channelz_v2_PropertyList_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  grpc_channelz_v2_PropertyList* ret = grpc_channelz_v2_PropertyList_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyList_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyList_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyList_serialize(const grpc_channelz_v2_PropertyList* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE grpc_channelz_v2_PropertyList* grpc_channelz_v2_PropertyList_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  grpc_channelz_v2_PropertyList* ret = grpc_channelz_v2_PropertyList_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyList_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* grpc_channelz_v2_PropertyList_serialize(const grpc_channelz_v2_PropertyList* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyList_serialize_ex(const grpc_channelz_v2_PropertyList* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* grpc_channelz_v2_PropertyList_serialize_ex(const grpc_channelz_v2_PropertyList* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyList_clear_properties(grpc_channelz_v2_PropertyList* msg) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE const grpc_channelz_v2_PropertyList_Element* const* grpc_channelz_v2_PropertyList_properties(const grpc_channelz_v2_PropertyList* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE const grpc_channelz_v2_PropertyList_Element* const* grpc_channelz_v2_PropertyList_properties(const grpc_channelz_v2_PropertyList* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyList__Element_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -91,8 +112,11 @@ UPB_INLINE const grpc_channelz_v2_PropertyList_Element* const* grpc_channelz_v2_
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyList_properties_upb_array(const grpc_channelz_v2_PropertyList* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+//
+UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyList_properties_upb_array(
+    const grpc_channelz_v2_PropertyList* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyList__Element_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -100,8 +124,10 @@ UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyList_properties_upb_array(
   }
   return arr;
 }
-UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyList_properties_mutable_upb_array(grpc_channelz_v2_PropertyList* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyList_properties_mutable_upb_array(
+    grpc_channelz_v2_PropertyList* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyList__Element_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -111,8 +137,9 @@ UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyList_properties_mutable_upb_arra
   return arr;
 }
 
-UPB_INLINE grpc_channelz_v2_PropertyList_Element** grpc_channelz_v2_PropertyList_mutable_properties(grpc_channelz_v2_PropertyList* msg, size_t* size) {
-  upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE grpc_channelz_v2_PropertyList_Element** grpc_channelz_v2_PropertyList_mutable_properties(grpc_channelz_v2_PropertyList* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyList__Element_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -123,13 +150,18 @@ UPB_INLINE grpc_channelz_v2_PropertyList_Element** grpc_channelz_v2_PropertyList
     return NULL;
   }
 }
-UPB_INLINE grpc_channelz_v2_PropertyList_Element** grpc_channelz_v2_PropertyList_resize_properties(grpc_channelz_v2_PropertyList* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (grpc_channelz_v2_PropertyList_Element**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+
+UPB_INLINE grpc_channelz_v2_PropertyList_Element** grpc_channelz_v2_PropertyList_resize_properties(grpc_channelz_v2_PropertyList* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyList__Element_msg_init);
+  return (grpc_channelz_v2_PropertyList_Element**)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE struct grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_PropertyList_add_properties(grpc_channelz_v2_PropertyList* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE struct grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_PropertyList_add_properties(
+    grpc_channelz_v2_PropertyList* msg, upb_Arena* arena) {
+  upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyList__Element_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -137,7 +169,8 @@ UPB_INLINE struct grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_Proper
                   arr, arr->UPB_PRIVATE(size) + 1, arena)) {
     return NULL;
   }
-  struct grpc_channelz_v2_PropertyList_Element* sub = (struct grpc_channelz_v2_PropertyList_Element*)_upb_Message_New(&grpc__channelz__v2__PropertyList__Element_msg_init, arena);
+  struct grpc_channelz_v2_PropertyList_Element* sub =
+      (struct grpc_channelz_v2_PropertyList_Element*)_upb_Message_New(&grpc__channelz__v2__PropertyList__Element_msg_init, arena);
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
@@ -145,37 +178,39 @@ UPB_INLINE struct grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_Proper
 }
 
 /* grpc.channelz.v2.PropertyList.Element */
-
 UPB_INLINE grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_PropertyList_Element_new(upb_Arena* arena) {
   return (grpc_channelz_v2_PropertyList_Element*)_upb_Message_New(&grpc__channelz__v2__PropertyList__Element_msg_init, arena);
 }
-UPB_INLINE grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_PropertyList_Element_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_PropertyList_Element_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   grpc_channelz_v2_PropertyList_Element* ret = grpc_channelz_v2_PropertyList_Element_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyList__Element_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_PropertyList_Element_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  grpc_channelz_v2_PropertyList_Element* ret = grpc_channelz_v2_PropertyList_Element_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyList__Element_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyList__Element_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyList_Element_serialize(const grpc_channelz_v2_PropertyList_Element* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE grpc_channelz_v2_PropertyList_Element* grpc_channelz_v2_PropertyList_Element_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  grpc_channelz_v2_PropertyList_Element* ret = grpc_channelz_v2_PropertyList_Element_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyList__Element_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* grpc_channelz_v2_PropertyList_Element_serialize(const grpc_channelz_v2_PropertyList_Element* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList__Element_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyList_Element_serialize_ex(const grpc_channelz_v2_PropertyList_Element* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* grpc_channelz_v2_PropertyList_Element_serialize_ex(const grpc_channelz_v2_PropertyList_Element* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyList__Element_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -193,33 +228,34 @@ UPB_INLINE upb_StringView grpc_channelz_v2_PropertyList_Element_key(const grpc_c
   return ret;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyList_Element_clear_value(grpc_channelz_v2_PropertyList_Element* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyList_Element_value(const grpc_channelz_v2_PropertyList_Element* msg) {
   const grpc_channelz_v2_PropertyValue* default_val = NULL;
   const grpc_channelz_v2_PropertyValue* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v2_PropertyList_Element_has_value(const grpc_channelz_v2_PropertyList_Element* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void grpc_channelz_v2_PropertyList_Element_set_key(grpc_channelz_v2_PropertyList_Element *msg, upb_StringView value) {
+UPB_INLINE void grpc_channelz_v2_PropertyList_Element_set_key(grpc_channelz_v2_PropertyList_Element* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void grpc_channelz_v2_PropertyList_Element_set_value(grpc_channelz_v2_PropertyList_Element *msg, grpc_channelz_v2_PropertyValue* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void grpc_channelz_v2_PropertyList_Element_set_value(grpc_channelz_v2_PropertyList_Element* msg, grpc_channelz_v2_PropertyValue* value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyList_Element_mutable_value(grpc_channelz_v2_PropertyList_Element* msg, upb_Arena* arena) {
+UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyList_Element_mutable_value(
+    grpc_channelz_v2_PropertyList_Element* msg, upb_Arena* arena) {
   struct grpc_channelz_v2_PropertyValue* sub = (struct grpc_channelz_v2_PropertyValue*)grpc_channelz_v2_PropertyList_Element_value(msg);
   if (sub == NULL) {
     sub = (struct grpc_channelz_v2_PropertyValue*)_upb_Message_New(&grpc__channelz__v2__PropertyValue_msg_init, arena);
@@ -229,37 +265,39 @@ UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyList_
 }
 
 /* grpc.channelz.v2.PropertyGrid */
-
 UPB_INLINE grpc_channelz_v2_PropertyGrid* grpc_channelz_v2_PropertyGrid_new(upb_Arena* arena) {
   return (grpc_channelz_v2_PropertyGrid*)_upb_Message_New(&grpc__channelz__v2__PropertyGrid_msg_init, arena);
 }
-UPB_INLINE grpc_channelz_v2_PropertyGrid* grpc_channelz_v2_PropertyGrid_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE grpc_channelz_v2_PropertyGrid* grpc_channelz_v2_PropertyGrid_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   grpc_channelz_v2_PropertyGrid* ret = grpc_channelz_v2_PropertyGrid_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyGrid_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE grpc_channelz_v2_PropertyGrid* grpc_channelz_v2_PropertyGrid_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  grpc_channelz_v2_PropertyGrid* ret = grpc_channelz_v2_PropertyGrid_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyGrid_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyGrid_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyGrid_serialize(const grpc_channelz_v2_PropertyGrid* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE grpc_channelz_v2_PropertyGrid* grpc_channelz_v2_PropertyGrid_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  grpc_channelz_v2_PropertyGrid* ret = grpc_channelz_v2_PropertyGrid_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyGrid_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* grpc_channelz_v2_PropertyGrid_serialize(const grpc_channelz_v2_PropertyGrid* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyGrid_serialize_ex(const grpc_channelz_v2_PropertyGrid* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* grpc_channelz_v2_PropertyGrid_serialize_ex(const grpc_channelz_v2_PropertyGrid* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -268,7 +306,8 @@ UPB_INLINE void grpc_channelz_v2_PropertyGrid_clear_columns(grpc_channelz_v2_Pro
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE upb_StringView const* grpc_channelz_v2_PropertyGrid_columns(const grpc_channelz_v2_PropertyGrid* msg, size_t* size) {
+UPB_INLINE upb_StringView const* grpc_channelz_v2_PropertyGrid_columns(const grpc_channelz_v2_PropertyGrid* msg,
+                                                  size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -279,7 +318,10 @@ UPB_INLINE upb_StringView const* grpc_channelz_v2_PropertyGrid_columns(const grp
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyGrid_columns_upb_array(const grpc_channelz_v2_PropertyGrid* msg, size_t* size) {
+
+//
+UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyGrid_columns_upb_array(
+    const grpc_channelz_v2_PropertyGrid* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -287,7 +329,9 @@ UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyGrid_columns_upb_array(con
   }
   return arr;
 }
-UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyGrid_columns_mutable_upb_array(grpc_channelz_v2_PropertyGrid* msg, size_t* size, upb_Arena* arena) {
+
+UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyGrid_columns_mutable_upb_array(
+    grpc_channelz_v2_PropertyGrid* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -297,11 +341,12 @@ UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyGrid_columns_mutable_upb_array(g
   return arr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyGrid_clear_rows(grpc_channelz_v2_PropertyGrid* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE const grpc_channelz_v2_PropertyGrid_Row* const* grpc_channelz_v2_PropertyGrid_rows(const grpc_channelz_v2_PropertyGrid* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE const grpc_channelz_v2_PropertyGrid_Row* const* grpc_channelz_v2_PropertyGrid_rows(const grpc_channelz_v2_PropertyGrid* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyGrid__Row_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -312,8 +357,11 @@ UPB_INLINE const grpc_channelz_v2_PropertyGrid_Row* const* grpc_channelz_v2_Prop
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyGrid_rows_upb_array(const grpc_channelz_v2_PropertyGrid* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+//
+UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyGrid_rows_upb_array(
+    const grpc_channelz_v2_PropertyGrid* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyGrid__Row_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -321,8 +369,10 @@ UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyGrid_rows_upb_array(const 
   }
   return arr;
 }
-UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyGrid_rows_mutable_upb_array(grpc_channelz_v2_PropertyGrid* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyGrid_rows_mutable_upb_array(
+    grpc_channelz_v2_PropertyGrid* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyGrid__Row_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -332,7 +382,8 @@ UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyGrid_rows_mutable_upb_array(grpc
   return arr;
 }
 
-UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyGrid_mutable_columns(grpc_channelz_v2_PropertyGrid* msg, size_t* size) {
+UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyGrid_mutable_columns(grpc_channelz_v2_PropertyGrid* msg,
+                                              size_t* size) {
   upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -343,12 +394,16 @@ UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyGrid_mutable_columns(grpc_ch
     return NULL;
   }
 }
-UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyGrid_resize_columns(grpc_channelz_v2_PropertyGrid* msg, size_t size, upb_Arena* arena) {
+
+UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyGrid_resize_columns(grpc_channelz_v2_PropertyGrid* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE bool grpc_channelz_v2_PropertyGrid_add_columns(grpc_channelz_v2_PropertyGrid* msg, upb_StringView val, upb_Arena* arena) {
+UPB_INLINE bool grpc_channelz_v2_PropertyGrid_add_columns(grpc_channelz_v2_PropertyGrid* msg, upb_StringView val,
+                                      upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -360,8 +415,9 @@ UPB_INLINE bool grpc_channelz_v2_PropertyGrid_add_columns(grpc_channelz_v2_Prope
   (arr, arr->UPB_PRIVATE(size) - 1, &val, sizeof(val));
   return true;
 }
-UPB_INLINE grpc_channelz_v2_PropertyGrid_Row** grpc_channelz_v2_PropertyGrid_mutable_rows(grpc_channelz_v2_PropertyGrid* msg, size_t* size) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE grpc_channelz_v2_PropertyGrid_Row** grpc_channelz_v2_PropertyGrid_mutable_rows(grpc_channelz_v2_PropertyGrid* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyGrid__Row_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -372,13 +428,18 @@ UPB_INLINE grpc_channelz_v2_PropertyGrid_Row** grpc_channelz_v2_PropertyGrid_mut
     return NULL;
   }
 }
-UPB_INLINE grpc_channelz_v2_PropertyGrid_Row** grpc_channelz_v2_PropertyGrid_resize_rows(grpc_channelz_v2_PropertyGrid* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (grpc_channelz_v2_PropertyGrid_Row**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+
+UPB_INLINE grpc_channelz_v2_PropertyGrid_Row** grpc_channelz_v2_PropertyGrid_resize_rows(grpc_channelz_v2_PropertyGrid* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyGrid__Row_msg_init);
+  return (grpc_channelz_v2_PropertyGrid_Row**)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE struct grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGrid_add_rows(grpc_channelz_v2_PropertyGrid* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE struct grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGrid_add_rows(
+    grpc_channelz_v2_PropertyGrid* msg, upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyGrid__Row_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -386,7 +447,8 @@ UPB_INLINE struct grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGr
                   arr, arr->UPB_PRIVATE(size) + 1, arena)) {
     return NULL;
   }
-  struct grpc_channelz_v2_PropertyGrid_Row* sub = (struct grpc_channelz_v2_PropertyGrid_Row*)_upb_Message_New(&grpc__channelz__v2__PropertyGrid__Row_msg_init, arena);
+  struct grpc_channelz_v2_PropertyGrid_Row* sub =
+      (struct grpc_channelz_v2_PropertyGrid_Row*)_upb_Message_New(&grpc__channelz__v2__PropertyGrid__Row_msg_init, arena);
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
@@ -394,37 +456,39 @@ UPB_INLINE struct grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGr
 }
 
 /* grpc.channelz.v2.PropertyGrid.Row */
-
 UPB_INLINE grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGrid_Row_new(upb_Arena* arena) {
   return (grpc_channelz_v2_PropertyGrid_Row*)_upb_Message_New(&grpc__channelz__v2__PropertyGrid__Row_msg_init, arena);
 }
-UPB_INLINE grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGrid_Row_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGrid_Row_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   grpc_channelz_v2_PropertyGrid_Row* ret = grpc_channelz_v2_PropertyGrid_Row_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyGrid__Row_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGrid_Row_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  grpc_channelz_v2_PropertyGrid_Row* ret = grpc_channelz_v2_PropertyGrid_Row_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyGrid__Row_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyGrid__Row_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyGrid_Row_serialize(const grpc_channelz_v2_PropertyGrid_Row* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE grpc_channelz_v2_PropertyGrid_Row* grpc_channelz_v2_PropertyGrid_Row_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  grpc_channelz_v2_PropertyGrid_Row* ret = grpc_channelz_v2_PropertyGrid_Row_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyGrid__Row_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* grpc_channelz_v2_PropertyGrid_Row_serialize(const grpc_channelz_v2_PropertyGrid_Row* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid__Row_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyGrid_Row_serialize_ex(const grpc_channelz_v2_PropertyGrid_Row* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* grpc_channelz_v2_PropertyGrid_Row_serialize_ex(const grpc_channelz_v2_PropertyGrid_Row* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyGrid__Row_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -442,11 +506,12 @@ UPB_INLINE upb_StringView grpc_channelz_v2_PropertyGrid_Row_label(const grpc_cha
   return ret;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyGrid_Row_clear_value(grpc_channelz_v2_PropertyGrid_Row* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE const grpc_channelz_v2_PropertyValue* const* grpc_channelz_v2_PropertyGrid_Row_value(const grpc_channelz_v2_PropertyGrid_Row* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE const grpc_channelz_v2_PropertyValue* const* grpc_channelz_v2_PropertyGrid_Row_value(const grpc_channelz_v2_PropertyGrid_Row* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -457,8 +522,11 @@ UPB_INLINE const grpc_channelz_v2_PropertyValue* const* grpc_channelz_v2_Propert
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyGrid_Row_value_upb_array(const grpc_channelz_v2_PropertyGrid_Row* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+//
+UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyGrid_Row_value_upb_array(
+    const grpc_channelz_v2_PropertyGrid_Row* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -466,8 +534,10 @@ UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyGrid_Row_value_upb_array(c
   }
   return arr;
 }
-UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyGrid_Row_value_mutable_upb_array(grpc_channelz_v2_PropertyGrid_Row* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyGrid_Row_value_mutable_upb_array(
+    grpc_channelz_v2_PropertyGrid_Row* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -477,12 +547,13 @@ UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyGrid_Row_value_mutable_upb_array
   return arr;
 }
 
-UPB_INLINE void grpc_channelz_v2_PropertyGrid_Row_set_label(grpc_channelz_v2_PropertyGrid_Row *msg, upb_StringView value) {
+UPB_INLINE void grpc_channelz_v2_PropertyGrid_Row_set_label(grpc_channelz_v2_PropertyGrid_Row* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyGrid_Row_mutable_value(grpc_channelz_v2_PropertyGrid_Row* msg, size_t* size) {
-  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyGrid_Row_mutable_value(grpc_channelz_v2_PropertyGrid_Row* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -493,13 +564,18 @@ UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyGrid_Row_mu
     return NULL;
   }
 }
-UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyGrid_Row_resize_value(grpc_channelz_v2_PropertyGrid_Row* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (grpc_channelz_v2_PropertyValue**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+
+UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyGrid_Row_resize_value(grpc_channelz_v2_PropertyGrid_Row* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
+  return (grpc_channelz_v2_PropertyValue**)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyGrid_Row_add_value(grpc_channelz_v2_PropertyGrid_Row* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyGrid_Row_add_value(
+    grpc_channelz_v2_PropertyGrid_Row* msg, upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -507,7 +583,8 @@ UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyGrid_
                   arr, arr->UPB_PRIVATE(size) + 1, arena)) {
     return NULL;
   }
-  struct grpc_channelz_v2_PropertyValue* sub = (struct grpc_channelz_v2_PropertyValue*)_upb_Message_New(&grpc__channelz__v2__PropertyValue_msg_init, arena);
+  struct grpc_channelz_v2_PropertyValue* sub =
+      (struct grpc_channelz_v2_PropertyValue*)_upb_Message_New(&grpc__channelz__v2__PropertyValue_msg_init, arena);
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
@@ -515,37 +592,39 @@ UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyGrid_
 }
 
 /* grpc.channelz.v2.PropertyTable */
-
 UPB_INLINE grpc_channelz_v2_PropertyTable* grpc_channelz_v2_PropertyTable_new(upb_Arena* arena) {
   return (grpc_channelz_v2_PropertyTable*)_upb_Message_New(&grpc__channelz__v2__PropertyTable_msg_init, arena);
 }
-UPB_INLINE grpc_channelz_v2_PropertyTable* grpc_channelz_v2_PropertyTable_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE grpc_channelz_v2_PropertyTable* grpc_channelz_v2_PropertyTable_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   grpc_channelz_v2_PropertyTable* ret = grpc_channelz_v2_PropertyTable_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyTable_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE grpc_channelz_v2_PropertyTable* grpc_channelz_v2_PropertyTable_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  grpc_channelz_v2_PropertyTable* ret = grpc_channelz_v2_PropertyTable_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyTable_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyTable_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyTable_serialize(const grpc_channelz_v2_PropertyTable* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE grpc_channelz_v2_PropertyTable* grpc_channelz_v2_PropertyTable_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  grpc_channelz_v2_PropertyTable* ret = grpc_channelz_v2_PropertyTable_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyTable_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* grpc_channelz_v2_PropertyTable_serialize(const grpc_channelz_v2_PropertyTable* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyTable_serialize_ex(const grpc_channelz_v2_PropertyTable* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* grpc_channelz_v2_PropertyTable_serialize_ex(const grpc_channelz_v2_PropertyTable* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -554,7 +633,8 @@ UPB_INLINE void grpc_channelz_v2_PropertyTable_clear_columns(grpc_channelz_v2_Pr
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE upb_StringView const* grpc_channelz_v2_PropertyTable_columns(const grpc_channelz_v2_PropertyTable* msg, size_t* size) {
+UPB_INLINE upb_StringView const* grpc_channelz_v2_PropertyTable_columns(const grpc_channelz_v2_PropertyTable* msg,
+                                                  size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -565,7 +645,10 @@ UPB_INLINE upb_StringView const* grpc_channelz_v2_PropertyTable_columns(const gr
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyTable_columns_upb_array(const grpc_channelz_v2_PropertyTable* msg, size_t* size) {
+
+//
+UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyTable_columns_upb_array(
+    const grpc_channelz_v2_PropertyTable* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -573,7 +656,9 @@ UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyTable_columns_upb_array(co
   }
   return arr;
 }
-UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyTable_columns_mutable_upb_array(grpc_channelz_v2_PropertyTable* msg, size_t* size, upb_Arena* arena) {
+
+UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyTable_columns_mutable_upb_array(
+    grpc_channelz_v2_PropertyTable* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -583,11 +668,12 @@ UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyTable_columns_mutable_upb_array(
   return arr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyTable_clear_rows(grpc_channelz_v2_PropertyTable* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE const grpc_channelz_v2_PropertyTable_Row* const* grpc_channelz_v2_PropertyTable_rows(const grpc_channelz_v2_PropertyTable* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE const grpc_channelz_v2_PropertyTable_Row* const* grpc_channelz_v2_PropertyTable_rows(const grpc_channelz_v2_PropertyTable* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyTable__Row_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -598,8 +684,11 @@ UPB_INLINE const grpc_channelz_v2_PropertyTable_Row* const* grpc_channelz_v2_Pro
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyTable_rows_upb_array(const grpc_channelz_v2_PropertyTable* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+//
+UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyTable_rows_upb_array(
+    const grpc_channelz_v2_PropertyTable* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyTable__Row_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -607,8 +696,10 @@ UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyTable_rows_upb_array(const
   }
   return arr;
 }
-UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyTable_rows_mutable_upb_array(grpc_channelz_v2_PropertyTable* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyTable_rows_mutable_upb_array(
+    grpc_channelz_v2_PropertyTable* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyTable__Row_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -618,7 +709,8 @@ UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyTable_rows_mutable_upb_array(grp
   return arr;
 }
 
-UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyTable_mutable_columns(grpc_channelz_v2_PropertyTable* msg, size_t* size) {
+UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyTable_mutable_columns(grpc_channelz_v2_PropertyTable* msg,
+                                              size_t* size) {
   upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -629,12 +721,16 @@ UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyTable_mutable_columns(grpc_c
     return NULL;
   }
 }
-UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyTable_resize_columns(grpc_channelz_v2_PropertyTable* msg, size_t size, upb_Arena* arena) {
+
+UPB_INLINE upb_StringView* grpc_channelz_v2_PropertyTable_resize_columns(grpc_channelz_v2_PropertyTable* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE bool grpc_channelz_v2_PropertyTable_add_columns(grpc_channelz_v2_PropertyTable* msg, upb_StringView val, upb_Arena* arena) {
+UPB_INLINE bool grpc_channelz_v2_PropertyTable_add_columns(grpc_channelz_v2_PropertyTable* msg, upb_StringView val,
+                                      upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -646,8 +742,9 @@ UPB_INLINE bool grpc_channelz_v2_PropertyTable_add_columns(grpc_channelz_v2_Prop
   (arr, arr->UPB_PRIVATE(size) - 1, &val, sizeof(val));
   return true;
 }
-UPB_INLINE grpc_channelz_v2_PropertyTable_Row** grpc_channelz_v2_PropertyTable_mutable_rows(grpc_channelz_v2_PropertyTable* msg, size_t* size) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE grpc_channelz_v2_PropertyTable_Row** grpc_channelz_v2_PropertyTable_mutable_rows(grpc_channelz_v2_PropertyTable* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyTable__Row_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -658,13 +755,18 @@ UPB_INLINE grpc_channelz_v2_PropertyTable_Row** grpc_channelz_v2_PropertyTable_m
     return NULL;
   }
 }
-UPB_INLINE grpc_channelz_v2_PropertyTable_Row** grpc_channelz_v2_PropertyTable_resize_rows(grpc_channelz_v2_PropertyTable* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (grpc_channelz_v2_PropertyTable_Row**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+
+UPB_INLINE grpc_channelz_v2_PropertyTable_Row** grpc_channelz_v2_PropertyTable_resize_rows(grpc_channelz_v2_PropertyTable* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyTable__Row_msg_init);
+  return (grpc_channelz_v2_PropertyTable_Row**)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE struct grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyTable_add_rows(grpc_channelz_v2_PropertyTable* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE struct grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyTable_add_rows(
+    grpc_channelz_v2_PropertyTable* msg, upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyTable__Row_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -672,7 +774,8 @@ UPB_INLINE struct grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyT
                   arr, arr->UPB_PRIVATE(size) + 1, arena)) {
     return NULL;
   }
-  struct grpc_channelz_v2_PropertyTable_Row* sub = (struct grpc_channelz_v2_PropertyTable_Row*)_upb_Message_New(&grpc__channelz__v2__PropertyTable__Row_msg_init, arena);
+  struct grpc_channelz_v2_PropertyTable_Row* sub =
+      (struct grpc_channelz_v2_PropertyTable_Row*)_upb_Message_New(&grpc__channelz__v2__PropertyTable__Row_msg_init, arena);
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
@@ -680,47 +783,50 @@ UPB_INLINE struct grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyT
 }
 
 /* grpc.channelz.v2.PropertyTable.Row */
-
 UPB_INLINE grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyTable_Row_new(upb_Arena* arena) {
   return (grpc_channelz_v2_PropertyTable_Row*)_upb_Message_New(&grpc__channelz__v2__PropertyTable__Row_msg_init, arena);
 }
-UPB_INLINE grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyTable_Row_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyTable_Row_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   grpc_channelz_v2_PropertyTable_Row* ret = grpc_channelz_v2_PropertyTable_Row_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyTable__Row_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyTable_Row_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  grpc_channelz_v2_PropertyTable_Row* ret = grpc_channelz_v2_PropertyTable_Row_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyTable__Row_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyTable__Row_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyTable_Row_serialize(const grpc_channelz_v2_PropertyTable_Row* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE grpc_channelz_v2_PropertyTable_Row* grpc_channelz_v2_PropertyTable_Row_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  grpc_channelz_v2_PropertyTable_Row* ret = grpc_channelz_v2_PropertyTable_Row_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyTable__Row_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* grpc_channelz_v2_PropertyTable_Row_serialize(const grpc_channelz_v2_PropertyTable_Row* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable__Row_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyTable_Row_serialize_ex(const grpc_channelz_v2_PropertyTable_Row* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* grpc_channelz_v2_PropertyTable_Row_serialize_ex(const grpc_channelz_v2_PropertyTable_Row* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyTable__Row_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v2_PropertyTable_Row_clear_value(grpc_channelz_v2_PropertyTable_Row* msg) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE const grpc_channelz_v2_PropertyValue* const* grpc_channelz_v2_PropertyTable_Row_value(const grpc_channelz_v2_PropertyTable_Row* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE const grpc_channelz_v2_PropertyValue* const* grpc_channelz_v2_PropertyTable_Row_value(const grpc_channelz_v2_PropertyTable_Row* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -731,8 +837,11 @@ UPB_INLINE const grpc_channelz_v2_PropertyValue* const* grpc_channelz_v2_Propert
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyTable_Row_value_upb_array(const grpc_channelz_v2_PropertyTable_Row* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+//
+UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyTable_Row_value_upb_array(
+    const grpc_channelz_v2_PropertyTable_Row* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -740,8 +849,10 @@ UPB_INLINE const upb_Array* _grpc_channelz_v2_PropertyTable_Row_value_upb_array(
   }
   return arr;
 }
-UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyTable_Row_value_mutable_upb_array(grpc_channelz_v2_PropertyTable_Row* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyTable_Row_value_mutable_upb_array(
+    grpc_channelz_v2_PropertyTable_Row* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -751,8 +862,9 @@ UPB_INLINE upb_Array* _grpc_channelz_v2_PropertyTable_Row_value_mutable_upb_arra
   return arr;
 }
 
-UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyTable_Row_mutable_value(grpc_channelz_v2_PropertyTable_Row* msg, size_t* size) {
-  upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyTable_Row_mutable_value(grpc_channelz_v2_PropertyTable_Row* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -763,13 +875,18 @@ UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyTable_Row_m
     return NULL;
   }
 }
-UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyTable_Row_resize_value(grpc_channelz_v2_PropertyTable_Row* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (grpc_channelz_v2_PropertyValue**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+
+UPB_INLINE grpc_channelz_v2_PropertyValue** grpc_channelz_v2_PropertyTable_Row_resize_value(grpc_channelz_v2_PropertyTable_Row* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
+  return (grpc_channelz_v2_PropertyValue**)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyTable_Row_add_value(grpc_channelz_v2_PropertyTable_Row* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyTable_Row_add_value(
+    grpc_channelz_v2_PropertyTable_Row* msg, upb_Arena* arena) {
+  upb_MiniTableField field = {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v2__PropertyValue_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -777,7 +894,8 @@ UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyTable
                   arr, arr->UPB_PRIVATE(size) + 1, arena)) {
     return NULL;
   }
-  struct grpc_channelz_v2_PropertyValue* sub = (struct grpc_channelz_v2_PropertyValue*)_upb_Message_New(&grpc__channelz__v2__PropertyValue_msg_init, arena);
+  struct grpc_channelz_v2_PropertyValue* sub =
+      (struct grpc_channelz_v2_PropertyValue*)_upb_Message_New(&grpc__channelz__v2__PropertyValue_msg_init, arena);
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
@@ -785,37 +903,39 @@ UPB_INLINE struct grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyTable
 }
 
 /* grpc.channelz.v2.PropertyValue */
-
 UPB_INLINE grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyValue_new(upb_Arena* arena) {
   return (grpc_channelz_v2_PropertyValue*)_upb_Message_New(&grpc__channelz__v2__PropertyValue_msg_init, arena);
 }
-UPB_INLINE grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyValue_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyValue_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   grpc_channelz_v2_PropertyValue* ret = grpc_channelz_v2_PropertyValue_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyValue_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyValue_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  grpc_channelz_v2_PropertyValue* ret = grpc_channelz_v2_PropertyValue_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyValue_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyValue_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyValue_serialize(const grpc_channelz_v2_PropertyValue* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE grpc_channelz_v2_PropertyValue* grpc_channelz_v2_PropertyValue_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  grpc_channelz_v2_PropertyValue* ret = grpc_channelz_v2_PropertyValue_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &grpc__channelz__v2__PropertyValue_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* grpc_channelz_v2_PropertyValue_serialize(const grpc_channelz_v2_PropertyValue* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyValue_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* grpc_channelz_v2_PropertyValue_serialize_ex(const grpc_channelz_v2_PropertyValue* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* grpc_channelz_v2_PropertyValue_serialize_ex(const grpc_channelz_v2_PropertyValue* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyValue_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -832,47 +952,49 @@ typedef enum {
   grpc_channelz_v2_PropertyValue_kind_duration_value = 9,
   grpc_channelz_v2_PropertyValue_kind_NOT_SET = 0
 } grpc_channelz_v2_PropertyValue_kind_oneofcases;
-UPB_INLINE grpc_channelz_v2_PropertyValue_kind_oneofcases grpc_channelz_v2_PropertyValue_kind_case(const grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE grpc_channelz_v2_PropertyValue_kind_oneofcases
+grpc_channelz_v2_PropertyValue_kind_case(const grpc_channelz_v2_PropertyValue* msg) {
+  const upb_MiniTableField field = {1, 16, -9, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (grpc_channelz_v2_PropertyValue_kind_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v2_PropertyValue_clear_kind(grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, -9, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearOneof(UPB_UPCAST(msg), &grpc__channelz__v2__PropertyValue_msg_init, &field);
 }
 UPB_INLINE void grpc_channelz_v2_PropertyValue_clear_empty_value(grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, -9, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Empty* grpc_channelz_v2_PropertyValue_empty_value(const grpc_channelz_v2_PropertyValue* msg) {
   const struct google_protobuf_Empty* default_val = NULL;
   const struct google_protobuf_Empty* ret;
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, -9, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Empty_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v2_PropertyValue_has_empty_value(const grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, -9, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v2_PropertyValue_clear_any_value(grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {2, 16, -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 16, -9, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Any* grpc_channelz_v2_PropertyValue_any_value(const grpc_channelz_v2_PropertyValue* msg) {
   const struct google_protobuf_Any* default_val = NULL;
   const struct google_protobuf_Any* ret;
-  const upb_MiniTableField field = {2, 16, -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 16, -9, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v2_PropertyValue_has_any_value(const grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {2, 16, -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 16, -9, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v2_PropertyValue_clear_string_value(grpc_channelz_v2_PropertyValue* msg) {
@@ -956,46 +1078,47 @@ UPB_INLINE bool grpc_channelz_v2_PropertyValue_has_bool_value(const grpc_channel
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v2_PropertyValue_clear_timestamp_value(grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {8, 16, -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, 16, -9, UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* grpc_channelz_v2_PropertyValue_timestamp_value(const grpc_channelz_v2_PropertyValue* msg) {
   const struct google_protobuf_Timestamp* default_val = NULL;
   const struct google_protobuf_Timestamp* ret;
-  const upb_MiniTableField field = {8, 16, -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, 16, -9, UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v2_PropertyValue_has_timestamp_value(const grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {8, 16, -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, 16, -9, UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v2_PropertyValue_clear_duration_value(grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {9, 16, -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, 16, -9, UPB_SIZE(6, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* grpc_channelz_v2_PropertyValue_duration_value(const grpc_channelz_v2_PropertyValue* msg) {
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
-  const upb_MiniTableField field = {9, 16, -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, 16, -9, UPB_SIZE(6, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v2_PropertyValue_has_duration_value(const grpc_channelz_v2_PropertyValue* msg) {
-  const upb_MiniTableField field = {9, 16, -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, 16, -9, UPB_SIZE(6, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void grpc_channelz_v2_PropertyValue_set_empty_value(grpc_channelz_v2_PropertyValue *msg, struct google_protobuf_Empty* value) {
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void grpc_channelz_v2_PropertyValue_set_empty_value(grpc_channelz_v2_PropertyValue* msg, struct google_protobuf_Empty* value) {
+  const upb_MiniTableField field = {1, 16, -9, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Empty_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_Empty* grpc_channelz_v2_PropertyValue_mutable_empty_value(grpc_channelz_v2_PropertyValue* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_Empty* grpc_channelz_v2_PropertyValue_mutable_empty_value(
+    grpc_channelz_v2_PropertyValue* msg, upb_Arena* arena) {
   struct google_protobuf_Empty* sub = (struct google_protobuf_Empty*)grpc_channelz_v2_PropertyValue_empty_value(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Empty*)_upb_Message_New(&google__protobuf__Empty_msg_init, arena);
@@ -1003,12 +1126,13 @@ UPB_INLINE struct google_protobuf_Empty* grpc_channelz_v2_PropertyValue_mutable_
   }
   return sub;
 }
-UPB_INLINE void grpc_channelz_v2_PropertyValue_set_any_value(grpc_channelz_v2_PropertyValue *msg, struct google_protobuf_Any* value) {
-  const upb_MiniTableField field = {2, 16, -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void grpc_channelz_v2_PropertyValue_set_any_value(grpc_channelz_v2_PropertyValue* msg, struct google_protobuf_Any* value) {
+  const upb_MiniTableField field = {2, 16, -9, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_Any* grpc_channelz_v2_PropertyValue_mutable_any_value(grpc_channelz_v2_PropertyValue* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_Any* grpc_channelz_v2_PropertyValue_mutable_any_value(
+    grpc_channelz_v2_PropertyValue* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)grpc_channelz_v2_PropertyValue_any_value(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google__protobuf__Any_msg_init, arena);
@@ -1016,32 +1140,33 @@ UPB_INLINE struct google_protobuf_Any* grpc_channelz_v2_PropertyValue_mutable_an
   }
   return sub;
 }
-UPB_INLINE void grpc_channelz_v2_PropertyValue_set_string_value(grpc_channelz_v2_PropertyValue *msg, upb_StringView value) {
+UPB_INLINE void grpc_channelz_v2_PropertyValue_set_string_value(grpc_channelz_v2_PropertyValue* msg, upb_StringView value) {
   const upb_MiniTableField field = {3, 16, -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void grpc_channelz_v2_PropertyValue_set_int64_value(grpc_channelz_v2_PropertyValue *msg, int64_t value) {
+UPB_INLINE void grpc_channelz_v2_PropertyValue_set_int64_value(grpc_channelz_v2_PropertyValue* msg, int64_t value) {
   const upb_MiniTableField field = {4, 16, -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void grpc_channelz_v2_PropertyValue_set_uint64_value(grpc_channelz_v2_PropertyValue *msg, uint64_t value) {
+UPB_INLINE void grpc_channelz_v2_PropertyValue_set_uint64_value(grpc_channelz_v2_PropertyValue* msg, uint64_t value) {
   const upb_MiniTableField field = {5, 16, -9, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void grpc_channelz_v2_PropertyValue_set_double_value(grpc_channelz_v2_PropertyValue *msg, double value) {
+UPB_INLINE void grpc_channelz_v2_PropertyValue_set_double_value(grpc_channelz_v2_PropertyValue* msg, double value) {
   const upb_MiniTableField field = {6, 16, -9, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void grpc_channelz_v2_PropertyValue_set_bool_value(grpc_channelz_v2_PropertyValue *msg, bool value) {
+UPB_INLINE void grpc_channelz_v2_PropertyValue_set_bool_value(grpc_channelz_v2_PropertyValue* msg, bool value) {
   const upb_MiniTableField field = {7, 16, -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void grpc_channelz_v2_PropertyValue_set_timestamp_value(grpc_channelz_v2_PropertyValue *msg, struct google_protobuf_Timestamp* value) {
-  const upb_MiniTableField field = {8, 16, -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void grpc_channelz_v2_PropertyValue_set_timestamp_value(grpc_channelz_v2_PropertyValue* msg, struct google_protobuf_Timestamp* value) {
+  const upb_MiniTableField field = {8, 16, -9, UPB_SIZE(8, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_Timestamp* grpc_channelz_v2_PropertyValue_mutable_timestamp_value(grpc_channelz_v2_PropertyValue* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_Timestamp* grpc_channelz_v2_PropertyValue_mutable_timestamp_value(
+    grpc_channelz_v2_PropertyValue* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)grpc_channelz_v2_PropertyValue_timestamp_value(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google__protobuf__Timestamp_msg_init, arena);
@@ -1049,12 +1174,13 @@ UPB_INLINE struct google_protobuf_Timestamp* grpc_channelz_v2_PropertyValue_muta
   }
   return sub;
 }
-UPB_INLINE void grpc_channelz_v2_PropertyValue_set_duration_value(grpc_channelz_v2_PropertyValue *msg, struct google_protobuf_Duration* value) {
-  const upb_MiniTableField field = {9, 16, -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void grpc_channelz_v2_PropertyValue_set_duration_value(grpc_channelz_v2_PropertyValue* msg, struct google_protobuf_Duration* value) {
+  const upb_MiniTableField field = {9, 16, -9, UPB_SIZE(6, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_Duration* grpc_channelz_v2_PropertyValue_mutable_duration_value(grpc_channelz_v2_PropertyValue* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_Duration* grpc_channelz_v2_PropertyValue_mutable_duration_value(
+    grpc_channelz_v2_PropertyValue* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)grpc_channelz_v2_PropertyValue_duration_value(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Duration*)_upb_Message_New(&google__protobuf__Duration_msg_init, arena);
@@ -1064,9 +1190,9 @@ UPB_INLINE struct google_protobuf_Duration* grpc_channelz_v2_PropertyValue_mutab
 }
 
 #ifdef __cplusplus
-}  /* extern "C" */
+              } /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_CHANNELZ_V2_PROPERTY_LIST_PROTO_UPB_H__UPB_H_ */
+#endif /* SRC_PROTO_GRPC_CHANNELZ_V2_PROPERTY_LIST_PROTO_UPB_H__UPB_H_ */

@@ -107,7 +107,6 @@ class ChannelCompression {
  private:
   // Max receive message length, if set.
   std::optional<uint32_t> max_recv_size_;
-  size_t message_size_service_config_parser_index_;
   // The default, channel-level, compression algorithm.
   grpc_compression_algorithm default_compression_algorithm_;
   // Enabled compression algorithms.
@@ -157,6 +156,15 @@ class ClientCompressionFilter final
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("compression_algorithm",
+               CompressionAlgorithmAsString(compression_algorithm_))
+          .Set("max_recv_message_length",
+               decompress_args_.max_recv_message_length.value_or(0))
+          .Set("decompression_algorithm",
+               CompressionAlgorithmAsString(decompress_args_.algorithm));
+    }
 
    private:
     grpc_compression_algorithm compression_algorithm_;
@@ -209,6 +217,16 @@ class ServerCompressionFilter final
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("compression_algorithm",
+               CompressionAlgorithmAsString(compression_algorithm_))
+          .Set("max_recv_message_length",
+               decompress_args_.max_recv_message_length.value_or(0))
+          .Set("decompression_algorithm",
+               CompressionAlgorithmAsString(decompress_args_.algorithm));
+    }
 
    private:
     ChannelCompression::DecompressArgs decompress_args_;

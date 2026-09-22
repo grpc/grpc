@@ -17,7 +17,13 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport/ssl")
+grpc_package(
+    name = "test/core/credentials/transport/ssl",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_fuzz_test(
     name = "ssl_server_fuzzer",
@@ -55,6 +61,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:ref_counted_ptr",
         "//:tsi_ssl_credentials",
         "//src/core:grpc_ssl_credentials",
         "//test/core/test_util:grpc_test_util",

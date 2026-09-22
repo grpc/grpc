@@ -29,6 +29,8 @@
 #include "src/core/util/grpc_check.h"
 #include "absl/functional/bind_front.h"
 
+using tsi::RootCertInfo;
+
 namespace grpc_core {
 
 namespace {
@@ -46,8 +48,8 @@ class RootCertificatesWatcher final
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
-                             std::optional<PemKeyCertPairList>
-                             /* key_cert_pairs */) override {
+                             std::optional<KeyCertPairsOrSelector>
+                             /* key_cert_pairs_or_selector */) override {
     if (roots != nullptr) {
       parent_->SetKeyMaterials("", roots, std::nullopt);
     }
@@ -77,11 +79,11 @@ class IdentityCertificatesWatcher final
       RefCountedPtr<grpc_tls_certificate_distributor> parent)
       : parent_(std::move(parent)) {}
 
-  void OnCertificatesChanged(
-      std::shared_ptr<RootCertInfo> /* root_certs */,
-      std::optional<PemKeyCertPairList> key_cert_pairs) override {
-    if (key_cert_pairs.has_value()) {
-      parent_->SetKeyMaterials("", nullptr, key_cert_pairs);
+  void OnCertificatesChanged(std::shared_ptr<RootCertInfo> /* root_certs */,
+                             std::optional<KeyCertPairsOrSelector>
+                                 key_cert_pairs_or_selector) override {
+    if (key_cert_pairs_or_selector.has_value()) {
+      parent_->SetKeyMaterials("", nullptr, key_cert_pairs_or_selector);
     }
   }
 
@@ -108,7 +110,8 @@ XdsCertificateProvider::XdsCertificateProvider(
     absl::string_view root_cert_name, bool use_system_root_certs,
     RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider,
     absl::string_view identity_cert_name,
-    std::vector<StringMatcher> san_matchers)
+    std::vector<StringMatcher> san_matchers, std::string sni,
+    bool auto_host_sni, bool auto_sni_san_validation)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_cert_provider_(std::move(root_cert_provider)),
       root_cert_name_(root_cert_name),
@@ -116,7 +119,9 @@ XdsCertificateProvider::XdsCertificateProvider(
       identity_cert_provider_(std::move(identity_cert_provider)),
       identity_cert_name_(identity_cert_name),
       san_matchers_(std::move(san_matchers)),
-      require_client_certificate_(false) {
+      sni_(std::move(sni)),
+      auto_host_sni_(auto_host_sni),
+      auto_sni_san_validation_(auto_sni_san_validation) {
   distributor_->SetWatchStatusCallback(
       absl::bind_front(&XdsCertificateProvider::WatchStatusCallback, this));
 }

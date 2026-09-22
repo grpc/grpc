@@ -18,12 +18,15 @@
 
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 
+#include <grpc/context_types.h>
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <stdint.h>
 
 #include <array>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -48,6 +51,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/telemetry/telemetry_label.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
@@ -120,12 +124,23 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::
         OpenTelemetryPluginImpl::ClientCallTracerInterface* const parent,
         uint64_t attempt_num, bool is_transparent_retry)
     : parent_(parent), start_time_(absl::Now()) {
+  absl::string_view telemetry_label;
+  if (auto* label = parent->arena_->GetContext<grpc_core::TelemetryLabel>();
+      label != nullptr) {
+    telemetry_label = label->value;
+  }
+  SetOptionalLabelImpl(OptionalLabelKey::kTelemetryLabel, telemetry_label);
   if (parent_->otel_plugin_->client_.attempt.started != nullptr) {
-    std::array<std::pair<absl::string_view, absl::string_view>, 2>
+    absl::InlinedVector<std::pair<absl::string_view, absl::string_view>, 3>
         additional_labels = {
             {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
              {OpenTelemetryTargetKey(),
               parent_->scope_config_->filtered_target()}}};
+    if (parent->otel_plugin_->per_call_optional_label_bits_.test(
+            static_cast<size_t>(OptionalLabelKey::kTelemetryLabel))) {
+      additional_labels.emplace_back(OpenTelemetryCustomLabelKey(),
+                                     telemetry_label);
+    }
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
     parent_->otel_plugin_->client_.attempt.started->Add(
@@ -173,6 +188,15 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
 template <typename UnrefBehavior>
 void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
     UnrefBehavior>::RecordSendInitialMetadata(grpc_metadata_batch*
+                                                  send_initial_metadata) {
+  GRPC_CHECK(
+      !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+  MutateSendInitialMetadata(send_initial_metadata);
+}
+
+template <typename UnrefBehavior>
+void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
+    UnrefBehavior>::MutateSendInitialMetadata(grpc_metadata_batch*
                                                   send_initial_metadata) {
   parent_->scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
@@ -364,8 +388,17 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
 
 template <typename UnrefBehavior>
 void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
-    UnrefBehavior>::RecordAnnotation(const Annotation& /*annotation*/) {
-  // Not implemented
+    UnrefBehavior>::RecordAnnotation(const Annotation& annotation) {
+  if (annotation.type() == grpc_core::CallTracerAnnotationInterface::
+                               AnnotationType::kSendInitialMetadata ||
+      annotation.type() == grpc_core::CallTracerAnnotationInterface::
+                               AnnotationType::kSendTrailingMetadata) {
+    // Otel does not have any immutable tracing for send initial/trailing
+    // metadata. All Otel work for send initial/trailing metadata is mutation,
+    // which is handled in MutateSendInitialMetadata/MutateSendTrailingMetadata.
+    return;
+  }
+  RecordAnnotation(annotation.ToString());
 }
 
 template <typename UnrefBehavior>
@@ -393,6 +426,15 @@ template <typename UnrefBehavior>
 void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
     UnrefBehavior>::SetOptionalLabel(OptionalLabelKey key,
                                      grpc_core::RefCountedStringValue value) {
+  SetOptionalLabelImpl(key, std::move(value));
+}
+
+template <typename UnrefBehavior>
+void OpenTelemetryPluginImpl::ClientCallTracerInterface::
+    CallAttemptTracer<UnrefBehavior>::SetOptionalLabelImpl(
+        OptionalLabelKey key,
+        std::variant<grpc_core::RefCountedStringValue, absl::string_view>
+            value) {
   GRPC_CHECK(key < OptionalLabelKey::kSize);
   optional_labels_[static_cast<size_t>(key)] = std::move(value);
 }
@@ -453,9 +495,9 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::ClientCallTracerInterface(
 
 OpenTelemetryPluginImpl::ClientCallTracerInterface::
     ~ClientCallTracerInterface() {
-  std::array<std::pair<opentelemetry::nostd::string_view,
-                       opentelemetry::common::AttributeValue>,
-             2>
+  absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
+                                opentelemetry::common::AttributeValue>,
+                      3>
       attributes = {
           std::pair(AbslStringViewToNoStdStringView(OpenTelemetryMethodKey()),
                     opentelemetry::common::AttributeValue(
@@ -464,6 +506,18 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::
                     opentelemetry::common::AttributeValue(
                         AbslStringViewToNoStdStringView(
                             scope_config_->filtered_target())))};
+  if (otel_plugin_->per_call_optional_label_bits_.test(static_cast<size_t>(
+          grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+              OptionalLabelKey::kTelemetryLabel))) {
+    absl::string_view value{};
+    if (auto* label = arena_->GetContext<grpc_core::TelemetryLabel>();
+        label != nullptr) {
+      value = label->value;
+    }
+    attributes.emplace_back(
+        AbslStringViewToNoStdStringView(OpenTelemetryCustomLabelKey()),
+        AbslStringViewToNoStdStringView(value));
+  }
   if (otel_plugin_->client_.call.retries != nullptr && retries_ > 1) {
     otel_plugin_->client_.call.retries->Record(
         retries_ - 1, attributes, opentelemetry::context::Context{});

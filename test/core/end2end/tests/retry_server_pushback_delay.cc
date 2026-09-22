@@ -35,7 +35,6 @@ namespace {
 // - first attempt gets ABORTED with a long delay
 // - second attempt succeeds
 CORE_END2END_TEST(RetryTests, RetryServerPushbackDelay) {
-  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -100,7 +99,7 @@ CORE_END2END_TEST(RetryTests, RetryServerPushbackDelay) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "message2");
+  EXPECT_EQ(server_status.message(), "");
   EXPECT_EQ(s->method(), "/service/method");
   EXPECT_FALSE(client_close2.was_cancelled());
 }

@@ -14,6 +14,11 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
 
+package(features = [
+    "layering_check",
+    "parse_headers",
+])
+
 exports_files(
     glob(
         ["**"],
@@ -51,12 +56,13 @@ grpc_cc_library(
     hdrs = ["generate_trace_flags.h"],
     external_deps = [
         "absl/strings",
+        "absl/strings:str_format",
         "absl/log",
+        "absl/container:flat_hash_map",
+        "@yaml-cpp//:yaml-cpp",
     ],
     deps = [
         "//:gpr",
-        "//third_party/absl/container:flat_hash_map",
-        "//third_party/yamlcpp",
     ],
 )
 

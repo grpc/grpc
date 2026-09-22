@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/security")
+grpc_package(
+    name = "test/core/security",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "cel_authorization_engine_test",
@@ -26,20 +32,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_cel_engine",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "evaluate_args_test",
-    srcs = ["evaluate_args_test.cc"],
-    external_deps = ["gtest"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:sockaddr_utils",
-        "//src/core:grpc_authorization_base",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -71,6 +63,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:evaluate_args",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_rbac_engine",
         "//test/core/test_util:grpc_test_util",

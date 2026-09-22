@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/util/http_client")
+grpc_package(
+    name = "test/core/util/http_client",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -44,10 +50,13 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/strings:strings",
     ],
     deps = [
+        "//:config_vars",
         "//:gpr",
         "//:subprocess",
+        "//src/core:grpc_check",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -78,6 +87,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:subprocess",
+        "//src/core:ares_resolver",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:fake_udp_and_tcp_server",
         "//test/core/test_util:grpc_test_util",
