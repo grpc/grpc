@@ -92,15 +92,6 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     // Create a streaming call on this transport for the specified method,
     // with wait-for-ready enabled.
     // Events on the stream will be reported to event_handler.
-    //
-    // If start_upon_send_message is true, the send_initial_metadata op is
-    // not started when the call is created; instead, it is started by the
-    // first call to SendMessage().  This allows a unary call to send
-    // initial metadata, the request message, and the half-close in a single
-    // batch:
-    //   auto call = transport->CreateStreamingCall(
-    //       method, std::move(handler), /*start_upon_send_message=*/true);
-    //   call->SendMessage(payload, /*send_half_close=*/true);
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler) {
@@ -109,8 +100,18 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
                                  /*wait_for_ready=*/true);
     }
 
-    // Same as above, but if wait_for_ready is false, the call fails
-    // instead of being queued when the transport is not connected.
+    // If start_upon_send_message is true, the send_initial_metadata op is
+    // not started when the call is created; instead, it is started by the
+    // first call to SendMessage().  This allows a unary call to send
+    // initial metadata, the request message, and the half-close in a single
+    // batch:
+    //   auto call = transport->CreateStreamingCall(
+    //       method, std::move(handler), /*start_upon_send_message=*/true,
+    //       /*wait_for_ready=*/false);
+    //   call->SendMessage(payload, /*send_half_close=*/true);
+    //
+    // If wait_for_ready is false, the call fails instead of being queued
+    // when the transport is not connected.
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,

@@ -59,12 +59,13 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     FakeStreamingCall(
         WeakRefCountedPtr<FakeXdsTransport> transport, const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        bool start_upon_send_message)
+        bool start_upon_send_message, bool wait_for_ready)
         : transport_(std::move(transport)),
           method_(method),
           event_engine_(transport_->factory()->event_engine_),
           event_handler_(
               MakeRefCounted<RefCountedEventHandler>(std::move(event_handler))),
+          wait_for_ready_(wait_for_ready),
           started_(!start_upon_send_message) {}
 
     ~FakeStreamingCall() override;
@@ -99,6 +100,11 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       return half_closed_;
     }
 
+    bool wait_for_ready() const {
+      MutexLock lock(&mu_);
+      return wait_for_ready_;
+    }
+
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
      public:
@@ -131,6 +137,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     mutable Mutex mu_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
+    const bool wait_for_ready_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool started_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;

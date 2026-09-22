@@ -86,7 +86,8 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
   }
 
   void InitStream(bool auto_complete_messages_from_client = true,
-                  bool start_upon_send_message = false) {
+                  bool start_upon_send_message = false,
+                  bool wait_for_ready = false) {
     transport_factory_->SetAutoCompleteMessagesFromClient(
         auto_complete_messages_from_client);
     absl::Status status;
@@ -94,12 +95,13 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
     ASSERT_TRUE(status.ok()) << status;
     ASSERT_NE(transport_, nullptr);
     wrapper_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
-        *transport_, kMethod, start_upon_send_message);
+        *transport_, kMethod, start_upon_send_message, wait_for_ready);
     stream_ = transport_factory_->WaitForStream(*target_, kMethod);
     if (start_upon_send_message) {
       ASSERT_EQ(stream_, nullptr);
     } else {
       ASSERT_NE(stream_, nullptr);
+      EXPECT_EQ(stream_->wait_for_ready(), wait_for_ready);
     }
   }
 
@@ -318,6 +320,7 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, StartUponSendMessage) {
   EXPECT_TRUE(send_completed);
   stream_ = transport_factory_->WaitForStream(*target_, kMethod);
   ASSERT_NE(stream_, nullptr);
+  EXPECT_FALSE(stream_->wait_for_ready());
   EXPECT_EQ(stream_->WaitForMessageFromClient(), kClientMessage);
   EXPECT_TRUE(stream_->half_closed());
   stream_->SendMessageToClient(kServerMessage);

@@ -234,6 +234,29 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
   call.reset();
 }
 
+TEST_F(GrpcXdsTransportTest, StreamingCallWithoutWaitForReadyFails) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
+      /*start_upon_send_message=*/false, /*wait_for_ready=*/false);
+  ASSERT_NE(call, nullptr);
+  exec_ctx.Flush();
+  // Nothing is listening on server_uri_, so the call fails as soon as the
+  // connection attempt fails, rather than being queued until the deadline.
+  on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
+}
+
 // Tests a unary RPC: the call is created with start_upon_send_message,
 // and the request is sent with the half-close in the same batch.
 TEST_F(GrpcXdsTransportTest, UnaryCall) {
@@ -246,17 +269,48 @@ TEST_F(GrpcXdsTransportTest, UnaryCall) {
   auto transport = factory_->GetTransport(target, &status);
   ASSERT_TRUE(status.ok()) << status.ToString();
   absl::Notification on_status_received;
+  absl::Status call_status;
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
-      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
       /*start_upon_send_message=*/true, /*wait_for_ready=*/false);
   ASSERT_NE(call, nullptr);
   call->StartRecvMessage();
   call->SendMessage("request", /*send_half_close=*/true);
   exec_ctx.Flush();
-  // There is no server listening on this port, so the call fails, but we
-  // do get a status.
+  // There is no server listening on this port, so the call fails as soon as
+  // the connection attempt fails.
   on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
+  call.reset();
+}
+
+TEST_F(GrpcXdsTransportTest, UnaryCallWithWaitForReady) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{{"key1", "val1"}},
+                             Duration::Seconds(1));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
+      /*start_upon_send_message=*/true, /*wait_for_ready=*/true);
+  ASSERT_NE(call, nullptr);
+  call->StartRecvMessage();
+  call->SendMessage("request", /*send_half_close=*/true);
+  exec_ctx.Flush();
+  // With wait-for-ready enabled on the deferred initial-metadata batch, the
+  // call stays queued until the 1s deadline.
+  on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kDeadlineExceeded)
+      << call_status;
   call.reset();
 }
 
