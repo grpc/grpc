@@ -188,7 +188,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   grpc_slice status_details_ = grpc_empty_slice();
   grpc_closure on_status_received_;
 
-  bool wait_for_ready_ = false;
+  const StreamingCall::Options options_;
 };
 
 }  // namespace grpc_core

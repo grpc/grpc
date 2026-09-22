@@ -83,7 +83,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     Duration timeout, StreamingCall::Options options)
     : factory_(std::move(factory)),
       event_handler_(std::move(event_handler)),
-      wait_for_ready_(options.wait_for_ready) {
+      options_(options) {
   Timestamp deadline = (timeout == Duration::Infinity())
                            ? Timestamp::InfFuture()
                            : Timestamp::Now() + timeout;
@@ -116,7 +116,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   // Start batch for recv_initial_metadata (and send_initial_metadata, unless
   // the caller asked us to wait until the first message is sent).
   OpList op_list;
-  if (!options.start_upon_send_message) {
+  if (!options_.start_upon_send_message) {
     sent_initial_metadata_ = true;
     AddSendInitialMetadataOp(op_list);
   }
@@ -136,7 +136,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   op.data.send_initial_metadata.count = send_initial_metadata_.size();
   op.data.send_initial_metadata.metadata =
       send_initial_metadata_.empty() ? nullptr : send_initial_metadata_.data();
-  op.flags = wait_for_ready_
+  op.flags = options_.wait_for_ready
                  ? GRPC_INITIAL_METADATA_WAIT_FOR_READY |
                        GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
                  : 0;

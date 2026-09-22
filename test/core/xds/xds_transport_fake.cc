@@ -79,8 +79,8 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
   {
     MutexLock lock(&mu_);
     GRPC_CHECK(!orphaned_);
-    if (!started_) {
-      started_ = true;
+    if (options_.start_upon_send_message) {
+      options_.start_upon_send_message = false;
       register_stream = true;
     }
     from_client_messages_.push_back(std::move(payload));

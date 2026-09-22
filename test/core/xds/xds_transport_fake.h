@@ -65,8 +65,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
           event_engine_(transport_->factory()->event_engine_),
           event_handler_(
               MakeRefCounted<RefCountedEventHandler>(std::move(event_handler))),
-          wait_for_ready_(options.wait_for_ready),
-          started_(!options.start_upon_send_message) {}
+          options_(options) {}
 
     ~FakeStreamingCall() override;
 
@@ -102,7 +101,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool wait_for_ready() const {
       MutexLock lock(&mu_);
-      return wait_for_ready_;
+      return options_.wait_for_ready;
     }
 
    private:
@@ -137,9 +136,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     mutable Mutex mu_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
-    const bool wait_for_ready_ ABSL_GUARDED_BY(&mu_);
+    StreamingCall::Options options_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
-    bool started_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
     bool half_closed_ ABSL_GUARDED_BY(&mu_) = false;
