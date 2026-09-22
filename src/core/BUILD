@@ -3075,6 +3075,7 @@ grpc_cc_library(
         "grpc_check",
         "iomgr_port",
         "posix_event_engine_timer_manager",
+        "resource_quota",
         "sync",
         "time",
         "windows_endpoint",
