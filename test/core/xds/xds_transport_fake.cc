@@ -299,17 +299,11 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
     bool start_upon_send_message) {
   auto call = MakeOrphanable<FakeStreamingCall>(
-<<<<<<< HEAD
-      WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler));
-  MutexLock lock(mu_);
-  active_calls_[method] = call->Ref().TakeAsSubclass<FakeStreamingCall>();
-=======
       WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler),
       start_upon_send_message);
   if (!start_upon_send_message) {
     RegisterStream(method, call->Ref().TakeAsSubclass<FakeStreamingCall>());
   }
->>>>>>> master
   return call;
 }
 
