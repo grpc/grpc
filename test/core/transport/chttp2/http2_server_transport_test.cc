@@ -594,7 +594,9 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportPingAbusePolicy) {
   ExecCtx ctx;
 
   // Step 1: Initialize the transport with max_ping_strikes set to 1.
-  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 1));
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 1)
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   // Step 2: Send 3 ping requests and expect GOAWAY in response.
@@ -630,7 +632,8 @@ TEST_F(Http2ServerTransportTest,
   InitTransport(
       GetChannelArgs()
           .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 1)
-          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max()));
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   AddStream([&on_stream_closed](CallHandler call_handler) {
@@ -1041,6 +1044,292 @@ TEST_F(Http2ServerTransportTest, PingOnRstStreamTest) {
   std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get(), /*last_stream_id=*/1);
   step2->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestIfBdpPingIsSentWhenDataIsReceived) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, true)
+                    // Disable all sources of pings except for BDP.
+                    .Set("grpc.http2.ping_on_rst_stream_percent", 0)
+                    .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // The call handler does not write anything back to the client. It just keeps
+  // the stream open till the transport is closed.
+  auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](bool cancelled) {
+                                   EXPECT_TRUE(cancelled);
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  // Client opens stream 1. No frames are expected to be written by the server.
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+  // Client sends a DATA frame. This is the only trigger needed for a BDP ping.
+  step->ThenPerformRead({
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+  });
+
+  step->ThenExpectWrite([](SliceBuffer& buffer) {
+    // The BDP PING is coalesced with the window updates for the DATA frame
+    // that triggered it. The increments are flow control accounting details,
+    // so they are deliberately not asserted here.
+    EXPECT_THAT(ParseFrames(buffer),
+                ::testing::ElementsAre(IsPingFrame(/*ack=*/false),
+                                       IsWindowUpdateFrame(/*stream_id=*/0),
+                                       IsWindowUpdateFrame(/*stream_id=*/1)));
+  });
+  step->Wait();
+
+  // Teardown the transport. The call handler never finishes the stream, so
+  // stream 1 is still open. The transport resets it in the same write batch
+  // as the GOAWAY. AddTransportCloseExpectations is not used here because it
+  // only expects the GOAWAY.
+  std::shared_ptr<EventSequenceEndpoint::Step> step_close =
+      endpoint()->NewStep();
+  step_close->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  step_close->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  step_close->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestBdpPingIsSentWithStreamWithoutAck) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, true)
+                    // Disable all sources of pings except for BDP.
+                    .Set("grpc.http2.ping_on_rst_stream_percent", 0)
+                    .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  auto step1 = endpoint()->NewStep();
+
+  auto factory_factory = [](CallHandler call_handler) {
+    LOG(INFO) << "New stream created on the server";
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle metadata) mutable {
+            LOG(INFO) << "Client initial metadata: " << metadata->DebugString();
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.PullMessage(),
+                       [](auto msg) { return absl::OkStatus(); });
+          },
+          [call_handler]() mutable {
+            MessageHandle message = Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromExternalString(kString1)), 0);
+            return call_handler.PushMessage(std::move(message));
+          },
+          [call_handler]() mutable {
+            return call_handler.PushServerTrailingMetadata(
+                ServerMetadataFromStatus(absl::CancelledError()));
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  // Client sends a header frame.
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+
+  step1->ThenExpectWrite({
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+
+  auto step2 = endpoint()->NewStep();
+  // Client sends a data frame.
+  step2->ThenPerformRead({
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+  });
+
+  // The BDP write cycle is a write batch of its own. It carries only the BDP
+  // PING and the window updates for the DATA frame that triggered it. The
+  // application frames are not ready yet at this point.
+  step2->ThenExpectWrite([&, step2](SliceBuffer& buffer) {
+    const uint64_t opaque_id =
+        VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+    // We do not read a PING ACK, because that will trigger CompleteBdpPing
+    // which is a very time sensitive API and not suitable for this test suite.
+
+    SliceBuffer expected;
+    auto add_expected = [&](transport::testing::EventEngineSlice slice) {
+      expected.Append(Slice(grpc_slice_copy(slice.c_slice())));
+    };
+
+    add_expected(helper_.SerializedPingFrame(/*ack=*/false, opaque_id));
+    add_expected(helper_.SerializedWindowUpdateFrame(/*stream_id=*/0,
+                                                     /*increment=*/21));
+    add_expected(helper_.SerializedWindowUpdateFrame(/*stream_id=*/1,
+                                                     /*increment=*/22));
+
+    EXPECT_EQ(buffer.JoinIntoString(), expected.JoinIntoString());
+    buffer.Clear();
+  });
+
+  // The application frames are flushed in the next write batch. The leading
+  // transport window update is the residual announce delta. It is emitted
+  // because MaybeAddTransportWindowUpdateFrame always passes
+  // writing_anyway=true. See the known limitation documented there.
+  step2->ThenExpectWrite({
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0, /*increment=*/1),
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusCancelled.begin(), kGrpcStatusCancelled.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  step2->Wait();
+
+  // Teardown the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step3.get(), /*last_stream_id=*/1);
+  step3->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestBdpProbeEnabledWithAck) {
+  // This test MIGHT run into trouble because BDP code is time sensitive.
+  // Disable it if it flakes on Kokoro.
+  // Already tested 10k times locally, but Kokoro is very different.
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, true)
+                    // Disable all sources of pings except for BDP.
+                    .Set("grpc.http2.ping_on_rst_stream_percent", 0)
+                    .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  auto step1 = endpoint()->NewStep();
+
+  auto factory_factory = [](CallHandler call_handler) {
+    LOG(INFO) << "New stream created on the server";
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle metadata) mutable {
+            LOG(INFO) << "Client initial metadata: " << metadata->DebugString();
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.PullMessage(),
+                       [](auto msg) { return absl::OkStatus(); });
+          },
+          [call_handler]() mutable {
+            MessageHandle message = Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromExternalString(kString1)), 0);
+            return call_handler.PushMessage(std::move(message));
+          },
+          [call_handler]() mutable {
+            return call_handler.PushServerTrailingMetadata(
+                ServerMetadataFromStatus(absl::CancelledError()));
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  // Client sends a header frame.
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+
+  step1->ThenExpectWrite({
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+
+  auto step2 = endpoint()->NewStep();
+  // Client sends a data frame.
+  step2->ThenPerformRead({
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+  });
+
+  // The BDP write cycle is a write batch of its own. It carries only the BDP
+  // PING and the window updates for the DATA frame that triggered it. The
+  // application frames are not ready yet at this point.
+  step2->ThenExpectWrite([&, step2](SliceBuffer& buffer) {
+    const uint64_t opaque_id =
+        VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+    step2->InsertReadAtHead(
+        {helper_.SerializedPingFrame(/*ack=*/true,
+                                     /*opaque=*/opaque_id)});
+
+    SliceBuffer expected;
+    auto add_expected = [&](transport::testing::EventEngineSlice slice) {
+      expected.Append(Slice(grpc_slice_copy(slice.c_slice())));
+    };
+
+    add_expected(helper_.SerializedPingFrame(/*ack=*/false, opaque_id));
+    add_expected(helper_.SerializedWindowUpdateFrame(/*stream_id=*/0,
+                                                     /*increment=*/21));
+    add_expected(helper_.SerializedWindowUpdateFrame(/*stream_id=*/1,
+                                                     /*increment=*/22));
+
+    EXPECT_EQ(buffer.JoinIntoString(), expected.JoinIntoString());
+    buffer.Clear();
+  });
+  step2->Wait();
+
+  // The PING ACK completes the BDP round. The BDP estimate grows, so the
+  // transport re-advertises its window. The application frames are flushed in
+  // this same batch.
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
+  step3->ThenExpectWrite({
+      helper_.SerializedSettingsFrame(
+          {{Http2Settings::kInitialWindowSizeWireId, 4194304},
+           {Http2Settings::kMaxFrameSizeWireId, 4194304}}),
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0,
+                                          /*increment=*/4128770),
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusCancelled.begin(), kGrpcStatusCancelled.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  step3->Wait();
+
+  // Teardown the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step4 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step4.get(), /*last_stream_id=*/1);
+  step4->Wait();
 }
 
 TEST_F(Http2ServerTransportTest, TestNextAllowedPingIntervalKeepaliveEnabled) {
@@ -1484,6 +1773,7 @@ TEST_F(Http2ServerTransportTest, TestServerStreamFlowControlWindowUpdate) {
   InitTransport(
       GetChannelArgs()
           .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, false)
           .Set(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES, 8192));
 
   // Step 2: Exchange settings, expecting the server to advertise

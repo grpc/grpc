@@ -20,8 +20,8 @@ cc_binary(
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
+        "//:health_cc_grpc",
         "//examples/protos:helloworld_cc_grpc",
-        "//src/proto/grpc/health/v1:health_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/log:initialize",
