@@ -468,7 +468,7 @@ def targets():
         ),
         # C#
         CSharpDistribTest(
-            "linux", "x64", "debian11", use_dotnet_cli=True, presubmit=True
+            "linux", "x64", "debian12", use_dotnet_cli=True, presubmit=True
         ),
         CSharpDistribTest("linux", "x64", "ubuntu2204", use_dotnet_cli=True),
         CSharpDistribTest(
