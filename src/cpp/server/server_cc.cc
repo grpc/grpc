@@ -1262,7 +1262,8 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   /// The completion queue to use for server shutdown completion notification
   grpc::CompletionQueue shutdown_cq;
   grpc::ShutdownTag shutdown_tag;  // Phony shutdown tag
-  grpc_server_shutdown_and_notify(server_, shutdown_cq.cq(), &shutdown_tag);
+  grpc_server_shutdown_and_notify_with_deadline(
+      server_, deadline, shutdown_cq.cq(), &shutdown_tag);
 
   shutdown_cq.Shutdown();
 

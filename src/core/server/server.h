@@ -231,7 +231,7 @@ class Server : public ServerInterface,
 
     void Start();
 
-    void Stop();
+    void Stop(bool send_goaways, Duration grace_period);
 
     void SendGoAways();
     void DisconnectImmediately();
@@ -410,13 +410,16 @@ class Server : public ServerInterface,
       grpc_completion_queue* cq_bound_to_call,
       grpc_completion_queue* cq_for_notification, void* tag_new);
 
-  void ShutdownAndNotify(grpc_completion_queue* cq, void* tag)
+  void ShutdownAndNotify(Duration grace_period, grpc_completion_queue* cq,
+                         void* tag)
       ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
-  void StopListening();
+  void StopListening(bool send_goaways, Duration grace_period);
 
+  // FIXME: maybe don't need this anymore?
   void CancelAllCalls() ABSL_LOCKS_EXCLUDED(mu_global_);
 
+  // FIXME: maybe don't need this anymore?
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
   grpc_compression_options compression_options() const override {

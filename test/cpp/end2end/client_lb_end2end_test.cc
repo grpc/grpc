@@ -509,8 +509,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     void StopListeningAndSendGoaways() {
       grpc_core::ExecCtx exec_ctx;
       auto* server = grpc_core::Server::FromC(server_->c_server());
-      server->StopListening();
-      server->SendGoaways();
+      server->StopListening(/*send_goaways=*/true, grpc_core::Duration::Zero());
     }
 
     void SetServingStatus(const std::string& service, bool serving) {

@@ -159,17 +159,17 @@ void Server::ListenerState::Start() {
   }
 }
 
-void Server::ListenerState::Stop() {
+void Server::ListenerState::Stop(bool send_goaways, Duration grace_period) {
   GRPC_TRACE_LOG(server, INFO)
       << "==> [server " << server_.get() << " ListenerState " << this
       << "] ListenerState::Stop()";
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections;
-  {
+  if (send_goaways) {
     MutexLock lock(&mu_);
     // Orphan the connections so that they can start cleaning up.
     if (IsServerConnectionTrackingEnabled()) {
-      DrainConnectionsLocked(Duration::Zero());
+      DrainConnectionsLocked(grace_period);
     } else {
       connections = std::move(connections_);
       connections_.clear();
@@ -201,7 +201,10 @@ void Server::ListenerState::DisconnectImmediately() {
 }
 
 bool Server::ListenerState::HasOpenConnections() {
+LOG(INFO) << "==> ListenerState::HasOpenConnections()";
   MutexLock lock(&mu_);
+LOG(INFO) << "connections_.size()=" << connections_.size();
+LOG(INFO) << "draining_connections_list_.size()=" << draining_connections_list_.size();
   return !connections_.empty() || !draining_connections_list_.empty();
 }
 
@@ -309,6 +312,7 @@ void Server::ListenerState::RemoveLogicalConnection(
       }
     }
   }
+  if (!IsServerConnectionTrackingEnabled()) return;
   connection_to_remove.reset();
   MutexLock lock(&server_->mu_global_);
   server_->MaybeFinishShutdown();
@@ -337,6 +341,7 @@ void Server::ListenerState::DrainConnectionsLocked(Duration grace_period) {
   for (auto& connection : connections_) {
     connection->SendGoAway();
   }
+  if (grace_period == Duration::Zero()) return;
   auto& connections_to_be_drained = draining_connections_list_.emplace_back();
   connections_to_be_drained.connections = std::move(connections_);
   connections_.clear();
@@ -1430,6 +1435,10 @@ grpc_error_handle Server::SetupTransport(
 }
 
 bool Server::HasOpenConnections() {
+  if (!IsServerConnectionTrackingEnabled()) {
+    MutexLock lock(&mu_global_);
+    return !channels_.empty() || !connections_.empty();
+  }
   for (const auto& listener_state : listener_states_) {
     if (listener_state->HasOpenConnections()) return true;
   }
@@ -1515,9 +1524,16 @@ LOG(INFO) << "HERE 0";
     MutexLock lock(&mu_call_);
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
-  if (HasOpenConnections() ||
-//  if (!channels_.empty() || connections_open_ > 0 ||
+  const bool has_open_connections =
+      IsServerConnectionTrackingEnabled()
+          ? HasOpenConnections()
+          : (!channels_.empty() || connections_open_ > 0);
+LOG(INFO) << "has_open_connections=" << has_open_connections;
+LOG(INFO) << "listeners_destroyed_=" << listeners_destroyed_;
+LOG(INFO) << "listener_states_.size()=" << listener_states_.size();
+  if (has_open_connections ||
       listeners_destroyed_ < listener_states_.size()) {
+LOG(INFO) << "RETURNING EARLY";
     if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
                                   last_shutdown_message_time_),
                      gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
@@ -1590,10 +1606,8 @@ void DonePublishedShutdown(void* /*done_arg*/, grpc_cq_completion* storage) {
 //    -- If the server has outstanding calls that are in the process, the
 //       connection is NOT closed until the server is done with all those calls.
 //    -- Once there are no more calls in progress, the channel is closed.
-//
-// TODO(roth): Add a deadline parameter, and pass that through to
-// ListenerState to insert a delay between GOAWAYs and disconnects.
-void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
+void Server::ShutdownAndNotify(Duration grace_period,
+                               grpc_completion_queue* cq, void* tag) {
   ChannelBroadcaster broadcaster;
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> removing_connections;
   {
@@ -1626,13 +1640,13 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
     }
     ShutdownUnrefOnShutdownCall();
   }
-  StopListening();
+  StopListening(/*send_goaways=*/true, grace_period);
   if (!IsServerConnectionTrackingEnabled()) {
     broadcaster.BroadcastShutdown(/*send_goaway=*/true, absl::OkStatus());
   }
 }
 
-void Server::StopListening() {
+void Server::StopListening(bool send_goaways, Duration grace_period) {
   for (auto& listener_state : listener_states_) {
     if (listener_state->listener() == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
@@ -1640,7 +1654,7 @@ void Server::StopListening() {
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
       channelz_listen_socket_node->RemoveParent(channelz_node_.get());
     }
-    listener_state->Stop();
+    listener_state->Stop(send_goaways, grace_period);
   }
 }
 
@@ -2292,7 +2306,21 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_shutdown_and_notify(server=" << server << ", cq=" << cq
       << ", tag=" << tag << ")";
-  grpc_core::Server::FromC(server)->ShutdownAndNotify(cq, tag);
+  grpc_core::Server::FromC(server)->ShutdownAndNotify(
+      grpc_core::Duration::Zero(), cq, tag);
+}
+
+void grpc_server_shutdown_and_notify_with_deadline(
+    grpc_server* server, gpr_timespec deadline, grpc_completion_queue* cq,
+    void* tag) {
+  grpc_core::ExecCtx exec_ctx;
+  auto grace_period = grpc_core::Timestamp::FromTimespecRoundDown(deadline)
+                      - grpc_core::Timestamp::Now();
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_shutdown_and_notify_with_timeout(server="
+      << server << ", duration=" << grace_period.ToString()
+      << ", cq=" << cq << ", tag=" << tag << ")";
+  grpc_core::Server::FromC(server)->ShutdownAndNotify(grace_period, cq, tag);
 }
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
