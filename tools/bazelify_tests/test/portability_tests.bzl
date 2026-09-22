@@ -33,7 +33,7 @@ def generate_run_tests_portability_tests(name):
     # portability C x86
     grpc_run_tests_harness_test(
         name = "runtests_c_linux_dbg_x86_build_only",
-        args = ["-l c -c dbg --build_only"],
+        args = ["-l c --arch x86 -c dbg --build_only"],
         docker_image_version = "tools/dockerfile/test/cxx_debian12_x86.current_version",
         size = "enormous",
     )
