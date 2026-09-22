@@ -54,7 +54,7 @@ cdef class _BoundEventLoop:
 
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
-    cdef bint _shutdown
+    cdef atomic[bint] _shutdown
     cdef cpp_event_queue _queue
     cdef mutex _queue_mutex
     cdef object _poller_thread  # threading.Thread

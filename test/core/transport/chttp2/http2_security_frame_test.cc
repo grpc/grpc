@@ -74,16 +74,16 @@ class MockTransportFramingEndpointExtension
     : public TransportFramingEndpointExtension {
  public:
   void SetSendFrameCallback(
-      absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback) override {
+      absl::AnyInvocable<void(SliceBuffer)> send_frame_callback) override {
     LOG(INFO) << "MockTransportFramingEndpointExtension::SetSendFrameCallback";
     send_frame_callback_ = std::move(send_frame_callback);
   }
 
-  void TriggerSendFrameCallback(SliceBuffer* data) {
+  void TriggerSendFrameCallback(SliceBuffer data) {
     LOG(INFO)
         << "MockTransportFramingEndpointExtension::TriggerSendFrameCallback";
     GRPC_CHECK(send_frame_callback_ != nullptr);
-    send_frame_callback_(data);
+    send_frame_callback_(std::move(data));
   }
 
   void ReceiveFrame(SliceBuffer payload) override {
@@ -92,7 +92,7 @@ class MockTransportFramingEndpointExtension
     last_received_payload_.Swap(&payload);
   }
 
-  absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback_ = nullptr;
+  absl::AnyInvocable<void(SliceBuffer)> send_frame_callback_ = nullptr;
   SliceBuffer last_received_payload_;
 };
 
@@ -278,7 +278,7 @@ TEST_P(SecurityFrameHandlerTest, SendFrameCallbackFactoryTest) {
   payload.Append(Slice::FromCopiedString("test_data"));
 
   // Run the callback
-  callback(&payload);
+  callback(std::move(payload));
 
   n.WaitForNotification();
   // Verify payload is received
@@ -317,7 +317,7 @@ TEST_P(SecurityFrameHandlerTest, OnTransportClosedPreventsSending) {
   transport->OnTransportClosed();
   SliceBuffer payload;
   payload.Append(Slice::FromCopiedString("hello"));
-  transport->mock_extension_.TriggerSendFrameCallback(&payload);
+  transport->mock_extension_.TriggerSendFrameCallback(std::move(payload));
   // Give event engine time to run
   absl::SleepFor(absl::Seconds(1));
   EXPECT_THAT(transport->security_frame_handler_->TestOnlyDebugString(),
@@ -432,7 +432,7 @@ TEST_P(SecurityFrameHandlerTest, MaybeAppendSecurityFrameWithPayload) {
   // Send a frame to trigger payload.
   SliceBuffer payload;
   payload.Append(Slice::FromCopiedString("Hello"));
-  transport->mock_extension_.TriggerSendFrameCallback(&payload);
+  transport->mock_extension_.TriggerSendFrameCallback(std::move(payload));
 
   n.WaitForNotification();
 }
@@ -522,7 +522,8 @@ TEST_P(SecurityFrameHandlerTest, SimulatorTest) {
               SliceBuffer payload;
               payload.Append(Slice::FromCopiedString("Hello"));
               LOG(INFO) << "OtherParty: TriggerSendFrameCallback with 'Hello'";
-              self->mock_extension_.TriggerSendFrameCallback(&payload);
+              self->mock_extension_.TriggerSendFrameCallback(
+                  std::move(payload));
               return Empty{};
             },
             [&write_to_endpoint_key]() {
@@ -533,7 +534,8 @@ TEST_P(SecurityFrameHandlerTest, SimulatorTest) {
               SliceBuffer payload;
               payload.Append(Slice::FromCopiedString("world"));
               LOG(INFO) << "OtherParty: TriggerSendFrameCallback with 'world'";
-              self->mock_extension_.TriggerSendFrameCallback(&payload);
+              self->mock_extension_.TriggerSendFrameCallback(
+                  std::move(payload));
               return Empty{};
             });
       },

@@ -202,7 +202,7 @@ class PromiseLike<void>;
 
 template <typename F>
 class PromiseLike<
-    F, absl::enable_if_t<!std::is_void<std::invoke_result_t<F>>::value>> {
+    F, std::enable_if_t<!std::is_void<std::invoke_result_t<F>>::value>> {
  private:
   GPR_NO_UNIQUE_ADDRESS RemoveCVRef<F> f_;
   using OriginalResult = decltype(f_());
@@ -241,7 +241,7 @@ class PromiseLike<
 
 template <typename F>
 class PromiseLike<
-    F, absl::enable_if_t<std::is_void<std::invoke_result_t<F>>::value>> {
+    F, std::enable_if_t<std::is_void<std::invoke_result_t<F>>::value>> {
  private:
   GPR_NO_UNIQUE_ADDRESS RemoveCVRef<F> f_;
 

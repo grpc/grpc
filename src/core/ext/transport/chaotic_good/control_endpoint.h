@@ -119,13 +119,13 @@ class ControlEndpoint {
   }
 
   auto SecureFrameWriterCallback() {
-    return [buffer = buffer_](SliceBuffer* data) {
+    return [buffer = buffer_](SliceBuffer data) {
       SliceBuffer output;
-      CHECK_LT(data->Length(), std::numeric_limits<uint32_t>::max());
-      const uint32_t length = data->Length();
+      CHECK_LT(data.Length(), std::numeric_limits<uint32_t>::max());
+      const uint32_t length = data.Length();
       TcpFrameHeader hdr{{FrameType::kTcpSecurityFrame, 0, length}};
       hdr.Serialize(output.AddTiny(TcpFrameHeader::kFrameHeaderSize));
-      output.TakeAndAppend(*data);
+      output.TakeAndAppend(data);
       buffer->ForceQueue(std::move(output));
     };
   }

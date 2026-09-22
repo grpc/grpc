@@ -778,6 +778,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/autosharding/autosharding.cc \
     src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
@@ -1710,6 +1711,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/autosharding)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/outlier_detection)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/pick_first)
