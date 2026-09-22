@@ -746,7 +746,7 @@ and start connecting to them, exactly as it does when it is first created.
 It will therefore report CONNECTING state with a picker that queues picks.
 
 If the selected subchannel reoports CONNECTING or TRANSIENT_FAILURE,
-the policy will immediately begin attempting to connecto all subchannels,
+the policy will immediately begin attempting to connect to all subchannels,
 as if it were in IDLE state and `ExitIdle()` had just been called.
 
 If pick\_first fails to connect to all subchannels, it will report
@@ -801,7 +801,7 @@ ExitIdle() method, thus triggering it to attempt to reconnect.
 The round\_robin policy determines what connectivity state to report
 to its parent by aggregating the connectivity states of the endpoints
 (i.e., the states reported by the pick\_first child policies),
-using the normal aggregation rules described in [Channel Connectivity
+using the normal aggregation rules described in [Aggregated Connectivity
 States](#aggregated-connectivity-states) above.  However, note that for
 the purposes of this aggregation, endpoints reporting IDLE are treated as
 if they had reported CONNECTING, because round\_robin always immediately
