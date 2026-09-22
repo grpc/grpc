@@ -1199,6 +1199,8 @@ void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
       << stream->GetStreamId();
   const uint32_t stream_id = stream->GetStreamId();
   stream_list_.emplace(stream_id, std::move(stream));
+  // Based on CHTTP2's stream creation in chttp2_transport.cc
+  reclamation_manager_->MaybePostDestructiveReclaimer();
 }
 
 void Http2ServerTransport::EnqueueResetStreamFromTransportParty(
@@ -1375,6 +1377,32 @@ std::optional<RefCountedPtr<Stream>> Http2ServerTransport::MakeStream(
                                 settings_->peer().allow_true_binary_metadata());
 }
 
+// Based on CHTTP2's use of GetConnectionMaxConcurrentRequests in parsing.cc
+void Http2ServerTransport::UpdateMaxConcurrentStreamsFromStreamQuota() {
+  uint32_t current_open_streams = 0;
+  {
+    MutexLock lock(&transport_mutex_);
+    // Unlike CHTTP2, PH2 has no `extra_streams` counter. Tarpitted streams stay
+    // in stream_list_ until they are cleaned up, so stream_list_ already
+    // accounts for them.
+    current_open_streams = GetActiveStreamCountLocked();
+  }
+  // The lock is intentionally released before touching settings_. settings_ is
+  // only ever touched from the transport party, so it needs no lock, and we do
+  // not want to hold transport_mutex_ across unrelated work.
+  const uint32_t max_concurrent_streams =
+      stream_quota_->GetConnectionMaxConcurrentRequests(current_open_streams);
+  GRPC_HTTP2_SERVER_DLOG
+      << "Http2ServerTransport::UpdateMaxConcurrentStreamsFromStreamQuota "
+         "current_open_streams="
+      << current_open_streams
+      << " max_concurrent_streams=" << max_concurrent_streams;
+  // UpdateMaxConcurrentStreams clamps to the value configured via
+  // GRPC_ARG_MAX_CONCURRENT_STREAMS. The updated local settings are sent to the
+  // peer by MaybeGetSettingsAndSettingsAckFrames in the next write cycle.
+  settings_->mutable_local().UpdateMaxConcurrentStreams(max_concurrent_streams);
+}
+
 Http2Status Http2ServerTransport::IncomingStream(
     ClientMetadataHandle&& metadata, const uint32_t stream_id) {
   if (shutdown_tracker_.IsPartyShutdownInitiated()) {
@@ -1410,6 +1438,10 @@ Http2Status Http2ServerTransport::IncomingStream(
   }
   RefCountedPtr<Stream> stream = std::move(result.value());
   AddToStreamList(stream);
+  // Recompute what we advertise for MAX_CONCURRENT_STREAMS now that one more
+  // stream is open on this connection.
+  // Based on CHTTP2's stream accept path in parsing.cc
+  UpdateMaxConcurrentStreamsFromStreamQuota();
   stream->SetInitialMetadataReceived();
 
   stream->GetCallInitiator().SpawnGuarded(
@@ -1513,6 +1545,7 @@ void Http2ServerTransport::HandleStreamStateChange(
 
 void Http2ServerTransport::CleanupStream(Stream& stream) {
   bool should_close = false;
+  bool should_post_benign_reclaimer = false;
   {
     MutexLock lock(&transport_mutex_);
     stream_list_.erase(stream.GetStreamId());
@@ -1520,6 +1553,9 @@ void Http2ServerTransport::CleanupStream(Stream& stream) {
     // streams.
     if (goaway_manager_.IsFinalGracefulGoawaySent() && stream_list_.empty()) {
       should_close = true;
+    }
+    if (stream_list_.empty()) {
+      should_post_benign_reclaimer = true;
     }
   }
   // Subtract any positive announced window delta of closed stream from the
@@ -1529,6 +1565,10 @@ void Http2ServerTransport::CleanupStream(Stream& stream) {
   if (should_close) {
     MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
         absl::StatusCode::kUnavailable, "Graceful shutdown complete."));
+  }
+  if (should_post_benign_reclaimer) {
+    // Based on CHTTP2's destroy_stream_locked in chttp2_transport.cc
+    reclamation_manager_->MaybePostBenignReclaimer();
   }
 }
 
@@ -1872,6 +1912,10 @@ void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
 void Http2ServerTransport::CloseTransport() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::CloseTransport";
 
+  // Stop all reclamation activity. Any reclaimer callback that fires after
+  // this point is a no-op. The ReclamationLoop exits on its next poll.
+  reclamation_manager_->Close();
+
   shutdown_tracker_.MarkShutdownComplete();
   settings_->HandleTransportShutdown(event_engine_.get());
 
@@ -2025,6 +2069,10 @@ Http2ServerTransport::Http2ServerTransport(
       memory_owner_(channel_args.GetObject<ResourceQuota>()
                         ->memory_quota()
                         ->CreateMemoryOwner()),
+      self_reservation_(
+          memory_owner_.MakeReservation(sizeof(Http2ServerTransport))),
+      // Based on CHTTP2's stream_quota initialization in chttp2_transport.cc
+      stream_quota_(channel_args.GetObject<ResourceQuota>()->stream_quota()),
       flow_control_(
           /*peer_name=*/read_context_.peer_string().as_string_view(),
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
@@ -2055,6 +2103,11 @@ Http2ServerTransport::Http2ServerTransport(
 
   GRPC_DCHECK(ping_manager_.has_value());
   GRPC_DCHECK(keepalive_manager_.has_value());
+
+  // Based on CHTTP2's RESOURCE QUOTAS section in chttp2_transport.cc
+  reclamation_manager_ = MakeRefCounted<ReclamationManager>(
+      &memory_owner_, ReclaimerInterfaceImpl::Make(this));
+
   SourceConstructed();
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor End";
@@ -2062,9 +2115,16 @@ Http2ServerTransport::Http2ServerTransport(
 
 Http2ServerTransport::~Http2ServerTransport() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Destructor Begin";
-  // GRPC_DCHECK(stream_list_.empty());
-  // GRPC_DCHECK(transport_party_ == nullptr);
-  // memory_owner_.Reset();
+  GRPC_DCHECK(stream_list_.empty());
+  GRPC_DCHECK(transport_party_ == nullptr);
+
+  // Hard guarantee that the reclamation manager never dereferences this
+  // transport again. CloseTransport() normally does this already, so this is
+  // just a safety net.
+  // ~MemoryOwner shuts the allocator down, which cancels any reclaimer that is
+  // still registered. That cancellation drops the last ref to
+  // reclamation_manager_.
+  reclamation_manager_->Close();
 
   // TODO(akshitpatel) : [PH2][P0][Close] : Remove call to
   // HandleTransportShutdown() from here and plumb CloseTransport() correctly.
@@ -2132,6 +2192,62 @@ void Http2ServerTransport::Orphan() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::Orphan End";
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Resource Quota Reclaimer
+
+std::unique_ptr<ReclaimerInterface>
+Http2ServerTransport::ReclaimerInterfaceImpl::Make(
+    Http2ServerTransport* transport) {
+  return std::unique_ptr<ReclaimerInterface>(
+      new ReclaimerInterfaceImpl(transport));
+}
+
+// Based on CHTTP2's benign_reclaimer_locked in chttp2_transport.cc
+bool Http2ServerTransport::ReclaimerInterfaceImpl::CloseTransportIfIdle() {
+  {
+    MutexLock lock(&transport_->transport_mutex_);
+    if (!transport_->stream_list_.empty()) {
+      return false;
+    }
+  }
+  transport_->memory_owner_.telemetry_storage()->Increment(
+      ResourceQuotaDomain::kConnectionsDropped);
+  GRPC_HTTP2_SERVER_DLOG
+      << "Http2ServerTransport: benign reclaimer closing idle transport";
+  transport_->MaybeSpawnCloseTransport(Http2Status::Http2ConnectionError(
+      Http2ErrorCode::kEnhanceYourCalm, "Buffers full"));
+  return true;
+}
+
+// Based on CHTTP2's destructive_reclaimer_locked in chttp2_transport.cc
+bool Http2ServerTransport::ReclaimerInterfaceImpl::CancelOneActiveStream() {
+  RefCountedPtr<Stream> stream_to_cancel = nullptr;
+  bool has_remaining_streams = false;
+  {
+    MutexLock lock(&transport_->transport_mutex_);
+    if (transport_->stream_list_.empty()) {
+      return false;
+    }
+    // As stream_list_ is a hash map, this selects effectively a random stream.
+    absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>::iterator it =
+        transport_->stream_list_.begin();
+    stream_to_cancel = it->second;
+    has_remaining_streams = (transport_->stream_list_.size() > 1u);
+  }
+  transport_->memory_owner_.telemetry_storage()->Increment(
+      ResourceQuotaDomain::kCallsDropped);
+  GRPC_HTTP2_SERVER_DLOG
+      << "Http2ServerTransport: destructive reclaimer abandoning stream id "
+      << stream_to_cancel->GetStreamId();
+  transport_->BeginCloseStream(
+      std::move(stream_to_cancel),
+      static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+      absl::ResourceExhaustedError("Buffers full"),
+      /*tarpit=*/false, /*override_tarpit=*/true);
+  GRPC_UNUSED const bool unused = transport_->TriggerWriteCycleOrHandleError();
+  return has_remaining_streams;
+}
+
 void Http2ServerTransport::SpawnTransportLoops() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops Begin";
   MaybeSpawnKeepaliveLoop();
@@ -2152,6 +2268,12 @@ void Http2ServerTransport::SpawnTransportLoops() {
   if (flow_control_.bdp_probe()) {
     SpawnGuardedTransportParty("BdpLoop", UntilTransportClosed(BdpLoop()));
   }
+  SpawnGuardedTransportParty(
+      "ReclamationLoop",
+      UntilTransportClosed(reclamation_manager_->ReclamationLoop()));
+  // Based on CHTTP2's post_benign_reclaimer in chttp2_transport.cc
+  reclamation_manager_->MaybePostBenignReclaimer();
+
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops End";
 }
 

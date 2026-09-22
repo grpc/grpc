@@ -1140,6 +1140,8 @@ void Http2ClientTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
     const uint32_t stream_id = stream->GetStreamId();
     stream_list_.emplace(stream_id, std::move(stream));
   }
+  // Based on CHTTP2's stream creation in chttp2_transport.cc
+  reclamation_manager_->MaybePostDestructiveReclaimer();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1208,6 +1210,8 @@ Http2ClientTransport::Http2ClientTransport(
       memory_owner_(channel_args.GetObject<ResourceQuota>()
                         ->memory_quota()
                         ->CreateMemoryOwner()),
+      self_reservation_(
+          memory_owner_.MakeReservation(sizeof(Http2ClientTransport))),
       flow_control_(
           /*peer_name=*/read_context_.peer_string().as_string_view(),
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
@@ -1236,8 +1240,68 @@ Http2ClientTransport::Http2ClientTransport(
 
   GRPC_DCHECK(ping_manager_.has_value());
   GRPC_DCHECK(keepalive_manager_.has_value());
+
+  // Based on CHTTP2's RESOURCE QUOTAS section in chttp2_transport.cc
+  reclamation_manager_ = MakeRefCounted<ReclamationManager>(
+      &memory_owner_, ReclaimerInterfaceImpl::Make(this));
+
   SourceConstructed();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::Http2ClientTransport End";
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Resource Quota Reclaimer
+
+std::unique_ptr<ReclaimerInterface>
+Http2ClientTransport::ReclaimerInterfaceImpl::Make(
+    Http2ClientTransport* transport) {
+  return std::unique_ptr<ReclaimerInterface>(
+      new ReclaimerInterfaceImpl(transport));
+}
+
+// Based on CHTTP2's benign_reclaimer_locked in chttp2_transport.cc
+bool Http2ClientTransport::ReclaimerInterfaceImpl::CloseTransportIfIdle() {
+  {
+    MutexLock lock(&transport_->transport_mutex_);
+    if (!transport_->stream_list_.empty()) {
+      return false;
+    }
+  }
+  transport_->memory_owner_.telemetry_storage()->Increment(
+      ResourceQuotaDomain::kConnectionsDropped);
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport: benign reclaimer closing idle transport";
+  transport_->MaybeSpawnCloseTransport(Http2Status::Http2ConnectionError(
+      Http2ErrorCode::kEnhanceYourCalm, "Buffers full"));
+  return true;
+}
+
+// Based on CHTTP2's destructive_reclaimer_locked in chttp2_transport.cc
+bool Http2ClientTransport::ReclaimerInterfaceImpl::CancelOneActiveStream() {
+  RefCountedPtr<Stream> stream_to_cancel = nullptr;
+  bool has_remaining_streams = false;
+  {
+    MutexLock lock(&transport_->transport_mutex_);
+    if (transport_->stream_list_.empty()) {
+      return false;
+    }
+    // As stream_list_ is a hash map, this selects effectively a random stream.
+    absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>::iterator it =
+        transport_->stream_list_.begin();
+    stream_to_cancel = it->second;
+    has_remaining_streams = (transport_->stream_list_.size() > 1u);
+  }
+  transport_->memory_owner_.telemetry_storage()->Increment(
+      ResourceQuotaDomain::kCallsDropped);
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport: destructive reclaimer abandoning stream id "
+      << stream_to_cancel->GetStreamId();
+  transport_->BeginCloseStream(
+      std::move(stream_to_cancel),
+      static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+      absl::ResourceExhaustedError("Buffers full"));
+  GRPC_UNUSED const bool unused = transport_->TriggerWriteCycleOrHandleError();
+  return has_remaining_streams;
 }
 
 void Http2ClientTransport::SpawnTransportLoops() {
@@ -1261,6 +1325,13 @@ void Http2ClientTransport::SpawnTransportLoops() {
           return self->UntilTransportClosed(self->BdpLoop());
         });
   }
+  SpawnGuardedTransportParty(
+      "ReclamationLoop", [self = RefAsSubclass<Http2ClientTransport>()]() {
+        return self->UntilTransportClosed(
+            self->reclamation_manager_->ReclamationLoop());
+      });
+  // Based on CHTTP2's post_benign_reclaimer in chttp2_transport.cc
+  reclamation_manager_->MaybePostBenignReclaimer();
 
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
 }
@@ -1347,13 +1418,22 @@ void Http2ClientTransport::HandleStreamStateChange(Stream& stream,
 }
 
 void Http2ClientTransport::CleanupStream(Stream& stream) {
+  bool should_post_benign_reclaimer = false;
   {
     MutexLock lock(&transport_mutex_);
     stream_list_.erase(stream.GetStreamId());
+    if (stream_list_.empty()) {
+      should_post_benign_reclaimer = true;
+    }
   }
   // Subtract any positive announced window delta of closed stream from the
   // transport flow control.
   stream.GetStreamFlowControl().OnStreamClosed();
+
+  if (should_post_benign_reclaimer) {
+    // Based on CHTTP2's destroy_stream_locked in chttp2_transport.cc
+    reclamation_manager_->MaybePostBenignReclaimer();
+  }
 }
 
 void Http2ClientTransport::BeginCloseStream(
@@ -1398,6 +1478,10 @@ void Http2ClientTransport::EnqueueResetStreamFromTransportParty(
 
 void Http2ClientTransport::CloseTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport";
+
+  // Stop all reclamation activity. Any reclaimer callback that fires after
+  // this point is a no-op. The ReclamationLoop exits on its next poll.
+  reclamation_manager_->Close();
 
   shutdown_tracker_.MarkShutdownComplete();
   settings_->HandleTransportShutdown(event_engine_.get());
@@ -1505,7 +1589,19 @@ Http2ClientTransport::~Http2ClientTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::~Http2ClientTransport Begin";
   GRPC_DCHECK(stream_list_.empty());
   GRPC_DCHECK(transport_party_ == nullptr);
-  memory_owner_.Reset();
+
+  // Hard guarantee that the reclamation manager never dereferences this
+  // transport again. CloseTransport() normally does this already, so this is
+  // just a safety net.
+  reclamation_manager_->Close();
+
+  // memory_owner_ is intentionally NOT reset here. Members like
+  // self_reservation_ and flow_control_ still hold reservations against it.
+  // They release those reservations during their own destruction, which
+  // happens after this body runs.
+  // ~MemoryOwner shuts the allocator down, which cancels any reclaimer that is
+  // still registered. That cancellation drops the last ref to
+  // reclamation_manager_.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::~Http2ClientTransport End";
 }
 
