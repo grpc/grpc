@@ -379,7 +379,7 @@ test_suite(
     name = "csharp_distribtests_linux",
     tests = [
         ":distribtest_csharp_linux_x64_alpine",
-        ":distribtest_csharp_linux_x64_debian11",
+        ":distribtest_csharp_linux_x64_debian12",
         ":distribtest_csharp_linux_x64_dotnet31",
         ":distribtest_csharp_linux_x64_dotnet5",
         ":distribtest_csharp_linux_x64_ubuntu2204",
