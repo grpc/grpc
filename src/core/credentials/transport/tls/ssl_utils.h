@@ -89,7 +89,7 @@ const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols,
 
 // Initialize TSI SSL server/client handshaker factory.
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    const grpc_core::PemKeyCertPair* key_cert_pair,
+    grpc_core::PemKeyCertPairList pem_key_cert_pairs,
     std::shared_ptr<tsi::RootCertInfo> root_cert_info,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
