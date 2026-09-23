@@ -22,12 +22,15 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/telemetry/histogram_view.h"
+#include "src/core/telemetry/stats_data.h"
 #include "test/core/test_util/postmortem.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/transport_test.h"
@@ -234,6 +237,165 @@ inline ::testing::Matcher<const Http2Frame&> IsPingFrame(
       ::testing::Field("ack", &Http2PingFrame::ack, ack),
       ::testing::Field("opaque", &Http2PingFrame::opaque, opaque)));
 }
+
+// Helper class to capture snapshots of Http2GlobalStats, calculate diffs, and
+// validate counter and histogram bucket/total counts across tests.
+class Http2GlobalStatsTestHelper {
+ public:
+  Http2GlobalStatsTestHelper() : before_(http2_global_stats().Collect()) {}
+
+  Http2GlobalStatsTestHelper(const Http2GlobalStatsTestHelper&) = delete;
+  Http2GlobalStatsTestHelper& operator=(const Http2GlobalStatsTestHelper&) =
+      delete;
+  Http2GlobalStatsTestHelper(Http2GlobalStatsTestHelper&&) = delete;
+  Http2GlobalStatsTestHelper& operator=(Http2GlobalStatsTestHelper&&) = delete;
+
+  // Counter validation methods.
+  void ExpectWritesBegun(const uint64_t expected_count) const {
+    ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2WritesBegun,
+                      expected_count);
+  }
+
+  void ExpectSettingsWrites(const uint64_t expected_count) const {
+    ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2SettingsWrites,
+                      expected_count);
+  }
+
+  void ExpectPingsSent(const uint64_t expected_count) const {
+    ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2PingsSent,
+                      expected_count);
+  }
+
+  void ExpectTransportStalls(const uint64_t expected_count) const {
+    ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2TransportStalls,
+                      expected_count);
+  }
+
+  void ExpectStreamStalls(const uint64_t expected_count) const {
+    ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2StreamStalls,
+                      expected_count);
+  }
+
+  // Histogram bucket count validation methods.
+  void ExpectReadDataFrameSize(const int value,
+                               const uint64_t expected_count) const {
+    ExpectHistogramBucketCountDiff(
+        Http2GlobalStats::Histogram::kHttp2ReadDataFrameSize, value,
+        expected_count);
+  }
+
+  void ExpectSendMessageSize(const int value,
+                             const uint64_t expected_count) const {
+    ExpectHistogramBucketCountDiff(
+        Http2GlobalStats::Histogram::kHttp2SendMessageSize, value,
+        expected_count);
+  }
+
+  void ExpectWriteDataFrameSize(const int value,
+                                const uint64_t expected_count) const {
+    ExpectHistogramBucketCountDiff(
+        Http2GlobalStats::Histogram::kHttp2WriteDataFrameSize, value,
+        expected_count);
+  }
+
+  void ExpectWriteTargetSize(const int value,
+                             const uint64_t expected_count) const {
+    ExpectHistogramBucketCountDiff(
+        Http2GlobalStats::Histogram::kHttp2WriteTargetSize, value,
+        expected_count);
+  }
+
+  void ExpectTransportRemoteWindowUpdate(const int value,
+                                         const uint64_t expected_count) const {
+    ExpectHistogramBucketCountDiff(
+        Http2GlobalStats::Histogram::kHttp2TransportRemoteWindowUpdate, value,
+        expected_count);
+  }
+
+  void ExpectStreamRemoteWindowUpdate(const int value,
+                                      const uint64_t expected_count) const {
+    ExpectHistogramBucketCountDiff(
+        Http2GlobalStats::Histogram::kHttp2StreamRemoteWindowUpdate, value,
+        expected_count);
+  }
+
+  // Histogram total sample count validation methods.
+  void ExpectWriteDataFrameSizeTotalCount(const double expected_count) const {
+    ExpectHistogramTotalCountDiff(
+        Http2GlobalStats::Histogram::kHttp2WriteDataFrameSize, expected_count);
+  }
+
+  void ExpectTransportWindowUpdatePeriodTotalCount(
+      const double expected_count) const {
+    ExpectHistogramTotalCountDiff(
+        Http2GlobalStats::Histogram::kHttp2TransportWindowUpdatePeriod,
+        expected_count);
+  }
+
+  void ExpectStreamRemoteWindowUpdateTotalCount(
+      const double expected_count) const {
+    ExpectHistogramTotalCountDiff(
+        Http2GlobalStats::Histogram::kHttp2StreamRemoteWindowUpdate,
+        expected_count);
+  }
+
+  void ExpectStreamWindowUpdatePeriodTotalCount(
+      const double expected_count) const {
+    ExpectHistogramTotalCountDiff(
+        Http2GlobalStats::Histogram::kHttp2StreamWindowUpdatePeriod,
+        expected_count);
+  }
+
+ private:
+  std::unique_ptr<Http2GlobalStats> GetDiff() const {
+    return http2_global_stats().Collect()->Diff(*before_);
+  }
+
+  uint64_t GetCounterDiff(const Http2GlobalStats::Counter counter) const {
+    const std::unique_ptr<Http2GlobalStats> diff = GetDiff();
+    return diff->counters[static_cast<int>(counter)];
+  }
+
+  uint64_t GetHistogramBucketCountDiff(
+      const Http2GlobalStats::Histogram histogram, const int value) const {
+    const std::unique_ptr<Http2GlobalStats> diff = GetDiff();
+    const HistogramView view = diff->histogram(histogram);
+    const int bucket_index = view.bucket_for(value);
+    return view.buckets[bucket_index];
+  }
+
+  double GetHistogramTotalCountDiff(
+      const Http2GlobalStats::Histogram histogram) const {
+    const std::unique_ptr<Http2GlobalStats> diff = GetDiff();
+    return diff->histogram(histogram).Count();
+  }
+
+  void ExpectCounterDiff(const Http2GlobalStats::Counter counter,
+                         const uint64_t expected_count) const {
+    EXPECT_EQ(GetCounterDiff(counter), expected_count)
+        << "Counter mismatch for "
+        << Http2GlobalStats::counter_name[static_cast<int>(counter)];
+  }
+
+  void ExpectHistogramBucketCountDiff(
+      const Http2GlobalStats::Histogram histogram, const int value,
+      const uint64_t expected_count) const {
+    EXPECT_EQ(GetHistogramBucketCountDiff(histogram, value), expected_count)
+        << "Histogram bucket count mismatch for "
+        << Http2GlobalStats::histogram_name[static_cast<int>(histogram)]
+        << " at value=" << value;
+  }
+
+  void ExpectHistogramTotalCountDiff(
+      const Http2GlobalStats::Histogram histogram,
+      const double expected_count) const {
+    EXPECT_EQ(GetHistogramTotalCountDiff(histogram), expected_count)
+        << "Histogram total count mismatch for "
+        << Http2GlobalStats::histogram_name[static_cast<int>(histogram)];
+  }
+
+  std::unique_ptr<Http2GlobalStats> before_;
+};
 
 class Http2TransportTest : public util::testing::TransportTest {
  public:

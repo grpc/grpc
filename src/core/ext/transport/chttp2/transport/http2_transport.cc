@@ -46,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
@@ -378,12 +379,17 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
 
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, Stream* stream) {
+    chttp2::TransportFlowControl& flow_control, Stream* stream,
+    Http2TransportStats& http2_transport_stats) {
   if (frame.stream_id != 0) {
     if (stream != nullptr) {
       GRPC_HTTP2_COMMON_DLOG
           << "ProcessIncomingWindowUpdateFrameFlowControl stream "
           << frame.stream_id << " increment " << frame.increment;
+      const Timestamp last_window_update_time =
+          http2_transport_stats.RecordStreamWindowUpdate(
+              frame.increment, stream->GetLastWindowUpdateTime());
+      stream->SetLastWindowUpdateTime(last_window_update_time);
       chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
           &stream->GetStreamFlowControl());
       fc_update.RecvUpdate(frame.increment);
@@ -398,6 +404,7 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     GRPC_HTTP2_COMMON_DLOG
         << "ProcessIncomingWindowUpdateFrameFlowControl transport increment "
         << frame.increment;
+    http2_transport_stats.RecordTransportWindowUpdate(frame.increment);
     chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
         &flow_control);
     fc_update.RecvUpdate(frame.increment);
