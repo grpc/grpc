@@ -320,6 +320,65 @@ TEST_P(WriteCycleTest, RstStreamAddedAndFlushed) {
   EXPECT_EQ(cycle.GetRegularFrameCount(), 0u);
 }
 
+// This test verifies that WriteCycle increments writes begun and records the
+// target write size when a stats collector is provided.
+// Assertions:
+// - http2_writes_begun is incremented by 1.
+// - Target write size matches the policy's target write size.
+TEST_P(WriteCycleTest, RecordsWriteStatsWhenStatsCollectorProvided) {
+  const bool is_client = GetParam();
+  Chttp2WriteSizePolicy policy;
+  bool is_first_write = true;
+  Http2StatsCollector stats_collector;
+  WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{},
+                   &stats_collector);
+
+  // Verify that writes begun counter was incremented.
+  EXPECT_EQ(stats_collector.View().http2_writes_begun, 1u);
+  // Verify that the target write size was recorded matching policy target size.
+  EXPECT_EQ(cycle.GetTargetWriteSize(), policy.WriteTargetSize());
+}
+
+// This test verifies that WriteCycle's SerializeRegularFrames increments
+// http2_settings_writes and http2_pings_sent when serializing non-ACK
+// SETTINGS and PING frames, and ignores ACK frames.
+// Assertions:
+// - http2_settings_writes is incremented for non-ACK SETTINGS frame only.
+// - http2_pings_sent is incremented for non-ACK PING frame only.
+TEST_P(WriteCycleTest, RecordsSettingsAndPingStatsOnSerialize) {
+  const bool is_client = GetParam();
+  Chttp2WriteSizePolicy policy;
+  bool is_first_write = true;
+  Http2StatsCollector stats_collector;
+  WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{},
+                   &stats_collector);
+
+  // Add non-ACK SETTINGS frame and SETTINGS ACK frame.
+  cycle.GetFrameSender().AddRegularFrame(Http2SettingsFrame{/*ack=*/false, {}});
+  cycle.GetFrameSender().AddRegularFrame(Http2SettingsFrame{/*ack=*/true, {}});
+
+  // Add non-ACK PING frame and PING ACK frame.
+  cycle.GetFrameSender().AddRegularFrame(Http2PingFrame{/*ack=*/false, 1234u});
+  cycle.GetFrameSender().AddRegularFrame(Http2PingFrame{/*ack=*/true, 5678u});
+
+  const std::unique_ptr<Http2GlobalStats> stats_before =
+      http2_global_stats().Collect();
+
+  bool reset_ping_clock = false;
+  cycle.SerializeRegularFrames(
+      WriteCycle::SerializeStats{reset_ping_clock, &stats_collector});
+
+  const std::unique_ptr<Http2GlobalStats> stats_after =
+      http2_global_stats().Collect();
+
+  // Verify that only the non-ACK SETTINGS frame was counted.
+  EXPECT_EQ(
+      stats_after->http2_settings_writes - stats_before->http2_settings_writes,
+      1u);
+  // Verify that only the non-ACK PING frame was counted.
+  EXPECT_EQ(stats_after->http2_pings_sent - stats_before->http2_pings_sent, 1u);
+}
+
 INSTANTIATE_TEST_SUITE_P(WriteCycleTest, WriteCycleTest, ::testing::Bool());
 
 class TransportWriteContextTest : public ::testing::TestWithParam<bool> {

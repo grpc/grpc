@@ -272,8 +272,9 @@ auto Http2ServerTransport::SerializeAndWrite() {
             << "Http2ServerTransport::SerializeAndWrite frame count: "
             << frame_count;
         ztrace_collector_->Append(PromiseEndpointWriteTrace{frame_count});
-        return EndpointWrite(write_cycle.SerializeRegularFrames(
-            WriteCycle::SerializeStats{should_reset_ping_clock_}));
+        return EndpointWrite(
+            write_cycle.SerializeRegularFrames(WriteCycle::SerializeStats{
+                should_reset_ping_clock_, stats_tracker_.stats_collector()}));
       },
       []() { return absl::OkStatus(); }));
 }
@@ -289,6 +290,8 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
       << ", payload length=" << frame.payload.Length() << "}";
 
   ping_manager_->ReceivedDataFrame();
+  // Based on CHTTP2's init_data_frame_parser in parsing.cc.
+  stats_tracker_.RecordReadDataFrameSize(frame.payload.Length());
 
   const RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
 
@@ -928,8 +931,9 @@ auto Http2ServerTransport::MaybeWriteUrgentFrames() {
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::MaybeWriteUrgentFrames frame count: "
             << buffer_length;
-        return EndpointWrite(write_cycle.SerializeUrgentFrames(
-            WriteCycle::SerializeStats{should_reset_ping_clock_}));
+        return EndpointWrite(
+            write_cycle.SerializeUrgentFrames(WriteCycle::SerializeStats{
+                should_reset_ping_clock_, stats_tracker_.stats_collector()}));
       },
       []() { return absl::OkStatus(); }));
 }
@@ -1031,7 +1035,8 @@ auto Http2ServerTransport::MultiplexerLoop() {
               if (GPR_UNLIKELY(!status.ok())) {
                 return status.status();
               }
-              transport_write_context_.StartWriteCycle();
+              transport_write_context_.StartWriteCycle(
+                  stats_tracker_.stats_collector());
               GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::MultiplexerLoop "
                                         "Start Iteration: "
                                      << transport_write_context_.DebugString();
@@ -1299,6 +1304,7 @@ absl::Status Http2ServerTransport::MaybeAddStreamToWritableStreamList(
 auto Http2ServerTransport::HandleMetadataAndMessages(
     RefCountedPtr<Stream> stream) {
   auto send_message = [this, stream](MessageHandle&& message) mutable {
+    stats_tracker_.RecordSendMessageSize(message->payload()->Length());
     return TrySeq(HandleStreamErrorOnFailure(
                       stream->EnqueueMessage(std::move(message)), stream),
                   [this, stream](const StreamWritabilityUpdate result) mutable {
@@ -2153,10 +2159,12 @@ Http2ServerTransport::Http2ServerTransport(
           &memory_owner_),
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
+      stats_tracker_(channel_args),
       tarpit_manager_(channel_args) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor Begin";
 
   // Initialize the general party and write party.
+  read_context_.SetHttp2StatsCollector(stats_tracker_.stats_collector_shared());
   RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<EventEngine>(event_engine_.get());
   transport_party_ = Party::Make(std::move(party_arena));

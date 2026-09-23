@@ -45,6 +45,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
+#include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
@@ -54,6 +55,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
@@ -333,6 +335,13 @@ RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
   }
   return nullptr;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Telemetry and Stats Tracker
+
+TransportStatsTracker::TransportStatsTracker(const ChannelArgs& channel_args)
+    : stats_collector_(CreateHttp2StatsCollector(
+          channel_args.GetObject<grpc_auth_context>())) {}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Flow control helpers

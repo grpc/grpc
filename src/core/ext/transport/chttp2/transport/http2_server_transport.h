@@ -776,6 +776,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+  TransportStatsTracker stats_tracker_;
   TarpitManager tarpit_manager_;
 };
 
