@@ -52,6 +52,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -2960,6 +2961,123 @@ TEST_F(Http2ServerTransportTest,
   const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
       endpoint()->NewStep();
   AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/5u);
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportRecordsDataFrameAndMessageStats) {
+  // Verifies that Http2ServerTransport records:
+  // 1. http2_send_message_size (RecordSendMessageSize) when sending a message.
+  // 2. http2_write_data_frame_size (RecordWriteDataFrameSize) when queuing an
+  //    outgoing DATA frame.
+  // 3. http2_read_data_frame_size (RecordReadDataFrameSize) when receiving
+  //    DATA frames.
+  ExecCtx ctx;
+
+  // Step 1: Initialize the server transport with BDP probe and keepalive
+  // disabled, and exchange initial settings.
+  InitTransport(
+      GetChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  const Http2GlobalStatsTestHelper stats_helper;
+
+  // Step 2: Register a server stream handler that pulls client initial metadata
+  // and request message, then pushes server initial metadata, response message,
+  // and trailing metadata.
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.PullMessage(),
+                       [](ClientToServerNextMessage next_msg) -> absl::Status {
+                         EXPECT_TRUE(next_msg.ok());
+                         EXPECT_TRUE(next_msg.has_value());
+                         return absl::OkStatus();
+                       });
+          },
+          [call_handler]() mutable {
+            return call_handler.PushMessage(Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromCopiedString(kString1)), 0u));
+          },
+          [call_handler]() mutable {
+            return call_handler.PushServerTrailingMetadata(
+                ServerMetadataFromStatus(absl::CancelledError()));
+          });
+    };
+  });
+
+  // Step 3: Client initiates stream 1 with HEADERS, a DATA frame with payload,
+  // and an empty end-of-stream DATA frame. Server writes initial metadata,
+  // response DATA frame, trailing metadata, and RST_STREAM(NO_ERROR).
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->ThenExpectWrite({
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+
+  const size_t expected_read_data_frame_size =
+      kString3.size() + kGrpcHeaderSizeInBytes;
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedDataFrame(kString3, /*stream_id=*/1u,
+                                  /*end_stream=*/false),
+      helper_.SerializedEmptyDataFrame(/*stream_id=*/1u, /*end_stream=*/true),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedWindowUpdateFrame(
+          /*stream_id=*/0u,
+          /*increment=*/static_cast<uint32_t>(expected_read_data_frame_size)),
+      helper_.SerializedDataFrame(kString1, /*stream_id=*/1u,
+                                  /*end_stream=*/false),
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusCancelled.begin(), kGrpcStatusCancelled.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/true),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Verify that http2_send_message_size, http2_write_data_frame_size,
+  // and http2_read_data_frame_size were recorded accurately.
+  stats_helper.ExpectHistogramBucketCountDiff(
+      Http2GlobalStats::Histogram::kHttp2SendMessageSize,
+      static_cast<int>(kString1.size()), 1u);
+
+  const size_t expected_write_data_frame_size =
+      kString1.size() + kGrpcHeaderSizeInBytes;
+  stats_helper.ExpectHistogramBucketCountDiff(
+      Http2GlobalStats::Histogram::kHttp2WriteDataFrameSize,
+      static_cast<int>(expected_write_data_frame_size), 1u);
+
+  stats_helper.ExpectHistogramBucketCountDiff(
+      Http2GlobalStats::Histogram::kHttp2ReadDataFrameSize,
+      static_cast<int>(expected_read_data_frame_size), 1u);
+  stats_helper.ExpectHistogramBucketCountDiff(
+      Http2GlobalStats::Histogram::kHttp2ReadDataFrameSize, 0, 1u);
+
+  // Step 5: Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
   teardown_step->Wait();
 }
 

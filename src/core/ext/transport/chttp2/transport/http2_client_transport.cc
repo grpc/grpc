@@ -46,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
@@ -240,6 +241,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
       << ", payload length=" << frame.payload.Length() << "}";
 
   ping_manager_->ReceivedDataFrame();
+  http2_transport_stats_.RecordReadDataFrameSize(frame.payload.Length());
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
 
@@ -525,7 +527,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
   }
 
   const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
-      frame, flow_control_, stream.get());
+      frame, flow_control_, stream.get(), http2_transport_stats_);
 
   if (should_trigger_write) {
     return ToHttpOkOrConnError(TriggerWriteCycle());
@@ -937,13 +939,15 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
       static_cast<uint32_t>(GetStreamFlowControlTokens(
           stream->GetStreamFlowControl(), settings_->peer()));
   stream->GetStreamFlowControl().ReportIfStalled(
-      /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer());
+      /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer(),
+      http2_transport_stats_);
   StreamDataQueue<ClientMetadataHandle>::DequeueResult result =
       stream->DequeueFrames(tokens, stream_flow_control_tokens,
                             settings_->peer().max_frame_size(), encoder_,
                             frame_sender);
   ProcessOutgoingDataFrameFlowControl(stream->GetStreamFlowControl(),
                                       result.flow_control_tokens_consumed);
+
   if (result.is_writable) {
     // Stream is still writable. Enqueue it back to the writable
     // stream list.
@@ -1014,7 +1018,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
               if (GPR_UNLIKELY(!status.ok())) {
                 return status.status();
               }
-              transport_write_context_.StartWriteCycle();
+              transport_write_context_.StartWriteCycle(http2_transport_stats_);
               GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::MultiplexerLoop "
                                         "Created WriteCycle: "
                                      << transport_write_context_.DebugString();
@@ -1198,9 +1202,11 @@ Http2ClientTransport::Http2ClientTransport(
           kIsClient, std::move(on_receive_settings))),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
+      http2_transport_stats_(channel_args),
       read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient,
                     GetMaxSecurityFrameSize(channel_args),
-                    GetPingOnRstStreamPercent(channel_args, kIsClient)),
+                    GetPingOnRstStreamPercent(channel_args, kIsClient),
+                    http2_transport_stats_),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
@@ -1740,6 +1746,7 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
   GRPC_DCHECK(stream != nullptr);
 
   auto send_message = [this, stream](MessageHandle&& message) mutable {
+    http2_transport_stats_.RecordSendMessageSize(message->payload()->Length());
     return TrySeq(
         stream->EnqueueMessage(std::move(message)),
         [this, stream](const StreamWritabilityUpdate result) mutable {

@@ -40,6 +40,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -204,7 +205,8 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame,
 // Returns true if a write should be triggered
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, Stream* stream);
+    chttp2::TransportFlowControl& flow_control, Stream* stream,
+    Http2TransportStats& http2_transport_stats);
 
 void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender);

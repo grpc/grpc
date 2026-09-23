@@ -24,9 +24,11 @@
 #include <cstddef>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -89,8 +91,11 @@ class WriteBufferTracker {
   static constexpr size_t kInlinedRegularFramesSize = 8;
   static constexpr size_t kInlinedUrgentFramesSize = 2;
 
-  explicit WriteBufferTracker(bool& is_first_write, const bool is_client)
-      : is_first_write_(is_first_write), is_client_(is_client) {}
+  explicit WriteBufferTracker(bool& is_first_write, const bool is_client,
+                              Http2TransportStats& http2_transport_stats)
+      : is_first_write_(is_first_write),
+        is_client_(is_client),
+        http2_transport_stats_(http2_transport_stats) {}
 
   // WriteBufferTracker is move-constructible but not copyable or assignable.
   WriteBufferTracker(const WriteBufferTracker&) = delete;
@@ -100,9 +105,11 @@ class WriteBufferTracker {
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void AddRegularFrame(
       Http2Frame&& frame) {
+    RecordFrameStats(frame);
     regular_frames_.emplace_back(std::forward<Http2Frame>(frame));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void AddUrgentFrame(Http2Frame&& frame) {
+    RecordFrameStats(frame);
     urgent_frames_.emplace_back(std::forward<Http2Frame>(frame));
   }
 
@@ -159,6 +166,36 @@ class WriteBufferTracker {
   }
 
  private:
+  struct FrameStatsVisitor {
+    Http2TransportStats& http2_transport_stats;
+
+    void operator()(const Http2DataFrame& frame) const {
+      http2_transport_stats.RecordWriteDataFrameSize(frame.payload.Length());
+    }
+    void operator()(const Http2HeaderFrame&) const {}
+    void operator()(const Http2ContinuationFrame&) const {}
+    void operator()(const Http2RstStreamFrame&) const {}
+    void operator()(const Http2SettingsFrame& frame) const {
+      if (!frame.ack) {
+        http2_transport_stats.RecordSettingsWrites();
+      }
+    }
+    void operator()(const Http2PingFrame& frame) const {
+      if (!frame.ack) {
+        http2_transport_stats.RecordPingsSent();
+      }
+    }
+    void operator()(const Http2GoawayFrame&) const {}
+    void operator()(const Http2WindowUpdateFrame&) const {}
+    void operator()(const Http2SecurityFrame&) const {}
+    void operator()(const Http2UnknownFrame&) const {}
+    void operator()(const Http2EmptyFrame&) const {}
+  };
+
+  void RecordFrameStats(const Http2Frame& frame) {
+    std::visit(FrameStatsVisitor{http2_transport_stats_}, frame);
+  }
+
   template <typename FrameContainer>
   SliceBuffer SerializeFrames(FrameContainer& frames, SerializeStats stats) {
     SliceBuffer output_buf;
@@ -194,6 +231,7 @@ class WriteBufferTracker {
   absl::InlinedVector<Http2Frame, kInlinedUrgentFramesSize> urgent_frames_;
   bool& is_first_write_;
   const bool is_client_;
+  Http2TransportStats& http2_transport_stats_;
 };
 
 // Wrapper for WriteBufferTracker and WriteQuota to be used by the callers
@@ -239,10 +277,14 @@ class WriteCycle {
  public:
   WriteCycle(Chttp2WriteSizePolicy* write_size_policy, bool& is_first_write,
              const bool& is_client,
-             std::vector<Http2RstStreamFrame>&& rst_streams)
-      : write_buffer_tracker_(is_first_write, is_client),
+             std::vector<Http2RstStreamFrame>&& rst_streams,
+             Http2TransportStats& http2_transport_stats)
+      : write_buffer_tracker_(is_first_write, is_client, http2_transport_stats),
         write_quota_(write_size_policy->WriteTargetSize()),
         write_size_policy_(write_size_policy) {
+    http2_transport_stats.RecordWritesBegun();
+    http2_transport_stats.RecordWriteTargetSize(
+        write_quota_.GetTargetWriteSize());
     for (const Http2RstStreamFrame& rst_frame : rst_streams) {
       GetFrameSender().AddRegularFrame(rst_frame);
     }
@@ -269,6 +311,10 @@ class WriteCycle {
   // Wrappers for WriteQuota
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION size_t GetWriteBytesRemaining() const {
     return write_quota_.GetWriteBytesRemaining();
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION size_t GetTargetWriteSize() const {
+    return write_quota_.GetTargetWriteSize();
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SliceBuffer
@@ -331,9 +377,9 @@ class TransportWriteContext {
   TransportWriteContext(TransportWriteContext&&) = delete;
   TransportWriteContext& operator=(TransportWriteContext&&) = delete;
 
-  void StartWriteCycle() {
+  void StartWriteCycle(Http2TransportStats& http2_transport_stats) {
     write_cycle_.emplace(&write_size_policy_, is_first_write_, is_client_,
-                         TakeRstStreams());
+                         TakeRstStreams(), http2_transport_stats);
   }
 
   void EndWriteCycle() { write_cycle_.reset(); }

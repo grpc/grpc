@@ -33,6 +33,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/promise/if.h"
@@ -458,7 +459,7 @@ class StreamDataQueueTest : public SimpleQueueTest,
                             public ::testing::WithParamInterface<bool> {
  public:
   StreamDataQueueTest() : transport_write_context_(GetParam()) {
-    transport_write_context_.StartWriteCycle();
+    transport_write_context_.StartWriteCycle(http2_transport_stats_);
     // Discard the connection preface
     MaybeFlushWriteBuffer();
   }
@@ -634,6 +635,7 @@ class StreamDataQueueTest : public SimpleQueueTest,
   }
 
   http2::TransportWriteContext transport_write_context_;
+  http2::Http2TransportStats http2_transport_stats_{ChannelArgs()};
 };
 
 }  // namespace
