@@ -720,8 +720,8 @@ void XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::Start() {
                 });
       },
       [&](const XdsListenerResource::HttpConnectionManager& hcm) {
-        // API listener for passive listener.
-        // Create a dummy L4FilterChain with key nullptr.
+        // API listener for passive listener.  Create an L4FilterChain
+        // with no DownstreamTlsContext, and store it with key nullptr.
         auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
             fetcher_state_.Ref(DEBUG_LOCATION, "L4FilterChain"),
             WeakRefAsSubclass<XdsConnectionManager>(), hcm, nullptr);
