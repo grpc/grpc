@@ -98,7 +98,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
-      StreamingCall::Options options) override;
+      CallOptions options) override;
 
   void ResetBackoff() override;
 
@@ -128,7 +128,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
       grpc_call_credentials* call_creds,
       const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-      Duration timeout, StreamingCall::Options options);
+      Duration timeout, CallOptions options);
   ~GrpcStreamingCall() override;
 
   void Orphan() override;
@@ -188,7 +188,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   grpc_slice status_details_ = grpc_empty_slice();
   grpc_closure on_status_received_;
 
-  const StreamingCall::Options options_;
+  const CallOptions options_;
 };
 
 }  // namespace grpc_core

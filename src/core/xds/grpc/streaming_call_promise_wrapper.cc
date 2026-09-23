@@ -55,7 +55,7 @@ class XdsStreamingCallPromiseWrapper::EventHandler final
 
 XdsStreamingCallPromiseWrapper::XdsStreamingCallPromiseWrapper(
     XdsTransport& transport, const char* method,
-    XdsTransport::StreamingCall::Options options) {
+    XdsTransport::CallOptions options) {
   auto internal_event_handler = std::make_unique<EventHandler>(
       WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>());
   call_ = transport.CreateStreamingCall(

@@ -79,8 +79,8 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
   {
     MutexLock lock(&mu_);
     GRPC_CHECK(!orphaned_);
-    if (options_.start_upon_send_message) {
-      options_.start_upon_send_message = false;
+    if (!started_) {
+      started_ = true;
       register_stream = true;
     }
     from_client_messages_.push_back(std::move(payload));
@@ -297,7 +297,7 @@ OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
-    StreamingCall::Options options) {
+    CallOptions options) {
   auto call = MakeOrphanable<FakeStreamingCall>(
       WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler),
       options);

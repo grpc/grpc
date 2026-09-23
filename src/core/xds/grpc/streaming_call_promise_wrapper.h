@@ -52,8 +52,7 @@ class XdsStreamingCallPromiseWrapper final
   // transport.
   XdsStreamingCallPromiseWrapper(
       XdsTransport& transport, const char* method,
-      XdsTransport::StreamingCall::Options options =
-          XdsTransport::StreamingCall::Options().set_wait_for_ready(false));
+      XdsTransport::CallOptions options = XdsTransport::CallOptions());
 
   // Pushes a message on the stream.
   //

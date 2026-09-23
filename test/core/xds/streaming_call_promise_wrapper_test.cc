@@ -85,12 +85,10 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
     WaitForSingleOwner(std::move(event_engine_));
   }
 
-  using StreamingCallOptions =
-      XdsTransportFactory::XdsTransport::StreamingCall::Options;
+  using CallOptions = XdsTransportFactory::XdsTransport::CallOptions;
 
   void InitStream(bool auto_complete_messages_from_client = true,
-                  StreamingCallOptions options =
-                      StreamingCallOptions().set_wait_for_ready(false)) {
+                  CallOptions options = CallOptions()) {
     transport_factory_->SetAutoCompleteMessagesFromClient(
         auto_complete_messages_from_client);
     absl::Status status;
@@ -292,9 +290,7 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, PushMessageWithSendHalfClose) {
 
 TEST_F(XdsStreamingCallPromiseWrapperTest, StartUponSendMessage) {
   InitStream(/*auto_complete_messages_from_client=*/true,
-             StreamingCallOptions()
-                 .set_start_upon_send_message(true)
-                 .set_wait_for_ready(false));
+             CallOptions().set_start_upon_send_message(true));
   std::optional<std::string> received_message;
   auto pull_activity = MakeActivity(
       [this, &received_message] {

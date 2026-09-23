@@ -34,37 +34,36 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
   // Represents a transport for xDS communication (e.g., a gRPC channel).
   class XdsTransport : public DualRefCounted<XdsTransport> {
    public:
+    // Options for creating a streaming call.
+    struct CallOptions {
+      // If true, the send_initial_metadata op is not started when the call
+      // is created; instead, it is started by the first call to
+      // SendMessage().  This allows a unary call to send initial metadata,
+      // the request message, and the half-close in a single batch:
+      //   auto call = transport->CreateStreamingCall(
+      //       method, std::move(handler),
+      //       CallOptions().set_start_upon_send_message(true));
+      //   call->SendMessage(payload, /*send_half_close=*/true);
+      bool start_upon_send_message = false;
+
+      // If true, the call will be queued until the transport is connected
+      // instead of failing fast when the transport is not connected.
+      bool wait_for_ready = false;
+
+      CallOptions& set_start_upon_send_message(bool value) {
+        start_upon_send_message = value;
+        return *this;
+      }
+
+      CallOptions& set_wait_for_ready(bool value) {
+        wait_for_ready = value;
+        return *this;
+      }
+    };
+
     // Represents a bidi streaming RPC call.
     class StreamingCall : public InternallyRefCounted<StreamingCall> {
      public:
-      // Options for creating a streaming call.
-      struct Options {
-        // If true, the send_initial_metadata op is not started when the call
-        // is created; instead, it is started by the first call to
-        // SendMessage().  This allows a unary call to send initial metadata,
-        // the request message, and the half-close in a single batch:
-        //   auto call = transport->CreateStreamingCall(
-        //       method, std::move(handler),
-        //       StreamingCall::Options().set_start_upon_send_message(true));
-        //   call->SendMessage(payload, /*send_half_close=*/true);
-        bool start_upon_send_message = false;
-
-        // If true, the call will be queued until the transport is connected
-        // instead of failing fast when the transport is not connected.
-        // default: true
-        bool wait_for_ready = true;
-
-        Options& set_start_upon_send_message(bool value) {
-          start_upon_send_message = value;
-          return *this;
-        }
-
-        Options& set_wait_for_ready(bool value) {
-          wait_for_ready = value;
-          return *this;
-        }
-      };
-
       // An interface for handling events on a streaming call.
       class EventHandler {
        public:
@@ -118,14 +117,14 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
         const RefCountedPtr<ConnectivityFailureWatcher>& watcher) = 0;
 
     // Create a streaming call on this transport for the specified method
-    // using default StreamingCall::Options (send_initial_metadata started
-    // immediately and wait_for_ready enabled).
+    // using default CallOptions (send_initial_metadata started immediately)
+    // with wait_for_ready enabled.
     // Events on the stream will be reported to event_handler.
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler) {
       return CreateStreamingCall(method, std::move(event_handler),
-                                 StreamingCall::Options());
+                                 CallOptions().set_wait_for_ready(true));
     }
 
     // Create a streaming call on this transport for the specified method
@@ -134,7 +133,7 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        StreamingCall::Options options) = 0;
+        CallOptions options) = 0;
 
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;
