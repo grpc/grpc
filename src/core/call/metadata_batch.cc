@@ -47,7 +47,6 @@ bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key) {
   if (key == GrpcTagsBinMetadata::key()) return true;
   if (key == GrpcTimeoutMetadata::key()) return true;
   if (key == GrpcTraceBinMetadata::key()) return true;
-  if (key == HostMetadata::key()) return true;
   if (key == HttpAuthorityMetadata::key()) return true;
   if (key == HttpMethodMetadata::key()) return true;
   if (key == HttpPathMetadata::key()) return true;

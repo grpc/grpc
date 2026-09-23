@@ -727,6 +727,25 @@ class HPackParser::Parser {
       // Reject any requests with invalid metadata.
       input_->SetErrorAndContinueParsing(*md.parse_status);
     }
+    if (GPR_LIKELY(metadata_buffer_ != nullptr) &&
+        metadata_buffer_->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+      state_.seen_authority = false;
+      state_.seen_host = false;
+    }
+    if (md.md.key() == HttpAuthorityMetadata::key()) {
+      if (state_.seen_authority) {
+        input_->SetErrorAndContinueParsing(
+            HpackParseResult::DuplicateHeaderError(
+                HttpAuthorityMetadata::key()));
+      }
+      state_.seen_authority = true;
+    } else if (md.md.key() == "host") {
+      if (state_.seen_host) {
+        input_->SetErrorAndContinueParsing(
+            HpackParseResult::DuplicateHeaderError("host"));
+      }
+      state_.seen_host = true;
+    }
     if (GPR_LIKELY(metadata_buffer_ != nullptr)) {
       metadata_buffer_->Set(md.md);
     }
@@ -1124,6 +1143,11 @@ void HPackParser::BeginFrame(
   if (metadata_buffer != nullptr) {
     metadata_buffer->Set(GrpcStatusFromWire(), true);
   }
+  if (metadata_buffer == nullptr ||
+      metadata_buffer->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+    state_.seen_authority = false;
+    state_.seen_host = false;
+  }
   boundary_ = boundary;
   priority_ = priority;
   state_.mitigation_engine = mitigation_engine;
@@ -1196,6 +1220,8 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last,
       state_.frame_error = HpackParseResult::IncompleteHeaderAtBoundaryError();
     }
     state_.frame_length = 0;
+    state_.seen_authority = false;
+    state_.seen_host = false;
     return std::exchange(state_.frame_error, HpackParseResult()).Materialize();
   } else {
     if (input.eof_error() && !state_.frame_error.connection_error()) {

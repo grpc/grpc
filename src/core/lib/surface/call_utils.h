@@ -90,9 +90,6 @@ class PublishToAppEncoder {
       if constexpr (std::is_same<UserAgentMetadata, Which>::value) {
         Append(Which::key(), value);
       }
-      if constexpr (std::is_same<HostMetadata, Which>::value) {
-        Append(Which::key(), value);
-      }
       if constexpr (std::is_same<GrpcPreviousRpcAttemptsMetadata,
                                  Which>::value) {
         Append(Which::key(), value);

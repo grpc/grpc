@@ -116,13 +116,6 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
   }
 
   if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    std::optional<Slice> host = md.Take(HostMetadata());
-    if (host.has_value()) {
-      md.Set(HttpAuthorityMetadata(), std::move(*host));
-    }
-  }
-
-  if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
     return MalformedRequest("Missing :authority header");
   }
 
