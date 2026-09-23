@@ -212,7 +212,7 @@ class Server : public ServerInterface,
     virtual void SetServerListenerState(
         RefCountedPtr<ListenerState> listener_state) = 0;
 
-    virtual const grpc_resolved_address* resolved_address() const = 0;
+    virtual std::optional<std::string> listening_address() const = 0;
 
     /// Sets a closure to be invoked by the listener when its destruction
     /// is complete.
