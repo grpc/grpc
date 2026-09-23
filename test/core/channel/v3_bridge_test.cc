@@ -13,24 +13,42 @@
 // limitations under the License.
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include <memory>
 #include <optional>
+#include <string>
+#include <vector>
 
 #include "src/core/call/call_spine.h"
+#include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/experiments/config.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/promise/poll_matcher.h"
+#include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -232,11 +250,334 @@ TEST_F(V3BridgeTest, ForceDestroyPromiseCancelsV3Call) {
   });
 }
 
+struct HalfCloseRecorder {
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() {
+    return "grpc.test.half_close_recorder";
+  }
+  std::vector<std::string> events;
+  bool half_closed = false;
+};
+
+class ClientHalfCloseFilter final : public ChannelFilter {
+ public:
+  explicit ClientHalfCloseFilter(HalfCloseRecorder* recorder)
+      : recorder_(recorder) {}
+
+  static absl::string_view TypeName() { return "client_half_close_test"; }
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs args, NextPromiseFactory next) override {
+    args.client_to_server_messages->InterceptAndMapWithHalfClose(
+        [this](MessageHandle msg) {
+          if (recorder_ != nullptr) {
+            recorder_->events.push_back(
+                absl::StrCat("msg:", msg->payload()->JoinIntoString()));
+          }
+          return msg;
+        },
+        [this]() {
+          if (recorder_ != nullptr) {
+            recorder_->events.push_back("half_close");
+            recorder_->half_closed = true;
+          }
+        });
+    return next(std::move(args));
+  }
+
+  static absl::StatusOr<std::unique_ptr<ClientHalfCloseFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args) {
+    return std::make_unique<ClientHalfCloseFilter>(
+        args.GetObject<HalfCloseRecorder>());
+  }
+
+ private:
+  HalfCloseRecorder* recorder_;
+};
+
+const grpc_channel_filter kClientHalfCloseFilter =
+    MakePromiseBasedFilter<ClientHalfCloseFilter, FilterEndpoint::kClient,
+                           kFilterExaminesOutboundMessages>();
+
+class MockTransportFilter {
+ public:
+  struct State {
+    struct RawPointerChannelArgTag {};
+    static absl::string_view ChannelArgName() {
+      return "grpc.test.v3_bridge_mock_transport";
+    }
+    CallCombiner* call_combiner = nullptr;
+    grpc_metadata_batch* recv_trailing_metadata = nullptr;
+    grpc_closure* recv_trailing_metadata_ready = nullptr;
+  };
+
+  static const grpc_channel_filter kFilter;
+
+ private:
+  static void StartBatch(grpc_call_element* elem,
+                         grpc_transport_stream_op_batch* op) {
+    auto* state = *static_cast<State**>(elem->channel_data);
+    if (op->recv_trailing_metadata) {
+      state->recv_trailing_metadata =
+          op->payload->recv_trailing_metadata.recv_trailing_metadata;
+      state->recv_trailing_metadata_ready =
+          op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    }
+    if (op->on_complete != nullptr) {
+      GRPC_CALL_COMBINER_START(state->call_combiner, op->on_complete,
+                               absl::OkStatus(), "mock_on_complete");
+    }
+    GRPC_CALL_COMBINER_STOP(state->call_combiner,
+                            "mock passed batch to transport");
+  }
+  static void StartTransportOp(grpc_channel_element*, grpc_transport_op* op) {
+    if (op->on_consumed != nullptr) {
+      ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
+    }
+  }
+  static grpc_error_handle InitCallElem(grpc_call_element*,
+                                        const grpc_call_element_args*) {
+    return absl::OkStatus();
+  }
+  static void DestroyCallElem(grpc_call_element*, const grpc_call_final_info*,
+                              grpc_closure*) {}
+  static grpc_error_handle InitChannelElem(grpc_channel_element* elem,
+                                           grpc_channel_element_args* args) {
+    *static_cast<State**>(elem->channel_data) =
+        args->channel_args.GetObject<State>();
+    return absl::OkStatus();
+  }
+  static void DestroyChannelElem(grpc_channel_element*) {}
+};
+
+const grpc_channel_filter MockTransportFilter::kFilter = {
+    MockTransportFilter::StartBatch,
+    MockTransportFilter::StartTransportOp,
+    0,
+    MockTransportFilter::InitCallElem,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    MockTransportFilter::DestroyCallElem,
+    sizeof(MockTransportFilter::State*),
+    MockTransportFilter::InitChannelElem,
+    grpc_channel_stack_no_post_init,
+    MockTransportFilter::DestroyChannelElem,
+    grpc_channel_next_get_info,
+    GRPC_UNIQUE_TYPE_NAME_HERE("v3_bridge_mock_transport"),
+};
+
+struct StartBatchCtx {
+  grpc_call_element* elem = nullptr;
+  grpc_transport_stream_op_batch* batch = nullptr;
+};
+
+void DoStartBatch(void* arg, grpc_error_handle) {
+  auto* ctx = static_cast<StartBatchCtx*>(arg);
+  ctx->elem->filter->start_transport_stream_op_batch(ctx->elem, ctx->batch);
+}
+
+void OnCompleteStopCombiner(void* arg, grpc_error_handle) {
+  GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(arg), "app:on_complete");
+}
+
+TEST(ClientHalfClosePropagationTest,
+     HalfCloseInSameBatchAsSendMessagePropagatesAfterSendMessageCompletes) {
+  ExecCtx exec_ctx;
+  HalfCloseRecorder recorder;
+  CallCombiner call_combiner;
+  MockTransportFilter::State transport_state;
+  transport_state.call_combiner = &call_combiner;
+  std::vector<FilterAndConfig> filters = {
+      {&kClientHalfCloseFilter, nullptr},
+      {&MockTransportFilter::kFilter, nullptr},
+  };
+  auto channel_args = CoreConfiguration::Get()
+                          .channel_args_preconditioning()
+                          .PreconditionChannelArgs(nullptr)
+                          .SetObject(&transport_state)
+                          .SetObject(&recorder);
+  auto* channel_stack = static_cast<grpc_channel_stack*>(
+      gpr_malloc(grpc_channel_stack_size(filters)));
+  GRPC_CHECK_OK(grpc_channel_stack_init(
+      1,
+      [](void* p, grpc_error_handle) {
+        grpc_channel_stack_destroy(static_cast<grpc_channel_stack*>(p));
+        gpr_free(p);
+      },
+      channel_stack, filters, channel_args, "test", channel_stack));
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto* call_stack =
+      static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
+  const grpc_call_element_args call_args = {
+      call_stack,
+      nullptr,
+      gpr_get_cycle_counter(),
+      Timestamp::InfFuture(),
+      arena.get(),
+      &call_combiner,
+  };
+  GRPC_CHECK_OK(grpc_call_stack_init(
+      channel_stack, 1,
+      [](void* p, grpc_error_handle) {
+        grpc_call_stack_destroy(static_cast<grpc_call_stack*>(p), nullptr,
+                                nullptr);
+        gpr_free(p);
+      },
+      call_stack, &call_args));
+  grpc_call_element* top = grpc_call_stack_element(call_stack, 0);
+  grpc_metadata_batch client_initial_md;
+  grpc_metadata_batch client_trailing_md;
+  grpc_metadata_batch recv_trailing_md;
+  SliceBuffer send_msg_buf;
+  send_msg_buf.Append(Slice::FromCopiedString("hello"));
+  grpc_closure on_complete;
+  GRPC_CLOSURE_INIT(&on_complete, OnCompleteStopCombiner, &call_combiner,
+                    nullptr);
+  grpc_closure recv_trailing_ready;
+  GRPC_CLOSURE_INIT(&recv_trailing_ready, OnCompleteStopCombiner,
+                    &call_combiner, nullptr);
+  grpc_transport_stream_op_batch_payload payload{};
+  grpc_transport_stream_op_batch batch{};
+  batch.payload = &payload;
+  batch.send_initial_metadata = true;
+  payload.send_initial_metadata.send_initial_metadata = &client_initial_md;
+  batch.send_message = true;
+  payload.send_message.send_message = &send_msg_buf;
+  batch.send_trailing_metadata = true;
+  payload.send_trailing_metadata.send_trailing_metadata = &client_trailing_md;
+  batch.recv_trailing_metadata = true;
+  payload.recv_trailing_metadata.recv_trailing_metadata = &recv_trailing_md;
+  payload.recv_trailing_metadata.recv_trailing_metadata_ready =
+      &recv_trailing_ready;
+  batch.on_complete = &on_complete;
+  StartBatchCtx start_ctx{top, &batch};
+  grpc_closure start_closure;
+  GRPC_CLOSURE_INIT(&start_closure, DoStartBatch, &start_ctx, nullptr);
+  GRPC_CALL_COMBINER_START(&call_combiner, &start_closure, absl::OkStatus(),
+                           "start_unary_batch");
+  ExecCtx::Get()->Flush();
+  EXPECT_TRUE(recorder.half_closed);
+  EXPECT_THAT(recorder.events,
+              ::testing::ElementsAre("msg:hello", "half_close"));
+  recv_trailing_md.Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
+  GRPC_CALL_COMBINER_START(&call_combiner,
+                           transport_state.recv_trailing_metadata_ready,
+                           absl::OkStatus(), "finish_call");
+  ExecCtx::Get()->Flush();
+  GRPC_CALL_STACK_UNREF(call_stack, "done");
+  ExecCtx::Get()->Flush();
+  GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
+}
+
+TEST(ClientHalfClosePropagationTest,
+     HalfCloseInSeparateBatchPropagatesImmediately) {
+  ExecCtx exec_ctx;
+  HalfCloseRecorder recorder;
+  CallCombiner call_combiner;
+  MockTransportFilter::State transport_state;
+  transport_state.call_combiner = &call_combiner;
+  std::vector<FilterAndConfig> filters = {
+      {&kClientHalfCloseFilter, nullptr},
+      {&MockTransportFilter::kFilter, nullptr},
+  };
+  auto channel_args = CoreConfiguration::Get()
+                          .channel_args_preconditioning()
+                          .PreconditionChannelArgs(nullptr)
+                          .SetObject(&transport_state)
+                          .SetObject(&recorder);
+  auto* channel_stack = static_cast<grpc_channel_stack*>(
+      gpr_malloc(grpc_channel_stack_size(filters)));
+  GRPC_CHECK_OK(grpc_channel_stack_init(
+      1,
+      [](void* p, grpc_error_handle) {
+        grpc_channel_stack_destroy(static_cast<grpc_channel_stack*>(p));
+        gpr_free(p);
+      },
+      channel_stack, filters, channel_args, "test", channel_stack));
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto* call_stack =
+      static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
+  const grpc_call_element_args call_args = {
+      call_stack,
+      nullptr,
+      gpr_get_cycle_counter(),
+      Timestamp::InfFuture(),
+      arena.get(),
+      &call_combiner,
+  };
+  GRPC_CHECK_OK(grpc_call_stack_init(
+      channel_stack, 1,
+      [](void* p, grpc_error_handle) {
+        grpc_call_stack_destroy(static_cast<grpc_call_stack*>(p), nullptr,
+                                nullptr);
+        gpr_free(p);
+      },
+      call_stack, &call_args));
+  grpc_call_element* top = grpc_call_stack_element(call_stack, 0);
+  grpc_metadata_batch client_initial_md;
+  grpc_metadata_batch client_trailing_md;
+  grpc_metadata_batch recv_trailing_md;
+  SliceBuffer send_msg_buf;
+  send_msg_buf.Append(Slice::FromCopiedString("msg1"));
+  grpc_closure on_complete1;
+  GRPC_CLOSURE_INIT(&on_complete1, OnCompleteStopCombiner, &call_combiner,
+                    nullptr);
+  grpc_closure recv_trailing_ready;
+  GRPC_CLOSURE_INIT(&recv_trailing_ready, OnCompleteStopCombiner,
+                    &call_combiner, nullptr);
+  grpc_transport_stream_op_batch_payload payload1{};
+  grpc_transport_stream_op_batch batch1{};
+  batch1.payload = &payload1;
+  batch1.send_initial_metadata = true;
+  payload1.send_initial_metadata.send_initial_metadata = &client_initial_md;
+  batch1.send_message = true;
+  payload1.send_message.send_message = &send_msg_buf;
+  batch1.recv_trailing_metadata = true;
+  payload1.recv_trailing_metadata.recv_trailing_metadata = &recv_trailing_md;
+  payload1.recv_trailing_metadata.recv_trailing_metadata_ready =
+      &recv_trailing_ready;
+  batch1.on_complete = &on_complete1;
+  StartBatchCtx start_ctx1{top, &batch1};
+  grpc_closure start_closure1;
+  GRPC_CLOSURE_INIT(&start_closure1, DoStartBatch, &start_ctx1, nullptr);
+  GRPC_CALL_COMBINER_START(&call_combiner, &start_closure1, absl::OkStatus(),
+                           "start_batch1");
+  ExecCtx::Get()->Flush();
+  EXPECT_FALSE(recorder.half_closed);
+  EXPECT_THAT(recorder.events, ::testing::ElementsAre("msg:msg1"));
+  grpc_closure on_complete2;
+  GRPC_CLOSURE_INIT(&on_complete2, OnCompleteStopCombiner, &call_combiner,
+                    nullptr);
+  grpc_transport_stream_op_batch_payload payload2{};
+  grpc_transport_stream_op_batch batch2{};
+  batch2.payload = &payload2;
+  batch2.send_trailing_metadata = true;
+  payload2.send_trailing_metadata.send_trailing_metadata = &client_trailing_md;
+  batch2.on_complete = &on_complete2;
+  StartBatchCtx start_ctx2{top, &batch2};
+  grpc_closure start_closure2;
+  GRPC_CLOSURE_INIT(&start_closure2, DoStartBatch, &start_ctx2, nullptr);
+  GRPC_CALL_COMBINER_START(&call_combiner, &start_closure2, absl::OkStatus(),
+                           "start_batch2");
+  ExecCtx::Get()->Flush();
+  EXPECT_TRUE(recorder.half_closed);
+  EXPECT_THAT(recorder.events,
+              ::testing::ElementsAre("msg:msg1", "half_close"));
+  recv_trailing_md.Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
+  GRPC_CALL_COMBINER_START(&call_combiner,
+                           transport_state.recv_trailing_metadata_ready,
+                           absl::OkStatus(), "finish_call");
+  ExecCtx::Get()->Flush();
+  GRPC_CALL_STACK_UNREF(call_stack, "done");
+  ExecCtx::Get()->Flush();
+  GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
+}
+
 }  // namespace
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
+  grpc_core::ForceEnableExperiment("promise_filter_client_half_close", true);
   return RUN_ALL_TESTS();
 }

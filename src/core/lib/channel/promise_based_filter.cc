@@ -430,6 +430,8 @@ const char* BaseCallData::SendMessage::StateString(State state) {
       return "CANCELLED_BUT_NOT_YET_POLLED";
     case State::kCancelledButNoStatus:
       return "CANCELLED_BUT_NO_STATUS";
+    case State::kClosed:
+      return "CLOSED";
   }
   return "UNKNOWN";
 }
@@ -449,6 +451,7 @@ void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
     case State::kForwardedBatch:
     case State::kBatchCompleted:
     case State::kPushedToPipe:
+    case State::kClosed:
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelled:
     case State::kCancelledButNotYetPolled:
@@ -457,6 +460,13 @@ void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
   }
   batch_ = batch;
   intercepted_on_complete_ = std::exchange(batch_->on_complete, &on_complete_);
+}
+
+void BaseCallData::SendMessage::HalfClose() {
+  if (!IsPromiseFilterClientHalfCloseEnabled()) return;
+  GRPC_TRACE_LOG(channel, INFO)
+      << base_->LogTag() << " SendMessage.HalfClose st=" << StateString(state_);
+  half_close_ = true;
 }
 
 template <typename T>
@@ -479,6 +489,7 @@ void BaseCallData::SendMessage::GotPipe(T* pipe_end) {
     case State::kBatchCompleted:
     case State::kPushedToPipe:
     case State::kCancelledButNoStatus:
+    case State::kClosed:
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kCancelled:
     case State::kCancelledButNotYetPolled:
@@ -495,6 +506,7 @@ bool BaseCallData::SendMessage::IsIdle() const {
     case State::kCancelled:
     case State::kCancelledButNotYetPolled:
     case State::kCancelledButNoStatus:
+    case State::kClosed:
       return true;
     case State::kGotBatchNoPipe:
     case State::kGotBatch:
@@ -517,6 +529,7 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
     case State::kPushedToPipe:
     case State::kGotBatch:
     case State::kBatchCompleted:
+    case State::kClosed:
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
       break;
     case State::kCancelled:
@@ -542,6 +555,7 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
   switch (state_) {
     case State::kCancelled:
     case State::kCancelledButNotYetPolled:
+    case State::kClosed:
       break;
     case State::kInitial:
       state_ = State::kCancelled;
@@ -588,15 +602,22 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
   GRPC_TRACE_LOG(channel, INFO)
       << base_->LogTag()
       << " SendMessage.WakeInsideCombiner st=" << StateString(state_)
+      << " half_close=" << half_close_
       << (state_ == State::kBatchCompleted
               ? absl::StrCat(" status=", completed_status_.ToString())
               : "");
   switch (state_) {
     case State::kInitial:
-    case State::kIdle:
     case State::kGotBatchNoPipe:
     case State::kCancelled:
     case State::kCancelledButNoStatus:
+    case State::kClosed:
+      break;
+    case State::kIdle:
+      if (IsPromiseFilterClientHalfCloseEnabled() && half_close_) {
+        interceptor()->Push()->Close();
+        state_ = State::kClosed;
+      }
       break;
     case State::kCancelledButNotYetPolled:
       interceptor()->Push()->Close();
@@ -629,6 +650,9 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
         batch_.CancelWith(absl::CancelledError(), flusher);
         break;
       }
+      if (IsPromiseFilterClientHalfCloseEnabled() && half_close_) {
+        interceptor()->Push()->Close();
+      }
       GRPC_CHECK(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = r_next.value_if_ready()) {
@@ -655,13 +679,25 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       if (push_.has_value() && (*push_)().ready()) {
         push_.reset();
       }
+      if (IsPromiseFilterClientHalfCloseEnabled() && half_close_ &&
+          !push_.has_value()) {
+        interceptor()->Push()->Close();
+      }
       break;
     case State::kBatchCompleted:
       if (push_.has_value() && (*push_)().pending()) {
         break;
       }
+      if (IsPromiseFilterClientHalfCloseEnabled()) {
+        push_.reset();
+      }
       if (completed_status_.ok()) {
-        state_ = State::kIdle;
+        if (IsPromiseFilterClientHalfCloseEnabled() && half_close_) {
+          interceptor()->Push()->Close();
+          state_ = State::kClosed;
+        } else {
+          state_ = State::kIdle;
+        }
         GetContext<Activity>()->ForceImmediateRepoll();
       } else {
         state_ = State::kCancelled;
@@ -1637,6 +1673,11 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   bool wake = false;
   if (send_message() != nullptr && batch->send_message) {
     send_message()->StartOp(batch);
+    wake = true;
+  }
+  if (IsPromiseFilterClientHalfCloseEnabled() && send_message() != nullptr &&
+      batch->send_trailing_metadata) {
+    send_message()->HalfClose();
     wake = true;
   }
   if (receive_message() != nullptr && batch->recv_message) {

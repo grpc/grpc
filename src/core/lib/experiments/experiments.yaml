@@ -320,6 +320,11 @@
   expiry: 2027/01/16
   owner: akshitpatel@google.com
   test_tags: []
+- name: promise_filter_client_half_close
+  description: Propagate client half-close in promise-based filters and v3 filter bridge.
+  expiry: 2027/03/01
+  owner: rishesh@google.com
+  test_tags: ["core_end2end_test", "xds_end2end_test", "xds_test"]
 - name: promise_filter_send_cancel_metadata
   description: Enables sending all trailing metadata fields from server side promise-based filters
     upon stream cancellation.
