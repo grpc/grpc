@@ -29,8 +29,10 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_security.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -210,7 +212,8 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
     security_frame_handler_->MaybeAppendSecurityFrame(frame_sender);
     if (write_cycle.CanSerializeRegularFrames()) {
       bool unused = false;
-      SliceBuffer serialized = write_cycle.SerializeRegularFrames({unused});
+      SliceBuffer serialized =
+          write_cycle.SerializeRegularFrames({unused, http2_transport_stats_});
       output_buffer.Append(serialized);
     }
     EXPECT_GE(output_buffer.Length(), previous_length);
@@ -225,7 +228,8 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
     WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
     if (write_cycle.CanSerializeRegularFrames()) {
       bool unused = false;
-      SliceBuffer serialized = write_cycle.SerializeRegularFrames({unused});
+      SliceBuffer serialized =
+          write_cycle.SerializeRegularFrames({unused, http2_transport_stats_});
     }
   }
 
@@ -235,6 +239,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   std::shared_ptr<EventEngine> event_engine_;
   Waker waker_;
   TransportWriteContext transport_write_context_;
+  Http2TransportStats http2_transport_stats_{ChannelArgs()};
 };
 
 }  // namespace testing
@@ -367,7 +372,8 @@ TEST_P(SecurityFrameHandlerTest, ExtensionNullTest) {
   handler->MaybeAppendSecurityFrame(frame_sender);
   if (GetWriteCycle().CanSerializeRegularFrames()) {
     bool should_reset = false;
-    outbuf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    outbuf.Append(GetWriteCycle().SerializeRegularFrames(
+        {should_reset, transport->http2_transport_stats_}));
   }
   EXPECT_EQ(outbuf.Length(), 0);
 

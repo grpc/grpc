@@ -111,7 +111,7 @@ class SimpleQueue {
   }
 
   std::optional<uint32_t> GetNextEntryTokens() {
-    Entry* front = queue_.Peek();
+    const Entry* const front = queue_.Peek();
     return front == nullptr ? std::nullopt : std::make_optional(front->tokens);
   }
 
@@ -481,6 +481,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     size_t flow_control_tokens_consumed = 0u;
     // Bitmask of the dequeue flags.
     DequeueFlags flags;
+    bool is_next_frame_data = false;
 
     // Returns true if the reset stream was dequeued.
     bool IsResetStreamDequeued() const { return flags.IsResetStreamDequeued(); }
@@ -570,7 +571,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         priority_,
         /*flow_control_tokens_consumed=*/
         handle_dequeue.GetFlowControlTokensConsumed(),
-        /*flags=*/handle_dequeue.GetDequeueFlags()};
+        /*flags=*/handle_dequeue.GetDequeueFlags(),
+        /*is_next_frame_data=*/AreNextBytesData()};
   }
 
   // Needs to be invoked when the peer sends stream flow control window update.
@@ -854,9 +856,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     is_writable_ = (!queue_.IsEmpty());
 
     // Next bytes to write are part of a gRPC message.
-    if (message_disassembler_.GetBufferedLength() > 0 ||
-        IsNextQueueEntryMessage()) {
-      is_writable_ = (available_stream_fc_tokens > 0);
+    if (AreNextBytesData()) {
+      is_writable_ = (available_stream_fc_tokens > 0u);
     }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG << "UpdateWritableStateLocked with priority: "
@@ -865,9 +866,15 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     return is_writable_;
   }
 
-  bool IsNextQueueEntryMessage() {
-    std::optional<size_t> next_entry_tokens = queue_.GetNextEntryTokens();
-    return next_entry_tokens.has_value() && *next_entry_tokens > 0;
+  bool AreNextBytesData() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return message_disassembler_.GetBufferedLength() > 0u ||
+           IsNextQueueEntryMessage();
+  }
+
+  bool IsNextQueueEntryMessage() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    const std::optional<uint32_t> next_entry_tokens =
+        queue_.GetNextEntryTokens();
+    return next_entry_tokens.has_value() && *next_entry_tokens > 0u;
   }
 
   // Handles the case where a reset stream is queued.
