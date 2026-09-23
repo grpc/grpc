@@ -90,9 +90,9 @@ class BaseCallData::WeakWakerHandle final : public Wakeable, public Orphanable {
   void Ref() { refs_.Ref(); }
 
   void Orphan() override {
-    mu_.Lock();
+    mu_.lock();
     base_ = nullptr;
-    mu_.Unlock();
+    mu_.unlock();
     Unref();
   }
 

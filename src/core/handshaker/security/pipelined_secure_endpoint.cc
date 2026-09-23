@@ -145,15 +145,15 @@ class FrameProtector : public RefCounted<FrameProtector> {
               grpc_slice temp_read_slice;
               grpc_slice temp_write_slice;
 
-              self->read_mu_.Lock();
+              self->read_mu_.lock();
               temp_read_slice =
                   std::exchange(self->read_staging_buffer_, grpc_empty_slice());
-              self->read_mu_.Unlock();
+              self->read_mu_.unlock();
 
-              self->write_mu_.Lock();
+              self->write_mu_.lock();
               temp_write_slice = std::exchange(self->write_staging_buffer_,
                                                grpc_empty_slice());
-              self->write_mu_.Unlock();
+              self->write_mu_.unlock();
 
               CSliceUnref(temp_read_slice);
               CSliceUnref(temp_write_slice);
@@ -231,11 +231,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, message_bytes, &processed_message_size, cur,
                 &unprotected_buffer_size_written);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_unprotect(
                 protector_, message_bytes, &processed_message_size, cur,
                 &unprotected_buffer_size_written);
-            protector_mu_.Unlock();
+            protector_mu_.unlock();
           }
           if (result != TSI_OK) {
             LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
@@ -368,11 +368,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, message_bytes, &processed_message_size, cur,
                 &protected_buffer_size_to_send);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_protect(
                 protector_, message_bytes, &processed_message_size, cur,
                 &protected_buffer_size_to_send);
-            protector_mu_.Unlock();
+            protector_mu_.unlock();
           }
           if (result != TSI_OK) {
             LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
@@ -397,11 +397,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, cur, &protected_buffer_size_to_send,
                 &still_pending_size);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_protect_flush(
                 protector_, cur, &protected_buffer_size_to_send,
                 &still_pending_size);
-            protector_mu_.Unlock();
+            protector_mu_.unlock();
           }
           if (result != TSI_OK) break;
           cur += protected_buffer_size_to_send;
@@ -785,10 +785,10 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     static void FailReads(grpc_core::RefCountedPtr<Impl> impl,
                           absl::Status status)
         ABSL_LOCKS_EXCLUDED(read_queue_mu_) {
-      impl->read_queue_mu_.Lock();
+      impl->read_queue_mu_.lock();
       impl->unprotecting_ = status;
       auto on_read = std::move(impl->on_read_);
-      impl->read_queue_mu_.Unlock();
+      impl->read_queue_mu_.unlock();
       impl.reset();
       if (on_read != nullptr) on_read(status);
     };
@@ -937,7 +937,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
           }
         }
 
-        impl->read_queue_mu_.Lock();
+        impl->read_queue_mu_.lock();
         impl->unprotected_data_buffer_ = std::move(read_buffer);
         if (impl->on_read_ != nullptr) {
           // We have a transport read waiting on this unprotected data - either
@@ -956,7 +956,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
             impl->unprotecting_ = false;
             exit_loop = true;
           }
-          impl->read_queue_mu_.Unlock();
+          impl->read_queue_mu_.unlock();
           // If we are returning bytes directly to the transport read, we can
           // ignore the callback and the waiting transport read will consume the
           // bytes directly from the `pending output buffer`. Otherwise, we need
@@ -974,7 +974,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
           // unprotected_data_buffer_.
           impl->waiting_for_transport_read_ = true;
           impl->unprotecting_ = false;
-          impl->read_queue_mu_.Unlock();
+          impl->read_queue_mu_.unlock();
           exit_loop = true;
         }
 

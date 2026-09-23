@@ -176,15 +176,15 @@ class FrameProtector : public RefCounted<FrameProtector> {
               grpc_slice temp_read_slice;
               grpc_slice temp_write_slice;
 
-              self->read_mu_.Lock();
+              self->read_mu_.lock();
               temp_read_slice =
                   std::exchange(self->read_staging_buffer_, grpc_empty_slice());
-              self->read_mu_.Unlock();
+              self->read_mu_.unlock();
 
-              self->write_mu_.Lock();
+              self->write_mu_.lock();
               temp_write_slice = std::exchange(self->write_staging_buffer_,
                                                grpc_empty_slice());
-              self->write_mu_.Unlock();
+              self->write_mu_.unlock();
 
               CSliceUnref(temp_read_slice);
               CSliceUnref(temp_write_slice);
@@ -259,11 +259,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
             protector_, protected_buffer, &processed_message_size, *cur,
             &unprotected_buffer_size_written);
       } else {
-        protector_mu_.Lock();
+        protector_mu_.lock();
         result = tsi_frame_protector_unprotect(
             protector_, protected_buffer, &processed_message_size, *cur,
             &unprotected_buffer_size_written);
-        protector_mu_.Unlock();
+        protector_mu_.unlock();
       }
       if (result != TSI_OK) {
         LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
@@ -506,11 +506,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, message_bytes, &processed_message_size, cur,
                 &protected_buffer_size_to_send);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_protect(
                 protector_, message_bytes, &processed_message_size, cur,
                 &protected_buffer_size_to_send);
-            protector_mu_.Unlock();
+            protector_mu_.unlock();
           }
           if (result != TSI_OK) {
             LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
@@ -535,11 +535,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, cur, &protected_buffer_size_to_send,
                 &still_pending_size);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_protect_flush(
                 protector_, cur, &protected_buffer_size_to_send,
                 &still_pending_size);
-            protector_mu_.Unlock();
+            protector_mu_.unlock();
           }
           if (result != TSI_OK) break;
           cur += protected_buffer_size_to_send;
@@ -775,10 +775,10 @@ static void endpoint_write(
 
 static void endpoint_destroy(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  ep->frame_protector.read_mu()->Lock();
+  ep->frame_protector.read_mu()->lock();
   ep->wrapped_ep.reset();
   ep->frame_protector.Shutdown();
-  ep->frame_protector.read_mu()->Unlock();
+  ep->frame_protector.read_mu()->unlock();
   SECURE_ENDPOINT_UNREF(ep, "destroy");
 }
 
@@ -1265,10 +1265,10 @@ class SecureEndpoint final : public EventEngine::Endpoint,
     static void FailWrites(grpc_core::RefCountedPtr<Impl> impl,
                            absl::Status status)
         ABSL_LOCKS_EXCLUDED(frame_protector_.write_mu(), write_queue_mu_) {
-      impl->write_queue_mu_.Lock();
+      impl->write_queue_mu_.lock();
       impl->writing_ = status;
       auto on_write = std::move(impl->on_write_);
-      impl->write_queue_mu_.Unlock();
+      impl->write_queue_mu_.unlock();
       impl.reset();
       if (on_write != nullptr) on_write(status);
     };
