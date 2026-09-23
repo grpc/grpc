@@ -289,6 +289,9 @@ struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
 };
 
 // host metadata trait.
+// Only populated when the map_host_header_to_authority experiment is disabled;
+// when enabled, "host" is mapped onto HttpAuthorityMetadata instead.
+// TODO(rishesh): Remove once map_host_header_to_authority is fully rolled out.
 struct HostMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kPublishToApp = true;
   static constexpr bool kRepeatable = false;
@@ -1608,6 +1611,12 @@ class MetadataMap {
 
   // Remove some metadata by name
   void Remove(absl::string_view key) {
+    if constexpr (kHasAuthority) {
+      if (IsHostMappedToAuthority(key)) {
+        Remove(HttpAuthorityMetadata());
+        return;
+      }
+    }
     metadata_detail::RemoveHelper<Derived> helper(static_cast<Derived*>(this));
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
@@ -1617,6 +1626,7 @@ class MetadataMap {
   // Retrieve some metadata by name
   std::optional<absl::string_view> GetStringValue(absl::string_view name,
                                                   std::string* buffer) const {
+    if (IsHostMappedToAuthority(name)) name = HttpAuthorityMetadata::key();
     metadata_detail::GetStringValueHelper<Derived> helper(
         static_cast<const Derived*>(this), buffer);
     return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
@@ -1659,6 +1669,16 @@ class MetadataMap {
                                        bool will_keep_past_request_lifetime,
                                        uint32_t transport_size,
                                        MetadataParseErrorFn on_error) {
+    if constexpr (kHasAuthority) {
+      if (IsHostMappedToAuthority(key)) {
+        return ParsedMetadata<Derived>(
+            typename ParsedMetadata<Derived>::FromHostSliceTag{},
+            HttpAuthorityMetadata{},
+            HttpAuthorityMetadata::ParseMemento(
+                value.TakeOwned(), will_keep_past_request_lifetime, on_error),
+            transport_size);
+      }
+    }
     metadata_detail::ParseHelper<Derived> helper(
         value.TakeOwned(), will_keep_past_request_lifetime, on_error,
         transport_size);
@@ -1673,6 +1693,12 @@ class MetadataMap {
   // Append a key/value pair - takes ownership of value
   void Append(absl::string_view key, Slice value,
               MetadataParseErrorFn on_error) {
+    if constexpr (kHasAuthority) {
+      if (IsHostMappedToAuthority(key)) {
+        if (get_pointer(HttpAuthorityMetadata()) != nullptr) return;
+        key = HttpAuthorityMetadata::key();
+      }
+    }
     metadata_detail::AppendHelper<Derived> helper(static_cast<Derived*>(this),
                                                   value.TakeOwned(), on_error);
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
@@ -1685,6 +1711,21 @@ class MetadataMap {
   size_t count() const { return table_.count() + unknown_.size(); }
 
  private:
+  static constexpr bool kHasAuthority =
+      (std::is_same_v<Traits, HttpAuthorityMetadata> || ...);
+
+  // Returns true if string-keyed operations on `key` should be redirected from
+  // "host" to HttpAuthorityMetadata.
+  // TODO(rishesh): Drop the experiment check once map_host_header_to_authority
+  // is fully rolled out.
+  static bool IsHostMappedToAuthority(absl::string_view key) {
+    if constexpr (kHasAuthority) {
+      return key == "host" && IsMapHostHeaderToAuthorityEnabled();
+    } else {
+      return false;
+    }
+  }
+
   friend class metadata_detail::AppendHelper<Derived>;
   friend class metadata_detail::GetStringValueHelper<Derived>;
   friend class metadata_detail::RemoveHelper<Derived>;

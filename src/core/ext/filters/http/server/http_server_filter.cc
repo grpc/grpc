@@ -115,6 +115,8 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
     return MalformedRequest("Missing :path header");
   }
 
+  // TODO(rishesh): Remove this fallback once the map_host_header_to_authority
+  // experiment is fully rolled out (host is then parsed into :authority).
   if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
     std::optional<Slice> host = md.Take(HostMetadata());
     if (host.has_value()) {

@@ -106,6 +106,8 @@ absl::string_view EvaluateArgs::GetAuthority() const {
       authority = authority_md->as_string_view();
     } else if (auto* host_md = metadata_->get_pointer(HostMetadata())) {
       // Fall back to the legacy host header.
+      // TODO(rishesh): Remove once map_host_header_to_authority is fully
+      // rolled out.
       authority = host_md->as_string_view();
     }
   }

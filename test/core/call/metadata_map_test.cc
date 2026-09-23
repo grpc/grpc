@@ -23,6 +23,8 @@
 #include <vector>
 
 #include "src/core/call/metadata_batch.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -337,6 +339,121 @@ TEST(MetadataMapTest, FilterTest) {
   // Remove all encodable headers
   map.Filter(HeaderFilter<false>());
   EXPECT_EQ(map.count(), kNumNonEncodableHeaders);
+}
+
+// Forces map_host_header_to_authority on or off for the lifetime of a test.
+class MapHostHeaderToAuthorityTest : public ::testing::Test {
+ protected:
+  explicit MapHostHeaderToAuthorityTest(bool enabled = true) {
+    ConfigVars::Overrides overrides;
+    overrides.experiments = enabled ? "map_host_header_to_authority"
+                                    : "-map_host_header_to_authority";
+    ConfigVars::SetOverrides(overrides);
+    TestOnlyReloadExperimentsFromConfigVariables();
+  }
+  ~MapHostHeaderToAuthorityTest() override {
+    ConfigVars::Reset();
+    TestOnlyReloadExperimentsFromConfigVariables();
+  }
+};
+
+class MapHostHeaderToAuthorityDisabledTest
+    : public MapHostHeaderToAuthorityTest {
+ protected:
+  MapHostHeaderToAuthorityDisabledTest()
+      : MapHostHeaderToAuthorityTest(/*enabled=*/false) {}
+};
+
+TEST_F(MapHostHeaderToAuthorityDisabledTest, HostKeptSeparateFromAuthority) {
+  grpc_metadata_batch map;
+  std::string buffer;
+  map.Append(":authority", Slice::FromStaticString("auth.example.com"),
+             [](absl::string_view, const Slice&) {});
+  map.Append("host", Slice::FromStaticString("host.example.com"),
+             [](absl::string_view, const Slice&) {});
+  ASSERT_NE(map.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(map.get_pointer(HostMetadata())->as_string_view(),
+            "host.example.com");
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "auth.example.com");
+  EXPECT_EQ(map.GetStringValue("host", &buffer), "host.example.com");
+  map.Remove("host");
+  EXPECT_EQ(map.get_pointer(HostMetadata()), nullptr);
+  EXPECT_NE(map.get_pointer(HttpAuthorityMetadata()), nullptr);
+}
+
+TEST_F(MapHostHeaderToAuthorityTest, HostAppendGetAndRemove) {
+  grpc_metadata_batch map;
+  std::string buffer;
+  map.Append("host", Slice::FromStaticString("host.example.com"),
+             [](absl::string_view, const Slice&) {});
+  EXPECT_EQ(map.get_pointer(HostMetadata()), nullptr);
+  ASSERT_NE(map.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "host.example.com");
+  EXPECT_EQ(map.GetStringValue("host", &buffer), "host.example.com");
+  EXPECT_EQ(map.GetStringValue(":authority", &buffer), "host.example.com");
+  map.Remove("host");
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(map.GetStringValue("host", &buffer), std::nullopt);
+}
+
+TEST_F(MapHostHeaderToAuthorityTest, HostAppendAuthorityPrecedence) {
+  grpc_metadata_batch map;
+  map.Append("host", Slice::FromStaticString("host.example.com"),
+             [](absl::string_view, const Slice&) {});
+  map.Append(":authority", Slice::FromStaticString("auth.example.com"),
+             [](absl::string_view, const Slice&) {});
+  ASSERT_NE(map.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "auth.example.com");
+  map.Append("host", Slice::FromStaticString("ignored.example.com"),
+             [](absl::string_view, const Slice&) {});
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "auth.example.com");
+}
+
+TEST_F(MapHostHeaderToAuthorityTest, HostParseAndSetPrecedence) {
+  grpc_metadata_batch map;
+  auto parsed_host = grpc_metadata_batch::Parse(
+      "host", Slice::FromStaticString("parsed.host.com"), true, 50,
+      [](absl::string_view, const Slice&) {});
+  EXPECT_EQ(parsed_host.key(), "host");
+  EXPECT_EQ(parsed_host.DebugString(), "host: parsed.host.com");
+  map.Set(parsed_host);
+  ASSERT_NE(map.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "parsed.host.com");
+  auto parsed_auth = grpc_metadata_batch::Parse(
+      ":authority", Slice::FromStaticString("parsed.auth.com"), true, 56,
+      [](absl::string_view, const Slice&) {});
+  map.Set(parsed_auth);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "parsed.auth.com");
+  map.Set(parsed_host);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "parsed.auth.com");
+}
+
+TEST_F(MapHostHeaderToAuthorityTest, HostWithNewValueAndEncode) {
+  auto base_host =
+      grpc_metadata_batch::Parse("host", Slice::FromStaticString(""), true, 36,
+                                 [](absl::string_view, const Slice&) {});
+  auto revalued =
+      base_host.WithNewValue(Slice::FromStaticString("new.host.com"), true, 12,
+                             [](absl::string_view, const Slice&) {});
+  EXPECT_EQ(revalued.key(), "host");
+  EXPECT_EQ(revalued.transport_size(), 48u);
+  grpc_metadata_batch map;
+  map.Set(revalued);
+  EXPECT_EQ(map.DebugString(), ":authority: new.host.com");
+  EXPECT_EQ(map.count(), 1u);
+  auto parsed_auth = grpc_metadata_batch::Parse(
+      ":authority", Slice::FromStaticString("auth.example.com"), true, 52,
+      [](absl::string_view, const Slice&) {});
+  map.Set(parsed_auth);
+  map.Set(revalued);
+  EXPECT_EQ(map.DebugString(), ":authority: auth.example.com");
 }
 
 }  // namespace testing

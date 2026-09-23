@@ -90,6 +90,8 @@ class PublishToAppEncoder {
       if constexpr (std::is_same<UserAgentMetadata, Which>::value) {
         Append(Which::key(), value);
       }
+      // TODO(rishesh): Remove once map_host_header_to_authority is fully
+      // rolled out.
       if constexpr (std::is_same<HostMetadata, Which>::value) {
         Append(Which::key(), value);
       }

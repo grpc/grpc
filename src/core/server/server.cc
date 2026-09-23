@@ -1790,6 +1790,8 @@ Server::RegisteredMethod* Server::GetRegisteredMethod(
 void Server::SetRegisteredMethodOnMetadata(ClientMetadata& metadata) {
   auto* authority = metadata.get_pointer(HttpAuthorityMetadata());
   if (authority == nullptr) {
+    // TODO(rishesh): Remove this fallback once map_host_header_to_authority
+    // is fully rolled out.
     authority = metadata.get_pointer(HostMetadata());
     if (authority == nullptr) {
       // Authority not being set is an RPC error.
