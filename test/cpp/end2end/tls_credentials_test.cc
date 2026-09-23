@@ -278,7 +278,8 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMlkem1024) {
   DoRpc(server_addr_, tls_options,
         /*expected_key_exchange_group=*/"id-alg-ml-kem-1024");
 }
-#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
+        // 0x30500000L
 
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
 TEST_F(TlsCredentialsTest, KeyExchangeGroupX25519) {
@@ -356,7 +357,8 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMismatchFailsWithTestVerifier) {
       server_addr_, tls_options, grpc::StatusCode::UNAVAILABLE,
       "Key exchange group mismatch: expected prime256v1, got X25519");
 }
-#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
+#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
+        // 0x30000000L
 
 }  // namespace
 }  // namespace testing
