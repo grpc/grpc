@@ -802,17 +802,22 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
 
 namespace experimental {
 
+void PassiveListenerImpl::Init(RefCountedPtr<Server> server,
+                               NewChttp2ServerListener* listener) {
+  MutexLock lock(&mu_);
+  server_ = std::move(server);
+  listener_ = listener;
+}
+
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
-  GRPC_CHECK_NE(server_.get(), nullptr);
   RefCountedPtr<NewChttp2ServerListener> new_listener;
   {
     MutexLock lock(&mu_);
-    auto* new_listener_ptr = std::get_if<NewChttp2ServerListener*>(&listener_);
-    if (new_listener_ptr != nullptr && *new_listener_ptr != nullptr) {
-      new_listener = (*new_listener_ptr)
-                         ->RefIfNonZero()
-                         .TakeAsSubclass<NewChttp2ServerListener>();
+    GRPC_CHECK_NE(server_.get(), nullptr);
+    if (listener_ != nullptr) {
+      new_listener =
+          listener_->RefIfNonZero().TakeAsSubclass<NewChttp2ServerListener>();
     }
   }
   if (new_listener == nullptr) {
@@ -824,9 +829,13 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
-  GRPC_CHECK_NE(server_.get(), nullptr);
   ExecCtx exec_ctx;
-  auto& args = server_->channel_args();
+  ChannelArgs args;
+  {
+    MutexLock lock(&mu_);
+    GRPC_CHECK_NE(server_.get(), nullptr);
+    args = server_->channel_args();
+  }
   auto* supports_fd = QueryExtension<EventEngineSupportsFdExtension>(
       args.GetObjectRef<EventEngine>().get());
   if (supports_fd == nullptr) {
@@ -844,7 +853,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
 
 void PassiveListenerImpl::ListenerDestroyed() {
   MutexLock lock(&mu_);
-  listener_ = static_cast<Chttp2ServerListener*>(nullptr);
+  listener_ = nullptr;
 }
 
 }  // namespace experimental
@@ -954,10 +963,9 @@ absl::Status grpc_server_add_passive_listener(
                   .SetObject(std::move(sc))
                   .Set(GRPC_ARG_USE_V3_STACK,
                        grpc_core::http2::ShouldEnablePh2Server());
-  passive_listener->listener_ =
+  passive_listener->Init(
+      server->Ref(),
       grpc_core::NewChttp2ServerListener::CreateForPassiveListener(
-          server, args, passive_listener);
-
-  passive_listener->server_ = server->Ref();
+          server, args, passive_listener));
   return absl::OkStatus();
 }

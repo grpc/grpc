@@ -3075,6 +3075,7 @@ grpc_cc_library(
         "grpc_check",
         "iomgr_port",
         "posix_event_engine_timer_manager",
+        "resource_quota",
         "sync",
         "time",
         "windows_endpoint",
@@ -7569,6 +7570,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
         "absl/status",
         "absl/strings",
     ],
@@ -8258,6 +8260,55 @@ grpc_cc_library(
         "//:debug_location",
         "//:endpoint_addresses",
         "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:sockaddr_utils",
+        "//:work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_autosharding",
+    srcs = [
+        "load_balancing/autosharding/autosharding.cc",
+    ],
+    hdrs = [
+        "load_balancing/autosharding/autosharding.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/random",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "channel_args",
+        "connectivity_state",
+        "delegating_helper",
+        "grpc_check",
+        "grpc_lb_policy_pick_first",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
+        "pollset_set",
+        "ref_counted",
+        "ref_counted_string",
+        "resolved_address",
+        "shared_bit_gen",
+        "time",
+        "validation_errors",
+        "//:channel_arg_names",
+        "//:config",
+        "//:debug_location",
+        "//:endpoint_addresses",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_trace",
@@ -12934,7 +12985,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto"],
+    deps = ["@grpc_proto//:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -12954,7 +13005,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto"],
+    deps = ["@grpc_proto//:grpclb_load_balancer_proto"],
 )
 
 grpc_upb_proto_library(

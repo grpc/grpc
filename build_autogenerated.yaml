@@ -324,7 +324,6 @@ libs:
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
-  - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
@@ -647,8 +646,6 @@ libs:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -663,6 +660,10 @@ libs:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h
   - src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h
@@ -681,10 +682,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/security.upb.h
@@ -1171,6 +1168,7 @@ libs:
   - src/core/lib/transport/transport_framing_endpoint_extension.h
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
+  - src/core/load_balancing/autosharding/autosharding.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -1526,7 +1524,6 @@ libs:
   - src/core/ext/transport/chttp2/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
-  - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
@@ -1702,7 +1699,6 @@ libs:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -1710,6 +1706,8 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
@@ -1719,8 +1717,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
@@ -2131,6 +2127,7 @@ libs:
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
+  - src/core/load_balancing/autosharding/autosharding.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -2574,7 +2571,6 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
-  - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
@@ -2633,8 +2629,6 @@ libs:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -2647,6 +2641,10 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
@@ -2663,10 +2661,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/validate/validate.upb.h
   - src/core/ext/upb-gen/validate/validate.upb_minitable.h
   - src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb.h
@@ -2926,6 +2920,7 @@ libs:
   - src/core/lib/transport/transport_framing_endpoint_extension.h
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
+  - src/core/load_balancing/autosharding/autosharding.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -3144,7 +3139,6 @@ libs:
   - src/core/ext/transport/chttp2/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
-  - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
@@ -3188,13 +3182,14 @@ libs:
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
@@ -3203,8 +3198,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/validate/validate.upb_minitable.c
   - src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
@@ -3417,6 +3410,7 @@ libs:
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
+  - src/core/load_balancing/autosharding/autosharding.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -3678,6 +3672,7 @@ libs:
   public_headers: []
   headers:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
@@ -6405,13 +6400,13 @@ targets:
   - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/async_end2end_test.cc
@@ -6461,6 +6456,33 @@ targets:
   - gtest
   - grpc++
   - grpc_authorization_provider
+  - grpc_test_util
+- name: autosharding_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/load_balancing/autosharding_config_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+- name: autosharding_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/load_balancing/lb_policy_test_lib.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/load_balancing/autosharding_test.cc
+  deps:
+  - gtest
+  - protobuf
   - grpc_test_util
 - name: avl_test
   gtest: true
@@ -6641,16 +6663,6 @@ targets:
   - linux
   - posix
   - mac
-- name: bin_decoder_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_decoder_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: bin_encoder_test
   gtest: true
   build: test
@@ -8430,8 +8442,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -8569,7 +8579,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -9508,7 +9517,6 @@ targets:
   src:
   - src/proto/grpc/channelz/v2/channelz.proto
   - src/proto/grpc/channelz/v2/property_list.proto
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -9516,6 +9524,7 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/core/util/json/json_util.cc
@@ -13113,8 +13122,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -13286,7 +13293,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -15562,7 +15568,7 @@ targets:
   language: c++
   headers: []
   src:
-  - src/proto/grpc/lb/v1/load_balancer.proto
+  - third_party/grpc-proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - gtest
@@ -15577,13 +15583,13 @@ targets:
   - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
-  - src/proto/grpc/lb/v1/load_balancer.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/lb/v1/load_balancer.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/test_util/test_call_creds.cc
@@ -15816,13 +15822,13 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.h
   - test/cpp/end2end/test_service_impl.h
   src:
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/health_service_end2end_test.cc
@@ -20862,7 +20868,6 @@ targets:
   - test/cpp/interop/xds_interop_server_lib.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/istio_echo.proto
   - src/proto/grpc/testing/messages.proto
@@ -20970,6 +20975,7 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -29435,8 +29441,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -29631,7 +29635,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -31472,8 +31475,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -31631,7 +31632,6 @@ targets:
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -33507,6 +33507,13 @@ targets:
   - posix
   - mac
 external_proto_libraries:
+- destination: third_party/autosharding
+  hash: 12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2
+  proto_prefix: third_party/autosharding/
+  strip_path_prefix: ''
+  strip_prefix: autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7
+  urls:
+  - https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz
 - destination: third_party/cel-spec
   hash: 13583c5a312861648449845b709722676a3c9b43396b6b8e9cbe4538feb74ad2
   proto_prefix: third_party/cel-spec/
@@ -33529,12 +33536,12 @@ external_proto_libraries:
   urls:
   - https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip
 - destination: third_party/grpc-proto
-  hash: 5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33
+  hash: 6aaa807572edfe307eaddc15161ce684d02d054e3fca36b38993efc85575ddfa
   proto_prefix: third_party/grpc-proto/
   strip_path_prefix: ''
-  strip_prefix: grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f
+  strip_prefix: grpc-proto-dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f
   urls:
-  - https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz
+  - https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
 - destination: third_party/protoc-gen-validate
   hash: e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
   proto_prefix: third_party/protoc-gen-validate/

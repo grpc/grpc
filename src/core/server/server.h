@@ -616,7 +616,8 @@ class Server : public ServerInterface,
       size_t* cq_idx, grpc_completion_queue* cq_for_notification, void* tag,
       grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
 
-  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const;
+  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has not been called.
@@ -717,7 +718,7 @@ class Server : public ServerInterface,
               .value_or(3000)))};
   const Duration max_time_in_pending_queue_;
 
-  std::list<ChannelData*> channels_;
+  std::list<ChannelData*> channels_ ABSL_GUARDED_BY(mu_global_);
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
       ABSL_GUARDED_BY(mu_global_);
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_

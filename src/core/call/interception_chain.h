@@ -193,7 +193,7 @@ class InterceptionChainBuilder final {
   // Call class must be one compatible with the filters described in
   // call_filters.h.
   template <typename T>
-  absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
+  std::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
     if (!status_.ok()) return *this;
     auto filter = T::Create(args_, {std::move(config)});
@@ -209,8 +209,8 @@ class InterceptionChainBuilder final {
 
   // Add a filter that is an interceptor - one that can hijack calls.
   template <typename T>
-  absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
-                    InterceptionChainBuilder&>
+  std::enable_if_t<std::is_base_of<Interceptor, T>::value,
+                   InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
     AddInterceptor(T::Create(args_, {std::move(config)}));
     return *this;
