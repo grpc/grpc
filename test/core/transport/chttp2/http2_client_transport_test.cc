@@ -19,6 +19,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -27,6 +28,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -48,6 +50,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
@@ -204,6 +207,154 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   EXPECT_EQ(client_transport()->TestOnlyTransportFlowControlWindow(),
             RFC9113::kHttp2InitialWindowSize);
   LOG(INFO) << "TestHttp2ClientTransportObjectCreation End";
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Resource Quota Reclaimer Tests
+
+TEST_F(Http2ClientTransportTest, BenignReclaimerClosesIdleTransport) {
+  // Test purpose: Verify that benign reclamation closes an idle client
+  // transport (zero active streams) by sending a GOAWAY frame with
+  // ENHANCE_YOUR_CALM and "Buffers full".
+  constexpr size_t kQuotaSize = 1024u * 1024u;
+  constexpr size_t kReservedBytes = 2u * 1024u * 1024u;
+  const RefCountedPtr<ResourceQuota> resource_quota =
+      MakeResourceQuota("test_quota_client_benign");
+  resource_quota->memory_quota()->SetSize(kQuotaSize);
+  const ChannelArgs args = GetChannelArgs().SetObject(resource_quota);
+
+  // Step 1: Initialize the client transport and exchange HTTP2 settings.
+  InitTransport(args);
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Set the expectation for the GOAWAY frame from the benign
+  // reclaimer. A client never accepts incoming streams, so last_stream_id is 0.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"Buffers full", /*last_stream_id=*/0u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+
+  // Step 3: Overcommit the quota so that the reclaimer is run.
+  // No ExecCtx is held here on purpose. The memory quota schedules its
+  // reclamation pass on the ExecCtx, so an enclosing ExecCtx would defer the
+  // reclaimer until the end of the test.
+  MemoryOwner allocator = resource_quota->memory_quota()->CreateMemoryOwner();
+  std::optional<MemoryAllocator::Reservation> reservation =
+      allocator.MakeReservation(grpc_event_engine::experimental::MemoryRequest(
+          kReservedBytes, kReservedBytes));
+
+  for (int i = 0; i < 5; ++i) {
+    event_engine()->Tick();
+  }
+
+  // Step 4: Verify that the GOAWAY frame was written.
+  step->Wait();
+
+  // Step 5: Let the transport party drain. The benign reclaimer spawns
+  // CloseTransport, and that promise only resolves after the GOAWAY write
+  // completes. CloseTransport() is the only place that releases
+  // transport_party_, so without these ticks the transport would still be
+  // referenced by its own party at TearDown, and would never be destroyed.
+  for (int i = 0; i < 5; ++i) {
+    event_engine()->Tick();
+  }
+
+  reservation.reset();
+}
+
+TEST_F(Http2ClientTransportTest, DestructiveReclaimerCancelsActiveStream) {
+  // Test purpose: Verify that destructive reclamation cancels an active client
+  // stream by sending RST_STREAM with ENHANCE_YOUR_CALM under memory pressure.
+  // Once that stream is gone the transport is idle, so benign reclamation then
+  // sends a GOAWAY frame and closes the connection.
+  constexpr size_t kQuotaSize = 1024u * 1024u;
+  constexpr size_t kReservedBytes = 2u * 1024u * 1024u;
+  const RefCountedPtr<ResourceQuota> resource_quota =
+      MakeResourceQuota("test_quota_client_destructive");
+  resource_quota->memory_quota()->SetSize(kQuotaSize);
+  // Keepalive and BDP probes are disabled to isolate the reclaimer writes.
+  const ChannelArgs args =
+      GetChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, false)
+          .SetObject(resource_quota);
+
+  CallInitiator initiator;
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+  {
+    // The ExecCtx is scoped to setup only. See the comment in
+    // BenignReclaimerClosesIdleTransport for why it must not span the
+    // reclamation phase below.
+    ExecCtx ctx;
+
+    // Step 1: Initialize the client transport and exchange HTTP2 settings.
+    InitTransport(args);
+    SpawnTransportLoopsAndExchangeSettings();
+
+    // Step 2: Start a call so that stream 1 is active on the transport. The
+    // call never finishes sends, so the stream stays open.
+    const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+        endpoint()->NewStep();
+    step1->ThenExpectWrite({
+        helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                  kPathDemoServiceStep.end())),
+    });
+    initiator = StartCall(TestInitialMetadata());
+
+    // The reclaimer cancels this call. The application side must consume the
+    // trailing metadata, otherwise the call spine stays alive and keeps a
+    // reference to the transport.
+    initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
+      return Seq(initiator.PullServerTrailingMetadata(),
+                 [&on_done](ServerMetadataHandle metadata) mutable {
+                   on_done.Call();
+                   return Empty{};
+                 });
+    });
+    step1->Wait();
+  }
+
+  // Step 3: Overcommit the quota. The destructive reclaimer picks stream 1 and
+  // resets it, then the benign reclaimer closes the now idle transport.
+  MemoryOwner allocator = resource_quota->memory_quota()->CreateMemoryOwner();
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"Buffers full", /*last_stream_id=*/0u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+
+  std::optional<MemoryAllocator::Reservation> reservation =
+      allocator.MakeReservation(grpc_event_engine::experimental::MemoryRequest(
+          kReservedBytes, kReservedBytes));
+
+  for (int i = 0; i < 5; ++i) {
+    event_engine()->Tick();
+  }
+
+  // Step 4: Verify both the RST_STREAM and the GOAWAY frames were written.
+  step2->Wait();
+
+  // Step 5: Let the transport party drain. See the comment in
+  // BenignReclaimerClosesIdleTransport.
+  for (int i = 0; i < 5; ++i) {
+    event_engine()->Tick();
+  }
+
+  reservation.reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

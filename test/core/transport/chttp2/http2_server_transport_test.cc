@@ -19,6 +19,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -48,6 +49,8 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
@@ -220,6 +223,220 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
   std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
   AddTransportCloseExpectations(step.get());
   step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, BenignReclaimerClosesIdleTransport) {
+  // Test purpose: Verify that benign reclamation closes an idle transport
+  // (zero active streams) by sending a GOAWAY frame with ENHANCE_YOUR_CALM
+  // and "Buffers full".
+  constexpr size_t kQuotaSize = 1024u * 1024u;
+  constexpr size_t kReservedBytes = 2u * 1024u * 1024u;
+  const RefCountedPtr<ResourceQuota> resource_quota =
+      MakeResourceQuota("test_quota");
+  resource_quota->memory_quota()->SetSize(kQuotaSize);
+  const ChannelArgs args = GetChannelArgs().SetObject(resource_quota);
+
+  // Step 1: Initialize server transport and exchange HTTP2 settings.
+  InitTransport(args);
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Set expectation for the GOAWAY frame from benign reclaimer.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"Buffers full", /*last_stream_id=*/0u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+
+  // Step 3: Trigger severe memory pressure to cause overcommit and run
+  // reclaimer.
+  MemoryOwner allocator = resource_quota->memory_quota()->CreateMemoryOwner();
+  std::optional<MemoryAllocator::Reservation> reservation =
+      allocator.MakeReservation(grpc_event_engine::experimental::MemoryRequest(
+          kReservedBytes, kReservedBytes));
+
+  for (int i = 0; i < 5; ++i) {
+    event_engine()->Tick();
+  }
+
+  // Step 4: Verify that the GOAWAY frame was received.
+  step->Wait();
+
+  reservation.reset();
+}
+
+TEST_F(Http2ServerTransportTest, DestructiveReclaimerCancelsActiveStream) {
+  // Test purpose: Verify that destructive reclamation cancels an active stream
+  // by sending RST_STREAM with ENHANCE_YOUR_CALM when under memory pressure.
+  constexpr size_t kQuotaSize = 1024u * 1024u;
+  constexpr size_t kReservedBytes = 2u * 1024u * 1024u;
+  const RefCountedPtr<ResourceQuota> resource_quota =
+      MakeResourceQuota("test_quota_destructive");
+  resource_quota->memory_quota()->SetSize(kQuotaSize);
+  const ChannelArgs args =
+      GetChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, false)
+          .SetObject(resource_quota);
+
+  // Step 1: Initialize server transport and exchange settings.
+  InitTransport(args);
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Establish an active stream on the server that remains pending.
+  bool stream_started = false;
+  const auto factory_factory = [&stream_started](CallHandler call_handler) {
+    return [call_handler, &stream_started]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler, &stream_started](ClientMetadataHandle) mutable {
+            stream_started = true;
+            return Map(
+                call_handler.WasCancelled(),
+                [](const bool) -> absl::Status { return absl::OkStatus(); });
+          });
+    };
+  };
+  AddStream(factory_factory);
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+  EXPECT_TRUE(stream_started);
+
+  // Step 3: Trigger memory pressure. When destructive reclaimer cancels stream
+  // 1, the server writes RST_STREAM. Because the transport is then idle under
+  // memory pressure, benign reclamation sends a GOAWAY frame and closes the
+  // connection.
+  MemoryOwner allocator = resource_quota->memory_quota()->CreateMemoryOwner();
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(
+              Http2ErrorCode::kEnhanceYourCalm)),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"Buffers full", /*last_stream_id=*/1u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+
+  std::optional<MemoryAllocator::Reservation> reservation =
+      allocator.MakeReservation(grpc_event_engine::experimental::MemoryRequest(
+          kReservedBytes, kReservedBytes));
+
+  for (int i = 0; i < 5; ++i) {
+    event_engine()->Tick();
+  }
+
+  step2->Wait();
+
+  reservation.reset();
+}
+
+TEST_F(Http2ServerTransportTest, StreamQuotaLimitsMaxConcurrentStreams) {
+  // Test purpose: Verify that accepting a new stream recomputes the
+  // MAX_CONCURRENT_STREAMS that we advertise, using the process wide
+  // StreamQuota, and that the new value reaches the peer in a SETTINGS frame.
+  const RefCountedPtr<ResourceQuota> resource_quota =
+      MakeResourceQuota("test_quota_stream_quota");
+  // 4 outstanding streams spread over 2 open channels gives a target mean of
+  // 2 streams per channel, and 2 further streams allowed per channel.
+  constexpr uint32_t kMaxOutstandingStreams = 4u;
+  constexpr uint32_t kExpectedMaxConcurrentStreams = 2u;
+  resource_quota->stream_quota()->SetMaxOutstandingStreams(
+      kMaxOutstandingStreams);
+  resource_quota->stream_quota()->IncrementOpenChannels();
+  resource_quota->stream_quota()->IncrementOpenChannels();
+  resource_quota->stream_quota()->UpdatePerConnectionLimitsForAllTestOnly();
+
+  // Keepalive pings and BDP probes would add unrelated writes to this test.
+  const ChannelArgs args =
+      GetChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, false)
+          .SetObject(resource_quota);
+
+  // Step 1: Initialize the server transport and exchange settings. The server
+  // advertises no MAX_CONCURRENT_STREAMS at this point, because no stream has
+  // been accepted yet.
+  InitTransport(args);
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: The client opens one stream, which stays open for the whole test.
+  bool stream_started = false;
+  const auto factory_factory = [&stream_started](CallHandler call_handler) {
+    return [call_handler, &stream_started]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler, &stream_started](ClientMetadataHandle) mutable {
+            stream_started = true;
+            return Map(
+                call_handler.WasCancelled(),
+                [](const bool) -> absl::Status { return absl::OkStatus(); });
+          });
+    };
+  };
+  AddStream(factory_factory);
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+  step1->Wait();
+  // This tick ensures the HEADERS frame is fully processed and the stream is
+  // present in the transport's stream list.
+  event_engine()->Tick();
+  EXPECT_TRUE(stream_started);
+
+  // Step 3: With 1 stream open and a target mean of 2 streams per channel, the
+  // quota allows 2 concurrent streams. Trigger a write cycle and assert that
+  // the server sends exactly this value in a SETTINGS frame.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenExpectWrite({helper_.SerializedSettingsFrame(
+      {{Http2Settings::kMaxConcurrentStreamsWireId,
+        kExpectedMaxConcurrentStreams}})});
+  server_transport()->TestOnlySpawnPromise("TriggerWriteCycle", [this] {
+    const absl::Status status = server_transport()->TestOnlyTriggerWriteCycle();
+    EXPECT_TRUE(status.ok());
+    return Empty{};
+  });
+  step2->Wait();
+
+  // Step 4: Teardown the transport. Stream 1 is still open, so the server
+  // sends a GOAWAY followed by a RST_STREAM for it.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step3 =
+      endpoint()->NewStep();
+  step3->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  step3->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/1u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  step3->Wait();
 }
 
 TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {

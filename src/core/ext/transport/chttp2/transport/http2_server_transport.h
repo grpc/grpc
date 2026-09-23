@@ -29,6 +29,7 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
@@ -45,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -60,6 +62,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -491,6 +494,14 @@ class Http2ServerTransport final : public ServerTransport,
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
 
+  // Recomputes the MAX_CONCURRENT_STREAMS that we advertise to the peer, based
+  // on the process wide StreamQuota. The new value is written into our local
+  // settings and is sent to the peer as part of the next write cycle.
+  // This MUST be called from the transport party only, because
+  // SettingsPromiseManager is not thread safe.
+  // Based on CHTTP2's use of GetConnectionMaxConcurrentRequests in parsing.cc
+  void UpdateMaxConcurrentStreamsFromStreamQuota();
+
   // Call this when a stream needs to be closed and we must notify the client by
   // sending a RST_STREAM frame (e.g., due to local stream error, cancellation).
   // This enqueues the RST_STREAM frame and immediately closes the stream for
@@ -643,6 +654,32 @@ class Http2ServerTransport final : public ServerTransport,
   void ActOnTarpitEntries(std::vector<TarpitEntry>&& entries);
 
   //////////////////////////////////////////////////////////////////////////////
+  // Resource Quota Reclaimer
+  //
+  // Based on CHTTP2's RESOURCE QUOTAS section in chttp2_transport.cc.
+  // All the reclamation state lives in ReclamationManager. This transport only
+  // supplies the actions that a reclamation pass performs. See reclaimer.h.
+
+  // Implements the reclamation actions for this transport.
+  // These methods only run from the ReclamationLoop, which runs on the
+  // transport party while the transport is alive.
+  class ReclaimerInterfaceImpl final : public ReclaimerInterface {
+   public:
+    static std::unique_ptr<ReclaimerInterface> Make(
+        Http2ServerTransport* transport);
+
+   private:
+    explicit ReclaimerInterfaceImpl(Http2ServerTransport* transport)
+        : transport_(transport) {}
+    bool CloseTransportIfIdle() override;
+    bool CancelOneActiveStream() override;
+    // Holding a raw pointer to transport works because the transport calls
+    // ReclamationManager::Close() before it is destroyed, and Close()
+    // destroys this object.
+    Http2ServerTransport* transport_;
+  };
+
+  //////////////////////////////////////////////////////////////////////////////
   // Inner Classes and Structs
 
   class PingSystemInterfaceImpl : public PingInterface {
@@ -749,12 +786,23 @@ class Http2ServerTransport final : public ServerTransport,
   GoawayManager goaway_manager_;
 
   MemoryOwner memory_owner_;
+  MemoryAllocator::Reservation self_reservation_;
+  // Process wide (per ResourceQuota) accounting of open streams. Used to
+  // compute the MAX_CONCURRENT_STREAMS that this connection advertises.
+  // Based on CHTTP2's stream_quota in internal.h
+  StreamQuotaRefPtr stream_quota_;
   chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
   TarpitManager tarpit_manager_;
+
+  // Owns all resource quota reclamation state. This is a separate ref counted
+  // object so that a reclaimer posted to the memory quota does not keep a
+  // transport ref alive. See the class comment in reclaimer.h.
+  // MUST be closed in CloseTransport() and in the destructor.
+  RefCountedPtr<ReclamationManager> reclamation_manager_;
 };
 
 // TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two

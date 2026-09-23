@@ -124,6 +124,9 @@ TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 *   GoAway : `goaway.{h,cc}` for implementation of HTTP2 GOAWAY
 *   Metadata: `read_context.h`
 *   Security Frame : `security_frame.h`
+*   Resource Quota Reclaimer : `reclaimer.{h,cc}`
+    *   Owns the memory quota reclamation state for a PH2 transport.
+    *   Shared by PH2 Client and PH2 Server.
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
@@ -270,7 +273,8 @@ Last checked on 26-June-2026
 | WaitForSettingsTimeout | Timeout | Settings Timeout | 1 | When we write SETTINGS | Settings timeout | Settings Ack Received or Settings Timeout |
 | KeepaliveLoop | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close |
 | Ping | Timeout + Misc | | 4 | Sending a ping request | Timeout or a specific duration | |
-| | | **Total** | 12 | | | |
+| ReclamationLoop | Loop | Resource Quota Reclamation Loop | 1 | SpawnTransportLoops | Lifetime of transport | Transport Close |
+| | | **Total** | 13 | | | |
 
 ## PH2 Client Party Slots Usage
 
