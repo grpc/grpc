@@ -23,18 +23,33 @@
 
 #include <algorithm>
 #include <cctype>
+#include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
+#include "src/core/call/metadata_batch.h"
+#include "src/core/filter/filter_args.h"
+#include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/json/json.h"
 #include "src/core/util/matchers.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/xds/grpc/blackboard.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
-#include "absl/functional/any_invocable.h"
+#include "src/core/xds/grpc/xds_http_filter_registry.h"
+#include "src/core/xds/grpc/xds_listener.h"
+#include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -187,6 +202,12 @@ std::optional<absl::string_view> XdsRouting::GetHeaderValue(
     return std::nullopt;
   } else if (header_name == "content-type") {
     return "application/grpc";
+  } else if (IsAuthorityHeaderName(header_name)) {
+    // ":authority" and "host" are treated as the same header so that routing
+    // and RBAC always agree on the authority.
+    const Slice* authority = GetAuthorityOrHost(*initial_metadata);
+    if (authority == nullptr) return std::nullopt;
+    return authority->as_string_view();
   }
   return initial_metadata->GetStringValue(header_name, concatenated_value);
 }

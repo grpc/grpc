@@ -31,8 +31,9 @@ class RpcMatchContext : public XdsMatcher::MatchContext {
   UniqueTypeName type() const override { return Type(); }
 
   // Returns the metadata value(s) for the specified key.
-  // As special cases, binary headers return a value of std::nullopt, and
-  // "content-type" header returns "application/grpc".
+  // As special cases, binary headers return a value of std::nullopt,
+  // "content-type" header returns "application/grpc", and "host" and
+  // ":authority" both return GetAuthorityOrHost().
   std::optional<absl::string_view> GetHeaderValue(
       absl::string_view header_name) const;
 

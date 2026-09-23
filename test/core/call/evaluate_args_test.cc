@@ -14,10 +14,14 @@
 
 #include "src/core/call/evaluate_args.h"
 
-#include <grpc/support/port_platform.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
+
+#include <optional>
 
 #include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "test/core/test_util/evaluate_args_test_util.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
@@ -87,6 +91,36 @@ TEST_F(EvaluateArgsTest, GetHeaderValueAliasesHost) {
       args.GetHeaderValue("host", &concatenated_value);
   ASSERT_TRUE(value.has_value());
   EXPECT_EQ(value.value(), "test.google.com");
+}
+
+TEST_F(EvaluateArgsTest, GetHeaderValueHostPrefersAuthority) {
+  util_.AddPairToMetadata("host", "host.google.com");
+  util_.AddPairToMetadata(":authority", "test.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  EXPECT_EQ(args.GetAuthority(), "test.google.com");
+  EXPECT_EQ(args.GetHeaderValue("host", &concatenated_value),
+            "test.google.com");
+  EXPECT_EQ(args.GetHeaderValue(":authority", &concatenated_value),
+            "test.google.com");
+}
+
+TEST_F(EvaluateArgsTest, GetHeaderValueAuthorityFallsBackToHost) {
+  util_.AddPairToMetadata("host", "host.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  EXPECT_EQ(args.GetHeaderValue(":authority", &concatenated_value),
+            "host.google.com");
+  EXPECT_EQ(args.GetHeaderValue("host", &concatenated_value),
+            "host.google.com");
+}
+
+TEST_F(EvaluateArgsTest, GetHeaderValueHostAndAuthorityAbsent) {
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  EXPECT_EQ(args.GetHeaderValue(":authority", &concatenated_value),
+            std::nullopt);
+  EXPECT_EQ(args.GetHeaderValue("host", &concatenated_value), std::nullopt);
 }
 
 TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {

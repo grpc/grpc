@@ -47,6 +47,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
+#include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
 
@@ -378,6 +379,13 @@ struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
   using CompressionTraits = SmallSetOfValuesCompressor;
   static absl::string_view key() { return ":authority"; }
 };
+
+// Returns true if `name` refers to the request authority, i.e. ":authority"
+// or the legacy "host" header.
+inline bool IsAuthorityHeaderName(absl::string_view name) {
+  return name == HttpAuthorityMetadata::key() ||
+         absl::EqualsIgnoreCase(name, HostMetadata::key());
+}
 
 // :path metadata trait.
 struct HttpPathMetadata : public SimpleSliceBasedMetadata {
@@ -1744,6 +1752,19 @@ Derived MetadataMap<Derived, Traits...>::Copy() const {
   metadata_detail::CopySink<Derived> sink(&out);
   ForEach(&sink);
   return out;
+}
+
+// Returns the request authority: ":authority" if present, otherwise the
+// legacy "host" header, otherwise nullptr. Every component that matches on
+// the authority (e.g. xDS routing and RBAC) must use this so that they all
+// agree on the authority even if a request carries both headers with
+// different values.
+template <typename Derived, typename... Traits>
+const Slice* GetAuthorityOrHost(const MetadataMap<Derived, Traits...>& md) {
+  if (const Slice* authority = md.get_pointer(HttpAuthorityMetadata())) {
+    return authority;
+  }
+  return md.get_pointer(HostMetadata());
 }
 
 }  // namespace grpc_core

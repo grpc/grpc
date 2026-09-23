@@ -18,24 +18,46 @@
 
 #include <grpc/grpc.h>
 
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "src/core/call/call_filters.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/property_list.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/blackboard.h"
+#include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_listener.h"
+#include "src/core/xds/grpc/xds_matcher_context.h"
 #include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
+#include "upb/reflection/def.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {
@@ -738,6 +760,72 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
                   GetTestXdsHttpFilterFactory(),
                   "hcm+vhost+route+cw/blackboard{hcm+vhost+route+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route+cw"), "hcm+vhost+route+cw");
+}
+
+//
+// GetHeaderValue() tests
+//
+
+TEST(XdsRoutingGetHeaderValueTest, HostAndAuthorityUseAuthority) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer),
+            "authority");
+}
+
+TEST(XdsRoutingGetHeaderValueTest, HostOnlyUsesHost) {
+  grpc_metadata_batch md;
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), "host");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer), "host");
+}
+
+TEST(XdsRoutingGetHeaderValueTest, AuthorityOnlyUsesAuthority) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer),
+            "authority");
+}
+
+TEST(XdsRoutingGetHeaderValueTest, NeitherHostNorAuthority) {
+  grpc_metadata_batch md;
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), std::nullopt);
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer),
+            std::nullopt);
+}
+
+TEST(XdsRoutingGetHeaderValueTest, HostHeaderNameIsCaseInsensitive) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "Host", &buffer), "authority");
+}
+
+// The composite filter's matcher must resolve the authority the same way as
+// routing and RBAC.
+TEST(RpcMatchContextGetHeaderValueTest, MismatchedHeadersUseAuthority) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  RpcMatchContext context(&md);
+  EXPECT_EQ(context.GetHeaderValue("host"), "authority");
+  EXPECT_EQ(context.GetHeaderValue(":authority"), "authority");
+}
+
+TEST(RpcMatchContextGetHeaderValueTest, HostOnlyUsesHost) {
+  grpc_metadata_batch md;
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  RpcMatchContext context(&md);
+  EXPECT_EQ(context.GetHeaderValue("host"), "host");
+  EXPECT_EQ(context.GetHeaderValue(":authority"), "host");
 }
 
 }  // namespace
