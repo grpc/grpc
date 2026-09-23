@@ -1804,7 +1804,8 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMlkem1024) {
   }
   DoHandshake();
 }
-#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
+        // 0x30500000L
 
 TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesX25519) {
   auto tls_version = std::get<0>(GetParam());
