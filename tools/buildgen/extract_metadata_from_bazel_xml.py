@@ -815,11 +815,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
                     if is_upb_proto
                     else [".upbdefs.h", ".upbdefs.c"]
                 )
-                root = (
-                    GEN_UPB_ROOT
-                    if is_upb_proto
-                    else GEN_UPBDEFS_ROOT
-                )
+                root = GEN_UPB_ROOT if is_upb_proto else GEN_UPBDEFS_ROOT
                 for ext in extensions:
                     srcs.append(root + proto_src_file.replace(".proto", ext))
                     hdrs.append(root + proto_src_file.replace(".proto", ext))
