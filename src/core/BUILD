@@ -6778,6 +6778,7 @@ grpc_cc_library(
         "experiment_env_var",
         "grpc_check",
         "grpc_matchers",
+        "grpc_xds_client",
         "json",
         "json_writer",
         "lb_policy_registry",

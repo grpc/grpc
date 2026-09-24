@@ -56,6 +56,7 @@
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
@@ -661,10 +662,14 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
     RouteRuntimeFractionParse(match, &route, errors);
   }
   // Parse route action.
+  const bool is_client =
+      DownCast<GrpcXdsClient*>(context.client)->component() ==
+      GrpcXdsClient::Component::kClient;
   const envoy_config_route_v3_RouteAction* route_action_proto =
       envoy_config_route_v3_Route_route(route_proto);
   if (route_action_proto != nullptr) {
     ValidationErrors::ScopedField field(errors, ".route");
+    if (!is_client) errors->AddError("field not supported on server");
     auto route_action = RouteActionParse(context, route_action_proto,
                                          cluster_specifier_plugin_map, errors);
     if (!route_action.has_value()) return std::nullopt;
@@ -684,6 +689,10 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
     route.action = std::move(*route_action);
   } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                  route_proto)) {
+    if (is_client) {
+      ValidationErrors::ScopedField field(errors, ".non_forwarding_action");
+      errors->AddError("field not supported on client");
+    }
     route.action = XdsRouteConfigResource::Route::NonForwardingAction();
   } else {
     // Leave route.action initialized to UnknownAction (its default).
