@@ -9702,6 +9702,7 @@ grpc_cc_library(
         "activity",
         "all_ok",
         "arena",
+        "call_arena_allocator",
         "call_destination",
         "call_spine",
         "channel_args",
