@@ -390,20 +390,15 @@ class Channel(_base_channel.Channel):
 
         if interceptors is not None:
             for interceptor in interceptors:
-                valid_interceptor = False
-                if isinstance(interceptor, UnaryUnaryClientInterceptor):
-                    self._unary_unary_interceptors.append(interceptor)
-                    valid_interceptor = True
-                if isinstance(interceptor, UnaryStreamClientInterceptor):
-                    self._unary_stream_interceptors.append(interceptor)
-                    valid_interceptor = True
-                if isinstance(interceptor, StreamUnaryClientInterceptor):
-                    self._stream_unary_interceptors.append(interceptor)
-                    valid_interceptor = True
-                if isinstance(interceptor, StreamStreamClientInterceptor):
-                    self._stream_stream_interceptors.append(interceptor)
-                    valid_interceptor = True
-                if not valid_interceptor:
+                if not isinstance(
+                    interceptor,
+                    (
+                        UnaryUnaryClientInterceptor,
+                        UnaryStreamClientInterceptor,
+                        StreamUnaryClientInterceptor,
+                        StreamStreamClientInterceptor,
+                    ),
+                ):
                     raise ValueError(  # noqa: TRY004
                         "Interceptor {} must be ".format(interceptor)
                         + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
@@ -411,6 +406,14 @@ class Channel(_base_channel.Channel):
                         + "{} or ".format(StreamUnaryClientInterceptor.__name__)
                         + "{}. ".format(StreamStreamClientInterceptor.__name__)
                     )
+                if isinstance(interceptor, UnaryUnaryClientInterceptor):
+                    self._unary_unary_interceptors.append(interceptor)
+                if isinstance(interceptor, UnaryStreamClientInterceptor):
+                    self._unary_stream_interceptors.append(interceptor)
+                if isinstance(interceptor, StreamUnaryClientInterceptor):
+                    self._stream_unary_interceptors.append(interceptor)
+                if isinstance(interceptor, StreamStreamClientInterceptor):
+                    self._stream_stream_interceptors.append(interceptor)
 
         self._loop = cygrpc.get_working_loop()
         self._channel = cygrpc.AioChannel(
