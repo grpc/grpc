@@ -50,18 +50,9 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
   virtual std::unique_ptr<ConnectionState> BuildFilterChains(
       FilterChainBuilder& builder) = 0;
 
-  // Configuration to apply to an incoming call
-  // TODO(roth): When we remove the xds_server_filter_chain_per_route
-  // experiment, remove this struct and have GetCallConfig() return
-  // the filter chain directly.
-  struct CallConfig {
-    const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
-    RefCountedPtr<ServiceConfig> service_config;
-    absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain;
-  };
-
-  // Returns the CallConfig to apply to a call based on the incoming \a metadata
-  virtual absl::StatusOr<CallConfig> GetCallConfig(
+  // Returns the filter chain to use for a call based on the incoming
+  // metadata.
+  virtual absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
       const ConnectionState* state, grpc_metadata_batch* metadata) = 0;
 };
 
@@ -77,10 +68,7 @@ class ServerConfigSelectorProvider
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) = 0;
   };
 
-  // TODO(roth): Change this to return void after removing
-  // xds_server_filter_chain_per_route experiment.
-  virtual absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) = 0;
+  virtual void Watch(std::shared_ptr<ServerConfigSelectorWatcher> watcher) = 0;
   virtual void CancelWatch(
       std::shared_ptr<ServerConfigSelectorWatcher> watcher) = 0;
 

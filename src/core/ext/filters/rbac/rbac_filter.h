@@ -61,7 +61,7 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   static absl::StatusOr<std::unique_ptr<RbacFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  RbacFilter(size_t index, const Rbac& rbac,
+  RbacFilter(const Rbac& rbac,
              EvaluateArgs::PerChannelArgs per_channel_evaluate_args);
 
   class Call {
@@ -80,11 +80,6 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   };
 
  private:
-  // TODO(roth): Remove these fields as part of removing the
-  // xds_server_filter_chain_per_route experiment.
-  size_t index_;
-  const size_t service_config_parser_index_;
-
   GrpcAuthorizationEngine authorization_engine_;
   // Per channel args used for authorization.
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;
