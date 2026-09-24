@@ -108,6 +108,7 @@ TEST(RecvMessageCancelledStatusTest, CancelBeforeBatchCompletion) {
   env.RunOnCombiner(env.mock.recv_message_ready);
   // The application must observe the cancellation status.
   EXPECT_TRUE(env.app.msg_ready_called);
+  EXPECT_FALSE(env.app.recv_message->has_value());
   EXPECT_EQ(env.app.msg_status.code(), absl::StatusCode::kDeadlineExceeded)
       << env.app.msg_status;
 }
@@ -139,7 +140,76 @@ TEST(RecvMessageCancelledStatusTest, CancelBeforeBatchCompletionNoPipe) {
   // 3) The transport completes the recv_message batch with an OK batch status.
   env.RunOnCombiner(env.mock.recv_message_ready);
   EXPECT_TRUE(env.app.msg_ready_called);
+  EXPECT_FALSE(env.app.recv_message->has_value());
   EXPECT_EQ(env.app.msg_status.code(), absl::StatusCode::kDeadlineExceeded)
+      << env.app.msg_status;
+}
+
+// Out-of-band cancellation followed by transport trailing metadata before
+// pending message completion: verifies that the second ReceiveMessage::Done()
+// call from ClientCallData::RecvTrailingMetadataReady does not overwrite
+// cancelled_status_.
+TEST(RecvMessageCancelledStatusTest,
+     CancelThenRecvTrailingMetadataBeforeBatchCompletion) {
+  if (!IsRecvMessageCancelledStatusFixEnabled()) {
+    GTEST_SKIP() << "Test requires recv_message_cancelled_status_fix";
+  }
+  ExecCtx exec_ctx;
+  FakeCallStack env({{&kInboundMessageFilter, nullptr},
+                     {&MockTransportFilter::kFilter, nullptr}});
+  env.StartStandardBatches();
+  env.mock.recv_initial_metadata->Set(HttpStatusMetadata(), 200);
+  env.RunOnCombiner(env.mock.recv_initial_metadata_ready);
+  EXPECT_TRUE(env.app.init_md_ready_called);
+  // 1) Out-of-band cancellation (first Done() call from
+  // ClientCallData::Cancel).
+  env.CancelStream(
+      absl::Status(absl::StatusCode::kDeadlineExceeded, "test cancel"));
+  EXPECT_FALSE(env.app.msg_ready_called);
+  // 2) Transport trailing metadata arrives before pending message completion
+  // (second Done() call from ClientCallData::RecvTrailingMetadataReady).
+  env.mock.recv_trailing_metadata->Set(GrpcStatusMetadata(),
+                                       GRPC_STATUS_UNAVAILABLE);
+  env.RunOnCombiner(env.mock.recv_trailing_metadata_ready);
+  EXPECT_FALSE(env.app.msg_ready_called);
+  // 3) Finally, the transport completes recv_message with an OK batch status
+  // and nullopt message. The cancellation status from step 1 must not be
+  // overwritten.
+  *env.mock.recv_message = std::nullopt;
+  env.RunOnCombiner(env.mock.recv_message_ready);
+  EXPECT_TRUE(env.app.msg_ready_called);
+  EXPECT_FALSE(env.app.recv_message->has_value());
+  EXPECT_EQ(env.app.msg_status.code(), absl::StatusCode::kDeadlineExceeded)
+      << env.app.msg_status;
+}
+
+// Trailing metadata arrives before pending message completion: when the
+// transport receives trailing metadata while a recv_message is still pending,
+// it later completes recv_message with nullopt and OK batch status. The
+// application must observe the non-OK status from trailing metadata.
+TEST(RecvMessageCancelledStatusTest, TrailingMetadataBeforeBatchCompletion) {
+  if (!IsRecvMessageCancelledStatusFixEnabled()) {
+    GTEST_SKIP() << "Test requires recv_message_cancelled_status_fix";
+  }
+  ExecCtx exec_ctx;
+  FakeCallStack env({{&kInboundMessageFilter, nullptr},
+                     {&MockTransportFilter::kFilter, nullptr}});
+  env.StartStandardBatches();
+  env.mock.recv_initial_metadata->Set(HttpStatusMetadata(), 200);
+  env.RunOnCombiner(env.mock.recv_initial_metadata_ready);
+  EXPECT_TRUE(env.app.init_md_ready_called);
+  // 1) Trailing metadata arrives before the pending recv_message completes.
+  env.mock.recv_trailing_metadata->Set(GrpcStatusMetadata(),
+                                       GRPC_STATUS_UNAVAILABLE);
+  env.RunOnCombiner(env.mock.recv_trailing_metadata_ready);
+  EXPECT_FALSE(env.app.msg_ready_called);
+  // 2) Transport completes the pending recv_message with nullopt and OK batch
+  // status.
+  *env.mock.recv_message = std::nullopt;
+  env.RunOnCombiner(env.mock.recv_message_ready);
+  EXPECT_TRUE(env.app.msg_ready_called);
+  EXPECT_FALSE(env.app.recv_message->has_value());
+  EXPECT_EQ(env.app.msg_status.code(), absl::StatusCode::kUnavailable)
       << env.app.msg_status;
 }
 

@@ -832,9 +832,6 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
 void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
                                         Flusher* flusher,
                                         bool discard_buffered_message) {
-  if (IsRecvMessageCancelledStatusFixEnabled()) {
-    cancelled_status_ = StatusFromMetadata(metadata);
-  }
   GRPC_TRACE_LOG(channel, INFO)
       << base_->LogTag() << " ReceiveMessage.Done st=" << StateString(state_)
       << " md=" << metadata.DebugString();
@@ -846,9 +843,15 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       state_ = State::kCancelledWhilstIdle;
       break;
     case State::kForwardedBatch:
+      if (IsRecvMessageCancelledStatusFixEnabled()) {
+        cancelled_status_ = StatusFromMetadata(metadata);
+      }
       state_ = State::kCancelledWhilstForwarding;
       break;
     case State::kForwardedBatchNoPipe:
+      if (IsRecvMessageCancelledStatusFixEnabled()) {
+        cancelled_status_ = StatusFromMetadata(metadata);
+      }
       state_ = State::kCancelledWhilstForwardingNoPipe;
       break;
     case State::kCompletedWhileBatchCompleted:
@@ -858,7 +861,11 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
         // Store the cancellation status so that WakeInsideCombiner() can
         // propagate it to the application's message ready callback instead of
         // defaulting to OK.
-        completed_status_ = StatusFromMetadata(metadata);
+        if (IsRecvMessageCancelledStatusFixEnabled()) {
+          cancelled_status_ = StatusFromMetadata(metadata);
+        } else {
+          completed_status_ = StatusFromMetadata(metadata);
+        }
         // Drop the buffered message here so it cannot bypass the trailing
         // metadata; WakeInsideCombiner() just fires the completion.
         if (intercepted_slice_buffer_ != nullptr) {
@@ -916,14 +923,21 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
           *intercepted_slice_buffer_ = std::nullopt;
         }
       }
+      if (IsRecvMessageCancelledStatusFixEnabled()) {
+        cancelled_status_ = StatusFromMetadata(metadata);
+      }
       state_ = State::kBatchCompletedButCancelledNoPipe;
       break;
     case State::kBatchCompletedButCancelled:
     case State::kBatchCompletedButCancelledNoPipe:
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
-    case State::kCancelledWhilstIdle:
     case State::kCancelledWhilstForwarding:
     case State::kCancelledWhilstForwardingNoPipe:
+      if (IsRecvMessageCancelledStatusFixEnabled() && cancelled_status_.ok()) {
+        cancelled_status_ = StatusFromMetadata(metadata);
+      }
+      break;
+    case State::kCancelledWhilstIdle:
     case State::kCancelled:
       break;
   }

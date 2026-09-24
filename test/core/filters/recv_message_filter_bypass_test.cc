@@ -187,7 +187,7 @@ class StallFakeCallStack : public FakeCallStack {
     StartStandardBatches();
   }
 
-  ~StallFakeCallStack() {
+  ~StallFakeCallStack() override {
     // Reset wakers to prevent call stack from outliving the arena.
     if (control_ != nullptr) {
       control_->init_md_waker = Waker();

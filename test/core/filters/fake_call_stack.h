@@ -247,7 +247,7 @@ class FakeCallStack {
                       nullptr);
   }
 
-  ~FakeCallStack() {
+  virtual ~FakeCallStack() {
     GRPC_CALL_STACK_UNREF(call_stack, "done");
     ExecCtx::Get()->Flush();
     GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
