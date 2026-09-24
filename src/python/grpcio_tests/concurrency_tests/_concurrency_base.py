@@ -17,12 +17,14 @@ Meant to run on a free-threaded interpreter, ideally TSAN instrumented
 (--config=tsan_python): data races surface as ThreadSanitizer reports, deadlocks
 as join timeouts.
 """
+import os
 import threading
 import traceback
 import unittest
 
 import grpc
 
+from concurrency_tests._deadlock_debug import dump_stack_and_abort
 from concurrency_tests._deadlock_debug import install_deadlock_debuggers
 from tests.unit import test_common
 
@@ -52,6 +54,8 @@ class ConcurrencyTestCase(unittest.TestCase):
             if t.is_alive():
                 stuck.append(t)
         super().tearDown()
+        if stuck and os.environ.get("GRPC_FT_GDB_DUMP_ON_DEADLOCK"):
+            dump_stack_and_abort()
         self.assertEqual([], stuck, f"deadlocked worker threads: {stuck}")
         self.assertEqual([], self._errors, "\n\n".join(self._errors))
 

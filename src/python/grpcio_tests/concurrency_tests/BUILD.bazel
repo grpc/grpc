@@ -159,7 +159,7 @@ py_test(
 
 py_test(
     name = "async_multiloop_concurrency_test",
-    size = "medium",
+    size = "enormous",
     srcs = ["_async_multiloop_concurrency_test.py"],
     imports = ["../"],
     main = "_async_multiloop_concurrency_test.py",

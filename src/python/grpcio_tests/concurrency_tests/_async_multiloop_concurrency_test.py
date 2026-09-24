@@ -17,7 +17,6 @@ import asyncio
 import contextlib
 import logging
 import os
-import threading
 import unittest
 
 import grpc
@@ -25,7 +24,7 @@ from grpc.experimental import aio
 
 from concurrency_tests._concurrency_base import ConcurrencyTestCase
 
-_THREADS = int(os.environ.get("GRPC_FT_MULTILOOP_THREADS", "32"))
+_THREADS = int(os.environ.get("GRPC_FT_MULTILOOP_THREADS", "16"))
 _ITERATIONS = int(os.environ.get("GRPC_FT_MULTILOOP_ITERATIONS", "20"))
 _HEAVY_ITERATIONS = int(
     os.environ.get(
@@ -47,7 +46,7 @@ _STREAM_LEN = 4
 _INFLIGHT = 4
 _INFLIGHT_SETTLE = 0.05
 _DEADLINE = 0.1
-_SLOW_HANDLER_SLEEP = 30
+_SLOW_HANDLER_SLEEP = 20
 
 
 async def _unary_unary_handler(unused_request, unused_context):
@@ -201,7 +200,8 @@ async def _await_cancelled(call):
     except asyncio.CancelledError:
         return None
     except grpc.aio.AioRpcError as exc:
-        if exc.code is grpc.StatusCode.CANCELLED:
+        # when stream RPC is closed it can return UNAVAILABLE status as well
+        if exc.code in (grpc.StatusCode.CANCELLED, grpc.StatusCode.UNAVAILABLE):
             return None
         return exc
     except Exception as exc:

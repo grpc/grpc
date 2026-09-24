@@ -167,6 +167,7 @@ build:python --copt=-DGRPC_PYTHON_BUILD
 build:python --@rules_python//python/config_settings:bootstrap_impl=script
 # route pip hub wheel selection to 3.14 hub
 build:python --@rules_python//python/config_settings:python_version=3.14
+build:python --per_file_copt=external/.*boringssl.*@-Wno-error=incompatible-pointer-types-discards-qualifiers
 
 # TSAN instrumented build rules
 build:tsan_python --config=python

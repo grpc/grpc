@@ -42,8 +42,7 @@ _PR_SET_PTRACER = 0x59616D61
 _PR_SET_PTRACER_ANY = ctypes.c_ulong(-1)
 
 
-def _start_gdb_watchdog(seconds, register_cleanup):
-    """Dump all threads via gdb if the test hasn't finished in `seconds`"""
+def _allow_ptracer():
     try:
         libc = ctypes.CDLL(None, use_errno=True)
         # this is needed to call `gdb -p <pid>` without `sudo`
@@ -51,26 +50,19 @@ def _start_gdb_watchdog(seconds, register_cleanup):
     except OSError:
         pass
 
-    pid = os.getpid()
 
+def _get_libpython():
     libpython = os.environ.get("GRPC_FT_LIBPYTHON_GDB", _DEFAULT_LIBPYTHON_GDB)
     assert(os.path.exists(libpython))
+    return libpython
 
-    done = threading.Event()
-    register_cleanup(done.set)
 
-    def watchdog():
-        if done.wait(seconds):
-            return  # test finished; nothing hung
-        sys.stderr.write(
-            f"\n=== GRPC_FT: no progress after {seconds}s; gdb-dumping pid:{pid} ===\n"
-        )
-        sys.stderr.flush()
+def _gdb_dump_all_threads(pid, libpython):
         cmd = [
             "gdb", "-batch", "-p", str(pid),
             "-ex", "set pagination off",
             "-ex", "source " + libpython,
-            "-ex", "thread apply all py-bt"]
+            "-ex", "thread apply all bt"]
         # stripping PYTHONPATH / PYTHONHOME / PYTHON_GIL from gdb;
         # its embedded Python will start with a clean path
         env = {
@@ -82,6 +74,32 @@ def _start_gdb_watchdog(seconds, register_cleanup):
             sys.stderr.write(f"gdb-dump failed: {ex}\n")
             sys.stderr.flush()
         os.abort()
+
+
+def dump_stack_and_abort():
+    _allow_ptracer()
+    libpython = _get_libpython()
+    pid = os.getpid()
+    _gdb_dump_all_threads(pid, libpython)
+
+
+def _start_gdb_watchdog(seconds, register_cleanup):
+    """Dump all threads via gdb if the test hasn't finished in `seconds`"""
+    _allow_ptracer()
+    libpython = _get_libpython()
+    pid = os.getpid()
+
+    done = threading.Event()
+    register_cleanup(done.set)
+
+    def watchdog():
+        if done.wait(seconds):
+            return  # test finished; nothing hung
+        sys.stderr.write(
+            f"\n=== GRPC_FT: no progress after {seconds}s; gdb-dumping pid:{pid} ===\n"
+        )
+        sys.stderr.flush()
+        _gdb_dump_all_threads(pid, libpython)
 
     threading.Thread(target=watchdog, daemon=True, name="gdb-watchdog").start()
 
