@@ -109,7 +109,7 @@ static void grpc_apple_register_read_stream_run_loop(
     CFReadStreamRef read_stream, dispatch_queue_t /*dispatch_queue*/) {
   GRPC_TRACE_VLOG(apple_polling, 2)
       << "(polling) Register read stream: " << read_stream;
-  grpc_core::MutexLock lock(gGlobalRunLoopContext->mu);
+  grpc_core::MutexLock lock(&gGlobalRunLoopContext->mu);
   CFReadStreamScheduleWithRunLoop(read_stream, gGlobalRunLoopContext->run_loop,
                                   kCFRunLoopDefaultMode);
   gGlobalRunLoopContext->input_source_registered = true;
@@ -123,7 +123,7 @@ static void grpc_apple_register_write_stream_run_loop(
     CFWriteStreamRef write_stream, dispatch_queue_t /*dispatch_queue*/) {
   GRPC_TRACE_VLOG(apple_polling, 2)
       << "(polling) Register write stream: " << write_stream;
-  grpc_core::MutexLock lock(gGlobalRunLoopContext->mu);
+  grpc_core::MutexLock lock(&gGlobalRunLoopContext->mu);
   CFWriteStreamScheduleWithRunLoop(
       write_stream, gGlobalRunLoopContext->run_loop, kCFRunLoopDefaultMode);
   gGlobalRunLoopContext->input_source_registered = true;
@@ -183,7 +183,7 @@ static void pollset_global_init(void) {
   grpc_apple_register_write_stream_impl =
       grpc_apple_register_write_stream_run_loop;
 
-  grpc_core::MutexLock lock(gGlobalRunLoopContext->mu);
+  grpc_core::MutexLock lock(&gGlobalRunLoopContext->mu);
   gGlobalRunLoopThread =
       new grpc_core::Thread("apple_ev", GlobalRunLoopFunc, nullptr);
   gGlobalRunLoopThread->Start();
@@ -193,7 +193,7 @@ static void pollset_global_init(void) {
 
 static void pollset_global_shutdown(void) {
   {
-    grpc_core::MutexLock lock(gGlobalRunLoopContext->mu);
+    grpc_core::MutexLock lock(&gGlobalRunLoopContext->mu);
     gGlobalRunLoopContext->is_shutdown = true;
     CFRunLoopStop(gGlobalRunLoopContext->run_loop);
   }

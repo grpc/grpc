@@ -209,7 +209,7 @@ HttpRequest::~HttpRequest() {
 }
 
 void HttpRequest::Start() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (test_only_generate_response_.has_value()) {
     if (test_only_generate_response_.value()()) return;
   }
@@ -230,7 +230,7 @@ void HttpRequest::Start() {
 
 void HttpRequest::Orphan() {
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     GRPC_CHECK(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
@@ -285,7 +285,7 @@ void HttpRequest::OnReadInternal(grpc_error_handle error) {
 void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
     void* arg, grpc_error_handle error) {
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
-  MutexLock lock(req->mu_);
+  MutexLock lock(&req->mu_);
   if (error.ok() && !req->cancelled_) {
     req->OnWritten();
   } else {
@@ -310,7 +310,7 @@ void HttpRequest::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     // do things like calling Orphan on the request
     g_test_only_on_handshake_done_intercept(this);
   }
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (!result.ok()) {
     handshake_mgr_.reset();
     NextAddress(result.status());
@@ -376,7 +376,7 @@ void HttpRequest::NextAddress(grpc_error_handle error) {
 void HttpRequest::OnResolved(
     absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or) {
   RefCountedPtr<HttpRequest> unreffer(this);
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   ee_resolver_->reset();
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));

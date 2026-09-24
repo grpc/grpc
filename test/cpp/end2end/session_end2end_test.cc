@@ -100,7 +100,7 @@ class SimpleSessionReactor : public grpc::experimental::ServerSessionReactor {
   void OnCancel() override {
     bool do_finish = false;
     {
-      grpc::internal::MutexLock l(mu_);
+      grpc::internal::MutexLock l(&mu_);
       if (!finished_) {
         finished_ = true;
         do_finish = true;
@@ -115,7 +115,7 @@ class SimpleSessionReactor : public grpc::experimental::ServerSessionReactor {
   void Close() {
     bool do_finish = false;
     {
-      grpc::internal::MutexLock l(mu_);
+      grpc::internal::MutexLock l(&mu_);
       if (!finished_) {
         finished_ = true;
         do_finish = true;
@@ -131,7 +131,7 @@ class SimpleSessionReactor : public grpc::experimental::ServerSessionReactor {
       bool do_finish = false;
       grpc::Status finish_status = grpc::Status::OK;
       {
-        grpc::internal::MutexLock l(mu_);
+        grpc::internal::MutexLock l(&mu_);
         if (!finished_) {
           finished_ = true;
           do_finish = true;

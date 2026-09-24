@@ -49,7 +49,7 @@ class TestLoggingSink : public grpc_core::LoggingSink {
  public:
   Config FindMatch(bool /* is_client */, absl::string_view /* service */,
                    absl::string_view /* method */) override {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return config_;
   }
 
@@ -62,30 +62,30 @@ class TestLoggingSink : public grpc_core::LoggingSink {
     LOG(INFO) << "trace_id: " << entry.trace_id;
     LOG(INFO) << "span_id: " << entry.span_id;
     LOG(INFO) << "is_sampled: " << entry.is_sampled;
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     entries_.push_back(std::move(entry));
     cv_.SignalAll();
   }
 
   void SetConfig(Config config) {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     config_ = config;
   }
 
   std::vector<LoggingSink::Entry> entries() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return entries_;
   }
 
   void Clear() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     entries_.clear();
   }
 
   // Waits for \a duration till we have \a num_entries in the log.
   bool WaitForNumEntries(size_t num_entries, absl::Duration duration) {
     absl::Time deadline = absl::Now() + duration * grpc_test_slowdown_factor();
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     while (entries_.size() != num_entries) {
       if (cv_.WaitWithDeadline(&mu_, deadline)) {
         LOG(ERROR) << "\nDeadline expired while waiting on logging "

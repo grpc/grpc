@@ -54,7 +54,7 @@ class EnvironmentAutoDetect {
   void NotifyOnDone(absl::AnyInvocable<void()> callback);
 
   const ResourceType* resource() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return resource_.get();
   }
 

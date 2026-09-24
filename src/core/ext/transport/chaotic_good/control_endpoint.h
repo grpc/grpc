@@ -44,7 +44,7 @@ class ControlEndpoint {
       return [buffer = std::move(buffer), this]() mutable -> Poll<Empty> {
         Waker waker;
         auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-        MutexLock lock(mu_);
+        MutexLock lock(&mu_);
         if (queued_output_.Length() != 0 &&
             queued_output_.Length() + buffer.Length() > MaxQueued()) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -68,7 +68,7 @@ class ControlEndpoint {
     void ForceQueue(SliceBuffer&& buffer) {
       Waker waker;
       auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       GRPC_TRACE_LOG(chaotic_good, INFO)
           << "CHAOTIC_GOOD: Force queue control write " << buffer.Length()
           << " bytes on " << this;
@@ -119,13 +119,13 @@ class ControlEndpoint {
   }
 
   auto SecureFrameWriterCallback() {
-    return [buffer = buffer_](SliceBuffer* data) {
+    return [buffer = buffer_](SliceBuffer data) {
       SliceBuffer output;
-      CHECK_LT(data->Length(), std::numeric_limits<uint32_t>::max());
-      const uint32_t length = data->Length();
+      CHECK_LT(data.Length(), std::numeric_limits<uint32_t>::max());
+      const uint32_t length = data.Length();
       TcpFrameHeader hdr{{FrameType::kTcpSecurityFrame, 0, length}};
       hdr.Serialize(output.AddTiny(TcpFrameHeader::kFrameHeaderSize));
-      output.TakeAndAppend(*data);
+      output.TakeAndAppend(data);
       buffer->ForceQueue(std::move(output));
     };
   }

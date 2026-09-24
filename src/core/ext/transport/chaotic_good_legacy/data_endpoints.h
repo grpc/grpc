@@ -76,7 +76,7 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   }
 
   void AddData(channelz::DataSink sink) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     sink.AddData("output_buffers",
                  channelz::PropertyList()
                      .Set("ready_endpoints",
@@ -198,7 +198,7 @@ class InputQueues : public RefCounted<InputQueues> {
   void AddEndpoint(uint32_t connection_id);
 
   void AddData(channelz::DataSink sink) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     sink.AddData(
         "input_queues",
         channelz::PropertyList()
@@ -297,7 +297,7 @@ class DataEndpoints {
   void AddData(channelz::DataSink sink) {
     output_buffers_->AddData(sink);
     input_queues_->AddData(sink);
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     for (auto& endpoint : endpoints_) {
       endpoint.AddData(sink);
     }

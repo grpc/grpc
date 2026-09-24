@@ -151,11 +151,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "6e1aee535473414164bf83e4ebc40240dec71a4701f8a642d906e95bea1aea0c",
-            strip_prefix = "abseil-cpp-20260526.0",
+            sha256 = "9b7a064305e9fd94d124ffa6cc358592eb42b5da588fb4e07d09254aa40086db",
+            strip_prefix = "abseil-cpp-20250512.1",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20260526.0.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20260526.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
             ],
             repo_mapping = {
                 "@googletest": "@com_google_googletest",
@@ -404,11 +404,22 @@ def grpc_deps():
     if "grpc_proto" not in native.existing_rules():
         http_archive(
             name = "grpc_proto",
-            sha256 = "5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33",
-            strip_prefix = "grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f",
+            sha256 = "6aaa807572edfe307eaddc15161ce684d02d054e3fca36b38993efc85575ddfa",
+            strip_prefix = "grpc-proto-dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz",
-                "https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz",
+                "https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz",
+            ],
+        )
+
+    if "autosharding" not in native.existing_rules():
+        http_archive(
+            name = "autosharding",
+            sha256 = "12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2",
+            strip_prefix = "autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
+                "https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
             ],
         )
 

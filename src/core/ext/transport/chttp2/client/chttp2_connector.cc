@@ -110,7 +110,7 @@ void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
 void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     GRPC_CHECK_EQ(notify_, nullptr);
     args_ = args;
     result_ = result;
@@ -155,7 +155,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   shutdown_ = true;
   if (handshake_mgr_ != nullptr) {
     // Handshaker will also shutdown the endpoint if it exists
@@ -164,7 +164,7 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
 }
 
 void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (!result.ok() || shutdown_) {
     if (result.ok()) {
       result = GRPC_ERROR_CREATE("connector shutdown");
@@ -261,7 +261,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
 
 void Chttp2Connector::OnReceiveSettings(
     absl::StatusOr<uint32_t> max_concurrent_streams) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (max_concurrent_streams.ok()) {
     result_->max_concurrent_streams = *max_concurrent_streams;
   }
@@ -287,7 +287,7 @@ void Chttp2Connector::OnReceiveSettings(
 }
 
 void Chttp2Connector::OnTimeout() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   timer_handle_.reset();
   if (!notify_error_.has_value()) {
     // The transport did not receive the settings frame in time. Destroy the

@@ -75,7 +75,7 @@ class EventEngineEndpointWrapper {
   }
 
   int Fd() {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return fd_;
   }
 
@@ -264,7 +264,7 @@ class EventEngineEndpointWrapper {
  private:
   void OnShutdownInternal() {
     {
-      grpc_core::MutexLock lock(mu_);
+      grpc_core::MutexLock lock(&mu_);
       fd_ = -1;
     }
     endpoint_.reset();

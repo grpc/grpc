@@ -116,7 +116,7 @@ void WaitForNotificationWithTimeoutAndDumpAllPartyStateIfWeFail(
     auto collector = std::make_shared<PartyStateCollector>(parties.size());
     for (size_t i = 0; i < parties.size(); i++) {
       parties[i]->ToJson([collector, i](Json::Object obj) {
-        MutexLock lock(collector->mu);
+        MutexLock lock(&collector->mu);
         collector->party_state[i] = std::move(obj);
         collector->done[i].Notify();
       });
@@ -124,7 +124,7 @@ void WaitForNotificationWithTimeoutAndDumpAllPartyStateIfWeFail(
     for (size_t i = 0; i < parties.size(); i++) {
       CHECK(
           collector->done[i].WaitForNotificationWithTimeout(absl::Seconds(30)));
-      MutexLock lock(collector->mu);
+      MutexLock lock(&collector->mu);
       LOG(ERROR) << "Party " << i << " state: "
                  << JsonDump(
                         Json::FromObject(std::move(collector->party_state[i])));

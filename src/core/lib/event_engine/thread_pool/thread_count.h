@@ -127,12 +127,12 @@ class LivingThreadCount {
 
   AutoThreadCounter MakeAutoThreadCounter() { return AutoThreadCounter(this); };
   void Increment() ABSL_LOCKS_EXCLUDED(mu_) {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     ++living_count_;
     cv_.SignalAll();
   }
   void Decrement() ABSL_LOCKS_EXCLUDED(mu_) {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     --living_count_;
     cv_.SignalAll();
   }
@@ -144,7 +144,7 @@ class LivingThreadCount {
                                      grpc_core::Duration stuck_timeout)
       ABSL_LOCKS_EXCLUDED(mu_);
   size_t count() ABSL_LOCKS_EXCLUDED(mu_) {
-    grpc_core::MutexLock lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return CountLocked();
   }
 

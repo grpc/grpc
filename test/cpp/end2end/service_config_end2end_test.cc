@@ -79,7 +79,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     {
-      grpc::internal::MutexLock lock(mu_);
+      grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
     }
     AddClient(context->peer());
@@ -87,23 +87,23 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   int request_count() {
-    grpc::internal::MutexLock lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     return request_count_;
   }
 
   void ResetCounters() {
-    grpc::internal::MutexLock lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     request_count_ = 0;
   }
 
   std::set<std::string> clients() {
-    grpc::internal::MutexLock lock(clients_mu_);
+    grpc::internal::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
   void AddClient(const std::string& client) {
-    grpc::internal::MutexLock lock(clients_mu_);
+    grpc::internal::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
@@ -310,7 +310,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
     void Start(const std::string& server_host) {
       LOG(INFO) << "starting server on port " << port_;
-      grpc::internal::MutexLock lock(mu_);
+      grpc::internal::MutexLock lock(&mu_);
       started_ = true;
       thread_ = std::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host));
@@ -330,13 +330,13 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
-      grpc::internal::MutexLock lock(mu_);
+      grpc::internal::MutexLock lock(&mu_);
       server_ready_ = true;
       cond_.Signal();
     }
 
     void Shutdown() {
-      grpc::internal::MutexLock lock(mu_);
+      grpc::internal::MutexLock lock(&mu_);
       if (!started_) return;
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();

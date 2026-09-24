@@ -172,7 +172,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>> roots = nullptr;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     FileWatcherCertificateProvider::WatcherInfo& info =
@@ -212,7 +212,7 @@ UniqueTypeName FileWatcherCertificateProvider::type() const {
 }
 
 absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (!root_cert_info_.ok()) {
     return root_cert_info_.status();
   }
@@ -254,7 +254,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     pem_key_cert_pairs = ReadIdentityKeyCertPairFromFiles(
         private_key_path_, identity_certificate_path_);
   }
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   const bool root_changed =
       HasRootCertInfoChanged(root_cert_info_, root_cert_info);
   if (root_changed) {
@@ -406,7 +406,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     std::shared_ptr<tsi::RootCertInfo> roots;
     std::optional<KeyCertPairsOrSelector> key_cert_pairs_or_selector;
     WatcherInfo& info = watcher_info_[cert_name];
@@ -433,7 +433,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
 absl::Status InMemoryCertificateProvider::Update(
     std::optional<std::shared_ptr<tsi::RootCertInfo>> root_cert_info,
     std::optional<const KeyCertPairsOrSelector> key_cert_pairs_or_selector) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   const bool root_changed =
       root_cert_info.has_value() &&
       HasRootCertInfoChanged(root_certificates_, *root_cert_info);
@@ -488,7 +488,7 @@ absl::Status InMemoryCertificateProvider::Update(
 }
 
 absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   if (!root_certificates_.ok()) {
     return root_certificates_.status();
   }

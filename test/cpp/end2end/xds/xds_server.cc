@@ -40,7 +40,7 @@ namespace testing {
 void AdsServiceImpl::SetResource(google::protobuf::Any resource,
                                  const std::string& type_url,
                                  const std::string& name) {
-  grpc_core::MutexLock lock(ads_mu_);
+  grpc_core::MutexLock lock(&ads_mu_);
   ResourceTypeState& resource_type_state = resource_map_[type_url];
   ++resource_type_state.resource_type_version;
   ResourceState& resource_state = resource_type_state.resource_name_map[name];
@@ -57,7 +57,7 @@ void AdsServiceImpl::SetResource(google::protobuf::Any resource,
 
 void AdsServiceImpl::UnsetResource(const std::string& type_url,
                                    const std::string& name) {
-  grpc_core::MutexLock lock(ads_mu_);
+  grpc_core::MutexLock lock(&ads_mu_);
   ResourceTypeState& resource_type_state = resource_map_[type_url];
   ++resource_type_state.resource_type_version;
   ResourceState& resource_state = resource_type_state.resource_name_map[name];
@@ -74,7 +74,7 @@ void AdsServiceImpl::UnsetResource(const std::string& type_url,
 
 void AdsServiceImpl::Shutdown() {
   {
-    grpc_core::MutexLock lock(ads_mu_);
+    grpc_core::MutexLock lock(&ads_mu_);
     resource_type_response_state_.clear();
   }
   LOG(INFO) << "ADS[" << debug_label_ << "]: shut down";
@@ -91,7 +91,7 @@ AdsServiceImpl::Reactor::Reactor(
   LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
             << this << ": StreamAggregatedResources starts";
   {
-    grpc_core::MutexLock lock(ads_service_impl_->ads_mu_);
+    grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
     if (ads_service_impl_->forced_ads_failure_.has_value()) {
       LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
                 << this
@@ -123,7 +123,7 @@ void AdsServiceImpl::Reactor::OnCancel() {
   // Clean up any subscriptions that were still active when the call
   // finished.
   {
-    grpc_core::MutexLock lock(ads_service_impl_->ads_mu_);
+    grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
     for (auto& [type_url, type_state] : type_state_map_) {
       auto& resource_name_map =
           ads_service_impl_->resource_map_[type_url].resource_name_map;
@@ -141,7 +141,7 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
   LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
             << this << ": OnReadDone(" << ok << ")";
   if (!ok) return;
-  grpc_core::MutexLock lock(ads_service_impl_->ads_mu_);
+  grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
   if (!seen_first_request_) {
     if (ads_service_impl_->check_first_request_ != nullptr) {
       ads_service_impl_->check_first_request_(request_);
@@ -312,7 +312,7 @@ void AdsServiceImpl::Reactor::MaybeStartWrite(
 void AdsServiceImpl::Reactor::OnWriteDone(bool ok) {
   LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
             << this << ": OnWriteDone(" << ok << ")";
-  grpc_core::MutexLock lock(ads_service_impl_->ads_mu_);
+  grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
   write_pending_ = false;
   response_.Clear();
   if (!ok) return;
@@ -394,7 +394,7 @@ LrsServiceImpl::ClientStats& LrsServiceImpl::ClientStats::operator+=(
 //
 
 void LrsServiceImpl::Start() {
-  grpc_core::MutexLock lock(load_report_mu_);
+  grpc_core::MutexLock lock(&load_report_mu_);
   result_queue_.clear();
 }
 
@@ -405,7 +405,7 @@ void LrsServiceImpl::Shutdown() {
 std::vector<LrsServiceImpl::ClientStats> LrsServiceImpl::WaitForLoadReport(
     absl::Duration timeout) {
   timeout *= grpc_test_slowdown_factor();
-  grpc_core::MutexLock lock(load_report_mu_);
+  grpc_core::MutexLock lock(&load_report_mu_);
   grpc_core::CondVar cv;
   if (result_queue_.empty()) {
     load_report_cond_ = &cv;
@@ -440,7 +440,7 @@ LrsServiceImpl::Reactor::Reactor(
 
 void LrsServiceImpl::Reactor::OnReadDone(bool ok) {
   if (!ok) return;
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (finished_) return;
   if (!seen_first_request_) {
     seen_first_request_ = true;
@@ -472,7 +472,7 @@ void LrsServiceImpl::Reactor::OnReadDone(bool ok) {
     for (const auto& cluster_stats : request_.cluster_stats()) {
       stats.emplace_back(cluster_stats);
     }
-    grpc_core::MutexLock lock(lrs_service_impl_->load_report_mu_);
+    grpc_core::MutexLock lock(&lrs_service_impl_->load_report_mu_);
     lrs_service_impl_->result_queue_.emplace_back(std::move(stats));
     if (lrs_service_impl_->load_report_cond_ != nullptr) {
       lrs_service_impl_->load_report_cond_->Signal();
@@ -496,7 +496,7 @@ void LrsServiceImpl::Reactor::OnDone() {
 void LrsServiceImpl::Reactor::OnCancel() {
   LOG(INFO) << "LRS[" << lrs_service_impl_->debug_label_ << "]: reactor "
             << this << ": OnCancel()";
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   finished_ = true;
   Finish(Status::OK);
 }

@@ -533,7 +533,7 @@ class PromiseActivity final
     }
     bool was_done;
     {
-      MutexLock lock(*mu());
+      MutexLock lock(mu());
       // Check if we were done, and flag done.
       was_done = done_;
       if (!done_) {

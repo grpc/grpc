@@ -489,7 +489,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
 //
 
 WeightedRoundRobin::EndpointWeight::~EndpointWeight() {
-  MutexLock lock(wrr_->endpoint_weight_map_mu_);
+  MutexLock lock(&wrr_->endpoint_weight_map_mu_);
   auto it = wrr_->endpoint_weight_map_.find(key_);
   if (it != wrr_->endpoint_weight_map_.end() && it->second == this) {
     wrr_->endpoint_weight_map_.erase(it);
@@ -518,7 +518,7 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
   }
   Timestamp now = Timestamp::Now();
   // Grab the lock and update the data.
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
       << ": qps=" << qps << ", eps=" << eps << ", utilization=" << utilization
@@ -535,7 +535,7 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
 float WeightedRoundRobin::EndpointWeight::GetWeight(
     Timestamp now, Duration weight_expiration_period, Duration blackout_period,
     uint64_t* num_not_yet_usable, uint64_t* num_stale) {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
       << ": getting weight: now=" << now.ToString()
@@ -563,7 +563,7 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
 }
 
 void WeightedRoundRobin::EndpointWeight::ResetNonEmptySince() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   non_empty_since_ = Timestamp::InfFuture();
 }
 
@@ -612,7 +612,7 @@ WeightedRoundRobin::Picker::Picker(RefCountedPtr<WeightedRoundRobin> wrr,
       << endpoints_.size() << " subchannels";
   // Note: BuildSchedulerAndStartTimerLocked() passes out pointers to `this`,
   // so we need to ensure that we really hold timer_mu_.
-  MutexLock lock(timer_mu_);
+  MutexLock lock(&timer_mu_);
   BuildSchedulerAndStartTimerLocked();
 }
 
@@ -622,7 +622,7 @@ WeightedRoundRobin::Picker::~Picker() {
 }
 
 void WeightedRoundRobin::Picker::Orphaned() {
-  MutexLock lock(timer_mu_);
+  MutexLock lock(&timer_mu_);
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << wrr_.get() << " picker " << this << "] cancelling timer";
   wrr_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
@@ -655,7 +655,7 @@ size_t WeightedRoundRobin::Picker::PickIndex() {
   // Grab a ref to the scheduler.
   std::shared_ptr<StaticStrideScheduler> scheduler;
   {
-    MutexLock lock(scheduler_mu_);
+    MutexLock lock(&scheduler_mu_);
     scheduler = scheduler_;
   }
   // If we have a scheduler, use it to do a WRR pick.
@@ -711,7 +711,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
         {wrr_->locality_name_, wrr_->backend_service_name_});
   }
   {
-    MutexLock lock(scheduler_mu_);
+    MutexLock lock(&scheduler_mu_);
     scheduler_ = std::move(scheduler);
   }
   // Start timer.
@@ -729,7 +729,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
        work_serializer = wrr_->work_serializer()]() mutable {
         ExecCtx exec_ctx;
         {
-          MutexLock lock(self->timer_mu_);
+          MutexLock lock(&self->timer_mu_);
           if (self->timer_handle_.has_value()) {
             GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
                 << "[WRR " << self->wrr_.get() << " picker " << self.get()
@@ -860,7 +860,7 @@ RefCountedPtr<WeightedRoundRobin::EndpointWeight>
 WeightedRoundRobin::GetOrCreateWeight(
     const std::vector<grpc_resolved_address>& addresses) {
   EndpointAddressSet key(addresses);
-  MutexLock lock(endpoint_weight_map_mu_);
+  MutexLock lock(&endpoint_weight_map_mu_);
   auto it = endpoint_weight_map_.find(key);
   if (it != endpoint_weight_map_.end()) {
     auto weight = it->second->RefIfNonZero();

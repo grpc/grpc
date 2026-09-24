@@ -75,6 +75,7 @@ _GRPC_DEP_NAMES = [
     "rules_java",
     "yaml-cpp",
     "grpc_proto",
+    "autosharding",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [

@@ -123,7 +123,7 @@ void ClientContext::AddMetadata(const std::string& meta_key,
 
 void ClientContext::set_call(grpc_call* call,
                              const std::shared_ptr<Channel>& channel) {
-  internal::MutexLock lock(mu_);
+  internal::MutexLock lock(&mu_);
   GRPC_CHECK_EQ(call_, nullptr);
   call_ = call;
   channel_ = channel;
@@ -152,7 +152,7 @@ void ClientContext::set_compression_algorithm(
 }
 
 void ClientContext::TryCancel() {
-  internal::MutexLock lock(mu_);
+  internal::MutexLock lock(&mu_);
   if (call_) {
     SendCancelToInterceptors();
     grpc_call_cancel(call_, nullptr);

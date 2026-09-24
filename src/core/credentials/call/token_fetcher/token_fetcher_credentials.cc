@@ -94,7 +94,7 @@ void TokenFetcherCredentials::FetchState::BackoffTimer::Orphan() {
 }
 
 void TokenFetcherCredentials::FetchState::BackoffTimer::OnTimer() {
-  MutexLock lock(fetch_state_->creds_->mu_);
+  MutexLock lock(&fetch_state_->creds_->mu_);
   if (!timer_handle_.has_value()) return;
   timer_handle_.reset();
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
@@ -156,7 +156,7 @@ void TokenFetcherCredentials::FetchState::StartFetchAttempt() {
 
 void TokenFetcherCredentials::FetchState::TokenFetchComplete(
     absl::StatusOr<RefCountedPtr<Token>> token) {
-  MutexLock lock(creds_->mu_);
+  MutexLock lock(&creds_->mu_);
   // If we were shut down, clean up.
   if (std::holds_alternative<Shutdown>(state_)) {
     if (token.ok()) token = absl::CancelledError("credentials shutdown");
@@ -232,7 +232,7 @@ TokenFetcherCredentials::~TokenFetcherCredentials() {
 }
 
 void TokenFetcherCredentials::Orphaned() {
-  MutexLock lock(mu_);
+  MutexLock lock(&mu_);
   fetch_state_.reset();
 }
 
@@ -241,7 +241,7 @@ TokenFetcherCredentials::GetRequestMetadata(
     ClientMetadataHandle initial_metadata, const GetRequestMetadataArgs*) {
   RefCountedPtr<QueuedCall> queued_call;
   {
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     // If we don't have a cached token or the token is within the
     // refresh duration, start a new fetch if there isn't a pending one.
     if ((token_ == nullptr || (token_->ExpirationTime() - Timestamp::Now()) <=

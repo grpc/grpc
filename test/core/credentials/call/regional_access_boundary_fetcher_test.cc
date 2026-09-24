@@ -55,28 +55,28 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
   static constexpr Duration kRegionalAccessBoundarySoftCacheGraceDuration =
       Duration::Hours(1);
   bool has_cache(RegionalAccessBoundaryFetcher* fetcher) {
-    MutexLock lock(fetcher->cache_mu_);
+    MutexLock lock(&fetcher->cache_mu_);
     return fetcher->cache_.has_value();
   }
   bool has_cache() { return has_cache(fetcher_.get()); }
 
   std::string cached_encoded_locations() {
-    MutexLock lock(fetcher_->cache_mu_);
+    MutexLock lock(&fetcher_->cache_mu_);
     return std::string(fetcher_->cache_->encoded_locations.as_string_view());
   }
   void set_cache(RegionalAccessBoundary cache) {
-    MutexLock lock(fetcher_->cache_mu_);
+    MutexLock lock(&fetcher_->cache_mu_);
     fetcher_->cache_ = std::move(cache);
   }
 
   bool fetch_in_flight(RegionalAccessBoundaryFetcher* fetcher) {
-    MutexLock lock(fetcher->cache_mu_);
+    MutexLock lock(&fetcher->cache_mu_);
     return fetcher->pending_request_ != nullptr;
   }
   bool fetch_in_flight() { return fetch_in_flight(fetcher_.get()); }
 
   Timestamp next_fetch_time() {
-    MutexLock lock(fetcher_->cache_mu_);
+    MutexLock lock(&fetcher_->cache_mu_);
     return fetcher_->next_fetch_time_;
   }
 
@@ -85,12 +85,12 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
   }
 
   bool is_shutdown(RegionalAccessBoundaryFetcher* fetcher) {
-    MutexLock lock(fetcher->cache_mu_);
+    MutexLock lock(&fetcher->cache_mu_);
     return fetcher->shutdown_;
   }
 
   bool check_pending_request_is_null(RegionalAccessBoundaryFetcher* fetcher) {
-    MutexLock lock(fetcher->cache_mu_);
+    MutexLock lock(&fetcher->cache_mu_);
     return fetcher->pending_request_ == nullptr;
   }
 

@@ -110,7 +110,7 @@ class InterActivityPipe {
     }
 
     bool IsClosed() {
-      MutexLock lock(mu_);
+      MutexLock lock(&mu_);
       return closed_;
     }
 

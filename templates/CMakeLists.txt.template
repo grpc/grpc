@@ -543,9 +543,9 @@
   # for DLL builds - and should be completely removed when source files are
   # generated with the necessary __declspec annotations.
   set(gRPC_UPB_GEN_DUPL_SRC
-    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+    src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   )
 
   set(gRPC_ADDITIONAL_DLL_SRC
@@ -646,7 +646,7 @@
     # Copy the proto file to a centralized location, with the correct import
     # path. For example, health proto has package name grpc.health.v1, the bash
     # equivalent would be:
-    #   cp src/proto/grpc/health/v1/health.proto <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1</%text>
+    #   cp third_party/grpc-proto/grpc/health/v1/health.proto <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1</%text>
     file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
     file(COPY <%text>${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION}</%text> DESTINATION <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
 

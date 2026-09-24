@@ -1043,7 +1043,7 @@ class InstrumentDomainImpl final : public QueryableDomain {
     uint64_t SumCounter(size_t offset) override { return backend_.Sum(offset); }
     void FillGaugeStorage(GaugeStorage& storage) override {
       GaugeSink sink(storage);
-      MutexLock lock(gauge_providers_mu_);
+      MutexLock lock(&gauge_providers_mu_);
       for (auto* provider : gauge_providers_) {
         provider->PopulateGaugeData(sink);
       }
@@ -1059,12 +1059,12 @@ class InstrumentDomainImpl final : public QueryableDomain {
           backend_(instrument_domain->allocated_counter_slots()) {}
 
     void RegisterGaugeProvider(GaugeProvider* provider) {
-      MutexLock lock(gauge_providers_mu_);
+      MutexLock lock(&gauge_providers_mu_);
       gauge_providers_.push_back(provider);
     }
 
     void UnregisterGaugeProvider(GaugeProvider* provider) {
-      MutexLock lock(gauge_providers_mu_);
+      MutexLock lock(&gauge_providers_mu_);
       gauge_providers_.erase(std::remove(gauge_providers_.begin(),
                                          gauge_providers_.end(), provider),
                              gauge_providers_.end());

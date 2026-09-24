@@ -269,7 +269,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
 
   void StartTimer(Timestamp deadline) {
     const Duration timeout = deadline - Timestamp::Now();
-    MutexLock lock(mu_);
+    MutexLock lock(&mu_);
     timer_handle_ =
         channel_->event_engine()->RunAfter(timeout, [self = Ref()]() mutable {
           ExecCtx exec_ctx;
@@ -293,7 +293,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
     if (GRPC_TRACE_FLAG_ENABLED(op_failure)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
-    MutexLock lock(self->mu_);
+    MutexLock lock(&self->mu_);
     if (self->timer_handle_.has_value()) {
       self->channel_->event_engine()->Cancel(*self->timer_handle_);
     }

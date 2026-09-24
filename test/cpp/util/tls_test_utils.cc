@@ -48,7 +48,7 @@ AsyncCertificateVerifier::AsyncCertificateVerifier(bool success)
 AsyncCertificateVerifier::~AsyncCertificateVerifier() {
   // Tell the thread to shut down.
   {
-    internal::MutexLock lock(mu_);
+    internal::MutexLock lock(&mu_);
     queue_.push_back(Request{nullptr, nullptr, true});
   }
   // Wait for thread to exit.
@@ -58,7 +58,7 @@ AsyncCertificateVerifier::~AsyncCertificateVerifier() {
 bool AsyncCertificateVerifier::Verify(
     TlsCustomVerificationCheckRequest* request,
     std::function<void(grpc::Status)> callback, grpc::Status*) {
-  internal::MutexLock lock(mu_);
+  internal::MutexLock lock(&mu_);
   queue_.push_back(Request{request, std::move(callback), false});
   return false;  // Asynchronous call
 }
@@ -70,7 +70,7 @@ void AsyncCertificateVerifier::WorkerThread(void* arg) {
     bool got_request = false;
     Request request;
     {
-      internal::MutexLock lock(self->mu_);
+      internal::MutexLock lock(&self->mu_);
       if (!self->queue_.empty()) {
         got_request = true;
         request = self->queue_.front();

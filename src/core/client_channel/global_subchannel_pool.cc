@@ -38,7 +38,7 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
   auto& read_shard = read_shards_[shard_index];
   SubchannelMap old_map1;
   SubchannelMap old_map2;
-  MutexLock lock(write_shard.mu);
+  MutexLock lock(&write_shard.mu);
   auto* existing = write_shard.map.Lookup(key);
   if (existing != nullptr) {
     auto existing_ref = (*existing)->RefIfNonZero();
@@ -46,7 +46,7 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
   }
   old_map1 = std::exchange(write_shard.map,
                            write_shard.map.Add(key, constructed->WeakRef()));
-  MutexLock lock_read(read_shard.mu);
+  MutexLock lock_read(&read_shard.mu);
   old_map2 = std::exchange(read_shard.map, write_shard.map);
   return constructed;
 }
@@ -58,13 +58,13 @@ void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
   auto& read_shard = read_shards_[shard_index];
   SubchannelMap old_map1;
   SubchannelMap old_map2;
-  MutexLock lock(write_shard.mu);
+  MutexLock lock(&write_shard.mu);
   auto* existing = write_shard.map.Lookup(key);
   // delete only if key hasn't been re-registered to a different subchannel
   // between strong-unreffing and unregistration of subchannel.
   if (existing == nullptr || existing->get() != subchannel) return;
   old_map1 = std::exchange(write_shard.map, write_shard.map.Remove(key));
-  MutexLock lock_read(read_shard.mu);
+  MutexLock lock_read(&read_shard.mu);
   old_map2 = std::exchange(read_shard.map, write_shard.map);
 }
 
