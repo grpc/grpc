@@ -2858,6 +2858,54 @@ TEST_F(Http2ServerTransportTest,
   teardown_step->Wait();
 }
 
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportInitialHeaderWithEndStreamAccepted) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+
+  auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      call_handler.PushServerTrailingMetadata(
+                          ServerMetadataFromStatus(absl::CancelledError()));
+                      return absl::OkStatus();
+                    });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  // Client sends initial HEADERS frame with end_stream = true.
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/true),
+  });
+
+  step->ThenExpectWrite(
+      {helper_.SerializedHeaderFrame(std::string(kGrpcStatusCancelled.begin(),
+                                                 kGrpcStatusCancelled.end()),
+                                     /*stream_id=*/1, /*end_headers=*/true,
+                                     /*end_stream=*/true),
+       helper_.SerializedResetStreamFrame(
+           /*stream_id=*/1,
+           /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))});
+  step->Wait();
+  event_engine()->Tick();
+
+  // Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1);
+  teardown_step->Wait();
+}
+
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core

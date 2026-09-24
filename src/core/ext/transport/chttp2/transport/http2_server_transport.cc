@@ -725,34 +725,31 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
                                settings_->acked().max_header_list_size());
     if (read_result.IsOk()) {
       ServerMetadataHandle metadata = TakeValue(std::move(read_result));
-      // TODO(tjagtap): [PH2][P0] : Might be worth differentiating between
-      // initial and trailing metadata based on the number of header frames
-      // received.
-      if (read_context_.HeaderHasEndStream()) {
-        // TODO(akshitpatel) [PH2][P1] : Implement receiving trailing metadata.
-        // Details:
-        // - Standard gRPC clients do not send trailers (only EOS).
-        // - If received (HEADERS with END_STREAM), mark stream as half-closed
-        //   remote.
-        // - Upper layers discard client trailers, so we are fine with not
-        //   propagating them.
-        //
-        // With these assumptions, the flow will look like this:
-        // - If the client sends trailing metadata with an OK status, we will
-        //   mark the stream as half-closed remote and do nothing else.
-        // - If the client sends trailing metadata with a non-OK status, this
-        //   case needs to be handled.
-        // TODO(akshitpatel) : [PH2][P0] : Verify this.
-        RefCountedPtr<Stream> stream =
-            LookupStream(read_context_.GetStreamId());
-        HandleStreamStateChange(
-            *stream, stream->OnTrailingMetadataReceived(std::move(metadata)));
-      } else {
+      const uint32_t stream_id = read_context_.GetStreamId();
+      RefCountedPtr<Stream> stream = LookupStream(stream_id);
+      if (stream == nullptr) {
+        // Initial metadata for a newly initiated stream.
         GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata "
                                   "SpawnPushServerInitialMetadata";
         metadata->Set(PeerString(), read_context_.peer_string());
-        return IncomingStream(std::move(metadata), read_context_.GetStreamId());
+        const Http2Status status =
+            IncomingStream(std::move(metadata), stream_id);
+        if (GPR_UNLIKELY(!status.IsOk())) {
+          return status;
+        }
+        if (read_context_.HeaderHasEndStream()) {
+          RefCountedPtr<Stream> new_stream = LookupStream(stream_id);
+          if (new_stream != nullptr) {
+            HandleStreamStateChange(*new_stream,
+                                    new_stream->OnHalfCloseReceived());
+          }
+        }
+        return Http2Status::Ok();
       }
+
+      // Stream already exists: this is trailing metadata.
+      HandleStreamStateChange(
+          *stream, stream->OnTrailingMetadataReceived(std::move(metadata)));
       return Http2Status::Ok();
     }
     GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata Failed";
