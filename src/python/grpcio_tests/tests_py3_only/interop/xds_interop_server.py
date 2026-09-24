@@ -62,6 +62,7 @@ _LISTEN_HOST = "0.0.0.0"
 _PROMETHEUS_PORT = 9464
 
 _THREAD_POOL_SIZE = 256
+_COMBINED_SERVER_THREAD_POOL_SIZE = 2048
 
 # Behaviors the client may request through the rpc-behavior header. See the
 # "Server" section of doc/xds-test-descriptions.md for the full definition.
@@ -351,7 +352,9 @@ def _run(
         csm_plugin.register_global()
     if port == maintenance_port:
         server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE),
+            futures.ThreadPoolExecutor(
+                max_workers=_COMBINED_SERVER_THREAD_POOL_SIZE
+            ),
             interceptors=(_RpcBehaviorInterceptor(socket.gethostname()),),
         )
         _configure_test_server(server, port, secure_mode, server_id)
