@@ -244,7 +244,7 @@ class TcpZerocopySendCtx {
   void NoteSend(TcpZerocopySendRecord* record) {
     record->Ref();
     {
-      MutexLock guard(&lock_);
+      MutexLock guard(lock_);
       is_in_write_ = true;
       AssociateSeqWithSendRecordLocked(last_send_, record);
     }
@@ -275,7 +275,7 @@ class TcpZerocopySendCtx {
 
   // Get a send record for a send that we wish to do with zerocopy.
   TcpZerocopySendRecord* GetSendRecord() {
-    MutexLock guard(&lock_);
+    MutexLock guard(lock_);
     return TryGetSendRecordLocked();
   }
 
@@ -289,7 +289,7 @@ class TcpZerocopySendCtx {
   // buffers for this sendmsg()) is received from the kernel - or, in case
   // sendmsg() was unsuccessful to begin with.
   TcpZerocopySendRecord* ReleaseSendRecord(uint32_t seq) {
-    MutexLock guard(&lock_);
+    MutexLock guard(lock_);
     return ReleaseSendRecordLocked(seq);
   }
 
@@ -300,7 +300,7 @@ class TcpZerocopySendCtx {
   void PutSendRecord(TcpZerocopySendRecord* record) {
     GRPC_DCHECK(record >= send_records_);
     GRPC_DCHECK(record < send_records_ + max_sends_);
-    MutexLock guard(&lock_);
+    MutexLock guard(lock_);
     PutSendRecordLocked(record);
   }
 
@@ -311,7 +311,7 @@ class TcpZerocopySendCtx {
   // Indicates that there are no inflight tcp_write() instances with zerocopy
   // enabled.
   bool AllSendRecordsEmpty() {
-    MutexLock guard(&lock_);
+    MutexLock guard(lock_);
     return free_send_records_size_ == max_sends_;
   }
 
@@ -351,7 +351,7 @@ class TcpZerocopySendCtx {
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
   bool UpdateZeroCopyOMemStateAfterFree() {
-    MutexLock guard(&lock_);
+    MutexLock guard(lock_);
     if (is_in_write_) {
       zcopy_enobuf_state_ = OMemState::CHECK;
       return false;
@@ -391,7 +391,7 @@ class TcpZerocopySendCtx {
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
   bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf) {
-    MutexLock guard(&lock_);
+    MutexLock guard(lock_);
     is_in_write_ = false;
     if (seen_enobuf) {
       if (zcopy_enobuf_state_ == OMemState::CHECK) {

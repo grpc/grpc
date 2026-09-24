@@ -179,7 +179,7 @@ CollectionScope::CollectionScope(
     if (parent != nullptr) {
       labels_of_interest_.Merge(parent->labels_of_interest_);
       auto& shard = parent->child_shard(this);
-      MutexLock lock(&shard.mu);
+      MutexLock lock(shard.mu);
       shard.children.insert(this);
     }
   }
@@ -189,7 +189,7 @@ CollectionScope::~CollectionScope() {
   for (const auto& parent : parents_) {
     if (parent != nullptr) {
       auto& shard = parent->child_shard(this);
-      MutexLock lock(&shard.mu);
+      MutexLock lock(shard.mu);
       shard.children.erase(this);
     }
   }
@@ -197,7 +197,7 @@ CollectionScope::~CollectionScope() {
     // TODO(ctiller): Consider a different entry point than GetDomainStorage
     // for this post-aggregation. We ought to be able to do this step without
     // accessing full_labels.
-    MutexLock lock(&shard.mu);
+    MutexLock lock(shard.mu);
     for (auto& storage_pair : shard.storage) {
       for (const auto& parent : parents_) {
         if (parent != nullptr) {
@@ -213,7 +213,7 @@ CollectionScope::~CollectionScope() {
 size_t CollectionScope::TestOnlyCountStorageHeld() const {
   size_t count = 0;
   for (const auto& shard : storage_shards_) {
-    MutexLock lock(&shard.mu);
+    MutexLock lock(shard.mu);
     count += shard.storage.size();
   }
   return count;
@@ -229,7 +229,7 @@ void CollectionScope::ForEachUniqueStorage(
     absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb,
     absl::flat_hash_set<instrument_detail::DomainStorage*>& visited) {
   for (auto& shard : storage_shards_) {
-    MutexLock lock(&shard.mu);
+    MutexLock lock(shard.mu);
     for (const auto& s : shard.storage) {
       if (visited.insert(s.second.get()).second) {
         cb(s.second.get());
@@ -237,7 +237,7 @@ void CollectionScope::ForEachUniqueStorage(
     }
   }
   for (auto& shard : child_shards_) {
-    MutexLock lock(&shard.mu);
+    MutexLock lock(shard.mu);
     for (auto* child : shard.children) {
       child->ForEachUniqueStorage(cb, visited);
     }
@@ -246,11 +246,11 @@ void CollectionScope::ForEachUniqueStorage(
 
 void CollectionScope::TestOnlyReset() {
   for (auto& shard : storage_shards_) {
-    MutexLock lock(&shard.mu);
+    MutexLock lock(shard.mu);
     shard.storage.clear();
   }
   for (auto& shard : child_shards_) {
-    MutexLock lock(&shard.mu);
+    MutexLock lock(shard.mu);
     shard.children.clear();
   }
 }
@@ -873,7 +873,7 @@ void QueryableDomain::ForEachInstrument(
 size_t QueryableDomain::TestOnlyCountStorageHeld() const {
   size_t count = 0;
   for (size_t i = 0; i < map_shards_size_; ++i) {
-    MutexLock lock(&map_shards_[i].mu);
+    MutexLock lock(map_shards_[i].mu);
     map_shards_[i].storage_map.ForEach(
         [&count](const auto&, const auto&) { count++; });
   }
@@ -995,7 +995,7 @@ RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
   }
   size_t shard_idx = absl::HashOf(key_labels) % scope->storage_shards_.size();
   auto& shard = scope->storage_shards_[shard_idx];
-  MutexLock lock(&shard.mu);
+  MutexLock lock(shard.mu);
   auto it = shard.storage.find({this, key_labels});
   if (it != shard.storage.end()) {
     return it->second;
@@ -1058,7 +1058,7 @@ class GlobalCollectionScopeManager {
   RefCountedPtr<CollectionScope> CreateRootScope(InstrumentLabelSet labels,
                                                  size_t child_shards_count,
                                                  size_t storage_shards_count) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
       auto scope = CreateCollectionScope({}, labels, child_shards_count,
                                          storage_shards_count);
@@ -1099,7 +1099,7 @@ class GlobalCollectionScopeManager {
   }
 
   RefCountedPtr<CollectionScope> GetGlobalScope() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
       auto global_scope = CreateCollectionScope(building->root_scopes,
                                                 InstrumentLabelSet(), 32, 32);
@@ -1112,7 +1112,7 @@ class GlobalCollectionScopeManager {
 
   void TestOnlyReset() {
     std::variant<Building, Published> state;
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     state = std::exchange(state_, Building{});
     if (auto* published = std::get_if<Published>(&state);
         published != nullptr) {
