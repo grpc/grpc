@@ -201,9 +201,9 @@ class PingManager {
       FrameSender& frame_sender, Duration next_allowed_ping_interval);
 
   // Notify the ping system that a ping has been sent. Returns the opaque data
-  // of the ping frame if a new ping was sent. The caller is expected to
-  // spawn a ping timeout promise using TimeoutPromise() for this returned
-  // value.
+  // of the ping frame if a new ping was sent. If it does, the caller must call
+  // ArmPingTimeout() synchronously with this function, and spawn the promise
+  // from PingTimeoutPromise() for the returned token.
   std::optional<uint64_t> NotifyPingSent();
 
   // Ping Rate policy wrapper
@@ -268,9 +268,36 @@ class PingManager {
 
   void AddPendingPingAck(uint64_t opaque_data);
 
-  auto TimeoutPromise(const uint64_t opaque_data) {
+  // Holds the two eagerly registered halves of a ping timeout: the armed
+  // EventEngine timer and the pending ack callback. Produced by
+  // ArmPingTimeout() and consumed by PingTimeoutPromise().
+  struct ArmedPingTimeout {
+    Promise<bool> timeout;
+    Promise<absl::Status> ack;
+  };
+
+  // Arms the ping timeout timer and registers the ack callback for the ping
+  // that was just sent, and returns a token representing both.
+  //
+  // Both registrations happen eagerly, when this function is
+  // called:
+  //  - Chttp2PingCallbacks::OnPingTimeout binds the timer to
+  //    most_recent_inflight_ and GRPC_CHECKs that exactly one timeout is armed
+  //    per StartPing(). Arming late would attach the timer to the wrong ping
+  //    and crash the following one.
+  //  - OnPingAck must be registered before the ack can arrive, otherwise the
+  //    ack is missed and the race below can only ever resolve via timeout.
+  [[nodiscard]] ArmedPingTimeout ArmPingTimeout();
+
+  // Returns a promise that resolves when either the ping ack arrives or the
+  // ping timeout fires, triggering PingInterface::PingTimeout() in the latter
+  // case.
+  //
+  // Unlike ArmPingTimeout(), it is safe to call lazily, from inside a spawned
+  // promise.
+  auto PingTimeoutPromise(ArmedPingTimeout armed, const uint64_t opaque_data) {
     return AssertResultType<absl::Status>(Race(
-        TrySeq(ping_callbacks_.PingTimeout(ping_timeout_),
+        TrySeq(std::move(armed.timeout),
                [this, opaque_data](bool trigger_ping_timeout) mutable {
                  return If(
                      trigger_ping_timeout,
@@ -282,8 +309,8 @@ class PingManager {
                      },
                      []() { return absl::OkStatus(); });
                }),
-        ping_callbacks_.WaitForPingAck()));
-  };
+        std::move(armed.ack)));
+  }
 
   auto DelayedPingPromise(const Duration wait) {
     return TrySeq(
