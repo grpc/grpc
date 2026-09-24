@@ -1,2 +1,3 @@
-# Needed for compiling certain tests with abseil when using older compilers (e.g. gcc 10.2)
+# TODO(weizheyuan): Remove after upgrading to abseil 20260817.0.
+# Needed for compiling with abseil on Clang < 16 (https://github.com/abseil/abseil-cpp/issues/2073)
 build --cxxopt=-Wno-invalid-partial-specialization
