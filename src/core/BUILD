@@ -10958,6 +10958,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/status:statusor"],
     deps = [
+        "channel_args",
         "dual_ref_counted",
         "grpc_promise_endpoint",
         "//:promise",
@@ -11099,6 +11100,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "1999",
@@ -11157,6 +11159,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "activity",
@@ -11209,6 +11212,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server",
+        "//:transport_auth_context",
     ],
 )
 
@@ -11226,6 +11230,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "activity",

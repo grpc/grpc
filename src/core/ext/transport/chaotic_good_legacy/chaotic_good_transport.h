@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CHAOTIC_GOOD_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CHAOTIC_GOOD_TRANSPORT_H
 
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
@@ -39,6 +40,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -92,6 +94,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
     uint32_t encode_alignment = 64;
     uint32_t decode_alignment = 64;
     uint32_t inlined_payload_size_threshold = 8 * 1024;
+    uint32_t max_receive_message_length = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   };
 
   ChaoticGoodTransport(
@@ -190,17 +193,23 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
   auto ReadFrameBytes() {
     return TrySeq(
         control_endpoint_.ReadSlice(FrameHeader::kFrameHeaderSize),
-        [this](Slice read_buffer) {
+        [this](Slice read_buffer) -> absl::StatusOr<FrameHeader> {
           auto frame_header =
               FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
+          if (!frame_header.ok()) return frame_header.status();
+          if (frame_header->payload_length >
+              options_.max_receive_message_length) {
+            return absl::ResourceExhaustedError(
+                absl::StrCat("Received message larger than max (",
+                             frame_header->payload_length, " vs. ",
+                             options_.max_receive_message_length, ")"));
+          }
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: ReadHeader from:"
               << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                      .value_or("<<unknown peer address>>")
-              << " "
-              << (frame_header.ok() ? frame_header->ToString()
-                                    : frame_header.status().ToString());
+              << " " << frame_header->ToString();
           return frame_header;
         },
         [this](FrameHeader frame_header) {
@@ -229,6 +238,11 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
               [this, frame_header]() -> absl::StatusOr<IncomingFrame> {
                 const auto padding =
                     frame_header.Padding(options_.decode_alignment);
+                if (frame_header.payload_length >
+                    std::numeric_limits<uint32_t>::max() - padding) {
+                  return absl::InvalidArgumentError(
+                      "Integer overflow in payload length plus padding");
+                }
                 return IncomingFrame(
                     frame_header,
                     data_endpoints_.Read(frame_header.payload_connection_id - 1,
@@ -245,7 +259,12 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
         << absl::CEscape(payload.JoinIntoString());
-    CHECK_EQ(header.payload_length, payload.Length());
+    if (header.payload_length != payload.Length()) {
+      return absl::InternalError(
+          absl::StrCat("Invalid payload length for frame type ",
+                       FrameTypeString(header.type), ": expected ",
+                       header.payload_length, ", got ", payload.Length()));
+    }
     auto s = frame.Deserialize(header, std::move(payload));
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: DeserializeFrame "
