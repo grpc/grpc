@@ -51,6 +51,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/writable_streams.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -391,6 +392,31 @@ class Http2ServerTransport final : public ServerTransport,
                 std::forward<Promise>(promise));
   }
 
+  // Hops to the EventEngine, checks that transport shutdown has not been
+  // initiated, snapshots the transport party, and then invokes
+  // `fn(Http2ServerTransport*, RefCountedPtr<Party>)` there. `fn` is expected
+  // to call one of the Spawn* helpers with that party. If shutdown has already
+  // been initiated, `fn` is not invoked.
+  template <typename Fn>
+  void SpawnOnTransportPartyFromEventEngine(absl::string_view name, Fn fn) {
+    event_engine_->Run([self = RefAsSubclass<Http2ServerTransport>(), name,
+                        fn = std::move(fn)]() mutable {
+      RefCountedPtr<Party> party = self->GetTransportPartyIfNotShutdown();
+      ExecCtx exec_ctx;
+      if (GPR_UNLIKELY(party == nullptr)) {
+        GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::" << name
+                               << ": Transport is closed.";
+      } else {
+        fn(self.get(), std::move(party));
+      }
+      self.reset();  // Cleanup with exec_ctx in scope.
+    });
+  }
+
+  // Returns the transport party, or nullptr if transport shutdown has already
+  // been initiated.
+  RefCountedPtr<Party> GetTransportPartyIfNotShutdown();
+
   // Spawns an infallible promise on the given party.
   template <typename Factory>
   void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
@@ -405,19 +431,28 @@ class Http2ServerTransport final : public ServerTransport,
     SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
+  // Spawns a promise on the given party. If the promise returns a non-ok
+  // status, it is handled by closing the transport with the corresponding
+  // status.
+  template <typename Factory>
+  void SpawnGuarded(RefCountedPtr<Party> party, absl::string_view name,
+                    Factory&& factory) {
+    party->Spawn(
+        name, std::forward<Factory>(factory),
+        [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
+          if (GPR_UNLIKELY(!status.ok())) {
+            GRPC_UNUSED const absl::Status error = self->HandleError(
+                /*stream=*/nullptr, ToHttpOkOrConnError(status));
+          }
+        });
+  }
+
   // Spawns a promise on the transport party. If the promise returns a non-ok
   // status, it is handled by closing the transport with the corresponding
   // status.
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
-    transport_party_->Spawn(
-        name, std::forward<Factory>(factory),
-        [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
-          if (!status.ok()) {
-            GRPC_UNUSED absl::Status error = self->HandleError(
-                /*stream=*/nullptr, ToHttpOkOrConnError(status));
-          }
-        });
+    SpawnGuarded(transport_party_, name, std::forward<Factory>(factory));
   }
 
   template <typename Factory, typename OnDone>
@@ -623,6 +658,17 @@ class Http2ServerTransport final : public ServerTransport,
                                  const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
+  void IncrementInflightCalls();
+  void DecrementInflightCalls();
+
+  // Fires the terminal GRPC_CHANNEL_SHUTDOWN disconnection report once
+  // MaybeSpawnCloseTransport() has initiated shutdown and every admitted call
+  // has finished. Whichever of the two happens last does the reporting.
+  void MaybeReportShutdownDisconnection();
+
+  void MaybeReportShutdownDisconnectionLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
+
   void ReadChannelArgs(const ChannelArgs& channel_args,
                        TransportChannelArgs& args);
 
@@ -644,7 +690,7 @@ class Http2ServerTransport final : public ServerTransport,
     }));
   }
 
-  auto SpawnGracefulGoawayPromise(Slice&& debug_data);
+  void SpawnGracefulGoawayPromise(Slice&& debug_data);
 
   //////////////////////////////////////////////////////////////////////////////
   // Tarpit
@@ -744,6 +790,20 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
   bool is_goaway_received_;
+
+  // Number of calls admitted by this transport (added to stream_list_) whose
+  // CallInitiator::OnDone has not yet fired.
+  //
+  // Reporting GRPC_CHANNEL_SHUTDOWN is what drives
+  // Server::MaybeFinishShutdown(). If that report lands while calls admitted
+  // here are still being serviced, the server can publish shutdown completion
+  // underneath a call that Server::MatchAndPublishCall is still matching. So
+  // the report is fenced behind this reaching zero.
+  std::atomic<uint32_t> inflight_calls_{0};
+
+  // Connection error stashed by MaybeSpawnCloseTransport() so that a deferred
+  // report from DecrementInflightCalls() carries the same status.
+  absl::Status shutdown_disconnect_status_ ABSL_GUARDED_BY(transport_mutex_);
 
   bool should_reset_ping_clock_;
   bool max_concurrent_streams_overload_protection_ = false;
