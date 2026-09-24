@@ -176,15 +176,15 @@ class FrameProtector : public RefCounted<FrameProtector> {
               grpc_slice temp_read_slice;
               grpc_slice temp_write_slice;
 
-              self->read_mu_.Lock();
+              self->read_mu_.lock();
               temp_read_slice =
                   std::exchange(self->read_staging_buffer_, grpc_empty_slice());
-              self->read_mu_.Unlock();
+              self->read_mu_.unlock();
 
-              self->write_mu_.Lock();
+              self->write_mu_.lock();
               temp_write_slice = std::exchange(self->write_staging_buffer_,
                                                grpc_empty_slice());
-              self->write_mu_.Unlock();
+              self->write_mu_.unlock();
 
               CSliceUnref(temp_read_slice);
               CSliceUnref(temp_write_slice);
@@ -259,11 +259,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
             protector_, protected_buffer, &processed_message_size, *cur,
             &unprotected_buffer_size_written);
       } else {
-        protector_mu_.Lock();
+        protector_mu_.lock();
         result = tsi_frame_protector_unprotect(
             protector_, protected_buffer, &processed_message_size, *cur,
             &unprotected_buffer_size_written);
-        protector_mu_.Unlock();
+        protector_mu_.unlock();
       }
       if (result != TSI_OK) {
         LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
@@ -506,11 +506,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, message_bytes, &processed_message_size, cur,
                 &protected_buffer_size_to_send);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_protect(
                 protector_, message_bytes, &processed_message_size, cur,
                 &protected_buffer_size_to_send);
-            protector_mu_.Unlock();
+            protector_mu_.unlock();
           }
           if (result != TSI_OK) {
             LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
@@ -535,11 +535,11 @@ class FrameProtector : public RefCounted<FrameProtector> {
                 protector_, cur, &protected_buffer_size_to_send,
                 &still_pending_size);
           } else {
-            protector_mu_.Lock();
+            protector_mu_.lock();
             result = tsi_frame_protector_protect_flush(
                 protector_, cur, &protected_buffer_size_to_send,
                 &still_pending_size);
-            protector_mu_.Unlock();
+            protector_mu_.unlock();
           }
           if (result != TSI_OK) break;
           cur += protected_buffer_size_to_send;
@@ -583,7 +583,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
   // Therefore, any valid plaintext has already been fully delivered, and
   // read_staging_buffer_ contains only unused, leftover memory capacity.
   void ResetReadStagingBuffer() {
-    MutexLock lock(&read_mu_);
+    MutexLock lock(read_mu_);
     CSliceUnref(read_staging_buffer_);
     read_staging_buffer_ = grpc_empty_slice();
   }
@@ -698,7 +698,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(user_data);
 
   {
-    grpc_core::MutexLock lock(ep->frame_protector.read_mu());
+    grpc_core::MutexLock lock(*ep->frame_protector.read_mu());
     // If we were shut down after this callback was scheduled with OK
     // status but before it was invoked, we need to treat that as an error.
     if (ep->wrapped_ep == nullptr && error.ok()) {
@@ -752,7 +752,7 @@ static void endpoint_write(
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   tsi_result result;
   {
-    grpc_core::MutexLock lock(ep->frame_protector.write_mu());
+    grpc_core::MutexLock lock(*ep->frame_protector.write_mu());
     result = ep->frame_protector.Protect(slices, args.max_frame_size());
   }
 
@@ -775,10 +775,10 @@ static void endpoint_write(
 
 static void endpoint_destroy(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  ep->frame_protector.read_mu()->Lock();
+  ep->frame_protector.read_mu()->lock();
   ep->wrapped_ep.reset();
   ep->frame_protector.Shutdown();
-  ep->frame_protector.read_mu()->Unlock();
+  ep->frame_protector.read_mu()->unlock();
   SECURE_ENDPOINT_UNREF(ep, "destroy");
 }
 
@@ -968,7 +968,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
         {
           // This mutex should not have any contention since we can only have
           // one outstanding Read() at a time.
-          grpc_core::MutexLock lock(&read_settings_mu_);
+          grpc_core::MutexLock lock(read_settings_mu_);
           if (rpc_receive_coalescing_enabled_) {
             // TODO(aananthv): Make required_read_bytes_ a separate field in
             // ReadArgs to avoid confusion between min_progress_size and
@@ -1015,7 +1015,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
         // If we get a zero length frame, just complete without looking at
         // anything further
         if (data->Length() == 0) return true;
-        grpc_core::MutexLock lock(&write_queue_mu_);
+        grpc_core::MutexLock lock(write_queue_mu_);
         // If there's been a failure observed asynchronously, then fail out with
         // that error.
         if (!writing_.ok()) {
@@ -1054,7 +1054,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
       }
       // A small write: encrypt inline and write to the socket.
       {
-        grpc_core::MutexLock lock(frame_protector_.write_mu());
+        grpc_core::MutexLock lock(*frame_protector_.write_mu());
         result = frame_protector_.Protect(data->c_slice_buffer(),
                                           args.max_frame_size());
       }
@@ -1088,7 +1088,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
 
     void EnableRpcReceiveCoalescing() {
       {
-        grpc_core::MutexLock lock(&read_settings_mu_);
+        grpc_core::MutexLock lock(read_settings_mu_);
         rpc_receive_coalescing_enabled_ = true;
       }
       frame_protector_.ResetReadStagingBuffer();
@@ -1099,7 +1099,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
 
     void DisableRpcReceiveCoalescing() {
       {
-        grpc_core::MutexLock lock(&read_settings_mu_);
+        grpc_core::MutexLock lock(read_settings_mu_);
         rpc_receive_coalescing_enabled_ = false;
       }
     }
@@ -1110,8 +1110,8 @@ class SecureEndpoint final : public EventEngine::Endpoint,
 
     void Shutdown() {
       std::unique_ptr<EventEngine::Endpoint> wrapped_ep;
-      grpc_core::MutexLock write_lock(frame_protector_.write_mu());
-      grpc_core::MutexLock read_lock(frame_protector_.read_mu());
+      grpc_core::MutexLock write_lock(*frame_protector_.write_mu());
+      grpc_core::MutexLock read_lock(*frame_protector_.read_mu());
       wrapped_ep = std::move(wrapped_ep_);
       frame_protector_.Shutdown();
       GRPC_TRACE_LOG(secure_endpoint, INFO)
@@ -1126,7 +1126,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
    private:
     bool MaybeFinishReadImmediately() {
       GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure_endpoint maybe finish read");
-      grpc_core::MutexLock lock(frame_protector_.read_mu());
+      grpc_core::MutexLock lock(*frame_protector_.read_mu());
       // If the read is large, since we got the bytes whilst still calling read,
       // offload the decryption to event engine.
       // That way we can do the decryption off this thread (which is usually
@@ -1159,7 +1159,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
                                 absl::Status status) {
       GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure endpoint finish async read");
       {
-        grpc_core::MutexLock lock(impl->frame_protector_.read_mu());
+        grpc_core::MutexLock lock(*impl->frame_protector_.read_mu());
         if (status.ok() && impl->wrapped_ep_ == nullptr) {
           status = absl::CancelledError("secure endpoint shutdown");
         }
@@ -1191,7 +1191,7 @@ class SecureEndpoint final : public EventEngine::Endpoint,
 
         bool had_source_data = false;
         {
-          grpc_core::MutexLock lock(frame_protector_.read_mu());
+          grpc_core::MutexLock lock(*frame_protector_.read_mu());
           if (status.ok() && wrapped_ep_ == nullptr) {
             status = absl::CancelledError("secure endpoint shutdown");
           } else {
@@ -1265,10 +1265,10 @@ class SecureEndpoint final : public EventEngine::Endpoint,
     static void FailWrites(grpc_core::RefCountedPtr<Impl> impl,
                            absl::Status status)
         ABSL_LOCKS_EXCLUDED(frame_protector_.write_mu(), write_queue_mu_) {
-      impl->write_queue_mu_.Lock();
+      impl->write_queue_mu_.lock();
       impl->writing_ = status;
       auto on_write = std::move(impl->on_write_);
-      impl->write_queue_mu_.Unlock();
+      impl->write_queue_mu_.unlock();
       impl.reset();
       if (on_write != nullptr) on_write(status);
     };

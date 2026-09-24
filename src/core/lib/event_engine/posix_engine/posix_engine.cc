@@ -103,7 +103,7 @@ absl::NoDestructor<absl::InlinedVector<ForkHandlerPointers<std::weak_ptr>, 16>>
 // "Locks" event engines and returns a collection so callbacks can be invoked
 // without holding a lock.
 std::vector<ForkHandlerPointers<std::shared_ptr>> LockForkHandlers() {
-  grpc_core::MutexLock lock(fork_mu.get());
+  grpc_core::MutexLock lock(*fork_mu);
   std::vector<ForkHandlerPointers<std::shared_ptr>> locked;
   // Not all weak_ptrs might be locked. If an engine enters dtor, it will stop
   // on a mutex in DeregisterEventEngineForFork but the weak pointer will not
@@ -168,7 +168,7 @@ void RegisterEventEngineForFork(
   if (!(grpc_core::Fork::Enabled())) {
     return;
   }
-  grpc_core::MutexLock lock(fork_mu.get());
+  grpc_core::MutexLock lock(*fork_mu);
   // We have mutex, cleanup if there's any expired event engines
   fork_handlers->erase(
       std::remove_if(fork_handlers->begin(), fork_handlers->end(),
@@ -212,14 +212,14 @@ PosixEventEngine::PollingCycle::PollingCycle(
 PosixEventEngine::PollingCycle::~PollingCycle() {
   done_ = true;
   poller_->Kick();
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   while (is_scheduled_ > 0) {
     cond_.Wait(&mu_);
   }
 }
 
 void PosixEventEngine::PollingCycle::PollerWorkInternal() {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   --is_scheduled_;
   GRPC_CHECK_EQ(is_scheduled_, 0);
   bool again = false;
@@ -253,7 +253,7 @@ AsyncConnect::~AsyncConnect() { delete on_writable_; }
 void AsyncConnect::OnTimeoutExpired(absl::Status status) {
   bool done = false;
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (fd_ != nullptr) {
       fd_->ShutdownHandle(std::move(status));
     }
@@ -272,7 +272,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   EventHandle* fd;
   absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep;
 
-  mu_.Lock();
+  mu_.lock();
   GRPC_CHECK_NE(fd_, nullptr);
   fd = std::exchange(fd_, nullptr);
   bool connect_cancelled = connect_cancelled_;
@@ -288,7 +288,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       status = absl::FailedPreconditionError("Connection cancelled");
     }
   }
-  mu_.Unlock();
+  mu_.unlock();
 
   if (engine_->Cancel(alarm_handle_)) {
     ++consumed_refs;
@@ -318,13 +318,13 @@ void AsyncConnect::OnWritable(absl::Status status)
           });
     }
     done = ((refs_ -= consumed_refs) == 0);
-    mu_.Unlock();
+    mu_.unlock();
     if (done) {
       delete this;
     }
   });
 
-  mu_.Lock();
+  mu_.lock();
   if (!status.ok() || connect_cancelled) {
     return;
   }
@@ -369,7 +369,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       // opened too many network connections.  The "easy" fix:
       // don't do that!
       LOG(ERROR) << "kernel out of buffers";
-      mu_.Unlock();
+      mu_.unlock();
       fd->NotifyOnWrite(on_writable_);
       // Don't run the cleanup function for this case.
       std::move(on_writable_finish).Cancel();
@@ -391,7 +391,7 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
   int shard_number = connection_handle % connection_shards_.size();
   struct ConnectionShard* shard = &connection_shards_[shard_number];
   {
-    grpc_core::MutexLock lock(&shard->mu);
+    grpc_core::MutexLock lock(shard->mu);
     shard->pending_connections.erase(connection_handle);
   }
 }
@@ -442,7 +442,7 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
     GRPC_TRACE_LOG(event_engine, INFO)
         << "PosixEventEngine:" << engine << " executing callback:" << handle;
     {
-      grpc_core::MutexLock lock(&engine->mu_);
+      grpc_core::MutexLock lock(engine->mu_);
       engine->known_handles_.erase(handle);
     }
     cb();
@@ -452,7 +452,7 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
 
 void PosixEventEngine::CancelAllPendingTimers() {
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     auto pending_handles = known_handles_;
     for (auto handle : pending_handles) {
       CancelInternal(handle);
@@ -465,7 +465,7 @@ void PosixEventEngine::CancelAllPendingTimers() {
 
 PosixEventEngine::~PosixEventEngine() {
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     auto pending_handles = known_handles_;
     for (auto handle : pending_handles) {
       if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
@@ -487,7 +487,7 @@ PosixEventEngine::~PosixEventEngine() {
 }
 
 bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   return CancelInternal(handle);
 }
 
@@ -530,7 +530,7 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   if (disallow_new_timers_) {
     delete cd;
     // Return handle and don't schedule the callback. The caller will see a
@@ -571,7 +571,7 @@ void PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
 void PosixEventEngine::RegisterAresResolverForFork(
     GRPC_UNUSED AresResolver* resolver) {
 #if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-  grpc_core::MutexLock lock(&resolver_handles_mu_);
+  grpc_core::MutexLock lock(resolver_handles_mu_);
   resolver_handles_.emplace_back(resolver->GetReinitHandle());
   // Cleanup in case we have expired callbacks, prevents the list from
   // growing indefinitely
@@ -662,7 +662,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   struct ConnectionShard* shard = &connection_shards_[shard_number];
   AsyncConnect* ac = nullptr;
   {
-    grpc_core::MutexLock lock(&shard->mu);
+    grpc_core::MutexLock lock(shard->mu);
     auto it = shard->pending_connections.find(connection_handle);
     if (it != shard->pending_connections.end()) {
       ac = it->second;
@@ -683,7 +683,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   if (ac == nullptr) {
     return false;
   }
-  ac->mu_.Lock();
+  ac->mu_.lock();
   bool connection_cancel_success = (ac->fd_ != nullptr);
   if (connection_cancel_success) {
     // Connection is still pending. The OnWritable callback hasn't executed
@@ -697,7 +697,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
         absl::FailedPreconditionError("Connection cancelled"));
   }
   bool done = (--ac->refs_ == 0);
-  ac->mu_.Unlock();
+  ac->mu_.unlock();
   if (done) {
     delete ac;
   }
@@ -817,7 +817,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
   int shard_number = connection_id % connection_shards_.size();
   struct ConnectionShard* shard = &connection_shards_[shard_number];
   {
-    grpc_core::MutexLock lock(&shard->mu);
+    grpc_core::MutexLock lock(shard->mu);
     shard->pending_connections.insert_or_assign(connection_id, ac);
   }
   // Start asynchronous connect and return the connection id.
@@ -874,13 +874,13 @@ void PosixEventEngine::SchedulePoller() {
   if (poller_ == nullptr) {
     return;
   }
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   GRPC_CHECK(!polling_cycle_.has_value());
   polling_cycle_.emplace(executor_, poller_);
 }
 
 void PosixEventEngine::ResetPollCycle() {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   polling_cycle_.reset();
 }
 
@@ -970,7 +970,7 @@ void PosixEventEngine::AfterForkInChild() {
     }
   };
   {
-    grpc_core::MutexLock lock(&resolver_handles_mu_);
+    grpc_core::MutexLock lock(resolver_handles_mu_);
     for (const auto& cb : resolver_handles_) {
       auto locked = cb.lock();
       if (locked != nullptr) {

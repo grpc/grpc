@@ -1,19 +1,4 @@
-#====================
-# run_tests.py python dependencies
-
-# Basic python dependencies to be able to run tools/run_tests python scripts
-# These dependencies are NOT for building gRPC Python, which are defined
-# elsewhere (requirements.txt, individual docker images, build scripts, etc).
-RUN apt-get update && apt-get install -y \
-  python3 \
-  python3-pip \
-  python3-venv \
-  && apt-get clean
-
-# Use system python to bootstrap virtualenv and activate it
-ENV VIRTUAL_ENV=/opt/venv
-RUN python3 -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+{% include "./setup_venv.include" %}
 # Install/upgrade basic requirements inside the virtualenv
 RUN pip install --upgrade pip setuptools pyyaml
 

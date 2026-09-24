@@ -18,7 +18,6 @@ RUN apt update && apt -y upgrade && apt install -y build-essential ccache curl g
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps_venv.include" %}
 {% include "../../cxx_deps.include" %}
-RUN clang --version | grep -Eq "clang version 19\.[0-9]+"
 {% include "../../cxx_test_deps.include" %}
 {% include "../../cmake.include" %}
 {% include "../../run_tests_addons.include" %}

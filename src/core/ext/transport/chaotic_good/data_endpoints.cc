@@ -67,7 +67,7 @@ const uint64_t kSecurityFramePayloadTag = 0;
 // OutputBuffers
 
 void OutputBuffers::Reader::EndReadNext() {
-  mu_.Lock();
+  mu_.lock();
   reading_ = false;
   if (GPR_UNLIKELY(!frames_.empty())) {
     // Cancellation -- we need to return the frames to the output buffer.
@@ -77,19 +77,19 @@ void OutputBuffers::Reader::EndReadNext() {
     auto frames = std::move(frames_);
     frames_.clear();
     send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
-    mu_.Unlock();
+    mu_.unlock();
     for (auto& frame : frames) {
       output_buffers_->Write(frame.payload_tag, std::move(frame.frame));
     }
   } else {
-    mu_.Unlock();
+    mu_.unlock();
   }
 }
 
 Poll<std::vector<OutputBuffers::QueuedFrame>>
 OutputBuffers::Reader::PollReadNext() {
   GRPC_LATENT_SEE_SCOPE("OutputBuffers::PollReadNext");
-  mu_.Lock();
+  mu_.lock();
   while (true) {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::PollReadNext::loop");
     if (frames_.empty()) {
@@ -99,7 +99,7 @@ OutputBuffers::Reader::PollReadNext() {
         call_wakeup = true;
       }
       waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      mu_.Unlock();
+      mu_.unlock();
       if (call_wakeup) {
         output_buffers_->WakeupScheduler();
       }
@@ -109,7 +109,7 @@ OutputBuffers::Reader::PollReadNext() {
     auto frames = std::move(frames_);
     frames_.clear();
     send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
-    mu_.Unlock();
+    mu_.unlock();
     output_buffers_->WakeupScheduler(/*async=*/true);
     return std::move(frames);
   }
@@ -118,14 +118,14 @@ OutputBuffers::Reader::PollReadNext() {
 void OutputBuffers::Reader::SetNetworkMetrics(
     const std::optional<SendRate::NetworkSend>& network_send,
     const SendRate::NetworkMetrics& metrics) {
-  mu_.Lock();
+  mu_.lock();
   send_rate_.SetNetworkMetrics(network_send, metrics);
-  mu_.Unlock();
+  mu_.unlock();
   output_buffers_->WakeupScheduler();
 }
 
 channelz::PropertyList OutputBuffers::Reader::ChannelzProperties() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   return channelz::PropertyList()
       .Set("reading", reading_)
       .Merge(send_rate_.ChannelzProperties())
@@ -159,7 +159,7 @@ void OutputBuffers::AddData(channelz::DataSink sink) {
 }
 
 RefCountedPtr<OutputBuffers::Reader> OutputBuffers::MakeReader(uint32_t id) {
-  MutexLock lock(&mu_reader_data_);
+  MutexLock lock(mu_reader_data_);
   if (readers_.size() <= id) {
     readers_.resize(id + 1);
   }
@@ -171,14 +171,14 @@ RefCountedPtr<OutputBuffers::Reader> OutputBuffers::MakeReader(uint32_t id) {
 }
 
 void OutputBuffers::DestroyReader(uint32_t id) {
-  mu_reader_data_.Lock();
+  mu_reader_data_.lock();
   RefCountedPtr<Reader> reader = std::move(readers_[id]);
   DCHECK_NE(reader.get(), nullptr);
-  mu_reader_data_.Unlock();
-  reader->mu_.Lock();
+  mu_reader_data_.unlock();
+  reader->mu_.lock();
   reader->reading_ = false;
   auto waker = std::move(reader->waker_);
-  reader->mu_.Unlock();
+  reader->mu_.unlock();
   waker.Wakeup();
   num_readers_.fetch_sub(1, std::memory_order_relaxed);
 }
@@ -256,7 +256,7 @@ void OutputBuffers::Schedule() {
   uint64_t queued_tokens = 0;
   {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::CollectData1");
-    MutexLock lock(&mu_reader_data_);
+    MutexLock lock(mu_reader_data_);
     scheduling_data.reserve(readers_.size());
     for (const auto& reader : readers_) {
       scheduling_data.emplace_back(reader);
@@ -275,10 +275,10 @@ void OutputBuffers::Schedule() {
     for (size_t i = 0; i < scheduling_data.size(); ++i) {
       SchedulingData& scheduling = scheduling_data[i];
       if (scheduling.reader == nullptr) continue;
-      scheduling.reader->mu_.Lock();
+      scheduling.reader->mu_.lock();
       auto delivery_data = scheduling.reader->send_rate_.GetDeliveryData(now);
       bool reading = scheduling.reader->reading_;
-      scheduling.reader->mu_.Unlock();
+      scheduling.reader->mu_.unlock();
       scheduler_->AddChannel(i, reading, delivery_data);
     }
   }
@@ -317,12 +317,12 @@ void OutputBuffers::Schedule() {
       if (scheduling.frames.empty()) continue;
       auto& reader = scheduling.reader;
       DCHECK_NE(reader.get(), nullptr);
-      reader->mu_.Lock();
+      reader->mu_.lock();
       if (reader->dropped_) {
         // Frames were assigned to this reader, but it's not allocated anymore.
         auto frames = std::move(scheduling.frames);
         scheduling.frames.clear();
-        reader->mu_.Unlock();
+        reader->mu_.unlock();
         for (auto& frame : frames) {
           Write(frame.payload_tag, std::move(frame.frame));
         }
@@ -334,7 +334,7 @@ void OutputBuffers::Schedule() {
       }
       reader->reading_ = false;
       auto waker = std::move(reader->waker_);
-      reader->mu_.Unlock();
+      reader->mu_.unlock();
       waker.WakeupAsync();
     }
   }
@@ -346,9 +346,9 @@ void OutputBuffers::Write(uint64_t payload_tag,
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: " << this
       << " Queue data frame write, payload_tag=" << payload_tag;
-  mu_write_.Lock();
+  mu_write_.lock();
   frames_queue_.Push(QueuedFrame{payload_tag, std::move(output_buffer)});
-  mu_write_.Unlock();
+  mu_write_.unlock();
   WakeupScheduler();
 }
 
@@ -385,7 +385,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
 // InputQueues
 
 InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!closed_error_.ok()) {
     return ReadTicket(MakeRefCounted<Completion>(payload_tag, closed_error_),
                       nullptr);
@@ -408,52 +408,52 @@ InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
 void InputQueue::CompleteRead(uint64_t payload_tag, SliceBuffer buffer) {
   GRPC_LATENT_SEE_SCOPE("InputQueue::CompleteRead");
   if (payload_tag == 0) return;
-  mu_.Lock();
+  mu_.lock();
   if (!closed_error_.ok()) {
-    mu_.Unlock();
+    mu_.unlock();
     return;
   }
   if (read_completed_.Set(payload_tag)) {
-    mu_.Unlock();
+    mu_.unlock();
     return;
   }
   auto c = completions_.extract(payload_tag);
   if (!c.empty()) {
     auto& completion = c.mapped();
-    mu_.Unlock();
-    completion->mu.Lock();
+    mu_.unlock();
+    completion->mu.lock();
     completion->result.emplace(std::move(buffer));
     completion->ready = true;
     auto waker = std::move(completion->waker);
-    completion->mu.Unlock();
+    completion->mu.unlock();
     waker.Wakeup();
     return;
   }
   completions_.emplace(
       payload_tag, MakeRefCounted<Completion>(payload_tag, std::move(buffer)));
-  mu_.Unlock();
+  mu_.unlock();
 }
 
 void InputQueue::Cancel(Completion* completion) {
-  mu_.Lock();
+  mu_.lock();
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Cancel payload_tag #" << completion->payload_tag;
   read_completed_.Set(completion->payload_tag);
   auto c = completions_.extract(completion->payload_tag);
   if (!c.empty()) {
     auto& completion = c.mapped();
-    mu_.Unlock();
-    completion->mu.Lock();
+    mu_.unlock();
+    completion->mu.lock();
     auto waker = std::move(completion->waker);
-    completion->mu.Unlock();
+    completion->mu.unlock();
     waker.Wakeup();
   } else {
-    mu_.Unlock();
+    mu_.unlock();
   }
 }
 
 void InputQueue::AddData(channelz::DataSink sink) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   sink.AddData("input_queue",
                channelz::PropertyList()
                    .Set("read_requested", absl::StrCat(read_requested_))
@@ -462,9 +462,9 @@ void InputQueue::AddData(channelz::DataSink sink) {
 }
 
 void InputQueue::SetClosed(absl::Status status) {
-  mu_.Lock();
+  mu_.lock();
   if (!closed_error_.ok()) {
-    mu_.Unlock();
+    mu_.unlock();
     return;
   }
   if (status.ok()) status = absl::UnavailableError("transport closed");
@@ -473,18 +473,18 @@ void InputQueue::SetClosed(absl::Status status) {
   auto completions = std::move(completions_);
   completions_.clear();
   Waker await_closed = std::move(await_closed_);
-  mu_.Unlock();
+  mu_.unlock();
   await_closed.Wakeup();
   for (auto& [tag, completion] : completions) {
-    completion->mu.Lock();
+    completion->mu.lock();
     if (!completion->ready) {
       completion->result = error_to_propagate;
       completion->ready = true;
       auto waker = std::move(completion->waker);
-      completion->mu.Unlock();
+      completion->mu.unlock();
       waker.Wakeup();
     } else {
-      completion->mu.Unlock();
+      completion->mu.unlock();
     }
   }
 }
@@ -1089,7 +1089,7 @@ void DataEndpoints::AddData(channelz::DataSink sink) {
     int remaining ABSL_GUARDED_BY(mu) = 0;
     Json::Array endpoints ABSL_GUARDED_BY(mu);
   };
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   for (size_t i = 0; i < endpoints_.size(); ++i) {
     endpoints_[i]->AddData(sink);
   }

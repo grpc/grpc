@@ -27,8 +27,8 @@ RUN git config --global protocol.file.allow always
 # run_tests.py python dependencies
 
 # Basic python dependencies to be able to run tools/run_tests python scripts
-# These dependencies are NOT for building gRPC Python, which are defined
-# elsewhere (requirements.txt, individual docker images, build scripts, etc).
+# These dependencies are not sufficient to build gRPC Python, gRPC Python
+# deps are defined elsewhere (e.g. python_deps.include)
 RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip \
@@ -39,6 +39,7 @@ RUN apt-get update && apt-get install -y \
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
 # Install/upgrade basic requirements inside the virtualenv
 RUN pip install --upgrade pip setuptools pyyaml
 
@@ -51,7 +52,6 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 # C++ dependencies
 RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 
-RUN clang --version | grep -Eq "clang version 19\.[0-9]+"
 # Some cxx tests depend on the twisted package
 RUN python3 -m pip install twisted
 
