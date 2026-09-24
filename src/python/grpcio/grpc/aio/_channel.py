@@ -390,15 +390,20 @@ class Channel(_base_channel.Channel):
 
         if interceptors is not None:
             for interceptor in interceptors:
+                valid_interceptor = False
                 if isinstance(interceptor, UnaryUnaryClientInterceptor):
                     self._unary_unary_interceptors.append(interceptor)
-                elif isinstance(interceptor, UnaryStreamClientInterceptor):
+                    valid_interceptor = True
+                if isinstance(interceptor, UnaryStreamClientInterceptor):
                     self._unary_stream_interceptors.append(interceptor)
-                elif isinstance(interceptor, StreamUnaryClientInterceptor):
+                    valid_interceptor = True
+                if isinstance(interceptor, StreamUnaryClientInterceptor):
                     self._stream_unary_interceptors.append(interceptor)
-                elif isinstance(interceptor, StreamStreamClientInterceptor):
+                    valid_interceptor = True
+                if isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
-                else:
+                    valid_interceptor = True
+                if not valid_interceptor:
                     raise ValueError(  # noqa: TRY004
                         "Interceptor {} must be ".format(interceptor)
                         + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
