@@ -209,8 +209,17 @@ TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
   // Trigger update that changes the route config, thus causing the
   // dynamic filters to be recreated.
   // We insert a route that matches requests with the header "foo" and
-  // has a non-forwarding action, which will cause the client to fail RPCs
-  // that hit this route.
+  // points to a cluster with no reachable endpoints, which will cause
+  // the client to fail RPCs that hit this route.
+  const absl::string_view kEdsResourceName2 = "eds2";
+  const absl::string_view kCdsResourceName2 = "cds2";
+  EdsResourceArgs args2({{"locality0", {MakeNonExistentEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kEdsResourceName2));
+  Cluster cluster2 = default_cluster_;
+  cluster2.set_name(kCdsResourceName2);
+  cluster2.mutable_eds_cluster_config()->set_service_name(kEdsResourceName2);
+  balancer_->ads_service()->SetCdsResource(cluster2);
   RouteConfiguration route_config = default_route_config_;
   *route_config.mutable_virtual_hosts(0)->add_routes() =
       route_config.virtual_hosts(0).routes(0);
@@ -222,13 +231,15 @@ TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
   header_matcher->set_present_match(true);
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
-      ->mutable_non_forwarding_action();
+      ->mutable_route()
+      ->set_cluster(kCdsResourceName2);
   SetListenerAndRouteConfiguration(
       balancer_.get(), BuildListenerWithGcpAuthnFilter(), route_config);
   // Send RPCs with the header "foo" and wait for them to start failing.
   // When they do, we know that the client has seen the update.
   SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                       "Matching route has inappropriate action",
+                       MakeConnectionFailureRegex(
+                           "connections to all backends failing; last error: "),
                        /*timeout_ms=*/15000,
                        RpcOptions().set_metadata({{"foo", "bar"}}));
   // Now send an RPC without the header, which will go through the new
