@@ -2748,6 +2748,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.cc )
   s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.h )
   s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc )
+  s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc )
+  s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.h )
   s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc )
   s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.h )
   s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/tzfile.h )
@@ -3693,8 +3695,4 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/zlib/zlib.h )
   s.files += %w( third_party/zlib/zutil.c )
   s.files += %w( third_party/zlib/zutil.h )
-  if RUBY_PLATFORM =~ /mingw|mswin/
-    s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.h )
-    s.files += %w( third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc )
-  end
 end
