@@ -42,24 +42,33 @@ class SingleLoader:
             )
             fqn = prefix + target_module
 
-        try:
-            spec = importlib.util.find_spec(fqn)
-        except Exception:
-            pass
-
-        if spec is None and fqn != target_module:
+        if sys.modules.get(fqn) is not None:
+            tests.append(loader.loadTestsFromModule(sys.modules[fqn]))
+        elif sys.modules.get(target_module) is not None:
+            tests.append(loader.loadTestsFromModule(sys.modules[target_module]))
+        else:
             try:
-                spec = importlib.util.find_spec(target_module)
+                spec = importlib.util.find_spec(fqn)
             except Exception:
                 pass
 
-        if spec is not None:
-            try:
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                tests.append(loader.loadTestsFromModule(module))
-            except Exception as e:
-                raise AssertionError(f"Error loading module {spec.name}: {e}")
+            if spec is None and fqn != target_module:
+                try:
+                    spec = importlib.util.find_spec(target_module)
+                except Exception:
+                    pass
+
+            if spec is not None:
+                try:
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[spec.name] = module
+                    if spec.loader is not None:
+                        spec.loader.exec_module(module)
+                    tests.append(loader.loadTestsFromModule(module))
+                except Exception as e:
+                    if spec.name in sys.modules:
+                        del sys.modules[spec.name]
+                    raise AssertionError(f"Error loading module {spec.name}: {e}")
 
         # Fallback to walking packages if direct lookup didn't find it
         if not tests:
@@ -79,6 +88,9 @@ class SingleLoader:
                 if module_name == target_module or module_name.endswith(
                     "." + target_module
                 ):
+                    if sys.modules.get(module_name) is not None:
+                        tests.append(loader.loadTestsFromModule(sys.modules[module_name]))
+                        break
                     try:
                         spec = None
                         if hasattr(importer, "find_spec"):
@@ -90,9 +102,13 @@ class SingleLoader:
                             spec = importlib.util.find_spec(module_name)
                         if spec is not None:
                             module = importlib.util.module_from_spec(spec)
-                            spec.loader.exec_module(module)
+                            sys.modules[module_name] = module
+                            if spec.loader is not None:
+                                spec.loader.exec_module(module)
                             tests.append(loader.loadTestsFromModule(module))
                     except Exception as e:
+                        if module_name in sys.modules:
+                            del sys.modules[module_name]
                         raise AssertionError(
                             f"Error loading module {module_name}: {e}"
                         )
