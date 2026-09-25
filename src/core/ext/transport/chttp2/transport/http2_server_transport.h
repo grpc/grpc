@@ -30,6 +30,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
@@ -769,6 +770,7 @@ class Http2ServerTransport final : public ServerTransport,
   GoawayManager goaway_manager_;
 
   MemoryOwner memory_owner_;
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
   chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
