@@ -678,11 +678,235 @@ TEST(RecvMessageFilterBypassTest,
   EXPECT_EQ(env.app.captured_payload, "");
   EXPECT_TRUE(env.app.trailing_ready_called);
 }
+
+// Encapsulates the mock server call stack, a server-side filter that observes
+// client-to-server half-close, and helper methods to drive server call batches.
+class FakeServerCallStack {
+ public:
+  struct Controller {
+    struct RawPointerChannelArgTag {};
+    static absl::string_view ChannelArgName() {
+      return "grpc.test.server_filter_controller";
+    }
+    bool half_close_observed = false;
+  };
+
+  class Filter final : public ChannelFilter {
+   public:
+    explicit Filter(Controller* controller) : controller_(controller) {}
+
+    static absl::string_view TypeName() {
+      return "server_observe_half_close_filter";
+    }
+
+    ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+        CallArgs args, NextPromiseFactory next) override {
+      auto next_message = args.client_to_server_messages->Next();
+      auto inner = next(std::move(args));
+      return
+          [next_message = std::move(next_message), inner = std::move(inner),
+           controller = controller_]() mutable -> Poll<ServerMetadataHandle> {
+            auto p = next_message();
+            if (auto* r = p.value_if_ready()) {
+              if (!r->has_value()) {
+                if (controller != nullptr) {
+                  controller->half_close_observed = true;
+                }
+              }
+            }
+            if (controller != nullptr && !controller->half_close_observed) {
+              return Pending{};
+            }
+            return inner();
+          };
+    }
+
+    static absl::StatusOr<std::unique_ptr<Filter>> Create(
+        const ChannelArgs& args, ChannelFilter::Args) {
+      return std::make_unique<Filter>(args.GetObject<Controller>());
+    }
+
+   private:
+    Controller* controller_;
+  };
+
+  static inline const grpc_channel_filter kFilter =
+      MakePromiseBasedFilter<Filter, FilterEndpoint::kServer,
+                             kFilterExaminesInboundMessages>();
+
+  FakeServerCallStack() {
+    mock.call_combiner = &call_combiner;
+    auto channel_args = CoreConfiguration::Get()
+                            .channel_args_preconditioning()
+                            .PreconditionChannelArgs(nullptr)
+                            .SetObject(&mock)
+                            .SetObject(&controller);
+    std::vector<FilterAndConfig> filters = {
+        {&kFilter, nullptr},
+        {&MockTransportFilter::kFilter, nullptr},
+    };
+    channel_stack = static_cast<grpc_channel_stack*>(
+        gpr_malloc(grpc_channel_stack_size(filters)));
+    GRPC_CHECK_OK(grpc_channel_stack_init(
+        1,
+        [](void* p, grpc_error_handle) {
+          grpc_channel_stack_destroy(static_cast<grpc_channel_stack*>(p));
+          gpr_free(p);
+        },
+        channel_stack, filters, channel_args, "test", channel_stack));
+    arena = SimpleArenaAllocator()->MakeArena();
+    call_stack = static_cast<grpc_call_stack*>(
+        gpr_malloc(channel_stack->call_stack_size));
+    const grpc_call_element_args call_args = {
+        call_stack,
+        nullptr,
+        gpr_get_cycle_counter(),
+        Timestamp::InfFuture(),
+        arena.get(),
+        &call_combiner,
+    };
+    GRPC_CHECK_OK(grpc_call_stack_init(
+        channel_stack, 1,
+        [](void* p, grpc_error_handle) {
+          grpc_call_stack_destroy(static_cast<grpc_call_stack*>(p), nullptr,
+                                  nullptr);
+          gpr_free(p);
+        },
+        call_stack, &call_args));
+
+    top = grpc_call_stack_element(call_stack, 0);
+  }
+
+  ~FakeServerCallStack() {
+    GRPC_CALL_STACK_UNREF(call_stack, "done");
+    ExecCtx::Get()->Flush();
+    GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
+  }
+
+  void RunOnCombiner(grpc_closure* c) {
+    GRPC_CALL_COMBINER_START(&call_combiner, c, absl::OkStatus(), "test");
+    ExecCtx::Get()->Flush();
+  }
+
+  void StartRecvInitialMetadata() {
+    batch_recv_init.payload = &payload_recv_init;
+    batch_recv_init.recv_initial_metadata = true;
+    payload_recv_init.recv_initial_metadata.recv_initial_metadata =
+        &server_recv_init_md;
+    GRPC_CLOSURE_INIT(&recv_init_md_ready, OnRecvInitialMetadataReady, this,
+                      nullptr);
+    payload_recv_init.recv_initial_metadata.recv_initial_metadata_ready =
+        &recv_init_md_ready;
+    start_recv_init = {top, &batch_recv_init};
+    GRPC_CLOSURE_INIT(&start_recv_init_closure, DoStartBatch, &start_recv_init,
+                      nullptr);
+    RunOnCombiner(&start_recv_init_closure);
+  }
+
+  void DeliverInitialMetadata(absl::string_view path = "/test/method") {
+    mock.recv_initial_metadata->Set(HttpPathMetadata(),
+                                    Slice::FromCopiedString(path));
+    RunOnCombiner(mock.recv_initial_metadata_ready);
+  }
+
+  void SendTrailingMetadata(grpc_status_code status = GRPC_STATUS_OK) {
+    batch_send_trail.payload = &payload_send_trail;
+    batch_send_trail.send_trailing_metadata = true;
+    server_send_trail_md.Set(GrpcStatusMetadata(), status);
+    payload_send_trail.send_trailing_metadata.send_trailing_metadata =
+        &server_send_trail_md;
+    GRPC_CLOSURE_INIT(&send_trail_complete, OnSendTrailingComplete, this,
+                      nullptr);
+    batch_send_trail.on_complete = &send_trail_complete;
+    start_send_trail = {top, &batch_send_trail};
+    GRPC_CLOSURE_INIT(&start_send_trail_closure, DoStartBatch,
+                      &start_send_trail, nullptr);
+    RunOnCombiner(&start_send_trail_closure);
+  }
+
+  bool half_close_observed() const { return controller.half_close_observed; }
+  bool recv_initial_metadata_ready_called() const {
+    return recv_init_md_ready_called;
+  }
+  bool send_trailing_complete_called() const {
+    return send_trail_complete_called;
+  }
+
+ private:
+  static void OnRecvInitialMetadataReady(void* arg, grpc_error_handle) {
+    auto* s = static_cast<FakeServerCallStack*>(arg);
+    s->recv_init_md_ready_called = true;
+    GRPC_CALL_COMBINER_STOP(&s->call_combiner,
+                            "server:recv_initial_metadata_ready");
+  }
+
+  static void OnSendTrailingComplete(void* arg, grpc_error_handle) {
+    auto* s = static_cast<FakeServerCallStack*>(arg);
+    s->send_trail_complete_called = true;
+    GRPC_CALL_COMBINER_STOP(&s->call_combiner, "server:send_trailing_complete");
+  }
+
+  CallCombiner call_combiner;
+  RefCountedPtr<Arena> arena;
+  MockTransportFilter::State mock;
+  Controller controller;
+
+  grpc_channel_stack* channel_stack;
+  grpc_call_stack* call_stack;
+  grpc_call_element* top;
+
+  bool recv_init_md_ready_called = false;
+  bool send_trail_complete_called = false;
+
+  grpc_metadata_batch server_recv_init_md;
+  grpc_closure recv_init_md_ready;
+  grpc_transport_stream_op_batch batch_recv_init;
+  grpc_transport_stream_op_batch_payload payload_recv_init{};
+  StartBatchCtx start_recv_init;
+  grpc_closure start_recv_init_closure;
+
+  grpc_metadata_batch server_send_trail_md;
+  grpc_closure send_trail_complete;
+  grpc_transport_stream_op_batch batch_send_trail;
+  grpc_transport_stream_op_batch_payload payload_send_trail{};
+  StartBatchCtx start_send_trail;
+  grpc_closure start_send_trail_closure;
+};
+
+// Verifies that when the server ends an RPC with OK status while idle (no
+// longer reading messages), the inbound messages pipe is cleanly closed inside
+// WakeInsideCombiner under an active Activity context, delivering EOF
+// (client half-close) to filters observing client-to-server messages.
+TEST(RecvMessageFilterBypassTest,
+     ServerEndsRpcOkClosesInboundPipeWithHalfCloseInCombiner) {
+  if (!IsPromiseFilterServerHalfCloseEnabled()) {
+    GTEST_SKIP() << "Test fail without experiment";
+  }
+  ExecCtx exec_ctx;
+  FakeServerCallStack env;
+  // 1) Start recv_initial_metadata batch on the server call stack.
+  env.StartRecvInitialMetadata();
+  // 2) Transport delivers initial metadata, starting the server filter promise.
+  env.DeliverInitialMetadata();
+  EXPECT_TRUE(env.recv_initial_metadata_ready_called());
+  EXPECT_FALSE(env.half_close_observed());
+  // 3) Server completes the RPC by sending OK trailing metadata while idle
+  // (not reading messages). This must trigger CloseInboundPipe() inside
+  // WakeInsideCombiner with an active Activity context, causing the filter's
+  // Next() reader to wake up and observe clean EOF (half-close).
+  env.SendTrailingMetadata(GRPC_STATUS_OK);
+  // Verify that the filter observed half-close and the trailing metadata
+  // batch completed.
+  EXPECT_TRUE(env.half_close_observed());
+  EXPECT_TRUE(env.send_trailing_complete_called());
+}
+
 }  // namespace
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
+  grpc_core::ForceEnableExperiment("promise_filter_server_half_close", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestGrpcScope grpc_scope;
