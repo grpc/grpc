@@ -9,7 +9,7 @@ Development of the gRPC PHP extension takes place inside the main monorepo at [g
 You can install this extension using PIE:
 
 ```bash
-pie install grpc/grpc-php-ext
+pie install grpc/grpc-ext
 ```
 
 Ensure your system has the required build tools (like `make`, `gcc`, `autoconf`, `phpize`) installed prior to running the installation command.
