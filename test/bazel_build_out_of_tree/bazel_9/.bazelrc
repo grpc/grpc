@@ -1,0 +1,3 @@
+common --lockfile_mode=off
+common --check_visibility=false
+build --verbose_failures
