@@ -349,6 +349,7 @@ class FakeStatsPlugin : public StatsPlugin {
     if (iter == double_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
   }
+  using StatsPlugin::RecordHistogram;
   void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, uint64_t value,
       absl::Span<const absl::string_view> label_values,
@@ -491,11 +492,6 @@ class FakeStatsPlugin : public StatsPlugin {
   std::optional<std::vector<uint64_t>> GetDoubleHistogramValueByName(
       absl::string_view name, absl::Span<const absl::string_view> labels = {});
 
- private:
-  template <typename T>
-  std::optional<T> GetMetricValueByNameImpl(
-      absl::string_view name, absl::Span<const absl::string_view> labels);
-
   template <typename T>
   class DomainMetricsSink final : public MetricsSink {
    public:
@@ -606,6 +602,11 @@ class FakeStatsPlugin : public StatsPlugin {
     std::vector<std::string> target_label_values_;
     std::optional<T> captured_value_;
   };
+
+ private:
+  template <typename T>
+  std::optional<T> GetMetricValueByNameImpl(
+      absl::string_view name, absl::Span<const absl::string_view> labels);
 
   class Reporter : public CallbackMetricReporter {
    public:
@@ -863,6 +864,47 @@ class GlobalStatsPluginRegistryTestPeer {
       node = next;
     }
   }
+};
+
+class FakeInstrumentRecorder : public InstrumentRecorder {
+ public:
+  struct Int64Histogram {
+    const InstrumentMetadata::Description* description;
+    int64_t value;
+    std::vector<std::string> label_values;
+  };
+  struct DoubleHistogram {
+    const InstrumentMetadata::Description* description;
+    double value;
+    std::vector<std::string> label_values;
+  };
+
+  void RecordHistogram(const InstrumentMetadata::Description* description,
+                       int64_t value,
+                       absl::Span<const std::string> label_values) override {
+    int64_histograms_.push_back(Int64Histogram{
+        description, value,
+        std::vector<std::string>(label_values.begin(), label_values.end())});
+  }
+
+  void RecordHistogram(const InstrumentMetadata::Description* description,
+                       double value,
+                       absl::Span<const std::string> label_values) override {
+    double_histograms_.push_back(DoubleHistogram{
+        description, value,
+        std::vector<std::string>(label_values.begin(), label_values.end())});
+  }
+
+  const std::vector<Int64Histogram>& int64_histograms() const {
+    return int64_histograms_;
+  }
+  const std::vector<DoubleHistogram>& double_histograms() const {
+    return double_histograms_;
+  }
+
+ private:
+  std::vector<Int64Histogram> int64_histograms_;
+  std::vector<DoubleHistogram> double_histograms_;
 };
 
 }  // namespace grpc_core
