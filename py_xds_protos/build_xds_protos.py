@@ -174,7 +174,6 @@ def main():
     compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "type"))
     compile_protos(VALIDATE_ROOT, "validate")
     compile_protos(OPENCENSUS_PROTO_ROOT)
-    compile_protos(OPENTELEMETRY_PROTO_ROOT)
     compile_protos(CEL_PROTO_ROOT, "cel")
 
     # Generate __init__.py files for all modules
