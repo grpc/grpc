@@ -729,8 +729,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
       std::make_unique<StreamEventHandler>(
           // Passing the initial ref here.  This ref will go away when
           // the StreamEventHandler is destroyed.
-          RefCountedPtr<AdsCall>(this)),
-      /*wait_for_ready=*/true);
+          RefCountedPtr<AdsCall>(this)));
   GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
