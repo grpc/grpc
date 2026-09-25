@@ -16,6 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
+# comment
 grpc_package(
     name = "test/cpp/grpclb",
     features = [
