@@ -68,6 +68,23 @@
 #define TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY "ssl_requested_server_name"
 #define TSI_SSL_TLS_VERSION_PEER_PROPERTY "ssl_tls_version"
 
+// Properties describing the X.509 certificate that *this* endpoint presented
+// on the connection.  Note that, unlike every other property above, these
+// describe the local endpoint rather than the peer.  They are emitted only on
+// the server side, and only if this endpoint presented a certificate; each of
+// them is emitted at most once, and only if the corresponding value is
+// non-empty.  These properties are deliberately named differently from the
+// peer ones so that they cannot be mistaken for the peer's identity (see
+// grpc_ssl_peer_to_auth_context(), which derives the peer identity by property
+// name).
+// These properties are of type TSI_PEER_PROPERTY_STRING.
+// First URI SAN of the local leaf certificate.
+#define TSI_X509_LOCAL_URI_PROPERTY "x509_local_uri"
+// First DNS SAN of the local leaf certificate.
+#define TSI_X509_LOCAL_DNS_PROPERTY "x509_local_dns"
+// Subject of the local leaf certificate, in RFC 2253 form.
+#define TSI_X509_LOCAL_SUBJECT_PROPERTY "x509_local_subject"
+
 namespace tsi {
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 }  // namespace tsi
@@ -512,6 +529,13 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 // Exposed for testing only.
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property);
+
+// Exposed for testing only.
+tsi_result x509_subject_rfc2253(X509* cert, std::string* subject);
+
+// Exposed for testing only.
+void first_subject_alt_names_from_x509(X509* cert, std::string* uri_san,
+                                       std::string* dns_san);
 
 namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
