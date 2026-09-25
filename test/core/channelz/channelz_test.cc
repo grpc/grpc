@@ -64,6 +64,21 @@
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
 namespace grpc_core {
+namespace testing {
+class ServerTestPeer {
+ public:
+  explicit ServerTestPeer(Server* server) : server_(server) {}
+  RefCountedPtr<Server> TakeRef() { return server_->Ref(); }
+
+ private:
+  Server* server_;
+};
+}  // namespace testing
+}  // namespace grpc_core
+
+using grpc_core::testing::ServerTestPeer;
+
+namespace grpc_core {
 namespace channelz {
 namespace testing {
 
@@ -677,6 +692,34 @@ TEST(ChannelzTextEncodeTest, LargeTraceEventDoesNotTruncateLastByte) {
   // encoded text into a NUL character.
   EXPECT_EQ(encoded.find('\0'), std::string::npos)
       << "encoded text unexpectedly contains an embedded NUL byte";
+}
+
+TEST(ServerDeregistrationTest, DestroyedServerNotListedWhileRefsRemain) {
+  ExecCtx ctx;
+  RefCountedPtr<Server> draining_ref;
+  intptr_t uuid;
+  {
+    ServerFixture server;
+    Server* core_server = Server::FromC(server.server());
+
+    ServerNode* node = core_server->channelz_node();
+    ASSERT_NE(node, nullptr);
+
+    uuid = node->uuid();
+    draining_ref = ServerTestPeer(core_server).TakeRef();
+  }  // ~ServerFixture() will call grpc_server_destroy
+
+  char* json_str = grpc_channelz_get_servers(0);
+  ASSERT_NE(json_str, nullptr);
+
+  const std::string key_value_pair =
+      "\"serverId\":\"" + std::to_string(uuid) + "\"";
+  EXPECT_FALSE(absl::StrContains(json_str, key_value_pair))
+      << "destroyed server " << uuid
+      << " still listed by GetServers(): " << json_str;
+
+  gpr_free(json_str);
+  draining_ref.reset();
 }
 
 }  // namespace testing

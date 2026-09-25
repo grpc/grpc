@@ -17,6 +17,7 @@
 //
 
 #include <grpc/grpc.h>
+#include <grpc/passive_listener.h>
 
 #include <thread>
 
@@ -36,6 +37,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/synchronization/notification.h"
 
@@ -77,6 +79,10 @@ class ActiveConnectionTestPeer {
   void OnClose() {
     NewChttp2ServerListener::ActiveConnection::OnClose(connection_,
                                                        absl::OkStatus());
+  }
+
+  void ScheduleOnWorkSerializer(absl::AnyInvocable<void()> cb) {
+    connection_->work_serializer_.Run(std::move(cb), DEBUG_LOCATION);
   }
 
   NewChttp2ServerListener::ActiveConnection::HandshakingState*
@@ -167,6 +173,17 @@ class ListenerStateTestPeer {
     return listener_state_->connections_.size();
   }
 
+  // Returns the single tracked connection or nullptr if there is not exactly
+  // one connection being tracked.
+  RefCountedPtr<NewChttp2ServerListener::ActiveConnection>
+  GetSingleConnection() {
+    MutexLock lock(&listener_state_->mu_);
+    if (listener_state_->connections_.size() != 1) return nullptr;
+    return DownCast<NewChttp2ServerListener::ActiveConnection*>(
+               listener_state_->connections_.begin()->get())
+        ->RefAsSubclass<NewChttp2ServerListener::ActiveConnection>();
+  }
+
  private:
   Server::ListenerState* listener_state_;
 };
@@ -225,6 +242,26 @@ class Chttp2ServerListenerTest : public ::testing::Test {
     listener_ = DownCast<NewChttp2ServerListener*>(listener_state_->listener());
   }
 
+  void SetUpServerWithPassiveListener(
+      const RefCountedPtr<grpc_server_credentials>& creds =
+          MakeRefCounted<InsecureServerCredentials>()) {
+    args_ = CoreConfiguration::Get()
+                .channel_args_preconditioning()
+                .PreconditionChannelArgs(nullptr);
+    server_ = MakeOrphanable<Server>(args_);
+    passive_listener_ = std::make_shared<experimental::PassiveListenerImpl>();
+    auto status = grpc_server_add_passive_listener(server_.get(), creds.get(),
+                                                   passive_listener_);
+    ASSERT_TRUE(status.ok());
+
+    cq_ = grpc_completion_queue_create_for_next(/*reserved=*/nullptr);
+    server_->RegisterCompletionQueue(cq_);
+    grpc_server_start(server_->c_ptr());
+    listener_state_ =
+        ServerTestPeer(server_.get()).listener_states().front().get();
+    listener_ = DownCast<NewChttp2ServerListener*>(listener_state_->listener());
+  }
+
   void TearDown() override {
     CqVerifier cqv(cq_);
     grpc_server_shutdown_and_notify(server_->c_ptr(), cq_, CqVerifier::tag(-1));
@@ -244,6 +281,7 @@ class Chttp2ServerListenerTest : public ::testing::Test {
   Server::ListenerState* listener_state_;
   NewChttp2ServerListener* listener_;
   grpc_completion_queue* cq_ = nullptr;
+  std::shared_ptr<experimental::PassiveListenerImpl> passive_listener_;
 };
 
 TEST_F(Chttp2ServerListenerTest, Basic) {
@@ -351,7 +389,7 @@ TEST_F(Chttp2ActiveConnectionTest, CloseWithoutHandshakeStarting) {
   ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
       listener_state_->memory_quota(), "peer"));
   auto connection = MakeOrphanable<NewChttp2ServerListener::ActiveConnection>(
-      listener_state_->Ref(), /*tcp_server=*/nullptr,
+      listener_state_->Ref(), /*listener_ref=*/nullptr, /*tcp_server=*/nullptr,
       /*accepting_pollset=*/nullptr,
       /*acceptor=*/nullptr, args_,
       listener_state_->memory_quota()->CreateMemoryOwner(), nullptr);
@@ -405,7 +443,7 @@ TEST_F(Chttp2ActiveConnectionTest, CloseDuringHandshake) {
   ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
       listener_state_->memory_quota(), "peer"));
   auto connection = MakeOrphanable<NewChttp2ServerListener::ActiveConnection>(
-      listener_state_->Ref(), /*tcp_server=*/nullptr,
+      listener_state_->Ref(), /*listener_ref=*/nullptr, /*tcp_server=*/nullptr,
       /*accepting_pollset=*/nullptr,
       /*acceptor=*/nullptr, args_,
       listener_state_->memory_quota()->CreateMemoryOwner(), nullptr);
@@ -432,7 +470,7 @@ TEST_F(Chttp2ActiveConnectionTest, CloseAfterHandshakeButBeforeSettingsFrame) {
   ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
       listener_state_->memory_quota(), "peer"));
   auto connection = MakeOrphanable<NewChttp2ServerListener::ActiveConnection>(
-      listener_state_->Ref(), /*tcp_server=*/nullptr,
+      listener_state_->Ref(), /*listener_ref=*/nullptr, /*tcp_server=*/nullptr,
       /*accepting_pollset=*/nullptr,
       /*acceptor=*/nullptr, args_,
       listener_state_->memory_quota()->CreateMemoryOwner(),
@@ -482,7 +520,7 @@ TEST_F(Chttp2ActiveConnectionTest, CloseAfterSettingsFrame) {
   ASSERT_TRUE(listener_state_->connection_quota()->AllowIncomingConnection(
       listener_state_->memory_quota(), "peer"));
   auto connection = MakeOrphanable<NewChttp2ServerListener::ActiveConnection>(
-      listener_state_->Ref(), /*tcp_server=*/nullptr,
+      listener_state_->Ref(), /*listener_ref=*/nullptr, /*tcp_server=*/nullptr,
       /*accepting_pollset=*/nullptr,
       /*acceptor=*/nullptr, args_,
       listener_state_->memory_quota()->CreateMemoryOwner(),
@@ -523,6 +561,42 @@ TEST_F(Chttp2ActiveConnectionTest, CloseAfterSettingsFrame) {
     // If the test turns out to be flaky, convert this to a sleep.
     std::this_thread::yield();
   }
+}
+
+TEST_F(Chttp2ActiveConnectionTest, PassiveListenerShutdownWaitsForHandshake) {
+  SetUpServerWithPassiveListener(CreateSecureServerCredentials());
+  listener_state_->connection_quota()->SetMaxIncomingConnections(10);
+  // accept a connection whose handshake will stall
+  auto mock_endpoint_controller =
+      grpc_event_engine::experimental::MockEndpointController::Create(
+          args_.GetObjectRef<EventEngine>());
+  Chttp2ServerListenerTestPeer(listener_).OnAccept(
+      /*tcp=*/mock_endpoint_controller->TakeCEndpoint(),
+      /*accepting_pollset=*/nullptr,
+      /*server_acceptor=*/nullptr);
+  auto connection =
+      ListenerStateTestPeer(listener_state_).GetSingleConnection();
+  ASSERT_NE(connection, nullptr);
+
+  // block the connection's WorkSerializer so that server shutdown must await
+  // for handshake completion
+  absl::Notification release_handshake;
+  ActiveConnectionTestPeer(connection.get()).ScheduleOnWorkSerializer([&]() {
+    release_handshake.WaitForNotification();
+  });
+
+  grpc_server_shutdown_and_notify(server_->c_ptr(), cq_, CqVerifier::tag(1));
+  CqVerifier cqv(cq_);
+  cqv.VerifyEmpty(Duration::Seconds(2 * grpc_test_slowdown_factor()));
+
+  // once the handshake is completed, server shutdown completes
+  release_handshake.Notify();
+  mock_endpoint_controller->TriggerReadEvent(
+      grpc_event_engine::experimental::Slice::FromCopiedString(
+          "not a valid ClientHello"));
+  mock_endpoint_controller->NoMoreReads();
+  cqv.Expect(CqVerifier::tag(1), true);
+  cqv.Verify();
 }
 
 }  // namespace
