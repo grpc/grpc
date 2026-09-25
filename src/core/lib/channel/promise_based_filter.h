@@ -44,6 +44,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -1361,23 +1362,33 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                                          [](bool x) { return StatusFlag(x); });
                             });
                       });
-                  call_args.client_to_server_messages->InterceptAndMap(
-                      [initiator, handler,
-                       pipe_owner](MessageHandle message) mutable {
-                        // Step 1: Push the message onto the v3 initiator in
-                        // its activity.
-                        initiator.SpawnPushMessage(std::move(message));
-                        // Step 3: Here in the v2 activity, read the message
-                        // from the inter-activity pipe and return it.
-                        return Map(
-                            pipe_owner->client_to_server_messages.receiver
-                                .Next(),
-                            [](InterActivityPipe<MessageHandle, 1>::NextResult
-                                   message) -> std::optional<MessageHandle> {
-                              if (!message.has_value()) return std::nullopt;
-                              return std::move(*message);
-                            });
-                      });
+                  call_args.client_to_server_messages
+                      ->InterceptAndMapWithHalfClose(
+                          [initiator,
+                           pipe_owner](MessageHandle message) mutable {
+                            // Step 1: Push the message onto the v3 initiator in
+                            // its activity.
+                            initiator.SpawnPushMessage(std::move(message));
+                            // Step 3: Here in the v2 activity, read the message
+                            // from the inter-activity pipe and return it.
+                            return Map(
+                                pipe_owner->client_to_server_messages.receiver
+                                    .Next(),
+                                [](InterActivityPipe<MessageHandle,
+                                                     1>::NextResult message)
+                                    -> std::optional<MessageHandle> {
+                                  if (!message.has_value()) return std::nullopt;
+                                  return std::move(*message);
+                                });
+                          },
+                          // The v2 side only closes the pipe when no message
+                          // is in it, so this runs after the last message has
+                          // gone through the v3 interceptor.
+                          [initiator]() mutable {
+                            if (IsPromiseFilterClientHalfCloseEnabled()) {
+                              initiator.SpawnFinishSends();
+                            }
+                          });
                   // For server initial metadata, we do a similar thing, but
                   // in the opposite direction, and using an inter-activity
                   // latch instead of a pipe:
@@ -1794,6 +1805,8 @@ class BaseCallData : public Activity,
 
     // Start a send_message op.
     void StartOp(CapturedBatch batch);
+    // Client half-close (send_trailing_metadata) received.
+    void HalfClose();
     // Publish the outbound pipe to the filter.
     // This happens when the promise requests to call the next filter: until
     // this occurs messages can't be sent as we don't know the pipe that the
@@ -1844,6 +1857,8 @@ class BaseCallData : public Activity,
       kCancelled,
       // We're done, but we haven't gotten a status yet
       kCancelledButNoStatus,
+      // Cleanly closed after client half-close.
+      kClosed,
     };
     static const char* StateString(State);
 
@@ -1851,6 +1866,7 @@ class BaseCallData : public Activity,
 
     BaseCallData* const base_;
     State state_ = State::kInitial;
+    bool half_close_ = false;
     Interceptor* const interceptor_;
     std::optional<PipeSender<MessageHandle>::PushType> push_;
     std::optional<PipeReceiverNextType<MessageHandle>> next_;

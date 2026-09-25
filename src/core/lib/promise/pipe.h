@@ -599,6 +599,11 @@ class PipeReceiver {
     };
   }
 
+  bool IsClosedForSender() {
+    if (center_ == nullptr) return true;
+    return center_->PollClosedForSender().ready();
+  }
+
   auto AwaitEmpty() {
     return [center = center_]() { return center->PollEmpty(); };
   }
