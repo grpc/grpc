@@ -108,15 +108,24 @@ RUN apt update && apt upgrade -y
 RUN apt-get install -y openjdk-21-jdk
 
 # Install Android SDK
+
+# AGP 8.13.2 use following default versions:
+#
+# - SDK Build Tools 35.0.0
+# - ndk 27.0.12077973
+#
+# We choose ndk;29.0.14206865 to be consistent with helloworld app.
+#
+# See also https://developer.android.com/build/releases/agp-8-13-0-release-notes#8.13.2
 ENV ANDROID_HOME=/opt/android-sdk
 RUN mkdir -p $ANDROID_HOME && \
     wget -O cmd.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
     unzip cmd.zip && rm cmd.zip && \
     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platform-tools' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'build-tools;30.0.2' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'build-tools;35.0.0' && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platforms;android-26' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;25.1.8937393' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;29.0.14206865' && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'cmake;3.22.1'
 
 # Install gcloud
