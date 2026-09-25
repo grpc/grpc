@@ -71,6 +71,7 @@ bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key) {
   if (key == GrpcStreamNetworkState::DebugKey()) return true;
   if (key == GrpcTarPit::DebugKey()) return true;
   if (key == GrpcTrailersOnly::DebugKey()) return true;
+  if (key == LocalAddressString::DebugKey()) return true;
   if (key == PeerString::DebugKey()) return true;
   if (key == WaitForReady::DebugKey()) return true;
   // go/keep-sorted end
@@ -365,6 +366,10 @@ std::string GrpcRegisteredMethod::DisplayValue(void* x) {
 }
 
 std::string PeerString::DisplayValue(const ValueType& x) {
+  return std::string(x.as_string_view());
+}
+
+std::string LocalAddressString::DisplayValue(const ValueType& x) {
   return std::string(x.as_string_view());
 }
 

@@ -51,6 +51,7 @@
 #include "test/cpp/util/test_credentials_provider.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -493,6 +494,50 @@ TEST_P(AsyncEnd2endTest, SimpleRpcWithExpectedError) {
 TEST_P(AsyncEnd2endTest, SequentialRpcs) {
   ResetStub();
   SendRpc(10);
+}
+
+TEST_P(AsyncEnd2endTest, LocalAddress) {
+  SKIP_IF_VIRTUAL();
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  // No call is bound to the context yet.
+  EXPECT_EQ(srv_ctx.local_address(), "");
+
+  send_request.set_message(GetParam().message_content);
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
+      stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
+                        cq_.get(), tag(2));
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
+  Verifier().Expect(2, true).Verify(cq_.get());
+
+  const std::string local_address = srv_ctx.local_address();
+  if (GetParam().inproc) {
+    // The inproc transport has no socket addresses.
+    EXPECT_EQ(local_address, "unknown");
+  } else {
+    EXPECT_TRUE(absl::StartsWith(local_address, "ipv4:") ||
+                absl::StartsWith(local_address, "ipv6:"))
+        << local_address;
+    EXPECT_TRUE(absl::EndsWith(local_address, absl::StrCat(":", port_)))
+        << local_address;
+    EXPECT_NE(local_address, srv_ctx.peer());
+  }
+
+  send_response.set_message(recv_request.message());
+  response_writer.Finish(send_response, Status::OK, tag(3));
+  Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 TEST_P(AsyncEnd2endTest, ReconnectChannel) {
