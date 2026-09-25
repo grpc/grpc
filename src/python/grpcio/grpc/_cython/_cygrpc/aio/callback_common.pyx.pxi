@@ -32,7 +32,7 @@ cdef class CallbackFailureHandler:
 
 cdef class CallbackWrapper:
 
-    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler):
+    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler, object tag=None):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
         self.context.loop = <cpython.PyObject*>loop
@@ -42,6 +42,7 @@ cdef class CallbackWrapper:
         # data path. We should make it as efficient as possible.
         self._reference_of_future = future
         self._reference_of_failure_handler = failure_handler
+        self._reference_of_tag = tag
         # NOTE(lidiz) We need to ensure when Core invokes our callback, the
         # callback function itself is not deallocated. Otherwise, we will get
         # a segfault. We can view this as Core holding a ref.
@@ -85,7 +86,8 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
         loop,
-        CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
+        CallbackFailureHandler('execute_batch', operations, ExecuteBatchError),
+        batch_operation_tag)
     cdef grpc_call_error error = grpc_call_start_batch(
         grpc_call_wrapper.call,
         batch_operation_tag.c_ops,
@@ -93,6 +95,7 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
         wrapper.c_functor(), NULL)
 
     if error != GRPC_CALL_OK:
+        cpython.Py_DECREF(wrapper)
         grpc_call_error_string = grpc_call_error_to_string(error).decode()
         raise ExecuteBatchError("Failed grpc_call_start_batch: {} with grpc_call_error value: '{}'".format(error, grpc_call_error_string))
 
