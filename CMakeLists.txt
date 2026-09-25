@@ -152,6 +152,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
+  absl_hardening
   absl_has_ostream_operator
   absl_hash
   absl_hash_container_defaults
@@ -163,6 +164,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
+  absl_internal_optional_ref
   absl_iterator_traits_internal
   absl_kernel_timeout_internal
   absl_layout
@@ -190,7 +192,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_log_severity
   absl_log_sink
   absl_log_sink_registry
-  absl_low_level_hash
   absl_malloc_internal
   absl_memory
   absl_no_destructor
@@ -223,6 +224,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_internal_traits
   absl_random_internal_uniform_helper
   absl_random_internal_wide_multiply
+  absl_random_mocking_access
   absl_random_random
   absl_random_seed_gen_exception
   absl_random_seed_sequences
@@ -231,6 +233,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_raw_hash_set_resize_impl
   absl_raw_logging_internal
   absl_sample_recorder
+  absl_source_location
   absl_span
   absl_spinlock_wait
   absl_stacktrace
@@ -241,7 +244,9 @@ set(gRPC_ABSL_USED_TARGETS
   absl_strerror
   absl_string_view
   absl_strings
+  absl_strings_append_and_overwrite
   absl_strings_internal
+  absl_strings_resize_and_overwrite
   absl_symbolize
   absl_synchronization
   absl_throw_delegate
@@ -398,6 +403,17 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
+# Setup external proto library at third_party/autosharding if it doesn't exist
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/autosharding AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/autosharding.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/autosharding
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz
+    https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz
+    12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2
+    autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7
+  )
+endif()
 # Setup external proto library at third_party/cel-spec if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
@@ -436,10 +452,10 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/grpc-proto AND gRPC_DOWNL
   # Download the archive via HTTP, validate the checksum, and extract to third_party/grpc-proto.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/grpc-proto
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz
-    https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz
-    5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33
-    grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
+    https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
+    6aaa807572edfe307eaddc15161ce684d02d054e3fca36b38993efc85575ddfa
+    grpc-proto-dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f
   )
 endif()
 # Setup external proto library at third_party/protoc-gen-validate if it doesn't exist
@@ -483,9 +499,9 @@ if(BUILD_SHARED_LIBS AND WIN32)
 # for DLL builds - and should be completely removed when source files are
 # generated with the necessary __declspec annotations.
 set(gRPC_UPB_GEN_DUPL_SRC
-  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
 )
 
 set(gRPC_ADDITIONAL_DLL_SRC
@@ -1322,6 +1338,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
   add_dependencies(buildtests_cxx authorization_policy_provider_test)
+  add_dependencies(buildtests_cxx autosharding_config_test)
+  add_dependencies(buildtests_cxx autosharding_test)
   add_dependencies(buildtests_cxx avl_test)
   add_dependencies(buildtests_cxx aws_request_signer_test)
   add_dependencies(buildtests_cxx backend_metrics_lb_policy_test)
@@ -1731,6 +1749,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx read_context_test)
+  add_dependencies(buildtests_cxx recv_message_cancelled_status_test)
   add_dependencies(buildtests_cxx recv_message_filter_bypass_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
   add_dependencies(buildtests_cxx ref_counted_test)
@@ -2553,7 +2572,6 @@ add_library(grpc
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -2561,6 +2579,9 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
   src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
@@ -2569,9 +2590,6 @@ add_library(grpc
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
@@ -2982,6 +3000,7 @@ add_library(grpc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/address_filtering.cc
+  src/core/load_balancing/autosharding/autosharding.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -3579,13 +3598,15 @@ add_library(grpc_unsecure
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
   src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
@@ -3593,9 +3614,6 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/validate/validate.upb_minitable.c
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
@@ -3808,6 +3826,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/address_filtering.cc
+  src/core/load_balancing/autosharding/autosharding.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -6093,13 +6112,13 @@ add_library(grpc_authorization_provider
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -8151,9 +8170,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(alts_handshaker_client_test
-  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
 )
@@ -8784,6 +8803,97 @@ target_link_libraries(authorization_policy_provider_test
   gtest
   grpc++
   grpc_authorization_provider
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(autosharding_config_test
+  test/core/load_balancing/autosharding_config_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(autosharding_config_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(autosharding_config_test PUBLIC cxx_std_17)
+target_include_directories(autosharding_config_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(autosharding_config_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(autosharding_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/autosharding_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(autosharding_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(autosharding_test PUBLIC cxx_std_17)
+target_include_directories(autosharding_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(autosharding_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -10198,13 +10308,13 @@ add_executable(call_utils_test
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -10769,7 +10879,6 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -17810,7 +17919,6 @@ add_executable(ext_proc_message_test
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -18175,13 +18283,13 @@ add_executable(filter_fusion_test
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -22579,13 +22687,13 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
     src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
     src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
     src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -30724,6 +30832,48 @@ target_link_libraries(read_context_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(recv_message_cancelled_status_test
+  test/core/filters/recv_message_cancelled_status_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(recv_message_cancelled_status_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(recv_message_cancelled_status_test PUBLIC cxx_std_17)
+target_include_directories(recv_message_cancelled_status_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(recv_message_cancelled_status_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(recv_message_filter_bypass_test
   test/core/filters/recv_message_filter_bypass_test.cc
 )
@@ -30759,7 +30909,6 @@ target_include_directories(recv_message_filter_bypass_test
 target_link_libraries(recv_message_filter_bypass_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -37293,13 +37442,13 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
     src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
     src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
     src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -38420,13 +38569,13 @@ add_executable(v3_bridge_test
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -42710,7 +42859,6 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -49571,7 +49719,6 @@ add_executable(xds_matcher_parse_test
   src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c

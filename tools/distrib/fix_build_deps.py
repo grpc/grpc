@@ -214,9 +214,9 @@ INTERNAL_DEPS = {
     "grpc/reflection/v1alpha/reflection.grpc.pb.h": (
         "//:reflection_v1alpha_cc_grpc"
     ),
-    "src/proto/grpc/gcp/transport_security_common.upb.h": "alts_upb",
-    "src/proto/grpc/gcp/handshaker.upb.h": "alts_upb",
-    "src/proto/grpc/gcp/altscontext.upb.h": "alts_upb",
+    "grpc/gcp/transport_security_common.upb.h": "alts_upb",
+    "grpc/gcp/handshaker.upb.h": "alts_upb",
+    "grpc/gcp/altscontext.upb.h": "alts_upb",
     "grpc/lookup/v1/rls.upb.h": "rls_upb",
     "grpc/lookup/v1/rls_config.upb.h": "rls_config_upb",
     "grpc/lookup/v1/rls_config.upbdefs.h": "rls_config_upbdefs",
