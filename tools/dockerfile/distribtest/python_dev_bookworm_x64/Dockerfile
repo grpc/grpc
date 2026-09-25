@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# this an aarch64 image, qemu emulator will be used to run the tests
-FROM --platform=linux/arm64 python:3.10-bullseye
+FROM python:3.10-bookworm
+
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    build-essential \
+    python3-dev
 
 RUN python3 -m pip install virtualenv

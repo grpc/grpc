@@ -112,7 +112,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l python -c opt",
     ],
-    docker_image_version = "tools/dockerfile/test/python_debian11_default_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/python_debian13_default_x64.current_version",
 )
 
 # C#
@@ -414,7 +414,7 @@ grpc_run_distribtest_test(
         "package_python_linux",
     ],
     build_script = "run_distribtest_python_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/python_bullseye_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/python_bookworm_x64.current_version",
 )
 
 test_suite(
