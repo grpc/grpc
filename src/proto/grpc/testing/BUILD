@@ -105,6 +105,13 @@ grpc_cc_proto_library(
     deps = ["echo_proto"],
 )
 
+cc_grpc_library(
+    name = "echo_cc_grpc_proto",
+    srcs = [":echo_proto"],
+    compatible_with = ["//buildenv/target:non_prod"],
+    deps = [":echo_cc_proto"],
+)
+
 grpc_cc_grpc_library(
     name = "echo_cc_grpc",
     srcs = ["echo_proto"],
