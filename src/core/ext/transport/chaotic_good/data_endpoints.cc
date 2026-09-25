@@ -524,7 +524,8 @@ class MetricsCollector
     if (telemetry_info_ == nullptr) return;
     delivery_rate_ = telemetry_info_->GetMetricKey("delivery_rate");
     rtt_ = telemetry_info_->GetMetricKey("net_rtt_usec");
-    if (!rtt_.has_value()) rtt_ = telemetry_info_->GetMetricKey("srtt");
+    srtt_ = telemetry_info_->GetMetricKey("srtt");
+    if (!rtt_.has_value()) rtt_ = srtt_;
     min_rtt_ = telemetry_info_->GetMetricKey("min_rtt");
     data_notsent_ = telemetry_info_->GetMetricKey("data_notsent");
     byte_offset_ = telemetry_info_->GetMetricKey("byte_offset");
@@ -551,6 +552,7 @@ class MetricsCollector
     if (delivery_rate_.has_value()) keys.push_back(*delivery_rate_);
     if (byte_offset_.has_value()) keys.push_back(*byte_offset_);
     if (rtt_.has_value()) keys.push_back(*rtt_);
+    if (srtt_.has_value()) keys.push_back(*srtt_);
     if (min_rtt_.has_value()) keys.push_back(*min_rtt_);
     if (data_notsent_.has_value()) keys.push_back(*data_notsent_);
     if (congestion_window_.has_value()) keys.push_back(*congestion_window_);
@@ -580,7 +582,8 @@ class MetricsCollector
     // Checking this subset of metrics is sufficient to determine if it has
     // any metrics
     return delivery_rate_.has_value() || rtt_.has_value() ||
-           min_rtt_.has_value() || data_notsent_.has_value() ||
+           srtt_.has_value() || min_rtt_.has_value() ||
+           data_notsent_.has_value() ||
            byte_offset_.has_value() || congestion_window_.has_value() ||
            snd_ssthresh_.has_value() || packet_retx_.has_value();
   }
@@ -689,6 +692,7 @@ class MetricsCollector
   Clock* const clock_;
   std::optional<size_t> delivery_rate_;
   std::optional<size_t> rtt_;
+  std::optional<size_t> srtt_;
   std::optional<size_t> min_rtt_;
   std::optional<size_t> data_notsent_;
   std::optional<size_t> byte_offset_;
