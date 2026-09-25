@@ -369,6 +369,26 @@ def grpc_deps():
             ],
         )
 
+    if "cel_c" not in native.existing_rules():
+        http_archive(
+            name = "cel_c",
+            # cel-c's BUILD files use the bzlmod module names of its
+            # dependencies, which differ from the repo names used here.
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@cel-spec": "@dev_cel",
+                "@googleapis": "@com_google_googleapis",
+                "@googletest": "@com_google_googletest",
+                "@protobuf": "@com_google_protobuf",
+            },
+            sha256 = "4ac93b6424dddebde797226c096607756b17e688efbd6f0574ff9dd3b091a76c",
+            strip_prefix = "cel-c-bbdb358f202b275731a0d7ee3162fd211886c945",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cel-expr/cel-c/archive/bbdb358f202b275731a0d7ee3162fd211886c945.tar.gz",
+                "https://github.com/cel-expr/cel-c/archive/bbdb358f202b275731a0d7ee3162fd211886c945.tar.gz",
+            ],
+        )
+
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",

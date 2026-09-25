@@ -503,9 +503,13 @@ class ArtifactGen {
         {"@autosharding//", ""},
     };
     for (auto& [name, bazel_rule] : rules_) {
+      const bool is_dev_cel_upb = bazel_rule.clazz == "upb_c_proto_library" &&
+                                  (absl::StartsWith(name, "@dev_cel//") ||
+                                   absl::StartsWith(name, "@@cel-spec+"));
       if (bazel_rule.generator_function != "grpc_upb_proto_library" &&
           bazel_rule.generator_function !=
-              "grpc_upb_proto_reflection_library") {
+              "grpc_upb_proto_reflection_library" &&
+          !is_dev_cel_upb) {
         continue;
       }
       CHECK_EQ(bazel_rule.deps.size(), 1u) << bazel_rule;
@@ -559,7 +563,8 @@ class ArtifactGen {
             TryExtractSourceFilePath(proto_src).value();
         std::vector<std::string> extensions;
         std::string root;
-        if (bazel_rule.generator_function == "grpc_upb_proto_library") {
+        if (bazel_rule.generator_function == "grpc_upb_proto_library" ||
+            is_dev_cel_upb) {
           extensions = {".upb.h", ".upb_minitable.h", ".upb_minitable.c"};
           root = kGenUpbRoot;
         } else {
@@ -1219,6 +1224,8 @@ class ArtifactGen {
           "@zlib//",
           "third_party/zlib",
       },
+      {"@cel_c//cel-c", "third_party/cel-c/cel-c"},
+      {"@@cel-c+//cel-c", "third_party/cel-c/cel-c"},
   };
   const std::map<std::string, ExternalProtoLibrary> external_proto_libraries_ =
       {{"envoy_api",

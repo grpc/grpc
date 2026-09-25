@@ -143,6 +143,8 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@com_google_protobuf//upb": "third_party/upb/upb",
     "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
     "@zlib//": "third_party/zlib",
+    "@cel_c//cel-c": "third_party/cel-c/cel-c",
+    "@@cel-c+//cel-c": "third_party/cel-c/cel-c",
 }
 
 
@@ -736,9 +738,16 @@ def _expand_upb_proto_library_rules(bazel_rules):
     GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-gen/"
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
-        if gen_func in (
-            "grpc_upb_proto_library",
-            "grpc_upb_proto_reflection_library",
+        is_dev_cel_upb = bazel_rule.get("class") == "upb_c_proto_library" and (
+            name.startswith("@dev_cel//") or name.startswith("@@cel-spec+")
+        )
+        if (
+            gen_func
+            in (
+                "grpc_upb_proto_library",
+                "grpc_upb_proto_reflection_library",
+            )
+            or is_dev_cel_upb
         ):
             # get proto dependency
             deps = bazel_rule["deps"]
@@ -797,17 +806,16 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         )
                     )
 
+                is_upb_proto = (
+                    gen_func == "grpc_upb_proto_library" or is_dev_cel_upb
+                )
                 extensions = (
                     # There is no longer a .upb.c extension.
                     [".upb.h", ".upb_minitable.h", ".upb_minitable.c"]
-                    if gen_func == "grpc_upb_proto_library"
+                    if is_upb_proto
                     else [".upbdefs.h", ".upbdefs.c"]
                 )
-                root = (
-                    GEN_UPB_ROOT
-                    if gen_func == "grpc_upb_proto_library"
-                    else GEN_UPBDEFS_ROOT
-                )
+                root = GEN_UPB_ROOT if is_upb_proto else GEN_UPBDEFS_ROOT
                 for ext in extensions:
                     srcs.append(root + proto_src_file.replace(".proto", ext))
                     hdrs.append(root + proto_src_file.replace(".proto", ext))
