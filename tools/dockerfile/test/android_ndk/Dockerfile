@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:13
 
 #=================
 # Basic C core dependencies
@@ -66,21 +66,27 @@ RUN git config --global protocol.file.allow always
 # run_tests.py python dependencies
 
 # Basic python dependencies to be able to run tools/run_tests python scripts
-# These dependencies are not sufficient to build gRPC Python, gRPC Python
-# deps are defined elsewhere (e.g. python_deps.include)
+# These dependencies are NOT for building gRPC Python, which are defined
+# elsewhere (requirements.txt, individual docker images, build scripts, etc).
 RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip \
-  python3-setuptools \
-  python3-yaml \
+  python3-venv \
   && apt-get clean
 
-# use pinned version of pip to avoid sudden breakages
-RUN python3 -m pip install --upgrade pip==19.3.1
+# Use system python to bootstrap virtualenv and activate it
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
-# but since our python2 usage is deprecated, we should get rid of it.
-RUN python3 -m pip install six==1.16.0
+# Persist this to /etc/profile.d because some of our tests
+# (e.g. tools/run_tests/dockerize/build_and_run_docker.sh)
+# use `bash -l` to launch tests and override Dockerfile's
+# ENV directives.
+RUN echo "export PATH=\"$VIRTUAL_ENV/bin:\$PATH\"" > /etc/profile.d/venv.sh
+
+# Install/upgrade basic requirements inside the virtualenv
+RUN pip install --upgrade pip setuptools pyyaml
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
@@ -88,12 +94,10 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# Install cmake from bullseye-backports
-# Note that this step should be only used for Debian 11 (bullseye) images.
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 
 RUN mkdir /var/local/jenkins
@@ -101,18 +105,27 @@ RUN mkdir /var/local/jenkins
 RUN apt update && apt upgrade -y
 
 # Java
-RUN apt-get install -y openjdk-11-jdk
+RUN apt-get install -y openjdk-21-jdk
 
 # Install Android SDK
-ENV ANDROID_HOME /opt/android-sdk
+
+# AGP 8.13.2 use following default versions:
+#
+# - SDK Build Tools 35.0.0
+# - ndk 27.0.12077973
+#
+# We choose ndk;29.0.14206865 to be consistent with helloworld app.
+#
+# See also https://developer.android.com/build/releases/agp-8-13-0-release-notes#8.13.2
+ENV ANDROID_HOME=/opt/android-sdk
 RUN mkdir -p $ANDROID_HOME && \
     wget -O cmd.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
     unzip cmd.zip && rm cmd.zip && \
     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'tools' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'build-tools;30.0.2' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platform-tools' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'build-tools;35.0.0' && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platforms;android-26' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;25.1.8937393' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;29.0.14206865' && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'cmake;3.22.1'
 
 # Install gcloud
