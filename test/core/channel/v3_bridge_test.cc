@@ -34,11 +34,16 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/promise/poll_matcher.h"
 #include "test/core/test_util/test_config.h"
@@ -48,6 +53,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 #include "absl/time/clock.h"
@@ -250,55 +256,6 @@ TEST_F(V3BridgeTest, ForceDestroyPromiseCancelsV3Call) {
   });
 }
 
-struct HalfCloseRecorder {
-  struct RawPointerChannelArgTag {};
-  static absl::string_view ChannelArgName() {
-    return "grpc.test.half_close_recorder";
-  }
-  std::vector<std::string> events;
-  bool half_closed = false;
-};
-
-class ClientHalfCloseFilter final : public ChannelFilter {
- public:
-  explicit ClientHalfCloseFilter(HalfCloseRecorder* recorder)
-      : recorder_(recorder) {}
-
-  static absl::string_view TypeName() { return "client_half_close_test"; }
-
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs args, NextPromiseFactory next) override {
-    args.client_to_server_messages->InterceptAndMapWithHalfClose(
-        [this](MessageHandle msg) {
-          if (recorder_ != nullptr) {
-            recorder_->events.push_back(
-                absl::StrCat("msg:", msg->payload()->JoinIntoString()));
-          }
-          return msg;
-        },
-        [this]() {
-          if (recorder_ != nullptr) {
-            recorder_->events.push_back("half_close");
-            recorder_->half_closed = true;
-          }
-        });
-    return next(std::move(args));
-  }
-
-  static absl::StatusOr<std::unique_ptr<ClientHalfCloseFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args) {
-    return std::make_unique<ClientHalfCloseFilter>(
-        args.GetObject<HalfCloseRecorder>());
-  }
-
- private:
-  HalfCloseRecorder* recorder_;
-};
-
-const grpc_channel_filter kClientHalfCloseFilter =
-    MakePromiseBasedFilter<ClientHalfCloseFilter, FilterEndpoint::kClient,
-                           kFilterExaminesOutboundMessages>();
-
 class MockTransportFilter {
  public:
   struct State {
@@ -379,197 +336,298 @@ void OnCompleteStopCombiner(void* arg, grpc_error_handle) {
   GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(arg), "app:on_complete");
 }
 
-TEST(ClientHalfClosePropagationTest,
-     HalfCloseInSameBatchAsSendMessagePropagatesAfterSendMessageCompletes) {
-  ExecCtx exec_ctx;
-  HalfCloseRecorder recorder;
-  CallCombiner call_combiner;
-  MockTransportFilter::State transport_state;
-  transport_state.call_combiner = &call_combiner;
-  std::vector<FilterAndConfig> filters = {
-      {&kClientHalfCloseFilter, nullptr},
-      {&MockTransportFilter::kFilter, nullptr},
-  };
-  auto channel_args = CoreConfiguration::Get()
-                          .channel_args_preconditioning()
-                          .PreconditionChannelArgs(nullptr)
-                          .SetObject(&transport_state)
-                          .SetObject(&recorder);
-  auto* channel_stack = static_cast<grpc_channel_stack*>(
-      gpr_malloc(grpc_channel_stack_size(filters)));
-  GRPC_CHECK_OK(grpc_channel_stack_init(
-      1,
-      [](void* p, grpc_error_handle) {
-        grpc_channel_stack_destroy(static_cast<grpc_channel_stack*>(p));
-        gpr_free(p);
-      },
-      channel_stack, filters, channel_args, "test", channel_stack));
-  auto arena = SimpleArenaAllocator()->MakeArena();
-  auto* call_stack =
-      static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
-  const grpc_call_element_args call_args = {
-      call_stack,
-      nullptr,
-      gpr_get_cycle_counter(),
-      Timestamp::InfFuture(),
-      arena.get(),
-      &call_combiner,
-  };
-  GRPC_CHECK_OK(grpc_call_stack_init(
-      channel_stack, 1,
-      [](void* p, grpc_error_handle) {
-        grpc_call_stack_destroy(static_cast<grpc_call_stack*>(p), nullptr,
-                                nullptr);
-        gpr_free(p);
-      },
-      call_stack, &call_args));
-  grpc_call_element* top = grpc_call_stack_element(call_stack, 0);
-  grpc_metadata_batch client_initial_md;
-  grpc_metadata_batch client_trailing_md;
-  grpc_metadata_batch recv_trailing_md;
+// Records what the v3 interceptor sees on the client-to-server path. The v3
+// call parties may run on event engine threads, so access is guarded by a
+// mutex.
+struct HalfCloseRecorder {
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() {
+    return "grpc.test.half_close_recorder";
+  }
+  std::vector<std::string> Events() {
+    MutexLock lock(&mu);
+    return events;
+  }
+  void Add(std::string event) {
+    MutexLock lock(&mu);
+    events.push_back(std::move(event));
+  }
+  Mutex mu;
+  std::vector<std::string> events ABSL_GUARDED_BY(mu);
+  absl::Notification got_message;
+  absl::Notification half_closed;
+};
+
+// A v3 interceptor run through V3InterceptorToV2Bridge. It forwards the call
+// to the next v2 filter and records each client-to-server message and the
+// client half-close.
+class HalfCloseRecordingInterceptor final
+    : public V3InterceptorToV2Bridge<HalfCloseRecordingInterceptor> {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  explicit HalfCloseRecordingInterceptor(const ChannelArgs& args)
+      : V3InterceptorToV2Bridge<HalfCloseRecordingInterceptor>(args),
+        recorder_(args.GetObject<HalfCloseRecorder>()) {}
+
+  static absl::string_view TypeName() {
+    return "half_close_recording_interceptor";
+  }
+
+  static absl::StatusOr<RefCountedPtr<HalfCloseRecordingInterceptor>> Create(
+      const ChannelArgs& args, ChannelFilter::Args) {
+    return MakeRefCounted<HalfCloseRecordingInterceptor>(args);
+  }
+
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    CallHandler handler = Consume(std::move(unstarted_call_handler));
+    handler.SpawnGuarded(
+        "start_child_call",
+        [self = RefAsSubclass<HalfCloseRecordingInterceptor>(),
+         handler]() mutable {
+          return TrySeq(handler.PullClientInitialMetadata(),
+                        [self, handler](ClientMetadataHandle metadata) mutable {
+                          CallInitiator initiator = self->MakeChildCall(
+                              std::move(metadata), handler.arena()->Ref());
+                          handler.AddChildCall(initiator);
+                          self->ForwardAndRecord(handler, initiator);
+                          return absl::OkStatus();
+                        });
+        });
+  }
+
+  void Orphaned() override {}
+
+ private:
+  void ForwardAndRecord(CallHandler handler, CallInitiator initiator) {
+    HalfCloseRecorder* recorder = recorder_;
+    handler.SpawnInfallible(
+        "record_client_to_server", [handler, initiator, recorder]() mutable {
+          return Seq(ForEach(MessagesFrom(handler),
+                             [initiator, recorder](MessageHandle msg) mutable {
+                               recorder->Add(absl::StrCat(
+                                   "msg:", msg->payload()->JoinIntoString()));
+                               recorder->got_message.Notify();
+                               initiator.SpawnPushMessage(std::move(msg));
+                               return Success{};
+                             }),
+                     [initiator, recorder](StatusFlag status) mutable {
+                       // A clean end of the message stream is the client
+                       // half-close.
+                       if (status.ok()) {
+                         recorder->Add("half_close");
+                         recorder->half_closed.Notify();
+                       }
+                       initiator.SpawnFinishSends();
+                       return Empty{};
+                     });
+        });
+    initiator.SpawnInfallible(
+        "forward_server_trailing_metadata", [handler, initiator]() mutable {
+          return Map(initiator.PullServerTrailingMetadata(),
+                     [handler](ServerMetadataHandle md) mutable {
+                       handler.SpawnPushServerTrailingMetadata(std::move(md));
+                       return Empty{};
+                     });
+        });
+  }
+
+  HalfCloseRecorder* recorder_;
+};
+
+const grpc_channel_filter HalfCloseRecordingInterceptor::kFilter =
+    MakePromiseBasedFilter<
+        HalfCloseRecordingInterceptor, FilterEndpoint::kClient,
+        kFilterExaminesServerInitialMetadata | kFilterExaminesOutboundMessages |
+            kFilterExaminesInboundMessages>();
+
+// Flushes the ExecCtx until `n` is notified or the timeout expires. Work on
+// the v3 side may hop to event engine threads and back, so a single flush is
+// not enough.
+bool FlushUntil(absl::Notification& n,
+                absl::Duration timeout = absl::Seconds(5)) {
+  const absl::Time deadline = absl::Now() + timeout;
+  while (absl::Now() < deadline) {
+    ExecCtx::Get()->Flush();
+    if (n.WaitForNotificationWithTimeout(absl::Milliseconds(1))) return true;
+  }
+  return n.HasBeenNotified();
+}
+
+struct RecvTrailingReadyArg {
+  CallCombiner* call_combiner;
+  absl::Notification done;
+};
+
+void RecvTrailingReady(void* arg, grpc_error_handle) {
+  auto* a = static_cast<RecvTrailingReadyArg*>(arg);
+  GRPC_CALL_COMBINER_STOP(a->call_combiner, "app:recv_trailing_ready");
+  a->done.Notify();
+}
+
+// A v2 channel stack with HalfCloseRecordingInterceptor on top of the mock
+// transport, and one call on it. The tests check that a client half-close sent
+// on the v2 call reaches the v3 interceptor through V3InterceptorToV2Bridge,
+// and only after the last message.
+class ClientHalfClosePropagationTest : public ::testing::Test {
+ protected:
+  ClientHalfClosePropagationTest() {
+    transport_state_.call_combiner = &call_combiner_;
+    std::vector<FilterAndConfig> filters = {
+        {&HalfCloseRecordingInterceptor::kFilter, nullptr},
+        {&MockTransportFilter::kFilter, nullptr},
+    };
+    auto channel_args = CoreConfiguration::Get()
+                            .channel_args_preconditioning()
+                            .PreconditionChannelArgs(nullptr)
+                            .SetObject(&transport_state_)
+                            .SetObject(&recorder_);
+    channel_stack_ = static_cast<grpc_channel_stack*>(
+        gpr_malloc(grpc_channel_stack_size(filters)));
+    GRPC_CHECK_OK(grpc_channel_stack_init(
+        1,
+        [](void* p, grpc_error_handle) {
+          grpc_channel_stack_destroy(static_cast<grpc_channel_stack*>(p));
+          gpr_free(p);
+        },
+        channel_stack_, filters, channel_args, "test", channel_stack_));
+    arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
+        grpc_event_engine::experimental::GetDefaultEventEngine().get());
+    call_stack_ = static_cast<grpc_call_stack*>(
+        gpr_malloc(channel_stack_->call_stack_size));
+    const grpc_call_element_args call_args = {
+        call_stack_,
+        nullptr,
+        gpr_get_cycle_counter(),
+        Timestamp::InfFuture(),
+        arena_.get(),
+        &call_combiner_,
+    };
+    GRPC_CHECK_OK(grpc_call_stack_init(
+        channel_stack_, 1,
+        [](void* p, grpc_error_handle) {
+          grpc_call_stack_destroy(static_cast<grpc_call_stack*>(p), nullptr,
+                                  nullptr);
+          gpr_free(p);
+        },
+        call_stack_, &call_args));
+    recv_trailing_arg_.call_combiner = &call_combiner_;
+    GRPC_CLOSURE_INIT(&recv_trailing_ready_, RecvTrailingReady,
+                      &recv_trailing_arg_, nullptr);
+  }
+
+  ~ClientHalfClosePropagationTest() override {
+    GRPC_CALL_STACK_UNREF(call_stack_, "done");
+    ExecCtx::Get()->Flush();
+    GRPC_CHANNEL_STACK_UNREF(channel_stack_, "done");
+  }
+
+  grpc_call_element* top() { return grpc_call_stack_element(call_stack_, 0); }
+
+  void StartBatch(StartBatchCtx* ctx, grpc_closure* start_closure) {
+    GRPC_CLOSURE_INIT(start_closure, DoStartBatch, ctx, nullptr);
+    GRPC_CALL_COMBINER_START(&call_combiner_, start_closure, absl::OkStatus(),
+                             "start_batch");
+  }
+
+  // Sends OK trailing metadata up from the mock transport and waits for the
+  // call to finish.
+  void FinishCall() {
+    recv_trailing_md_.Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
+    GRPC_CALL_COMBINER_START(&call_combiner_,
+                             transport_state_.recv_trailing_metadata_ready,
+                             absl::OkStatus(), "finish_call");
+    EXPECT_TRUE(FlushUntil(recv_trailing_arg_.done));
+  }
+
+  ExecCtx exec_ctx_;
+  HalfCloseRecorder recorder_;
+  CallCombiner call_combiner_;
+  MockTransportFilter::State transport_state_;
+  RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
+  grpc_channel_stack* channel_stack_ = nullptr;
+  grpc_call_stack* call_stack_ = nullptr;
+  grpc_metadata_batch client_initial_md_;
+  grpc_metadata_batch client_trailing_md_;
+  grpc_metadata_batch recv_trailing_md_;
+  RecvTrailingReadyArg recv_trailing_arg_;
+  grpc_closure recv_trailing_ready_;
+};
+
+TEST_F(ClientHalfClosePropagationTest,
+       HalfCloseInSameBatchAsSendMessagePropagatesAfterSendMessageCompletes) {
   SliceBuffer send_msg_buf;
   send_msg_buf.Append(Slice::FromCopiedString("hello"));
   grpc_closure on_complete;
-  GRPC_CLOSURE_INIT(&on_complete, OnCompleteStopCombiner, &call_combiner,
+  GRPC_CLOSURE_INIT(&on_complete, OnCompleteStopCombiner, &call_combiner_,
                     nullptr);
-  grpc_closure recv_trailing_ready;
-  GRPC_CLOSURE_INIT(&recv_trailing_ready, OnCompleteStopCombiner,
-                    &call_combiner, nullptr);
   grpc_transport_stream_op_batch_payload payload{};
   grpc_transport_stream_op_batch batch{};
   batch.payload = &payload;
   batch.send_initial_metadata = true;
-  payload.send_initial_metadata.send_initial_metadata = &client_initial_md;
+  payload.send_initial_metadata.send_initial_metadata = &client_initial_md_;
   batch.send_message = true;
   payload.send_message.send_message = &send_msg_buf;
   batch.send_trailing_metadata = true;
-  payload.send_trailing_metadata.send_trailing_metadata = &client_trailing_md;
+  payload.send_trailing_metadata.send_trailing_metadata = &client_trailing_md_;
   batch.recv_trailing_metadata = true;
-  payload.recv_trailing_metadata.recv_trailing_metadata = &recv_trailing_md;
+  payload.recv_trailing_metadata.recv_trailing_metadata = &recv_trailing_md_;
   payload.recv_trailing_metadata.recv_trailing_metadata_ready =
-      &recv_trailing_ready;
+      &recv_trailing_ready_;
   batch.on_complete = &on_complete;
-  StartBatchCtx start_ctx{top, &batch};
+  StartBatchCtx start_ctx{top(), &batch};
   grpc_closure start_closure;
-  GRPC_CLOSURE_INIT(&start_closure, DoStartBatch, &start_ctx, nullptr);
-  GRPC_CALL_COMBINER_START(&call_combiner, &start_closure, absl::OkStatus(),
-                           "start_unary_batch");
-  ExecCtx::Get()->Flush();
-  EXPECT_TRUE(recorder.half_closed);
-  EXPECT_THAT(recorder.events,
+  StartBatch(&start_ctx, &start_closure);
+  ASSERT_TRUE(FlushUntil(recorder_.half_closed));
+  EXPECT_THAT(recorder_.Events(),
               ::testing::ElementsAre("msg:hello", "half_close"));
-  recv_trailing_md.Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
-  GRPC_CALL_COMBINER_START(&call_combiner,
-                           transport_state.recv_trailing_metadata_ready,
-                           absl::OkStatus(), "finish_call");
-  ExecCtx::Get()->Flush();
-  GRPC_CALL_STACK_UNREF(call_stack, "done");
-  ExecCtx::Get()->Flush();
-  GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
+  FinishCall();
 }
 
-TEST(ClientHalfClosePropagationTest,
-     HalfCloseInSeparateBatchPropagatesImmediately) {
-  ExecCtx exec_ctx;
-  HalfCloseRecorder recorder;
-  CallCombiner call_combiner;
-  MockTransportFilter::State transport_state;
-  transport_state.call_combiner = &call_combiner;
-  std::vector<FilterAndConfig> filters = {
-      {&kClientHalfCloseFilter, nullptr},
-      {&MockTransportFilter::kFilter, nullptr},
-  };
-  auto channel_args = CoreConfiguration::Get()
-                          .channel_args_preconditioning()
-                          .PreconditionChannelArgs(nullptr)
-                          .SetObject(&transport_state)
-                          .SetObject(&recorder);
-  auto* channel_stack = static_cast<grpc_channel_stack*>(
-      gpr_malloc(grpc_channel_stack_size(filters)));
-  GRPC_CHECK_OK(grpc_channel_stack_init(
-      1,
-      [](void* p, grpc_error_handle) {
-        grpc_channel_stack_destroy(static_cast<grpc_channel_stack*>(p));
-        gpr_free(p);
-      },
-      channel_stack, filters, channel_args, "test", channel_stack));
-  auto arena = SimpleArenaAllocator()->MakeArena();
-  auto* call_stack =
-      static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
-  const grpc_call_element_args call_args = {
-      call_stack,
-      nullptr,
-      gpr_get_cycle_counter(),
-      Timestamp::InfFuture(),
-      arena.get(),
-      &call_combiner,
-  };
-  GRPC_CHECK_OK(grpc_call_stack_init(
-      channel_stack, 1,
-      [](void* p, grpc_error_handle) {
-        grpc_call_stack_destroy(static_cast<grpc_call_stack*>(p), nullptr,
-                                nullptr);
-        gpr_free(p);
-      },
-      call_stack, &call_args));
-  grpc_call_element* top = grpc_call_stack_element(call_stack, 0);
-  grpc_metadata_batch client_initial_md;
-  grpc_metadata_batch client_trailing_md;
-  grpc_metadata_batch recv_trailing_md;
+TEST_F(ClientHalfClosePropagationTest,
+       HalfCloseInSeparateBatchPropagatesImmediately) {
   SliceBuffer send_msg_buf;
   send_msg_buf.Append(Slice::FromCopiedString("msg1"));
   grpc_closure on_complete1;
-  GRPC_CLOSURE_INIT(&on_complete1, OnCompleteStopCombiner, &call_combiner,
+  GRPC_CLOSURE_INIT(&on_complete1, OnCompleteStopCombiner, &call_combiner_,
                     nullptr);
-  grpc_closure recv_trailing_ready;
-  GRPC_CLOSURE_INIT(&recv_trailing_ready, OnCompleteStopCombiner,
-                    &call_combiner, nullptr);
   grpc_transport_stream_op_batch_payload payload1{};
   grpc_transport_stream_op_batch batch1{};
   batch1.payload = &payload1;
   batch1.send_initial_metadata = true;
-  payload1.send_initial_metadata.send_initial_metadata = &client_initial_md;
+  payload1.send_initial_metadata.send_initial_metadata = &client_initial_md_;
   batch1.send_message = true;
   payload1.send_message.send_message = &send_msg_buf;
   batch1.recv_trailing_metadata = true;
-  payload1.recv_trailing_metadata.recv_trailing_metadata = &recv_trailing_md;
+  payload1.recv_trailing_metadata.recv_trailing_metadata = &recv_trailing_md_;
   payload1.recv_trailing_metadata.recv_trailing_metadata_ready =
-      &recv_trailing_ready;
+      &recv_trailing_ready_;
   batch1.on_complete = &on_complete1;
-  StartBatchCtx start_ctx1{top, &batch1};
+  StartBatchCtx start_ctx1{top(), &batch1};
   grpc_closure start_closure1;
-  GRPC_CLOSURE_INIT(&start_closure1, DoStartBatch, &start_ctx1, nullptr);
-  GRPC_CALL_COMBINER_START(&call_combiner, &start_closure1, absl::OkStatus(),
-                           "start_batch1");
-  ExecCtx::Get()->Flush();
-  EXPECT_FALSE(recorder.half_closed);
-  EXPECT_THAT(recorder.events, ::testing::ElementsAre("msg:msg1"));
+  StartBatch(&start_ctx1, &start_closure1);
+  ASSERT_TRUE(FlushUntil(recorder_.got_message));
+  // No half-close was sent yet, so v3 must not see one.
+  absl::Notification never;
+  FlushUntil(never, absl::Milliseconds(100));
+  EXPECT_FALSE(recorder_.half_closed.HasBeenNotified());
+  EXPECT_THAT(recorder_.Events(), ::testing::ElementsAre("msg:msg1"));
   grpc_closure on_complete2;
-  GRPC_CLOSURE_INIT(&on_complete2, OnCompleteStopCombiner, &call_combiner,
+  GRPC_CLOSURE_INIT(&on_complete2, OnCompleteStopCombiner, &call_combiner_,
                     nullptr);
   grpc_transport_stream_op_batch_payload payload2{};
   grpc_transport_stream_op_batch batch2{};
   batch2.payload = &payload2;
   batch2.send_trailing_metadata = true;
-  payload2.send_trailing_metadata.send_trailing_metadata = &client_trailing_md;
+  payload2.send_trailing_metadata.send_trailing_metadata = &client_trailing_md_;
   batch2.on_complete = &on_complete2;
-  StartBatchCtx start_ctx2{top, &batch2};
+  StartBatchCtx start_ctx2{top(), &batch2};
   grpc_closure start_closure2;
-  GRPC_CLOSURE_INIT(&start_closure2, DoStartBatch, &start_ctx2, nullptr);
-  GRPC_CALL_COMBINER_START(&call_combiner, &start_closure2, absl::OkStatus(),
-                           "start_batch2");
-  ExecCtx::Get()->Flush();
-  EXPECT_TRUE(recorder.half_closed);
-  EXPECT_THAT(recorder.events,
+  StartBatch(&start_ctx2, &start_closure2);
+  ASSERT_TRUE(FlushUntil(recorder_.half_closed));
+  EXPECT_THAT(recorder_.Events(),
               ::testing::ElementsAre("msg:msg1", "half_close"));
-  recv_trailing_md.Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
-  GRPC_CALL_COMBINER_START(&call_combiner,
-                           transport_state.recv_trailing_metadata_ready,
-                           absl::OkStatus(), "finish_call");
-  ExecCtx::Get()->Flush();
-  GRPC_CALL_STACK_UNREF(call_stack, "done");
-  ExecCtx::Get()->Flush();
-  GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
+  FinishCall();
 }
 
 }  // namespace

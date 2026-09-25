@@ -614,6 +614,9 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kClosed:
       break;
     case State::kIdle:
+      // Half-close is only applied from kIdle, so any message in flight is
+      // fully done first. If the call is cancelled while the half-close is
+      // pending, we never get here and the half-close is dropped.
       if (IsPromiseFilterClientHalfCloseEnabled() && half_close_) {
         interceptor()->Push()->Close();
         state_ = State::kClosed;
@@ -650,9 +653,6 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
         batch_.CancelWith(absl::CancelledError(), flusher);
         break;
       }
-      if (IsPromiseFilterClientHalfCloseEnabled() && half_close_) {
-        interceptor()->Push()->Close();
-      }
       GRPC_CHECK(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = r_next.value_if_ready()) {
@@ -679,10 +679,6 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       if (push_.has_value() && (*push_)().ready()) {
         push_.reset();
       }
-      if (IsPromiseFilterClientHalfCloseEnabled() && half_close_ &&
-          !push_.has_value()) {
-        interceptor()->Push()->Close();
-      }
       break;
     case State::kBatchCompleted:
       if (push_.has_value() && (*push_)().pending()) {
@@ -692,12 +688,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
         push_.reset();
       }
       if (completed_status_.ok()) {
-        if (IsPromiseFilterClientHalfCloseEnabled() && half_close_) {
-          interceptor()->Push()->Close();
-          state_ = State::kClosed;
-        } else {
-          state_ = State::kIdle;
-        }
+        state_ = State::kIdle;
         GetContext<Activity>()->ForceImmediateRepoll();
       } else {
         state_ = State::kCancelled;

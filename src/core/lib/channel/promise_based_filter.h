@@ -1282,7 +1282,6 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     struct PipeOwner {
       InterActivityLatch<ClientMetadataHandle> client_initial_metadata;
       InterActivityPipe<MessageHandle, 1> client_to_server_messages;
-      bool client_to_server_half_closed = false;
       InterActivityLatch<std::optional<ServerMetadataHandle>>
           server_initial_metadata;
       InterActivityPipe<MessageHandle, 1> server_to_client_messages;
@@ -1365,21 +1364,11 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                       });
                   call_args.client_to_server_messages
                       ->InterceptAndMapWithHalfClose(
-                          [initiator, pipe_owner,
-                           client_to_server_messages =
-                               call_args.client_to_server_messages](
-                              MessageHandle message) mutable {
+                          [initiator,
+                           pipe_owner](MessageHandle message) mutable {
                             // Step 1: Push the message onto the v3 initiator in
                             // its activity.
                             initiator.SpawnPushMessage(std::move(message));
-                            if (IsPromiseFilterClientHalfCloseEnabled() &&
-                                client_to_server_messages
-                                    ->IsClosedForSender() &&
-                                !std::exchange(
-                                    pipe_owner->client_to_server_half_closed,
-                                    true)) {
-                              initiator.SpawnFinishSends();
-                            }
                             // Step 3: Here in the v2 activity, read the message
                             // from the inter-activity pipe and return it.
                             return Map(
@@ -1392,11 +1381,11 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                                   return std::move(*message);
                                 });
                           },
-                          [initiator, pipe_owner]() mutable {
-                            if (IsPromiseFilterClientHalfCloseEnabled() &&
-                                !std::exchange(
-                                    pipe_owner->client_to_server_half_closed,
-                                    true)) {
+                          // The v2 side only closes the pipe when no message
+                          // is in it, so this runs after the last message has
+                          // gone through the v3 interceptor.
+                          [initiator]() mutable {
+                            if (IsPromiseFilterClientHalfCloseEnabled()) {
                               initiator.SpawnFinishSends();
                             }
                           });
