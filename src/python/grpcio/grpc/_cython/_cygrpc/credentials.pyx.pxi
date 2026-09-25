@@ -186,15 +186,24 @@ cdef class SSLSessionCacheLRU:
     grpc_shutdown()
 
 
+class TLSVersion:
+  tls1_2 = TLS1_2
+  tls1_3 = TLS1_3
+
+
 cdef class SSLChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, private_key_signer=None):
+  def __cinit__(self, pem_root_certificates, private_key, certificate_chain,
+                private_key_signer=None, minimum_tls_version=None,
+                maximum_tls_version=None):
     if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
       raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
     self._private_key_signer = private_key_signer
+    self._minimum_tls_version = minimum_tls_version
+    self._maximum_tls_version = maximum_tls_version
     # This gets passed around C++, make sure it stays
     if self._private_key_signer is not None:
       Py_INCREF(self._private_key_signer)
@@ -215,6 +224,14 @@ cdef class SSLChannelCredentials(ChannelCredentials):
     cdef Status private_key_status
 
     c_tls_credentials_options = grpc_tls_credentials_options_create()
+    if self._minimum_tls_version is not None:
+      grpc_tls_credentials_options_set_min_tls_version(
+        c_tls_credentials_options,
+        <grpc_tls_version>self._minimum_tls_version)
+    if self._maximum_tls_version is not None:
+      grpc_tls_credentials_options_set_max_tls_version(
+        c_tls_credentials_options,
+        <grpc_tls_version>self._maximum_tls_version)
     c_pem_root_certificates = self._pem_root_certificates or <const char*>NULL
     if self._private_key or self._certificate_chain or self._private_key_signer:
       c_tls_identity_pairs = grpc_tls_identity_pairs_create()
