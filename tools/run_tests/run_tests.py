@@ -972,6 +972,7 @@ class RubyLanguage:
             "src/ruby/end2end/killed_client_thread_test.rb",
             "src/ruby/end2end/forking_client_test.rb",
             "src/ruby/end2end/fork_test_repro_35489.rb",
+            "src/ruby/end2end/concurrent_close_during_fork_test.rb",
             "src/ruby/end2end/multiple_killed_watching_threads_test.rb",
             "src/ruby/end2end/client_memory_usage_test.rb",
             "src/ruby/end2end/package_with_underscore_test.rb",
@@ -994,6 +995,7 @@ class RubyLanguage:
                     "src/ruby/end2end/prefork_without_using_grpc_test.rb",
                     "src/ruby/end2end/prefork_postfork_loop_test.rb",
                     "src/ruby/end2end/fork_test_repro_35489.rb",
+                    "src/ruby/end2end/concurrent_close_during_fork_test.rb",
                 ]
                 and platform_string() == "mac"
             ):
