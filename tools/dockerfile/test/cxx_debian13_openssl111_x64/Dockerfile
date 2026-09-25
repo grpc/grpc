@@ -66,8 +66,8 @@ RUN git config --global protocol.file.allow always
 # run_tests.py python dependencies
 
 # Basic python dependencies to be able to run tools/run_tests python scripts
-# These dependencies are not sufficient to build gRPC Python, gRPC Python
-# deps are defined elsewhere (e.g. python_deps.include)
+# These dependencies are NOT for building gRPC Python, which are defined
+# elsewhere (requirements.txt, individual docker images, build scripts, etc).
 RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip \
@@ -78,6 +78,12 @@ RUN apt-get update && apt-get install -y \
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Persist this to /etc/profile.d because some of our tests
+# (e.g. tools/run_tests/dockerize/build_and_run_docker.sh)
+# use `bash -l` to launch tests and override Dockerfile's
+# ENV directives.
+RUN echo "export PATH=\"$VIRTUAL_ENV/bin:\$PATH\"" > /etc/profile.d/venv.sh
 
 # Install/upgrade basic requirements inside the virtualenv
 RUN pip install --upgrade pip setuptools pyyaml
