@@ -725,10 +725,11 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
       "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
       "StreamAggregatedResources";
   streaming_call_ = xds_channel()->transport_->CreateStreamingCall(
-      method, std::make_unique<StreamEventHandler>(
-                  // Passing the initial ref here.  This ref will go away when
-                  // the StreamEventHandler is destroyed.
-                  RefCountedPtr<AdsCall>(this)));
+      method,
+      std::make_unique<StreamEventHandler>(
+          // Passing the initial ref here.  This ref will go away when
+          // the StreamEventHandler is destroyed.
+          RefCountedPtr<AdsCall>(this)));
   GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)

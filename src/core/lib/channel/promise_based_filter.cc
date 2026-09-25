@@ -832,6 +832,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
 void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
                                         Flusher* flusher,
                                         bool discard_buffered_message) {
+  cancelled_status_ = StatusFromMetadata(metadata);
   GRPC_TRACE_LOG(channel, INFO)
       << base_->LogTag() << " ReceiveMessage.Done st=" << StateString(state_)
       << " md=" << metadata.DebugString();

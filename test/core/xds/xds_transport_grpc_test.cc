@@ -46,12 +46,14 @@ class FakeStreamingCallEventHandler
     : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
  public:
   explicit FakeStreamingCallEventHandler(
-      absl::Notification* on_status_received = nullptr)
-      : on_status_received_(on_status_received) {}
+      absl::Notification* on_status_received = nullptr,
+      absl::Status* status = nullptr)
+      : on_status_received_(on_status_received), status_(status) {}
 
   void OnRequestSent(bool /*ok*/) override {}
   void OnRecvMessage(absl::string_view /*payload*/) override {}
-  void OnStatusReceived(absl::Status /*status*/) override {
+  void OnStatusReceived(absl::Status status) override {
+    if (status_ != nullptr) *status_ = std::move(status);
     if (on_status_received_ != nullptr) {
       on_status_received_->Notify();
     }
@@ -59,6 +61,7 @@ class FakeStreamingCallEventHandler
 
  private:
   absl::Notification* on_status_received_;
+  absl::Status* status_;
 };
 
 class GrpcXdsTransportTest : public ::testing::Test {
@@ -213,15 +216,45 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
   auto transport = factory_->GetTransport(target, &status);
   ASSERT_TRUE(status.ok()) << status.ToString();
   absl::Notification on_status_received;
+  absl::Status call_status;
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
-      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received));
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status));
   ASSERT_NE(call, nullptr);
   exec_ctx.Flush();
   on_status_received.WaitForNotification();
+  // Nothing is listening on server_uri_, but this overload defaults to
+  // wait-for-ready, so the call stays queued until the deadline instead of
+  // failing when the connection attempt fails.
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kDeadlineExceeded)
+      << call_status;
   // Orphan the call after status is received. This invokes Orphan(), which
   // cleans up the call and releases the initial reference.
   call.reset();
+}
+
+TEST_F(GrpcXdsTransportTest, StreamingCallWithoutWaitForReadyFails) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
+      XdsTransportFactory::XdsTransport::CallOptions());
+  ASSERT_NE(call, nullptr);
+  exec_ctx.Flush();
+  // Nothing is listening on server_uri_, so the call fails as soon as the
+  // connection attempt fails, rather than being queued until the deadline.
+  on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
 }
 
 // Tests a unary RPC: the call is created with start_upon_send_message,
@@ -236,17 +269,51 @@ TEST_F(GrpcXdsTransportTest, UnaryCall) {
   auto transport = factory_->GetTransport(target, &status);
   ASSERT_TRUE(status.ok()) << status.ToString();
   absl::Notification on_status_received;
+  absl::Status call_status;
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
-      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
-      /*start_upon_send_message=*/true);
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
+      XdsTransportFactory::XdsTransport::CallOptions()
+          .set_start_upon_send_message(true));
   ASSERT_NE(call, nullptr);
   call->StartRecvMessage();
   call->SendMessage("request", /*send_half_close=*/true);
   exec_ctx.Flush();
-  // There is no server listening on this port, so the call fails, but we
-  // do get a status.
+  // There is no server listening on this port, so the call fails as soon as
+  // the connection attempt fails.
   on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
+  call.reset();
+}
+
+TEST_F(GrpcXdsTransportTest, UnaryCallWithWaitForReady) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{{"key1", "val1"}},
+                             Duration::Seconds(1));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status),
+      XdsTransportFactory::XdsTransport::CallOptions()
+          .set_start_upon_send_message(true)
+          .set_wait_for_ready(true));
+  ASSERT_NE(call, nullptr);
+  call->StartRecvMessage();
+  call->SendMessage("request", /*send_half_close=*/true);
+  exec_ctx.Flush();
+  // With wait-for-ready enabled on the deferred initial-metadata batch, the
+  // call stays queued until the 1s deadline.
+  on_status_received.WaitForNotification();
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kDeadlineExceeded)
+      << call_status;
   call.reset();
 }
 
@@ -264,7 +331,8 @@ TEST_F(GrpcXdsTransportTest, UnaryCallOrphanedBeforeSendMessage) {
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
-      /*start_upon_send_message=*/true);
+      XdsTransportFactory::XdsTransport::CallOptions()
+          .set_start_upon_send_message(true));
   ASSERT_NE(call, nullptr);
   call.reset();
   exec_ctx.Flush();
