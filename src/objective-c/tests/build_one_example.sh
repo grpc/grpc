@@ -48,7 +48,7 @@ if [ "$SCHEME" == "gRPC-Package" ]; then
   time xcodebuild \
     build \
     -scheme $SCHEME \
-    -destination generic/platform=iOS 
+    -destination generic/platform=iOS \
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
@@ -65,10 +65,21 @@ elif [ "$SCHEME" == "tvOS-sample" ]; then
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGNING_ALLOWED=NO \
     | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
-else
+elif [ -n "$(ls -d *.xcworkspace 2>/dev/null)" ]; then
   time xcodebuild \
     build \
     -workspace *.xcworkspace \
+    -scheme $SCHEME \
+    -destination generic/platform=iOS \
+    -derivedDataPath Build/Build \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=NO \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+else
+  time xcodebuild \
+    build \
+    -project *.xcodeproj \
     -scheme $SCHEME \
     -destination generic/platform=iOS \
     -derivedDataPath Build/Build \
