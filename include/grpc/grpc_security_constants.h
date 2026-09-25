@@ -159,6 +159,8 @@ typedef enum {
   GRPC_TLS_GROUP_X25519_MLKEM768,
   /** secp384r1 ECDH key exchange. */
   GRPC_TLS_GROUP_SECP384R1,
+  /** MLKEM1024 key exchange. Post-quantum cryptography. */
+  GRPC_TLS_GROUP_MLKEM1024,
 } grpc_tls_key_exchange_group;
 
 #ifdef __cplusplus

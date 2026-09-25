@@ -225,6 +225,53 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
   call.reset();
 }
 
+// Tests a unary RPC: the call is created with start_upon_send_message,
+// and the request is sent with the half-close in the same batch.
+TEST_F(GrpcXdsTransportTest, UnaryCall) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{{"key1", "val1"}},
+                             Duration::Seconds(1));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
+      /*start_upon_send_message=*/true);
+  ASSERT_NE(call, nullptr);
+  call->StartRecvMessage();
+  call->SendMessage("request", /*send_half_close=*/true);
+  exec_ctx.Flush();
+  // There is no server listening on this port, so the call fails, but we
+  // do get a status.
+  on_status_received.WaitForNotification();
+  call.reset();
+}
+
+// A call created with start_upon_send_message does not send initial metadata
+// if SendMessage() is not called, and can be orphaned before sending a message.
+TEST_F(GrpcXdsTransportTest, UnaryCallOrphanedBeforeSendMessage) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(1));
+  absl::Status status;
+  auto transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  absl::Notification on_status_received;
+  auto call = transport->CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
+      /*start_upon_send_message=*/true);
+  ASSERT_NE(call, nullptr);
+  call.reset();
+  exec_ctx.Flush();
+  on_status_received.WaitForNotification();
+}
+
 class GrpcXdsServerTargetTest : public ::testing::Test {
  protected:
   void SetUp() override {

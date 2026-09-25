@@ -109,7 +109,7 @@ LrsClient::ClusterDropStats::Snapshot
 LrsClient::ClusterDropStats::GetSnapshotAndReset() {
   Snapshot snapshot;
   snapshot.uncategorized_drops = GetAndResetCounter(&uncategorized_drops_);
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   snapshot.categorized_drops = std::move(categorized_drops_);
   return snapshot;
 }
@@ -119,7 +119,7 @@ void LrsClient::ClusterDropStats::AddUncategorizedDrops() {
 }
 
 void LrsClient::ClusterDropStats::AddCallDropped(const std::string& category) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   ++categorized_drops_[category];
 }
 
@@ -178,7 +178,7 @@ LrsClient::ClusterLocalityStats::GetSnapshotAndReset() {
         {},
         {}};
     {
-      MutexLock lock(&percpu_stats.backend_metrics_mu);
+      MutexLock lock(percpu_stats.backend_metrics_mu);
       percpu_snapshot.cpu_utilization = std::move(percpu_stats.cpu_utilization);
       percpu_snapshot.mem_utilization = std::move(percpu_stats.mem_utilization);
       percpu_snapshot.application_utilization =
@@ -204,7 +204,7 @@ void LrsClient::ClusterLocalityStats::AddCallFinished(
   to_increment.fetch_add(1, std::memory_order_relaxed);
   stats.total_requests_in_progress.fetch_add(-1, std::memory_order_acq_rel);
   if (backend_metrics == nullptr) return;
-  MutexLock lock(&stats.backend_metrics_mu);
+  MutexLock lock(stats.backend_metrics_mu);
   if (!XdsOrcaLrsPropagationChangesEnabled()) {
     for (const auto& [name, value] : backend_metrics->named_metrics) {
       stats.backend_metrics[std::string(name)] += BackendMetric(1, value);
@@ -509,7 +509,7 @@ void LrsClient::LrsChannel::RetryableCall<T>::StartRetryTimerLocked() {
 
 template <typename T>
 void LrsClient::LrsChannel::RetryableCall<T>::OnRetryTimer() {
-  MutexLock lock(&lrs_channel_->lrs_client()->mu_);
+  MutexLock lock(lrs_channel_->lrs_client()->mu_);
   if (timer_handle_.has_value()) {
     timer_handle_.reset();
     if (shutting_down_) return;
@@ -548,7 +548,7 @@ void LrsClient::LrsChannel::LrsCall::Timer::ScheduleNextReportLocked() {
 }
 
 void LrsClient::LrsChannel::LrsCall::Timer::OnNextReportTimer() {
-  MutexLock lock(&lrs_client()->mu_);
+  MutexLock lock(lrs_client()->mu_);
   timer_handle_.reset();
   if (IsCurrentTimerOnCall()) lrs_call_->SendReportLocked();
 }
@@ -655,13 +655,13 @@ void LrsClient::LrsChannel::LrsCall::SendMessageLocked(std::string payload) {
 }
 
 void LrsClient::LrsChannel::LrsCall::OnRequestSent() {
-  MutexLock lock(&lrs_client()->mu_);
+  MutexLock lock(lrs_client()->mu_);
   send_message_pending_ = false;
   if (IsCurrentCallOnChannel()) MaybeScheduleNextReportLocked();
 }
 
 void LrsClient::LrsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
-  MutexLock lock(&lrs_client()->mu_);
+  MutexLock lock(lrs_client()->mu_);
   // If we're no longer the current call, ignore the result.
   if (!IsCurrentCallOnChannel()) return;
   // Start recv after any code branch
@@ -729,7 +729,7 @@ void LrsClient::LrsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
 }
 
 void LrsClient::LrsChannel::LrsCall::OnStatusReceived(absl::Status status) {
-  MutexLock lock(&lrs_client()->mu_);
+  MutexLock lock(lrs_client()->mu_);
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_client() << "] lrs server "
       << lrs_channel()->server_->server_uri()
@@ -778,7 +778,7 @@ LrsClient::~LrsClient() {
 void LrsClient::Orphaned() {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << this << "] shutting down lrs client";
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   // We may still be sending lingering queued load report data, so don't
   // just clear the load reporting map, but we do want to clear the refs
   // we're holding to the LrsChannel objects, to make sure that
@@ -810,7 +810,7 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
       std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterDropStats> cluster_drop_stats;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // We jump through some hoops here to make sure that the
     // absl::string_views stored in the ClusterDropStats object point
     // to the strings in the load_report_map_ keys, so that
@@ -848,7 +848,7 @@ void LrsClient::RemoveClusterDropStats(
     absl::string_view lrs_server_key, absl::string_view cluster_name,
     absl::string_view eds_service_name,
     LrsClient::ClusterDropStats* cluster_drop_stats) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto server_it = load_report_map_.find(lrs_server_key);
   if (server_it == load_report_map_.end()) return;
   auto& server = server_it->second;
@@ -875,7 +875,7 @@ LrsClient::AddClusterLocalityStats(
       std::pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterLocalityStats> cluster_locality_stats;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // We jump through some hoops here to make sure that the
     // absl::string_views stored in the ClusterLocalityStats object point
     // to the strings in the load_report_map_ keys, so that
@@ -921,7 +921,7 @@ void LrsClient::RemoveClusterLocalityStats(
     const RefCountedPtr<const BackendMetricPropagation>&
         backend_metric_propagation,
     ClusterLocalityStats* cluster_locality_stats) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto server_it = load_report_map_.find(lrs_server_key);
   if (server_it == load_report_map_.end()) return;
   auto& server = server_it->second;
@@ -946,7 +946,7 @@ void LrsClient::RemoveClusterLocalityStats(
 }
 
 void LrsClient::ResetBackoff() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   for (auto& [_, lrs_channel] : lrs_channel_map_) {
     lrs_channel->ResetBackoff();
   }

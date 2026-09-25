@@ -3075,6 +3075,7 @@ grpc_cc_library(
         "grpc_check",
         "iomgr_port",
         "posix_event_engine_timer_manager",
+        "resource_quota",
         "sync",
         "time",
         "windows_endpoint",
@@ -7617,6 +7618,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
         "absl/status",
         "absl/strings",
     ],
@@ -9739,6 +9741,7 @@ grpc_cc_library(
         "activity",
         "all_ok",
         "arena",
+        "call_arena_allocator",
         "call_destination",
         "call_spine",
         "channel_args",
@@ -9782,6 +9785,7 @@ grpc_cc_library(
         "read_context",
         "ref_counted",
         "resource_quota",
+        "resource_quota_telemetry",
         "sleep",
         "status_flag",
         "stream_data_queue",
@@ -13082,7 +13086,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "alts_upb",
-    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+    deps = ["@grpc_proto//:alts_handshaker_proto"],
 )
 
 grpc_upb_proto_library(
