@@ -976,6 +976,68 @@ TEST(StackDataTest, ServerTrailingMetadataReturningVoidTakingChannelPtr) {
   EXPECT_THAT(f1.v, ::testing::ElementsAre(42));
 }
 
+TEST(StackDataTest, ServerTrailingMetadataReturningStatusTakingChannelPtr) {
+  struct Filter1 {
+    struct Call {
+      absl::Status OnServerTrailingMetadata(ServerMetadata& /*md*/,
+                                            Filter1* p) {
+        p->v.push_back(42);
+        return absl::CancelledError("custom cancellation");
+      }
+    };
+    std::vector<int> v;
+  };
+  StackData d;
+  Filter1 f1;
+  const size_t call_offset = d.AddFilter(&f1);
+  EXPECT_EQ(call_offset, 0);
+  EXPECT_EQ(d.call_data_size, 0);
+  d.AddServerTrailingMetadataOp(&f1, call_offset);
+  ASSERT_EQ(d.filter_constructor.size(), 0u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
+  ASSERT_EQ(d.server_trailing_metadata.size(), 1u);
+  EXPECT_EQ(d.server_trailing_metadata[0].call_offset, call_offset);
+  EXPECT_EQ(d.server_trailing_metadata[0].channel_data, &f1);
+  // Check operation
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
+  char call_data;
+  auto r = d.server_trailing_metadata[0].server_trailing_metadata(
+      &call_data, d.server_trailing_metadata[0].channel_data, std::move(md));
+  EXPECT_EQ(r->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
+  EXPECT_EQ(r->get_pointer(GrpcMessageMetadata())->as_string_view(),
+            "custom cancellation");
+  EXPECT_EQ(r->get(GrpcCallWasCancelled()), true);
+  EXPECT_THAT(f1.v, ::testing::ElementsAre(42));
+}
+
+TEST(StackDataTest, ServerTrailingMetadataReturningOkStatusTakingChannelPtr) {
+  struct Filter1 {
+    struct Call {
+      absl::Status OnServerTrailingMetadata(ServerMetadata& md, Filter1* p) {
+        p->v.push_back(42);
+        md.Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
+        return absl::OkStatus();
+      }
+    };
+    std::vector<int> v;
+  };
+  StackData d;
+  Filter1 f1;
+  const size_t call_offset = d.AddFilter(&f1);
+  EXPECT_EQ(call_offset, 0);
+  EXPECT_EQ(d.call_data_size, 0);
+  d.AddServerTrailingMetadataOp(&f1, call_offset);
+  ASSERT_EQ(d.server_trailing_metadata.size(), 1u);
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
+  char call_data;
+  auto r = d.server_trailing_metadata[0].server_trailing_metadata(
+      &call_data, d.server_trailing_metadata[0].channel_data, std::move(md));
+  EXPECT_EQ(r->get_pointer(HttpPathMetadata())->as_string_view(), "hello");
+  EXPECT_THAT(f1.v, ::testing::ElementsAre(42));
+}
+
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1267,6 +1329,53 @@ TEST(CallFiltersTest, UnaryCall) {
                   "f2:OnServerToClientMessage", "f1:OnServerToClientMessage",
                   "f2:OnServerTrailingMetadata", "f1:OnServerTrailingMetadata",
                   "f1:OnFinalize", "f2:OnFinalize"));
+}
+
+TEST(CallFiltersTest, ServerTrailingMetadataStatusCancellation) {
+  struct Filter {
+    struct Call {
+      void OnClientInitialMetadata(ClientMetadata&, Filter*) {}
+      void OnServerInitialMetadata(ServerMetadata&, Filter*) {}
+      void OnClientToServerMessage(Message&, Filter*) {}
+      void OnClientToServerHalfClose(Filter*) {}
+      void OnServerToClientMessage(Message&, Filter*) {}
+      absl::Status OnServerTrailingMetadata(ServerMetadata&, Filter*) {
+        return absl::PermissionDeniedError("denied by filter");
+      }
+      void OnFinalize(const grpc_call_final_info*, Filter*) {}
+      channelz::PropertyList ChannelzProperties() {
+        return channelz::PropertyList();
+      }
+    };
+    absl::string_view Name() const { return "Filter"; }
+  };
+  Filter f;
+  CallFilters::StackBuilder builder;
+  builder.Add(&f);
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  CallFilters filters(Arena::MakePooledForOverwrite<ClientMetadata>());
+  filters.AddStack(builder.Build());
+  filters.Start();
+  promise_detail::Context<Arena> ctx(arena.get());
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  auto pull_client_initial_metadata = filters.PullClientInitialMetadata();
+  EXPECT_THAT(pull_client_initial_metadata(), IsReady());
+  filters.PushServerInitialMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
+  auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
+  EXPECT_THAT(pull_server_initial_metadata(), IsReady());
+  filters.PushServerTrailingMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
+  auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
+  auto result = pull_server_trailing_metadata();
+  EXPECT_THAT(result, IsReady());
+  auto md = std::move(result.value());
+  EXPECT_EQ(md->get(GrpcStatusMetadata()), GRPC_STATUS_PERMISSION_DENIED);
+  EXPECT_EQ(md->get_pointer(GrpcMessageMetadata())->as_string_view(),
+            "denied by filter");
+  EXPECT_EQ(md->get(GrpcCallWasCancelled()), true);
+  filters.Finalize(nullptr);
 }
 
 TEST(CallFiltersTest, UnaryCallWithMultiStack) {
