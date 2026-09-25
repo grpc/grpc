@@ -46,6 +46,13 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
+# Needed for upload_rbe_results.py big_query_utils called by bazel_report_helper.py
+# Note: the versions are locked to the ones supporting python3.10.
+# Google will drop Python 3.10 once it reaches its end of life (2026-10-04)
+# TODO(sergiitk): we need to migrate off of oauth2client: https://google-auth.readthedocs.io/en/latest/oauth2client-deprecation.html
+pip install --user google-api-python-client==2.187.0 oauth2client==4.1.3 \
+  "pyOpenSSL>=23.2.0"
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_c_cpp_tests
 
 # run all C/C++ tests
