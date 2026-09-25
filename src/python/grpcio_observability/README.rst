@@ -21,7 +21,7 @@ time the data is collected and the time it becomes available through Python expo
 Installation
 ------------
 
-Currently gRPC Python Observability is **only available for Linux**.
+Currently gRPC Python Observability is **only available for Linux and macOS**.
 
 Installing From PyPI
 ~~~~~~~~~~~~~~~~~~~~
