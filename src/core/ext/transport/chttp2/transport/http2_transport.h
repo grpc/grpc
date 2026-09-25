@@ -39,6 +39,7 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
@@ -188,6 +189,34 @@ RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         event_engine_endpoint,
     const ChannelArgs& args);
+
+///////////////////////////////////////////////////////////////////////////////
+// Telemetry and Stats Tracker
+
+// Encapsulates telemetry and metrics collection for HTTP/2 transports.
+// Shared between Http2ClientTransport and Http2ServerTransport.
+class TransportStatsTracker {
+ public:
+  explicit TransportStatsTracker(const ChannelArgs& channel_args);
+  ~TransportStatsTracker() = default;
+
+  // TransportStatsTracker is non-copyable and non-movable.
+  TransportStatsTracker(const TransportStatsTracker&) = delete;
+  TransportStatsTracker& operator=(const TransportStatsTracker&) = delete;
+  TransportStatsTracker(TransportStatsTracker&&) = delete;
+  TransportStatsTracker& operator=(TransportStatsTracker&&) = delete;
+
+  // Access the underlying stats collector for components that require it.
+  Http2StatsCollector* stats_collector() const {
+    return stats_collector_.get();
+  }
+  std::shared_ptr<Http2StatsCollector> stats_collector_shared() const {
+    return stats_collector_;
+  }
+
+ private:
+  std::shared_ptr<Http2StatsCollector> stats_collector_;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Flow control helpers
