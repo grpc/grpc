@@ -80,10 +80,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
-    bool half_closed() const {
-      MutexLock lock(&mu_);
-      return half_closed_;
-    }
     std::optional<std::string> WaitForMessageFromClient();
 
     // If FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient()
