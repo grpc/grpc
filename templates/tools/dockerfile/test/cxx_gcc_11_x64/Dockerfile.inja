@@ -12,19 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcc:12-bookworm
+FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y \
-  ccache \
-  curl \
-  git \
-  time \
-  zip && apt-get clean
+RUN apt-get update && apt-get install -y build-essential ccache curl git time zip && apt-get clean
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps_venv.include" %}
 {% include "../../cxx_test_deps.include" %}
 {% include "../../cmake.include" %}
-
 {% include "../../run_tests_addons.include" %}
 
 # Define the default command.
