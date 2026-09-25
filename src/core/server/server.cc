@@ -1790,11 +1790,8 @@ Server::RegisteredMethod* Server::GetRegisteredMethod(
 void Server::SetRegisteredMethodOnMetadata(ClientMetadata& metadata) {
   auto* authority = metadata.get_pointer(HttpAuthorityMetadata());
   if (authority == nullptr) {
-    authority = metadata.get_pointer(HostMetadata());
-    if (authority == nullptr) {
-      // Authority not being set is an RPC error.
-      return;
-    }
+    // Authority not being set is an RPC error.
+    return;
   }
   auto* path = metadata.get_pointer(HttpPathMetadata());
   if (path == nullptr) {

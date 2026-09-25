@@ -779,25 +779,10 @@ TEST_F(CreateExtProcAttributesProtoStructTest, AttributesAllRecognizedFields) {
 }
 
 TEST_F(CreateExtProcAttributesProtoStructTest,
-       AttributesHostFallbackToHostHeader) {
-  upb::Arena arena;
-  grpc_metadata_batch batch;
-  // No HttpAuthorityMetadata, but has HostMetadata.
-  batch.Set(HostMetadata(), Slice::FromCopiedString("fallback.host.com"));
-  EvaluateArgs args(&batch, /*channel_args=*/nullptr);
-  auto* upb_struct = CreateExtProcAttributesProtoStruct(
-      arena.ptr(), {"request.host"}, args, "default.host.com");
-  ASSERT_NE(upb_struct, nullptr);
-  auto proto = ConvertToProto(upb_struct, arena.ptr());
-  EXPECT_EQ(proto.fields().at("request.host").string_value(),
-            "fallback.host.com");
-}
-
-TEST_F(CreateExtProcAttributesProtoStructTest,
        AttributesHostFallbackToDefaultAuthority) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  // Neither HttpAuthorityMetadata nor HostMetadata is present.
+  // HttpAuthorityMetadata is not present.
   EvaluateArgs args(&batch, /*channel_args=*/nullptr);
   auto* upb_struct = CreateExtProcAttributesProtoStruct(
       arena.ptr(), {"request.host"}, args, "default.host.com");

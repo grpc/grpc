@@ -170,7 +170,6 @@ std::vector<std::string> GetAllowList() {
           std::string(GrpcTagsBinMetadata::key()),
           std::string(GrpcTimeoutMetadata::key()),
           std::string(GrpcTraceBinMetadata::key()),
-          std::string(HostMetadata::key()),
           std::string(HttpAuthorityMetadata::key()),
           std::string(HttpMethodMetadata::key()),
           std::string(HttpPathMetadata::key()),
@@ -220,7 +219,7 @@ TEST(DebugStringBuilderTest, TestAllAllowListed) {
       "grpc-tags-bin: grpc-tags-bin, "
       "grpc-timeout: grpc-timeout, "
       "grpc-trace-bin: grpc-trace-bin, "
-      "host: host, :authority: :authority, "
+      ":authority: :authority, "
       ":method: :method, "
       ":path: :path, "
       ":scheme: :scheme, "
@@ -278,7 +277,6 @@ std::vector<std::string> GetEncodableHeaders() {
           std::string(GrpcTagsBinMetadata::key()),
           std::string(GrpcTimeoutMetadata::key()),
           std::string(GrpcTraceBinMetadata::key()),
-          std::string(HostMetadata::key()),
           std::string(HttpAuthorityMetadata::key()),
           std::string(HttpMethodMetadata::key()),
           std::string(HttpPathMetadata::key()),
@@ -337,6 +335,79 @@ TEST(MetadataMapTest, FilterTest) {
   // Remove all encodable headers
   map.Filter(HeaderFilter<false>());
   EXPECT_EQ(map.count(), kNumNonEncodableHeaders);
+}
+
+TEST(MetadataMapTest, HostAppendGetAndRemove) {
+  grpc_metadata_batch map;
+  std::string buffer;
+  map.Append("host", Slice::FromStaticString("host.example.com"),
+             [](absl::string_view, const Slice&) {});
+  ASSERT_NE(map.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "host.example.com");
+  EXPECT_EQ(map.GetStringValue("host", &buffer), "host.example.com");
+  EXPECT_EQ(map.GetStringValue(":authority", &buffer), "host.example.com");
+  map.Remove("host");
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(map.GetStringValue("host", &buffer), std::nullopt);
+}
+
+TEST(MetadataMapTest, HostAppendAuthorityPrecedence) {
+  grpc_metadata_batch map;
+  map.Append("host", Slice::FromStaticString("host.example.com"),
+             [](absl::string_view, const Slice&) {});
+  map.Append(":authority", Slice::FromStaticString("auth.example.com"),
+             [](absl::string_view, const Slice&) {});
+  ASSERT_NE(map.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "auth.example.com");
+  map.Append("host", Slice::FromStaticString("ignored.example.com"),
+             [](absl::string_view, const Slice&) {});
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "auth.example.com");
+}
+
+TEST(MetadataMapTest, HostParseAndSetPrecedence) {
+  grpc_metadata_batch map;
+  auto parsed_host = grpc_metadata_batch::Parse(
+      "host", Slice::FromStaticString("parsed.host.com"), true, 50,
+      [](absl::string_view, const Slice&) {});
+  EXPECT_EQ(parsed_host.key(), "host");
+  EXPECT_EQ(parsed_host.DebugString(), "host: parsed.host.com");
+  map.Set(parsed_host);
+  ASSERT_NE(map.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "parsed.host.com");
+  auto parsed_auth = grpc_metadata_batch::Parse(
+      ":authority", Slice::FromStaticString("parsed.auth.com"), true, 56,
+      [](absl::string_view, const Slice&) {});
+  map.Set(parsed_auth);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "parsed.auth.com");
+  map.Set(parsed_host);
+  EXPECT_EQ(map.get_pointer(HttpAuthorityMetadata())->as_string_view(),
+            "parsed.auth.com");
+}
+
+TEST(MetadataMapTest, HostWithNewValueAndEncode) {
+  auto base_host = grpc_metadata_batch::Parse(
+      "host", Slice::FromStaticString(""), true, 36,
+      [](absl::string_view, const Slice&) {});
+  auto revalued = base_host.WithNewValue(
+      Slice::FromStaticString("new.host.com"), true, 12,
+      [](absl::string_view, const Slice&) {});
+  EXPECT_EQ(revalued.key(), "host");
+  EXPECT_EQ(revalued.transport_size(), 48u);
+  grpc_metadata_batch map;
+  map.Set(revalued);
+  EXPECT_EQ(map.DebugString(), ":authority: new.host.com");
+  EXPECT_EQ(map.count(), 1u);
+  auto parsed_auth = grpc_metadata_batch::Parse(
+      ":authority", Slice::FromStaticString("auth.example.com"), true, 52,
+      [](absl::string_view, const Slice&) {});
+  map.Set(parsed_auth);
+  map.Set(revalued);
+  EXPECT_EQ(map.DebugString(), ":authority: auth.example.com");
 }
 
 }  // namespace testing

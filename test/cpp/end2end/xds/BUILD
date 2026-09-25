@@ -180,6 +180,7 @@ grpc_cc_test(
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":xds_end2end_test_lib",
+        "//:chttp2_frame",
         "//:config",
         "//:config_vars",
         "//:gpr",

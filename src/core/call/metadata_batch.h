@@ -288,15 +288,6 @@ struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "grpc-message"; }
 };
 
-// host metadata trait.
-struct HostMetadata : public SimpleSliceBasedMetadata {
-  static constexpr bool kPublishToApp = true;
-  static constexpr bool kRepeatable = false;
-  static constexpr bool kTransferOnTrailersOnly = false;
-  using CompressionTraits = NoCompressionCompressor;
-  static absl::string_view key() { return "host"; }
-};
-
 // endpoint-load-metrics-bin metadata trait.
 struct EndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kPublishToApp = false;
@@ -1608,6 +1599,12 @@ class MetadataMap {
 
   // Remove some metadata by name
   void Remove(absl::string_view key) {
+    if constexpr (kHasAuthority) {
+      if (key == "host") {
+        Remove(HttpAuthorityMetadata());
+        return;
+      }
+    }
     metadata_detail::RemoveHelper<Derived> helper(static_cast<Derived*>(this));
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
@@ -1617,6 +1614,9 @@ class MetadataMap {
   // Retrieve some metadata by name
   std::optional<absl::string_view> GetStringValue(absl::string_view name,
                                                   std::string* buffer) const {
+    if constexpr (kHasAuthority) {
+      if (name == "host") name = HttpAuthorityMetadata::key();
+    }
     metadata_detail::GetStringValueHelper<Derived> helper(
         static_cast<const Derived*>(this), buffer);
     return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
@@ -1659,6 +1659,16 @@ class MetadataMap {
                                        bool will_keep_past_request_lifetime,
                                        uint32_t transport_size,
                                        MetadataParseErrorFn on_error) {
+    if constexpr (kHasAuthority) {
+      if (key == "host") {
+        return ParsedMetadata<Derived>(
+            typename ParsedMetadata<Derived>::FromHostSliceTag{},
+            HttpAuthorityMetadata{},
+            HttpAuthorityMetadata::ParseMemento(
+                value.TakeOwned(), will_keep_past_request_lifetime, on_error),
+            transport_size);
+      }
+    }
     metadata_detail::ParseHelper<Derived> helper(
         value.TakeOwned(), will_keep_past_request_lifetime, on_error,
         transport_size);
@@ -1673,6 +1683,12 @@ class MetadataMap {
   // Append a key/value pair - takes ownership of value
   void Append(absl::string_view key, Slice value,
               MetadataParseErrorFn on_error) {
+    if constexpr (kHasAuthority) {
+      if (key == "host") {
+        if (get_pointer(HttpAuthorityMetadata()) != nullptr) return;
+        key = HttpAuthorityMetadata::key();
+      }
+    }
     metadata_detail::AppendHelper<Derived> helper(static_cast<Derived*>(this),
                                                   value.TakeOwned(), on_error);
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
@@ -1685,6 +1701,9 @@ class MetadataMap {
   size_t count() const { return table_.count() + unknown_.size(); }
 
  private:
+  static constexpr bool kHasAuthority =
+      (std::is_same_v<Traits, HttpAuthorityMetadata> || ...);
+
   friend class metadata_detail::AppendHelper<Derived>;
   friend class metadata_detail::GetStringValueHelper<Derived>;
   friend class metadata_detail::RemoveHelper<Derived>;
@@ -1762,7 +1781,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcAcceptEncodingMetadata, grpc_core::GrpcStatusMetadata,
     grpc_core::GrpcTimeoutMetadata, grpc_core::GrpcPreviousRpcAttemptsMetadata,
     grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::UserAgentMetadata,
-    grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
+    grpc_core::GrpcMessageMetadata,
     grpc_core::EndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,

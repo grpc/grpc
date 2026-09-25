@@ -81,12 +81,10 @@ class TestFilterFailOnMessage
       if (message.payload()->JoinIntoString() == kGoodMessage) {
         return nullptr;
       }
-
       auto md = GetContext<Arena>()->MakePooled<ServerMetadata>();
       md->Set(GrpcStatusMetadata(), GRPC_STATUS_PERMISSION_DENIED);
       md->Set(GrpcMessageMetadata(),
               Slice::FromStaticString("Failure that's not preventable."));
-      md->Set(HostMetadata(), Slice::FromStaticString("test-host"));
       md->Set(GrpcTarPit());
       md->Append(
           "test-failure", Slice::FromStaticString("Failing as requested."),
@@ -242,15 +240,12 @@ void FilterCloseOnMessage(CoreEnd2endTest& test) {
   test.Expect(3, true);
   test.Expect(1, true);
   test.Step();
-
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
   EXPECT_EQ(server_status.message(), "Failure that's not preventable.");
   EXPECT_EQ(server_status.GetTrailingMetadata("test-failure"),
             "Failing as requested.");
   EXPECT_EQ(server_status.GetTrailingMetadata("test-failure-bin"),
             "Failing as requested binary.");
-  EXPECT_EQ(server_status.GetTrailingMetadata(HostMetadata::key()),
-            "test-host");
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose) {
