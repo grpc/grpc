@@ -1644,20 +1644,34 @@ void Http2ServerTransport::CleanupStream(Stream& stream) {
 }
 
 absl::Status Http2ServerTransport::UpdateAllStreamsWritability() {
-  MutexLock lock(transport_mutex_);
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport::UpdateAllStreamsWritability total streams: "
-      << stream_list_.size();
-  // This loop iterates over all active streams. For each stream this would
-  // internally take a stream specific lock and update the stream writability.
-  // This is not optimal but should be fine as this function is only called when
-  // initial window size is increased which in theory should not be very
-  // frequent.
-  for (const auto& [stream_id, stream] : stream_list_) {
-    StreamWritabilityUpdate update =
-        stream->UpdateStreamWritability(GetStreamFlowControlTokens(
-            stream->GetStreamFlowControl(), settings_->peer()));
-    absl::Status status = MaybeAddStreamToWritableStreamList(stream, update);
+  std::vector<std::pair<RefCountedPtr<Stream>, StreamWritabilityUpdate>> updates;
+  {
+    MutexLock lock(transport_mutex_);
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::UpdateAllStreamsWritability total streams: "
+        << stream_list_.size();
+    // This loop iterates over all active streams. For each stream this would
+    // internally take a stream specific lock and update the stream writability.
+    // This is not optimal but should be fine as this function is only called when
+    // initial window size is increased which in theory should not be very
+    // frequent.
+    updates.reserve(stream_list_.size());
+    for (const auto& [stream_id, stream] : stream_list_) {
+      StreamWritabilityUpdate update =
+          stream->UpdateStreamWritability(GetStreamFlowControlTokens(
+              stream->GetStreamFlowControl(), settings_->peer()));
+      updates.emplace_back(stream, update);
+    }
+  }
+
+  // ponytail: Process writability updates outside transport_mutex_ so that if
+  // MaybeAddStreamToWritableStreamList fails and invokes HandleError ->
+  // MaybeSpawnCloseTransport, it does not self-deadlock trying to re-acquire
+  // non-recursive transport_mutex_.
+  for (auto& [stream, update] : updates) {
+    const uint32_t stream_id = stream->GetStreamId();
+    absl::Status status =
+        MaybeAddStreamToWritableStreamList(std::move(stream), update);
     if (GPR_UNLIKELY(!status.ok())) {
       GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::"
                                 "UpdateAllStreamsWritability failed for stream "

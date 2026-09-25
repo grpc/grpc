@@ -2858,6 +2858,77 @@ TEST_F(Http2ServerTransportTest,
   teardown_step->Wait();
 }
 
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportUpdateAllStreamsWritabilityOnWindowSizeIncrease) {
+  // Verifies that when a peer sends a SETTINGS frame increasing the initial
+  // window size, UpdateAllStreamsWritability safely updates writability for all
+  // active streams without deadlock or assertion failures.
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs());
+
+  const std::vector<Http2SettingsFrame::Setting> server_settings = {
+      {Http2Settings::kInitialWindowSizeWireId, 65535u},
+      {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+  };
+  SpawnTransportLoopsAndExchangeSettings(server_settings);
+
+  // Step 1: Client initiates Stream 1, which becomes active on the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  });
+
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Step 2: Client sends SETTINGS increasing initial window size from 65535 to
+  // 131070. This triggers UpdateAllStreamsWritability() with active streams.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedSettingsFrame({
+          {Http2Settings::kInitialWindowSizeWireId, 131070u},
+      }),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedSettingsFrameAck(),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Cleanly reset Stream 1 to confirm connection and stream survived.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step3 =
+      endpoint()->NewStep();
+  step3->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+  });
+  step3->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
+  teardown_step->Wait();
+}
+
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
