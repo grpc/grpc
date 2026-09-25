@@ -31,6 +31,9 @@ RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libg
 
 ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh
 
+# This ensures image is regenerated on cython updates.
+ENV CYTHON_INSTALL_SELECTOR "cython==3.2.8"
+
 # These are synced to the versions in our grpc_artifact_python_ images based pypa/{many,musl}linux.
 # grep grpc_artifact_python_ tools/bazelify_tests/dockerimage_current_versions.bzl | grep -oP '(?<=docker://)[^"]+(?=")'
 # IMG=one_of_the_images_from_the_command_above
