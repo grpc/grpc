@@ -16,9 +16,9 @@
 import asyncio
 from collections.abc import AsyncIterable
 import enum
-from functools import partial
 import logging
 import traceback
+import weakref
 from typing import (
     Any,
     AsyncIterator,
@@ -240,7 +240,17 @@ class Call(Generic[RequestType, ResponseType]):
         return self._cython_call.done()
 
     def add_done_callback(self, callback: DoneCallbackType) -> None:
-        cb = partial(callback, self)
+        # The callback must not pin the Call: the Cython call object can
+        # outlive an abandoned Python Call, so a strong reference here
+        # crosses the C boundary, defeats garbage collection, and stops
+        # __del__ from ever cancelling the RPC.
+        self_ref = weakref.ref(self)
+
+        def cb() -> None:
+            call = self_ref()
+            if call is not None:
+                callback(call)
+
         self._cython_call.add_done_callback(cb)
 
     def time_remaining(self) -> Optional[float]:
