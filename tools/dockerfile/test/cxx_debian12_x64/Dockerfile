@@ -122,6 +122,10 @@ RUN mkdir /var/local/jenkins
 
 
 
+# Used by generate_projects.sh
+RUN apt-get update && apt-get install -y \
+  python3-mako && apt-get clean
+
 #=================
 # Setup git to access working directory across docker boundary
 
