@@ -29,6 +29,7 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_destination.h"
@@ -46,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -61,6 +63,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -508,6 +511,13 @@ class Http2ServerTransport final : public ServerTransport,
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
 
+  // Recomputes the MAX_CONCURRENT_STREAMS that we advertise to the peer, based
+  // on the process wide StreamQuota.
+  // This MUST be called from the transport party only, because
+  // SettingsPromiseManager is not thread safe.
+  // Based on CHTTP2's use of GetConnectionMaxConcurrentRequests in parsing.cc
+  void UpdateMaxConcurrentStreamsFromStreamQuota();
+
   // Call this when a stream needs to be closed and we must notify the client by
   // sending a RST_STREAM frame (e.g., due to local stream error, cancellation).
   // This enqueues the RST_STREAM frame and immediately closes the stream for
@@ -771,6 +781,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   MemoryOwner memory_owner_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+  StreamQuotaRefPtr stream_quota_;
   chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 

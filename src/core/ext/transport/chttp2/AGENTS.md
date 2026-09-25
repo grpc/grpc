@@ -124,6 +124,9 @@ TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 *   GoAway : `goaway.{h,cc}` for implementation of HTTP2 GOAWAY
 *   Metadata: `read_context.h`
 *   Security Frame : `security_frame.h`
+*   Resource Quota Reclaimer : `reclaimer.{h,cc}`
+    *   Owns the memory quota reclamation state for a PH2 transport.
+    *   Shared by PH2 Client and PH2 Server.
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
@@ -245,6 +248,17 @@ PH2 shares several architectural similarities with the [Chaotic Good transport](
 *   **Endpoint Interaction:** Both transports use the `PromiseEndpoint` abstraction or reading from and writing to the network, making the core transport logic independent of the underlying I/O mechanism.
 *   **Stream Initiation:** In PH2, `Http2ClientTransport::StartCall` initiates a new stream. It acquires a lock, assigns a new stream ID, creates a `Stream` object, and spawns the `CallOutboundLoop` to handle the stream's outgoing messages. Chaotic Good follows a similar pattern in `ChaoticGoodClientTransport::StartCall`, where it calls `StreamDispatch::MakeStream` to allocate a stream ID and create a `Stream` object, and then spawns `CallOutboundLoop` for the stream's lifecycle.
 
+# Thread Safety in PH2
+
+*   **Same Party:** Promises spawned on the same Party never run in parallel.
+    *   State and variables accessed only from a single Party needs no extra locking.
+*   **Different Parties:** Promises on different Parties can run in parallel.
+    *   Example: The transport Party vs. a call's Party (e.g. `StartCall`).
+    *   State shared across Parties MUST be explicitly synchronized.
+    *   Use `Mutex` with `ABSL_GUARDED_BY`, atomics, or the inter-activity
+        primitives in [`src/core/lib/promise/`](../../../lib/promise/AGENTS.md).
+*   Before adding new transport state, identify every Party that touches it.
+
 # PH2 Transport Party Slots
 
 The HTTP2 transport uses Promise Party internally to manage scheduling of jobs.
@@ -256,27 +270,28 @@ We need to ensure that our slots do not exceed 16.
 
 <!--
 TODO(tjagtap) [PH2][P2] Validate this before roll out begins.
-Last checked on 26-June-2026
+Last checked on 24-September-2026
 -->
 
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
-| SecurityFrameLoop | Loop | Security Frame | 1 | After Constructor | Lifetime of the transport | Transport Close |
-| ReadLoop | Loop | | 1 | After 1st write | Lifetime of the transport | Transport Close |
-| BdpLoop | Loop | BDP Loop | Default - 1 (0 if GRPC_ARG_HTTP2_BDP_PROBE is explicitly set to false) | After Constructor | Lifetime of the transport | Transport Close |
-| MultiplexerLoop | Loop | | 1 | After Constructor | Lifetime of the transport | Transport Close |
+| SecurityFrameLoop | Loop | Security Frame | 1 | After receiving peer SETTINGS | Lifetime of the transport | Transport Close |
+| ReadLoop | Loop | | 1 | Transport start | Lifetime of the transport | Transport Close |
+| BdpLoop | Loop | BDP Loop | Default - 1 (0 if GRPC_ARG_HTTP2_BDP_PROBE is explicitly set to false) | Transport start | Lifetime of the transport | Transport Close |
+| MultiplexerLoop | Loop | | 1 | Transport start | Lifetime of the transport | Transport Close |
 | AddData | Misc | ChannelZ AddData | 1 | On demand | Immediate | Immediate |
 | CloseTransport | Misc | Close transport | 1 | While closing transport. Only once in the life of a transport | As long as it takes to close the transport | Transport Close |
 | WaitForSettingsTimeout | Timeout | Settings Timeout | 1 | When we write SETTINGS | Settings timeout | Settings Ack Received or Settings Timeout |
-| KeepaliveLoop | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close |
+| KeepaliveLoop | Loop | Keepalive Loop | 1 |  If Keepalive is enabled, Transport start | Lifetime of the transport | Transport Close |
 | Ping | Timeout + Misc | | 4 | Sending a ping request | Timeout or a specific duration | |
-| | | **Total** | 12 | | | |
+| ReclamationLoop | Loop | Resource Quota Reclamation Loop | 1 | Transport start | Lifetime of transport | Transport Close |
+| | | **Total** | 13 | | | |
 
 ## PH2 Client Party Slots Usage
 
 <!--
 TODO(tjagtap) [PH2][P2] Validate this before roll out begins.
-Last checked on 26-June-2026
+Last checked on 24-September-2026
 -->
 
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
@@ -286,13 +301,13 @@ Last checked on 26-June-2026
 
 <!--
 TODO(tjagtap) [PH2][P2] Validate this before roll out begins.
-Last checked on 26-June-2026
+Last checked on 24-September-2026
 -->
 
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
-| Graceful Goaway | Misc | | 1 | Sending a graceful Goaway | As long as it takes to complete the graceful goaway process | |
-| TarpitDrainLoop | Loop | Tarpit Drain Loop | 1 | SpawnTransportLoops | Lifetime of transport | Transport Close |
+| GracefulGoaway | Misc | | 1 | Sending a graceful Goaway | As long as it takes to complete the graceful goaway process | |
+| TarpitDrainLoop | Loop | Tarpit Drain Loop | 1 | Transport start | Lifetime of transport | Transport Close |
 | PingOnResetStream | Misc | Ping On Reset Stream | 1 | When receiving RST_STREAM | Till ping ack/ping timeout | Till ping ack/ping timeout |
 | | | **Total** | 3 | | | |
 

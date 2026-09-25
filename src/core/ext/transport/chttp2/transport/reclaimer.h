@@ -19,8 +19,46 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_RECLAIMER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_RECLAIMER_H
 
+#include <memory>
+#include <optional>
+#include <utility>
+
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+
 namespace grpc_core {
-namespace http2 {}  // namespace http2
+namespace http2 {
+
+#define GRPC_HTTP2_RECLAIMER_LOG VLOG(2)
+
+// Each PH2 transport provides its own implementation of this interface.
+// Each method maps to the actions that a memory reclamation pass performs on a
+// PH2 transport.
+class ReclaimerInterface {
+ public:
+  virtual ~ReclaimerInterface() = default;
+
+  // Benign pass. Closes the transport if it has no active streams.
+  // Returns true if the transport close was initiated.
+  virtual bool CloseTransportIfIdle() = 0;
+
+  // Destructive pass. Cancels exactly one active stream, if any exists.
+  // Returns true if at least one stream is still active after the
+  // cancellation. Returns false otherwise.
+  virtual bool CancelOneActiveStream() = 0;
+};
+
+}  // namespace http2
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_RECLAIMER_H
