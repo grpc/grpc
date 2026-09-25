@@ -173,6 +173,24 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
             await asyncio.gather(task1, task2),
         )
 
+    async def test_cancel_unary_unary_with_message(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        started = asyncio.Event()
+
+        async def wrap():
+            started.set()
+            await call
+
+        task = self.loop.create_task(wrap())
+        await started.wait()
+
+        task.cancel("my reason")
+
+        with self.assertRaises(asyncio.CancelledError) as exception_context:
+            await task
+
+        self.assertEqual(exception_context.exception.args, ("my reason",))
+
     async def test_cancel_unary_unary(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
@@ -241,6 +259,25 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         self.assertTrue(call.done())
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
         await channel.close()
+
+    async def test_cancel_unary_stream_with_message(self):
+        request = messages_pb2.StreamingOutputCallRequest()
+        call = self._stub.StreamingOutputCall(request)
+        started = asyncio.Event()
+
+        async def wrap():
+            started.set()
+            await call.read()
+
+        task = self.loop.create_task(wrap())
+        await started.wait()
+
+        task.cancel("my reason")
+
+        with self.assertRaises(asyncio.CancelledError) as exception_context:
+            await task
+
+        self.assertEqual(exception_context.exception.args, ("my reason",))
 
     async def test_cancel_unary_stream(self):
         # Prepares the request
