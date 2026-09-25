@@ -63,7 +63,7 @@ void CFSocketListenerImpl::Shutdown() {
   GRPC_TRACE_LOG(event_engine, INFO)
       << "CFSocketListenerImpl::Shutdown: this: " << this;
 
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
 
   shutdown_ = true;
   for (auto& [ipv6cfsock] : ipv6cfsocks_) {
@@ -78,7 +78,7 @@ void CFSocketListenerImpl::Shutdown() {
 
 absl::StatusOr<int> CFSocketListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
 
   if (started_) {
     return absl::FailedPreconditionError(
@@ -160,7 +160,7 @@ absl::StatusOr<int> CFSocketListenerImpl::Bind(
 }
 
 absl::Status CFSocketListenerImpl::Start() {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
 
   CHECK(!started_);
   started_ = true;
@@ -174,7 +174,7 @@ absl::Status CFSocketListenerImpl::Start() {
         << ", this: " << thatPtr;
 
     {
-      grpc_core::MutexLock lock(&that->mu_);
+      grpc_core::MutexLock lock(that->mu_);
       if (that->shutdown_) {
         return;
       }
