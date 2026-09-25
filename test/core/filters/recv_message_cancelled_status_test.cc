@@ -113,8 +113,9 @@ TEST(RecvMessageCancelledStatusTest, CancelBeforeBatchCompletion) {
       << env.app.msg_status;
 }
 
-// Same ordering, but the recv_message batch is issued before the promise
-// exists, so ReceiveMessage takes the "no pipe" arm of the state machine:
+// Same ordering, but the call is cancelled before send_initial_metadata, so
+// the promise (and hence the message pipe) is never created and ReceiveMessage
+// takes the "no pipe" arm of the state machine:
 // kForwardedBatchNoPipe -> kCancelledWhilstForwardingNoPipe ->
 // kBatchCompletedButCancelledNoPipe.
 TEST(RecvMessageCancelledStatusTest, CancelBeforeBatchCompletionNoPipe) {
@@ -127,12 +128,8 @@ TEST(RecvMessageCancelledStatusTest, CancelBeforeBatchCompletionNoPipe) {
   // 1) recv_message is issued before send_initial_metadata, so the filter has
   // not been given a message pipe yet.
   env.StartRecvMessageBatch();
-  env.StartInitialMetadataBatch();
-  env.StartRecvTrailingMetadataBatch();
-  env.mock.recv_initial_metadata->Set(HttpStatusMetadata(), 200);
-  env.RunOnCombiner(env.mock.recv_initial_metadata_ready);
   // 2) Out of band cancellation while the recv_message batch is still with the
-  // transport.
+  // transport, and before send_initial_metadata could start the promise.
   ASSERT_NE(env.mock.recv_message_ready, nullptr);
   env.CancelStream(
       absl::Status(absl::StatusCode::kDeadlineExceeded, "test cancel"));

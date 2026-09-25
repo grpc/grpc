@@ -401,6 +401,7 @@ TEST(RecvMessageFilterBypassTest,
 
 int main(int argc, char** argv) {
   grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
+  grpc_core::ForceEnableExperiment("recv_message_cancelled_status_fix", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestGrpcScope grpc_scope;

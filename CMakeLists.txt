@@ -30862,7 +30862,6 @@ target_include_directories(recv_message_cancelled_status_test
 target_link_libraries(recv_message_cancelled_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -30905,7 +30904,6 @@ target_include_directories(recv_message_filter_bypass_test
 target_link_libraries(recv_message_filter_bypass_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_unsecure
   grpc_test_util
 )
 
