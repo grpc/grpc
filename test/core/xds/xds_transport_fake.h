@@ -95,7 +95,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     bool WaitForReadsStarted(size_t expected);
 
     bool half_closed() const {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       return half_closed_;
     }
 

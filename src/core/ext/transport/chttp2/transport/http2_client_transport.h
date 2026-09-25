@@ -532,7 +532,7 @@ class Http2ClientTransport final : public ClientTransport,
   auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
   Duration NextAllowedPingInterval() {
-    MutexLock lock(&transport_mutex_);
+    MutexLock lock(transport_mutex_);
     return (!keepalive_permit_without_calls_ &&
             GetActiveStreamCountLocked() == 0)
                ? Duration::Hours(2)

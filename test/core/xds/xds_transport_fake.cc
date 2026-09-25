@@ -43,7 +43,7 @@ namespace grpc_core {
 FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
   // Tests should not fail to read any messages from the client.
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (transport_->abort_on_undrained_messages()) {
       for (const auto& message : from_client_messages_) {
         LOG(ERROR) << "[" << transport_->server()->server_uri() << "] " << this
@@ -66,7 +66,7 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
 
 void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     orphaned_ = true;
   }
   transport_->RemoveStream(method_, this);
@@ -77,7 +77,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload, bool send_half_close) {
   bool register_stream = false;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_CHECK(!orphaned_);
     if (!started_) {
       started_ = true;
@@ -96,7 +96,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
 }
 
 bool FakeXdsTransportFactory::FakeStreamingCall::HaveMessageFromClient() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   return !from_client_messages_.empty();
 }
 
@@ -104,7 +104,7 @@ std::optional<std::string>
 FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient() {
   while (true) {
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (!from_client_messages_.empty()) {
         std::string payload = std::move(from_client_messages_.front());
         from_client_messages_.pop_front();
@@ -131,12 +131,12 @@ void FakeXdsTransportFactory::FakeStreamingCall::
 void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
     bool ok) {
   GRPC_CHECK(!transport_->auto_complete_messages_from_client());
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   CompleteSendMessageFromClientLocked(ok);
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (num_pending_reads_ > 0) {
     transport_->factory()->too_many_pending_reads_callback_();
   }
@@ -152,14 +152,14 @@ void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::SendHalfClose() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   half_closed_ = true;
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessageToClient(
     absl::string_view payload) {
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     to_client_messages_.emplace_back(payload);
   }
   MaybeDeliverMessageToClient();
@@ -171,7 +171,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeDeliverMessageToClient() {
   // Loop terminates with a break inside
   while (true) {
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (num_pending_reads_ == 0 || to_client_messages_.empty()) {
         break;
       }
@@ -190,7 +190,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
   ExecCtx exec_ctx;
   RefCountedPtr<RefCountedEventHandler> event_handler;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (status_sent_) return;
     status_sent_ = true;
     event_handler = event_handler_->Ref();
@@ -202,7 +202,7 @@ bool FakeXdsTransportFactory::FakeStreamingCall::WaitForReadsStarted(
     size_t expected) {
   while (true) {
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (reads_started_ == expected) return true;
       if (event_engine_->IsIdle()) return false;
     }
@@ -211,7 +211,7 @@ bool FakeXdsTransportFactory::FakeStreamingCall::WaitForReadsStarted(
 }
 
 bool FakeXdsTransportFactory::FakeStreamingCall::IsOrphaned() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   return orphaned_;
 }
 
@@ -223,7 +223,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
     absl::Status status) {
   std::set<RefCountedPtr<ConnectivityFailureWatcher>> watchers;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     watchers = watchers_;
   }
   ExecCtx exec_ctx;
@@ -234,7 +234,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
 
 void FakeXdsTransportFactory::FakeXdsTransport::Orphaned() {
   {
-    MutexLock lock(&factory_->mu_);
+    MutexLock lock(factory_->mu_);
     auto it = factory_->transport_map_.find(server_.Key());
     if (it != factory_->transport_map_.end() && it->second == this) {
       factory_->transport_map_.erase(it);
@@ -242,7 +242,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::Orphaned() {
   }
   factory_.reset();
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // Can't destroy watchers synchronously, since that operation will trigger
     // code in XdsClient that acquires its mutex, but it was already holding
     // its mutex when it called us, so it would deadlock.
@@ -257,7 +257,7 @@ RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(const char* method) {
   while (true) {
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       auto it = active_calls_.find(method);
       if (it != active_calls_.end() && it->second != nullptr) return it->second;
       if (event_engine_->IsIdle()) return nullptr;
@@ -274,7 +274,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::RegisterStream(
 
 void FakeXdsTransportFactory::FakeXdsTransport::RemoveStream(
     const char* method, FakeStreamingCall* call) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = active_calls_.find(method);
   if (it != active_calls_.end() && it->second.get() == call) {
     active_calls_.erase(it);
@@ -283,13 +283,13 @@ void FakeXdsTransportFactory::FakeXdsTransport::RemoveStream(
 
 void FakeXdsTransportFactory::FakeXdsTransport::StartConnectivityFailureWatch(
     RefCountedPtr<ConnectivityFailureWatcher> watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   watchers_.insert(std::move(watcher));
 }
 
 void FakeXdsTransportFactory::FakeXdsTransport::StopConnectivityFailureWatch(
     const RefCountedPtr<ConnectivityFailureWatcher>& watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   watchers_.erase(watcher);
 }
 
@@ -318,7 +318,7 @@ RefCountedPtr<XdsTransportFactory::XdsTransport>
 FakeXdsTransportFactory::GetTransport(
     const XdsBootstrap::XdsServerTarget& server, absl::Status* /*status*/) {
   std::string key = server.Key();
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto transport = GetTransportLocked(key);
   if (transport == nullptr) {
     transport = MakeRefCounted<FakeXdsTransport>(
@@ -337,12 +337,12 @@ void FakeXdsTransportFactory::TriggerConnectionFailure(
 }
 
 void FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient(bool value) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto_complete_messages_from_client_ = value;
 }
 
 void FakeXdsTransportFactory::SetAbortOnUndrainedMessages(bool value) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   abort_on_undrained_messages_ = value;
 }
 
@@ -360,7 +360,7 @@ RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
 FakeXdsTransportFactory::GetTransport(
     const XdsBootstrap::XdsServerTarget& server) {
   std::string key = server.Key();
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   return GetTransportLocked(key);
 }
 

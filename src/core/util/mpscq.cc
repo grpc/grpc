@@ -96,7 +96,7 @@ LockedMultiProducerSingleConsumerQueue::TryPop() {
 
 LockedMultiProducerSingleConsumerQueue::Node*
 LockedMultiProducerSingleConsumerQueue::Pop() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   bool empty = false;
   Node* node;
   do {

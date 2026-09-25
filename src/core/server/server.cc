@@ -103,7 +103,7 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
   RefCountedPtr<ServerConfigFetcher::ConnectionManager>
       connection_manager_to_destroy;
   {
-    MutexLock lock(&listener_state_->mu_);
+    MutexLock lock(listener_state_->mu_);
     connection_manager_to_destroy = listener_state_->connection_manager_;
     listener_state_->connection_manager_ = std::move(connection_manager);
     listener_state_->DrainConnectionsDueToConfigChangeLocked();
@@ -121,7 +121,7 @@ void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << listener_state_->server_.get() << " ListenerState "
       << listener_state_ << "] StopServing()";
-  MutexLock lock(&listener_state_->mu_);
+  MutexLock lock(listener_state_->mu_);
   listener_state_->is_serving_ = false;
   listener_state_->DrainConnectionsDueToConfigChangeLocked();
 }
@@ -163,7 +163,7 @@ void Server::ListenerState::Start() {
         << "[server " << server_.get() << " ListenerState " << this
         << "] Start(): starting listener";
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       started_ = true;
       is_serving_ = true;
     }
@@ -178,7 +178,7 @@ void Server::ListenerState::Stop(bool send_goaways, Duration grace_period) {
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections;
   if (send_goaways) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // Orphan the connections so that they can start cleaning up.
     if (IsServerConnectionTrackingEnabled()) {
       DrainConnectionsLocked(grace_period);
@@ -225,7 +225,7 @@ std::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
       << "] AddLogicalConnection(" << connection.get() << ")";
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (!is_serving_) {
       // Not serving
       return std::nullopt;
@@ -265,7 +265,7 @@ std::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
     }
     new_args = (*args_result).SetObject(security_connector);
   }
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   // Since we let go of the lock earlier, we need to protect ourselves against
   // time-of-check-to-time-of-use cases. The server may have stopped serving
   // or the connection manager may have changed before we add the connection
@@ -292,7 +292,7 @@ void Server::ListenerState::OnHandshakeDone(
   OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
   {
     // Remove the connection if it wasn't already removed.
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     auto connection_handle = connections_.extract(connection);
     if (!connection_handle.empty()) {
       connection_to_remove = std::move(connection_handle.value());
@@ -310,7 +310,7 @@ void Server::ListenerState::RemoveLogicalConnection(
   OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
   {
     // Remove the connection if it wasn't already removed.
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     auto connection_handle = connections_.extract(connection);
     if (!connection_handle.empty()) {
       connection_to_remove = std::move(connection_handle.value());
@@ -372,7 +372,7 @@ void Server::ListenerState::OnDrainGraceTimer() {
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections_to_be_drained;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (draining_connections_list_.empty()) {
       return;
     }
@@ -675,7 +675,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       while (true) {
         NextPendingCall pending_call;
         {
-          MutexLock lock(&server_->mu_call_);
+          MutexLock lock(server_->mu_call_);
           while (!pending_filter_stack_.empty() &&
                  pending_filter_stack_.front().Age() >
                      server_->max_time_in_pending_queue_) {
@@ -745,7 +745,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     size_t cq_idx = 0;
     size_t loop_count;
     {
-      MutexLock lock(&server_->mu_call_);
+      MutexLock lock(server_->mu_call_);
       for (loop_count = 0; loop_count < requests_per_cq_.size(); loop_count++) {
         cq_idx =
             (start_request_queue_index + loop_count) % requests_per_cq_.size();
@@ -790,7 +790,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     size_t loop_count;
     {
       std::vector<std::shared_ptr<ActivityWaiter>> removed_pending;
-      MutexLock lock(&server_->mu_call_);
+      MutexLock lock(server_->mu_call_);
       while (!pending_promises_.empty() &&
              pending_promises_.front()->Age() >
                  server_->max_time_in_pending_queue_) {
@@ -1097,7 +1097,7 @@ class Server::TransportConnectivityWatcher
     // Don't do anything until we are being shut down.
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
     // Shut down channel.
-    MutexLock lock(&server_->mu_global_);
+    MutexLock lock(server_->mu_global_);
     server_->connections_.erase(transport_.get());
     --server_->connections_open_;
     server_->stream_quota_->DecrementOpenChannels();
@@ -1284,7 +1284,7 @@ Server::~Server() {
 }
 
 void Server::AddData(channelz::DataSink sink) {
-  MutexLock global_lock(&mu_global_);
+  MutexLock global_lock(mu_global_);
   sink.AddData(
       "server",
       channelz::PropertyList()
@@ -1353,7 +1353,7 @@ void Server::Start() {
     }
   }
   {
-    MutexLock lock(&mu_global_);
+    MutexLock lock(mu_global_);
     starting_ = true;
   }
   // Register the interested parties from the config fetcher to the cq pollsets
@@ -1369,7 +1369,7 @@ void Server::Start() {
   for (auto& listener_state : listener_states_) {
     listener_state->Start();
   }
-  MutexLock lock(&mu_global_);
+  MutexLock lock(mu_global_);
   starting_ = false;
   starting_cv_.Signal();
 }
@@ -1399,7 +1399,7 @@ grpc_error_handle Server::SetupTransport(
         channel_stack_type);
     if (!destination.ok()) return destination.status();
     t->SetCallDestination(std::move(*destination));
-    MutexLock lock(&mu_global_);
+    MutexLock lock(mu_global_);
     if (ShutdownCalled()) {
       t->DisconnectWithError(GRPC_ERROR_CREATE("Server shutdown"));
     }
@@ -1459,7 +1459,7 @@ grpc_error_handle Server::SetupTransport(
 
 bool Server::HasOpenConnections() {
   if (!IsServerConnectionTrackingEnabled()) {
-    MutexLock lock(&mu_global_);
+    MutexLock lock(mu_global_);
     return !channels_.empty() || !connections_.empty();
   }
   for (const auto& listener_state : listener_states_) {
@@ -1543,7 +1543,7 @@ void Server::MaybeFinishShutdown() {
     return;
   }
   {
-    MutexLock lock(&mu_call_);
+    MutexLock lock(mu_call_);
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
   const bool has_open_connections =
@@ -1597,7 +1597,7 @@ void Server::ListenerDestroyDone(void* arg, grpc_error_handle /*error*/) {
   Server* server = static_cast<Server*>(arg);
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server << "] ListenerDestroyDone()";
-  MutexLock lock(&server->mu_global_);
+  MutexLock lock(server->mu_global_);
   server->listeners_destroyed_++;
   server->MaybeFinishShutdown();
 }
@@ -1630,7 +1630,7 @@ void Server::ShutdownAndNotify(Duration grace_period,
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> removing_connections;
   {
     // Wait for startup to be finished.  Locks mu_global.
-    MutexLock lock(&mu_global_);
+    MutexLock lock(mu_global_);
     while (starting_) {
       starting_cv_.Wait(&mu_global_);
     }
@@ -1653,7 +1653,7 @@ void Server::ShutdownAndNotify(Duration grace_period,
     removing_connections.swap(connections_);
     // Collect all unregistered then registered calls.
     {
-      MutexLock lock(&mu_call_);
+      MutexLock lock(mu_call_);
       KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
     }
     ShutdownUnrefOnShutdownCall();
@@ -1680,7 +1680,7 @@ void Server::CancelAllCalls() {
   if (!IsServerConnectionTrackingEnabled()) {
     ChannelBroadcaster broadcaster;
     {
-      MutexLock lock(&mu_global_);
+      MutexLock lock(mu_global_);
       broadcaster.FillChannelsLocked(GetChannelsLocked());
     }
     broadcaster.BroadcastShutdown(
@@ -1696,7 +1696,7 @@ void Server::SendGoaways() {
   if (!IsServerConnectionTrackingEnabled()) {
     ChannelBroadcaster broadcaster;
     {
-      MutexLock lock(&mu_global_);
+      MutexLock lock(mu_global_);
       broadcaster.FillChannelsLocked(GetChannelsLocked());
     }
     broadcaster.BroadcastShutdown(/*send_goaway=*/true, absl::OkStatus());
@@ -1709,7 +1709,7 @@ void Server::SendGoaways() {
 
 void Server::Orphan() {
   {
-    MutexLock lock(&mu_global_);
+    MutexLock lock(mu_global_);
     GRPC_CHECK(ShutdownCalled() || listener_states_.empty());
     GRPC_CHECK(listeners_destroyed_ == listener_states_.size());
   }
@@ -1821,7 +1821,7 @@ class Server::ChannelData::ConnectivityWatcher
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
     chand_->server_->stream_quota_->DecrementOpenChannels();
     // Shut down channel.
-    MutexLock lock(&chand_->server_->mu_global_);
+    MutexLock lock(chand_->server_->mu_global_);
     chand_->Destroy();
   }
 
@@ -1838,7 +1838,7 @@ Server::ChannelData::~ChannelData() {
 // FIXME: maybe don't do this here either?
     server_->stream_quota_->DecrementOpenChannels();
     if (!IsServerConnectionTrackingEnabled()) {
-      MutexLock lock(&server_->mu_global_);
+      MutexLock lock(server_->mu_global_);
       if (list_position_.has_value()) {
         server_->channels_.erase(*list_position_);
         list_position_.reset();
@@ -1858,7 +1858,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   channelz_socket_uuid_ = channelz_socket_uuid;
   // Publish channel.
   if (!IsServerConnectionTrackingEnabled()) {
-    MutexLock lock(&server_->mu_global_);
+    MutexLock lock(server_->mu_global_);
     server_->channels_.push_front(this);
     list_position_ = server_->channels_.begin();
   }

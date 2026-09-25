@@ -68,7 +68,7 @@ void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
   absl::Status status(static_cast<absl::StatusCode>(
                           static_cast<int>(update.status.error_code())),
                       update.status.error_message());
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   LOG(INFO) << "Received server status notification for " << uri << ": "
             << status;
   status_map_[uri].emplace_back(std::move(status));
@@ -79,7 +79,7 @@ std::optional<absl::Status>
 XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::GetNextStatus(
     const std::string& uri, absl::Time deadline) {
   LOG(INFO) << "Getting next server status notification for " << uri;
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   auto& queue = status_map_[uri];
   if (queue.empty()) {
     grpc_core::CondVar cv;
@@ -167,7 +167,7 @@ void XdsEnd2endTest::ServerThread::Start() {
   grpc_core::Mutex mu;
   // We need to acquire the lock here in order to prevent the notify_one
   // by ServerThread::Serve from firing before the wait below is hit.
-  grpc_core::MutexLock lock(&mu);
+  grpc_core::MutexLock lock(mu);
   grpc_core::CondVar cond;
   thread_ = std::make_unique<std::thread>(
       std::bind(&ServerThread::Serve, this, &mu, &cond));
@@ -210,7 +210,7 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
                                          grpc_core::CondVar* cond) {
   // We need to acquire the lock here in order to prevent the notify_one
   // below from firing before its corresponding wait is executed.
-  grpc_core::MutexLock lock(mu);
+  grpc_core::MutexLock lock(*mu);
   std::string server_address = grpc_core::LocalIpAndPort(port_);
   if (use_xds_enabled_server_) {
     XdsServerBuilder builder;
@@ -758,7 +758,7 @@ void XdsEnd2endTest::AsyncRpc::StartRpc(
   start_time_ = NowFromCycleCounter();
   stub->async()->Echo(&context_, &request_, &response_, [this](Status status) {
     elapsed_time_ = NowFromCycleCounter() - start_time_;
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     status_ = std::move(status);
     cv_.Signal();
   });
@@ -770,7 +770,7 @@ void XdsEnd2endTest::AsyncRpc::CancelRpc() {
 }
 
 Status XdsEnd2endTest::AsyncRpc::GetStatus() {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   while (!status_.has_value()) {
     cv_.Wait(&mu_);
   }

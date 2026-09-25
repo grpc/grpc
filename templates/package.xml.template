@@ -44,7 +44,13 @@
     for dep in set(php_deps) - set({'cares'}):
       lib = lib_maps.get(dep, None)
       if lib:
-         srcs.extend(lib.get('public_headers', []) + lib.headers + lib.src)
+         srcs.extend(
+             lib.get('public_headers', []) +
+             lib.headers +
+             lib.get('headers_windows', []) +
+             lib.src +
+             lib.get('src_windows', [])
+         )
     srcs = sorted(set(srcs))
   %>
       % for src in srcs:

@@ -48,7 +48,7 @@ void GrpcLbClientStats::AddCallDropped(const char* token) {
   gpr_atm_full_fetch_add(&num_calls_started_, (gpr_atm)1);
   gpr_atm_full_fetch_add(&num_calls_finished_, (gpr_atm)1);
   // Record the drop.
-  MutexLock lock(&drop_count_mu_);
+  MutexLock lock(drop_count_mu_);
   if (drop_token_counts_ == nullptr) {
     drop_token_counts_ = std::make_unique<DroppedCallCounts>();
   }
@@ -81,7 +81,7 @@ void GrpcLbClientStats::Get(
                            &num_calls_finished_with_client_failed_to_send_);
   AtomicGetAndResetCounter(num_calls_finished_known_received,
                            &num_calls_finished_known_received_);
-  MutexLock lock(&drop_count_mu_);
+  MutexLock lock(drop_count_mu_);
   *drop_token_counts = std::move(drop_token_counts_);
 }
 

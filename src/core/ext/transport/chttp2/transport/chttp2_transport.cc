@@ -962,7 +962,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
           t->ep.get(), t->interested_parties_until_recv_settings);
       t->interested_parties_until_recv_settings = nullptr;
     }
-    grpc_core::MutexLock lock(&t->ep_destroy_mu);
+    grpc_core::MutexLock lock(t->ep_destroy_mu);
     t->ep.reset();
   }
   t->MaybeNotifyOnReceiveSettingsLocked(error);
@@ -3450,7 +3450,7 @@ void grpc_chttp2_transport::SetPollset(grpc_stream* /*gs*/,
   // using the "poll" polling engine, which is the only one that
   // actually uses pollsets.
   if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
-  grpc_core::MutexLock lock(&ep_destroy_mu);
+  grpc_core::MutexLock lock(ep_destroy_mu);
   if (ep != nullptr) grpc_endpoint_add_to_pollset(ep.get(), pollset);
 }
 
@@ -3460,7 +3460,7 @@ void grpc_chttp2_transport::SetPollsetSet(grpc_stream* /*gs*/,
   // using the "poll" polling engine, which is the only one that
   // actually uses pollsets.
   if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
-  grpc_core::MutexLock lock(&ep_destroy_mu);
+  grpc_core::MutexLock lock(ep_destroy_mu);
   if (ep != nullptr) grpc_endpoint_add_to_pollset_set(ep.get(), pollset_set);
 }
 
