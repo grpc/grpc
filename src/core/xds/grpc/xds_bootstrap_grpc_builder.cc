@@ -80,7 +80,7 @@ NoDestruct<absl::AnyInvocable<void(XdsHttpFilterRegistry&)>>
 
 void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryInitForTest(
     absl::AnyInvocable<void(XdsHttpFilterRegistry&)> init) {
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   *g_http_filter_factory_test_init = std::move(init);
 }
 

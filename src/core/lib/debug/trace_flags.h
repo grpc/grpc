@@ -50,6 +50,7 @@ extern DebugOnlyTraceFlag work_serializer_trace;
 extern DebugOnlyTraceFlag ztrace_trace;
 extern TraceFlag api_trace;
 extern TraceFlag apple_polling_trace;
+extern TraceFlag autosharding_lb_trace;
 extern TraceFlag backend_metric_trace;
 extern TraceFlag backend_metric_filter_trace;
 extern TraceFlag bdp_estimator_trace;

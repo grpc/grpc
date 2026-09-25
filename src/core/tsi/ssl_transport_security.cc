@@ -584,7 +584,7 @@ void TlsOffloadSignDoneCallback(
   std::optional<HandshakerNextArgs> next_args;
   tsi_result result = TSI_INTERNAL_ERROR;
   {
-    grpc_core::MutexLock lock(&handshaker->mu);
+    grpc_core::MutexLock lock(handshaker->mu);
     if (handshaker->is_shutdown) return;
     handshaker->signed_bytes = std::move(signed_data);
     handshaker->signing_handle.reset();
@@ -798,7 +798,7 @@ void OnSelectCertificateDone(
   tsi_result next_result;
   std::optional<HandshakerNextArgs> next_args;
   {
-    grpc_core::MutexLock lock(&handshaker->mu);
+    grpc_core::MutexLock lock(handshaker->mu);
     if (handshaker->is_shutdown) return;
     if (!result.ok()) {
       VLOG(2) << "SelectCertificate failed " << result.status();
@@ -2910,7 +2910,7 @@ static tsi_result ssl_handshaker_next(
     return TSI_INVALID_ARGUMENT;
   }
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
-  grpc_core::MutexLock lock(&impl->mu);
+  grpc_core::MutexLock lock(impl->mu);
   if (impl->is_shutdown) {
     if (error != nullptr) *error = "Handshaker shutdown";
     return TSI_HANDSHAKE_SHUTDOWN;
@@ -2949,7 +2949,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self, bool peer_closed) {
   std::optional<HandshakerNextArgs> next_args;
 #endif  // defined(OPENSSL_IS_BORINGSSL)
   {
-    grpc_core::MutexLock lock(&impl->mu);
+    grpc_core::MutexLock lock(impl->mu);
     // Should never happen, if so something is very wrong
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;

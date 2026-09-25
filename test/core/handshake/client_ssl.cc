@@ -66,13 +66,13 @@ class SslLibraryInfo {
   SslLibraryInfo() {}
 
   void Notify() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     ready_ = true;
     cv_.Signal();
   }
 
   void Await() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     while (!ready_) {
       cv_.Wait(&mu_);
     }
