@@ -168,6 +168,16 @@ def _bazel_mod_show_repo() -> StarlarkLike:
         return e.output
 
 
+def _clean_bazel_cache():
+    subprocess.check_output(
+        [
+            "tools/bazel",
+            "clean",
+            "--expunge",
+        ]
+    )
+
+
 def _bazel_query_xml_tree(query: str) -> ET.Element:
     """Get xml output of bazel query invocation, parsed as XML tree"""
     args = [
@@ -1577,6 +1587,8 @@ _BAZEL_DEPS_QUERIES = [
 #               'srcs': ['//:src/core/lib/surface/init.cc', ... ],
 #               'deps': ['//:grpc_common', ...],
 #               ... }
+
+# _clean_bazel_cache()
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
