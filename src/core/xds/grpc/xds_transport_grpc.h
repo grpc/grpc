@@ -165,6 +165,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
 
   // recv_initial_metadata
   grpc_metadata_array initial_metadata_recv_;
+  grpc_closure on_recv_initial_metadata_;
 
   // send_initial_metadata
   std::vector<grpc_metadata> send_initial_metadata_;

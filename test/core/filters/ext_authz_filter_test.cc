@@ -68,32 +68,31 @@ constexpr absl::string_view kServerHeaderKey = "server-header-key";
 constexpr absl::string_view kServerHeaderValue = "server-header-value";
 constexpr absl::string_view kTrailerKey = "trailer-key";
 constexpr absl::string_view kTrailerValue = "trailer-value";
-constexpr absl::string_view kTrailerKey2 = "trailer-key-2";
-constexpr absl::string_view kTrailerValue2 = "trailer-value-2";
 constexpr absl::string_view kZero = "0";
-constexpr absl::string_view kPermissionDeniedCode = "7";
-constexpr absl::string_view kUnavailableCode = "14";
-constexpr absl::string_view kUnauthenticatedCode = "16";
 constexpr absl::string_view kGrpcStatus = "grpc-status";
-constexpr absl::string_view kGrpcMessage = "grpc-message";
-constexpr absl::string_view kBackendErrorMessage = "backend error";
 constexpr absl::string_view kCheckResponseStatusErrorMessage = "token expired";
 constexpr absl::string_view kDeniedErrorMessage =
     "ExtAuthz request is denied, error message: token expired";
+constexpr absl::string_view kDeniedNoMessageErrorMessage =
+    "ExtAuthz request is denied";
 constexpr absl::string_view kDisabledErrorMessage =
     "ExtAuthz filter is not enabled";
 constexpr absl::string_view kChannelUnavailableErrorMessage =
     "ext_authz channel or transport not available";
 constexpr absl::string_view kFilterConfigNotSetErrorMessage =
     "ext_authz: filter config not set";
-constexpr absl::string_view kFilterConfigWrongTypeErrorMessage =
-    "wrong config type passed to ext_authz filter: wrong_config";
+constexpr absl::string_view kNoResponseErrorMessage =
+    "No response message received";
 constexpr absl::string_view kDeniedResponseNotPresentErrorMessage =
     "denied_response not present in CheckResponse";
 constexpr absl::string_view kOkResponseNotPresentErrorMessage =
     "ok_response not present in CheckResponse";
 constexpr absl::string_view kHeaderMutationNotAllowedErrorMessage =
     "ExtAuthz header mutation is not allowed";
+constexpr absl::string_view kForbiddenHeaderMutationErrorMessage =
+    "Forbidden header mutation: x-custom-header";
+constexpr absl::string_view kForbiddenHeaderRemovalErrorMessage =
+    "Forbidden header removal: x-custom-header";
 constexpr absl::string_view kTransportErrorMessage = "transport failure";
 // Connection attributes used by the server-side tests.
 constexpr char kUriSan[] = "spiffe://foo.com/bar/baz";
@@ -244,6 +243,10 @@ class ExtAuthzFilterTest : public FilterTest {
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
 };
 
+//
+// Filter creation
+//
+
 FILTER_TEST(ExtAuthzFilterTest, CreateSucceeds) {
   auto config = MakeConfig();
   EXPECT_THAT(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config),
@@ -254,6 +257,37 @@ FILTER_TEST(ExtAuthzFilterTest, CreateFailsWithoutConfig) {
   EXPECT_THAT(
       CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), nullptr),
       StatusIs(absl::StatusCode::kInternal, kFilterConfigNotSetErrorMessage));
+}
+
+//
+// Filter enablement (filter_enabled / deny_at_disable)
+//
+
+// With filter_enabled at 100%, sampling is skipped and the authorization
+// service is always called, even if deny_at_disable is set.
+FILTER_TEST(ExtAuthzFilterTest, FilterFullyEnabledCallsAuthz) {
+  auto config = MakeConfig();
+  config->filter_enabled = 1000000;
+  config->deny_at_disable = true;
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        response.mutable_ok_response();
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_TRUE(PullClientInitialMetadata().ok());
+  handler.join();
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
+  WaitForAllPendingWork();
 }
 
 FILTER_TEST(ExtAuthzFilterTest, FilterDisabledAllows) {
@@ -315,6 +349,10 @@ FILTER_TEST(ExtAuthzFilterTest, FilterDisabledWithoutChannelAllows) {
   WaitForAllPendingWork();
 }
 
+//
+// Authorization service unreachable (failure_mode_allow)
+//
+
 FILTER_TEST(ExtAuthzFilterTest, MissingChannelWithFailureModeDeny) {
   auto config = MakeConfig(/*failure_mode_allow=*/false,
                            /*failure_mode_allow_header_add=*/false,
@@ -361,6 +399,30 @@ FILTER_TEST(ExtAuthzFilterTest,
   WaitForAllPendingWork();
 }
 
+FILTER_TEST(ExtAuthzFilterTest, TransportFailureFailureModeDeny) {
+  auto config = MakeConfig(/*failure_mode_allow=*/false,
+                           /*failure_mode_allow_header_add=*/false,
+                           GRPC_STATUS_PERMISSION_DENIED);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        unary_call->MaybeSendStatusToClient(
+            absl::UnavailableError(kTransportErrorMessage));
+      });
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  handler.join();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(
+      **server_trailing_md,
+      HasMetadataResult(absl::PermissionDeniedError(kTransportErrorMessage)));
+  WaitForAllPendingWork();
+}
+
 FILTER_TEST(ExtAuthzFilterTest, TransportFailureWithFailureModeAllow) {
   auto config = MakeConfig(/*failure_mode_allow=*/true,
                            /*failure_mode_allow_header_add=*/false);
@@ -403,18 +465,22 @@ FILTER_TEST(ExtAuthzFilterTest,
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest, TransportFailureFailureModeDeny) {
+//
+// Bad response from the authorization service (failure_mode_allow)
+//
+
+// The authorization service ends the call with OK but never sends a
+// CheckResponse.
+FILTER_TEST(ExtAuthzFilterTest, NoResponseMessageWithFailureModeDeny) {
   auto config = MakeConfig(/*failure_mode_allow=*/false,
                            /*failure_mode_allow_header_add=*/false,
-                           GRPC_STATUS_PERMISSION_DENIED);
+                           GRPC_STATUS_UNAVAILABLE);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
   auto handler = HandleUnaryCall(
       [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
-        unary_call->MaybeSendStatusToClient(
-            absl::UnavailableError(kTransportErrorMessage));
       });
   EXPECT_FALSE(PullClientInitialMetadata().ok());
   handler.join();
@@ -423,9 +489,119 @@ FILTER_TEST(ExtAuthzFilterTest, TransportFailureFailureModeDeny) {
   ASSERT_TRUE(server_trailing_md.ok());
   EXPECT_THAT(
       **server_trailing_md,
-      HasMetadataResult(absl::PermissionDeniedError(kTransportErrorMessage)));
+      HasMetadataResult(absl::UnavailableError(kNoResponseErrorMessage)));
   WaitForAllPendingWork();
 }
+
+FILTER_TEST(ExtAuthzFilterTest,
+            NoResponseMessageWithFailureModeAllowInjectsHeader) {
+  auto config = MakeConfig(/*failure_mode_allow=*/true,
+                           /*failure_mode_allow_header_add=*/true);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+      });
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
+  handler.join();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md,
+              HasMetadataKeyValue(kFailureModeAllowedHeader, kTrue));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
+  WaitForAllPendingWork();
+}
+
+FILTER_TEST(ExtAuthzFilterTest, NonOkStatusWithOkResponseFails) {
+  auto config = MakeConfig();
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(7);
+        response.mutable_ok_response();
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  handler.join();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md,
+              HasMetadataResult(absl::PermissionDeniedError(
+                  kDeniedResponseNotPresentErrorMessage)));
+  WaitForAllPendingWork();
+}
+
+FILTER_TEST(ExtAuthzFilterTest, OkStatusWithDeniedResponseFails) {
+  auto config = MakeConfig();
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* denied = response.mutable_denied_response();
+        denied->mutable_status()->set_code(
+            envoy::type::v3::StatusCode::Unauthorized);
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  handler.join();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md,
+              HasMetadataResult(absl::PermissionDeniedError(
+                  kOkResponseNotPresentErrorMessage)));
+  WaitForAllPendingWork();
+}
+
+// A CheckResponse that fails to parse is a failure, not a deny, so
+// failure_mode_allow lets the call through.
+FILTER_TEST(ExtAuthzFilterTest,
+            MalformedResponseWithFailureModeAllowInjectsHeader) {
+  auto config = MakeConfig(/*failure_mode_allow=*/true,
+                           /*failure_mode_allow_header_add=*/true);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* denied = response.mutable_denied_response();
+        denied->mutable_status()->set_code(
+            envoy::type::v3::StatusCode::Unauthorized);
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
+  handler.join();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md,
+              HasMetadataKeyValue(kFailureModeAllowedHeader, kTrue));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
+  WaitForAllPendingWork();
+}
+
+//
+// OK response
+//
 
 FILTER_TEST(ExtAuthzFilterTest, OkResponseAllows) {
   auto config = MakeConfig();
@@ -503,49 +679,6 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseAdditionsBeforeRemovals) {
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest,
-            HeaderMutationFailedOnOkResponseWithFailureModeAllow) {
-  auto config = MakeConfig(/*failure_mode_allow=*/true,
-                           /*failure_mode_allow_header_add=*/true);
-  HeaderMutationRules rules;
-  rules.disallow_all = true;
-  rules.disallow_is_error = true;
-  config->decoder_header_mutation_rules = std::move(rules);
-  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
-  StartCallForFilter(MakeClientMetadata());
-  auto handler = HandleUnaryCall(
-      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
-        auto msg = unary_call->WaitForMessageFromClient();
-        ASSERT_TRUE(msg.has_value());
-        envoy::service::auth::v3::CheckResponse response;
-        response.mutable_status()->set_code(0);
-        auto* ok = response.mutable_ok_response();
-        auto* header = ok->add_headers();
-        header->mutable_header()->set_key(std::string(kCustomHeaderKey));
-        header->mutable_header()->set_value(std::string(kCustomHeaderValue));
-        unary_call->SendMessageToClient(response.SerializeAsString());
-      });
-  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
-  handler.join();
-  ASSERT_TRUE(client_md.ok());
-  EXPECT_THAT(**client_md,
-              HasMetadataKeyValue(kFailureModeAllowedHeader, kTrue));
-  PushServerInitialMetadata(
-      NewServerMetadata({{kServerHeaderKey, kServerHeaderValue}}));
-  ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_md =
-      PullServerInitialMetadata();
-  ASSERT_TRUE(server_initial_md.ok());
-  ASSERT_TRUE(server_initial_md->has_value());
-  EXPECT_THAT(***server_initial_md,
-              HasMetadataKeyValue(kServerHeaderKey, kServerHeaderValue));
-  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
-  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
-      PullServerTrailingMetadata();
-  ASSERT_TRUE(server_trailing_md.ok());
-  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
-  WaitForAllPendingWork();
-}
-
 FILTER_TEST(ExtAuthzFilterTest, OkResponseModifyResponseHeaders) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
@@ -586,13 +719,10 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseModifyResponseHeaders) {
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest,
-            ResponseHeaderMutationFailsOnOkResponseWithFailureModeDeny) {
+// response_headers_to_add is not applied when the server replies with
+// trailers-only.
+FILTER_TEST(ExtAuthzFilterTest, TrailersOnlySkipsResponseHeaders) {
   auto config = MakeConfig();
-  HeaderMutationRules rules;
-  rules.disallow_all = true;
-  rules.disallow_is_error = true;
-  config->decoder_header_mutation_rules = std::move(rules);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
   auto handler = HandleUnaryCall(
@@ -609,40 +739,26 @@ FILTER_TEST(ExtAuthzFilterTest,
       });
   EXPECT_TRUE(PullClientInitialMetadata().ok());
   handler.join();
-  PushServerInitialMetadata(NewServerMetadata());
-  (void)PullServerInitialMetadata();
+  ServerMetadataHandle trailers_only_md = NewServerMetadata();
+  trailers_only_md->Set(GrpcTrailersOnly(), true);
+  PushServerInitialMetadata(std::move(trailers_only_md));
+  ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_md =
+      PullServerInitialMetadata();
+  ASSERT_TRUE(server_initial_md.ok());
+  ASSERT_TRUE(server_initial_md->has_value());
+  EXPECT_THAT(***server_initial_md, LacksMetadataKey(kCustomHeaderKey));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
   ValueOrFailure<ServerMetadataHandle> server_trailing_md =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_md.ok());
-  EXPECT_THAT(**server_trailing_md,
-              HasMetadataResult(absl::PermissionDeniedError(
-                  kHeaderMutationNotAllowedErrorMessage)));
+  EXPECT_THAT(**server_trailing_md, AllOf(HasMetadataResult(absl::OkStatus()),
+                                          LacksMetadataKey(kCustomHeaderKey)));
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest, NonOkStatusWithOkResponseFails) {
-  auto config = MakeConfig();
-  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
-  StartCallForFilter(MakeClientMetadata());
-  auto handler = HandleUnaryCall(
-      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
-        auto msg = unary_call->WaitForMessageFromClient();
-        ASSERT_TRUE(msg.has_value());
-        envoy::service::auth::v3::CheckResponse response;
-        response.mutable_status()->set_code(7);
-        response.mutable_ok_response();
-        unary_call->SendMessageToClient(response.SerializeAsString());
-      });
-  EXPECT_FALSE(PullClientInitialMetadata().ok());
-  handler.join();
-  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
-      PullServerTrailingMetadata();
-  ASSERT_TRUE(server_trailing_md.ok());
-  EXPECT_THAT(**server_trailing_md,
-              HasMetadataResult(absl::PermissionDeniedError(
-                  kDeniedResponseNotPresentErrorMessage)));
-  WaitForAllPendingWork();
-}
+//
+// Denied response
+//
 
 FILTER_TEST(ExtAuthzFilterTest, DeniedResponseFails) {
   auto config = MakeConfig();
@@ -712,7 +828,9 @@ FILTER_TEST(ExtAuthzFilterTest, DeniedResponseModifiesServerTrailingMetadata) {
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest, OkStatusWithDeniedResponseFails) {
+// Without a CheckResponse status message, the error has no
+// ", error message: ..." suffix.
+FILTER_TEST(ExtAuthzFilterTest, DeniedResponseWithoutStatusMessage) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
@@ -721,7 +839,7 @@ FILTER_TEST(ExtAuthzFilterTest, OkStatusWithDeniedResponseFails) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
-        response.mutable_status()->set_code(0);
+        response.mutable_status()->set_code(7);
         auto* denied = response.mutable_denied_response();
         denied->mutable_status()->set_code(
             envoy::type::v3::StatusCode::Unauthorized);
@@ -733,8 +851,292 @@ FILTER_TEST(ExtAuthzFilterTest, OkStatusWithDeniedResponseFails) {
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_md.ok());
   EXPECT_THAT(**server_trailing_md,
+              HasMetadataResult(
+                  absl::UnauthenticatedError(kDeniedNoMessageErrorMessage)));
+  WaitForAllPendingWork();
+}
+
+// failure_mode_allow only covers failures to get a decision. A real deny from
+// the authorization service must still fail the call.
+FILTER_TEST(ExtAuthzFilterTest, DeniedResponseWithFailureModeAllowStillDenies) {
+  auto config = MakeConfig(/*failure_mode_allow=*/true,
+                           /*failure_mode_allow_header_add=*/true);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(7);
+        response.mutable_status()->set_message(
+            std::string(kCheckResponseStatusErrorMessage));
+        auto* denied = response.mutable_denied_response();
+        denied->mutable_status()->set_code(
+            envoy::type::v3::StatusCode::Unauthorized);
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  handler.join();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(
+      **server_trailing_md,
+      HasMetadataResult(absl::UnauthenticatedError(kDeniedErrorMessage)));
+  WaitForAllPendingWork();
+}
+
+//
+// Header mutation rules
+//
+
+FILTER_TEST(ExtAuthzFilterTest, RequestHeaderMutationFailsWithFailureModeDeny) {
+  auto config = MakeConfig(/*failure_mode_allow=*/false,
+                           /*failure_mode_allow_header_add=*/false,
+                           GRPC_STATUS_UNAVAILABLE);
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.disallow_is_error = true;
+  config->decoder_header_mutation_rules = std::move(rules);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* ok = response.mutable_ok_response();
+        auto* header = ok->add_headers();
+        header->mutable_header()->set_key(std::string(kCustomHeaderKey));
+        header->mutable_header()->set_value(std::string(kCustomHeaderValue));
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  handler.join();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::UnavailableError(
+                                        kForbiddenHeaderMutationErrorMessage)));
+  WaitForAllPendingWork();
+}
+
+FILTER_TEST(ExtAuthzFilterTest,
+            RequestHeaderMutationFailsWithFailureModeAllow) {
+  auto config = MakeConfig(/*failure_mode_allow=*/true,
+                           /*failure_mode_allow_header_add=*/true);
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.disallow_is_error = true;
+  config->decoder_header_mutation_rules = std::move(rules);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* ok = response.mutable_ok_response();
+        auto* header = ok->add_headers();
+        header->mutable_header()->set_key(std::string(kCustomHeaderKey));
+        header->mutable_header()->set_value(std::string(kCustomHeaderValue));
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
+  handler.join();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md,
+              AllOf(HasMetadataKeyValue(kFailureModeAllowedHeader, kTrue),
+                    LacksMetadataKey(kCustomHeaderKey)));
+  PushServerInitialMetadata(
+      NewServerMetadata({{kServerHeaderKey, kServerHeaderValue}}));
+  ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_md =
+      PullServerInitialMetadata();
+  ASSERT_TRUE(server_initial_md.ok());
+  ASSERT_TRUE(server_initial_md->has_value());
+  EXPECT_THAT(***server_initial_md,
+              HasMetadataKeyValue(kServerHeaderKey, kServerHeaderValue));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
+  WaitForAllPendingWork();
+}
+
+FILTER_TEST(ExtAuthzFilterTest, RequestHeaderRemovalFailsWithFailureModeDeny) {
+  auto config = MakeConfig(/*failure_mode_allow=*/false,
+                           /*failure_mode_allow_header_add=*/false,
+                           GRPC_STATUS_UNAVAILABLE);
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.disallow_is_error = true;
+  config->decoder_header_mutation_rules = std::move(rules);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(
+      MakeClientMetadata({{kCustomHeaderKey, kCustomHeaderValue}}));
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* ok = response.mutable_ok_response();
+        ok->add_headers_to_remove(std::string(kCustomHeaderKey));
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  handler.join();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::UnavailableError(
+                                        kForbiddenHeaderRemovalErrorMessage)));
+  WaitForAllPendingWork();
+}
+
+FILTER_TEST(ExtAuthzFilterTest, RequestHeaderRemovalFailsWithFailureModeAllow) {
+  auto config = MakeConfig(/*failure_mode_allow=*/true,
+                           /*failure_mode_allow_header_add=*/true);
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.disallow_is_error = true;
+  config->decoder_header_mutation_rules = std::move(rules);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(
+      MakeClientMetadata({{kCustomHeaderKey, kCustomHeaderValue}}));
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* ok = response.mutable_ok_response();
+        ok->add_headers_to_remove(std::string(kCustomHeaderKey));
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
+  handler.join();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md,
+              AllOf(HasMetadataKeyValue(kFailureModeAllowedHeader, kTrue),
+                    HasMetadataKeyValue(kCustomHeaderKey, kCustomHeaderValue)));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
+  WaitForAllPendingWork();
+}
+
+FILTER_TEST(ExtAuthzFilterTest,
+            ResponseHeaderMutationFailsWithFailureModeDeny) {
+  auto config = MakeConfig();
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.disallow_is_error = true;
+  config->decoder_header_mutation_rules = std::move(rules);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* ok = response.mutable_ok_response();
+        auto* header = ok->add_response_headers_to_add();
+        header->mutable_header()->set_key(std::string(kCustomHeaderKey));
+        header->mutable_header()->set_value(std::string(kCustomHeaderValue));
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_TRUE(PullClientInitialMetadata().ok());
+  handler.join();
+  PushServerInitialMetadata(NewServerMetadata());
+  (void)PullServerInitialMetadata();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md,
               HasMetadataResult(absl::PermissionDeniedError(
-                  kOkResponseNotPresentErrorMessage)));
+                  kHeaderMutationNotAllowedErrorMessage)));
+  WaitForAllPendingWork();
+}
+
+// Response header mutation errors fail the call with status_on_error even
+// when failure_mode_allow is set.
+FILTER_TEST(ExtAuthzFilterTest,
+            ResponseHeaderMutationFailsWithFailureModeAllow) {
+  auto config = MakeConfig(/*failure_mode_allow=*/true,
+                           /*failure_mode_allow_header_add=*/true,
+                           GRPC_STATUS_UNAVAILABLE);
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.disallow_is_error = true;
+  config->decoder_header_mutation_rules = std::move(rules);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* ok = response.mutable_ok_response();
+        auto* header = ok->add_response_headers_to_add();
+        header->mutable_header()->set_key(std::string(kCustomHeaderKey));
+        header->mutable_header()->set_value(std::string(kCustomHeaderValue));
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_TRUE(PullClientInitialMetadata().ok());
+  handler.join();
+  PushServerInitialMetadata(NewServerMetadata());
+  (void)PullServerInitialMetadata();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md,
+              HasMetadataResult(absl::UnavailableError(
+                  kHeaderMutationNotAllowedErrorMessage)));
+  WaitForAllPendingWork();
+}
+
+FILTER_TEST(ExtAuthzFilterTest,
+            HeaderMutationFailsOnDeniedResponseWithFailureModeDeny) {
+  auto config = MakeConfig();
+  config->failure_mode_allow = false;
+  config->status_on_error = GRPC_STATUS_RESOURCE_EXHAUSTED;
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.disallow_is_error = true;
+  config->decoder_header_mutation_rules = std::move(rules);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(7);
+        auto* denied = response.mutable_denied_response();
+        denied->mutable_status()->set_code(
+            envoy::type::v3::StatusCode::Unauthorized);
+        auto* header = denied->add_headers();
+        header->mutable_header()->set_key(std::string(kCustomHeaderKey));
+        header->mutable_header()->set_value(std::string(kCustomHeaderValue));
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  handler.join();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md,
+              HasMetadataResult(absl::ResourceExhaustedError(
+                  kHeaderMutationNotAllowedErrorMessage)));
   WaitForAllPendingWork();
 }
 
@@ -773,14 +1175,66 @@ FILTER_TEST(ExtAuthzFilterTest,
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest,
-            HeaderMutationFailsOnDeniedResponseWithFailureModeDeny) {
+// With disallow_is_error=false, disallowed mutations on an OK response are
+// skipped and the call goes through unchanged.
+FILTER_TEST(ExtAuthzFilterTest, DisallowedMutationsIgnoredOnOkResponse) {
   auto config = MakeConfig();
-  config->failure_mode_allow = false;
-  config->status_on_error = GRPC_STATUS_RESOURCE_EXHAUSTED;
   HeaderMutationRules rules;
   rules.disallow_all = true;
-  rules.disallow_is_error = true;
+  rules.disallow_is_error = false;
+  config->decoder_header_mutation_rules = std::move(rules);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(
+      MakeClientMetadata({{kCustomHeaderKey2, kCustomHeaderValue2}}));
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* ok = response.mutable_ok_response();
+        auto* header = ok->add_headers();
+        header->mutable_header()->set_key(std::string(kCustomHeaderKey));
+        header->mutable_header()->set_value(std::string(kCustomHeaderValue));
+        ok->add_headers_to_remove(std::string(kCustomHeaderKey2));
+        auto* response_header = ok->add_response_headers_to_add();
+        response_header->mutable_header()->set_key(
+            std::string(kCustomHeaderKey));
+        response_header->mutable_header()->set_value(
+            std::string(kCustomHeaderValue));
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
+  handler.join();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md,
+              AllOf(LacksMetadataKey(kCustomHeaderKey),
+                    HasMetadataKeyValue(kCustomHeaderKey2, kCustomHeaderValue2),
+                    LacksMetadataKey(kFailureModeAllowedHeader)));
+  PushServerInitialMetadata(
+      NewServerMetadata({{kServerHeaderKey, kServerHeaderValue}}));
+  ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_md =
+      PullServerInitialMetadata();
+  ASSERT_TRUE(server_initial_md.ok());
+  ASSERT_TRUE(server_initial_md->has_value());
+  EXPECT_THAT(***server_initial_md,
+              AllOf(HasMetadataKeyValue(kServerHeaderKey, kServerHeaderValue),
+                    LacksMetadataKey(kCustomHeaderKey)));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
+  WaitForAllPendingWork();
+}
+
+// With disallow_is_error=false, disallowed headers on a denied response are
+// skipped and the deny status is kept.
+FILTER_TEST(ExtAuthzFilterTest, DisallowedMutationsIgnoredOnDeniedResponse) {
+  auto config = MakeConfig();
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.disallow_is_error = false;
   config->decoder_header_mutation_rules = std::move(rules);
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
@@ -790,6 +1244,8 @@ FILTER_TEST(ExtAuthzFilterTest,
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
         response.mutable_status()->set_code(7);
+        response.mutable_status()->set_message(
+            std::string(kCheckResponseStatusErrorMessage));
         auto* denied = response.mutable_denied_response();
         denied->mutable_status()->set_code(
             envoy::type::v3::StatusCode::Unauthorized);
@@ -803,9 +1259,10 @@ FILTER_TEST(ExtAuthzFilterTest,
   ValueOrFailure<ServerMetadataHandle> server_trailing_md =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_md.ok());
-  EXPECT_THAT(**server_trailing_md,
-              HasMetadataResult(absl::ResourceExhaustedError(
-                  kHeaderMutationNotAllowedErrorMessage)));
+  EXPECT_THAT(
+      **server_trailing_md,
+      AllOf(HasMetadataResult(absl::UnauthenticatedError(kDeniedErrorMessage)),
+            LacksMetadataKey(kCustomHeaderKey)));
   WaitForAllPendingWork();
 }
 
