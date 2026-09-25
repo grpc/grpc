@@ -50,8 +50,9 @@ class XdsStreamingCallPromiseWrapper final
 
   // Constructs a new streaming call wrapper for the given method on the
   // transport.
-  XdsStreamingCallPromiseWrapper(XdsTransport& transport, const char* method,
-                                 bool start_upon_send_message = false);
+  XdsStreamingCallPromiseWrapper(
+      XdsTransport& transport, const char* method,
+      XdsTransport::CallOptions options = XdsTransport::CallOptions());
 
   // Pushes a message on the stream.
   //
