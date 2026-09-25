@@ -197,6 +197,7 @@ _TESTS = [
     "server_finishes_request",
     "server_streaming",
     "shutdown_finishes_calls",
+    "shutdown_finishes_pending_calls",
     "shutdown_finishes_tags",
     "simple_delayed_request",
     "simple_metadata",
