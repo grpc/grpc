@@ -212,17 +212,17 @@ class BaseNode : public DualRefCounted<BaseNode> {
   void Orphaned() override;
 
   bool HasParent(const BaseNode* parent) const {
-    MutexLock lock(&parent_mu_);
+    MutexLock lock(parent_mu_);
     return parents_.find(parent) != parents_.end();
   }
 
   void AddParent(BaseNode* parent) {
-    MutexLock lock(&parent_mu_);
+    MutexLock lock(parent_mu_);
     parents_.insert(parent->WeakRef());
   }
 
   void RemoveParent(BaseNode* parent) {
-    MutexLock lock(&parent_mu_);
+    MutexLock lock(parent_mu_);
     parents_.erase(parent);
   }
 
@@ -504,7 +504,7 @@ class ChannelNode final : public BaseNode {
   void Orphaned() override {
     ChannelArgs to_destroy;
     {
-      MutexLock lock(&channel_args_mu_);
+      MutexLock lock(channel_args_mu_);
       std::swap(channel_args_, to_destroy);
     }
     BaseNode::Orphaned();
@@ -526,7 +526,7 @@ class ChannelNode final : public BaseNode {
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
     ChannelArgs to_destroy;
-    MutexLock lock(&channel_args_mu_);
+    MutexLock lock(channel_args_mu_);
     std::swap(channel_args_, to_destroy);
     channel_args_ = channel_args;
   }
@@ -542,7 +542,7 @@ class ChannelNode final : public BaseNode {
   std::set<intptr_t> child_channels() const;
   std::set<intptr_t> child_subchannels() const;
   ChannelArgs channel_args() const {
-    MutexLock lock(&channel_args_mu_);
+    MutexLock lock(channel_args_mu_);
     return channel_args_;
   }
 
@@ -571,7 +571,7 @@ class SubchannelNode final : public BaseNode {
   void Orphaned() override {
     ChannelArgs to_destroy;
     {
-      MutexLock lock(&channel_args_mu_);
+      MutexLock lock(channel_args_mu_);
       std::swap(channel_args_, to_destroy);
     }
     BaseNode::Orphaned();
@@ -585,7 +585,7 @@ class SubchannelNode final : public BaseNode {
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
     ChannelArgs to_destroy;
-    MutexLock lock(&channel_args_mu_);
+    MutexLock lock(channel_args_mu_);
     std::swap(channel_args_, to_destroy);
     channel_args_ = channel_args;
   }
@@ -597,7 +597,7 @@ class SubchannelNode final : public BaseNode {
   std::string connectivity_state() const;
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
   ChannelArgs channel_args() const {
-    MutexLock lock(&channel_args_mu_);
+    MutexLock lock(channel_args_mu_);
     return channel_args_;
   }
 
@@ -626,7 +626,7 @@ class ServerNode final : public BaseNode {
   void Orphaned() override {
     ChannelArgs to_destroy;
     {
-      MutexLock lock(&channel_args_mu_);
+      MutexLock lock(channel_args_mu_);
       std::swap(channel_args_, to_destroy);
     }
     BaseNode::Orphaned();
@@ -640,7 +640,7 @@ class ServerNode final : public BaseNode {
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
     ChannelArgs to_destroy;
-    MutexLock lock(&channel_args_mu_);
+    MutexLock lock(channel_args_mu_);
     std::swap(channel_args_, to_destroy);
     channel_args_ = channel_args;
   }
@@ -655,7 +655,7 @@ class ServerNode final : public BaseNode {
   std::map<intptr_t, WeakRefCountedPtr<SocketNode>> child_sockets() const;
 
   ChannelArgs channel_args() const {
-    MutexLock lock(&channel_args_mu_);
+    MutexLock lock(channel_args_mu_);
     return channel_args_;
   }
 

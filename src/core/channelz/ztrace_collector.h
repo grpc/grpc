@@ -203,7 +203,7 @@ class ZTraceCollector {
   bool IsActive() {
     if (!impl_.is_set()) return false;
     auto impl = impl_.Get();
-    MutexLock lock(&impl->mu);
+    MutexLock lock(impl->mu);
     return !impl->instances.empty();
   }
 
@@ -388,7 +388,7 @@ class ZTraceCollector {
 
     ~ZTraceImpl() override {
       if (instance_ != nullptr) {
-        MutexLock lock(&impl_->mu);
+        MutexLock lock(impl_->mu);
         instance_->Finish(absl::CancelledError());
       }
     }
@@ -400,7 +400,7 @@ class ZTraceCollector {
       CHECK(instance_ == nullptr);
       instance_ = MakeRefCounted<Instance>(std::move(args), event_engine);
       RefCountedPtr<Instance> oldest_instance;
-      MutexLock lock(&impl_->mu);
+      MutexLock lock(impl_->mu);
       if (impl_->instances.size() > 20) {
         // Eject oldest running trace
         Timestamp oldest_time = Timestamp::InfFuture();
@@ -430,7 +430,7 @@ class ZTraceCollector {
         const bool end =
             (response.ok() && !response->has_value()) || !response.ok();
         (*callback)(std::move(response));
-        MutexLock lock(&impl->mu);
+        MutexLock lock(impl->mu);
         if (end) {
           impl->instances.erase(instance);
         } else {
@@ -449,7 +449,7 @@ class ZTraceCollector {
     auto value = std::pair(gpr_get_cycle_counter(), std::forward<T>(data));
     auto* impl = impl_.Get();
     {
-      MutexLock lock(&impl->mu);
+      MutexLock lock(impl->mu);
       switch (impl->instances.size()) {
         case 0:
           return;
