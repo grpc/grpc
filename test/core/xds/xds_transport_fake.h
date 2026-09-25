@@ -59,13 +59,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     FakeStreamingCall(
         WeakRefCountedPtr<FakeXdsTransport> transport, const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        bool start_upon_send_message)
+        XdsTransport::CallOptions options)
         : transport_(std::move(transport)),
           method_(method),
           event_engine_(transport_->factory()->event_engine_),
+          wait_for_ready_(options.wait_for_ready),
           event_handler_(
               MakeRefCounted<RefCountedEventHandler>(std::move(event_handler))),
-          started_(!start_upon_send_message) {}
+          started_(!options.start_upon_send_message) {}
 
     ~FakeStreamingCall() override;
 
@@ -102,6 +103,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       return half_closed_;
     }
 
+    bool wait_for_ready() const { return wait_for_ready_; }
+
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
      public:
@@ -131,6 +134,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const char* method_;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine_;
+    const bool wait_for_ready_;
 
     mutable Mutex mu_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
@@ -231,7 +235,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler,
-        bool start_upon_send_message, bool wait_for_ready) override;
+        CallOptions options) override;
 
     void ResetBackoff() override {}
 

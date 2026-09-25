@@ -85,21 +85,24 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
     WaitForSingleOwner(std::move(event_engine_));
   }
 
+  using CallOptions = XdsTransportFactory::XdsTransport::CallOptions;
+
   void InitStream(bool auto_complete_messages_from_client = true,
-                  bool start_upon_send_message = false) {
+                  CallOptions options = CallOptions()) {
     transport_factory_->SetAutoCompleteMessagesFromClient(
         auto_complete_messages_from_client);
     absl::Status status;
     transport_ = transport_factory_->GetTransport(*target_, &status);
     ASSERT_TRUE(status.ok()) << status;
     ASSERT_NE(transport_, nullptr);
-    wrapper_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
-        *transport_, kMethod, start_upon_send_message, /*wait_for_ready=*/false);
+    wrapper_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(*transport_,
+                                                              kMethod, options);
     stream_ = transport_factory_->WaitForStream(*target_, kMethod);
-    if (start_upon_send_message) {
+    if (options.start_upon_send_message) {
       ASSERT_EQ(stream_, nullptr);
     } else {
       ASSERT_NE(stream_, nullptr);
+      EXPECT_EQ(stream_->wait_for_ready(), options.wait_for_ready);
     }
   }
 
@@ -287,7 +290,7 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, PushMessageWithSendHalfClose) {
 
 TEST_F(XdsStreamingCallPromiseWrapperTest, StartUponSendMessage) {
   InitStream(/*auto_complete_messages_from_client=*/true,
-             /*start_upon_send_message=*/true);
+             CallOptions().set_start_upon_send_message(true));
   std::optional<std::string> received_message;
   auto pull_activity = MakeActivity(
       [this, &received_message] {
@@ -318,6 +321,7 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, StartUponSendMessage) {
   EXPECT_TRUE(send_completed);
   stream_ = transport_factory_->WaitForStream(*target_, kMethod);
   ASSERT_NE(stream_, nullptr);
+  EXPECT_FALSE(stream_->wait_for_ready());
   EXPECT_EQ(stream_->WaitForMessageFromClient(), kClientMessage);
   EXPECT_TRUE(stream_->half_closed());
   stream_->SendMessageToClient(kServerMessage);
