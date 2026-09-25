@@ -287,6 +287,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_QueryPar
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Action.QueryParameterValueMatch");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_RemoteAddressMatch_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Action.RemoteAddressMatch");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Override_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Override");
@@ -295,6 +300,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Override_getmsg
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Override_DynamicMetadata_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Override.DynamicMetadata");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Override_RateLimitOverride_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Override.RateLimitOverride");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_HitsAddend_getmsgdef(upb_DefPool *s) {
@@ -310,6 +320,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_HeaderMatcher_getmsgdef(u
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_QueryParameterMatcher_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.QueryParameterMatcher");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_CookieMatcher_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.CookieMatcher");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_InternalRedirectPolicy_getmsgdef(upb_DefPool *s) {

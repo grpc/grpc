@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include "upb/generated_code_support.h"
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.h"
+#include "envoy/config/core/v3/address.upb_minitable.h"
 #include "envoy/config/core/v3/base.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 
@@ -17,20 +18,22 @@
 
 extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
 typedef struct {
-  upb_MiniTableField fields[1];
-  upb_MiniTableSubInternal subs[1];
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
 } envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init_Fields;
 
 static const envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init_Fields envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__fields = {{
-  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
  },
   {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TransportSocket_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
 }};
 
 const upb_MiniTable envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init = {
   &envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.transport_sockets.http_11_proxy.v3.Http11ProxyUpstreamTransport",
 #endif

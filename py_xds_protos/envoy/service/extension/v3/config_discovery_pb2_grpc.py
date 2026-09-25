@@ -27,7 +27,6 @@ if _version_not_supported:
 
 class ExtensionConfigDiscoveryServiceStub(object):
     """[#protodoc-title: Extension config discovery service (ECDS)]
-
     A service that supports dynamic configuration updates for a specific filter.
     Currently, ECDS is supported for network filters, HTTP filters, UDP session filters, and listener filters.
     Please check :ref:`Extension Config Discovery Service (ECDS) API <config_overview_extension_discovery>`.
@@ -80,7 +79,6 @@ class ExtensionConfigDiscoveryServiceStub(object):
 
 class ExtensionConfigDiscoveryServiceServicer(object):
     """[#protodoc-title: Extension config discovery service (ECDS)]
-
     A service that supports dynamic configuration updates for a specific filter.
     Currently, ECDS is supported for network filters, HTTP filters, UDP session filters, and listener filters.
     Please check :ref:`Extension Config Discovery Service (ECDS) API <config_overview_extension_discovery>`.
@@ -154,7 +152,6 @@ def add_ExtensionConfigDiscoveryServiceServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class ExtensionConfigDiscoveryService(object):
     """[#protodoc-title: Extension config discovery service (ECDS)]
-
     A service that supports dynamic configuration updates for a specific filter.
     Currently, ECDS is supported for network filters, HTTP filters, UDP session filters, and listener filters.
     Please check :ref:`Extension Config Discovery Service (ECDS) API <config_overview_extension_discovery>`.

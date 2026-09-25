@@ -23,15 +23,16 @@
 
 extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
 typedef struct {
-  upb_MiniTableField fields[4];
+  upb_MiniTableField fields[5];
   upb_MiniTableSubInternal subs[2];
 } envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init_Fields;
 
 static const envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init_Fields envoy_extensions_filters_http_fault_v3_FaultAbort__fields = {{
-  {2, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 16), 64, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(7, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(20, 40), UPB_SIZE(-17, -13), kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 32), 64, UPB_SIZE(12, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 40), UPB_SIZE(-17, -13), UPB_SIZE(10, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 40), UPB_SIZE(-17, -13), kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
  },
   {
   {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init},
@@ -40,18 +41,18 @@ static const envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init_Fi
 
 const upb_MiniTable envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init = {
   &envoy_extensions_filters_http_fault_v3_FaultAbort__fields.fields[0],
-  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.fault.v3.FaultAbort",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c02000010, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
+    {0x0028000c02000010, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c05000028, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0028000c05000028, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
+    {0x001000003f000032, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
