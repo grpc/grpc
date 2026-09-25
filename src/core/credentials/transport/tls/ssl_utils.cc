@@ -342,6 +342,22 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(ctx.get(), GRPC_PEER_IP_PROPERTY_NAME,
                                      prop->value.data, prop->value.length);
     }
+    // The three properties below describe the LOCAL endpoint's certificate,
+    // not the peer's, so they must never affect
+    // peer_identity_property_name.
+    else if (strcmp(prop->name, TSI_X509_LOCAL_URI_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(),
+                                     GRPC_X509_LOCAL_URI_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_LOCAL_DNS_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(),
+                                     GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_LOCAL_SUBJECT_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(),
+                                     GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+    }
   }
   if (peer_identity_property_name != nullptr) {
     GRPC_CHECK(grpc_auth_context_set_peer_identity_property_name(

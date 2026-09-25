@@ -725,10 +725,12 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
       "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
       "StreamAggregatedResources";
   streaming_call_ = xds_channel()->transport_->CreateStreamingCall(
-      method, std::make_unique<StreamEventHandler>(
-                  // Passing the initial ref here.  This ref will go away when
-                  // the StreamEventHandler is destroyed.
-                  RefCountedPtr<AdsCall>(this)));
+      method,
+      std::make_unique<StreamEventHandler>(
+          // Passing the initial ref here.  This ref will go away when
+          // the StreamEventHandler is destroyed.
+          RefCountedPtr<AdsCall>(this)),
+      /*start_upon_send_message=*/false);
   GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
@@ -921,7 +923,8 @@ void XdsClient::XdsChannel::AdsCall::SendMessageLocked(
       << " version=" << xds_channel()->resource_type_version_map_[type]
       << " nonce=" << state.nonce << " error=" << state.status;
   state.status = absl::OkStatus();
-  streaming_call_->SendMessage(std::move(serialized_message));
+  streaming_call_->SendMessage(std::move(serialized_message),
+                               /*send_half_close=*/false);
   send_message_pending_ = type;
 }
 

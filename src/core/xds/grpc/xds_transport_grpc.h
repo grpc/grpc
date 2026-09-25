@@ -171,6 +171,10 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   std::vector<grpc_metadata> send_initial_metadata_;
   bool sent_initial_metadata_ = false;
 
+  // Whether StartCallOps() has been called.  Will be false upon
+  // construction only if start_upon_send_message was set in the ctor.
+  bool call_started_ = false;
+
   // send_message
   grpc_byte_buffer* send_message_payload_ = nullptr;
   grpc_closure on_request_sent_;

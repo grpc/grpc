@@ -205,6 +205,8 @@ class FilterTest : public YodelTest {
   // R"("maxRequestMessageBytes": 4)". Call before StartCall().
   void SetServiceConfig(absl::string_view method_config_fields);
 
+  void Shutdown() override;
+
  private:
   static constexpr absl::string_view kTestPath = "/test_method";
 
@@ -251,8 +253,6 @@ class FilterTest : public YodelTest {
 
   ChannelArgs WithTestChannelArgs(const ChannelArgs& args);
   absl::Status FinishInitChannel(InterceptionChainBuilder& builder);
-
-  void Shutdown() override;
 
   RefCountedPtr<TestCallDestination> destination_ =
       MakeRefCounted<TestCallDestination>();
