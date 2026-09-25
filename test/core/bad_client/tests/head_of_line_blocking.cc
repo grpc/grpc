@@ -72,7 +72,7 @@ static const char prefix[] =
     "";
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* registered_method) {
+                     void* registered_method, gpr_event* ready) {
   grpc_call_error error;
   grpc_call* s;
   grpc_core::CqVerifier cqv(cq);
@@ -80,6 +80,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   gpr_timespec deadline;
   grpc_byte_buffer* payload = nullptr;
 
+  gpr_event_set(ready, reinterpret_cast<void*>(1));
   grpc_metadata_array_init(&request_metadata_recv);
 
   error = grpc_server_request_registered_call(
