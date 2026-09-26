@@ -184,12 +184,17 @@ void ThreadManager::MainWorkLoop() {
             if (worker->created()) {
               worker->Start();
             } else {
-              // Get lock again to undo changes to poller/thread counters.
-              grpc_core::MutexLock failure_lock(mu_);
-              num_pollers_--;
-              num_threads_--;
-              resource_exhausted = true;
-              delete worker;
+              {
+                // Get lock again to undo changes to poller/thread counters.
+                grpc_core::MutexLock failure_lock(mu_);
+                num_pollers_--;
+                num_threads_--;
+                resource_exhausted = true;
+                delete worker;
+              }
+
+              // Give back the thread quota reserved above
+              thread_quota_->Release(1);
             }
           } else if (num_pollers_ > 0) {
             // There is still at least some thread polling, so we can go on
