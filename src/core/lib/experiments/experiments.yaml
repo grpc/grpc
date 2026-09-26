@@ -283,7 +283,7 @@
   allow_in_fuzzing_config: true
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
-  expiry: 2026/10/01
+  expiry: 2027/02/01
   owner: roth@google.com
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
@@ -327,6 +327,14 @@
   owner: akshitpatel@google.com
   test_tags: []
   allow_in_fuzzing_config: true
+- name: recv_message_cancelled_status_fix
+  description:
+    Report the status from the received trailing metadata (instead of the
+    batch completion status) when a recv_message batch is completed after the
+    call has been cancelled.
+  expiry: 2027/03/01
+  owner: rishesh@google.com
+  test_tags: [core_end2end_test, xds_end2end_test, xds_test]
 - name: recv_message_filter_bypass_fix
   description:
     Receive message bypass happen if trailing metadata is received while
@@ -438,7 +446,7 @@
   test_tags: ["core_end2end_test"]
 - name: xds_server_filter_chain_per_route
   description: xDS servers use a separate filter chain for each route.
-  expiry: 2026/10/01
+  expiry: 2026/10/31
   owner: roth@google.com
   test_tags: ["xds_end2end_test", "xds_test"]
   requires: ["v2_non_owning_waker_implementation"]

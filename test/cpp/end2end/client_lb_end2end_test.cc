@@ -2191,6 +2191,8 @@ TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
   for (size_t i = 0; i < 100; i++) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
 }
 
 TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
