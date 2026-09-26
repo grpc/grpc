@@ -1,0 +1,58 @@
+name: Issue and PR Triage
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Runs every hour at minute 0
+  workflow_dispatch:    # Allows manual runs from the Actions tab
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore rotation index cache
+        uses: actions/cache/restore@v4
+        with:
+          path: tools/github_triage/last_assignee_index
+          key: assignee-index-${{ github.run_id }}
+          restore-keys: |
+            assignee-index-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: python -m pip install PyGithub absl-py requests
+
+      - name: Label unlabeled issues (hourly)
+        run: python tools/github_triage/label_unlabeled_issues.py
+
+      - name: Assign untriaged issues and PRs (hourly)
+        run: python tools/github_triage/new_label_issues_untriaged_issues.py
+
+      - name: Manage 'requires reporter action' labels (hourly)
+        run: python tools/github_triage/requires_reporter_action.py
+
+      - name: Close 'kind/question' issues (daily at 00:00 UTC or manual run)
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(date -u +%H)" = "00" ]; then
+            python tools/github_triage/kind_question.py
+          fi
+
+      - name: Save rotation index cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: tools/github_triage/last_assignee_index
+          key: assignee-index-${{ github.run_id }}
