@@ -4,6 +4,8 @@ import PackageDescription
 import Foundation
 
 var basePath = FileManager.default.fileExists(atPath: "native") ? "native" : "."
+let packageRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent(basePath).path
+let bazelExcludes = (try? FileManager.default.contentsOfDirectory(atPath: packageRoot))?.filter { $0.hasPrefix("bazel-") } ?? []
 
 let package = Package(
   name: "gRPC",
@@ -62,9 +64,12 @@ let package = Package(
       ],
       path: basePath,
       exclude: [
-        "examples/",
-        "src/objective-c/",
-      ],
+        "examples",
+        "src/objective-c/examples",
+        "src/objective-c/manual_tests",
+        "src/objective-c/tests",
+        "third_party/bloaty",
+      ] + bazelExcludes,
     
       sources: [
         "include/grpc/byte_buffer.h",
@@ -2573,6 +2578,7 @@ let package = Package(
       cSettings: [
         .headerSearchPath("./"),
         .headerSearchPath("include/"),
+        .headerSearchPath("third_party/cel-c/"),
         .headerSearchPath("third_party/re2/"),
         .headerSearchPath("third_party/upb/"),
         .headerSearchPath("third_party/utf8_range/"),
@@ -2595,24 +2601,24 @@ let package = Package(
       ],
       path: basePath,
       exclude: [
-        "examples/",
+        "examples",
         "src/cpp/client/channel_test_peer.cc",
         "src/cpp/common/alts_util.cc",
         "src/cpp/common/alts_context.cc",
         "src/cpp/common/insecure_create_auth_context.cc",
-        "src/cpp/server/admin/",
-        "src/cpp/server/channelz/",
-        "src/cpp/server/csds/",
-        "src/cpp/server/load_reporter/",
-        "src/cpp/ext/",
-        "src/cpp/latent_see/",
+        "src/cpp/server/admin",
+        "src/cpp/server/channelz",
+        "src/cpp/server/csds",
+        "src/cpp/server/load_reporter",
+        "src/cpp/ext",
+        "src/cpp/latent_see",
         "src/cpp/README.md",
         "src/cpp/util/error_details.cc",
-        "src/objective-c/examples/",
-        "src/objective-c/manual_tests/",
-        "src/objective-c/tests/",
-        "third_party/bloaty/",
-      ],
+        "src/objective-c/examples",
+        "src/objective-c/manual_tests",
+        "src/objective-c/tests",
+        "third_party/bloaty",
+      ] + bazelExcludes,
       sources: [
         "src/core/client_channel/virtual_channel.cc",
         "src/cpp/",
@@ -2637,13 +2643,13 @@ let package = Package(
       ],
       path: basePath,
       exclude: [
-        "examples/",
+        "examples",
         "src/objective-c/RxLibrary/README.md",
-        "src/objective-c/examples/",
-        "src/objective-c/manual_tests/",
-        "src/objective-c/tests/",
-        "third_party/",
-      ],
+        "src/objective-c/examples",
+        "src/objective-c/manual_tests",
+        "src/objective-c/tests",
+        "third_party",
+      ] + bazelExcludes,
       sources: [
         "src/objective-c/RxLibrary",
       ],
@@ -2664,16 +2670,16 @@ let package = Package(
       ],
       path: basePath,
       exclude: [
-        "examples/",
+        "examples",
         "src/objective-c/GRPCClient/GRPCCall+GID.h",
         "src/objective-c/GRPCClient/GRPCCall+GID.mm",
         "src/objective-c/GRPCClient/README.md",
-        "src/objective-c/GRPCClient/internal_testing/",
-        "src/objective-c/examples/",
-        "src/objective-c/manual_tests/",
-        "src/objective-c/tests/",
-        "third_party/",
-      ],
+        "src/objective-c/GRPCClient/internal_testing",
+        "src/objective-c/examples",
+        "src/objective-c/manual_tests",
+        "src/objective-c/tests",
+        "third_party",
+      ] + bazelExcludes,
       sources: [
         "src/objective-c/GRPCClient",
       ],
@@ -2705,12 +2711,12 @@ let package = Package(
       ],
       path: basePath,
       exclude: [
-        "examples/",
-        "src/objective-c/examples/",
-        "src/objective-c/manual_tests/",
-        "src/objective-c/tests/",
-        "third_party/",
-      ],
+        "examples",
+        "src/objective-c/examples",
+        "src/objective-c/manual_tests",
+        "src/objective-c/tests",
+        "third_party",
+      ] + bazelExcludes,
       sources: [
         "src/objective-c/ProtoRPC",
       ],
