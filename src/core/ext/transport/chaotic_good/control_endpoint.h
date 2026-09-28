@@ -44,7 +44,7 @@ class ControlEndpoint {
       return [buffer = std::move(buffer), this]() mutable -> Poll<Empty> {
         Waker waker;
         auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-        MutexLock lock(&mu_);
+        MutexLock lock(mu_);
         if (queued_output_.Length() != 0 &&
             queued_output_.Length() + buffer.Length() > MaxQueued()) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -68,7 +68,7 @@ class ControlEndpoint {
     void ForceQueue(SliceBuffer&& buffer) {
       Waker waker;
       auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       GRPC_TRACE_LOG(chaotic_good, INFO)
           << "CHAOTIC_GOOD: Force queue control write " << buffer.Length()
           << " bytes on " << this;

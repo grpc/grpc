@@ -255,19 +255,19 @@ AresResolver::ReinitHandle::ReinitHandle(AresResolver* resolver)
     : resolver_(resolver) {}
 
 void AresResolver::ReinitHandle::OnResolverGone() {
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   resolver_ = nullptr;
 }
 
 void AresResolver::ReinitHandle::Reset(const absl::Status& status) {
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   if (resolver_ != nullptr) {
     resolver_->Reset(status);
   }
 }
 
 void AresResolver::ReinitHandle::Restart() {
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   if (resolver_ != nullptr) {
     resolver_->Restart();
   }
@@ -323,14 +323,14 @@ void AresResolver::Orphan() {
   // Do this before locking &mutex_ - ensures there will be no deadlock if
   // resolver is being orphaned during fork.
   {
-    grpc_core::MutexLock handle_lock(&reinit_handle_mu_);
+    grpc_core::MutexLock handle_lock(reinit_handle_mu_);
     if (reinit_handle_ != nullptr) {
       reinit_handle_->OnResolverGone();
     }
   }
 #endif
   {
-    grpc_core::MutexLock lock(&mutex_);
+    grpc_core::MutexLock lock(mutex_);
     shutting_down_ = true;
     ShutdownLocked(absl::CancelledError("AresResolver::Orphan"),
                    "resolver orphaned");
@@ -396,7 +396,7 @@ void AresResolver::LookupHostname(
         });
     return;
   }
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
   GRPC_CHECK_NE(channel_, nullptr);
@@ -444,7 +444,7 @@ void AresResolver::LookupSRV(
     });
     return;
   }
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
   GRPC_CHECK_NE(channel_, nullptr);
@@ -480,7 +480,7 @@ void AresResolver::LookupTXT(
     });
     return;
   }
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
   GRPC_CHECK_NE(channel_, nullptr);
@@ -607,7 +607,7 @@ void AresResolver::MaybeStartTimerLocked() {
 }
 
 void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   GRPC_CHECK(fd_node->readable_registered);
   fd_node->readable_registered = false;
   GRPC_TRACE_LOG(cares_resolver, INFO)
@@ -629,7 +629,7 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
 }
 
 void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   GRPC_CHECK(fd_node->writable_registered);
   fd_node->writable_registered = false;
   GRPC_TRACE_LOG(cares_resolver, INFO)
@@ -657,7 +657,7 @@ void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
 // For the latter, we use this backup poller. Also see
 // https://github.com/grpc/grpc/pull/17688 description for more details.
 void AresResolver::OnAresBackupPollAlarm() {
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   ares_backup_poll_alarm_handle_.reset();
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) request:" << this
@@ -906,7 +906,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
 #ifdef GRPC_ENABLE_FORK_SUPPORT
 
 std::weak_ptr<AresResolver::ReinitHandle> AresResolver::GetReinitHandle() {
-  grpc_core::MutexLock lock(&reinit_handle_mu_);
+  grpc_core::MutexLock lock(reinit_handle_mu_);
   if (reinit_handle_ == nullptr) {
     reinit_handle_ = ReinitHandle::New(this);
   }
@@ -918,7 +918,7 @@ void AresResolver::Reset(const absl::Status& reason) {
   if (self == nullptr) {
     return;
   }
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   for (auto& [_, callback] : callback_map_) {
     event_engine_->Run(
         [callback = std::move(callback), reason = reason]() mutable {
@@ -934,7 +934,7 @@ void AresResolver::Reset(const absl::Status& reason) {
 }
 
 void AresResolver::Restart() {
-  grpc_core::MutexLock lock(&mutex_);
+  grpc_core::MutexLock lock(mutex_);
   polled_fd_factory_ = polled_fd_factory_->NewEmptyInstance();
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
   GRPC_CHECK_EQ(channel_, nullptr);

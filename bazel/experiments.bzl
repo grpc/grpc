@@ -64,6 +64,7 @@ EXPERIMENT_ENABLES = {
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
     "promise_filter_client_half_close": "promise_filter_client_half_close",
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
+    "recv_message_cancelled_status_fix": "recv_message_cancelled_status_fix",
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
@@ -164,6 +165,7 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_filter_client_half_close",
+                "recv_message_cancelled_status_fix",
                 "recv_message_filter_bypass_fix",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
@@ -207,6 +209,8 @@ EXPERIMENTS = {
             ],
             "xds_test": [
                 "promise_filter_client_half_close",
+                "recv_message_cancelled_status_fix",
+                "ring_hash_update_cleanup",
             ],
         },
         "on": {
