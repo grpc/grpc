@@ -60,7 +60,7 @@
   }
   // A writer that serializes the proto messages to send.
   GRXWriter *bytesWriter = [requestsWriter map:^id(GPBMessage *proto) {
-    // TODO: Revert this #ifdef once Objective-C Protobuf is added as an SPM package dependency.
+  // TODO: Revert this #ifdef once Objective-C Protobuf is added as an SPM package dependency.
 #ifdef SWIFTPM_MODULE_BUNDLE
     Class gpbMessageClass = NSClassFromString(@"GPBMessage");
     if (gpbMessageClass && ![proto isKindOfClass:gpbMessageClass]) {
