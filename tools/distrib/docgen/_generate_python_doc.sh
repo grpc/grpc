@@ -25,7 +25,6 @@ export HOME
 
 SOURCE_DIR="doc/python/sphinx"
 TARGET_DIR="doc/build"
-export PIP_EXTRA_INDEX_URL="https://pypi.org/simple"
 
 tools/run_tests/run_tests.py -c opt -l python --compiler python3.10 --newline_on_success -j 8 --build_only
 # shellcheck disable=SC1091
