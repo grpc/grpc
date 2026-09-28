@@ -32,6 +32,7 @@
     <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/channel_factory.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/context_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/create_channel_from_endpoint.h" role="src" />
@@ -1783,6 +1784,8 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_create.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_create.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/channel_factory.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.cc" role="src" />

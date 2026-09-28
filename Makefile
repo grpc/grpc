@@ -1379,6 +1379,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/call_utils.cc \
     src/core/lib/surface/channel.cc \
     src/core/lib/surface/channel_create.cc \
+    src/core/lib/surface/channel_factory.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_stack_type.cc \
     src/core/lib/surface/completion_queue.cc \
@@ -1844,6 +1845,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
+    include/grpc/channel_factory.h \
     include/grpc/compression.h \
     include/grpc/context_types.h \
     include/grpc/create_channel_from_endpoint.h \

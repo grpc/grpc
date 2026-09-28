@@ -326,6 +326,7 @@ GPR_PUBLIC_HDRS = [
 ]
 
 GRPC_PUBLIC_HDRS = [
+    "include/grpc/channel_factory.h",
     "include/grpc/grpc_audit_logging.h",
     "include/grpc/grpc_crl_provider.h",
     "include/grpc/private_key_signer.h",
@@ -651,6 +652,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_arg_names",
+        "channel_factory",
         "channel_stack_builder",
         "config",
         "exec_ctx",
@@ -747,6 +749,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_arg_names",
+        "channel_factory",
         "channel_stack_builder",
         "config",
         "exec_ctx",
@@ -1883,6 +1886,7 @@ grpc_cc_library(
         "//src/core:lib/surface/channel_create.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -1914,6 +1918,32 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:stats_data",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_factory",
+    srcs = [
+        "//src/core:lib/surface/channel_factory.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/surface/channel_factory.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    visibility = ["//bazel:alt_grpc_base_legacy"],
+    deps = [
+        "channel",
+        "channel_create",
+        "config",
+        "exec_ctx",
+        "grpc_public_hdrs",
+        "ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:channel_args_preconditioning",
     ],
 )
 
@@ -2690,6 +2720,7 @@ grpc_cc_library(
     deps = [
         "channel",
         "channel_arg_names",
+        "channel_factory",
         "channel_stack_builder",
         "config",
         "exec_ctx",
@@ -2794,6 +2825,7 @@ grpc_cc_library(
     deps = [
         "channel",
         "channel_arg_names",
+        "channel_factory",
         "channel_stack_builder",
         "config",
         "exec_ctx",

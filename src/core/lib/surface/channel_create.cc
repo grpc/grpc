@@ -211,6 +211,22 @@ grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
 }
 }  // namespace experimental
 
+RefCountedPtr<Channel> MakeLameChannel(absl::string_view target,
+                                       absl::Status status) {
+  if (status.ok()) status = absl::UnknownError(status.message());
+  ChannelArgs args =
+      CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(nullptr)
+          .Set(GRPC_ARG_LAME_FILTER_ERROR,
+               ChannelArgs::Pointer(new absl::Status(std::move(status)),
+                                    &kLameFilterErrorArgVtable));
+  auto channel = ChannelCreate(std::string(target), std::move(args),
+                               GRPC_CLIENT_LAME_CHANNEL, nullptr);
+  GRPC_CHECK(channel.ok());
+  return std::move(*channel);
+}
+
 }  // namespace grpc_core
 
 grpc_channel* grpc_lame_client_channel_create(const char* target,
@@ -222,20 +238,12 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       << ", error_code=" << (int)error_code
       << ", error_message=" << error_message << ")";
   if (error_code == GRPC_STATUS_OK) error_code = GRPC_STATUS_UNKNOWN;
-  grpc_core::ChannelArgs args =
-      grpc_core::CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(nullptr)
-          .Set(GRPC_ARG_LAME_FILTER_ERROR,
-               grpc_core::ChannelArgs::Pointer(
-                   new absl::Status(static_cast<absl::StatusCode>(error_code),
-                                    error_message),
-                   &grpc_core::kLameFilterErrorArgVtable));
-  auto channel =
-      grpc_core::ChannelCreate(target == nullptr ? "" : target, std::move(args),
-                               GRPC_CLIENT_LAME_CHANNEL, nullptr);
-  GRPC_CHECK(channel.ok());
-  return channel->release()->c_ptr();
+  return grpc_core::MakeLameChannel(
+             target == nullptr ? "" : target,
+             absl::Status(static_cast<absl::StatusCode>(error_code),
+                          error_message))
+      .release()
+      ->c_ptr();
 }
 
 // Create a client channel:

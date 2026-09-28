@@ -23,12 +23,14 @@
 
 #include <algorithm>
 #include <list>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/lib/surface/channel_factory.h"
 #include "src/core/net/socket_mutator.h"
 #include "src/core/util/grpc_check.h"
 
@@ -151,6 +153,12 @@ void ChannelArguments::SetResourceQuota(
   SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA,
                        resource_quota.c_resource_quota(),
                        grpc_resource_quota_arg_vtable());
+}
+
+void ChannelArguments::SetChannelFactory(
+    std::shared_ptr<grpc_core::experimental::ChannelFactory> factory) {
+  SetPointerWithVtable(GRPC_ARG_CHANNEL_FACTORY, &factory,
+                       grpc_core::ChannelFactoryArgVtable());
 }
 
 void ChannelArguments::SetMaxReceiveMessageSize(int size) {

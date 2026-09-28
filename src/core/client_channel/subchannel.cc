@@ -1677,6 +1677,7 @@ ChannelArgs Subchannel::MakeSubchannelArgs(
       .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
       .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP)
       .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
+      .Remove(GRPC_ARG_CHANNEL_FACTORY)
       // Remove all keys with the no-subchannel prefix.
       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);
 }

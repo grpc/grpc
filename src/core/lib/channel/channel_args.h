@@ -21,6 +21,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -56,6 +57,9 @@
 namespace grpc_core {
 
 class Arena;
+namespace experimental {
+class ChannelFactory;
+}  // namespace experimental
 
 // Define a traits object for vtable lookup - allows us to integrate with
 // existing code easily (just define the trait!) and allows some magic in
@@ -103,6 +107,8 @@ struct SupportedSharedPtrType
 template <>
 struct SupportedSharedPtrType<grpc_event_engine::experimental::EventEngine>
     : std::true_type {};
+template <>
+struct SupportedSharedPtrType<experimental::ChannelFactory> : std::true_type {};
 
 // Specialization for shared_ptr
 // Incurs an allocation because shared_ptr.release is not a thing.
@@ -311,6 +317,11 @@ struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
   static absl::string_view ChannelArgName() {
     return GRPC_INTERNAL_ARG_EVENT_ENGINE;
   }
+};
+// Specialization for the ChannelFactory
+template <>
+struct ChannelArgNameTraits<experimental::ChannelFactory> {
+  static absl::string_view ChannelArgName() { return GRPC_ARG_CHANNEL_FACTORY; }
 };
 
 class ChannelArgs {

@@ -25,8 +25,14 @@
 #include <grpcpp/support/config.h>
 
 #include <list>
+#include <memory>
 #include <vector>
 
+namespace grpc_core {
+namespace experimental {
+class ChannelFactory;
+}  // namespace experimental
+}  // namespace grpc_core
 namespace grpc {
 class ChannelCredentials;
 namespace testing {
@@ -78,6 +84,12 @@ class ChannelArguments {
 
   /// Set the buffer pool to be attached to the constructed channel.
   void SetResourceQuota(const grpc::ResourceQuota& resource_quota);
+
+  /// EXPERIMENTAL API - Subject to change
+  ///
+  /// Set the channel factory for LB policies.
+  void SetChannelFactory(
+      std::shared_ptr<grpc_core::experimental::ChannelFactory> factory);
 
   /// Set the max receive and send message sizes.
   void SetMaxReceiveMessageSize(int size);

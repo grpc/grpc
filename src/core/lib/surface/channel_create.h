@@ -24,7 +24,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -38,6 +40,11 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
 absl::StatusOr<grpc_channel*> CreateClientEndpointChannel(
     const char* target, grpc_channel_credentials* creds,
     const ChannelArgs& args);
+
+// Creates a lame channel. Calls on it fail with status, or UNKNOWN if status
+// is OK.
+RefCountedPtr<Channel> MakeLameChannel(absl::string_view target,
+                                       absl::Status status);
 
 }  // namespace grpc_core
 

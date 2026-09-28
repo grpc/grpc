@@ -479,5 +479,8 @@
  * details on the Security Frame.
  */
 #define GRPC_ARG_MAX_SECURITY_FRAME_SIZE "grpc.http2.max_security_frame_size"
+/** EXPERIMENTAL. Channel factory for LB policies. The value is a
+ * std::shared_ptr<grpc_core::experimental::ChannelFactory>. */
+#define GRPC_ARG_CHANNEL_FACTORY "grpc.experimental.channel_factory"
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */
