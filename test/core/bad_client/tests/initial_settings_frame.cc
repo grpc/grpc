@@ -85,7 +85,8 @@
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* /*registered_method*/) {
+                     void* /*registered_method*/, gpr_event* ready) {
+  gpr_event_set(ready, reinterpret_cast<void*>(1));
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
     GRPC_CHECK(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
@@ -95,12 +96,14 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
 static void single_request_verifier(grpc_server* server,
                                     grpc_completion_queue* cq,
-                                    void* /*registered_method*/) {
+                                    void* /*registered_method*/,
+                                    gpr_event* ready) {
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
   grpc_core::CqVerifier cqv(cq);
   grpc_metadata_array request_metadata_recv;
+  bool once = true;
 
   for (int i = 0; i < 2; i++) {
     grpc_call_details_init(&call_details);
@@ -111,6 +114,18 @@ static void single_request_verifier(grpc_server* server,
                                      grpc_core::CqVerifier::tag(101));
     GRPC_CHECK_EQ(error, GRPC_CALL_OK);
     cqv.Expect(grpc_core::CqVerifier::tag(101), true);
+    // This prevents a race condition where the client might create
+    // and destroy a stream before the server has a chance to validate its
+    // creation. This test expects the client to initiate three streams,
+    // where the first and third are successful and the test expects to validate
+    // the the success of the first and third streams. As this server verifier
+    // runs on a separate thread, it is possible that the client has
+    // created and destroyed the second stream before this thread gets a
+    // chance to validate the first stream.
+    if (once) {
+      gpr_event_set(ready, reinterpret_cast<void*>(1));
+      once = false;
+    }
     cqv.Verify();
 
     char* host = grpc_slice_to_c_string(call_details.host);

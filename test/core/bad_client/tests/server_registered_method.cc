@@ -43,7 +43,7 @@
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
 static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
-                              void* registered_method) {
+                              void* registered_method, gpr_event* ready) {
   grpc_call_error error;
   grpc_call* s;
   grpc_core::CqVerifier cqv(cq);
@@ -51,6 +51,7 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
   gpr_timespec deadline;
   grpc_byte_buffer* payload = nullptr;
 
+  gpr_event_set(ready, reinterpret_cast<void*>(1));
   grpc_metadata_array_init(&request_metadata_recv);
 
   error = grpc_server_request_registered_call(
@@ -68,7 +69,8 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
 }
 
 static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
-                           void* /*registered_method*/) {
+                           void* /*registered_method*/, gpr_event* ready) {
+  gpr_event_set(ready, reinterpret_cast<void*>(1));
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
     GRPC_CHECK(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
