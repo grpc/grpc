@@ -65,37 +65,116 @@
           path: basePath,
           exclude: [
             "examples/",
+            "src/core/call/metadata_channelz.cc",
+            "src/core/channelz/zviz/",
+            "src/core/ext/filters/load_reporting/",
+            "src/core/ext/filters/logging/",
+            "src/core/ext/transport/chaotic_good/",
+            "src/core/ext/transport/chaotic_good_legacy/",
+            "src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c",
+            "src/core/ext/upb-gen/proto/",
+            "src/core/ext/upbdefs-gen/google/api/field_behavior.upbdefs.c",
+            "src/core/ext/upbdefs-gen/proto/",
+            "src/core/lib/event_engine/tcp_telemetry.cc",
+            "src/core/lib/security/authorization/cel_authorization_engine.cc",
+            "src/core/plugin_registry/grpc_plugin_registry_noextra.cc",
+            "src/core/tsi/alts/handshaker/proto/",
+            "src/core/tsi/test_creds/",
+            "src/core/util/json/json_util.cc",
+            "src/core/util/seq_bit_set.cc",
+            "src/core/util/subprocess_posix.cc",
+            "src/core/util/subprocess_windows.cc",
+            "src/core/xds/grpc/streaming_call_promise_wrapper.cc",
             "src/objective-c/",
             "third_party/bloaty/",
+            "third_party/re2/re2/fuzzing/",
+            "third_party/re2/re2/testing/",
+            "third_party/re2/util/benchmark.cc",
+            "third_party/re2/util/fuzz.cc",
+            "third_party/re2/util/pcre.cc",
+            "third_party/re2/util/test.cc",
+            "third_party/upb/upb/base/internal/",
+            "third_party/upb/upb/base/string_view_test.cc",
+            "third_party/upb/upb/bazel/",
+            "third_party/upb/upb/cmake/",
+            "third_party/upb/upb/conformance/",
+            "third_party/upb/upb/hash/test.cc",
+            "third_party/upb/upb/io/",
+            "third_party/upb/upb/json/decode_test.cc",
+            "third_party/upb/upb/json/encode_test.cc",
+            "third_party/upb/upb/json/fuzz_test.cc",
+            "third_party/upb/upb/lex/atoi_test.cc",
+            "third_party/upb/upb/lex/round_trip_test.cc",
+            "third_party/upb/upb/mem/arena_test.cc",
+            "third_party/upb/upb/message/accessors_test.cc",
+            "third_party/upb/upb/message/array_test.cc",
+            "third_party/upb/upb/message/compare.c",
+            "third_party/upb/upb/message/copy_test.cc",
+            "third_party/upb/upb/message/internal/compare_unknown.c",
+            "third_party/upb/upb/message/internal/compare_unknown_test.cc",
+            "third_party/upb/upb/message/map_test.cc",
+            "third_party/upb/upb/message/merge_test.cc",
+            "third_party/upb/upb/message/promote.c",
+            "third_party/upb/upb/message/promote_test.cc",
+            "third_party/upb/upb/message/test.cc",
+            "third_party/upb/upb/message/utf8_test.cc",
+            "third_party/upb/upb/mini_descriptor/internal/encode_test.cc",
+            "third_party/upb/upb/mini_table/compat.c",
+            "third_party/upb/upb/mini_table/compat_test.cc",
+            "third_party/upb/upb/mini_table/debug_string.c",
+            "third_party/upb/upb/mini_table/debug_string_test_generate.cc",
+            "third_party/upb/upb/mini_table/generated_registry_empty_test.cc",
+            "third_party/upb/upb/mini_table/generated_registry_test.cc",
+            "third_party/upb/upb/mini_table/message_benchmark.cc",
+            "third_party/upb/upb/reflection/cmake/",
+            "third_party/upb/upb/reflection/internal/def_builder_test.cc",
+            "third_party/upb/upb/reflection/reflection_test.cc",
+            "third_party/upb/upb/reflection/stage0/",
+            "third_party/upb/upb/test/",
+            "third_party/upb/upb/text/debug_string.c",
+            "third_party/upb/upb/text/encode_debug_test.cc",
+            "third_party/upb/upb/util/",
+            "third_party/upb/upb/wire/byte_size.c",
+            "third_party/upb/upb/wire/byte_size_test.cc",
+            "third_party/upb/upb/wire/decode_benchmark.cc",
+            "third_party/upb/upb/wire/decode_fast/bisect_helper.cc",
+            "third_party/upb/upb/wire/decode_fast/cardinality.c",
+            "third_party/upb/upb/wire/decode_fast/dispatch.c",
+            "third_party/upb/upb/wire/decode_fast/field_fixed.c",
+            "third_party/upb/upb/wire/decode_fast/field_message.c",
+            "third_party/upb/upb/wire/decode_fast/field_string.c",
+            "third_party/upb/upb/wire/decode_fast/field_varint.c",
+            "third_party/upb/upb/wire/decode_fast/function_array.c",
+            "third_party/upb/upb/wire/decode_fast/select_test.cc",
+            "third_party/upb/upb/wire/decode_test.cc",
+            "third_party/upb/upb/wire/eps_copy_input_stream_test.cc",
+            "third_party/upb/upb/wire/test_util/",
+            "third_party/utf8_range/ascii.cpp",
+            "third_party/utf8_range/boost.cpp",
+            "third_party/utf8_range/cmake/",
+            "third_party/utf8_range/fuzz/",
+            "third_party/utf8_range/lemire-avx2.c",
+            "third_party/utf8_range/lemire-neon.c",
+            "third_party/utf8_range/lemire-sse.c",
+            "third_party/utf8_range/lookup.c",
+            "third_party/utf8_range/main.c",
+            "third_party/utf8_range/naive.c",
+            "third_party/utf8_range/range-avx2.c",
+            "third_party/utf8_range/range-neon.c",
+            "third_party/utf8_range/range-sse.c",
+            "third_party/utf8_range/range2-neon.c",
+            "third_party/utf8_range/range2-sse.c",
+            "third_party/utf8_range/utf8_corpus_dir/",
+            "third_party/utf8_range/utf8_to_utf16/",
+            "third_party/utf8_range/utf8_validity_test.cc",
           ],
-        <%
-          lib_maps = {lib.name: lib for lib in libs}
-          def is_absl_lib(target_name):
-            return target_name.startswith("absl/")
-          def lib_and_transitive_deps(lib):
-            transitive_deps = []
-            lib_metadata = lib_maps.get(lib, None)
-            if lib_metadata:
-              transitive_deps = lib_metadata.transitive_deps
-            return list(sorted(set({lib} | set(transitive_deps))))
-          def non_abseil_lib_and_transitive_deps(lib):
-            return [l for l in lib_and_transitive_deps(lib) if not is_absl_lib(l)]
-          deps = (set(non_abseil_lib_and_transitive_deps("grpc")) | set(swift_package.get('deps', []))) - set({"cares", "z"})
-          files = []
-          for dep in sorted(deps):
-            lib = lib_maps.get(dep, None)
-            if lib:
-              files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
-          files.extend([
-            "src/core/client_channel/virtual_channel.cc",
-            "src/core/client_channel/virtual_channel.h",
-          ])
-          files = sorted(set(files))
-        %>
           sources: [
-            % for file in files:
-            "${file}",
-            % endfor
+            "src/core/",
+            "third_party/address_sorting/",
+            "third_party/re2/re2/",
+            "third_party/re2/util/",
+            "third_party/upb/upb/",
+            "third_party/utf8_range/",
           ],
           resources: [
             .copy("src/objective-c/PrivacyInfo.xcprivacy"),
