@@ -205,12 +205,12 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_filter_client_half_close",
+                "recv_message_cancelled_status_fix",
                 "ring_hash_update_cleanup",
             ],
             "xds_test": [
                 "promise_filter_client_half_close",
                 "recv_message_cancelled_status_fix",
-                "ring_hash_update_cleanup",
             ],
         },
         "on": {
