@@ -81,7 +81,8 @@ Pod::Spec.new do |s|
         ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'\
         ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'\
         ' "$(PODS_TARGET_SRCROOT)/third_party/utf8_range"'\
-        ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
+        ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/cel-c"',
     # If we don't set these two settings, `include/grpc/support/time.h` and
     # `src/core/util/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
     # build.
