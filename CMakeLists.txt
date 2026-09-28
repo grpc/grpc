@@ -385,6 +385,7 @@ include(cmake/abseil-cpp.cmake)
 include(cmake/address_sorting.cmake)
 include(cmake/benchmark.cmake)
 include(cmake/cares.cmake)
+include(cmake/cel-c.cmake)
 include(cmake/protobuf.cmake)
 include(cmake/re2.cmake)
 include(cmake/ssl.cmake)
@@ -1749,6 +1750,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx read_context_test)
+  add_dependencies(buildtests_cxx recv_message_cancelled_status_test)
   add_dependencies(buildtests_cxx recv_message_filter_bypass_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
   add_dependencies(buildtests_cxx ref_counted_test)
@@ -2075,6 +2077,7 @@ target_include_directories(address_sorting
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -2173,6 +2176,7 @@ target_include_directories(gpr
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -3213,6 +3217,7 @@ target_include_directories(grpc
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -3373,6 +3378,7 @@ target_include_directories(grpc_test_util
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -3447,6 +3453,7 @@ target_include_directories(grpc_test_util_unsecure
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -3950,6 +3957,7 @@ target_include_directories(grpc_unsecure
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4096,6 +4104,7 @@ target_include_directories(gtest
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4158,6 +4167,7 @@ target_include_directories(upb_base_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4212,6 +4222,7 @@ target_include_directories(upb_descriptor_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4266,6 +4277,7 @@ target_include_directories(upb_hash_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4323,6 +4335,7 @@ target_include_directories(upb_json_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4382,6 +4395,7 @@ target_include_directories(upb_lex_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4437,6 +4451,7 @@ target_include_directories(upb_mem_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4498,6 +4513,7 @@ target_include_directories(upb_message_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4560,6 +4576,7 @@ target_include_directories(upb_mini_descriptor_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4619,6 +4636,7 @@ target_include_directories(upb_mini_table_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4692,6 +4710,7 @@ target_include_directories(upb_reflection_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4750,6 +4769,7 @@ target_include_directories(upb_textformat_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4811,6 +4831,7 @@ target_include_directories(upb_wire_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4864,6 +4885,7 @@ target_include_directories(utf8_range_lib
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -4954,6 +4976,7 @@ target_include_directories(benchmark_helpers
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -5064,6 +5087,7 @@ target_include_directories(grpc++
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -5354,6 +5378,7 @@ target_include_directories(grpc++_alts
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -5425,6 +5450,7 @@ target_include_directories(grpc++_error_details
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -5506,6 +5532,7 @@ target_include_directories(grpc++_reflection
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -5581,6 +5608,7 @@ target_include_directories(grpc++_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -5652,6 +5680,7 @@ target_include_directories(grpc++_test_config
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -5716,6 +5745,7 @@ target_include_directories(grpc++_test_util
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -5814,6 +5844,7 @@ target_include_directories(grpc++_unsecure
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -6398,6 +6429,7 @@ target_include_directories(grpc_authorization_provider
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -6532,6 +6564,7 @@ target_include_directories(grpc_plugin_support
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -6659,6 +6692,7 @@ target_include_directories(grpcpp_channelz
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -6737,6 +6771,7 @@ target_include_directories(grpcpp_otel_plugin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -6794,6 +6829,7 @@ target_include_directories(multiple_server_queues_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -6831,6 +6867,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -6932,6 +6969,7 @@ target_include_directories(activity_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -6987,6 +7025,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -7038,6 +7077,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -7618,6 +7658,7 @@ target_include_directories(admin_services_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -7664,6 +7705,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -7769,6 +7811,7 @@ target_include_directories(all_ok_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -7822,6 +7865,7 @@ target_include_directories(alloc_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -7864,6 +7908,7 @@ target_include_directories(alpn_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -7919,6 +7964,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -7964,6 +8010,7 @@ target_include_directories(alts_counter_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8007,6 +8054,7 @@ target_include_directories(alts_crypt_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8050,6 +8098,7 @@ target_include_directories(alts_crypter_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8100,6 +8149,7 @@ target_include_directories(alts_frame_protector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8144,6 +8194,7 @@ target_include_directories(alts_grpc_record_protocol_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8190,6 +8241,7 @@ target_include_directories(alts_handshaker_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8233,6 +8285,7 @@ target_include_directories(alts_iovec_record_protocol_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8275,6 +8328,7 @@ target_include_directories(alts_security_connector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8318,6 +8372,7 @@ target_include_directories(alts_tsi_handshaker_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8361,6 +8416,7 @@ target_include_directories(alts_tsi_utils_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8404,6 +8460,7 @@ target_include_directories(alts_util_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8448,6 +8505,7 @@ target_include_directories(alts_zero_copy_grpc_protector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8490,6 +8548,7 @@ target_include_directories(arena_promise_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8532,6 +8591,7 @@ target_include_directories(arena_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8612,6 +8672,7 @@ target_include_directories(async_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8654,6 +8715,7 @@ target_include_directories(auth_context_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8697,6 +8759,7 @@ target_include_directories(auth_property_iterator_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8739,6 +8802,7 @@ target_include_directories(authorization_matchers_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8783,6 +8847,7 @@ target_include_directories(authorization_policy_provider_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8827,6 +8892,7 @@ target_include_directories(autosharding_config_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8875,6 +8941,7 @@ target_include_directories(autosharding_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8917,6 +8984,7 @@ target_include_directories(avl_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -8960,6 +9028,7 @@ target_include_directories(aws_request_signer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9017,6 +9086,7 @@ target_include_directories(backend_metrics_lb_policy_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9061,6 +9131,7 @@ target_include_directories(backoff_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9104,6 +9175,7 @@ target_include_directories(bad_server_response_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9147,6 +9219,7 @@ target_include_directories(bad_ssl_alpn_server
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9188,6 +9261,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -9232,6 +9306,7 @@ target_include_directories(bad_ssl_cert_server
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9273,6 +9348,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -9318,6 +9394,7 @@ target_include_directories(bad_streaming_id_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9362,6 +9439,7 @@ target_include_directories(badreq_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9404,6 +9482,7 @@ target_include_directories(basic_work_queue_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9447,6 +9526,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -9490,6 +9570,7 @@ target_include_directories(bin_encoder_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9523,6 +9604,7 @@ target_include_directories(bitset_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9629,6 +9711,7 @@ target_include_directories(blackboard_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9682,6 +9765,7 @@ target_include_directories(buffer_list_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9725,6 +9809,7 @@ target_include_directories(byte_buffer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9767,6 +9852,7 @@ target_include_directories(c_slice_buffer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9810,6 +9896,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -9860,6 +9947,7 @@ target_include_directories(call_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -9948,6 +10036,7 @@ target_include_directories(call_creds_registry_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -10078,6 +10167,7 @@ target_include_directories(call_filters_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -10134,6 +10224,7 @@ target_include_directories(call_finalization_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -10240,6 +10331,7 @@ target_include_directories(call_state_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -10558,6 +10650,7 @@ target_include_directories(call_utils_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -10620,6 +10713,7 @@ target_include_directories(cancel_ares_query_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -10735,6 +10829,7 @@ target_include_directories(cancel_callback_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -10795,6 +10890,7 @@ target_include_directories(cds_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -10932,6 +11028,7 @@ target_include_directories(cel_authorization_engine_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -10982,6 +11079,7 @@ target_include_directories(cert_selection_offload_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11025,6 +11123,7 @@ target_include_directories(certificate_provider_registry_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11067,6 +11166,7 @@ target_include_directories(certificate_provider_store_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11110,6 +11210,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -11160,6 +11261,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -11233,6 +11335,7 @@ target_include_directories(cfstream_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11275,6 +11378,7 @@ target_include_directories(channel_args_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11318,6 +11422,7 @@ target_include_directories(channel_arguments_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11657,6 +11762,7 @@ target_include_directories(channel_creds_registry_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11700,6 +11806,7 @@ target_include_directories(channel_init_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11742,6 +11849,7 @@ target_include_directories(channel_stack_builder_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11784,6 +11892,7 @@ target_include_directories(channel_stack_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11832,6 +11941,7 @@ target_include_directories(channel_trace_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11876,6 +11986,7 @@ target_include_directories(channelz_registry_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -11950,6 +12061,7 @@ target_include_directories(channelz_service_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12006,6 +12118,7 @@ target_include_directories(channelz_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12117,6 +12230,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -12195,6 +12309,7 @@ target_include_directories(channelz_v2_service_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12238,6 +12353,7 @@ target_include_directories(check_gcp_environment_linux_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12280,6 +12396,7 @@ target_include_directories(check_gcp_environment_windows_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12323,6 +12440,7 @@ target_include_directories(chttp2_server_listener_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12437,6 +12555,7 @@ target_include_directories(chunked_vector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12530,6 +12649,7 @@ target_include_directories(cli_call_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12582,6 +12702,7 @@ target_include_directories(client_auth_filter_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12656,6 +12777,7 @@ target_include_directories(client_callback_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12698,6 +12820,7 @@ target_include_directories(client_channel_service_config_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12741,6 +12864,7 @@ target_include_directories(client_context_test_peer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12817,6 +12941,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -12862,6 +12987,7 @@ target_include_directories(client_initial_metadata_outstanding_token_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -12935,6 +13061,7 @@ target_include_directories(client_interceptors_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13034,6 +13161,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -13078,6 +13206,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -13134,6 +13263,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -13178,6 +13308,7 @@ target_include_directories(cmdline_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13221,6 +13352,7 @@ target_include_directories(codegen_test_full
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13265,6 +13397,7 @@ target_include_directories(codegen_test_minimal
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13309,6 +13442,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -13351,6 +13485,7 @@ target_include_directories(common_closures_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13396,6 +13531,7 @@ target_include_directories(completion_queue_threading_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13439,6 +13575,7 @@ target_include_directories(composite_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13481,6 +13618,7 @@ target_include_directories(compression_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13523,6 +13661,7 @@ target_include_directories(concurrent_connectivity_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13565,6 +13704,7 @@ target_include_directories(connection_context_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13609,6 +13749,7 @@ target_include_directories(connection_prefix_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13652,6 +13793,7 @@ target_include_directories(connection_refused_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13694,6 +13836,7 @@ target_include_directories(connectivity_state_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13766,6 +13909,7 @@ target_include_directories(context_allocator_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13867,6 +14011,7 @@ target_include_directories(context_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13920,6 +14065,7 @@ target_include_directories(core_configuration_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13953,6 +14099,7 @@ target_include_directories(cpp_impl_of_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -13994,6 +14141,7 @@ target_include_directories(cpu_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14066,6 +14214,7 @@ target_include_directories(crl_provider_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14116,6 +14265,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -14160,6 +14310,7 @@ target_include_directories(default_engine_methods_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14232,6 +14383,7 @@ target_include_directories(delegating_channel_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14274,6 +14426,7 @@ target_include_directories(directory_reader_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14319,6 +14472,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -14363,6 +14517,7 @@ target_include_directories(dns_resolver_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14404,6 +14559,7 @@ target_include_directories(down_cast_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14446,6 +14602,7 @@ target_include_directories(dual_ref_counted_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14490,6 +14647,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -14525,6 +14683,7 @@ target_include_directories(dump_args_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14571,6 +14730,7 @@ target_include_directories(duplicate_header_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -14671,6 +14831,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -14866,6 +15027,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -14971,6 +15133,7 @@ target_include_directories(end2end_http2_no_logging_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -15075,6 +15238,7 @@ target_include_directories(end2end_http2_security_no_logging_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -15268,6 +15432,7 @@ target_include_directories(end2end_http2_security_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -15461,6 +15626,7 @@ target_include_directories(end2end_http2_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -15565,6 +15731,7 @@ target_include_directories(end2end_inproc_no_logging_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -15758,6 +15925,7 @@ target_include_directories(end2end_inproc_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -15862,6 +16030,7 @@ target_include_directories(end2end_ph2_no_logging_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16055,6 +16224,7 @@ target_include_directories(end2end_ph2_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16159,6 +16329,7 @@ target_include_directories(end2end_posix_no_logging_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16352,6 +16523,7 @@ target_include_directories(end2end_posix_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16434,6 +16606,7 @@ target_include_directories(end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16534,6 +16707,7 @@ target_include_directories(end2end_vrpc_no_logging_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16728,6 +16902,7 @@ target_include_directories(end2end_vrpc_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16775,6 +16950,7 @@ target_include_directories(endpoint_addresses_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16833,6 +17009,7 @@ target_include_directories(endpoint_config_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16883,6 +17060,7 @@ target_include_directories(endpoint_pair_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16925,6 +17103,7 @@ target_include_directories(env_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -16988,6 +17167,7 @@ target_include_directories(error_details_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -17032,6 +17212,7 @@ target_include_directories(error_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -17074,6 +17255,7 @@ target_include_directories(error_utils_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -17117,6 +17299,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -17160,6 +17343,7 @@ target_include_directories(evaluate_args_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -17202,6 +17386,7 @@ target_include_directories(event_engine_wakeup_scheduler_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -17246,6 +17431,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -17290,6 +17476,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -17362,6 +17549,7 @@ target_include_directories(exception_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -17467,6 +17655,7 @@ target_include_directories(exec_ctx_wakeup_scheduler_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -17522,6 +17711,7 @@ target_include_directories(experiments_tag_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -17567,6 +17757,7 @@ target_include_directories(experiments_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -17961,6 +18152,7 @@ target_include_directories(ext_proc_message_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -18004,6 +18196,7 @@ target_include_directories(factory_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -18046,6 +18239,7 @@ target_include_directories(fake_resolver_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -18095,6 +18289,7 @@ target_include_directories(fake_transport_security_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -18139,6 +18334,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -18183,6 +18379,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -18226,6 +18423,7 @@ target_include_directories(file_watcher_certificate_provider_factory_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -18533,6 +18731,7 @@ target_include_directories(filter_fusion_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -18599,6 +18798,7 @@ target_include_directories(filter_test_v2_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -18673,6 +18873,7 @@ target_include_directories(flaky_network_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -18793,6 +18994,7 @@ target_include_directories(flow_control_manager_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -18925,6 +19127,7 @@ target_include_directories(flow_control_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19051,6 +19254,7 @@ target_include_directories(for_each_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19106,6 +19310,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -19153,6 +19358,7 @@ target_include_directories(format_request_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19196,6 +19402,7 @@ target_include_directories(frame_handler_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19313,6 +19520,7 @@ target_include_directories(frame_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19359,6 +19567,7 @@ target_include_directories(function_signature_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19412,6 +19621,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -19462,6 +19672,7 @@ target_include_directories(fuzzing_event_engine_unittest
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19512,6 +19723,7 @@ target_include_directories(gcp_authentication_filter_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19555,6 +19767,7 @@ target_include_directories(gdch_service_account_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19630,6 +19843,7 @@ target_include_directories(generic_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19672,6 +19886,7 @@ target_include_directories(glob_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19715,6 +19930,7 @@ target_include_directories(goaway_server_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19759,6 +19975,7 @@ target_include_directories(google_c2p_resolver_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19802,6 +20019,7 @@ target_include_directories(google_default_call_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19844,6 +20062,7 @@ target_include_directories(gpr_time_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19887,6 +20106,7 @@ target_include_directories(graceful_shutdown_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19929,6 +20149,7 @@ target_include_directories(grpc_alts_credentials_options_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -19971,6 +20192,7 @@ target_include_directories(grpc_audit_logging_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20014,6 +20236,7 @@ target_include_directories(grpc_authorization_engine_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20056,6 +20279,7 @@ target_include_directories(grpc_authorization_policy_provider_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20131,6 +20355,7 @@ target_include_directories(grpc_authz_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20174,6 +20399,7 @@ target_include_directories(grpc_byte_buffer_reader_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20227,6 +20453,7 @@ target_include_directories(grpc_cli
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20268,6 +20495,7 @@ target_include_directories(grpc_completion_queue_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20301,6 +20529,7 @@ target_include_directories(grpc_cpp_plugin
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20339,6 +20568,7 @@ target_include_directories(grpc_csharp_plugin
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20386,6 +20616,7 @@ target_include_directories(grpc_ipv6_loopback_available_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20419,6 +20650,7 @@ target_include_directories(grpc_node_plugin
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20457,6 +20689,7 @@ target_include_directories(grpc_objective_c_plugin
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20495,6 +20728,7 @@ target_include_directories(grpc_php_plugin
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20533,6 +20767,7 @@ target_include_directories(grpc_python_plugin
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20571,6 +20806,7 @@ target_include_directories(grpc_ruby_plugin
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20622,6 +20858,7 @@ target_include_directories(grpc_text_map_carrier_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20666,6 +20903,7 @@ target_include_directories(grpc_tls_certificate_distributor_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20708,6 +20946,7 @@ target_include_directories(grpc_tls_certificate_provider_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20750,6 +20989,7 @@ target_include_directories(grpc_tls_certificate_selector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20792,6 +21032,7 @@ target_include_directories(grpc_tls_certificate_verifier_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20834,6 +21075,7 @@ target_include_directories(grpc_tls_credentials_options_comparator_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20876,6 +21118,7 @@ target_include_directories(grpc_tls_credentials_options_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -20929,6 +21172,7 @@ target_include_directories(grpc_tls_crl_provider_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21008,6 +21252,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -21060,6 +21305,7 @@ target_include_directories(grpc_trace_bin_text_map_propagator_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21109,6 +21355,7 @@ target_include_directories(grpclb_api_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21191,6 +21438,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -21288,6 +21536,7 @@ target_include_directories(h2_ssl_cert_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21332,6 +21581,7 @@ target_include_directories(h2_ssl_session_reuse_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21375,6 +21625,7 @@ target_include_directories(h2_tls_peer_property_external_verifier_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21417,6 +21668,7 @@ target_include_directories(handle_tests
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21461,6 +21713,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -21506,6 +21759,7 @@ target_include_directories(head_of_line_blocking_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21554,6 +21808,7 @@ target_include_directories(header_assembler_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21599,6 +21854,7 @@ target_include_directories(headers_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21680,6 +21936,7 @@ target_include_directories(health_service_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21722,6 +21979,7 @@ target_include_directories(histogram_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21764,6 +22022,7 @@ target_include_directories(host_port_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21806,6 +22065,7 @@ target_include_directories(hpack_encoder_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21848,6 +22108,7 @@ target_include_directories(hpack_parser_table_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21890,6 +22151,7 @@ target_include_directories(hpack_parser_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21945,6 +22207,7 @@ target_include_directories(http2_client
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -21990,6 +22253,7 @@ target_include_directories(http2_client_transport_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22040,6 +22304,7 @@ target_include_directories(http2_security_frame_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22091,6 +22356,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -22135,6 +22401,7 @@ target_include_directories(http2_settings_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22183,6 +22450,7 @@ target_include_directories(http2_status_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22233,6 +22501,7 @@ target_include_directories(http2_transport_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22276,6 +22545,7 @@ target_include_directories(http_proxy_mapper_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22322,6 +22592,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -22369,6 +22640,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -22446,6 +22718,7 @@ target_include_directories(hybrid_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22480,6 +22753,7 @@ target_include_directories(idle_filter_state_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22514,6 +22788,7 @@ target_include_directories(if_list_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22618,6 +22893,7 @@ target_include_directories(if_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -22941,6 +23217,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -23000,6 +23277,7 @@ target_include_directories(init_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23044,6 +23322,7 @@ target_include_directories(initial_settings_frame_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23086,6 +23365,7 @@ target_include_directories(insecure_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23128,6 +23408,7 @@ target_include_directories(insecure_security_connector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23171,6 +23452,7 @@ target_include_directories(instrument_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23213,6 +23495,7 @@ target_include_directories(inter_activity_latch_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23256,6 +23539,7 @@ target_include_directories(inter_activity_mutex_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23361,6 +23645,7 @@ target_include_directories(inter_activity_pipe_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23414,6 +23699,7 @@ target_include_directories(interception_chain_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23528,6 +23814,7 @@ target_include_directories(interceptor_list_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23599,6 +23886,7 @@ target_include_directories(interop_client
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23653,6 +23941,7 @@ target_include_directories(interop_server
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23692,6 +23981,7 @@ target_include_directories(invalid_call_argument_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23736,6 +24026,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -23785,6 +24076,7 @@ target_include_directories(istio_echo_server_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23890,6 +24182,7 @@ target_include_directories(join_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23943,6 +24236,7 @@ target_include_directories(json_object_loader_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -23985,6 +24279,7 @@ target_include_directories(json_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24027,6 +24322,7 @@ target_include_directories(json_token_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24069,6 +24365,7 @@ target_include_directories(jwt_util_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24111,6 +24408,7 @@ target_include_directories(jwt_verifier_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24154,6 +24452,7 @@ target_include_directories(lame_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24259,6 +24558,7 @@ target_include_directories(latch_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24328,6 +24628,7 @@ target_include_directories(latent_see_service_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24446,6 +24747,7 @@ target_include_directories(latent_see_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24568,6 +24870,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -24614,6 +24917,7 @@ target_include_directories(layout_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24661,6 +24965,7 @@ target_include_directories(lb_get_cpu_stats_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24705,6 +25010,7 @@ target_include_directories(lb_load_data_store_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24748,6 +25054,7 @@ target_include_directories(lb_metadata_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24790,6 +25097,7 @@ target_include_directories(load_config_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24832,6 +25140,7 @@ target_include_directories(load_file_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24874,6 +25183,7 @@ target_include_directories(local_security_connector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -24980,6 +25290,7 @@ target_include_directories(lock_based_mpsc_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25034,6 +25345,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -25140,6 +25452,7 @@ target_include_directories(loop_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25252,6 +25565,7 @@ target_include_directories(lru_cache_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25377,6 +25691,7 @@ target_include_directories(map_pipe_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25492,6 +25807,7 @@ target_include_directories(match_promise_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25536,6 +25852,7 @@ target_include_directories(match_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25579,6 +25896,7 @@ target_include_directories(matchers_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25622,6 +25940,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -25665,6 +25984,7 @@ target_include_directories(memory_quota_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25714,6 +26034,7 @@ target_include_directories(memory_usage_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25792,6 +26113,7 @@ target_include_directories(message_allocator_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25840,6 +26162,7 @@ target_include_directories(message_assembler_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25883,6 +26206,7 @@ target_include_directories(message_compress_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25925,6 +26249,7 @@ target_include_directories(message_size_service_config_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -25967,6 +26292,7 @@ target_include_directories(metadata_map_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26010,6 +26336,7 @@ target_include_directories(metrics_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26052,6 +26379,7 @@ target_include_directories(minimal_stack_is_minimal_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26085,6 +26413,7 @@ target_include_directories(miscompile_with_no_unique_address_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26128,6 +26457,7 @@ target_include_directories(mitigation_engine_provider_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26199,6 +26529,7 @@ target_include_directories(mock_stream_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26274,6 +26605,7 @@ target_include_directories(mock_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26317,6 +26649,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -26351,6 +26684,7 @@ target_include_directories(no_destruct_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26395,6 +26729,7 @@ target_include_directories(no_server_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26466,6 +26801,7 @@ target_include_directories(nonblocking_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26507,6 +26843,7 @@ target_include_directories(notification_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26549,6 +26886,7 @@ target_include_directories(num_external_connectivity_watchers_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26654,6 +26992,7 @@ target_include_directories(observable_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26713,6 +27052,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -26778,6 +27118,7 @@ target_include_directories(orca_service_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26822,6 +27163,7 @@ target_include_directories(orca_service_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26864,6 +27206,7 @@ target_include_directories(orphanable_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26898,6 +27241,7 @@ target_include_directories(osa_distance_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -26974,6 +27318,7 @@ target_include_directories(otel_npc_metrics_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27053,6 +27398,7 @@ target_include_directories(otel_plugin_option_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27133,6 +27479,7 @@ target_include_directories(otel_plugin_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27213,6 +27560,7 @@ target_include_directories(otel_tracing_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27261,6 +27609,7 @@ target_include_directories(out_of_bounds_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27303,6 +27652,7 @@ target_include_directories(outlier_detection_lb_config_parser_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27351,6 +27701,7 @@ target_include_directories(outlier_detection_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27385,6 +27736,7 @@ target_include_directories(overload_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27428,6 +27780,7 @@ target_include_directories(parse_address_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27471,6 +27824,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -27514,6 +27868,7 @@ target_include_directories(parsed_metadata_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27560,6 +27915,7 @@ target_include_directories(parser_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27603,6 +27959,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -27646,6 +28003,7 @@ target_include_directories(party_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27688,6 +28046,7 @@ target_include_directories(percent_encoding_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27763,6 +28122,7 @@ target_include_directories(periodic_update_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27820,6 +28180,7 @@ target_include_directories(pick_first_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27863,6 +28224,7 @@ target_include_directories(ping_abuse_policy_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27905,6 +28267,7 @@ target_include_directories(ping_callbacks_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27947,6 +28310,7 @@ target_include_directories(ping_configuration_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -27989,6 +28353,7 @@ target_include_directories(ping_rate_policy_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -28031,6 +28396,7 @@ target_include_directories(pipe_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -28132,6 +28498,7 @@ target_include_directories(poll_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -28189,6 +28556,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -28263,6 +28631,7 @@ target_include_directories(port_sharing_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -28310,6 +28679,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -28354,6 +28724,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -28401,6 +28772,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -28453,6 +28825,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -28509,6 +28882,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -28553,6 +28927,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -29154,6 +29529,7 @@ target_include_directories(pre_stop_hook_server_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29260,6 +29636,7 @@ target_include_directories(prioritized_race_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29321,6 +29698,7 @@ target_include_directories(private_key_offload_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29364,6 +29742,7 @@ target_include_directories(promise_endpoint_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29467,6 +29846,7 @@ target_include_directories(promise_factory_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29581,6 +29961,7 @@ target_include_directories(promise_map_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29697,6 +30078,7 @@ target_include_directories(promise_mutex_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29811,6 +30193,7 @@ target_include_directories(promise_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29878,6 +30261,7 @@ target_include_directories(property_list_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29926,6 +30310,7 @@ target_include_directories(proto_buffer_reader_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -29969,6 +30354,7 @@ target_include_directories(proto_buffer_writer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30046,6 +30432,7 @@ target_include_directories(proto_server_reflection_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30090,6 +30477,7 @@ target_include_directories(proto_utils_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30218,6 +30606,7 @@ target_include_directories(qps_json_driver
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30332,6 +30721,7 @@ target_include_directories(qps_worker
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30434,6 +30824,7 @@ target_include_directories(query_extensions_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30547,6 +30938,7 @@ target_include_directories(race_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30592,6 +30984,7 @@ target_include_directories(random_early_detection_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30672,6 +31065,7 @@ target_include_directories(raw_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30714,6 +31108,7 @@ target_include_directories(rbac_service_config_parser_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30756,6 +31151,7 @@ target_include_directories(rbac_translator_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30806,6 +31202,7 @@ target_include_directories(read_context_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30831,6 +31228,49 @@ target_link_libraries(read_context_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(recv_message_cancelled_status_test
+  test/core/filters/recv_message_cancelled_status_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(recv_message_cancelled_status_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(recv_message_cancelled_status_test PUBLIC cxx_std_17)
+target_include_directories(recv_message_cancelled_status_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(recv_message_cancelled_status_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(recv_message_filter_bypass_test
   test/core/filters/recv_message_filter_bypass_test.cc
 )
@@ -30849,6 +31289,7 @@ target_include_directories(recv_message_filter_bypass_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30866,7 +31307,6 @@ target_include_directories(recv_message_filter_bypass_test
 target_link_libraries(recv_message_filter_bypass_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -30892,6 +31332,7 @@ target_include_directories(ref_counted_ptr_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30934,6 +31375,7 @@ target_include_directories(ref_counted_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -30982,6 +31424,7 @@ target_include_directories(regional_access_boundary_fetcher_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31029,6 +31472,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -31159,6 +31603,7 @@ target_include_directories(request_buffer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31243,6 +31688,7 @@ target_include_directories(resource_quota_end2end_stress_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31285,6 +31731,7 @@ target_include_directories(resource_quota_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31320,6 +31767,7 @@ target_include_directories(resource_tracker_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31364,6 +31812,7 @@ target_include_directories(retry_service_config_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31406,6 +31855,7 @@ target_include_directories(retry_throttle_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31439,6 +31889,7 @@ target_include_directories(ring_buffer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31488,6 +31939,7 @@ target_include_directories(ring_hash_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31575,6 +32027,7 @@ target_include_directories(rls_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31618,6 +32071,7 @@ target_include_directories(rls_lb_config_parser_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31666,6 +32120,7 @@ target_include_directories(round_robin_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31710,6 +32165,7 @@ target_include_directories(secure_auth_context_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31752,6 +32208,7 @@ target_include_directories(secure_channel_create_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31794,6 +32251,7 @@ target_include_directories(secure_endpoint_read_coalescing_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31837,6 +32295,7 @@ target_include_directories(secure_endpoint_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31879,6 +32338,7 @@ target_include_directories(security_connector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -31982,6 +32442,7 @@ target_include_directories(seq_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32035,6 +32496,7 @@ target_include_directories(sequential_connectivity_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32111,6 +32573,7 @@ target_include_directories(server_builder_plugin_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32184,6 +32647,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -32258,6 +32722,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -32302,6 +32767,7 @@ target_include_directories(server_call_tracer_factory_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32344,6 +32810,7 @@ target_include_directories(server_chttp2_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32386,6 +32853,7 @@ target_include_directories(server_config_selector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32429,6 +32897,7 @@ target_include_directories(server_context_test_spouse_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32500,6 +32969,7 @@ target_include_directories(server_early_return_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32573,6 +33043,7 @@ target_include_directories(server_interceptors_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32617,6 +33088,7 @@ target_include_directories(server_registered_method_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32689,6 +33161,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -32735,6 +33208,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -32778,6 +33252,7 @@ target_include_directories(server_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32854,6 +33329,7 @@ target_include_directories(service_config_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32896,6 +33372,7 @@ target_include_directories(service_config_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -32967,6 +33444,7 @@ target_include_directories(session_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33011,6 +33489,7 @@ target_include_directories(session_endpoint_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33060,6 +33539,7 @@ target_include_directories(settings_timeout_manager_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33103,6 +33583,7 @@ target_include_directories(settings_timeout_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33137,6 +33618,7 @@ target_include_directories(shared_bit_gen_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33213,6 +33695,7 @@ target_include_directories(shutdown_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33257,6 +33740,7 @@ target_include_directories(simple_request_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33298,6 +33782,7 @@ target_include_directories(single_set_ptr_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33341,6 +33826,7 @@ target_include_directories(sleep_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33387,6 +33873,7 @@ target_include_directories(slice_string_helpers_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33431,6 +33918,7 @@ target_include_directories(sockaddr_resolver_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33473,6 +33961,7 @@ target_include_directories(sockaddr_utils_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33516,6 +34005,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -33550,6 +34040,7 @@ target_include_directories(sorted_pack_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33623,6 +34114,7 @@ target_include_directories(spiffe_bundle_map_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33673,6 +34165,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -33717,6 +34210,7 @@ target_include_directories(spiffe_utils_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33759,6 +34253,7 @@ target_include_directories(spinlock_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33801,6 +34296,7 @@ target_include_directories(ssl_telemetry_utils_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -33851,6 +34347,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -33903,6 +34400,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -33948,6 +34446,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -33991,6 +34490,7 @@ target_include_directories(stat_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34093,6 +34593,7 @@ target_include_directories(static_stride_scheduler_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34146,6 +34647,7 @@ target_include_directories(status_conversion_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34247,6 +34749,7 @@ target_include_directories(status_flag_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34300,6 +34803,7 @@ target_include_directories(status_helper_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34348,6 +34852,7 @@ target_include_directories(status_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34398,6 +34903,7 @@ target_include_directories(status_util_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34446,6 +34952,7 @@ target_include_directories(stream_data_queue_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34489,6 +34996,7 @@ target_include_directories(stream_leak_with_queued_flow_control_update_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34534,6 +35042,7 @@ target_include_directories(stream_quota_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34581,6 +35090,7 @@ target_include_directories(stream_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34631,6 +35141,7 @@ target_include_directories(streaming_call_promise_wrapper_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34708,6 +35219,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -34752,6 +35264,7 @@ target_include_directories(streams_not_seen_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34795,6 +35308,7 @@ target_include_directories(string_ref_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34838,6 +35352,7 @@ target_include_directories(string_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34880,6 +35395,7 @@ target_include_directories(subchannel_args_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34922,6 +35438,7 @@ target_include_directories(subchannel_metrics_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -34964,6 +35481,7 @@ target_include_directories(subchannel_stream_limiter_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35067,6 +35585,7 @@ target_include_directories(switch_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35120,6 +35639,7 @@ target_include_directories(sync_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35162,6 +35682,7 @@ target_include_directories(system_roots_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35195,6 +35716,7 @@ target_include_directories(table_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35243,6 +35765,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -35287,6 +35810,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -35332,6 +35856,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -35376,6 +35901,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -35419,6 +35945,7 @@ target_include_directories(tcp_socket_utils_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35461,6 +35988,7 @@ target_include_directories(test_core_credentials_transport_ssl_ssl_credentials_t
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35503,6 +36031,7 @@ target_include_directories(test_core_credentials_transport_tls_tls_credentials_t
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35546,6 +36075,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -35651,6 +36181,7 @@ target_include_directories(test_core_event_engine_posix_timer_heap_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35768,6 +36299,7 @@ target_include_directories(test_core_event_engine_slice_buffer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35822,6 +36354,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -35865,6 +36398,7 @@ target_include_directories(test_core_iomgr_timer_heap_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35907,6 +36441,7 @@ target_include_directories(test_core_slice_slice_buffer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35950,6 +36485,7 @@ target_include_directories(test_core_slice_slice_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -35992,6 +36528,7 @@ target_include_directories(test_core_util_time_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36039,6 +36576,7 @@ target_include_directories(test_cpp_client_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36112,6 +36650,7 @@ target_include_directories(test_cpp_end2end_ssl_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36184,6 +36723,7 @@ target_include_directories(test_cpp_end2end_tls_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36228,6 +36768,7 @@ target_include_directories(test_cpp_server_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36272,6 +36813,7 @@ target_include_directories(test_cpp_util_slice_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36315,6 +36857,7 @@ target_include_directories(test_cpp_util_time_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36358,6 +36901,7 @@ target_include_directories(test_timeout_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36400,6 +36944,7 @@ target_include_directories(thd_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36443,6 +36988,7 @@ target_include_directories(thread_manager_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36486,6 +37032,7 @@ target_include_directories(thread_pool_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36589,6 +37136,7 @@ target_include_directories(thread_quota_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36676,6 +37224,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -36727,6 +37276,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -36772,6 +37322,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -36816,6 +37367,7 @@ target_include_directories(time_util_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36858,6 +37410,7 @@ target_include_directories(timeout_encoding_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36903,6 +37456,7 @@ target_include_directories(timer_list_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36948,6 +37502,7 @@ target_include_directories(timer_manager_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -36991,6 +37546,7 @@ target_include_directories(timer_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37066,6 +37622,7 @@ target_include_directories(tls_cert_selection_offload_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37110,6 +37667,7 @@ target_include_directories(tls_certificate_verifier_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37182,6 +37740,7 @@ target_include_directories(tls_key_export_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37255,6 +37814,7 @@ target_include_directories(tls_private_key_signer_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37298,6 +37858,7 @@ target_include_directories(tls_security_connector_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37342,6 +37903,7 @@ target_include_directories(too_many_pings_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37654,6 +38216,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -37713,6 +38276,7 @@ target_include_directories(trace_flags_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37756,6 +38320,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -37799,6 +38364,7 @@ target_include_directories(transport_security_common_api_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37841,6 +38407,7 @@ target_include_directories(transport_security_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37874,6 +38441,7 @@ target_include_directories(trie_lookup_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -37977,6 +38545,7 @@ target_include_directories(try_join_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38030,6 +38599,7 @@ target_include_directories(try_seq_metadata_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38145,6 +38715,7 @@ target_include_directories(try_seq_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38258,6 +38829,7 @@ target_include_directories(unique_ptr_with_bitset_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38302,6 +38874,7 @@ target_include_directories(unique_type_name_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38351,6 +38924,7 @@ target_include_directories(unknown_frame_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38393,6 +38967,7 @@ target_include_directories(uri_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38426,6 +39001,7 @@ target_include_directories(useful_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38471,6 +39047,7 @@ target_include_directories(uuid_v4_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38778,6 +39355,7 @@ target_include_directories(v3_bridge_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38836,6 +39414,7 @@ target_include_directories(validation_errors_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38878,6 +39457,7 @@ target_include_directories(varint_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -38983,6 +39563,7 @@ target_include_directories(wait_for_callback_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -39036,6 +39617,7 @@ target_include_directories(wait_for_single_owner_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -39079,6 +39661,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -39123,6 +39706,7 @@ target_include_directories(weighted_round_robin_config_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -39172,6 +39756,7 @@ target_include_directories(weighted_round_robin_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -39217,6 +39802,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -39262,6 +39848,7 @@ target_include_directories(window_overflow_bad_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -39306,6 +39893,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -39351,6 +39939,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -39400,6 +39989,7 @@ target_include_directories(writable_streams_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -39443,6 +40033,7 @@ target_include_directories(write_cycle_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -39545,6 +40136,7 @@ target_include_directories(write_size_policy_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -39634,6 +40226,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -40044,6 +40637,7 @@ target_include_directories(xds_audit_logger_registry_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -40090,6 +40684,7 @@ target_include_directories(xds_bootstrap_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -40132,6 +40727,7 @@ target_include_directories(xds_certificate_provider_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -40175,6 +40771,7 @@ target_include_directories(xds_client_grpc_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -40766,6 +41363,7 @@ target_include_directories(xds_client_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -41321,6 +41919,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -41850,6 +42449,7 @@ target_include_directories(xds_cluster_resource_type_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -42408,6 +43008,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -42865,6 +43466,7 @@ target_include_directories(xds_common_types_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -43431,6 +44033,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -43978,6 +44581,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -44051,6 +44655,7 @@ target_include_directories(xds_credentials_end2end_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -44093,6 +44698,7 @@ target_include_directories(xds_credentials_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -44731,6 +45337,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -45277,6 +45884,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -45594,6 +46202,7 @@ target_include_directories(xds_endpoint_resource_type_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -46147,6 +46756,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -46701,6 +47311,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -47251,6 +47862,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -47802,6 +48414,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -48322,6 +48935,7 @@ target_include_directories(xds_http_filters_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -48774,6 +49388,7 @@ target_include_directories(xds_lb_policy_registry_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -49294,6 +49909,7 @@ target_include_directories(xds_listener_resource_type_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -49725,6 +50341,7 @@ target_include_directories(xds_matcher_parse_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -49768,6 +50385,7 @@ target_include_directories(xds_matcher_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -50074,6 +50692,7 @@ target_include_directories(xds_metadata_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -50628,6 +51247,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -51182,6 +51802,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -51225,6 +51846,7 @@ target_include_directories(xds_override_host_lb_config_parser_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -51273,6 +51895,7 @@ target_include_directories(xds_override_host_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -51828,6 +52451,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -52379,6 +53003,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -52934,6 +53559,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -53351,6 +53977,7 @@ target_include_directories(xds_route_config_resource_type_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -53908,6 +54535,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -53958,6 +54586,7 @@ target_include_directories(xds_routing_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -54530,6 +55159,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -55102,6 +55732,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -55695,6 +56326,7 @@ target_include_directories(xds_stats_watcher_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -55740,6 +56372,7 @@ target_include_directories(xds_transport_grpc_test
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -56298,6 +56931,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
@@ -56356,6 +56990,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_CEL_C_INCLUDE_DIR}
       ${_gRPC_RE2_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}

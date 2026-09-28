@@ -75,6 +75,7 @@ UPBDEFS_GRPC_GENERATED_INCLUDE = (
 )
 UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)
+CEL_C_INCLUDE = (os.path.join("third_party", "cel-c"),)
 ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
 README = os.path.join(PYTHON_STEM, "README.rst")
 
@@ -377,6 +378,7 @@ EXTENSION_INCLUDE_DIRECTORIES = (
     + UPBDEFS_GRPC_GENERATED_INCLUDE
     + UTF8_RANGE_INCLUDE
     + XXHASH_INCLUDE
+    + CEL_C_INCLUDE
     + ZLIB_INCLUDE
 )
 

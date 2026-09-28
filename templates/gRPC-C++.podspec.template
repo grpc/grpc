@@ -143,7 +143,8 @@
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-gen"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'${"\\"}
-          ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
+          ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/cel-c"',
       'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
       'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
       'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',

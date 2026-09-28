@@ -44,6 +44,19 @@ bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_a
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20260616.0")
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
+
+# -- CEL (Common Expression Language) C implementation.
+# Pinning version to be consistent with third_party/cel-c.
+bazel_dep(name = "cel-c", version = "0.0.0-20260820-bbdb358", repo_name = "cel_c")
+
+# -- CEL specification protos (cel.expr.*).
+# This dep exists for the repo_name mapping: gRPC code refers to these protos
+# as @dev_cel//proto/cel/expr:..., which is the name the legacy WORKSPACE
+# build binds them to (see bazel/grpc_deps.bzl), so declaring the alias here
+# makes the same label work under bzlmod.
+# The version must match what the module graph resolves to (xds, envoy_api,
+# cel-c and cel-cpp all require 0.25.1) and what CMakeLists.txt downloads.
+bazel_dep(name = "cel-spec", version = "0.25.1", repo_name = "dev_cel")
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
