@@ -1869,13 +1869,19 @@ int64_t Http2ClientTransport::TestOnlyGetStreamFlowControlWindow(
 
 void Http2ClientTransport::MaybeSpawnPingTimeout(
     std::optional<uint64_t> opaque_data) {
-  if (opaque_data.has_value()) {
-    SpawnGuardedTransportParty(
-        "PingTimeout", [self = RefAsSubclass<Http2ClientTransport>(),
-                        opaque_data = *opaque_data]() {
-          return self->ping_manager_->TimeoutPromise(opaque_data);
-        });
+  if (!opaque_data.has_value()) {
+    return;
   }
+  // Must happen synchronously with the ping send, not inside the spawned
+  // promise
+  PingManager::ArmedPingTimeout armed = ping_manager_->ArmPingTimeout();
+  SpawnGuardedTransportParty(
+      "PingTimeout",
+      [self = RefAsSubclass<Http2ClientTransport>(), armed = std::move(armed),
+       opaque_data = *opaque_data]() mutable {
+        return self->ping_manager_->PingTimeoutPromise(std::move(armed),
+                                                       opaque_data);
+      });
 }
 void Http2ClientTransport::MaybeSpawnDelayedPing(
     std::optional<Duration> delayed_ping_wait) {

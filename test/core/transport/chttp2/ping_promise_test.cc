@@ -109,14 +109,18 @@ class PingManagerTest : public YodelTest {
 
   void MaybeSpawnTimeout(PingManager& ping_system,
                          std::optional<uint64_t> opaque_data) {
-    if (opaque_data.has_value()) {
-      GetContext<Party>()->Spawn(
-          "PingTimeout",
-          [&ping_system, opaque_data = *opaque_data]() {
-            return ping_system.TimeoutPromise(opaque_data);
-          },
-          [](auto) {});
+    if (!opaque_data.has_value()) {
+      return;
     }
+    // Arm eagerly, matching what both transports do.
+    PingManager::ArmedPingTimeout armed = ping_system.ArmPingTimeout();
+    GetContext<Party>()->Spawn(
+        "PingTimeout",
+        [&ping_system, armed = std::move(armed),
+         opaque_data = *opaque_data]() mutable {
+          return ping_system.PingTimeoutPromise(std::move(armed), opaque_data);
+        },
+        [](auto) {});
   }
 
   void MaybeSendPing(PingManager& ping_system,
