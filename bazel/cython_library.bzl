@@ -69,6 +69,9 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
 
     shared_objects = []
     defines = kwargs.pop("defines", [])
+    features = kwargs.pop("features", [])
+    if "force_no_whole_archive" not in features:
+        features = list(features) + ["force_no_whole_archive"]
     for src in pyx_srcs:
         stem = src.split(".")[0]
         shared_object_name = stem + ".so"
@@ -79,6 +82,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
                 "@rules_python//python/cc:current_py_cc_headers",
             ],
             defines = defines,
+            features = features,
             linkshared = 1,
             linkopts = select({
                 # The "-undefined dynamic_lookup" flag allows the shared library to use symbols
