@@ -83,8 +83,9 @@
           deps = (set(non_abseil_lib_and_transitive_deps("grpc")) | set(swift_package.get('deps', []))) - set({"cares", "z"})
           files = []
           for dep in sorted(deps):
-            lib = lib_maps[dep]
-            files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
+            lib = lib_maps.get(dep, None)
+            if lib:
+              files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
           files.extend([
             "src/core/client_channel/virtual_channel.cc",
             "src/core/client_channel/virtual_channel.h",
