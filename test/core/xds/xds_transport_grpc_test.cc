@@ -220,13 +220,15 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
-                                                      &call_status));
+                                                      &call_status),
+      XdsTransportFactory::XdsTransport::CallOptions().set_wait_for_ready(
+          true));
   ASSERT_NE(call, nullptr);
   exec_ctx.Flush();
   on_status_received.WaitForNotification();
-  // Nothing is listening on server_uri_, but this overload defaults to
-  // wait-for-ready, so the call stays queued until the deadline instead of
-  // failing when the connection attempt fails.
+  // Nothing is listening on server_uri_, but with wait-for-ready enabled,
+  // the call stays queued until the deadline instead of failing when the
+  // connection attempt fails.
   EXPECT_EQ(call_status.code(), absl::StatusCode::kDeadlineExceeded)
       << call_status;
   // Orphan the call after status is received. This invokes Orphan(), which
@@ -247,8 +249,7 @@ TEST_F(GrpcXdsTransportTest, StreamingCallWithoutWaitForReadyFails) {
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
-                                                      &call_status),
-      XdsTransportFactory::XdsTransport::CallOptions());
+                                                      &call_status));
   ASSERT_NE(call, nullptr);
   exec_ctx.Flush();
   // Nothing is listening on server_uri_, so the call fails as soon as the
