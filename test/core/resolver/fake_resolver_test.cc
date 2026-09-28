@@ -60,14 +60,14 @@ class FakeResolverTest : public ::testing::Test {
    public:
     void SetExpectedAndNotification(Resolver::Result expected,
                                     absl::Notification* notification) {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       ASSERT_EQ(notification_, nullptr);
       expected_ = std::move(expected);
       notification_ = notification;
     }
 
     void ReportResult(Resolver::Result actual) override {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       ASSERT_NE(notification_, nullptr);
       // TODO(roth): Check fields other than just the addresses.
       // Note: No good way to compare result_health_callback.

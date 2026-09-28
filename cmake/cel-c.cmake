@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library")
-
-# TODO(rishesh): Enable parse_headers when internal build system limitations are resolved.
-package(
-    features = [
-        "layering_check",
-        # "parse_headers",
-    ],
-)
-
-licenses(["notice"])
-
-grpc_internal_proto_library(
-    name = "alts_handshaker_proto",
-    srcs = [
-        "altscontext.proto",
-        "handshaker.proto",
-        "transport_security_common.proto",
-    ],
-    visibility = ["//visibility:public"],
-)
+set(CEL_C_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-c)
+set(_gRPC_CEL_C_INCLUDE_DIR "${CEL_C_ROOT_DIR}")

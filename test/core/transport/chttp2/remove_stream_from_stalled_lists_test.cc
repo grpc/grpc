@@ -162,7 +162,7 @@ class TestServer {
   int ShutdownAndGetNumCallsHandled() {
     {
       // prevent the server from requesting any more calls
-      grpc_core::MutexLock lock(&shutdown_mu_);
+      grpc_core::MutexLock lock(shutdown_mu_);
       shutdown_ = true;
     }
     grpc_server_shutdown_and_notify(server_, cq_, this /* tag */);
@@ -192,7 +192,7 @@ class TestServer {
       grpc_metadata_array request_metadata_recv;
       grpc_metadata_array_init(&request_metadata_recv);
       {
-        grpc_core::MutexLock lock(&shutdown_mu_);
+        grpc_core::MutexLock lock(shutdown_mu_);
         if (!shutdown_) {
           call_cq = grpc_completion_queue_create_for_next(nullptr);
           grpc_call_error error = grpc_server_request_call(
@@ -213,7 +213,7 @@ class TestServer {
           rpc_threads.push_back(
               std::thread(std::bind(&TestServer::HandleOneRpc, call, call_cq)));
         } else if (event.tag == this /* shutdown_and_notify tag */) {
-          grpc_core::MutexLock lock(&shutdown_mu_);
+          grpc_core::MutexLock lock(shutdown_mu_);
           GRPC_CHECK(shutdown_);
           GRPC_CHECK_EQ(call_cq, nullptr);
           got_shutdown_and_notify_tag = true;
@@ -221,7 +221,7 @@ class TestServer {
           GRPC_CHECK(0);
         }
       } else {
-        grpc_core::MutexLock lock(&shutdown_mu_);
+        grpc_core::MutexLock lock(shutdown_mu_);
         GRPC_CHECK(shutdown_);
         grpc_completion_queue_destroy(call_cq);
       }

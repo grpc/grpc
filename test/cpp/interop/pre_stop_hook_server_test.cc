@@ -44,13 +44,13 @@ struct CallInfo {
 
   std::optional<Status> WaitForStatus(
       absl::Duration timeout = absl::Seconds(1)) {
-    grpc_core::MutexLock lock(&mu);
+    grpc_core::MutexLock lock(mu);
     cv.WaitWithTimeout(&mu, timeout);
     return status_;
   }
 
   void SetStatus(const Status& status) {
-    grpc_core::MutexLock lock(&mu);
+    grpc_core::MutexLock lock(mu);
     status_ = status;
     cv.SignalAll();
   }
@@ -69,7 +69,7 @@ void ServerLoop(HookServiceImpl* service, int port, Server** server,
   builder.RegisterService(service);
   auto s = builder.BuildAndStart();
   {
-    grpc_core::MutexLock lock(mu);
+    grpc_core::MutexLock lock(*mu);
     *server = s.get();
     condition->SignalAll();
   }
@@ -191,7 +191,7 @@ TEST(PreStopHookService, StartDoRequestStop) {
   std::thread server_thread(ServerLoop, &service, port, &server, &mu,
                             &condition);
   {
-    grpc_core::MutexLock lock(&mu);
+    grpc_core::MutexLock lock(mu);
     while (server == nullptr) {
       condition.Wait(&mu);
     }

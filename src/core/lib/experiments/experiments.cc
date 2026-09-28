@@ -199,6 +199,11 @@ const char* const description_promise_filter_server_half_close =
     "Close inbound message pipe in server-side promise-based filter on call "
     "completion so filters observe client half-close.";
 const char* const additional_constraints_promise_filter_server_half_close =
+const char* const description_recv_message_cancelled_status_fix =
+    "Report the status from the received trailing metadata (instead of the "
+    "batch completion status) when a recv_message batch is completed after the "
+    "call has been cancelled.";
+const char* const additional_constraints_recv_message_cancelled_status_fix =
     "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
@@ -413,6 +418,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_filter_server_half_close,
      additional_constraints_promise_filter_server_half_close, nullptr, 0, false,
      true},
+    {"recv_message_cancelled_status_fix",
+     description_recv_message_cancelled_status_fix,
+     additional_constraints_recv_message_cancelled_status_fix, nullptr, 0,
+     false, true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
@@ -657,6 +666,11 @@ const char* const description_promise_filter_server_half_close =
     "Close inbound message pipe in server-side promise-based filter on call "
     "completion so filters observe client half-close.";
 const char* const additional_constraints_promise_filter_server_half_close =
+const char* const description_recv_message_cancelled_status_fix =
+    "Report the status from the received trailing metadata (instead of the "
+    "batch completion status) when a recv_message batch is completed after the "
+    "call has been cancelled.";
+const char* const additional_constraints_recv_message_cancelled_status_fix =
     "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
@@ -871,6 +885,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_filter_server_half_close,
      additional_constraints_promise_filter_server_half_close, nullptr, 0, false,
      true},
+    {"recv_message_cancelled_status_fix",
+     description_recv_message_cancelled_status_fix,
+     additional_constraints_recv_message_cancelled_status_fix, nullptr, 0,
+     false, true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
@@ -1115,6 +1133,11 @@ const char* const description_promise_filter_server_half_close =
     "Close inbound message pipe in server-side promise-based filter on call "
     "completion so filters observe client half-close.";
 const char* const additional_constraints_promise_filter_server_half_close =
+const char* const description_recv_message_cancelled_status_fix =
+    "Report the status from the received trailing metadata (instead of the "
+    "batch completion status) when a recv_message batch is completed after the "
+    "call has been cancelled.";
+const char* const additional_constraints_recv_message_cancelled_status_fix =
     "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
@@ -1329,6 +1352,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_filter_server_half_close,
      additional_constraints_promise_filter_server_half_close, nullptr, 0, false,
      true},
+    {"recv_message_cancelled_status_fix",
+     description_recv_message_cancelled_status_fix,
+     additional_constraints_recv_message_cancelled_status_fix, nullptr, 0,
+     false, true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,

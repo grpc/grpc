@@ -50,7 +50,7 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
     GRPC_TRACE_LOG(event_engine, INFO)
         << "CFEventEngine:" << engine << " executing callback:" << handle;
     {
-      grpc_core::MutexLock lock(&engine->task_mu_);
+      grpc_core::MutexLock lock(engine->task_mu_);
       engine->known_handles_.erase(handle);
     }
     cb();
@@ -66,7 +66,7 @@ CFEventEngine::CFEventEngine()
 
 CFEventEngine::~CFEventEngine() {
   {
-    grpc_core::MutexLock lock(&task_mu_);
+    grpc_core::MutexLock lock(task_mu_);
     if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
       for (auto handle : known_handles_) {
         LOG(ERROR) << "CFEventEngine:" << this
@@ -102,7 +102,7 @@ CFEventEngine::ConnectionHandle CFEventEngine::Connect(
 
   ConnectionHandle handle{reinterpret_cast<intptr_t>(endpoint_ptr), 0};
   {
-    grpc_core::MutexLock lock(&conn_mu_);
+    grpc_core::MutexLock lock(conn_mu_);
     conn_handles_.insert(handle);
   }
 
@@ -121,7 +121,7 @@ CFEventEngine::ConnectionHandle CFEventEngine::Connect(
         that->Cancel(deadline_timer);
 
         {
-          grpc_core::MutexLock lock(&that->conn_mu_);
+          grpc_core::MutexLock lock(that->conn_mu_);
           that->conn_handles_.erase(handle);
         }
 
@@ -149,7 +149,7 @@ bool CFEventEngine::CancelConnect(ConnectionHandle handle) {
 
 bool CFEventEngine::CancelConnectInternal(ConnectionHandle handle,
                                           absl::Status status) {
-  grpc_core::MutexLock lock(&conn_mu_);
+  grpc_core::MutexLock lock(conn_mu_);
 
   if (!conn_handles_.contains(handle)) {
     GRPC_TRACE_LOG(event_engine, INFO)
@@ -196,7 +196,7 @@ EventEngine::TaskHandle CFEventEngine::RunAfter(
 }
 
 bool CFEventEngine::Cancel(TaskHandle handle) {
-  grpc_core::MutexLock lock(&task_mu_);
+  grpc_core::MutexLock lock(task_mu_);
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<Closure*>(handle.keys[0]);
   bool r = timer_manager_.TimerCancel(&cd->timer);
@@ -213,7 +213,7 @@ EventEngine::TaskHandle CFEventEngine::RunAfterInternal(
   cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
-  grpc_core::MutexLock lock(&task_mu_);
+  grpc_core::MutexLock lock(task_mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
   GRPC_TRACE_LOG(event_engine, INFO)
