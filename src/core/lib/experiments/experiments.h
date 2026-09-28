@@ -129,7 +129,6 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return true; }
-inline bool IsPromiseFilterServerHalfCloseEnabled() { return false; }
 inline bool IsRecvMessageCancelledStatusFixEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
@@ -226,7 +225,6 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return true; }
-inline bool IsPromiseFilterServerHalfCloseEnabled() { return false; }
 inline bool IsRecvMessageCancelledStatusFixEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
@@ -323,7 +321,6 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return true; }
-inline bool IsPromiseFilterServerHalfCloseEnabled() { return false; }
 inline bool IsRecvMessageCancelledStatusFixEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
@@ -396,7 +393,6 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
   kExperimentIdPromiseFilterSendCancelMetadata,
-  kExperimentIdPromiseFilterServerHalfClose,
   kExperimentIdRecvMessageCancelledStatusFix,
   kExperimentIdRecvMessageFilterBypassFix,
   kExperimentIdRetryInCallv3,
@@ -603,10 +599,6 @@ inline bool IsPromiseBatchCleanupOnCancelEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseFilterSendCancelMetadata>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SERVER_HALF_CLOSE
-inline bool IsPromiseFilterServerHalfCloseEnabled() {
-  return IsExperimentEnabled<kExperimentIdPromiseFilterServerHalfClose>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RECV_MESSAGE_CANCELLED_STATUS_FIX
 inline bool IsRecvMessageCancelledStatusFixEnabled() {

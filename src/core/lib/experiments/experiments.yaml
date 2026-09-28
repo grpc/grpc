@@ -327,13 +327,6 @@
   owner: akshitpatel@google.com
   test_tags: []
   allow_in_fuzzing_config: true
-- name: promise_filter_server_half_close
-  description:
-    Close inbound message pipe in server-side promise-based filter on
-    call completion so filters observe client half-close.
-  expiry: 2027/03/16
-  owner: rishesh@google.com
-  test_tags: ["core_end2end_test", "xds_end2end_test", "xds_test"]
 - name: recv_message_cancelled_status_fix
   description:
     Report the status from the received trailing metadata (instead of the

@@ -63,7 +63,6 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
-    "promise_filter_server_half_close": "promise_filter_server_half_close",
     "recv_message_cancelled_status_fix": "recv_message_cancelled_status_fix",
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
@@ -164,7 +163,6 @@ EXPERIMENTS = {
                 "ph2_server",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
-                "promise_filter_server_half_close",
                 "recv_message_cancelled_status_fix",
                 "recv_message_filter_bypass_fix",
                 "retry_in_callv3",
@@ -204,13 +202,11 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
-                "promise_filter_server_half_close",
+                "recv_message_cancelled_status_fix",
                 "ring_hash_update_cleanup",
             ],
             "xds_test": [
-                "promise_filter_server_half_close",
                 "recv_message_cancelled_status_fix",
-                "ring_hash_update_cleanup",
             ],
         },
         "on": {
