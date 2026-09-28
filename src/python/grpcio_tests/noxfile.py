@@ -17,6 +17,7 @@ import argparse
 import glob
 import os
 import os.path
+import pathlib
 import platform
 import re
 import shutil
@@ -24,19 +25,11 @@ import sys
 
 import nox
 
-# PYTHON_STEM - # usr/local/google/home/janiewicz/Code/grpc/src/python/grpcio_tests
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-# GRPC_STEM - usr/local/google/home/janiewicz/Code/grpc
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../../")
-# PYTHON_REL_PATH - src/python/grpcio_tests
-ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
-GRPC_PROTO_STEM = os.path.join(GRPC_ROOT_ABS_PATH, "src", "proto")  # src/proto
-PROTO_STEM = os.path.join(
-    ROOT_DIR, "src", "proto"
-)  # src/python/grpcio_tests/src/proto
-PYTHON_PROTO_TOP_LEVEL = os.path.join(
-    ROOT_DIR, "src"
-)  # src/python/grpcio_tests/src
+GRPC_PROTO_STEM = os.path.join(GRPC_ROOT_ABS_PATH, "src", "proto")
+PROTO_STEM = os.path.join(ROOT_DIR, "src", "proto")
+PYTHON_PROTO_TOP_LEVEL = os.path.join(ROOT_DIR, "src")
 
 
 @nox.session(python=False)
@@ -48,15 +41,10 @@ def preprocess(session: nox.Session):
 
     session.cd(GRPC_ROOT_ABS_PATH)
 
-    try:
-        shutil.rmtree(PROTO_STEM)
-    except Exception as error:
-        # We don't care if this command fails
-        pass
+    shutil.rmtree(PROTO_STEM, ignore_errors=True)
     shutil.copytree(GRPC_PROTO_STEM, PROTO_STEM)
     for root, _, _ in os.walk(PYTHON_PROTO_TOP_LEVEL):
-        path = os.path.join(root, "__init__.py")
-        open(path, "a").close()
+        pathlib.Path(root, "__init__.py").touch(exist_ok=True)
 
 
 @nox.session(venv_params=["--system-site-packages"])

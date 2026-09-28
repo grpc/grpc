@@ -20,7 +20,6 @@ import nox
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
-ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 CHANNELZ_PROTO = os.path.join(
     GRPC_ROOT_ABS_PATH, "third_party/grpc-proto/grpc/channelz/v1/channelz.proto"
 )
