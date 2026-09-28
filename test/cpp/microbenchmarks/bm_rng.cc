@@ -45,7 +45,7 @@ static void BM_OneRngFromReusedBitSetWithMutex(benchmark::State& state) {
   };
   Data data;
   for (auto _ : state) {
-    grpc_core::MutexLock lock(&data.mu);
+    grpc_core::MutexLock lock(data.mu);
     benchmark::DoNotOptimize(absl::Uniform(data.bitgen, 0.0, 1.0));
   }
 }

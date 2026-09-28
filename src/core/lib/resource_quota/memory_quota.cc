@@ -64,7 +64,7 @@ class MemoryQuotaTracker {
   }
 
   void Add(std::shared_ptr<BasicMemoryQuota> quota) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // Common usage is that we only create a few (one or two) quotas.
     // We'd like to ensure that we don't OOM if more are added - and
     // using a weak_ptr here, whilst nicely braindead, does run that
@@ -77,7 +77,7 @@ class MemoryQuotaTracker {
   }
 
   std::vector<std::shared_ptr<BasicMemoryQuota>> All() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return GatherAndGarbageCollect();
   }
 
@@ -221,7 +221,7 @@ void ReclaimerQueue::Handle::Sweep::MarkCancelled() {
   // This ensures that we don't suffer from head of line blocking whereby a
   // non-cancelled reclaimer at the head of the queue, in the absence of memory
   // pressure, prevents the remainder of the queue from being cleaned up.
-  MutexLock lock(&state_->reader_mu);
+  MutexLock lock(state_->reader_mu);
   while (true) {
     bool empty = false;
     std::unique_ptr<QueuedNode> node(
@@ -241,13 +241,13 @@ ReclaimerQueue::~ReclaimerQueue() = default;
 
 void ReclaimerQueue::Enqueue(RefCountedPtr<Handle> handle) {
   if (state_->queue.Push(new QueuedNode(std::move(handle)))) {
-    MutexLock lock(&state_->reader_mu);
+    MutexLock lock(state_->reader_mu);
     state_->waker.Wakeup();
   }
 }
 
 Poll<RefCountedPtr<ReclaimerQueue::Handle>> ReclaimerQueue::PollNext() {
-  MutexLock lock(&state_->reader_mu);
+  MutexLock lock(state_->reader_mu);
   bool empty = false;
   // Try to pull from the queue.
   std::unique_ptr<QueuedNode> node(
@@ -290,7 +290,7 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
   OrphanablePtr<ReclaimerQueue::Handle>
       reclamation_handles[kNumReclamationPasses];
   {
-    MutexLock lock(&reclaimer_mu_);
+    MutexLock lock(reclaimer_mu_);
     GRPC_CHECK(!shutdown_);
     shutdown_ = true;
     memory_quota = memory_quota_;
@@ -425,7 +425,7 @@ void GrpcMemoryAllocatorImpl::FillChannelzProperties(
   donate_back_.Interrupt([&list](Duration so_far) {
     list.Set("donate_back_period_expired", so_far);
   });
-  MutexLock lock(&reclaimer_mu_);
+  MutexLock lock(reclaimer_mu_);
   list.Set("shutdown", shutdown_);
 }
 
@@ -610,7 +610,7 @@ void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
   AllocatorBucket::Shard& shard = small_allocators_.SelectShard(allocator);
 
   {
-    MutexLock l(&shard.shard_mu);
+    MutexLock l(shard.shard_mu);
     shard.allocators.emplace(allocator);
   }
 }
@@ -622,7 +622,7 @@ void BasicMemoryQuota::RemoveAllocator(GrpcMemoryAllocatorImpl* allocator) {
       small_allocators_.SelectShard(allocator);
 
   {
-    MutexLock l(&small_shard.shard_mu);
+    MutexLock l(small_shard.shard_mu);
     if (small_shard.allocators.erase(allocator) == 1) {
       return;
     }
@@ -631,7 +631,7 @@ void BasicMemoryQuota::RemoveAllocator(GrpcMemoryAllocatorImpl* allocator) {
   AllocatorBucket::Shard& big_shard = big_allocators_.SelectShard(allocator);
 
   {
-    MutexLock l(&big_shard.shard_mu);
+    MutexLock l(big_shard.shard_mu);
     big_shard.allocators.erase(allocator);
   }
 }
@@ -667,14 +667,14 @@ void BasicMemoryQuota::MaybeMoveAllocatorBigToSmall(
   AllocatorBucket::Shard& old_shard = big_allocators_.SelectShard(allocator);
 
   {
-    MutexLock l(&old_shard.shard_mu);
+    MutexLock l(old_shard.shard_mu);
     if (old_shard.allocators.erase(allocator) == 0) return;
   }
 
   AllocatorBucket::Shard& new_shard = small_allocators_.SelectShard(allocator);
 
   {
-    MutexLock l(&new_shard.shard_mu);
+    MutexLock l(new_shard.shard_mu);
     new_shard.allocators.emplace(allocator);
   }
 }
@@ -687,14 +687,14 @@ void BasicMemoryQuota::MaybeMoveAllocatorSmallToBig(
   AllocatorBucket::Shard& old_shard = small_allocators_.SelectShard(allocator);
 
   {
-    MutexLock l(&old_shard.shard_mu);
+    MutexLock l(old_shard.shard_mu);
     if (old_shard.allocators.erase(allocator) == 0) return;
   }
 
   AllocatorBucket::Shard& new_shard = big_allocators_.SelectShard(allocator);
 
   {
-    MutexLock l(&new_shard.shard_mu);
+    MutexLock l(new_shard.shard_mu);
     new_shard.allocators.emplace(allocator);
   }
 }
@@ -735,7 +735,7 @@ void BasicMemoryQuota::AddData(channelz::DataSink sink) {
                [this]() {
                  channelz::PropertyTable table;
                  for (auto& shard : small_allocators_.shards) {
-                   MutexLock l(&shard.shard_mu);
+                   MutexLock l(shard.shard_mu);
                    size_t i = 0;
                    for (auto& allocator : shard.allocators) {
                      i++;
@@ -746,7 +746,7 @@ void BasicMemoryQuota::AddData(channelz::DataSink sink) {
                    }
                  }
                  for (auto& shard : big_allocators_.shards) {
-                   MutexLock l(&shard.shard_mu);
+                   MutexLock l(shard.shard_mu);
                    size_t i = 0;
                    for (auto& allocator : shard.allocators) {
                      i++;
