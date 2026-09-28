@@ -146,6 +146,7 @@ _TESTS = [
     "invoke_large_request",
     "keepalive_timeout",
     "large_metadata",
+    "many_calls",
     "max_concurrent_streams",
     "max_connection_age",
     "max_connection_idle",
