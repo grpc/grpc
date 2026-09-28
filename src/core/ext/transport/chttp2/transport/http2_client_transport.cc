@@ -566,8 +566,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
     GRPC_UNUSED Http2UnknownFrame&& frame) {
   // RFC9113: Implementations MUST ignore and discard frames of
   // unknown types.
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport::ProcessIncomingFrame(UnknownFrame) ";
   return Http2Status::Ok();
 }
 
@@ -685,7 +683,6 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
 }
 
 auto Http2ClientTransport::ReadLoop() {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ReadLoop Factory";
   return AssertResultType<absl::Status>(Loop([this]() {
     return TrySeq(ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
       GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ReadLoop Continue";
@@ -704,6 +701,7 @@ auto Http2ClientTransport::BdpLoop() {
         [this]() {
           // TODO(akshitpatel) : [PH2][P1] : Reset the keepalive ping timer
           // when a BDP ping is sent, similar to CHTTP2's start_bdp_ping_locked.
+          TriggerWriteCycleOrHandleError();
           return ping_manager_->RequestPing(
               [this] { flow_control_.StartBdpPing(); },
               /*important=*/false);

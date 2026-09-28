@@ -3281,15 +3281,11 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestHeaderModeDefault) {
   XdsExtension extension = MakeXdsExtension(proto);
   auto config =
       factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(
-      status,
-      absl::InvalidArgumentError(
-          "errors validating filter config: ["
-          "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
-          ".ExternalProcessor].processing_mode.request_header_mode "
-          "error:unsupported header processing mode value: 0]"));
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_TRUE(DownCast<const ExtProcFilter::Config&>(*config)
+                  .processing_mode->send_request_headers);
 }
 
 TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestHeaderModeSend) {
@@ -3349,15 +3345,11 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseHeaderModeDefault) {
   XdsExtension extension = MakeXdsExtension(proto);
   auto config =
       factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  EXPECT_EQ(
-      status,
-      absl::InvalidArgumentError(
-          "errors validating filter config: ["
-          "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
-          ".ExternalProcessor].processing_mode.response_header_mode "
-          "error:unsupported header processing mode value: 0]"));
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_TRUE(DownCast<const ExtProcFilter::Config&>(*config)
+                  .processing_mode->send_response_headers);
 }
 
 TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseHeaderModeSend) {
@@ -3416,6 +3408,49 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseTrailerModeDefault) {
   XdsExtension extension = MakeXdsExtension(proto);
   auto config =
       factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_FALSE(DownCast<const ExtProcFilter::Config&>(*config)
+                   .processing_mode->send_response_trailers);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigEmptyProcessingMode) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  // Leave all fields unset, which means DEFAULT for the header and trailer
+  // modes and NONE for the body modes.
+  proto.mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
+  const auto& processing_mode =
+      DownCast<const ExtProcFilter::Config&>(*config).processing_mode;
+  ASSERT_TRUE(processing_mode.has_value());
+  EXPECT_TRUE(processing_mode->send_request_headers);
+  EXPECT_TRUE(processing_mode->send_response_headers);
+  EXPECT_FALSE(processing_mode->send_response_trailers);
+  EXPECT_FALSE(processing_mode->send_request_body);
+  EXPECT_FALSE(processing_mode->send_response_body);
+}
+
+TEST_F(XdsExtProcFilterTest,
+       ParseTopLevelConfigGrpcResponseBodyWithDefaultTrailerMode) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  auto* mode = proto.mutable_processing_mode();
+  mode->set_response_body_mode(
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+  // response_trailer_mode is left unset, which means SKIP.
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -3424,7 +3459,27 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseTrailerModeDefault) {
           "errors validating filter config: ["
           "field:http_filter.value[envoy.extensions.filters.http.ext_proc.v3"
           ".ExternalProcessor].processing_mode.response_trailer_mode "
-          "error:unsupported header processing mode value: 0]"));
+          "error:must be set to SEND if response_body_mode is set to GRPC]"));
+}
+
+TEST_F(XdsExtProcFilterTest, ParseOverrideConfigDefaultProcessingMode) {
+  ExtProcPerRoute proto;
+  // Leave all fields unset, which means DEFAULT for the header and trailer
+  // modes and NONE for the body modes.
+  proto.mutable_overrides()->mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
+  const auto& processing_mode =
+      DownCast<const ExtProcFilter::Config&>(*config).processing_mode;
+  ASSERT_TRUE(processing_mode.has_value());
+  EXPECT_TRUE(processing_mode->send_request_headers);
+  EXPECT_TRUE(processing_mode->send_response_headers);
+  EXPECT_FALSE(processing_mode->send_response_trailers);
 }
 
 TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseTrailerModeSend) {

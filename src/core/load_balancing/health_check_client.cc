@@ -30,6 +30,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "grpc/health/v1/health.upb.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
@@ -52,7 +53,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/work_serializer.h"
-#include "src/proto/grpc/health/v1/health.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "absl/log/log.h"

@@ -70,8 +70,15 @@ const grpc_channel_filter* XdsHttpExtProcFilterFactory::channel_filter() const {
 
 namespace {
 
-bool ParseHeaderProcessingMode(int32_t value, ValidationErrors* errors) {
+// Parses a ProcessingMode.HeaderSendMode value.  Returns true if the headers
+// or trailers should be sent to the ext_proc server.  DEFAULT resolves to
+// default_value, which per the proto docs is SEND for request and response
+// headers and SKIP for trailers.
+bool ParseHeaderProcessingMode(int32_t value, bool default_value,
+                               ValidationErrors* errors) {
   switch (value) {
+    case envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_DEFAULT:
+      return default_value;
     case envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_SEND:
       return true;
     case envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_SKIP:
@@ -109,21 +116,21 @@ ExtProcFilter::ProcessingMode ParseProcessingMode(
     processing_mode.send_request_headers = ParseHeaderProcessingMode(
         envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_request_header_mode(
             proto),
-        errors);
+        /*default_value=*/true, errors);
   }
   {
     ValidationErrors::ScopedField field(errors, ".response_header_mode");
     processing_mode.send_response_headers = ParseHeaderProcessingMode(
         envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_response_header_mode(
             proto),
-        errors);
+        /*default_value=*/true, errors);
   }
   {
     ValidationErrors::ScopedField field(errors, ".response_trailer_mode");
     processing_mode.send_response_trailers = ParseHeaderProcessingMode(
         envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_response_trailer_mode(
             proto),
-        errors);
+        /*default_value=*/false, errors);
   }
   {
     ValidationErrors::ScopedField field(errors, ".request_body_mode");

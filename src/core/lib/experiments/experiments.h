@@ -133,6 +133,7 @@ inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
 inline bool IsReturnPreexistingErrorsEnabled() { return true; }
+inline bool IsRingHashUpdateCleanupEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -227,6 +228,7 @@ inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
 inline bool IsReturnPreexistingErrorsEnabled() { return true; }
+inline bool IsRingHashUpdateCleanupEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -321,6 +323,7 @@ inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
 inline bool IsReturnPreexistingErrorsEnabled() { return true; }
+inline bool IsRingHashUpdateCleanupEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -390,6 +393,7 @@ enum ExperimentIds {
   kExperimentIdRecvMessageFilterBypassFix,
   kExperimentIdRetryInCallv3,
   kExperimentIdReturnPreexistingErrors,
+  kExperimentIdRingHashUpdateCleanup,
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdSecureEndpointOffloadLargeReads,
   kExperimentIdSecureEndpointOffloadLargeWrites,
@@ -603,6 +607,10 @@ inline bool IsRetryInCallv3Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
 inline bool IsReturnPreexistingErrorsEnabled() {
   return IsExperimentEnabled<kExperimentIdReturnPreexistingErrors>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RING_HASH_UPDATE_CLEANUP
+inline bool IsRingHashUpdateCleanupEnabled() {
+  return IsExperimentEnabled<kExperimentIdRingHashUpdateCleanup>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {

@@ -22,6 +22,8 @@
 // - find some deterministic way to exercise adaptive throttler code
 
 #include <grpc/credentials.h>
+#include <grpc/lookup/v1/rls.grpc.pb.h>
+#include <grpc/lookup/v1/rls.pb.h>
 #include <grpcpp/call_context_types.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
@@ -51,8 +53,6 @@
 #include "src/core/util/uri.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
-#include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/fake_stats_plugin.h"
