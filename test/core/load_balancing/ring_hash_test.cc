@@ -394,7 +394,8 @@ TEST_F(RingHashTest, RequestHashHeader) {
   std::string hash_key =
       absl::StrCat(absl::StripPrefix(kAddresses[0], "ipv4:"), "_0");
   std::map<std::string, std::string> metadata = {{"foo", hash_key}};
-  ExpectPickQueued(picker.get(), /*call_attributes=*/{}, metadata);
+  ExpectPickQueued(picker.get(), /*call_attributes=*/{}, metadata, "connecting",
+                   "waiting for endpoint 0 (state=IDLE)");
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -402,7 +403,8 @@ TEST_F(RingHashTest, RequestHashHeader) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {}, metadata);
+  ExpectPickQueued(picker.get(), {}, metadata, "connecting",
+                   "waiting for endpoint 0 (state=CONNECTING)");
   EXPECT_EQ(nullptr, FindSubchannel(kAddresses[1]));
   EXPECT_EQ(nullptr, FindSubchannel(kAddresses[2]));
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
@@ -421,7 +423,7 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
                   lb_policy()),
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
-  ExpectPickQueued(picker.get());
+  ExpectPickQueued(picker.get(), {}, {}, "connecting");
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   // It will randomly pick one.
@@ -438,7 +440,9 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get());
+  ExpectPickQueued(
+      picker.get(), {}, {}, "connecting",
+      absl::StrCat("waiting for endpoint ", index, " (state=CONNECTING)"));
   // No other subchannels should have been created yet.
   for (size_t i = 0; i < kAddresses.size(); ++i) {
     if (i != index) EXPECT_EQ(nullptr, FindSubchannel(kAddresses[i]));

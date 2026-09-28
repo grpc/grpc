@@ -646,7 +646,8 @@ void PickFirst::GoIdle() {
   subchannel_list_.reset();
   // Enter idle.
   UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-              MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
+              MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"),
+                                          "connecting", "idle"));
 }
 
 //
@@ -675,7 +676,10 @@ void PickFirst::HealthWatcher::OnConnectivityStateChange(
     case GRPC_CHANNEL_CONNECTING:
       policy_->channel_control_helper()->UpdateState(
           new_state, absl::OkStatus(),
-          MakeRefCounted<QueuePicker>(policy_->Ref()));
+          MakeRefCounted<QueuePicker>(
+              policy_->Ref(), "connecting",
+              absl::StrCat("waiting for health check on ",
+                           policy_->selected_->subchannel()->address())));
       break;
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
       std::string message = absl::StrCat("health watch: ", status.message());
@@ -816,8 +820,15 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   // Otherwise, go IDLE.
   if (new_state == GRPC_CHANNEL_CONNECTING ||
       new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    pick_first_->UpdateState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                             MakeRefCounted<QueuePicker>(nullptr));
+    std::string reason =
+        absl::StrCat("selected subchannel ", subchannel_->address(),
+                     " entered ", ConnectivityStateName(new_state));
+    if (!status.ok()) {
+      absl::StrAppend(&reason, ": ", status.message());
+    }
+    pick_first_->UpdateState(
+        GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+        MakeRefCounted<QueuePicker>(nullptr, "connecting", std::move(reason)));
     pick_first_->AttemptToConnectUsingLatestUpdateArgsLocked();
     // Unset the selected subchannel, so that when we see the initial
     // connectivity state notifications for the subchannels in the new
@@ -989,8 +1000,16 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
       // TRANSIENT_FAILURE.
       // TODO(roth): Squelch duplicate CONNECTING updates.
       if (p->state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        std::string reason = absl::StrCat(
+            "connecting to ", subchannel_state_->subchannel()->address(),
+            " (subchannel ", index_, " of ", subchannel_list_->size(), ")");
+        if (!subchannel_list_->last_failure_.ok()) {
+          absl::StrAppend(&reason, "; last error: ",
+                          subchannel_list_->last_failure_.message());
+        }
         p->UpdateState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                       MakeRefCounted<QueuePicker>(nullptr));
+                       MakeRefCounted<QueuePicker>(nullptr, "connecting",
+                                                   std::move(reason)));
       }
       break;
     default:

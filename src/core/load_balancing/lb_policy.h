@@ -233,7 +233,17 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Pick cannot be completed until something changes on the control
     /// plane.  The client channel will queue the pick and try again the
     /// next time the picker is updated.
-    struct Queue {};
+    struct Queue {
+      /// Type of delay for metric reporting.  Empty if not specified by the
+      /// picker.
+      std::string delay_type;
+      /// Detailed human-readable reason for span annotations.
+      std::string delay_reason;
+
+      Queue() = default;
+      explicit Queue(std::string type, std::string reason = "")
+          : delay_type(std::move(type)), delay_reason(std::move(reason)) {}
+    };
 
     /// Pick failed.  If the call is wait_for_ready, the client channel
     /// will wait for the next picker and try again; otherwise, it
@@ -262,7 +272,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // NOLINTNEXTLINE(google-explicit-constructor)
     PickResult(Complete complete) : result(std::move(complete)) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
-    PickResult(Queue queue) : result(queue) {}
+    PickResult(Queue queue) : result(std::move(queue)) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
     PickResult(Fail fail) : result(std::move(fail)) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
@@ -440,8 +450,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // first pick is seen.
   class QueuePicker final : public SubchannelPicker {
    public:
-    explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
-        : parent_(std::move(parent)) {}
+    explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent,
+                         std::string delay_type = "",
+                         std::string delay_reason = "")
+        : parent_(std::move(parent)),
+          delay_type_(std::move(delay_type)),
+          delay_reason_(std::move(delay_reason)) {}
 
     ~QueuePicker() override { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
 
@@ -450,6 +464,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    private:
     Mutex mu_;
     RefCountedPtr<LoadBalancingPolicy> parent_ ABSL_GUARDED_BY(&mu_);
+    const std::string delay_type_;
+    const std::string delay_reason_;
   };
 
   // A picker that returns PickResult::Fail for all picks.
