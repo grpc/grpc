@@ -44,7 +44,6 @@ class _NoOpCommand(setuptools.Command):
 
 
 CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ] + [
