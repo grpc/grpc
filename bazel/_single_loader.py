@@ -106,6 +106,7 @@ class SingleLoader:
                             if spec.loader is not None:
                                 spec.loader.exec_module(module)
                             tests.append(loader.loadTestsFromModule(module))
+                            break
                     except Exception as e:
                         if module_name in sys.modules:
                             del sys.modules[module_name]
