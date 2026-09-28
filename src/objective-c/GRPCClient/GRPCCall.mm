@@ -73,7 +73,7 @@
 
 - (void)didReceiveData:(id)data {
   // For backwards compatibility with didReceiveRawMessage, if the user provided a response handler
-  // that handles didReceiveRawMesssage, we issue to that method instead
+  // that handles didReceiveRawMessage, we issue to that method instead
   if ([_responseHandler respondsToSelector:@selector(didReceiveRawMessage:)]) {
     [_responseHandler didReceiveRawMessage:data];
   } else if ([_responseHandler respondsToSelector:@selector(didReceiveData:)]) {
