@@ -47,7 +47,7 @@ def preprocess(session: nox.Session):
         shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
 
 
-@nox.session(venv_params=["--system-site-packages"])
+@nox.session(python=False)
 def build_package_protos(session: nox.Session):
     """
     Session to generate project *_pb2.py modules from proto files.
