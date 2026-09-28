@@ -368,7 +368,7 @@ def _create_portability_test_jobs(
 
     # portability C and C++ on x64
     for compiler in [
-        "gcc10",
+        "gcc11",
         "gcc10.2_openssl111",
         "gcc12_openssl309",
         "gcc14",
