@@ -317,6 +317,8 @@ namespace {
 // field is
 //   populated instead of the value field to preserve exact binary/raw header
 //   bytes.
+// TODO(rishesh): Move UpbHeaderMapEncoder to a common place shared with
+// ext_authz.
 class UpbHeaderMapEncoder {
  public:
   UpbHeaderMapEncoder(envoy_config_core_v3_HeaderMap* header_map,

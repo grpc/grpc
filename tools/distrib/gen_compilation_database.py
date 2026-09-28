@@ -27,7 +27,7 @@ import re
 import shlex
 import subprocess
 
-RE_INCLUDE_SYSTEM = re.compile("\s*-I\s+/usr/[^ ]+")
+RE_INCLUDE_SYSTEM = re.compile(r"\s*-I\s+/usr/[^ ]+")
 
 
 # This method is equivalent to https://github.com/grailbio/bazel-compilation-database/blob/master/generate.sh

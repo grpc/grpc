@@ -82,6 +82,13 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
         auth_context, GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME);
     tls_version =
         GetAuthPropertyValue(auth_context, GRPC_SSL_TLS_VERSION_PROPERTY_NAME);
+    // Note that these three describe the local endpoint, not the peer.
+    local_uri_san =
+        GetAuthPropertyValue(auth_context, GRPC_X509_LOCAL_URI_PROPERTY_NAME);
+    local_dns_san =
+        GetAuthPropertyValue(auth_context, GRPC_X509_LOCAL_DNS_PROPERTY_NAME);
+    local_subject = GetAuthPropertyValue(auth_context,
+                                         GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME);
   }
   local_address = ParseEndpointUri(
       args.GetString(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS).value_or(""));
@@ -233,6 +240,27 @@ absl::string_view EvaluateArgs::GetTlsVersion() const {
     return "";
   }
   return channel_args_->tls_version;
+}
+
+absl::string_view EvaluateArgs::GetLocalUriSan() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->local_uri_san;
+}
+
+absl::string_view EvaluateArgs::GetLocalDnsSan() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->local_dns_san;
+}
+
+absl::string_view EvaluateArgs::GetLocalSubject() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->local_subject;
 }
 
 }  // namespace grpc_core

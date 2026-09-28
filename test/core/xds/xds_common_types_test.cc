@@ -46,6 +46,8 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"

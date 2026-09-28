@@ -35,8 +35,9 @@ class EvaluateArgs final {
   // struct.
   struct PerChannelArgs {
     struct Address {
-      // The address in sockaddr form.
-      grpc_resolved_address address;
+      // The address in sockaddr form.  Zero-initialized (i.e., len == 0) if
+      // the endpoint address is unknown or is not an IPv4/IPv6 address.
+      grpc_resolved_address address = {};
       // The same address with only the host part.
       std::string address_str;
       int port = 0;
@@ -52,6 +53,17 @@ class EvaluateArgs final {
     absl::string_view subject;
     absl::string_view requested_server_name;
     absl::string_view tls_version;
+    // NOTE: unlike every other field in this struct, the three fields below
+    // describe the LOCAL endpoint -- i.e., the certificate that this endpoint
+    // presented on this connection -- rather than the peer.  They are empty
+    // unless this is the server side of a TLS connection on which this
+    // endpoint presented a certificate.
+    // First URI SAN of the local leaf certificate.
+    absl::string_view local_uri_san;
+    // First DNS SAN of the local leaf certificate.
+    absl::string_view local_dns_san;
+    // Subject of the local leaf certificate, in RFC 2253 form.
+    absl::string_view local_subject;
     Address local_address;
     Address peer_address;
   };
@@ -89,9 +101,12 @@ class EvaluateArgs final {
   absl::string_view GetSubject() const;
   absl::string_view GetRequestedServerName() const;
   absl::string_view GetTlsVersion() const;
-
-  // Iterates over all metadata entries, invoking encoder->Encode() for each
-  // one.  See grpc_metadata_batch::Encode() for details.
+  // The three accessors below describe the LOCAL endpoint's certificate, not
+  // the peer's; see PerChannelArgs.  They return an empty string_view unless
+  // presented a certificate.
+  absl::string_view GetLocalUriSan() const;
+  absl::string_view GetLocalDnsSan() const;
+  absl::string_view GetLocalSubject() const;
   template <typename Encoder>
   void EncodeHeaders(Encoder* encoder) const {
     if (metadata_ != nullptr) metadata_->Encode(encoder);
