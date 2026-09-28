@@ -1762,18 +1762,18 @@ TEST(SslTransportSecurityTest, X509SubjectRfc2253PrintExFailure) {
 }
 
 TEST(SslTransportSecurityTest, FirstSubjectAltNamesNullCertAndNullOutputs) {
-  first_subject_alt_names_from_x509(nullptr, nullptr, nullptr);
+  tsi_first_subject_alt_names_from_x509(nullptr, nullptr, nullptr);
 }
 
 TEST(SslTransportSecurityTest, FirstSubjectAltNamesNullCertClearsUriOutput) {
   std::string uri_san = "initial_uri";
-  first_subject_alt_names_from_x509(nullptr, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(nullptr, &uri_san, nullptr);
   EXPECT_TRUE(uri_san.empty());
 }
 
 TEST(SslTransportSecurityTest, FirstSubjectAltNamesNullCertClearsDnsOutput) {
   std::string dns_san = "initial_dns";
-  first_subject_alt_names_from_x509(nullptr, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(nullptr, nullptr, &dns_san);
   EXPECT_TRUE(dns_san.empty());
 }
 
@@ -1781,7 +1781,7 @@ TEST(SslTransportSecurityTest, FirstSubjectAltNamesValidCertNullOutputs) {
   X509* cert =
       SslTransportSecurityTest::LoadTestCertificate("multi-domain.pem");
   ASSERT_NE(cert, nullptr);
-  first_subject_alt_names_from_x509(cert, nullptr, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, nullptr);
   X509_free(cert);
 }
 
@@ -1790,7 +1790,7 @@ TEST(SslTransportSecurityTest, FirstSubjectAltNamesOnlyUriRequested) {
       SslTransportSecurityTest::LoadTestCertificate("multi-domain.pem");
   ASSERT_NE(cert, nullptr);
   std::string uri_san = "initial_uri";
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_EQ(uri_san, "https://foo.test.domain.com/test");
   X509_free(cert);
 }
@@ -1800,7 +1800,7 @@ TEST(SslTransportSecurityTest, FirstSubjectAltNamesOnlyDnsRequested) {
       SslTransportSecurityTest::LoadTestCertificate("multi-domain.pem");
   ASSERT_NE(cert, nullptr);
   std::string dns_san = "initial_dns";
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_EQ(dns_san, "foo.test.domain.com");
   X509_free(cert);
 }
@@ -1810,7 +1810,7 @@ TEST(SslTransportSecurityTest,
   X509* cert = SslTransportSecurityTest::LoadTestCertificate("server0.pem");
   ASSERT_NE(cert, nullptr);
   std::string uri_san = "dirty_uri";
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_TRUE(uri_san.empty());
   X509_free(cert);
 }
@@ -1820,7 +1820,7 @@ TEST(SslTransportSecurityTest,
   X509* cert = SslTransportSecurityTest::LoadTestCertificate("server0.pem");
   ASSERT_NE(cert, nullptr);
   std::string dns_san = "dirty_dns";
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_TRUE(dns_san.empty());
   X509_free(cert);
 }
@@ -1830,7 +1830,7 @@ TEST(SslTransportSecurityTest,
   X509* cert = SslTransportSecurityTest::LoadTestCertificate("server1.pem");
   ASSERT_NE(cert, nullptr);
   std::string uri_san = "dirty_uri";
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_TRUE(uri_san.empty());
   X509_free(cert);
 }
@@ -1840,7 +1840,7 @@ TEST(SslTransportSecurityTest,
   X509* cert = SslTransportSecurityTest::LoadTestCertificate("server1.pem");
   ASSERT_NE(cert, nullptr);
   std::string dns_san;
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_EQ(dns_san, "*.test.google.fr");
   X509_free(cert);
 }
@@ -1852,7 +1852,7 @@ TEST(SslTransportSecurityTest,
   ASSERT_NE(cert, nullptr);
   std::string uri_san;
   std::string dns_san;
-  first_subject_alt_names_from_x509(cert, &uri_san, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, &dns_san);
   EXPECT_EQ(uri_san, "https://foo.test.domain.com/test");
   EXPECT_EQ(dns_san, "foo.test.domain.com");
   X509_free(cert);
@@ -1868,7 +1868,7 @@ TEST(SslTransportSecurityTest,
       gens, GEN_URI, std::string("https://bad\0example.com", 23));
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string uri_san = "dirty_uri";
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_TRUE(uri_san.empty());
   X509_free(cert);
 }
@@ -1883,7 +1883,7 @@ TEST(SslTransportSecurityTest,
                                       std::string("bad\0dns.com", 11));
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string dns_san = "dirty_dns";
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_TRUE(dns_san.empty());
   X509_free(cert);
 }
@@ -1896,7 +1896,7 @@ TEST(SslTransportSecurityTest, FirstSubjectAltNamesEmptyUriSanSkipped) {
   SslTransportSecurityTest::AddIa5San(gens, GEN_URI, "");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string uri_san = "dirty_uri";
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_TRUE(uri_san.empty());
   X509_free(cert);
 }
@@ -1909,7 +1909,7 @@ TEST(SslTransportSecurityTest, FirstSubjectAltNamesEmptyDnsSanSkipped) {
   SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string dns_san = "dirty_dns";
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_TRUE(dns_san.empty());
   X509_free(cert);
 }
@@ -1926,7 +1926,7 @@ TEST(SslTransportSecurityTest,
                                       "https://valid.example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string uri_san;
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_EQ(uri_san, "https://valid.example.com");
   X509_free(cert);
 }
@@ -1942,7 +1942,7 @@ TEST(SslTransportSecurityTest,
                                       "https://valid.example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string uri_san;
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_EQ(uri_san, "https://valid.example.com");
   X509_free(cert);
 }
@@ -1958,7 +1958,7 @@ TEST(SslTransportSecurityTest,
   SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "valid.example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string dns_san;
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_EQ(dns_san, "valid.example.com");
   X509_free(cert);
 }
@@ -1973,7 +1973,7 @@ TEST(SslTransportSecurityTest,
   SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "valid.example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string dns_san;
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_EQ(dns_san, "valid.example.com");
   X509_free(cert);
 }
@@ -1986,7 +1986,7 @@ TEST(SslTransportSecurityTest, FirstSubjectAltNamesEmailSanIgnoredForUri) {
   SslTransportSecurityTest::AddIa5San(gens, GEN_EMAIL, "test@example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string uri_san = "dirty_uri";
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_TRUE(uri_san.empty());
   X509_free(cert);
 }
@@ -1999,7 +1999,7 @@ TEST(SslTransportSecurityTest, FirstSubjectAltNamesEmailSanIgnoredForDns) {
   SslTransportSecurityTest::AddIa5San(gens, GEN_EMAIL, "test@example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string dns_san = "dirty_dns";
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_TRUE(dns_san.empty());
   X509_free(cert);
 }
@@ -2013,7 +2013,7 @@ TEST(SslTransportSecurityTest, FirstSubjectAltNamesIpAddressSanIgnoredForUri) {
   SslTransportSecurityTest::AddIpSan(gens, ip_bytes, sizeof(ip_bytes));
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string uri_san = "dirty_uri";
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_TRUE(uri_san.empty());
   X509_free(cert);
 }
@@ -2027,7 +2027,7 @@ TEST(SslTransportSecurityTest, FirstSubjectAltNamesIpAddressSanIgnoredForDns) {
   SslTransportSecurityTest::AddIpSan(gens, ip_bytes, sizeof(ip_bytes));
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string dns_san = "dirty_dns";
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_TRUE(dns_san.empty());
   X509_free(cert);
 }
@@ -2043,7 +2043,7 @@ TEST(SslTransportSecurityTest,
                                       "https://valid.example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string uri_san;
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_EQ(uri_san, "https://valid.example.com");
   X509_free(cert);
 }
@@ -2058,7 +2058,7 @@ TEST(SslTransportSecurityTest,
   SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "valid.example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string dns_san;
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_EQ(dns_san, "valid.example.com");
   X509_free(cert);
 }
@@ -2075,7 +2075,7 @@ TEST(SslTransportSecurityTest,
                                       "https://valid.example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string uri_san;
-  first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
+  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
   EXPECT_EQ(uri_san, "https://valid.example.com");
   X509_free(cert);
 }
@@ -2091,7 +2091,7 @@ TEST(SslTransportSecurityTest,
   SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "valid.example.com");
   SslTransportSecurityTest::AttachSansAndFree(cert, gens);
   std::string dns_san;
-  first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
+  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
   EXPECT_EQ(dns_san, "valid.example.com");
   X509_free(cert);
 }

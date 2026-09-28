@@ -1114,8 +1114,8 @@ tsi_result x509_subject_rfc2253(X509* cert, std::string* subject) {
 // Finds the first URI SAN and the first DNS SAN of \a cert, storing them in
 // \a uri_san and \a dns_san respectively.  Either one is left empty if the
 // certificate has no SAN of that type.
-void first_subject_alt_names_from_x509(X509* cert, std::string* uri_san,
-                                       std::string* dns_san) {
+void tsi_first_subject_alt_names_from_x509(X509* cert, std::string* uri_san,
+                                           std::string* dns_san) {
   if (uri_san != nullptr) uri_san->clear();
   if (dns_san != nullptr) dns_san->clear();
   if (cert == nullptr) return;
@@ -2405,8 +2405,8 @@ static tsi_result ssl_handshaker_result_extract_peer(
     // owned by the SSL object and must not be freed.
     X509* local_cert = SSL_get_certificate(impl->ssl);
     if (local_cert != nullptr) {
-      first_subject_alt_names_from_x509(local_cert, &local_uri_san,
-                                        &local_dns_san);
+      tsi_first_subject_alt_names_from_x509(local_cert, &local_uri_san,
+                                            &local_dns_san);
       if (x509_subject_rfc2253(local_cert, &local_subject) != TSI_OK) {
         local_subject.clear();
       }
