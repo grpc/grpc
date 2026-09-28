@@ -650,6 +650,9 @@ struct grpc_chttp2_stream {
   const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
   grpc_core::Arena* const arena;
+  // Server streams only: arena context set when the client half-closes
+  // (END_STREAM received). Null on client streams.
+  grpc_core::ServerHalfCloseState* half_close_state = nullptr;
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;
@@ -879,6 +882,9 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t,
 grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s, int close_reads,
     int close_writes, grpc_error_handle error);
+// Server streams: records on the call arena that the client half-closed
+// (END_STREAM received). No-op on client streams.
+void grpc_chttp2_mark_client_half_closed(grpc_chttp2_stream* s);
 void grpc_chttp2_start_writing(grpc_chttp2_transport* t);
 
 #ifndef NDEBUG

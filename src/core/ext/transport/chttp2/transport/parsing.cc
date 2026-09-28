@@ -1104,6 +1104,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
               GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
               absl::OkStatus());
         }
+        if (!t->is_client) grpc_chttp2_mark_client_half_closed(s);
         grpc_chttp2_mark_stream_closed(t, s, true, false, absl::OkStatus());
       }
     }

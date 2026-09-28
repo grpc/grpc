@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <atomic>
 #include <functional>
 #include <optional>
 #include <string>
@@ -187,6 +188,19 @@ struct CallArgs {
 
 using NextPromiseFactory =
     std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+
+// Set by the server transport when it receives the client's half-close
+// (END_STREAM) on the stream. Interceptors can read it to see client
+// half-close even when the application stops reading messages (e.g. unary),
+// in which case the half-close never reaches them through the message pipe.
+struct ServerHalfCloseState {
+  std::atomic<bool> client_half_closed{false};
+};
+
+template <>
+struct ArenaContextType<ServerHalfCloseState> {
+  static void Destroy(ServerHalfCloseState*) {}
+};
 
 }  // namespace grpc_core
 

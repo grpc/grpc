@@ -190,6 +190,7 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
         t->incoming_frame_size});
   }
   if (is_last && s->received_last_frame) {
+    if (!t->is_client) grpc_chttp2_mark_client_half_closed(s);
     grpc_chttp2_mark_stream_closed(
         t, s, true, false,
         t->is_client

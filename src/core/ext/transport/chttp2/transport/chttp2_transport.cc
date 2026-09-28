@@ -1011,6 +1011,10 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
       call_tracer(arena->GetContext<grpc_core::CallTracer>()) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
+    // Set up the half-close state here: this runs while the call is being
+    // created, before any filter or interceptor can read the arena slot.
+    half_close_state = arena->New<grpc_core::ServerHalfCloseState>();
+    arena->SetContext<grpc_core::ServerHalfCloseState>(half_close_state);
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
     GRPC_TRACE_VLOG(http, 2)
         << "HTTP:" << t << "/" << this << " creating accept stream " << id
@@ -2723,6 +2727,14 @@ grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2");
   }
   return rsh;
+}
+
+void grpc_chttp2_mark_client_half_closed(grpc_chttp2_stream* s) {
+  if (s->half_close_state == nullptr) return;
+  GRPC_TRACE_VLOG(http, 2) << "MARK_CLIENT_HALF_CLOSED: s=" << s
+                           << " (id=" << s->id << ")";
+  s->half_close_state->client_half_closed.store(true,
+                                                std::memory_order_release);
 }
 
 static void close_from_api(
