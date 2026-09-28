@@ -619,6 +619,21 @@ class Server : public ServerInterface,
   std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
+  // CallV3 counterpart of ChannelBroadcaster::BroadcastShutdown: performs a
+  // shutdown grpc_transport_op on every transport in connections_ .
+  //
+  // - send_goaway: if true, requests a graceful GOAWAY with HTTP/2 NO_ERROR,
+  //   asking the peer to stop sending new streams while in-flight ones drain.
+  //   If false, no graceful GOAWAY is requested.
+  // - force_disconnect: if non-ok, closes the transport immediately and fails
+  //   all in-flight calls with this status. The transport sends an immediate
+  //   GOAWAY as part of the close.
+  //
+  //   Note that force_disconnect takes precedence over send_goaway.
+  void BroadcastShutdownToConnectionsLocked(bool send_goaway,
+                                            grpc_error_handle force_disconnect)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has not been called.
   bool ShutdownRefOnRequest() {

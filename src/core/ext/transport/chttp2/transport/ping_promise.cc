@@ -60,6 +60,13 @@ Promise<absl::Status> PingManager::PingPromiseCallbacks::WaitForPingAck() {
   return Map(latch->Wait(), [latch](Empty) { return absl::OkStatus(); });
 }
 
+PingManager::ArmedPingTimeout PingManager::ArmPingTimeout() {
+  // Braced initialization is evaluated left to right, so the timeout timer is
+  // started before the ack callback is registered.
+  return ArmedPingTimeout{ping_callbacks_.PingTimeout(ping_timeout_),
+                          ping_callbacks_.WaitForPingAck()};
+}
+
 // Ping System implementation
 PingManager::PingManager(const ChannelArgs& channel_args, const bool is_client,
                          Duration ping_timeout,
