@@ -14,7 +14,7 @@
 """Exceptions for the aio version of the RPC calls."""
 
 
-cdef class AioRpcStatus(Exception):
+cdef class AioRpcStatus:
     cdef readonly:
         grpc_status_code _code
         str _details
