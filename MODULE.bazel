@@ -75,7 +75,7 @@ bazel_dep(name = "rules_shell", version = "0.4.0")
 
 # Golang rules.
 #
-# Patch to fix a windows rbe related issue on bazel 8.7.0
+# Patch to fix a windows rbe related issue on bazel 9.2.0
 # See also https://github.com/grpc/grpc/issues/42607.
 bazel_dep(name = "rules_go", version = "0.59.0", repo_name = "io_bazel_rules_go")
 single_version_override(
