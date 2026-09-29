@@ -1,0 +1,10 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 95ae7c5..dad5ac7 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1,3 +1,5 @@
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++
+ cc_library(
+     name = "zlib",
+     srcs = [
