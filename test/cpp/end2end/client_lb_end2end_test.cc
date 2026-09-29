@@ -41,7 +41,6 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/channelz_registry.h"
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"

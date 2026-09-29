@@ -20,7 +20,6 @@
 #include <vector>
 
 #include "envoy/config/listener/v3/listener.pb.h"
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/fake_stats_plugin.h"

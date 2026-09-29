@@ -28,7 +28,6 @@
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/type/matcher/v3/http_inputs.pb.h"
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/experiments/experiments.h"

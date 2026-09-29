@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/surface/call.h"

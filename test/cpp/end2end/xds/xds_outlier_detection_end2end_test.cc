@@ -21,7 +21,6 @@
 #include "envoy/config/cluster/v3/outlier_detection.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"

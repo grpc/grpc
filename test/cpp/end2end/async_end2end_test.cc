@@ -33,7 +33,6 @@
 #include <memory>
 #include <thread>
 
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/port.h"

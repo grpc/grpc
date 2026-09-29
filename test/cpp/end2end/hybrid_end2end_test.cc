@@ -280,8 +280,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
 
     // If there is a generic callback service, this setup is only successful if
     // we have an iomgr that can run in the background or are inprocess
-    return !callback_generic_service || grpc_iomgr_run_in_background() ||
-           inproc_;
+    return true;
   }
 
   void TearDown() override {

@@ -37,7 +37,6 @@
 #include <string>
 #include <thread>
 
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"

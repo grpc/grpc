@@ -18,7 +18,6 @@
 
 #include <memory>
 
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/env.h"
 #include "test/core/test_util/scoped_env_var.h"

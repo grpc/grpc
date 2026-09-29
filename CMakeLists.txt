@@ -2294,7 +2294,6 @@ add_library(grpc
   src/core/channelz/v2tov1/convert.cc
   src/core/channelz/v2tov1/legacy_api.cc
   src/core/channelz/v2tov1/property_list.cc
-  src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
@@ -3498,7 +3497,6 @@ add_library(grpc_unsecure
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
-  src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
