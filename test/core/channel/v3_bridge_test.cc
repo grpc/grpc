@@ -266,6 +266,8 @@ class MockTransportFilter {
     CallCombiner* call_combiner = nullptr;
     grpc_metadata_batch* recv_trailing_metadata = nullptr;
     grpc_closure* recv_trailing_metadata_ready = nullptr;
+    bool hold_send_message_on_complete = false;
+    grpc_closure* held_send_message_on_complete = nullptr;
   };
 
   static const grpc_channel_filter kFilter;
@@ -280,7 +282,9 @@ class MockTransportFilter {
       state->recv_trailing_metadata_ready =
           op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
     }
-    if (op->on_complete != nullptr) {
+    if (op->send_message && state->hold_send_message_on_complete) {
+      state->held_send_message_on_complete = op->on_complete;
+    } else if (op->on_complete != nullptr) {
       GRPC_CALL_COMBINER_START(state->call_combiner, op->on_complete,
                                absl::OkStatus(), "mock_on_complete");
     }
@@ -624,6 +628,123 @@ TEST_F(ClientHalfClosePropagationTest,
   StartBatchCtx start_ctx2{top(), &batch2};
   grpc_closure start_closure2;
   StartBatch(&start_ctx2, &start_closure2);
+  ASSERT_TRUE(FlushUntil(recorder_.half_closed));
+  EXPECT_THAT(recorder_.Events(),
+              ::testing::ElementsAre("msg:msg1", "half_close"));
+  FinishCall();
+}
+
+TEST_F(ClientHalfClosePropagationTest,
+       HalfCloseInSeparateBatchWithoutAnySendMessagePropagates) {
+  grpc_closure on_complete1;
+  GRPC_CLOSURE_INIT(&on_complete1, OnCompleteStopCombiner, &call_combiner_,
+                    nullptr);
+  grpc_transport_stream_op_batch_payload payload1{};
+  grpc_transport_stream_op_batch batch1{};
+  batch1.payload = &payload1;
+  batch1.send_initial_metadata = true;
+  payload1.send_initial_metadata.send_initial_metadata = &client_initial_md_;
+  batch1.recv_trailing_metadata = true;
+  payload1.recv_trailing_metadata.recv_trailing_metadata = &recv_trailing_md_;
+  payload1.recv_trailing_metadata.recv_trailing_metadata_ready =
+      &recv_trailing_ready_;
+  batch1.on_complete = &on_complete1;
+  StartBatchCtx start_ctx1{top(), &batch1};
+  grpc_closure start_closure1;
+  StartBatch(&start_ctx1, &start_closure1);
+  grpc_closure on_complete2;
+  GRPC_CLOSURE_INIT(&on_complete2, OnCompleteStopCombiner, &call_combiner_,
+                    nullptr);
+  grpc_transport_stream_op_batch_payload payload2{};
+  grpc_transport_stream_op_batch batch2{};
+  batch2.payload = &payload2;
+  batch2.send_trailing_metadata = true;
+  payload2.send_trailing_metadata.send_trailing_metadata = &client_trailing_md_;
+  batch2.on_complete = &on_complete2;
+  StartBatchCtx start_ctx2{top(), &batch2};
+  grpc_closure start_closure2;
+  StartBatch(&start_ctx2, &start_closure2);
+  ASSERT_TRUE(FlushUntil(recorder_.half_closed));
+  EXPECT_THAT(recorder_.Events(), ::testing::ElementsAre("half_close"));
+  FinishCall();
+}
+
+TEST_F(ClientHalfClosePropagationTest,
+       HalfCloseInInitialBatchWithoutSendMessagePropagates) {
+  grpc_closure on_complete;
+  GRPC_CLOSURE_INIT(&on_complete, OnCompleteStopCombiner, &call_combiner_,
+                    nullptr);
+  grpc_transport_stream_op_batch_payload payload{};
+  grpc_transport_stream_op_batch batch{};
+  batch.payload = &payload;
+  batch.send_initial_metadata = true;
+  payload.send_initial_metadata.send_initial_metadata = &client_initial_md_;
+  batch.send_trailing_metadata = true;
+  payload.send_trailing_metadata.send_trailing_metadata = &client_trailing_md_;
+  batch.recv_trailing_metadata = true;
+  payload.recv_trailing_metadata.recv_trailing_metadata = &recv_trailing_md_;
+  payload.recv_trailing_metadata.recv_trailing_metadata_ready =
+      &recv_trailing_ready_;
+  batch.on_complete = &on_complete;
+  StartBatchCtx start_ctx{top(), &batch};
+  grpc_closure start_closure;
+  StartBatch(&start_ctx, &start_closure);
+  ASSERT_TRUE(FlushUntil(recorder_.half_closed));
+  EXPECT_THAT(recorder_.Events(), ::testing::ElementsAre("half_close"));
+  FinishCall();
+}
+
+TEST_F(ClientHalfClosePropagationTest,
+       HalfCloseWhilePreviousSendMessageOpIsStillPending) {
+  transport_state_.hold_send_message_on_complete = true;
+  SliceBuffer send_msg_buf;
+  send_msg_buf.Append(Slice::FromCopiedString("msg1"));
+  grpc_closure on_complete1;
+  GRPC_CLOSURE_INIT(&on_complete1, OnCompleteStopCombiner, &call_combiner_,
+                    nullptr);
+  grpc_transport_stream_op_batch_payload payload1{};
+  grpc_transport_stream_op_batch batch1{};
+  batch1.payload = &payload1;
+  batch1.send_initial_metadata = true;
+  payload1.send_initial_metadata.send_initial_metadata = &client_initial_md_;
+  batch1.send_message = true;
+  payload1.send_message.send_message = &send_msg_buf;
+  batch1.recv_trailing_metadata = true;
+  payload1.recv_trailing_metadata.recv_trailing_metadata = &recv_trailing_md_;
+  payload1.recv_trailing_metadata.recv_trailing_metadata_ready =
+      &recv_trailing_ready_;
+  batch1.on_complete = &on_complete1;
+  StartBatchCtx start_ctx1{top(), &batch1};
+  grpc_closure start_closure1;
+  StartBatch(&start_ctx1, &start_closure1);
+  ASSERT_TRUE(FlushUntil(recorder_.got_message));
+  EXPECT_THAT(recorder_.Events(), ::testing::ElementsAre("msg:msg1"));
+  // Send batch with send_trailing_metadata while send_message on_complete is
+  // still held by the mock transport.
+  grpc_closure on_complete2;
+  GRPC_CLOSURE_INIT(&on_complete2, OnCompleteStopCombiner, &call_combiner_,
+                    nullptr);
+  grpc_transport_stream_op_batch_payload payload2{};
+  grpc_transport_stream_op_batch batch2{};
+  batch2.payload = &payload2;
+  batch2.send_trailing_metadata = true;
+  payload2.send_trailing_metadata.send_trailing_metadata = &client_trailing_md_;
+  batch2.on_complete = &on_complete2;
+  StartBatchCtx start_ctx2{top(), &batch2};
+  grpc_closure start_closure2;
+  StartBatch(&start_ctx2, &start_closure2);
+  // Since send_message hasn't completed yet, v3 interceptor should not have
+  // observed half-close yet.
+  absl::Notification never;
+  FlushUntil(never, absl::Milliseconds(100));
+  EXPECT_FALSE(recorder_.half_closed.HasBeenNotified());
+  EXPECT_THAT(recorder_.Events(), ::testing::ElementsAre("msg:msg1"));
+  // Now release the held on_complete callback for send_message.
+  grpc_closure* held =
+      std::exchange(transport_state_.held_send_message_on_complete, nullptr);
+  ASSERT_NE(held, nullptr);
+  GRPC_CALL_COMBINER_START(&call_combiner_, held, absl::OkStatus(),
+                           "release_held_send_message");
   ASSERT_TRUE(FlushUntil(recorder_.half_closed));
   EXPECT_THAT(recorder_.Events(),
               ::testing::ElementsAre("msg:msg1", "half_close"));
