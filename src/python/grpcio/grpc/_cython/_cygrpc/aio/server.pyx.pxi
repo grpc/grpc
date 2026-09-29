@@ -238,7 +238,8 @@ cdef class _ServicerContext:
     def peer(self):
         cdef char *c_peer = NULL
         c_peer = grpc_call_get_peer(self._rpc_state.call)
-        peer = (<bytes>c_peer).decode('utf8')
+        from grpc import _common
+        peer = _common.decode(<bytes>c_peer)
         gpr_free(c_peer)
         return peer
 
@@ -255,7 +256,8 @@ cdef class _ServicerContext:
         identity_key = peer_identity_key(query_call)
         query_call.c_call = NULL
         if identity_key:
-            return identity_key.decode('utf8')
+            from grpc import _common
+            return _common.decode(identity_key)
         else:
             return None
 
@@ -265,9 +267,10 @@ cdef class _ServicerContext:
         bytes_ctx = auth_context(query_call)
         query_call.c_call = NULL
         if bytes_ctx:
+            from grpc import _common
             ctx = {}
             for key in bytes_ctx:
-                ctx[key.decode('utf8')] = bytes_ctx[key]
+                ctx[_common.decode(key)] = bytes_ctx[key]
             return ctx
         else:
             return {}
@@ -372,7 +375,7 @@ cdef class _MethodResolver:
         self._generic_handlers = generic_handlers
         self._registered_method_handlers = registered_method_handlers
 
-    cpdef resolve_handler(self, _HandlerCallDetails handler_call_details):
+    cpdef resolve_handler(self, object handler_call_details):
         # Check registered handlers first
         if self._registered_method_handlers:
             method_handler = self._registered_method_handlers.get(
@@ -1001,7 +1004,8 @@ cdef class AioServer:
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             self._loop,
-            REQUEST_REGISTERED_CALL_FAILURE_HANDLER)
+            REQUEST_REGISTERED_CALL_FAILURE_HANDLER,
+            rpc_state)
         cdef RegisteredMethod registered_method = self._server.registered_methods[method]
         error = grpc_server_request_registered_call(
             self._server.c_server, 
@@ -1027,7 +1031,8 @@ cdef class AioServer:
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             self._loop,
-            REQUEST_CALL_FAILURE_HANDLER)
+            REQUEST_CALL_FAILURE_HANDLER,
+            rpc_state)
         error = grpc_server_request_call(
             self._server.c_server, &rpc_state.call, &rpc_state.details,
             &rpc_state.request_metadata,
@@ -1052,14 +1057,18 @@ cdef class AioServer:
         cdef RPCState rpc_state
         cdef str method_name
         cdef bint is_registered = method is not None
-        cdef str registered_method_name = (
-            method.decode() if is_registered else None
+        cdef str registered_method_name
+        from grpc import _common
+        registered_method_name = (
+            _common.decode(method) if is_registered else None
         )
 
         while True:
             # When shutdown begins, no more new connections.
             if self._status != AIO_SERVER_STATUS_RUNNING:
                 break
+
+            rpc_state = None
 
             # Accepts new request from Core
             try:
@@ -1068,7 +1077,7 @@ cdef class AioServer:
                     method_name = registered_method_name
                 else:
                     rpc_state = await self._request_call()
-                    method_name = rpc_state.method().decode()
+                    method_name = _common.decode(rpc_state.method())
             except _RequestCallError:
                 # Only _RequestCallError (the async failure) is retried.
                 # A synchronous error from issuing the request (InternalError /
