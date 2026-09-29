@@ -27,13 +27,13 @@ namespace grpc_core {
 class Notification {
  public:
   void Notify() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     notified_ = true;
     cv_.SignalAll();
   }
 
   void WaitForNotification() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     while (!notified_) {
       cv_.Wait(&mu_);
     }
@@ -42,7 +42,7 @@ class Notification {
   bool WaitForNotificationWithTimeout(absl::Duration timeout) {
     auto now = absl::Now();
     auto deadline = now + timeout;
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     while (!notified_ && now < deadline) {
       cv_.WaitWithTimeout(&mu_, deadline - now);
       now = absl::Now();
@@ -51,7 +51,7 @@ class Notification {
   }
 
   bool HasBeenNotified() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return notified_;
   }
 

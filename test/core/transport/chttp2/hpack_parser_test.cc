@@ -854,14 +854,15 @@ class MockMitigationEngine : public MitigationEngine {
   explicit MockMitigationEngine(Behavior behavior = Behavior::kNone)
       : behavior_(behavior) {}
 
-  std::optional<Action> EvaluateIncomingConnection(absl::string_view) override {
+  std::optional<Action> EvaluateIncomingConnection(
+      const EvaluateArgs& /*args*/) override {
     return std::nullopt;
   }
 
   std::optional<Action> EvaluateIncomingMetadata(
       absl::string_view key, absl::string_view,
-      absl::string_view peer_address) override {
-    last_incoming_peer_address_ = std::string(peer_address);
+      const EvaluateArgs& args) override {
+    last_incoming_peer_address_ = std::string(args.peer_address);
     if (behavior_ == Behavior::kRejectRpc && key == "custom-key") {
       return Action::kRejectRpc;
     }
@@ -869,8 +870,8 @@ class MockMitigationEngine : public MitigationEngine {
   }
 
   std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch&, absl::string_view peer_address) override {
-    last_all_incoming_peer_address_ = std::string(peer_address);
+      const grpc_metadata_batch&, const EvaluateArgs& args) override {
+    last_all_incoming_peer_address_ = std::string(args.peer_address);
     if (behavior_ == Behavior::kCloseConnection) {
       return Action::kCloseConnection;
     }

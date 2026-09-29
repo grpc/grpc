@@ -304,7 +304,7 @@
   set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
   set(gRPC_INSTALL_CMAKEDIR "lib/cmake/<%text>${PACKAGE_NAME}</%text>" CACHE STRING "Installation directory for cmake config files")
   set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
-  set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE STRING "The maximum number of processes for MSVC /MP option")
+  set(gRPC_BUILD_MSVC_MP_COUNT -1 CACHE STRING "The maximum number of processes for MSVC /MP option")
 
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -486,6 +486,7 @@
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)
+  include(cmake/cel-c.cmake)
   include(cmake/protobuf.cmake)
   include(cmake/re2.cmake)
   include(cmake/ssl.cmake)
@@ -542,9 +543,9 @@
   # for DLL builds - and should be completely removed when source files are
   # generated with the necessary __declspec annotations.
   set(gRPC_UPB_GEN_DUPL_SRC
-    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+    src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
+    src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   )
 
   set(gRPC_ADDITIONAL_DLL_SRC
@@ -645,7 +646,7 @@
     # Copy the proto file to a centralized location, with the correct import
     # path. For example, health proto has package name grpc.health.v1, the bash
     # equivalent would be:
-    #   cp src/proto/grpc/health/v1/health.proto <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1</%text>
+    #   cp third_party/grpc-proto/grpc/health/v1/health.proto <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1</%text>
     file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
     file(COPY <%text>${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION}</%text> DESTINATION <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
 
@@ -713,7 +714,7 @@
     DEPENDS tools_c tools_cxx)
 
   % for src in sorted(protobuf_gen_files):
-  % if not (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
+  % if not ((src.startswith('third_party/') and not src.startswith('third_party/grpc-proto/')) or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
@@ -724,7 +725,7 @@
   # in the third_party directory as long as test builds are disabled.
   if (gRPC_BUILD_TESTS)
   % for src in sorted(protobuf_gen_files):
-  % if (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
+  % if ((src.startswith('third_party/') and not src.startswith('third_party/grpc-proto/')) or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
@@ -923,6 +924,7 @@
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_CEL_C_INCLUDE_DIR}</%text>
       <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
@@ -1020,6 +1022,7 @@
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_CEL_C_INCLUDE_DIR}</%text>
       <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>

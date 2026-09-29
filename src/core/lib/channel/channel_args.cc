@@ -18,6 +18,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 
+#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
@@ -658,6 +659,25 @@ grpc_arg grpc_channel_arg_pointer_create(
   arg.value.pointer.p = value;
   arg.value.pointer.vtable = vtable;
   return arg;
+}
+
+static void* channel_args_copy(void* p) {
+  return grpc_channel_args_copy(static_cast<grpc_channel_args*>(p));
+}
+
+static void channel_args_destroy(void* p) {
+  return grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
+}
+
+static int channel_args_compare(void* p1, void* p2) {
+  return grpc_channel_args_compare(static_cast<grpc_channel_args*>(p1),
+                                   static_cast<grpc_channel_args*>(p2));
+}
+
+const grpc_arg_pointer_vtable* grpc_channel_args_arg_vtable(void) {
+  static const grpc_arg_pointer_vtable vtable = {
+      channel_args_copy, channel_args_destroy, channel_args_compare};
+  return &vtable;
 }
 
 std::string grpc_channel_args_string(const grpc_channel_args* args) {

@@ -542,11 +542,17 @@ class OpenTelemetryPluginImpl::CounterExporter final {
                                                      label_values);
       observer_->Observe(value, labels_iterable);
     }
-    void Histogram(grpc_core::InstrumentLabelList,
-                   absl::Span<const std::string>, absl::string_view,
-                   grpc_core::HistogramBuckets,
-                   absl::Span<const uint64_t>) override {
+    void Int64Histogram(grpc_core::InstrumentLabelList,
+                        absl::Span<const std::string>, absl::string_view,
+                        grpc_core::Int64HistogramBuckets,
+                        absl::Span<const uint64_t>) override {
       LOG(FATAL) << "Expected a counter, got a histogram";
+    }
+    void DoubleHistogram(grpc_core::InstrumentLabelList,
+                         absl::Span<const std::string>, absl::string_view,
+                         grpc_core::DoubleHistogramBuckets,
+                         absl::Span<const uint64_t>) override {
+      LOG(FATAL) << "Expected a counter, got a double histogram";
     }
     void DoubleGauge(grpc_core::InstrumentLabelList,
                      absl::Span<const std::string>, absl::string_view,
@@ -772,8 +778,11 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                 [&](grpc_core::InstrumentMetadata::UintGaugeShape) {
                   LOG(FATAL) << "Uint gauge shape is not supported yet";
                 },
-                [&](grpc_core::InstrumentMetadata::HistogramShape) {
+                [&](grpc_core::InstrumentMetadata::Int64HistogramShape) {
                   LOG(FATAL) << "Histogram shape is not supported yet";
+                },
+                [&](grpc_core::InstrumentMetadata::DoubleHistogramShape) {
+                  LOG(FATAL) << "Double histogram shape is not supported yet";
                 });
           });
       grpc_core::InstrumentLabelSet label_set;
@@ -1132,7 +1141,7 @@ void OpenTelemetryPluginImpl::AddCallback(
       std::variant<CallbackGaugeState<int64_t>*, CallbackGaugeState<double>*>>
       gauges_that_need_to_add_callback;
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     callback_timestamps_.emplace(callback, grpc_core::Timestamp::InfPast());
     for (const auto& handle : callback->metrics()) {
       const auto& descriptor =
@@ -1206,7 +1215,7 @@ void OpenTelemetryPluginImpl::RemoveCallback(
     grpc_core::RegisteredMetricCallback* callback) {
   if (meter_provider_ == nullptr) return;
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     callback_timestamps_.erase(callback);
     for (const auto& handle : callback->metrics()) {
       const auto& descriptor =
@@ -1298,7 +1307,7 @@ void OpenTelemetryPluginImpl::CallbackGaugeState<ValueType>::
                           void* arg) {
   auto* callback_gauge_state = static_cast<CallbackGaugeState<ValueType>*>(arg);
   auto now = grpc_core::Timestamp::Now();
-  grpc_core::MutexLock plugin_lock(&callback_gauge_state->ot_plugin->mu_);
+  grpc_core::MutexLock plugin_lock(callback_gauge_state->ot_plugin->mu_);
   for (auto& elem : callback_gauge_state->caches) {
     auto* registered_metric_callback = elem.first;
     auto iter = callback_gauge_state->ot_plugin->callback_timestamps_.find(

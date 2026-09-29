@@ -214,7 +214,7 @@ MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
 }  // namespace
 
 void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   on_peer_checked_ = nullptr;
   if (!error.ok() || is_shutdown_) {
     HandshakeFailedLocked(error);
@@ -408,7 +408,7 @@ void SecurityHandshaker::OnHandshakeNextDoneGrpcWrapper(
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
   RefCountedPtr<SecurityHandshaker> h(
       static_cast<SecurityHandshaker*>(user_data));
-  MutexLock lock(&h->mu_);
+  MutexLock lock(h->mu_);
   grpc_error_handle error = h->OnHandshakeNextDoneLocked(
       result, bytes_to_send, bytes_to_send_size, handshaker_result);
   if (!error.ok()) {
@@ -455,7 +455,7 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
 }
 
 void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(absl::Status error) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!error.ok() || is_shutdown_) {
     HandshakeFailedLocked(
         GRPC_ERROR_CREATE_REFERENCING("Handshake read failed", &error, 1),
@@ -487,7 +487,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
 }
 
 void SecurityHandshaker::OnHandshakeDataSentToPeerFn(absl::Status error) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!error.ok() || is_shutdown_) {
     HandshakeFailedLocked(
         GRPC_ERROR_CREATE_REFERENCING("Handshake write failed", &error, 1),
@@ -517,7 +517,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(absl::Status error) {
 //
 
 void SecurityHandshaker::Shutdown(grpc_error_handle error) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!is_shutdown_) {
     is_shutdown_ = true;
     connector_->cancel_check_peer(on_peer_checked_, std::move(error));
@@ -529,7 +529,7 @@ void SecurityHandshaker::Shutdown(grpc_error_handle error) {
 void SecurityHandshaker::DoHandshake(
     HandshakerArgs* args,
     absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   args_ = args;
   on_handshake_done_ = std::move(on_handshake_done);
   size_t bytes_received_size = MoveReadBufferIntoHandshakeBuffer();

@@ -22,10 +22,12 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <utility>
 
 #include "src/core/call/metadata_info.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -143,6 +145,25 @@ class IncomingMetadataState {
   // Returns stream id of stream for which headers are being received.
   uint32_t GetStreamId() const { return stream_id_; }
 
+  void SetIsDiscardingIncomingStream(const bool is_discarding) {
+    is_discarding_incoming_stream_ = is_discarding;
+  }
+
+  // Set to true when:
+  // 1. A header frame or continuation frame causes a STREAM_ERROR.
+  // 2. The frame that caused the error did not have the END_HEADERS flag set.
+
+  // This ensures that subsequent CONTINUATION frames are safely parsed and
+  // discarded while keeping the HPACK table in sync. This function should be
+  // called each time a CONTINUATION frame is received.
+
+  // Returns true if the transport is actively discarding incoming
+  // CONTINUATION frames after a HEADERS frame was rejected, while continuing
+  // to decode their payload to keep the HPACK dynamic table in sync.
+  bool IsDiscardingIncomingStream() const {
+    return is_discarding_incoming_stream_;
+  }
+
   // A gRPC server is permitted to send both initial metadata and trailing
   // metadata where initial metadata is optional.
   // A gRPC C++ client is permitted to send only initial metadata.
@@ -163,12 +184,19 @@ class IncomingMetadataState {
         "{ incoming_header_in_progress : ",
         metadata_in_progress_ ? "true" : "false",
         ", incoming_header_end_stream : ", end_stream_ ? "true" : "false",
-        ", incoming_header_stream_id : ", stream_id_, "}");
+        ", incoming_header_stream_id : ", stream_id_,
+        ", is_discarding_incoming_stream_ : ",
+        is_discarding_incoming_stream_ ? "true" : "false", "}");
   }
 
  private:
   bool metadata_in_progress_ = false;
   bool end_stream_ = false;
+  // Indicates whether incoming CONTINUATION frames should have their payloads
+  // discarded after a HEADERS frame was rejected, while still feeding the
+  // payload through the HPACK decoder to maintain dynamic table
+  // synchronization.
+  bool is_discarding_incoming_stream_ = false;
   uint32_t stream_id_ = 0;
 };
 
@@ -298,14 +326,67 @@ class ReadContext {
 
   // Called when we are closing a stream.
   void OnResetFrameEnqueued(const uint32_t reset_stream_error_code) {
-    // TODO(tjagtap) [PH2][P1] Call this when we reject streams because of
-    // MAX_CONCURRENT_STREAMS limit.
     if (reset_stream_error_code != 0u) {
       IncrementInducedFrames();
     }
   }
   void OnSettingsFrameReceived() { IncrementInducedFrames(); }
   void OnPingFrameReceived() { IncrementInducedFrames(); }
+
+  // This is applicable only to servers.
+  // Based on CHTTP2's num_incoming_streams_before_settings_ack in parsing.cc.
+  // Sets the number of streams the peer may open before it acknowledges our
+  // SETTINGS frame. Has no effect once the first SETTINGS ACK has been
+  // received.
+  void SetNumIncomingStreamsBeforeSettingsAck(const uint32_t limit) {
+    num_incoming_streams_before_settings_ack_ = limit;
+  }
+
+  // Returns true once the peer has acknowledged our first SETTINGS frame.
+  bool HasReceivedSettingsAck() const {
+    return has_received_first_settings_ack_;
+  }
+
+  // Called when the first SETTINGS ACK frame is received.
+  // Removes the incoming streams limit for the rest of the connection.
+  void OnSettingsAckReceived() {
+    has_received_first_settings_ack_ = true;
+    num_incoming_streams_before_settings_ack_ =
+        std::numeric_limits<uint32_t>::max();
+  }
+
+  // Rejects incoming streams with ENHANCE_YOUR_CALM if received before the
+  // first settings ACK when limit is exhausted.
+  // Based on CHTTP2's check in parsing.cc:790.
+  Http2Status ValidateIncomingStreamBeforeSettingsAck(
+      const uint32_t stream_id) const {
+    if (GPR_LIKELY(has_received_first_settings_ack_)) {
+      return Http2Status::Ok();
+    } else if (GPR_UNLIKELY(num_incoming_streams_before_settings_ack_ == 0u)) {
+      GRPC_HTTP2_COMMON_DLOG
+          << "ReadContext::ValidateIncomingStreamBeforeSettingsAck "
+          << "Rejecting stream before settings have been acknowledged, "
+             "refusing stream_id="
+          << stream_id;
+      return Http2Status::Http2StreamError(
+          Http2ErrorCode::kEnhanceYourCalm,
+          std::string(GrpcErrors::kRejectStreamBeforeSettingsAck));
+    }
+    return Http2Status::Ok();
+  }
+
+  // Consumes one unit of the pre-SETTINGS-ACK stream limit once all stream
+  // validation checks have passed and the stream is accepted.
+  // Based on CHTTP2's --t->num_incoming_streams_before_settings_ack in
+  // parsing.cc:811.
+  void ConsumeIncomingStreamBeforeSettingsAck() {
+    if (GPR_LIKELY(has_received_first_settings_ack_)) {
+      return;
+    }
+    if (GPR_LIKELY(num_incoming_streams_before_settings_ack_ > 0u)) {
+      --num_incoming_streams_before_settings_ack_;
+    }
+  }
 
   // Called when we read a RST_STREAM frame from the peer.
   // Returns true if a ping should be sent in response.
@@ -357,6 +438,14 @@ class ReadContext {
 
   // Returns stream id of stream for which headers are being received.
   uint32_t GetStreamId() const { return metadata_state_.GetStreamId(); }
+
+  bool IsDiscardingIncomingStream() const {
+    return metadata_state_.IsDiscardingIncomingStream();
+  }
+
+  void SetIsDiscardingIncomingStream(const bool is_discarding) {
+    metadata_state_.SetIsDiscardingIncomingStream(is_discarding);
+  }
 
   // A gRPC server is permitted to send both initial metadata and trailing
   // metadata where initial metadata is optional.
@@ -513,6 +602,10 @@ class ReadContext {
   ReadLoopPauseRestart read_loop_manager_;
   HeaderAssembler header_assembler_;
   IncomingMetadataState metadata_state_;
+  // Number of streams the peer may still open before it acknowledges our
+  // SETTINGS frame. Unused once has_received_first_settings_ack_ is true.
+  uint32_t num_incoming_streams_before_settings_ack_ = 0u;
+  bool has_received_first_settings_ack_ = false;
 };
 
 }  // namespace http2

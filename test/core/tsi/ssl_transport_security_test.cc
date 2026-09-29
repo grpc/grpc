@@ -23,6 +23,7 @@
 #include <grpc/support/string_util.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -611,6 +612,35 @@ class SslTransportSecurityTest
                 peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) != nullptr) {
           expected_property_count++;
         }
+        const tsi_peer_property* server_name_prop =
+            tsi_peer_get_property_by_name(
+                peer, TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY);
+        if (server_name_prop != nullptr) {
+          expected_property_count++;
+          if (!ssl_fixture->server_name_indication_.empty() &&
+              ssl_fixture->server_name_indication_ != kSslTsiTestInvalidSni) {
+            EXPECT_EQ(std::string(server_name_prop->value.data,
+                                  server_name_prop->value.length),
+                      ssl_fixture->server_name_indication_);
+          }
+        }
+        const tsi_peer_property* tls_version_prop =
+            tsi_peer_get_property_by_name(peer,
+                                          TSI_SSL_TLS_VERSION_PEER_PROPERTY);
+        if (tls_version_prop != nullptr) {
+          expected_property_count++;
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+          // OpenSSL versions < 1.1.1 do not support TLS 1.3, so TLS 1.2 is
+          // negotiated.
+          std::string expected_tls_version = "TLSv1.2";
+#else
+          std::string expected_tls_version =
+              ssl_fixture->tls_version_ == TSI_TLS1_2 ? "TLSv1.2" : "TLSv1.3";
+#endif
+          EXPECT_EQ(std::string(tls_version_prop->value.data,
+                                tls_version_prop->value.length),
+                    expected_tls_version);
+        }
         ASSERT_EQ(peer->property_count, expected_property_count);
 
       } else {
@@ -769,12 +799,6 @@ class SslTransportSecurityTest
         std::make_shared<SslTsiTestFixture>(tls_version, send_client_ca_list);
     ssl_tsi_test_fixture_ = ssl_fixture_->GetBaseFixture();
     fixture_destroyed = false;
-  }
-
-  std::string ExpectedTargetLabel() const {
-    return ssl_fixture_->server_name_indication().empty()
-               ? "<omitted>"
-               : ssl_fixture_->server_name_indication();
   }
 
   void DoHandshake() { tsi_test_do_handshake(ssl_tsi_test_fixture_); }
@@ -991,7 +1015,16 @@ TEST_P(SslTransportSecurityTest, DoRoundTripForAllConfigs) {
 TEST_P(SslTransportSecurityTest, DoRoundTripWithErrorOnStack) {
   // Invoke an SSL function that causes an error, and ensure the error
   // makes it to the stack.
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   ASSERT_FALSE(EC_KEY_new_by_curve_name(NID_rsa));
+#else
+  // Use EVP_PKEY_CTX with an invalid operation to push an error.
+  EVP_PKEY_CTX* err_ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
+  ASSERT_NE(err_ctx, nullptr);
+  // Calling sign_init without a key will fail and push an error.
+  ASSERT_LE(EVP_PKEY_sign_init(err_ctx), 0);
+  EVP_PKEY_CTX_free(err_ctx);
+#endif
   ASSERT_NE(ERR_peek_error(), 0);
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1535,10 +1568,16 @@ class TestMetricsSink final : public MetricsSink {
   void UpDownCounter(InstrumentLabelList /*label_keys*/,
                      absl::Span<const std::string> /*label*/,
                      absl::string_view /*name*/, uint64_t /*value*/) override {}
-  void Histogram(InstrumentLabelList /*label_keys*/,
-                 absl::Span<const std::string> /*label*/,
-                 absl::string_view /*name*/, HistogramBuckets /*bounds*/,
-                 absl::Span<const uint64_t> /*counts*/) override {}
+  void Int64Histogram(InstrumentLabelList /*label_keys*/,
+                      absl::Span<const std::string> /*label*/,
+                      absl::string_view /*name*/,
+                      Int64HistogramBuckets /*bounds*/,
+                      absl::Span<const uint64_t> /*counts*/) override {}
+  void DoubleHistogram(InstrumentLabelList /*label_keys*/,
+                       absl::Span<const std::string> /*label*/,
+                       absl::string_view /*name*/,
+                       DoubleHistogramBuckets /*bounds*/,
+                       absl::Span<const uint64_t> /*counts*/) override {}
   void DoubleGauge(InstrumentLabelList /*label_keys*/,
                    absl::Span<const std::string> /*labels*/,
                    absl::string_view /*name*/, double /*value*/) override {}
@@ -1595,9 +1634,6 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "OK"},
       {"grpc.tls.handshake.resumed", "false"},
-      {"grpc.target", ExpectedTargetLabel()},
-      {"grpc.lb.locality", "<omitted>"},
-      {"grpc.lb.backend_service", "<omitted>"},
   };
   const TestMetricsSink::Labels server_labels = {
       {"grpc.tls.handshake.result", "OK"},
@@ -1636,9 +1672,6 @@ TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
       {"grpc.tls.handshake.resumed", "false"},
-      {"grpc.target", ExpectedTargetLabel()},
-      {"grpc.lb.locality", "<omitted>"},
-      {"grpc.lb.backend_service", "<omitted>"},
   };
   EXPECT_EQ(
       sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
@@ -1676,9 +1709,6 @@ TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
   const TestMetricsSink::Labels client_labels = {
       {"grpc.tls.handshake.result", "OK"},
       {"grpc.tls.handshake.resumed", "false"},
-      {"grpc.target", ExpectedTargetLabel()},
-      {"grpc.lb.locality", "<omitted>"},
-      {"grpc.lb.backend_service", "<omitted>"},
   };
   const TestMetricsSink::Labels server_labels = {
       {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
@@ -1706,7 +1736,7 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupSuccess) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
 // The client default protocols set by the handshaker factory are [toto, baz].
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
   ssl_fixture_->OverrideClientKeyExchangeGroups(
       {GRPC_TLS_GROUP_X25519_MLKEM768, GRPC_TLS_GROUP_X25519});
   ssl_fixture_->OverrideServerKeyExchangeGroups(
@@ -1736,7 +1766,7 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   DoHandshake();
 }
 
-#if defined(OPENSSL_IS_BORINGSSL)
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
 TEST_P(SslTransportSecurityTest,
        SuccessfulHandshakeServerSpecifiesX25519Mlkem768) {
   auto tls_version = std::get<0>(GetParam());
@@ -1762,7 +1792,20 @@ TEST_P(SslTransportSecurityTest,
   }
   DoHandshake();
 }
-#endif  // OPENSSL_IS_BORINGSSL
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMlkem1024) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_MLKEM1024});
+    ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_MLKEM1024});
+    ssl_fixture_->SetExpectedNegotiatedGroup("id-alg-ml-kem-1024");
+  }
+  DoHandshake();
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
+        // 0x30500000L
 
 TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesX25519) {
   auto tls_version = std::get<0>(GetParam());

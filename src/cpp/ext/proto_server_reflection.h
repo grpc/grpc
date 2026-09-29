@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H
 #define GRPC_SRC_CPP_EXT_PROTO_SERVER_REFLECTION_H
 
+#include <grpc/reflection/v1/reflection.grpc.pb.h>
+#include <grpc/reflection/v1alpha/reflection.grpc.pb.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
@@ -30,9 +32,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-
-#include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
-#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 
 namespace grpc {
 

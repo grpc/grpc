@@ -150,7 +150,9 @@ std::string TransportChannelArgs::DebugString() const {
       " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
       " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
       " initial_sequence_number: ", initial_sequence_number,
-      " test_only_ack_pings: ", test_only_ack_pings);
+      " test_only_ack_pings: ", test_only_ack_pings,
+      " max_concurrent_streams_overload_protection: ",
+      max_concurrent_streams_overload_protection);
 }
 
 void ReadChannelArgs(const ChannelArgs& channel_args,
@@ -185,6 +187,13 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
   args.keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
           .value_or(kDefaultKeepalivePermitWithoutCalls);
+
+  args.max_concurrent_streams_overload_protection =
+      is_client
+          ? false
+          : channel_args
+                .GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION)
+                .value_or(true);
 
   args.max_usable_hpack_table_size =
       channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
@@ -371,6 +380,8 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
       chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
           &stream->GetStreamFlowControl());
       absl::Status fc_status = stream_fc.RecvData(frame_header.length);
+      // TODO(tjagtap) [PH2][P1][FlowControl] This is a HACK. Fix this.
+      stream_fc.HackIncrementPendingSize(frame_header.length);
       chttp2::FlowControlAction action = stream_fc.MakeAction();
       GRPC_HTTP2_COMMON_DLOG
           << "ProcessIncomingDataFrameFlowControl Stream RecvData status: "
@@ -383,8 +394,6 @@ ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
             Http2ErrorCode::kFlowControlError,
             std::string(fc_status.message()));
       }
-      // TODO(tjagtap) [PH2][P1][FlowControl] This is a HACK. Fix this.
-      stream_fc.HackIncrementPendingSize(frame_header.length);
       return action;
     }
   }

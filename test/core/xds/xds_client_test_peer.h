@@ -36,7 +36,7 @@ class XdsClientTestPeer {
     upb::Arena arena;
     auto* client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
     std::set<std::string> string_pool;
-    MutexLock lock(xds_client_->mu());
+    MutexLock lock(*xds_client_->mu());
     xds_client_->DumpClientConfig(&string_pool, arena.ptr(), client_config);
     size_t output_length;
     char* output = envoy_service_status_v3_ClientConfig_serialize(
@@ -57,7 +57,7 @@ class XdsClientTestPeer {
   };
   void TestReportResourceCounts(
       absl::FunctionRef<void(const ResourceCountLabels&, uint64_t)> func) {
-    MutexLock lock(xds_client_->mu());
+    MutexLock lock(*xds_client_->mu());
     xds_client_->ReportResourceCounts(
         [&](const XdsClient::ResourceCountLabels& labels, uint64_t count) {
           ResourceCountLabels labels_copy = {std::string(labels.xds_authority),
@@ -69,7 +69,7 @@ class XdsClientTestPeer {
 
   void TestReportServerConnections(
       absl::FunctionRef<void(absl::string_view, bool)> func) {
-    MutexLock lock(xds_client_->mu());
+    MutexLock lock(*xds_client_->mu());
     xds_client_->ReportServerConnections(func);
   }
 

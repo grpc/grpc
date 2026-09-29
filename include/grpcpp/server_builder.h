@@ -248,6 +248,8 @@ class ServerBuilder {
     return SetOption(grpc::MakeChannelArgumentOption(arg, value));
   }
 
+  ServerBuilder& SetChildChannelArgs(const ChannelArguments& args);
+
   /// For internal use only: Register a ServerBuilderPlugin factory function.
   static void InternalAddPluginFactory(
       std::unique_ptr<grpc::ServerBuilderPlugin> (*CreatePlugin)());

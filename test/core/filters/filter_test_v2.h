@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,13 +21,14 @@
 #include <stdint.h>
 
 #include <initializer_list>
-#include <iosfwd>
 #include <memory>
-#include <ostream>
-#include <string>
+#include <optional>
 #include <utility>
 
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -39,54 +40,12 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 
-// gmock matcher to ensure that metadata has a key/value pair.
-MATCHER_P2(HasMetadataKeyValue, key, value, "") {
-  std::string temp;
-  auto r = arg.GetStringValue(key, &temp);
-  return r == value;
-}
-
-// gmock matcher to ensure that metadata does not include a key/value pair.
-MATCHER_P(LacksMetadataKey, key, "") {
-  std::string temp;
-  return !arg.GetStringValue(key, &temp).has_value();
-}
-
-// gmock matcher to ensure that a message has a given set of flags.
-MATCHER_P(HasMessageFlags, value, "") { return arg.flags() == value; }
-
-MATCHER_P(HasMetadataResult, absl_status, "") {
-  auto status = arg.get(grpc_core::GrpcStatusMetadata());
-  if (!status.has_value()) return false;
-  if (static_cast<absl::StatusCode>(status.value()) != absl_status.code()) {
-    return false;
-  }
-  auto* message = arg.get_pointer(grpc_core::GrpcMessageMetadata());
-  if (message == nullptr) return absl_status.message().empty();
-  return message->as_string_view() == absl_status.message();
-}
-
-// gmock matcher to ensure that a message has a given payload.
-MATCHER_P(HasMessagePayload, value, "") {
-  return arg.payload()->JoinIntoString() == value;
-}
-
 namespace grpc_core {
-
-inline std::ostream& operator<<(std::ostream& os,
-                                const grpc_metadata_batch& md) {
-  return os << md.DebugString();
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Message& msg) {
-  return os << "flags:" << msg.flags()
-            << " payload:" << absl::CEscape(msg.payload()->JoinIntoString());
-}
 
 class FilterTestV2Base : public ::testing::Test {
  public:

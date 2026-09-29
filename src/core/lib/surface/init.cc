@@ -76,10 +76,15 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  builder->channel_init()
-      ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
-      .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
-      .After<ServerAuthFilter>();
+  auto& authz_registration =
+      builder->channel_init()
+          ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
+          .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
+  if (IsFixV3FilterStackServerSideOrderingEnabled()) {
+    authz_registration.Before<ServerAuthFilter>();
+  } else {
+    authz_registration.After<ServerAuthFilter>();
+  }
 }
 }  // namespace grpc_core
 
@@ -106,7 +111,7 @@ static void do_basic_init(void) {
 void grpc_init(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
 
-  grpc_core::MutexLock lock(g_init_mu);
+  grpc_core::MutexLock lock(*g_init_mu);
   if (++g_initializations == 1) {
     if (g_shutting_down) {
       g_shutting_down = false;
@@ -133,7 +138,7 @@ void grpc_shutdown_internal_locked(void)
 
 void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
   GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown_from_cleanup_thread";
-  grpc_core::MutexLock lock(g_init_mu);
+  grpc_core::MutexLock lock(*g_init_mu);
   // We have released lock from the shutdown thread and it is possible that
   // another grpc_init has been called, and do nothing if that is the case.
   if (--g_initializations != 0) {
@@ -145,7 +150,7 @@ void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
 
 void grpc_shutdown(void) {
   GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown(void)";
-  grpc_core::MutexLock lock(g_init_mu);
+  grpc_core::MutexLock lock(*g_init_mu);
 
   if (--g_initializations == 0) {
     if (!grpc_iomgr_is_any_background_poller_thread() &&
@@ -173,7 +178,7 @@ void grpc_shutdown(void) {
 
 void grpc_shutdown_blocking(void) {
   GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown_blocking(void)";
-  grpc_core::MutexLock lock(g_init_mu);
+  grpc_core::MutexLock lock(*g_init_mu);
   if (--g_initializations == 0) {
     g_shutting_down = true;
     grpc_shutdown_internal_locked();
@@ -183,14 +188,14 @@ void grpc_shutdown_blocking(void) {
 int grpc_is_initialized(void) {
   int r;
   gpr_once_init(&g_basic_init, do_basic_init);
-  grpc_core::MutexLock lock(g_init_mu);
+  grpc_core::MutexLock lock(*g_init_mu);
   r = g_initializations > 0;
   return r;
 }
 
 void grpc_maybe_wait_for_async_shutdown(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
-  grpc_core::MutexLock lock(g_init_mu);
+  grpc_core::MutexLock lock(*g_init_mu);
   while (g_shutting_down) {
     g_shutting_down_cv->Wait(g_init_mu);
   }
@@ -201,7 +206,7 @@ bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
   const auto started = absl::Now();
   const auto deadline = started + timeout;
   gpr_once_init(&g_basic_init, do_basic_init);
-  grpc_core::MutexLock lock(g_init_mu);
+  grpc_core::MutexLock lock(*g_init_mu);
   while (g_initializations != 0) {
     if (g_shutting_down_cv->WaitWithDeadline(g_init_mu, deadline)) {
       GRPC_TRACE_LOG(api, ERROR)

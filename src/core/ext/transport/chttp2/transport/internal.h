@@ -294,7 +294,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void PerformOp(grpc_transport_op* op) override;
   // Callback for transport framing endpoint extension to send security frames
   // received directly from the endpoint on wire.
-  void WriteSecurityFrame(grpc_core::SliceBuffer* data);
+  void WriteSecurityFrame(grpc_core::SliceBuffer data);
   void WriteSecurityFrameLocked(grpc_core::SliceBuffer* data);
 
   void StartWatch(grpc_core::RefCountedPtr<StateWatcher> watcher) override;
@@ -631,7 +631,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::optional<uint32_t> max_recv_message_length;
 
-  // Current mitigation engine, retrieved once per connection.
+  grpc_auth_context* auth_context = nullptr;
   grpc_core::RefCountedPtr<grpc_core::MitigationEngine> mitigation_engine;
 };
 

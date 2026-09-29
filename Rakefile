@@ -287,7 +287,7 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
 
   gems_by_version = gem_files.group_by do |path|
     full_version = Gem::Package.new(path).spec.version.to_s
-    match = full_version.match(/^(\d+\.\d+\.\d+)/)
+    match = full_version.match(/^(\d+\.\d+\.\d+(?:\.pre\d+)?)/)
     fail "Unexpected version format: #{full_version}" unless match
     match[1]
   rescue StandardError => e

@@ -61,8 +61,7 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
 namespace {
 
 absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
-  auto policy_slice =
-      LoadFile(std::string(policy_path), /*add_null_terminator=*/false);
+  auto policy_slice = LoadFile(std::string(policy_path));
   if (!policy_slice.ok()) {
     return absl::InvalidArgumentError(policy_slice.status().ToString());
   }
@@ -126,14 +125,14 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
 
 void FileWatcherAuthorizationPolicyProvider::SetCallbackForTesting(
     std::function<void(bool contents_changed, absl::Status status)> cb) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   cb_ = std::move(cb);
 }
 
 absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   bool contents_changed = false;
   auto done_early = [&](absl::Status status) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (cb_ != nullptr) {
       cb_(contents_changed, status);
     }
@@ -153,7 +152,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   if (!rbac_policies_or.ok()) {
     return done_early(rbac_policies_or.status());
   }
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
       std::move(rbac_policies_or->allow_policy));
   if (rbac_policies_or->deny_policy.has_value()) {

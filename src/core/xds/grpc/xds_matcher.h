@@ -196,7 +196,7 @@ class XdsMatcherList : public XdsMatcher {
 
   // Factory method for creating a SinglePredicate.
   template <typename InputType, typename MatcherType>
-  static absl::enable_if_t<
+  static std::enable_if_t<
       std::is_same<typename InputType::ProducedType,
                    typename MatcherType::ConsumedType>::value,
       std::unique_ptr<Predicate>>
@@ -210,7 +210,7 @@ class XdsMatcherList : public XdsMatcher {
   // Alternative template specialization to return null in the case where
   // the input produces a different type than the matcher consumes.
   template <typename InputType, typename MatcherType>
-  static absl::enable_if_t<
+  static std::enable_if_t<
       !std::is_same<typename InputType::ProducedType,
                     typename MatcherType::ConsumedType>::value,
       std::unique_ptr<Predicate>>

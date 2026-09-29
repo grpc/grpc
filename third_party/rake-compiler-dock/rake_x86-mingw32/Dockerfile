@@ -1,4 +1,4 @@
-FROM us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:1.12.0-mri-x86-mingw32@sha256:ff05101ba9608a8949f8f1b7f461b891be6690ded2e1ee9589a4f062b4b3669a
+FROM us-docker.pkg.dev/grpc-testing/testing-images-public/rake-compiler-dock-image:1.12.0-mri-x86-mingw32@sha256:11155aa66b97169143b42b2f2e11de7df32f4cd7be4d6ae5fa195110df8296ed
 
 RUN find / -name win32.h | while read f ; do sed -i 's/gettimeofday/rb_gettimeofday/' $f ; done
 

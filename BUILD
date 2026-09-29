@@ -19,7 +19,9 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_add_well_known_proto_upb_targets",
+    "grpc_cc_grpc_library",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
@@ -285,9 +287,9 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gimbal"  # @unused
 
-core_version = "56.0.0"  # @unused
+core_version = "57.0.0"  # @unused
 
-version = "1.84.0-dev"  # @unused
+version = "1.85.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -944,6 +946,7 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_outlier_detection",
         "//src/core:grpc_lb_policy_pick_first",
         "//src/core:grpc_lb_policy_priority",
+        "//src/core:grpc_lb_policy_autosharding",
         "//src/core:grpc_lb_policy_ring_hash",
         "//src/core:grpc_lb_policy_round_robin",
         "//src/core:grpc_lb_policy_weighted_round_robin",
@@ -1177,6 +1180,7 @@ grpc_cc_library(
         "google_api_expr_v1alpha1_syntax_upb",
         "gpr",
         "grpc_mock_cel",
+        "//src/core:evaluate_args",
         "//src/core:grpc_authorization_base",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
@@ -2286,9 +2290,9 @@ grpc_cc_library(
         ":gpr",
         ":grpc++",
         ":lb_load_reporter",
+        ":load_reporter_cc_grpc",
         "//src/core:grpc_check",
         "//src/core:sync",
-        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
@@ -2335,9 +2339,9 @@ grpc_cc_library(
         "gpr",
         "lb_get_cpu_stats",
         "lb_load_data_store",
+        ":load_reporter_cc_grpc",
         "//src/core:grpc_check",
         "//src/core:sync",
-        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
@@ -2914,8 +2918,8 @@ grpc_cc_library(
         "config_vars",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1:reflection_proto",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        ":reflection_v1_cc_grpc",
+        ":reflection_v1alpha_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -3024,10 +3028,10 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        ":channelz_cc_grpc",
         "//src/core:channelz_v2tov1_convert",
         "//src/core:experiments",
         "//src/core:notification",
-        "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
     alwayslink = 1,
@@ -3334,6 +3338,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "gpr_public_hdrs",
         "grpc++_public_hdrs",
     ],
 )
@@ -4424,6 +4429,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:json",
         "//src/core:load_file",
+        "//src/core:slice",
         "//src/core:useful",
     ],
 )
@@ -5057,7 +5063,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
-        "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
         "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.cc",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.cc",
         "//src/core:ext/transport/chttp2/transport/frame_data.cc",
@@ -5072,7 +5077,6 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/writing.cc",
     ],
     hdrs = [
-        "//src/core:ext/transport/chttp2/transport/bin_decoder.h",
         "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.h",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.h",
         "//src/core:ext/transport/chttp2/transport/frame_data.h",
@@ -5257,7 +5261,7 @@ grpc_cc_library(
 
 grpc_upb_proto_library(
     name = "alts_handshaker_upb_proto",
-    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+    deps = ["@grpc_proto//:alts_handshaker_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5592,7 +5596,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto"],
+    deps = ["@grpc_proto//:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5612,27 +5616,27 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto"],
+    deps = ["@grpc_proto//:grpclb_load_balancer_proto"],
 )
 
 grpc_upb_proto_library(
     name = "alts_upb",
-    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+    deps = ["@grpc_proto//:alts_handshaker_proto"],
 )
 
 grpc_upb_proto_library(
     name = "rls_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_proto"],
+    deps = ["@grpc_proto//:rls_proto"],
 )
 
 grpc_upb_proto_library(
     name = "rls_config_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+    deps = ["@grpc_proto//:rls_config_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+    deps = ["@grpc_proto//:rls_config_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5677,12 +5681,22 @@ grpc_upb_proto_reflection_library(
 
 grpc_upb_proto_library(
     name = "channelz_v1_upb",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+    deps = ["@grpc_proto//:channelz_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "channelz_v1_upbdefs",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+    deps = ["@grpc_proto//:channelz_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "autosharding_upb",
+    deps = ["@autosharding//:autosharding_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "autosharding_upbdefs",
+    deps = ["@autosharding//:autosharding_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [
@@ -5704,4 +5718,103 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
+)
+
+grpc_cc_proto_library(
+    name = "reflection_v1_cc_proto",
+    deps = ["@grpc_proto//:reflection_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "reflection_v1alpha_cc_proto",
+    deps = ["@grpc_proto//:reflection_proto_deprecated"],
+)
+
+grpc_cc_proto_library(
+    name = "channelz_cc_proto",
+    deps = ["@grpc_proto//:channelz_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "rls_cc_proto",
+    deps = ["@grpc_proto//:rls_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "rls_config_cc_proto",
+    deps = ["@grpc_proto//:rls_config_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "health_cc_proto",
+    deps = ["@grpc_proto//:health_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "load_balancer_cc_proto",
+    deps = ["@grpc_proto//:grpclb_load_balancer_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "load_reporter_cc_proto",
+    deps = ["@grpc_proto//:grpclb_load_reporter_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "autosharding_cc_proto",
+    deps = ["@autosharding//:autosharding_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "reflection_v1_cc_grpc",
+    srcs = ["@grpc_proto//:reflection_proto"],
+    deps = [":reflection_v1_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "reflection_v1alpha_cc_grpc",
+    srcs = ["@grpc_proto//:reflection_proto_deprecated"],
+    deps = [":reflection_v1alpha_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "channelz_cc_grpc",
+    srcs = ["@grpc_proto//:channelz_proto"],
+    deps = [":channelz_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "rls_cc_grpc",
+    srcs = ["@grpc_proto//:rls_proto"],
+    deps = [":rls_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "rls_config_cc_grpc",
+    srcs = ["@grpc_proto//:rls_config_proto"],
+    deps = [":rls_config_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "health_cc_grpc",
+    srcs = ["@grpc_proto//:health_proto"],
+    deps = [":health_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "load_balancer_cc_grpc",
+    srcs = ["@grpc_proto//:grpclb_load_balancer_proto"],
+    deps = [":load_balancer_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "load_reporter_cc_grpc",
+    srcs = ["@grpc_proto//:grpclb_load_reporter_proto"],
+    deps = [":load_reporter_cc_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "autosharding_cc_grpc",
+    srcs = ["@autosharding//:autosharding_proto"],
+    deps = [":autosharding_cc_proto"],
 )

@@ -95,6 +95,22 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "evaluate_args_test",
+    srcs = ["evaluate_args_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_credentials_util",
+        "//:sockaddr_utils",
+        "//src/core:evaluate_args",
+        "//src/core:grpc_authorization_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
 grpc_cc_library(
     name = "batch_builder",
     testonly = True,

@@ -16,7 +16,7 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_x64/Dockerfile.inja`!!!
 
-FROM quay.io/pypa/manylinux2014_x86_64:2026.06.03-1
+FROM quay.io/pypa/manylinux2014_x86_64:2026.08.15-1
 
 RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc && \
@@ -46,13 +46,6 @@ RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp315-cp315/bin/pip install --upgrade 'cython==3.1.1'
 
-
-# TODO(jtattermusch): revisit which of the deps are really required
-# Specifically, `libffi-devel` is needed because the `cryptography` package's
-# dependency `cffi` lacks Python 3.14 supported wheels (as of Aug 2025), causing
-# a source install that fails due to a missing `libffi-devel` package in the
-# manylinux docker images.
-RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel libffi-devel
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
