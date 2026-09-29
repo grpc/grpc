@@ -164,7 +164,6 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_filter_client_half_close",
-                "recv_message_cancelled_status_fix",
                 "recv_message_filter_bypass_fix",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
@@ -204,12 +203,10 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_filter_client_half_close",
-                "recv_message_cancelled_status_fix",
                 "ring_hash_update_cleanup",
             ],
             "xds_test": [
                 "promise_filter_client_half_close",
-                "recv_message_cancelled_status_fix",
             ],
         },
         "on": {
