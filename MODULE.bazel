@@ -29,6 +29,11 @@ module(
 # finding switfc.exe on Windows with bazel 7.
 bazel_dep(name = "rules_swift", version = "2.5.0")
 
+########## Version bumps for bazel 9 compatibility
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5", dev_dependency = True)
+bazel_dep(name = "aspect_rules_esbuild", version = "0.26.0", dev_dependency = True)
+########## End of version bumps for bazel 9 compatibility
+
 # -- Abseil library.
 # Pinning version to be consistent with third_party/abseil-cpp
 bazel_dep(name = "abseil-cpp", version = "20260526.0", repo_name = "com_google_absl")
