@@ -51,7 +51,7 @@ class ChaoticGoodConnector final : public SubchannelConnector {
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle) override {
     ActivityPtr connect_activity;
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     is_shutdown_ = true;
     connect_activity = std::move(connect_activity_);
   };
