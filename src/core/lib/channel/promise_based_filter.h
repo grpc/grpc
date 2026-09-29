@@ -2006,6 +2006,7 @@ class BaseCallData : public Activity,
     std::optional<PipeSender<MessageHandle>::PushType> push_;
     std::optional<PipeReceiverNextType<MessageHandle>> next_;
     absl::Status completed_status_;
+    absl::Status cancelled_status_;
     grpc_closure* intercepted_on_complete_;
     grpc_closure on_complete_ =
         MakeMemberClosure<ReceiveMessage, &ReceiveMessage::OnComplete>(this);

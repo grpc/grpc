@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <google/protobuf/wrappers.pb.h>
 #include <grpc/support/string_util.h>
 
 #include <map>
@@ -669,9 +670,18 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   // Response construction helper functions
 
   static void PopulateHeaderMutation(
+      ::envoy::service::ext_proc::v3::ProcessingResponse* response,
       ::envoy::service::ext_proc::v3::HeaderMutation* mutation,
       const std::vector<std::pair<std::string, std::string>>& set_headers,
-      const std::vector<std::string>& remove_headers = {}) {
+      const std::vector<std::string>& remove_headers = {},
+      bool request_drain_requests = false,
+      bool request_drain_responses = false) {
+    if (request_drain_requests) {
+      response->set_request_drain_requests(true);
+    }
+    if (request_drain_responses) {
+      response->set_request_drain_responses(true);
+    }
     for (const auto& [key, value] : set_headers) {
       auto* header = mutation->add_set_headers();
       header->mutable_header()->set_key(key);
@@ -686,15 +696,15 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   MakeRequestHeadersMutationResponse(
       const std::vector<std::pair<std::string, std::string>>& set_headers,
       const std::vector<std::string>& remove_headers = {},
-      bool request_drain = false) {
+      bool request_drain_requests = false,
+      bool request_drain_responses = false) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
-    PopulateHeaderMutation(response.mutable_request_headers()
+    PopulateHeaderMutation(&response,
+                           response.mutable_request_headers()
                                ->mutable_response()
                                ->mutable_header_mutation(),
-                           set_headers, remove_headers);
+                           set_headers, remove_headers, request_drain_requests,
+                           request_drain_responses);
     return response;
   }
 
@@ -702,21 +712,30 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   MakeResponseHeadersMutationResponse(
       const std::vector<std::pair<std::string, std::string>>& set_headers,
       const std::vector<std::string>& remove_headers = {},
-      bool request_drain = false) {
+      bool request_drain_requests = false,
+      bool request_drain_responses = false) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
-    PopulateHeaderMutation(response.mutable_response_headers()
+    PopulateHeaderMutation(&response,
+                           response.mutable_response_headers()
                                ->mutable_response()
                                ->mutable_header_mutation(),
-                           set_headers, remove_headers);
+                           set_headers, remove_headers, request_drain_requests,
+                           request_drain_responses);
     return response;
   }
 
   static void PopulateBodyMutation(
+      ::envoy::service::ext_proc::v3::ProcessingResponse* response,
       ::envoy::service::ext_proc::v3::BodyMutation* body_mutation,
-      absl::string_view body, bool end_of_stream = false) {
+      absl::string_view body, bool end_of_stream = false,
+      bool request_drain_requests = false,
+      bool request_drain_responses = false) {
+    if (request_drain_requests) {
+      response->set_request_drain_requests(true);
+    }
+    if (request_drain_responses) {
+      response->set_request_drain_responses(true);
+    }
     body_mutation->mutable_streamed_response()->set_body(std::string(body));
     body_mutation->mutable_streamed_response()->set_end_of_stream(
         end_of_stream);
@@ -725,30 +744,30 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   static ::envoy::service::ext_proc::v3::ProcessingResponse
   MakeRequestBodyMutationResponse(absl::string_view body,
                                   bool end_of_stream = false,
-                                  bool request_drain = false) {
+                                  bool request_drain_requests = false,
+                                  bool request_drain_responses = false) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
-    PopulateBodyMutation(response.mutable_request_body()
+    PopulateBodyMutation(&response,
+                         response.mutable_request_body()
                              ->mutable_response()
                              ->mutable_body_mutation(),
-                         body, end_of_stream);
+                         body, end_of_stream, request_drain_requests,
+                         request_drain_responses);
     return response;
   }
 
   static ::envoy::service::ext_proc::v3::ProcessingResponse
   MakeResponseBodyMutationResponse(absl::string_view body,
                                    bool end_of_stream = false,
-                                   bool request_drain = false) {
+                                   bool request_drain_requests = false,
+                                   bool request_drain_responses = false) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
-    PopulateBodyMutation(response.mutable_response_body()
+    PopulateBodyMutation(&response,
+                         response.mutable_response_body()
                              ->mutable_response()
                              ->mutable_body_mutation(),
-                         body, end_of_stream);
+                         body, end_of_stream, request_drain_requests,
+                         request_drain_responses);
     return response;
   }
 
@@ -756,14 +775,36 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   MakeResponseTrailersMutationResponse(
       const std::vector<std::pair<std::string, std::string>>& set_headers,
       const std::vector<std::string>& remove_headers = {},
-      bool request_drain = false) {
+      bool request_drain_requests = false,
+      bool request_drain_responses = false) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
     PopulateHeaderMutation(
+        &response,
         response.mutable_response_trailers()->mutable_header_mutation(),
-        set_headers, remove_headers);
+        set_headers, remove_headers, request_drain_requests,
+        request_drain_responses);
+    return response;
+  }
+
+  static ::envoy::service::ext_proc::v3::ProcessingResponse
+  MakeRequestBodyDrainCompleteResponse() {
+    ::envoy::service::ext_proc::v3::ProcessingResponse response;
+    auto* streamed_response = response.mutable_request_body()
+                                  ->mutable_response()
+                                  ->mutable_body_mutation()
+                                  ->mutable_streamed_response();
+    streamed_response->set_drain_complete(true);
+    return response;
+  }
+
+  static ::envoy::service::ext_proc::v3::ProcessingResponse
+  MakeResponseBodyDrainCompleteResponse() {
+    ::envoy::service::ext_proc::v3::ProcessingResponse response;
+    auto* streamed_response = response.mutable_response_body()
+                                  ->mutable_response()
+                                  ->mutable_body_mutation()
+                                  ->mutable_streamed_response();
+    streamed_response->set_drain_complete(true);
     return response;
   }
 
@@ -777,7 +818,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     if (!details.empty()) {
       immediate->set_details(std::string(details));
     }
-    PopulateHeaderMutation(immediate->mutable_headers(), set_headers);
+    PopulateHeaderMutation(&response, immediate->mutable_headers(),
+                           set_headers);
     return response;
   }
 
@@ -946,6 +988,20 @@ MATCHER_P2(MatchesRequestBody, body_matcher, end_of_stream,
                                        result_listener);
 }
 
+MATCHER(MatchesRequestBodyDrainComplete,
+        "matches request_body with drain_complete = true") {
+  if (!arg.has_request_body()) {
+    *result_listener << "request does not have request_body";
+    return false;
+  }
+  const auto& request_body = arg.request_body();
+  if (!request_body.drain_complete()) {
+    *result_listener << "expected drain_complete to be true";
+    return false;
+  }
+  return true;
+}
+
 MATCHER_P2(MatchesResponseHeaders, headers_matcher, end_of_stream,
            "matches response_headers with given headers and end_of_stream") {
   if (!arg.has_response_headers()) {
@@ -985,6 +1041,20 @@ MATCHER_P2(MatchesResponseBody, body_matcher, end_of_stream,
   }
   return ::testing::ExplainMatchResult(body_matcher, response_body.body(),
                                        result_listener);
+}
+
+MATCHER(MatchesResponseBodyDrainComplete,
+        "matches response_body with drain_complete = true") {
+  if (!arg.has_response_body()) {
+    *result_listener << "request does not have response_body";
+    return false;
+  }
+  const auto& response_body = arg.response_body();
+  if (!response_body.drain_complete()) {
+    *result_listener << "expected drain_complete to be true";
+    return false;
+  }
+  return true;
 }
 
 MATCHER_P(MatchesResponseTrailers, trailers_matcher,
@@ -1818,7 +1888,11 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
                        EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       ModifyEchoRequest(req->request_body().body(), kMutatedSuffix),
-      !kEndOfStream, /*request_drain=*/true));
+      !kEndOfStream, /*request_drain_requests=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
   EXPECT_TRUE(stream.WaitForWrite());
   EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
@@ -1847,8 +1921,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
       req,
       ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
           ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
-  ext_proc_stream->SendResponse(
-      MakeRequestHeadersMutationResponse({}, {}, /*request_drain=*/true));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {}, {}, /*request_drain_requests=*/true));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   EXPECT_EQ(rpc.response().message(), kRequestMessage);
@@ -1872,8 +1946,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
   auto resp_headers_req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(resp_headers_req,
               ::testing::Optional(MatchesResponseHeaders(::testing::_)));
-  ext_proc_stream->SendResponse(
-      MakeResponseHeadersMutationResponse({}, {}, /*request_drain=*/true));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse(
+      {}, {}, /*request_drain_requests=*/false,
+      /*request_drain_responses=*/true));
   EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1)));
   stream.StartWritesDone();
@@ -1902,8 +1977,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
-  ext_proc_stream->SendResponse(
-      MakeResponseTrailersMutationResponse({}, {}, /*request_drain=*/true));
+  ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse(
+      {}, {}, /*request_drain_requests=*/false,
+      /*request_drain_responses=*/true));
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
@@ -1931,7 +2007,12 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
                   EchoResponseMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
       ModifyEchoResponse(resp_body_req->response_body().body(), kMutatedSuffix),
-      !kEndOfStream, /*request_drain=*/true));
+      !kEndOfStream, /*request_drain_requests=*/false,
+      /*request_drain_responses=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
   EXPECT_THAT(stream.WaitForRead(),
               ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
   request.set_message(kMessage2);
@@ -1941,6 +2022,69 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
   EXPECT_THAT(stream.WaitForRead(),
               ::testing::Optional(MatchesEchoResponse(kMessage2)));
   stream.StartWritesDone();
+  auto trailers_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(trailers_req,
+              ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+}
+
+TEST_P(XdsExtProcEnd2endTest, UnexpectedDrainCompleteFailsCall) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  EXPECT_THAT(
+      stream.WaitForStatus(),
+      ::testing::Optional(GrpcStatusIs(
+          StatusCode::INTERNAL,
+          "Received unexpected drain_complete from external processor")));
+}
+
+TEST_P(XdsExtProcEnd2endTest, DrainIgnoredAfterHalfClose) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  auto req1 = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req1, ::testing::Optional(MatchesRequestBody(
+                        EchoRequestMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      ModifyEchoRequest(req1->request_body().body(), kMutatedSuffix),
+      !kEndOfStream));
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  stream.StartWritesDone();
+  auto req2 = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req2, ::testing::Optional(MatchesRequestBody("", kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      "", /*end_of_stream=*/true, /*request_drain_requests=*/true));
+  EXPECT_FALSE(stream.ReadMessage().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
@@ -2218,7 +2362,11 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBodiesDrainedSuccess) {
                        EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       ModifyEchoRequest(req->request_body().body(), kMutatedSuffix),
-      !kEndOfStream));
+      !kEndOfStream, /*request_drain_requests=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
   EXPECT_TRUE(stream.WaitForWrite());
   stream.StartReadMessage();
   auto resp_body_req = ext_proc_stream->GetNextRequest();
@@ -2227,7 +2375,12 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBodiesDrainedSuccess) {
                   EchoResponseMessageIs(kMessage1Mutated), !kEndOfStream)));
   ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
       ModifyEchoResponse(resp_body_req->response_body().body(), kMutatedSuffix),
-      !kEndOfStream, /*request_drain=*/true));
+      !kEndOfStream, /*request_drain_requests=*/false,
+      /*request_drain_responses=*/true));
+  auto resp_drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(resp_drain_req,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
   EXPECT_THAT(stream.WaitForRead(),
               ::testing::Optional(MatchesEchoResponse(kMessage1DoubleMutated)));
   ext_proc_stream->SendStatus(absl::OkStatus());
@@ -2368,6 +2521,82 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyNotDrainedFails) {
                                        "Stream closed cleanly without drain")));
 }
 
+TEST_P(XdsExtProcEnd2endTest,
+       StreamCleanCloseDuringRequestBodyDrainInFlightFails) {
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      MakeRequestBodyMutationResponse(req->request_body().body(), !kEndOfStream,
+                                      /*request_drain_requests=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1)));
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  ext_proc_stream->SendStatus(absl::OkStatus());
+  stream.StartWritesDone();
+  EXPECT_THAT(
+      stream.WaitForStatus(),
+      ::testing::Optional(GrpcStatusIs(StatusCode::INTERNAL,
+                                       "Stream closed cleanly without drain")));
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamCleanCloseDuringResponseBodyDrainInFlightFails) {
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseBody(
+                       EchoResponseMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      req->response_body().body(), !kEndOfStream,
+      /*request_drain_requests=*/false, /*request_drain_responses=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  ext_proc_stream->SendStatus(absl::OkStatus());
+  stream.StartWritesDone();
+  EXPECT_THAT(
+      stream.WaitForStatus(),
+      ::testing::Optional(GrpcStatusIs(StatusCode::INTERNAL,
+                                       "Stream closed cleanly without drain")));
+}
+
 TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBeforeBodySentDrainSuccess) {
   ResetStub();
   auto ext_proc_config = MakeFilterConfigBuilder()
@@ -2387,8 +2616,17 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBeforeBodySentDrainSuccess) {
               ::testing::Optional(
                   MatchesRequestHeaders(::testing::Contains(::testing::Pair(
                       ":path", "/grpc.testing.EchoTestService/BidiStream")))));
-  ext_proc_stream->SendResponse(
-      MakeRequestHeadersMutationResponse({}, {}, /*request_drain=*/true));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {}, {}, /*request_drain_requests=*/true,
+      /*request_drain_responses=*/true));
+  auto drain_req1 = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req1,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  auto drain_req2 = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req2,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
   ext_proc_stream->SendStatus(absl::OkStatus());
   // Wait for the client filter to receive the stream closure from the fake
   // ext_proc server and update its internal state. There is no public event to
@@ -2536,8 +2774,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowBodiesDrainedSuccess) {
       req,
       ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
           ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
-  ext_proc_stream->SendResponse(
-      MakeRequestHeadersMutationResponse({}, {}, /*request_drain=*/true));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse(
+      {}, {}, /*request_drain_requests=*/true,
+      /*request_drain_responses=*/true));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server after drain"));
   Status status = rpc.GetStatus();
@@ -2633,6 +2872,54 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
       MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
+  const std::string expected_target = absl::StrCat("xds:", kServerName);
+  EXPECT_TRUE(stats_plugin
+                  ->GetHistogramValueByName(
+                      "grpc.client_ext_proc.client_half_close_duration",
+                      {expected_target})
+                  .has_value());
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ExtProcClientHalfCloseDurationMetricAfterRequestBodyDrain) {
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetRequestBodyMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      MakeRequestBodyMutationResponse(req->request_body().body(), !kEndOfStream,
+                                      /*request_drain_requests=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1)));
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
   const std::string expected_target = absl::StrCat("xds:", kServerName);
   EXPECT_TRUE(stats_plugin
                   ->GetHistogramValueByName(

@@ -30,7 +30,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nAenvoy/extensions/http/injected_credentials/oauth2/v3/oauth2.proto\x12\x34\x65nvoy.extensions.http.injected_credentials.oauth2.v3\x1a#envoy/config/core/v3/http_uri.proto\x1a\x36\x65nvoy/extensions/transport_sockets/tls/v3/secret.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xbf\x04\n\x06OAuth2\x12?\n\x0etoken_endpoint\x18\x01 \x01(\x0b\x32\x1d.envoy.config.core.v3.HttpUriB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12\x0e\n\x06scopes\x18\x02 \x03(\t\x12l\n\x12\x63lient_credentials\x18\x03 \x01(\x0b\x32N.envoy.extensions.http.injected_credentials.oauth2.v3.OAuth2.ClientCredentialsH\x00\x12I\n\x1atoken_fetch_retry_interval\x18\x04 \x01(\x0b\x32\x19.google.protobuf.DurationB\n\xfa\x42\x07\xaa\x01\x04\x32\x02\x08\x01\x1a\xe6\x01\n\x11\x43lientCredentials\x12\x1a\n\tclient_id\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12[\n\rclient_secret\x18\x02 \x01(\x0b\x32:.envoy.extensions.transport_sockets.tls.v3.SdsSecretConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12X\n\tauth_type\x18\x03 \x01(\x0e\x32\x45.envoy.extensions.http.injected_credentials.oauth2.v3.OAuth2.AuthType\"0\n\x08\x41uthType\x12\x0e\n\nBASIC_AUTH\x10\x00\x12\x14\n\x10URL_ENCODED_BODY\x10\x01\x42\x10\n\tflow_type\x12\x03\xf8\x42\x01\x42\xc9\x01\nBio.envoyproxy.envoy.extensions.http.injected_credentials.oauth2.v3B\x0bOauth2ProtoP\x01Zdgithub.com/envoyproxy/go-control-plane/envoy/extensions/http/injected_credentials/oauth2/v3;oauth2v3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nAenvoy/extensions/http/injected_credentials/oauth2/v3/oauth2.proto\x12\x34\x65nvoy.extensions.http.injected_credentials.oauth2.v3\x1a#envoy/config/core/v3/http_uri.proto\x1a\x36\x65nvoy/extensions/transport_sockets/tls/v3/secret.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xe3\x05\n\x06OAuth2\x12?\n\x0etoken_endpoint\x18\x01 \x01(\x0b\x32\x1d.envoy.config.core.v3.HttpUriB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12\x0e\n\x06scopes\x18\x02 \x03(\t\x12l\n\x12\x63lient_credentials\x18\x03 \x01(\x0b\x32N.envoy.extensions.http.injected_credentials.oauth2.v3.OAuth2.ClientCredentialsH\x00\x12I\n\x1atoken_fetch_retry_interval\x18\x04 \x01(\x0b\x32\x19.google.protobuf.DurationB\n\xfa\x42\x07\xaa\x01\x04\x32\x02\x08\x01\x12g\n\x0f\x65ndpoint_params\x18\x05 \x03(\x0b\x32N.envoy.extensions.http.injected_credentials.oauth2.v3.OAuth2.EndpointParameter\x1a\xe6\x01\n\x11\x43lientCredentials\x12\x1a\n\tclient_id\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12[\n\rclient_secret\x18\x02 \x01(\x0b\x32:.envoy.extensions.transport_sockets.tls.v3.SdsSecretConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12X\n\tauth_type\x18\x03 \x01(\x0e\x32\x45.envoy.extensions.http.injected_credentials.oauth2.v3.OAuth2.AuthType\x1a\x39\n\x11\x45ndpointParameter\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\r\n\x05value\x18\x02 \x01(\t\"0\n\x08\x41uthType\x12\x0e\n\nBASIC_AUTH\x10\x00\x12\x14\n\x10URL_ENCODED_BODY\x10\x01\x42\x10\n\tflow_type\x12\x03\xf8\x42\x01\x42\xc9\x01\nBio.envoyproxy.envoy.extensions.http.injected_credentials.oauth2.v3B\x0bOauth2ProtoP\x01Zdgithub.com/envoyproxy/go-control-plane/envoy/extensions/http/injected_credentials/oauth2/v3;oauth2v3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -42,6 +42,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_OAUTH2_CLIENTCREDENTIALS'].fields_by_name['client_id']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_OAUTH2_CLIENTCREDENTIALS'].fields_by_name['client_secret']._loaded_options = None
   _globals['_OAUTH2_CLIENTCREDENTIALS'].fields_by_name['client_secret']._serialized_options = b'\372B\005\212\001\002\020\001'
+  _globals['_OAUTH2_ENDPOINTPARAMETER'].fields_by_name['name']._loaded_options = None
+  _globals['_OAUTH2_ENDPOINTPARAMETER'].fields_by_name['name']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_OAUTH2'].oneofs_by_name['flow_type']._loaded_options = None
   _globals['_OAUTH2'].oneofs_by_name['flow_type']._serialized_options = b'\370B\001'
   _globals['_OAUTH2'].fields_by_name['token_endpoint']._loaded_options = None
@@ -49,9 +51,11 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_OAUTH2'].fields_by_name['token_fetch_retry_interval']._loaded_options = None
   _globals['_OAUTH2'].fields_by_name['token_fetch_retry_interval']._serialized_options = b'\372B\007\252\001\0042\002\010\001'
   _globals['_OAUTH2']._serialized_start=338
-  _globals['_OAUTH2']._serialized_end=913
-  _globals['_OAUTH2_CLIENTCREDENTIALS']._serialized_start=615
-  _globals['_OAUTH2_CLIENTCREDENTIALS']._serialized_end=845
-  _globals['_OAUTH2_AUTHTYPE']._serialized_start=847
-  _globals['_OAUTH2_AUTHTYPE']._serialized_end=895
+  _globals['_OAUTH2']._serialized_end=1077
+  _globals['_OAUTH2_CLIENTCREDENTIALS']._serialized_start=720
+  _globals['_OAUTH2_CLIENTCREDENTIALS']._serialized_end=950
+  _globals['_OAUTH2_ENDPOINTPARAMETER']._serialized_start=952
+  _globals['_OAUTH2_ENDPOINTPARAMETER']._serialized_end=1009
+  _globals['_OAUTH2_AUTHTYPE']._serialized_start=1011
+  _globals['_OAUTH2_AUTHTYPE']._serialized_end=1059
 # @@protoc_insertion_point(module_scope)
