@@ -573,7 +573,9 @@ LrsClient::LrsChannel::LrsCall::LrsCall(
       std::make_unique<StreamEventHandler>(
           // Passing the initial ref here.  This ref will go away when
           // the StreamEventHandler is destroyed.
-          RefCountedPtr<LrsCall>(this)));
+          RefCountedPtr<LrsCall>(this)),
+      XdsTransportFactory::XdsTransport::CallOptions().set_wait_for_ready(
+          true));
   GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)

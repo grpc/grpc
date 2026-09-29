@@ -117,14 +117,13 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
         const RefCountedPtr<ConnectivityFailureWatcher>& watcher) = 0;
 
     // Create a streaming call on this transport for the specified method
-    // using default CallOptions (send_initial_metadata started immediately)
-    // with wait_for_ready enabled.
+    // using default CallOptions.
     // Events on the stream will be reported to event_handler.
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler) {
       return CreateStreamingCall(method, std::move(event_handler),
-                                 CallOptions().set_wait_for_ready(true));
+                                 CallOptions());
     }
 
     // Create a streaming call on this transport for the specified method
