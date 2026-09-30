@@ -37,6 +37,7 @@ EXPERIMENT_ENABLES = {
     "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
     "header_data_frame": "header_data_frame",
     "inproc_cancel_stream": "inproc_cancel_stream",
+    "internal_fix": "internal_fix",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "map_host_header_to_authority": "map_host_header_to_authority",
