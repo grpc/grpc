@@ -221,7 +221,8 @@ class FilterTest : public YodelTest {
 
   // Tears down the stack under test before the event engine goes away.
   // Subclasses that own objects holding a reference to event_engine() must
-  // override this, release those objects, and chain to FilterTest::Shutdown().
+  // override this, chain to FilterTest::Shutdown() first (which cancels the
+  // call under test), and then release those objects.
   void Shutdown() override;
 
  private:

@@ -398,6 +398,43 @@ grpc_cc_benchmark(
     ],
 )
 
+grpc_fuzz_test(
+    name = "ext_proc_filter_test",
+    srcs = ["ext_proc_filter_test.cc"],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/status",
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        ":filter_matchers",
+        ":filter_test",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+        "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:client_channel_args",
+        "//src/core:ext_proc_messages",
+        "//src/core:filter_args",
+        "//src/core:grpc_ext_proc_filter",
+        "//src/core:metadata",
+        "//src/core:metrics",
+        "//src/core:time",
+        "//src/core:xds_server_grpc",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/xds:xds_transport_fake",
+        "@com_google_protobuf//:struct_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
+    ],
+)
+
 grpc_cc_test(
     name = "ext_proc_message_test",
     srcs = ["ext_proc_message_test.cc"],

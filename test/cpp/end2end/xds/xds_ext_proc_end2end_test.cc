@@ -9,7 +9,11 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 #include <map>
 #include <memory>
 #include <optional>
@@ -32,7 +36,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/check.h"
-#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
@@ -121,17 +124,6 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
       write_in_flight_ = true;
       StartWrite(&response_);
       while (write_in_flight_ && !is_done_) {
-        cv_.Wait(&mu_);
-      }
-    }
-
-    // Closes the stream with the specified status.
-    void SendStatus(const absl::Status& status) {
-      grpc_core::MutexLock lock(&mu_);
-      MaybeFinishLocked(
-          grpc::Status(static_cast<grpc::StatusCode>(status.code()),
-                       std::string(status.message())));
-      while (!is_done_) {
         cv_.Wait(&mu_);
       }
     }
@@ -359,11 +351,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   // the request body has been processed.
   class ClientHalfCloseHandler {
    public:
-    // In observability mode the filter does not expect a response from the
-    // ext_proc server, so callers pass send_response=false.
-    explicit ClientHalfCloseHandler(FakeExtProcService::Stream* stream,
-                                    bool send_response = true)
-        : stream_(stream), send_response_(send_response) {}
+    explicit ClientHalfCloseHandler(FakeExtProcService::Stream* stream)
+        : stream_(stream) {}
 
     void Handle(const ProcessingRequest& request);
 
@@ -373,13 +362,12 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
         std::optional<ProcessingRequest> request);
 
     // Handles the half-close if it arrived after all of the response-path
-    // events.  When send_response is true, this must be called before waiting
-    // for the RPC to complete, which cannot happen until we respond.
+    // events.  This must be called before waiting for the RPC to complete,
+    // which cannot happen until we respond.
     void HandleIfNotYetSeen();
 
    private:
     FakeExtProcService::Stream* stream_;
-    bool send_response_;
     bool seen_ = false;
   };
 
@@ -398,66 +386,47 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   static void PopulateHeaderMutation(
       ::envoy::service::ext_proc::v3::HeaderMutation* mutation,
-      const std::vector<std::pair<std::string, std::string>>& set_headers,
-      const std::vector<std::string>& remove_headers = {}) {
+      const std::vector<std::pair<std::string, std::string>>& set_headers) {
     for (const auto& [key, value] : set_headers) {
       auto* header = mutation->add_set_headers();
       header->mutable_header()->set_key(key);
       header->mutable_header()->set_value(value);
     }
-    for (const auto& key : remove_headers) {
-      mutation->add_remove_headers(key);
-    }
   }
 
   static ::envoy::service::ext_proc::v3::ProcessingResponse
   MakeRequestHeadersMutationResponse(
-      const std::vector<std::pair<std::string, std::string>>& set_headers,
-      const std::vector<std::string>& remove_headers = {},
-      bool request_drain = false) {
+      const std::vector<std::pair<std::string, std::string>>& set_headers) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
     PopulateHeaderMutation(response.mutable_request_headers()
                                ->mutable_response()
                                ->mutable_header_mutation(),
-                           set_headers, remove_headers);
+                           set_headers);
     return response;
   }
 
   static ::envoy::service::ext_proc::v3::ProcessingResponse
   MakeResponseHeadersMutationResponse(
-      const std::vector<std::pair<std::string, std::string>>& set_headers,
-      const std::vector<std::string>& remove_headers = {},
-      bool request_drain = false) {
+      const std::vector<std::pair<std::string, std::string>>& set_headers) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
     PopulateHeaderMutation(response.mutable_response_headers()
                                ->mutable_response()
                                ->mutable_header_mutation(),
-                           set_headers, remove_headers);
+                           set_headers);
     return response;
   }
 
   static void PopulateBodyMutation(
       ::envoy::service::ext_proc::v3::BodyMutation* body_mutation,
-      absl::string_view body, bool end_of_stream = false) {
+      absl::string_view body, bool end_of_stream) {
     body_mutation->mutable_streamed_response()->set_body(std::string(body));
     body_mutation->mutable_streamed_response()->set_end_of_stream(
         end_of_stream);
   }
 
   static ::envoy::service::ext_proc::v3::ProcessingResponse
-  MakeRequestBodyMutationResponse(absl::string_view body,
-                                  bool end_of_stream = false,
-                                  bool request_drain = false) {
+  MakeRequestBodyMutationResponse(absl::string_view body, bool end_of_stream) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
     PopulateBodyMutation(response.mutable_request_body()
                              ->mutable_response()
                              ->mutable_body_mutation(),
@@ -466,13 +435,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   static ::envoy::service::ext_proc::v3::ProcessingResponse
-  MakeResponseBodyMutationResponse(absl::string_view body,
-                                   bool end_of_stream = false,
-                                   bool request_drain = false) {
+  MakeResponseBodyMutationResponse(absl::string_view body, bool end_of_stream) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
     PopulateBodyMutation(response.mutable_response_body()
                              ->mutable_response()
                              ->mutable_body_mutation(),
@@ -482,16 +446,11 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   static ::envoy::service::ext_proc::v3::ProcessingResponse
   MakeResponseTrailersMutationResponse(
-      const std::vector<std::pair<std::string, std::string>>& set_headers,
-      const std::vector<std::string>& remove_headers = {},
-      bool request_drain = false) {
+      const std::vector<std::pair<std::string, std::string>>& set_headers) {
     ::envoy::service::ext_proc::v3::ProcessingResponse response;
-    if (request_drain) {
-      response.set_request_drain(true);
-    }
     PopulateHeaderMutation(
         response.mutable_response_trailers()->mutable_header_mutation(),
-        set_headers, remove_headers);
+        set_headers);
     return response;
   }
 
@@ -739,10 +698,8 @@ void XdsExtProcEnd2endTest::ClientHalfCloseHandler::Handle(
   EXPECT_FALSE(seen_) << "duplicate client half-close event";
   seen_ = true;
   EXPECT_THAT(request, MatchesRequestBody(kEmptyBody, kEndOfStream));
-  if (send_response_) {
-    stream_->SendResponse(
-        MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
-  }
+  stream_->SendResponse(
+      MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
 }
 
 std::optional<ProcessingRequest>

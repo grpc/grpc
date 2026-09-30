@@ -268,6 +268,7 @@ grpc_cc_library(
         "absl/status",
         "absl/time",
     ],
+    visibility = ["//test:__subpackages__"],
     deps = [
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
@@ -386,42 +387,6 @@ grpc_cc_proto_library(
     name = "xds_client_fuzzer_cc_proto",
     deps = [
         "xds_client_fuzzer_proto",
-    ],
-)
-
-grpc_fuzz_test(
-    name = "ext_proc_filter_test",
-    srcs = ["ext_proc_filter_test.cc"],
-    external_deps = [
-        "absl/functional:function_ref",
-        "absl/status",
-        "absl/strings",
-        "fuzztest",
-        "fuzztest_main",
-        "gtest",
-    ],
-    deps = [
-        ":xds_transport_fake",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:ref_counted_ptr",
-        "//:xds_client",
-        "//src/core:channel_args",
-        "//src/core:channel_args_endpoint_config",
-        "//src/core:client_channel_args",
-        "//src/core:ext_proc_messages",
-        "//src/core:filter_args",
-        "//src/core:grpc_ext_proc_filter",
-        "//src/core:metadata",
-        "//src/core:metrics",
-        "//src/core:time",
-        "//src/core:xds_server_grpc",
-        "//test/core/filters:filter_matchers",
-        "//test/core/filters:filter_test",
-        "//test/core/test_util:fake_stats_plugin",
-        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
-        "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
     ],
 )
 
