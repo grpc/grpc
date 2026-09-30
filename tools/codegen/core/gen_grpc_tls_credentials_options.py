@@ -273,8 +273,7 @@ def put_copyright(f, year):
 // limitations under the License.
 //
 //
-"""
-        % (year),
+""" % (year),
         file=f,
     )
 

@@ -115,7 +115,7 @@ def _parse_protoc_arguments(protoc_args, projectdir):
             # Assumes that cmdline arguments are always passed in the
             # "--somearg=argvalue", which happens to be the form that
             # msbuild integration uses, but it's not the only way.
-            (name, value) = arg.split("=", 1)
+            name, value = arg.split("=", 1)
 
             if (
                 name == "--dependency_out"

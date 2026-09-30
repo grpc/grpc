@@ -2962,8 +2962,7 @@ def get_startup_script(path_to_server_binary, service_port):
             service_port,
         )
     else:
-        return (
-            """#!/bin/bash
+        return """#!/bin/bash
 sudo apt update
 sudo apt install -y git default-jdk
 mkdir java_server
@@ -2974,9 +2973,7 @@ pushd interop-testing
 ../gradlew installDist -x test -PskipCodegen=true -PskipAndroid=true
 
 nohup build/install/grpc-interop-testing/bin/xds-test-server \
-    --port=%d 1>/dev/null &"""
-            % service_port
-        )
+    --port=%d 1>/dev/null &""" % service_port
 
 
 def create_instance_template(
