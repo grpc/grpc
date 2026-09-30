@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstddef>
+#include <type_traits>
 #include <utility>
 
 #include "src/core/channelz/property_list.h"
@@ -27,7 +28,6 @@
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "src/proto/grpc/channelz/v2/promise.upbdefs.h"
 #include "upb/reflection/def.hpp"
-#include "absl/meta/type_traits.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
 // Often when we're writing code that uses promises, we end up wanting to also
@@ -192,7 +192,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto WrapInPoll(T&& x)
 
 // T -> T, const T& -> T
 template <typename T>
-using RemoveCVRef = absl::remove_cv_t<absl::remove_reference_t<T>>;
+using RemoveCVRef = std::remove_cv_t<std::remove_reference_t<T>>;
 
 template <typename F, typename SfinaeVoid = void>
 class PromiseLike;

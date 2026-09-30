@@ -54,15 +54,16 @@ class XdsStreamingCallPromiseWrapper::EventHandler final
 };
 
 XdsStreamingCallPromiseWrapper::XdsStreamingCallPromiseWrapper(
-    XdsTransport& transport, const char* method, bool start_upon_send_message) {
+    XdsTransport& transport, const char* method,
+    XdsTransport::CallOptions options) {
   auto internal_event_handler = std::make_unique<EventHandler>(
       WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>());
   call_ = transport.CreateStreamingCall(
-      method, std::move(internal_event_handler), start_upon_send_message);
+      method, std::move(internal_event_handler), options);
 }
 
 Poll<StatusFlag> XdsStreamingCallPromiseWrapper::PollPushMessage() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   // If the send is still in flight on the transport, wait for completion.
   if (send_state_ == SendState::kSendMessageInFlight ||
       send_state_ == SendState::kSendMessageAndHalfCloseInFlight ||
@@ -79,7 +80,7 @@ Poll<StatusFlag> XdsStreamingCallPromiseWrapper::PollPushMessage() {
 
 Poll<std::optional<std::string>>
 XdsStreamingCallPromiseWrapper::PollPullMessage() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   switch (recv_state_) {
     case RecvState::kIdle:
       return std::exchange(recv_message_, std::nullopt);
@@ -92,7 +93,7 @@ XdsStreamingCallPromiseWrapper::PollPullMessage() {
 
 Poll<absl::Status>
 XdsStreamingCallPromiseWrapper::PollPullServerTrailingMetadata() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (recv_state_ != RecvState::kReceivedStatus) return Pending{};
   return std::move(status_);
 }
@@ -101,7 +102,7 @@ void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
   Waker waker;
   bool send_half_close = false;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (!ok) {
       send_state_ = SendState::kSendFailed;
     } else {
@@ -126,7 +127,7 @@ void XdsStreamingCallPromiseWrapper::OnRequestSent(bool ok) {
 void XdsStreamingCallPromiseWrapper::OnRecvMessage(absl::string_view payload) {
   Waker waker;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     recv_message_ = std::string(payload);
     if (recv_state_ == RecvState::kRecvMessageInFlight) {
       recv_state_ = RecvState::kIdle;
@@ -140,7 +141,7 @@ void XdsStreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
   Waker recv_message_waker;
   Waker recv_status_waker;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     status_ = std::move(status);
     if (recv_state_ == RecvState::kRecvMessageInFlight) {
       recv_message_waker = std::move(recv_message_waker_);
@@ -155,7 +156,7 @@ void XdsStreamingCallPromiseWrapper::OnStatusReceived(absl::Status status) {
 void XdsStreamingCallPromiseWrapper::SendHalfClose() {
   bool send_half_close = false;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // If a send is in flight, record that half-close was requested.
     // OnRequestSent will issue the half-close once the message send completes.
     if (send_state_ == SendState::kSendMessageInFlight) {

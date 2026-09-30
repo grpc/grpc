@@ -210,7 +210,7 @@ void TracedBufferList::AddNewEntry(int32_t seq_no,
   }
   new_elem.last_timestamp_ = grpc_core::Timestamp::Now();
   // new_elem.last_timestamp_ = new_elem.ts_.sendmsg_time.time;
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   list_.push_back(std::move(new_elem));
 }
 
@@ -220,7 +220,7 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
   absl::Time timestamp = absl::TimeFromTimespec(tss->ts[0]);
   grpc_core::Timestamp core_timestamp = grpc_core::Timestamp::Now();
   auto metrics = ExtractOptStatsFromCmsg(opt_stats);
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   auto it = list_.begin();
   while (it != list_.end()) {
     // The byte number refers to the sequence number of the last byte which this
@@ -273,7 +273,7 @@ void TracedBufferList::Shutdown(
     sink.RecordEvent(EventEngine::Endpoint::WriteEvent::kClosed, absl::Now(),
                      PosixWriteEventSink::ConnectionMetrics());
   }
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   if (list_.empty()) return;
   auto curr_time = absl::Now();
   for (auto it = list_.begin(); it != list_.end(); ++it) {

@@ -80,8 +80,10 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
     grpc_call_credentials* call_creds,
     const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-    Duration timeout, bool start_upon_send_message)
-    : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
+    Duration timeout, CallOptions options)
+    : factory_(std::move(factory)),
+      event_handler_(std::move(event_handler)),
+      options_(options) {
   Timestamp deadline = (timeout == Duration::Infinity())
                            ? Timestamp::InfFuture()
                            : Timestamp::Now() + timeout;
@@ -114,7 +116,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   // Start batch for recv_initial_metadata (and send_initial_metadata, unless
   // the caller asked us to wait until the first message is sent).
   OpList op_list;
-  if (!start_upon_send_message) {
+  if (!options_.start_upon_send_message) {
     sent_initial_metadata_ = true;
     AddSendInitialMetadataOp(op_list);
   }
@@ -134,8 +136,10 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   op.data.send_initial_metadata.count = send_initial_metadata_.size();
   op.data.send_initial_metadata.metadata =
       send_initial_metadata_.empty() ? nullptr : send_initial_metadata_.data();
-  op.flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-             GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
+  op.flags = options_.wait_for_ready
+                 ? GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+                       GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
+                 : 0;
   op.reserved = nullptr;
 }
 
@@ -384,7 +388,7 @@ class GrpcXdsTransportFactory::SharedChannel final
         factory_(std::move(factory)) {}
 
   ~SharedChannel() override {
-    MutexLock lock(&factory_->mu_);
+    MutexLock lock(factory_->mu_);
     auto it = factory_->channels_.find(key_);
     if (it != factory_->channels_.end() && it->second == this) {
       factory_->channels_.erase(it);
@@ -428,7 +432,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[GrpcXdsTransport " << this << "] orphaned";
   {
-    MutexLock lock(&factory_->mu_);
+    MutexLock lock(factory_->mu_);
     auto it = factory_->transports_.find(key_);
     if (it != factory_->transports_.end() && it->second == this) {
       factory_->transports_.erase(it);
@@ -449,7 +453,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::StartConnectivityFailureWatch(
   if (channel_->channel()->IsLame()) return;
   auto* state_watcher = new StateWatcher(watcher);
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     watchers_.emplace(watcher, state_watcher);
   }
   channel_->channel()->AddConnectivityWatcher(
@@ -462,7 +466,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::StopConnectivityFailureWatch(
   if (channel_->channel()->IsLame()) return;
   StateWatcher* state_watcher = nullptr;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     auto it = watchers_.find(watcher);
     if (it == watchers_.end()) return;
     state_watcher = it->second;
@@ -475,11 +479,11 @@ OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
-    bool start_upon_send_message) {
+    CallOptions options) {
   return MakeOrphanable<GrpcStreamingCall>(
       factory_.WeakRef(DEBUG_LOCATION, "StreamingCall"), channel_->channel(),
       method, std::move(event_handler), call_creds_.get(), initial_metadata_,
-      timeout_, start_upon_send_message);
+      timeout_, options);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
@@ -525,7 +529,7 @@ GrpcXdsTransportFactory::GetTransport(
     const XdsBootstrap::XdsServerTarget& server, absl::Status* status) {
   std::string key = server.Key();
   RefCountedPtr<GrpcXdsTransport> transport;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = transports_.find(key);
   if (it != transports_.end()) {
     transport = it->second->RefIfNonZero().TakeAsSubclass<GrpcXdsTransport>();
