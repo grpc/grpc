@@ -55,6 +55,7 @@ using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
 using ::envoy::service::ext_proc::v3::ProcessingRequest;
 using ::envoy::service::ext_proc::v3::ProcessingResponse;
+using ExtProcService = ::envoy::service::ext_proc::v3::ExternalProcessor;
 
 constexpr absl::string_view kFilterInstanceName = "ext_proc_instance";
 
@@ -80,8 +81,7 @@ constexpr char kEmptyBody[] = "";
 // A stream-based fake external processor service that provides fine-grained,
 // sequential control over incoming ext_proc stream requests and outgoing
 // responses/statuses for test assertions.
-class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
-                                     ExternalProcessor::CallbackService {
+class FakeExtProcService final : public ExtProcService::CallbackService {
  public:
   // Represents a single bidirectional stream between the client ext_proc filter
   // and this service, implemented as a ServerBidiReactor.
@@ -356,12 +356,10 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       return *this;
     }
 
-    envoy::extensions::filters::http::ext_proc::v3::ExternalProcessor Build() {
-      return ext_proc_;
-    }
+    ExternalProcessor Build() { return ext_proc_; }
 
    private:
-    envoy::extensions::filters::http::ext_proc::v3::ExternalProcessor ext_proc_;
+    ExternalProcessor ext_proc_;
   };
 
   // A class for running a bidirectional streaming RPC asynchronously using the
