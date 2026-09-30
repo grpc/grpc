@@ -369,8 +369,8 @@ FILTER_TEST(FilterTest, FilterRejectsAtServerTrailingMetadata) {
   ASSERT_TRUE(CreateFilterChain<RejectingTrailingMetadataFilter>().ok());
   StartCallForFilter(NewClientMetadata());
   ASSERT_TRUE(PullClientInitialMetadata().ok());
-  PushServerTrailingMetadata(NewServerMetadata(
-      {{"grpc-status", "0"}, {"x-reject", "yes"}}));
+  PushServerTrailingMetadata(
+      NewServerMetadata({{"grpc-status", "0"}, {"x-reject", "yes"}}));
   ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_metadata.ok());
