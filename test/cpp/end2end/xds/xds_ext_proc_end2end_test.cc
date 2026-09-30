@@ -128,6 +128,15 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
       }
     }
 
+    // Closes the stream with the specified status.
+    void SendStatus(const grpc::Status& status) {
+      grpc_core::MutexLock lock(&mu_);
+      MaybeFinishLocked(status);
+      while (!is_done_) {
+        cv_.Wait(&mu_);
+      }
+    }
+
     void MaybeFinish(const grpc::Status& status) {
       grpc_core::MutexLock lock(&mu_);
       MaybeFinishLocked(status);
@@ -258,6 +267,11 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       auto* google_grpc =
           ext_proc_.mutable_grpc_service()->mutable_google_grpc();
       google_grpc->set_target_uri(target_uri);
+      return *this;
+    }
+
+    ExtProcFilterConfigBuilder& SetFailureModeAllow(bool allow) {
+      ext_proc_.set_failure_mode_allow(allow);
       return *this;
     }
 
@@ -582,6 +596,15 @@ MATCHER(IsStatusOk, "") {
   return true;
 }
 
+MATCHER_P2(GrpcStatusIs, code, message_matcher, "") {
+  *result_listener << "actual code=" << arg.error_code()
+                   << ", actual message=\"" << arg.error_message() << "\"";
+  return ::testing::ExplainMatchResult(code, arg.error_code(),
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(message_matcher, arg.error_message(),
+                                       result_listener);
+}
+
 MATCHER_P(MatchesRequestHeaders, headers_matcher,
           "matches request_headers with given headers") {
   if (!arg.has_request_headers()) {
@@ -722,9 +745,11 @@ void XdsExtProcEnd2endTest::ClientHalfCloseHandler::HandleIfNotYetSeen() {
 //
 // Detailed ext_proc filter behavior (processing modes, mutations, ordering,
 // drain, failure modes, metrics, etc.) is covered by the much faster
-// FilterTest-based suite in test/core/xds/ext_proc_filter_test.cc. This
-// file only keeps a smoke test that exercises the filter end-to-end through
-// xDS configuration (listener and route-override) with a real ext_proc server.
+// FilterTest-based suite in test/core/filters/ext_proc_filter_test.cc. This
+// file only keeps a small set of tests that exercise the filter end-to-end
+// through xDS configuration (listener and route-override) with a real ext_proc
+// server: a full success case, and the fail-closed and fail-open behavior on
+// ext_proc stream failure.
 //
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
@@ -793,6 +818,60 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   EXPECT_EQ(rpc.response().message(),
             absl::StrCat(kRequestMessage, kRequestBodyMutatedSuffix,
                          kResponseBodyMutatedSuffix));
+}
+
+// With failure_mode_allow=false, an ext_proc stream failure fails the RPC.
+TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeFalseFails) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req,
+      ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
+          ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendStatus(
+      grpc::Status(StatusCode::UNAVAILABLE,
+                   "Call closed by ext_proc server on request headers"));
+  Status status = rpc.GetStatus();
+  EXPECT_THAT(status, GrpcStatusIs(
+                          StatusCode::INTERNAL,
+                          "External processor stream failed: UNAVAILABLE: Call "
+                          "closed by ext_proc server on request headers"));
+}
+
+// With failure_mode_allow=true, an ext_proc stream failure is ignored and the
+// RPC proceeds without ext_proc processing.
+TEST_P(XdsExtProcEnd2endTest,
+       StreamErrorFailureModeAllowBodiesNotConfiguredSuccess) {
+  ResetStub();
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(true)
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req,
+      ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
+          ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendStatus(grpc::Status(
+      StatusCode::UNAVAILABLE, "Call closed by ext_proc server on headers"));
+  Status status = rpc.GetStatus();
+  EXPECT_THAT(status, IsStatusOk());
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
 }
 
 }  // namespace
