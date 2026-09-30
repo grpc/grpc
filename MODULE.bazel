@@ -49,6 +49,14 @@ bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_a
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20260616.0")
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
+single_version_override(
+    module_name = "c-ares",
+    patch_strip = 1,
+    patches = [
+        "//bazel:c-ares/bazel_9_support.patch",
+    ],
+    version = "1.19.1",
+)
 
 # -- CEL (Common Expression Language) C implementation.
 # Pinning version to be consistent with third_party/cel-c.
@@ -70,6 +78,14 @@ bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googl
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.3", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
+single_version_override(
+    module_name = "opentelemetry-cpp",
+    patch_strip = 1,
+    patches = [
+        "//bazel:opentelemetry-cpp/bazel_9_support.patch",
+    ],
+    version = "1.19.0",
+)
 
 # --- Protobuf related packages.
 bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
@@ -113,6 +129,7 @@ archive_override(
     patches = [
         "//bazel/zlib:add_module_dot_bazel.patch",
         "//bazel/zlib:add_custom_build_file.patch",
+        "//bazel/zlib:bazel_9_support.patch",
     ],
     strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
     urls = [
@@ -197,6 +214,7 @@ archive_override(
     patch_strip = 1,
     patches = [
         "//bazel:re2.patch",
+        "//bazel:re2/bazel_9_support.patch",
     ],
     strip_prefix = "re2-2022-04-01",
     urls = [
