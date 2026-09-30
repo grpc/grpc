@@ -169,6 +169,11 @@
   expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
+- name: internal_fix
+  description: Gate for the internal fix.
+  expiry: 2026/10/31
+  owner: bpawan@google.com
+  test_tags: []
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
@@ -181,6 +186,13 @@
   expiry: 2027/01/16
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
+- name: map_host_header_to_authority
+  description:
+    Map the HTTP host header directly to HttpAuthorityMetadata and reject
+    duplicate host/authority headers.
+  expiry: 2027/07/01
+  owner: rishesh@google.com
+  test_tags: ["core_end2end_test", "hpack_test"]
 - name: memory_optimization_01
   description: Memory Optimization
   expiry: 2026/10/30
@@ -327,14 +339,6 @@
   owner: akshitpatel@google.com
   test_tags: []
   allow_in_fuzzing_config: true
-- name: recv_message_cancelled_status_fix
-  description:
-    Report the status from the received trailing metadata (instead of the
-    batch completion status) when a recv_message batch is completed after the
-    call has been cancelled.
-  expiry: 2027/03/01
-  owner: rishesh@google.com
-  test_tags: [core_end2end_test, xds_end2end_test, xds_test]
 - name: recv_message_filter_bypass_fix
   description:
     Receive message bypass happen if trailing metadata is received while

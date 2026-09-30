@@ -94,8 +94,10 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 inline bool IsHeaderDataFrameEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() { return true; }
+inline bool IsInternalFixEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
@@ -129,7 +131,6 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return true; }
-inline bool IsRecvMessageCancelledStatusFixEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
@@ -190,8 +191,10 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 inline bool IsHeaderDataFrameEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() { return true; }
+inline bool IsInternalFixEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
@@ -225,7 +228,6 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return true; }
-inline bool IsRecvMessageCancelledStatusFixEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
@@ -286,8 +288,10 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 inline bool IsHeaderDataFrameEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() { return true; }
+inline bool IsInternalFixEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
@@ -321,7 +325,6 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return true; }
-inline bool IsRecvMessageCancelledStatusFixEnabled() { return false; }
 inline bool IsRecvMessageFilterBypassFixEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
@@ -367,8 +370,10 @@ enum ExperimentIds {
   kExperimentIdH2MaxDeallocatingStreamsHeadroom,
   kExperimentIdHeaderDataFrame,
   kExperimentIdInprocCancelStream,
+  kExperimentIdInternalFix,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
+  kExperimentIdMapHostHeaderToAuthority,
   kExperimentIdMemoryOptimization01,
   kExperimentIdMemoryOptimization02,
   kExperimentIdMessageSizeRefactoring,
@@ -393,7 +398,6 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
   kExperimentIdPromiseFilterSendCancelMetadata,
-  kExperimentIdRecvMessageCancelledStatusFix,
   kExperimentIdRecvMessageFilterBypassFix,
   kExperimentIdRetryInCallv3,
   kExperimentIdReturnPreexistingErrors,
@@ -496,6 +500,10 @@ inline bool IsHeaderDataFrameEnabled() {
 inline bool IsInprocCancelStreamEnabled() {
   return IsExperimentEnabled<kExperimentIdInprocCancelStream>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_INTERNAL_FIX
+inline bool IsInternalFixEnabled() {
+  return IsExperimentEnabled<kExperimentIdInternalFix>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {
   return IsExperimentEnabled<kExperimentIdKeepAlivePingTimerBatch>();
@@ -503,6 +511,10 @@ inline bool IsKeepAlivePingTimerBatchEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
 inline bool IsLocalConnectorSecureEnabled() {
   return IsExperimentEnabled<kExperimentIdLocalConnectorSecure>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAP_HOST_HEADER_TO_AUTHORITY
+inline bool IsMapHostHeaderToAuthorityEnabled() {
+  return IsExperimentEnabled<kExperimentIdMapHostHeaderToAuthority>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
 inline bool IsMemoryOptimization01Enabled() {
@@ -599,10 +611,6 @@ inline bool IsPromiseBatchCleanupOnCancelEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseFilterSendCancelMetadata>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_RECV_MESSAGE_CANCELLED_STATUS_FIX
-inline bool IsRecvMessageCancelledStatusFixEnabled() {
-  return IsExperimentEnabled<kExperimentIdRecvMessageCancelledStatusFix>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RECV_MESSAGE_FILTER_BYPASS_FIX
 inline bool IsRecvMessageFilterBypassFixEnabled() {
