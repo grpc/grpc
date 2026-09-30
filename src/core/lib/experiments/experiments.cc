@@ -102,6 +102,8 @@ const char* const additional_constraints_header_data_frame = "{}";
 const char* const description_inproc_cancel_stream =
     "If set, cancel inproc stream inside the transport mutex.";
 const char* const additional_constraints_inproc_cancel_stream = "{}";
+const char* const description_internal_fix = "Gate for the internal fix.";
+const char* const additional_constraints_internal_fix = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -335,6 +337,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_header_data_frame, nullptr, 0, true, true},
     {"inproc_cancel_stream", description_inproc_cancel_stream,
      additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
+    {"internal_fix", description_internal_fix,
+     additional_constraints_internal_fix, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -551,6 +555,8 @@ const char* const additional_constraints_header_data_frame = "{}";
 const char* const description_inproc_cancel_stream =
     "If set, cancel inproc stream inside the transport mutex.";
 const char* const additional_constraints_inproc_cancel_stream = "{}";
+const char* const description_internal_fix = "Gate for the internal fix.";
+const char* const additional_constraints_internal_fix = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -784,6 +790,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_header_data_frame, nullptr, 0, true, true},
     {"inproc_cancel_stream", description_inproc_cancel_stream,
      additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
+    {"internal_fix", description_internal_fix,
+     additional_constraints_internal_fix, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -1000,6 +1008,8 @@ const char* const additional_constraints_header_data_frame = "{}";
 const char* const description_inproc_cancel_stream =
     "If set, cancel inproc stream inside the transport mutex.";
 const char* const additional_constraints_inproc_cancel_stream = "{}";
+const char* const description_internal_fix = "Gate for the internal fix.";
+const char* const additional_constraints_internal_fix = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -1233,6 +1243,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_header_data_frame, nullptr, 0, true, true},
     {"inproc_cancel_stream", description_inproc_cancel_stream,
      additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
+    {"internal_fix", description_internal_fix,
+     additional_constraints_internal_fix, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},

@@ -169,6 +169,11 @@
   expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
+- name: internal_fix
+  description: Gate for the internal fix.
+  expiry: 2026/10/31
+  owner: bpawan@google.com
+  test_tags: []
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
