@@ -684,13 +684,14 @@ grpc_chttp2_transport::ChannelzDataSource::GetZTrace(absl::string_view name) {
 }
 
 // TODO(alishananda): add unit testing as part of chttp2 promise conversion work
-void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer* data) {
+void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer data) {
   grpc_core::ExecCtx exec_ctx;
-  combiner->Run(grpc_core::NewClosure(
-                    [transport = Ref(), data](grpc_error_handle) mutable {
-                      transport->WriteSecurityFrameLocked(data);
-                    }),
-                absl::OkStatus());
+  combiner->Run(
+      grpc_core::NewClosure([transport = Ref(), data = std::move(data)](
+                                grpc_error_handle) mutable {
+        transport->WriteSecurityFrameLocked(&data);
+      }),
+      absl::OkStatus());
 }
 
 void grpc_chttp2_transport::WriteSecurityFrameLocked(
@@ -779,7 +780,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
             ep.get()));
     if (transport_framing_endpoint_extension != nullptr) {
       transport_framing_endpoint_extension->SetSendFrameCallback(
-          [this](grpc_core::SliceBuffer* data) { WriteSecurityFrame(data); });
+          [this](grpc_core::SliceBuffer data) {
+            WriteSecurityFrame(std::move(data));
+          });
     }
   }
 
@@ -959,7 +962,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
           t->ep.get(), t->interested_parties_until_recv_settings);
       t->interested_parties_until_recv_settings = nullptr;
     }
-    grpc_core::MutexLock lock(&t->ep_destroy_mu);
+    grpc_core::MutexLock lock(t->ep_destroy_mu);
     t->ep.reset();
   }
   t->MaybeNotifyOnReceiveSettingsLocked(error);
@@ -3447,7 +3450,7 @@ void grpc_chttp2_transport::SetPollset(grpc_stream* /*gs*/,
   // using the "poll" polling engine, which is the only one that
   // actually uses pollsets.
   if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
-  grpc_core::MutexLock lock(&ep_destroy_mu);
+  grpc_core::MutexLock lock(ep_destroy_mu);
   if (ep != nullptr) grpc_endpoint_add_to_pollset(ep.get(), pollset);
 }
 
@@ -3457,7 +3460,7 @@ void grpc_chttp2_transport::SetPollsetSet(grpc_stream* /*gs*/,
   // using the "poll" polling engine, which is the only one that
   // actually uses pollsets.
   if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
-  grpc_core::MutexLock lock(&ep_destroy_mu);
+  grpc_core::MutexLock lock(ep_destroy_mu);
   if (ep != nullptr) grpc_endpoint_add_to_pollset_set(ep.get(), pollset_set);
 }
 

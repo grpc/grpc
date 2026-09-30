@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y \
 RUN dpkg --add-architecture arm64
 RUN apt-get update && apt-get install -y g++-14-aarch64-linux-gnu
 
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
 CMD ["bash"]
