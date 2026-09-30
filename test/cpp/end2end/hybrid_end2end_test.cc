@@ -243,7 +243,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
                   : false;
   }
 
-  bool SetUpServer(grpc::Service* service1, grpc::Service* service2,
+  void SetUpServer(grpc::Service* service1, grpc::Service* service2,
                    AsyncGenericService* generic_service,
                    CallbackGenericService* callback_generic_service,
                    int max_message_size = 0) {
@@ -277,10 +277,6 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
       cqs_.push_back(builder.AddCompletionQueue(false));
     }
     server_ = builder.BuildAndStart();
-
-    // If there is a generic callback service, this setup is only successful if
-    // we have an iomgr that can run in the background or are inprocess
-    return true;
   }
 
   void TearDown() override {
@@ -840,9 +836,7 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
     }
   } generic_service;
 
-  if (!SetUpServer(&service, nullptr, nullptr, &generic_service)) {
-    return;
-  }
+  SetUpServer(&service, nullptr, nullptr, &generic_service);
   ResetStub();
   TestAllMethods();
 }

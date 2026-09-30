@@ -504,11 +504,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
   };
 
   static void SetUpTestSuite() {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    grpc_core::ConfigVars::Overrides overrides;
-    overrides.client_channel_backup_poll_interval_ms = 1;
-    grpc_core::ConfigVars::SetOverrides(overrides);
     grpc_init();
   }
 

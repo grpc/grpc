@@ -119,14 +119,6 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
         kRequestMessage_("Live long and prosper."),
         creds_(std::make_shared<FakeTransportSecurityChannelCredentials>()) {}
 
-  static void SetUpTestSuite() {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    grpc_core::ConfigVars::Overrides overrides;
-    overrides.client_channel_backup_poll_interval_ms = 1;
-    grpc_core::ConfigVars::SetOverrides(overrides);
-  }
-
   void SetUp() override {
     grpc_init();
     response_generator_ =

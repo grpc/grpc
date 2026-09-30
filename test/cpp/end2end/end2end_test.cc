@@ -2398,11 +2398,6 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   std::vector<TestScenario> scenarios;
   std::vector<std::string> credentials_types;
 
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms =
-      kClientChannelBackupPollIntervalMs;
-  grpc_core::ConfigVars::SetOverrides(overrides);
-
   if (test_secure) {
     credentials_types =
         GetCredentialsProvider()->GetSecureCredentialsTypeList();

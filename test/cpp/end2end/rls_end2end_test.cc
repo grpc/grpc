@@ -169,9 +169,6 @@ class FakeResolverResponseGeneratorWrapper {
 class RlsEnd2endTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    grpc_core::ConfigVars::Overrides overrides;
-    overrides.client_channel_backup_poll_interval_ms = 1;
-    grpc_core::ConfigVars::SetOverrides(overrides);
     grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         grpc_core::RegisterFixedAddressLoadBalancingPolicy);
     grpc_init();
