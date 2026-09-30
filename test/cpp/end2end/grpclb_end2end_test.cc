@@ -503,9 +503,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     bool running_ = false;
   };
 
-  static void SetUpTestSuite() {
-    grpc_init();
-  }
+  static void SetUpTestSuite() { grpc_init(); }
 
   static void TearDownTestSuite() { grpc_shutdown(); }
 
