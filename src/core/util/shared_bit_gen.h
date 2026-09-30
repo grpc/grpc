@@ -53,6 +53,8 @@ class SharedBitGen {
   static constexpr auto max() { return absl::BitGen::max(); }
 
  private:
+  // TODO(ctiller): Perhaps use per-cpu storage? Would add additional overhead
+  // for the mutex acquisition.
   static absl::BitGen& GetBitGen() {
     thread_local absl::BitGen bit_gen;
     return bit_gen;
