@@ -38,6 +38,7 @@
 #include <sys/un.h>
 #endif  // GPR_WINDOWS
 #endif  // GRPC_HAVE_UNIX_SOCKET
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -182,11 +183,17 @@ grpc_error_handle VSockaddrPopulate(absl::string_view path,
       reinterpret_cast<struct sockaddr_vm*>(resolved_addr->addr);
   vm->svm_family = AF_VSOCK;
   std::vector<absl::string_view> parts = absl::StrSplit(path, ':');
-  if (parts.size() != 2 || !absl::SimpleAtoi(parts[0], &vm->svm_cid) ||
+  // The cid is an unsigned 32-bit value, but VMADDR_CID_ANY is conventionally
+  // written as -1, so parse it as a signed value and accept that one negative
+  // spelling in addition to the range that fits in 32 bits.
+  int64_t cid;
+  if (parts.size() != 2 || !absl::SimpleAtoi(parts[0], &cid) ||
+      (cid < -1 || cid > std::numeric_limits<uint32_t>::max()) ||
       !absl::SimpleAtoi(parts[1], &vm->svm_port)) {
     return GRPC_ERROR_CREATE(
         absl::StrCat("Failed to parse vsock cid/port: ", path));
   }
+  vm->svm_cid = static_cast<uint32_t>(cid);
   resolved_addr->len = static_cast<socklen_t>(sizeof(*vm));
   return absl::OkStatus();
 }
