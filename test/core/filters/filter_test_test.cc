@@ -25,6 +25,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -172,6 +173,39 @@ class RejectingFilter : public ImplementChannelFilter<RejectingFilter> {
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() { return {}; }
+  };
+};
+
+// A filter that fails the call at server trailing metadata if the trailing
+// metadata carries an "x-reject" key. Its OnServerTrailingMetadata returns
+// absl::Status and takes a channel pointer.
+class RejectingTrailingMetadataFilter
+    : public ImplementChannelFilter<RejectingTrailingMetadataFilter> {
+ public:
+  static absl::string_view TypeName() { return "rejecting_trailing_metadata"; }
+
+  static absl::StatusOr<std::unique_ptr<RejectingTrailingMetadataFilter>>
+  Create(const ChannelArgs&, const ChannelFilter::Args&) {
+    return std::make_unique<RejectingTrailingMetadataFilter>();
+  }
+
+  class Call {
+   public:
+    static inline const NoInterceptor OnClientInitialMetadata;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
+    absl::Status OnServerTrailingMetadata(
+        ServerMetadata& md, RejectingTrailingMetadataFilter* /*filter*/) {
+      std::string buffer;
+      if (md.GetStringValue("x-reject", &buffer).has_value()) {
+        return absl::PermissionDeniedError("rejected trailing metadata");
+      }
+      return absl::OkStatus();
+    }
     channelz::PropertyList ChannelzProperties() { return {}; }
   };
 };
@@ -325,6 +359,40 @@ FILTER_TEST(FilterTest, FilterRejectsAtInitialMetadata) {
       **server_trailing_metadata,
       HasMetadataResult(absl::PermissionDeniedError("rejected by filter")));
 
+  WaitForAllPendingWork();
+}
+
+// A filter whose OnServerTrailingMetadata returns a non-OK absl::Status
+// replaces the server's trailing metadata with that status, and marks the call
+// as cancelled.
+FILTER_TEST(FilterTest, FilterRejectsAtServerTrailingMetadata) {
+  ASSERT_TRUE(CreateFilterChain<RejectingTrailingMetadataFilter>().ok());
+  StartCallForFilter(NewClientMetadata());
+  ASSERT_TRUE(PullClientInitialMetadata().ok());
+  PushServerTrailingMetadata(NewServerMetadata(
+      {{"grpc-status", "0"}, {"x-reject", "yes"}}));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_metadata.ok());
+  EXPECT_THAT(**server_trailing_metadata,
+              HasMetadataResult(
+                  absl::PermissionDeniedError("rejected trailing metadata")));
+  EXPECT_EQ((*server_trailing_metadata)->get(GrpcCallWasCancelled()), true);
+  WaitForAllPendingWork();
+}
+
+// When OnServerTrailingMetadata returns OK, the server's trailing metadata
+// reaches the client unchanged.
+FILTER_TEST(FilterTest, FilterAcceptsAtServerTrailingMetadata) {
+  ASSERT_TRUE(CreateFilterChain<RejectingTrailingMetadataFilter>().ok());
+  StartCallForFilter(NewClientMetadata());
+  ASSERT_TRUE(PullClientInitialMetadata().ok());
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_metadata.ok());
+  EXPECT_THAT(**server_trailing_metadata, HasMetadataResult(absl::OkStatus()));
+  EXPECT_NE((*server_trailing_metadata)->get(GrpcCallWasCancelled()), true);
   WaitForAllPendingWork();
 }
 

@@ -353,7 +353,7 @@ auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&, Derived*),
                         auto status = call_data->call.OnServerTrailingMetadata(
                             *md, call_data->channel);
                         if (!status.ok()) {
-                          return ServerMetadataFromStatus(status);
+                          return CancelledServerMetadataFromStatus(status);
                         }
                         return md;
                       }),
