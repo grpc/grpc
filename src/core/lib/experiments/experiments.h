@@ -96,6 +96,7 @@ inline bool IsHeaderDataFrameEnabled() { return true; }
 inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
@@ -191,6 +192,7 @@ inline bool IsHeaderDataFrameEnabled() { return true; }
 inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
@@ -286,6 +288,7 @@ inline bool IsHeaderDataFrameEnabled() { return true; }
 inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
@@ -366,6 +369,7 @@ enum ExperimentIds {
   kExperimentIdInprocCancelStream,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
+  kExperimentIdMapHostHeaderToAuthority,
   kExperimentIdMemoryOptimization01,
   kExperimentIdMemoryOptimization02,
   kExperimentIdMessageSizeRefactoring,
@@ -499,6 +503,10 @@ inline bool IsKeepAlivePingTimerBatchEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
 inline bool IsLocalConnectorSecureEnabled() {
   return IsExperimentEnabled<kExperimentIdLocalConnectorSecure>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAP_HOST_HEADER_TO_AUTHORITY
+inline bool IsMapHostHeaderToAuthorityEnabled() {
+  return IsExperimentEnabled<kExperimentIdMapHostHeaderToAuthority>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
 inline bool IsMemoryOptimization01Enabled() {
