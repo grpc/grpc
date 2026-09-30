@@ -192,7 +192,7 @@
     duplicate host/authority headers.
   expiry: 2027/07/01
   owner: rishesh@google.com
-  test_tags: []
+  test_tags: ["core_end2end_test", "hpack_test"]
 - name: memory_optimization_01
   description: Memory Optimization
   expiry: 2026/10/30

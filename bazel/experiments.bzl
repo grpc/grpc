@@ -158,6 +158,7 @@ EXPERIMENTS = {
                 "buffer_list_deletion_prep",
                 "fix_v3_filter_stack_server_side_ordering",
                 "local_connector_secure",
+                "map_host_header_to_authority",
                 "otel_export_telemetry_domains",
                 "ph2_client",
                 "ph2_client_server",
@@ -184,6 +185,9 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "hpack_test": [
+                "map_host_header_to_authority",
             ],
             "lb_unit_test": [
                 "ring_hash_update_cleanup",
