@@ -96,7 +96,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     Stream()
         : grpc_core::InternallyRefCounted<Stream>(/*trace=*/nullptr,
                                                   /*initial_refcount=*/2) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       StartRead(&request_);
     }
 
@@ -112,7 +112,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     // request.
     std::optional<::envoy::service::ext_proc::v3::ProcessingRequest>
     GetNextRequest(absl::Duration timeout = absl::Seconds(10)) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       const absl::Time deadline =
           absl::Now() + timeout * grpc_test_slowdown_factor();
       while (requests_.empty() && !is_done_) {
@@ -131,7 +131,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     // Sends a response on the stream.
     void SendResponse(
         ::envoy::service::ext_proc::v3::ProcessingResponse response) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       response_ = std::move(response);
       write_in_flight_ = true;
       StartWrite(&response_);
@@ -142,7 +142,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
 
     // Closes the stream with the specified status.
     void SendStatus(const absl::Status& status) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       MaybeFinishLocked(
           grpc::Status(static_cast<grpc::StatusCode>(status.code()),
                        std::string(status.message())));
@@ -152,7 +152,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     }
 
     void MaybeFinish(const grpc::Status& status) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       MaybeFinishLocked(status);
     }
 
@@ -166,7 +166,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     }
 
     void OnReadDone(bool ok) override {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       if (ok) {
         requests_.push(std::move(request_));
         cv_.SignalAll();
@@ -177,7 +177,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     }
 
     void OnWriteDone(bool /*ok*/) override {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       write_in_flight_ = false;
       cv_.SignalAll();
     }
@@ -186,7 +186,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
 
     void OnDone() override {
       {
-        grpc_core::MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(mu_);
         is_done_ = true;
         cv_.SignalAll();
       }
@@ -211,7 +211,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
   // stream; the stream is cancelled when the returned pointer is destroyed.
   grpc_core::OrphanablePtr<Stream> GetStream(
       absl::Duration timeout = absl::Seconds(10)) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     const absl::Time deadline =
         absl::Now() + timeout * grpc_test_slowdown_factor();
     while (streams_.empty() && !is_shutdown_) {
@@ -231,7 +231,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     // Cancels any streams that were never consumed via GetStream().  Streams
     // already handed to the test are owned by the test.
     std::queue<grpc_core::OrphanablePtr<Stream>> streams;
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     is_shutdown_ = true;
     streams = std::move(streams_);
     cv_.SignalAll();
@@ -240,7 +240,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
   Stream* Process(grpc::CallbackServerContext* /*context*/) override {
     auto stream = grpc_core::MakeOrphanable<Stream>();
     Stream* active_stream = stream.get();
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (is_shutdown_) {
       stream->MaybeFinish(
           grpc::Status(grpc::StatusCode::UNAVAILABLE, "Server shutdown"));
@@ -383,7 +383,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     AsyncBidiStream() = default;
 
     ~AsyncBidiStream() override {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       while (!status_.has_value() && (write_state_ == OpState::kInFlight ||
                                       read_state_ == OpState::kInFlight)) {
         cv_.Wait(&mu_);
@@ -398,7 +398,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     void StartWrite(const EchoRequest& request) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       write_msg_ = request;
       if (status_.has_value() || write_state_ == OpState::kFailed ||
           read_state_ == OpState::kFailed) {
@@ -411,7 +411,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     bool WaitForWrite(absl::Duration timeout = absl::Seconds(10)) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       const absl::Time deadline =
           absl::Now() + timeout * grpc_test_slowdown_factor();
       while (write_state_ != OpState::kSuccess &&
@@ -424,7 +424,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     void StartWritesDone() {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       if (status_.has_value() || write_state_ == OpState::kFailed ||
           read_state_ == OpState::kFailed) {
         return;
@@ -433,7 +433,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     void StartReadMessage() {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       read_msg_.Clear();
       if (status_.has_value() || write_state_ == OpState::kFailed ||
           read_state_ == OpState::kFailed) {
@@ -447,7 +447,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     std::optional<EchoResponse> WaitForRead(
         absl::Duration timeout = absl::Seconds(10)) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       const absl::Time deadline =
           absl::Now() + timeout * grpc_test_slowdown_factor();
       while (read_state_ != OpState::kSuccess &&
@@ -470,7 +470,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
     std::optional<Status> WaitForStatus(
         absl::Duration timeout = absl::Seconds(10)) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       const absl::Time deadline =
           absl::Now() + timeout * grpc_test_slowdown_factor();
       while (!status_.has_value()) {
@@ -500,7 +500,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     bool WaitForInitialMetadata(absl::Duration timeout = absl::Seconds(10)) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       const absl::Time deadline =
           absl::Now() + timeout * grpc_test_slowdown_factor();
       while (initial_metadata_state_ == MetadataState::kPending &&
@@ -513,26 +513,26 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     }
 
     void OnReadInitialMetadataDone(bool ok) override {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       initial_metadata_state_ =
           ok ? MetadataState::kSuccess : MetadataState::kFailed;
       cv_.SignalAll();
     }
 
     void OnWriteDone(bool ok) override {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       write_state_ = ok ? OpState::kSuccess : OpState::kFailed;
       cv_.SignalAll();
     }
 
     void OnReadDone(bool ok) override {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       read_state_ = ok ? OpState::kSuccess : OpState::kFailed;
       cv_.SignalAll();
     }
 
     void OnDone(const Status& status) override {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       status_ = status;
       cv_.SignalAll();
     }
