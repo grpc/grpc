@@ -276,26 +276,6 @@ index cb181f8..61a92ae 100644
          name = name + "_smoketest",
          srcs = srcs,
          deps = deps + ["@com_github_google_benchmark//:benchmark"],
-diff --git a/bazel/zlib.BUILD b/bazel/zlib.BUILD
-index 676de88..a9ef9f6 100644
---- a/bazel/zlib.BUILD
-+++ b/bazel/zlib.BUILD
-@@ -4,6 +4,8 @@
- # Builds ZLIB from a distribution.
- # Copied from https://github.com/protocolbuffers/protobuf/blob/master/third_party/zlib.BUILD
- 
-+load("@rules_cc//cc:cc_library.bzl", "cc_library")
-+
- licenses(["notice"])  # BSD/MIT-like license (for zlib)
- 
- exports_files(["zlib.BUILD"])
-@@ -71,4 +73,4 @@ cc_library(
-     }),
-     includes = ["zlib/include/"],
-     visibility = ["//visibility:public"],
--)
-\ No newline at end of file
-+)
 diff --git a/examples/batch/BUILD b/examples/batch/BUILD
 index c5db0f4..557b5b6 100644
 --- a/examples/batch/BUILD
