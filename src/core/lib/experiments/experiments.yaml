@@ -169,6 +169,11 @@
   expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
+- name: internal_fix
+  description: Gate for the internal fix.
+  expiry: 2026/10/31
+  owner: bpawan@google.com
+  test_tags: []
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
@@ -181,6 +186,13 @@
   expiry: 2027/01/16
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
+- name: map_host_header_to_authority
+  description:
+    Map the HTTP host header directly to HttpAuthorityMetadata and reject
+    duplicate host/authority headers.
+  expiry: 2027/07/01
+  owner: rishesh@google.com
+  test_tags: []
 - name: memory_optimization_01
   description: Memory Optimization
   expiry: 2026/10/30
@@ -283,7 +295,7 @@
   allow_in_fuzzing_config: true
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
-  expiry: 2026/10/01
+  expiry: 2027/02/01
   owner: roth@google.com
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
@@ -344,6 +356,11 @@
   expiry: 2027/01/16
   owner: pragunsaxena@google.com
   test_tags: []
+- name: ring_hash_update_cleanup
+  description: Clean up update logic in ring_hash LB policy.
+  expiry: 2027/01/16
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "xds_end2end_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2027/01/16
@@ -433,7 +450,7 @@
   test_tags: ["core_end2end_test"]
 - name: xds_server_filter_chain_per_route
   description: xDS servers use a separate filter chain for each route.
-  expiry: 2026/10/01
+  expiry: 2026/10/31
   owner: roth@google.com
   test_tags: ["xds_end2end_test", "xds_test"]
   requires: ["v2_non_owning_waker_implementation"]

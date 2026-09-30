@@ -29,8 +29,9 @@
 #include "absl/log/initialize.h"
 
 #ifdef BAZEL_BUILD
+#include <grpc/health/v1/health.grpc.pb.h>
+
 #include "examples/protos/helloworld.grpc.pb.h"
-#include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #else
 #include "health.grpc.pb.h"
 #include "helloworld.grpc.pb.h"

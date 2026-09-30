@@ -51,7 +51,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> GetPicker() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     while (picker_ == nullptr) {
       cv_.Wait(&mu_);
     }
@@ -60,7 +60,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
 
   void UpdateLbPolicy(size_t num_endpoints) {
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       picker_ = nullptr;
       work_serializer_->Run([this, num_endpoints]() {
         EndpointAddressesList addresses;
@@ -97,7 +97,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
 
     void CancelConnectivityStateWatch(
         ConnectivityStateWatcherInterface* watcher) override {
-      MutexLock lock(&helper_->mu_);
+      MutexLock lock(helper_->mu_);
       helper_->connectivity_watchers_.erase(watcher);
     }
 
@@ -126,7 +126,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
     void AddConnectivityWatcherInternal(
         std::shared_ptr<ConnectivityStateWatcherInterface> watcher) {
       {
-        MutexLock lock(&helper_->mu_);
+        MutexLock lock(helper_->mu_);
         helper_->work_serializer_->Run([watcher]() {
           watcher->OnConnectivityStateChange(GRPC_CHANNEL_READY,
                                              absl::OkStatus());
@@ -151,7 +151,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
     void UpdateState(
         grpc_connectivity_state state, const absl::Status& status,
         RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
-      MutexLock lock(&helper_->mu_);
+      MutexLock lock(helper_->mu_);
       helper_->picker_ = std::move(picker);
       helper_->cv_.SignalAll();
     }

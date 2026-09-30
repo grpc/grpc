@@ -33,7 +33,7 @@ def generate_run_tests_portability_tests(name):
     # portability C x86
     grpc_run_tests_harness_test(
         name = "runtests_c_linux_dbg_x86_build_only",
-        args = ["-l c -c dbg --build_only"],
+        args = ["-l c --arch x86 -c dbg --build_only"],
         docker_image_version = "tools/dockerfile/test/cxx_debian12_x86.current_version",
         size = "enormous",
     )
@@ -55,7 +55,6 @@ def generate_run_tests_portability_tests(name):
         compiler_configs = [
             ["gcc_10", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF", "tools/dockerfile/test/cxx_gcc_10_x64.current_version"],
             ["gcc_14_cxx20", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_14_x64.current_version"],
-            ["gcc10.2_openssl102", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl102_x64.current_version"],
             ["gcc10.2_openssl111", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl111_x64.current_version"],
             ["gcc_12_openssl309", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian12_openssl309_x64.current_version"],
             ["gcc_musl", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17", "tools/dockerfile/test/cxx_alpine_x64.current_version"],

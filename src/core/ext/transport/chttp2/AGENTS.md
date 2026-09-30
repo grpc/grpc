@@ -151,7 +151,6 @@ TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 
 ## 4. Unused or TBD Files
 
-*   Not used by either transport: `bin_decoder.{h,cc}`
 *   TBD (ETA 2025-10-30):
     *   `call_tracer_wrapper.{h,cc}`
     *   `http2_stats_collector.{h,cc}`

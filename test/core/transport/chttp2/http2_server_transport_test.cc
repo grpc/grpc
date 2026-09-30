@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -48,6 +49,7 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
@@ -111,12 +113,15 @@ class Http2ServerTransportTest : public Http2TransportTest {
         /*on_close_callback=*/nullptr);
   }
 
-  void SpawnTransportLoopsAndExchangeSettings() {
+  void SpawnTransportLoopsAndExchangeSettings(
+      const std::optional<std::vector<Http2SettingsFrame::Setting>>&
+          expected_server_settings = std::nullopt) {
     ExecCtx ctx;
-    std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+    const std::shared_ptr<EventSequenceEndpoint::Step> step =
+        endpoint()->NewStep();
     server_transport_->SetCallDestination(
         MakeRefCounted<TestCallDestination>(this));
-    AddTransportStartExpectations(step.get());
+    AddTransportStartExpectations(step.get(), expected_server_settings);
     step->Wait();
     // This tick ensures that settings ack is read by the ReadLoop. This is
     // needed as the ReadLoop stalls after reading the first settings frame and
@@ -124,15 +129,22 @@ class Http2ServerTransportTest : public Http2TransportTest {
     event_engine()->Tick();
   }
 
-  void AddTransportStartExpectations(EventSequenceEndpoint::Step* step) {
+  void AddTransportStartExpectations(
+      EventSequenceEndpoint::Step* step,
+      const std::optional<std::vector<Http2SettingsFrame::Setting>>&
+          expected_server_settings = std::nullopt) {
     step->ThenPerformRead({
         EventEngineSlice(
             grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
         helper_.SerializedDefaultClientSettingsFrame(),
     });
 
-    step->ThenExpectWrite({helper_.SerializedDefaultServerSettingsFrame(),
-                           helper_.SerializedSettingsFrameAck()});
+    step->ThenExpectWrite({
+        expected_server_settings.has_value()
+            ? helper_.SerializedSettingsFrame(*expected_server_settings)
+            : helper_.SerializedDefaultServerSettingsFrame(),
+        helper_.SerializedSettingsFrameAck(),
+    });
 
     step->ThenPerformRead({
         helper_.SerializedSettingsFrameAck(),
@@ -1046,6 +1058,292 @@ TEST_F(Http2ServerTransportTest, PingOnRstStreamTest) {
   step2->Wait();
 }
 
+TEST_F(Http2ServerTransportTest, TestIfBdpPingIsSentWhenDataIsReceived) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, true)
+                    // Disable all sources of pings except for BDP.
+                    .Set("grpc.http2.ping_on_rst_stream_percent", 0)
+                    .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // The call handler does not write anything back to the client. It just keeps
+  // the stream open till the transport is closed.
+  auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](bool cancelled) {
+                                   EXPECT_TRUE(cancelled);
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  // Client opens stream 1. No frames are expected to be written by the server.
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+  // Client sends a DATA frame. This is the only trigger needed for a BDP ping.
+  step->ThenPerformRead({
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+  });
+
+  step->ThenExpectWrite([](SliceBuffer& buffer) {
+    // The BDP PING is coalesced with the window updates for the DATA frame
+    // that triggered it. The increments are flow control accounting details,
+    // so they are deliberately not asserted here.
+    EXPECT_THAT(ParseFrames(buffer),
+                ::testing::ElementsAre(IsPingFrame(/*ack=*/false),
+                                       IsWindowUpdateFrame(/*stream_id=*/0),
+                                       IsWindowUpdateFrame(/*stream_id=*/1)));
+  });
+  step->Wait();
+
+  // Teardown the transport. The call handler never finishes the stream, so
+  // stream 1 is still open. The transport resets it in the same write batch
+  // as the GOAWAY. AddTransportCloseExpectations is not used here because it
+  // only expects the GOAWAY.
+  std::shared_ptr<EventSequenceEndpoint::Step> step_close =
+      endpoint()->NewStep();
+  step_close->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  step_close->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  step_close->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestBdpPingIsSentWithStreamWithoutAck) {
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, true)
+                    // Disable all sources of pings except for BDP.
+                    .Set("grpc.http2.ping_on_rst_stream_percent", 0)
+                    .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  auto step1 = endpoint()->NewStep();
+
+  auto factory_factory = [](CallHandler call_handler) {
+    LOG(INFO) << "New stream created on the server";
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle metadata) mutable {
+            LOG(INFO) << "Client initial metadata: " << metadata->DebugString();
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.PullMessage(),
+                       [](auto msg) { return absl::OkStatus(); });
+          },
+          [call_handler]() mutable {
+            MessageHandle message = Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromExternalString(kString1)), 0);
+            return call_handler.PushMessage(std::move(message));
+          },
+          [call_handler]() mutable {
+            return call_handler.PushServerTrailingMetadata(
+                ServerMetadataFromStatus(absl::CancelledError()));
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  // Client sends a header frame.
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+
+  step1->ThenExpectWrite({
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+
+  auto step2 = endpoint()->NewStep();
+  // Client sends a data frame.
+  step2->ThenPerformRead({
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+  });
+
+  // The BDP write cycle is a write batch of its own. It carries only the BDP
+  // PING and the window updates for the DATA frame that triggered it. The
+  // application frames are not ready yet at this point.
+  step2->ThenExpectWrite([&, step2](SliceBuffer& buffer) {
+    const uint64_t opaque_id =
+        VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+    // We do not read a PING ACK, because that will trigger CompleteBdpPing
+    // which is a very time sensitive API and not suitable for this test suite.
+
+    SliceBuffer expected;
+    auto add_expected = [&](transport::testing::EventEngineSlice slice) {
+      expected.Append(Slice(grpc_slice_copy(slice.c_slice())));
+    };
+
+    add_expected(helper_.SerializedPingFrame(/*ack=*/false, opaque_id));
+    add_expected(helper_.SerializedWindowUpdateFrame(/*stream_id=*/0,
+                                                     /*increment=*/21));
+    add_expected(helper_.SerializedWindowUpdateFrame(/*stream_id=*/1,
+                                                     /*increment=*/22));
+
+    EXPECT_EQ(buffer.JoinIntoString(), expected.JoinIntoString());
+    buffer.Clear();
+  });
+
+  // The application frames are flushed in the next write batch. The leading
+  // transport window update is the residual announce delta. It is emitted
+  // because MaybeAddTransportWindowUpdateFrame always passes
+  // writing_anyway=true. See the known limitation documented there.
+  step2->ThenExpectWrite({
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0, /*increment=*/1),
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusCancelled.begin(), kGrpcStatusCancelled.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  step2->Wait();
+
+  // Teardown the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step3.get(), /*last_stream_id=*/1);
+  step3->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestBdpProbeEnabledWithAck) {
+  // This test MIGHT run into trouble because BDP code is time sensitive.
+  // Disable it if it flakes on Kokoro.
+  // Already tested 10k times locally, but Kokoro is very different.
+  ExecCtx ctx;
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP2_BDP_PROBE, true)
+                    // Disable all sources of pings except for BDP.
+                    .Set("grpc.http2.ping_on_rst_stream_percent", 0)
+                    .Set(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  auto step1 = endpoint()->NewStep();
+
+  auto factory_factory = [](CallHandler call_handler) {
+    LOG(INFO) << "New stream created on the server";
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle metadata) mutable {
+            LOG(INFO) << "Client initial metadata: " << metadata->DebugString();
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.PullMessage(),
+                       [](auto msg) { return absl::OkStatus(); });
+          },
+          [call_handler]() mutable {
+            MessageHandle message = Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromExternalString(kString1)), 0);
+            return call_handler.PushMessage(std::move(message));
+          },
+          [call_handler]() mutable {
+            return call_handler.PushServerTrailingMetadata(
+                ServerMetadataFromStatus(absl::CancelledError()));
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  // Client sends a header frame.
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
+  });
+
+  step1->ThenExpectWrite({
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+
+  auto step2 = endpoint()->NewStep();
+  // Client sends a data frame.
+  step2->ThenPerformRead({
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+  });
+
+  // The BDP write cycle is a write batch of its own. It carries only the BDP
+  // PING and the window updates for the DATA frame that triggered it. The
+  // application frames are not ready yet at this point.
+  step2->ThenExpectWrite([&, step2](SliceBuffer& buffer) {
+    const uint64_t opaque_id =
+        VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
+    step2->InsertReadAtHead(
+        {helper_.SerializedPingFrame(/*ack=*/true,
+                                     /*opaque=*/opaque_id)});
+
+    SliceBuffer expected;
+    auto add_expected = [&](transport::testing::EventEngineSlice slice) {
+      expected.Append(Slice(grpc_slice_copy(slice.c_slice())));
+    };
+
+    add_expected(helper_.SerializedPingFrame(/*ack=*/false, opaque_id));
+    add_expected(helper_.SerializedWindowUpdateFrame(/*stream_id=*/0,
+                                                     /*increment=*/21));
+    add_expected(helper_.SerializedWindowUpdateFrame(/*stream_id=*/1,
+                                                     /*increment=*/22));
+
+    EXPECT_EQ(buffer.JoinIntoString(), expected.JoinIntoString());
+    buffer.Clear();
+  });
+  step2->Wait();
+
+  // The PING ACK completes the BDP round. The BDP estimate grows, so the
+  // transport re-advertises its window. The application frames are flushed in
+  // this same batch.
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
+  step3->ThenExpectWrite({
+      helper_.SerializedSettingsFrame(
+          {{Http2Settings::kInitialWindowSizeWireId, 4194304},
+           {Http2Settings::kMaxFrameSizeWireId, 4194304}}),
+      helper_.SerializedWindowUpdateFrame(/*stream_id=*/0,
+                                          /*increment=*/4128770),
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1, /*end_stream=*/false),
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusCancelled.begin(), kGrpcStatusCancelled.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  step3->Wait();
+
+  // Teardown the transport.
+  std::shared_ptr<EventSequenceEndpoint::Step> step4 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step4.get(), /*last_stream_id=*/1);
+  step4->Wait();
+}
+
 TEST_F(Http2ServerTransportTest, TestNextAllowedPingIntervalKeepaliveEnabled) {
   ExecCtx ctx;
   InitTransport(GetChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS, 1000));
@@ -1398,30 +1696,13 @@ TEST_F(Http2ServerTransportTest,
   ExecCtx ctx;
   InitTransport(GetChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
 
-  const std::shared_ptr<EventSequenceEndpoint::Step> handshake_step =
-      endpoint()->NewStep();
-  server_transport()->SetCallDestination(
-      MakeRefCounted<TestCallDestination>(this));
-  handshake_step->ThenPerformRead({
-      EventEngineSlice(
-          grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-      helper_.SerializedDefaultClientSettingsFrame(),
-  });
   const std::vector<Http2SettingsFrame::Setting> server_settings = {
       {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
       {Http2Settings::kInitialWindowSizeWireId, 65535u},
       {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
       {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
   };
-  handshake_step->ThenExpectWrite({
-      helper_.SerializedSettingsFrame(server_settings),
-      helper_.SerializedSettingsFrameAck(),
-  });
-  handshake_step->ThenPerformRead({
-      helper_.SerializedSettingsFrameAck(),
-  });
-  handshake_step->Wait();
-  event_engine()->Tick();
+  SpawnTransportLoopsAndExchangeSettings(server_settings);
 
   const auto factory_factory = [](CallHandler call_handler) {
     return [call_handler]() mutable {
@@ -1487,6 +1768,7 @@ TEST_F(Http2ServerTransportTest, TestServerStreamFlowControlWindowUpdate) {
   InitTransport(
       GetChannelArgs()
           .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max())
+          .Set(GRPC_ARG_HTTP2_BDP_PROBE, false)
           .Set(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES, 8192));
 
   // Step 2: Exchange settings, expecting the server to advertise
@@ -1584,6 +1866,998 @@ TEST_F(Http2ServerTransportTest, TestServerStreamFlowControlWindowUpdate) {
   });
   close_transport_step->Wait();
 }
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportMonotonicStreamIdValidationFails) {
+  // Based on CHTTP2's init_header_skip_frame_parser in parsing.cc:693-699:
+  // Verifies that the server tracks increasing incoming stream IDs
+  // and updates last_incoming_stream_id accordingly. Verifies
+  // that a non-monotonically increasing stream ID (e.g. 1 after 3) is ignored
+  // (headers parsed & discarded to keep HPACK in sync) rather than terminating
+  // the connection with PROTOCOL_ERROR, leaving active stream 3 intact.
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport and complete the initial settings handshake.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+  EXPECT_EQ(server_transport()->TestOnlyLastIncomingStreamId(), 0u);
+
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  });
+
+  // Step 2: Client initiates stream 3.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Verify that last_incoming_stream_id is updated to 3.
+  EXPECT_EQ(server_transport()->TestOnlyLastIncomingStreamId(), 3u);
+
+  // Step 3: Client sends a HEADERS frame for stream 1 (out of order, 1 <= 3).
+  // Following CHTTP2, the server parses & discards the headers to keep HPACK
+  // in sync, but emits NO write frames (no GOAWAY, no RST_STREAM).
+  // Active stream 3 and the connection remain intact.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Verify that the invalid out-of-order stream 1 did not overwrite
+  // last_incoming_stream_id.
+  EXPECT_EQ(server_transport()->TestOnlyLastIncomingStreamId(), 3u);
+
+  // Step 4: Teardown the transport. Verify that active stream 3 remained intact
+  // and is reset by the server upon transport closure.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  teardown_step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  teardown_step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/3u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportMaxConcurrentStreamsExceeded) {
+  // Verifies that when the number of active streams reaches
+  // MAX_CONCURRENT_STREAMS, the server rejects new incoming streams by sending
+  // a RST_STREAM frame.
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport with MAX_CONCURRENT_STREAMS = 1.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
+
+  const std::vector<Http2SettingsFrame::Setting> server_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
+      {Http2Settings::kInitialWindowSizeWireId, 65535u},
+      {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+  };
+  SpawnTransportLoopsAndExchangeSettings(server_settings);
+
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  });
+
+  // Step 2: Client initiates Stream 1, which becomes active.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Client attempts to initiate Stream 3 while Stream 1 is still
+  // active. Since active stream count (1) >= max_concurrent_streams (1), the
+  // server must reject Stream 3 with a RST_STREAM frame with error code
+  // REFUSED_STREAM.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kRefusedStream)),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Teardown the transport
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  teardown_step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  teardown_step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/3u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportHighMemoryPressureRejectsStream) {
+  // Verifies that under high memory pressure, incoming streams are
+  // rejected with a stream error (RST_STREAM with ENHANCE_YOUR_CALM), leaving
+  // the transport connection healthy and intact.
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport with a resource quota configured for high
+  // memory pressure.
+  const ResourceQuotaRefPtr resource_quota =
+      MakeResourceQuota("test_memory_pressure");
+  resource_quota->memory_quota()->SetSize(0u);
+  InitTransport(GetChannelArgs().SetObject(resource_quota));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Client sends a HEADERS frame for stream 1.
+  // The server rejects the stream due to high memory pressure and responds with
+  // a RST_STREAM frame with error code ENHANCE_YOUR_CALM.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Teardown the transport.
+  // No active streams to reset, expects GOAWAY.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportOverloadProtectionRejectsStream) {
+  // Verifies that when overload protection is enabled (default), reducing the
+  // server's local MAX_CONCURRENT_STREAMS setting causes new incoming streams
+  // that exceed that local limit to be rejected with RST_STREAM.
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport and complete the initial settings handshake.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  });
+
+  // Step 2: Client initiates Stream 1, which is accepted and becomes active.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Simulate server overload by reducing the local
+  // MAX_CONCURRENT_STREAMS limit to 1. The acknowledged limit remains default
+  // unlimited.
+  server_transport()->TestOnlySetLocalMaxConcurrentStreams(1u);
+
+  // Step 4: Client initiates Stream 3 while Stream 1 is still active.
+  // Active stream count (1) >= local max_concurrent_streams (1). Overload
+  // protection triggers and rejects Stream 3 with RST_STREAM (REFUSED_STREAM).
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  const std::vector<Http2SettingsFrame::Setting> updated_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
+  };
+  step2->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kRefusedStream)),
+      helper_.SerializedSettingsFrame(updated_settings),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Step 5: Teardown the transport. Active stream 1 is reset and GOAWAY is
+  // sent.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  teardown_step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  teardown_step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/3u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportOverloadProtectionDisabledAcceptsStream) {
+  // Verifies that when overload protection is explicitly disabled via channel
+  // args (GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION = false),
+  // reducing the server's local MAX_CONCURRENT_STREAMS setting does not cause
+  // new incoming streams exceeding that limit to be rejected, as long as the
+  // peer's acknowledged limit has not been exceeded.
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport with overload protection disabled and complete
+  // the initial settings handshake.
+  InitTransport(
+      GetChannelArgs()
+          .Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false)
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false)
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max()));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  });
+
+  // Step 2: Client initiates Stream 1, which is accepted and becomes active.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Reduce the local MAX_CONCURRENT_STREAMS limit to 1 and flush the
+  // updated settings frame to the peer. The acknowledged limit remains default
+  // unlimited.
+  server_transport()->TestOnlySetLocalMaxConcurrentStreams(1u);
+  const std::shared_ptr<EventSequenceEndpoint::Step> settings_step =
+      endpoint()->NewStep();
+  const std::vector<Http2SettingsFrame::Setting> updated_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
+  };
+  settings_step->ThenExpectWrite({
+      helper_.SerializedSettingsFrame(updated_settings),
+  });
+  EXPECT_TRUE(server_transport()->TestOnlyTriggerWriteCycle().ok());
+  settings_step->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Client initiates Stream 3 while Stream 1 is still active.
+  // Although active stream count (1) >= local max_concurrent_streams (1),
+  // overload protection is disabled, so Stream 3 is accepted without sending a
+  // RST_STREAM frame.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Step 5: Cleanly close active streams (Stream 1 and Stream 3).
+  const std::shared_ptr<EventSequenceEndpoint::Step> step3 =
+      endpoint()->NewStep();
+  step3->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kCancel)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kCancel)),
+  });
+  step3->Wait();
+  event_engine()->Tick();
+
+  // Step 6: Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  teardown_step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  teardown_step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/3u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportStreamRejectedBeforeSettingsAckReceived) {
+  // Verifies that when the client has not acknowledged the server's
+  // initial settings, the server limits the number of incoming streams.
+  // Any stream received beyond that quota before the settings ACK is received
+  // is rejected with RST_STREAM (ENHANCE_YOUR_CALM), leaving existing streams
+  // and the connection intact.
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport with MAX_CONCURRENT_STREAMS = 1.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> handshake_step =
+      endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  handshake_step->ThenPerformRead({
+      EventEngineSlice(
+          grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      helper_.SerializedDefaultClientSettingsFrame(),
+  });
+  const std::vector<Http2SettingsFrame::Setting> server_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
+      {Http2Settings::kInitialWindowSizeWireId, 65535u},
+      {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+  };
+  // Server sends its settings frame and ACKs client's settings frame.
+  // Note: Client intentionally does NOT send a SETTINGS ACK in response.
+  handshake_step->ThenExpectWrite({
+      helper_.SerializedSettingsFrame(server_settings),
+      helper_.SerializedSettingsFrameAck(),
+  });
+  handshake_step->Wait();
+  event_engine()->Tick();
+
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  });
+
+  // Step 2: Client initiates Stream 1 before sending SETTINGS ACK.
+  // Quota is 1, so Stream 1 is accepted, and
+  // num_incoming_streams_before_settings_ack_ decrements to 0.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Client attempts to initiate Stream 3 without having acknowledged
+  // the server's settings frame. Since
+  // num_incoming_streams_before_settings_ack_ is 0, the server rejects Stream 3
+  // with a RST_STREAM frame with error code ENHANCE_YOUR_CALM.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Teardown the transport. Active stream 1 is reset and GOAWAY is
+  // sent.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  teardown_step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  teardown_step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/3u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportStreamAcceptedAfterSettingsAck) {
+  // Verifies that when the incoming streams quota before settings ACK is set
+  // (e.g., to 2), the client can open up to 2 streams before acknowledging
+  // settings. Once the client acknowledges the server's initial settings, the
+  // quota restriction is lifted, allowing subsequent streams (the 3rd stream)
+  // to be accepted.
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport with MAX_CONCURRENT_STREAMS = 2 and tarpit
+  // disabled so RST_STREAM immediately closes streams.
+  InitTransport(GetChannelArgs()
+                    // Disable tarpitting to ensure RST_STREAM immediately
+                    // closes streams
+                    .Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false)
+                    .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 2));
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> handshake_step =
+      endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  handshake_step->ThenPerformRead({
+      EventEngineSlice(
+          grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      helper_.SerializedDefaultClientSettingsFrame(),
+  });
+  const std::vector<Http2SettingsFrame::Setting> server_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 2u},
+      {Http2Settings::kInitialWindowSizeWireId, 65535u},
+      {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+  };
+  // Server sends its settings frame and ACKs client's settings frame.
+  // Note: Client intentionally does NOT send a SETTINGS ACK in response yet.
+  handshake_step->ThenExpectWrite({
+      helper_.SerializedSettingsFrame(server_settings),
+      helper_.SerializedSettingsFrameAck(),
+  });
+  handshake_step->Wait();
+  event_engine()->Tick();
+
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  });
+
+  // Step 2: Client initiates Stream 1 (1st stream) before sending SETTINGS ACK.
+  // Pre-settings-ACK quota is 2, so Stream 1 is accepted, and
+  // num_incoming_streams_before_settings_ack_ decrements to 1.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Client initiates Stream 3 (2nd stream) before sending SETTINGS ACK.
+  // Pre-settings-ACK quota is 1, so Stream 3 is accepted, and
+  // num_incoming_streams_before_settings_ack_ decrements to 0.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Client resets Stream 1.
+  // Active stream count drops from 2 to 1 (only Stream 3 remains active).
+  // Note: Even though active stream count is 1 (< MAX_CONCURRENT_STREAMS = 2),
+  // without SETTINGS ACK, any new stream would still be rejected with
+  // ENHANCE_YOUR_CALM because the pre-settings-ACK quota is exhausted (0).
+  const std::shared_ptr<EventSequenceEndpoint::Step> step3 =
+      endpoint()->NewStep();
+  step3->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kCancel)),
+  });
+  step3->Wait();
+  event_engine()->Tick();
+
+  // Step 5: Client sends SETTINGS ACK for the server's initial settings.
+  // Server calls OnSettingsAckReceived(), resetting
+  // num_incoming_streams_before_settings_ack_ to max uint32_t.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step4 =
+      endpoint()->NewStep();
+  step4->ThenPerformRead({
+      helper_.SerializedSettingsFrameAck(),
+  });
+  step4->Wait();
+  event_engine()->Tick();
+
+  // Step 6: Client initiates Stream 5 (3rd stream).
+  // Since SETTINGS ACK was processed, the quota restriction is lifted and
+  // active stream count (1) < MAX_CONCURRENT_STREAMS (2).
+  // The server accepts Stream 5 without sending a RST_STREAM.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step5 =
+      endpoint()->NewStep();
+  step5->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/5u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step5->Wait();
+  event_engine()->Tick();
+
+  // Step 7: Cleanly close active streams (Stream 3 and Stream 5).
+  const std::shared_ptr<EventSequenceEndpoint::Step> step6 =
+      endpoint()->NewStep();
+  step6->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kCancel)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/5u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kCancel)),
+  });
+  step6->Wait();
+  event_engine()->Tick();
+
+  // Step 8: Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  teardown_step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  teardown_step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/5u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportStreamRejectionDoesNotBurnPreSettingsAckQuota) {
+  // Verifies that when an incoming stream before the first SETTINGS ACK is
+  // refused due to high memory pressure, it does not burn a unit of the
+  // pre-SETTINGS-ACK stream quota. Once memory pressure is relieved, the client
+  // can still open streams up to the configured pre-SETTINGS-ACK quota.
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport with MAX_CONCURRENT_STREAMS = 1 and a resource
+  // quota configured with 0 size (high memory pressure).
+  const ResourceQuotaRefPtr resource_quota =
+      MakeResourceQuota("test_memory_pressure");
+  resource_quota->memory_quota()->SetSize(0u);
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
+                    .SetObject(resource_quota));
+
+  const std::shared_ptr<EventSequenceEndpoint::Step> handshake_step =
+      endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  handshake_step->ThenPerformRead({
+      EventEngineSlice(
+          grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      helper_.SerializedDefaultClientSettingsFrame(),
+  });
+  const std::vector<Http2SettingsFrame::Setting> server_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
+      {Http2Settings::kInitialWindowSizeWireId, 65535u},
+      {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+  };
+  // Server sends its settings frame and ACKs client's settings frame.
+  // Note: Client intentionally does NOT send a SETTINGS ACK in response.
+  handshake_step->ThenExpectWrite({
+      helper_.SerializedSettingsFrame(server_settings),
+      helper_.SerializedSettingsFrameAck(),
+  });
+  handshake_step->Wait();
+  event_engine()->Tick();
+
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  });
+
+  // Step 2: Client sends a HEADERS frame for Stream 1 before SETTINGS ACK.
+  // Due to high memory pressure, Stream 1 is rejected with RST_STREAM
+  // (ENHANCE_YOUR_CALM). Because it was refused by memory pressure, it must NOT
+  // decrement the pre-SETTINGS-ACK quota (which remains 1).
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // Step 3: Relieve high memory pressure.
+  resource_quota->memory_quota()->SetSize(1024u * 1024u * 1024u);
+
+  // Step 4: Client initiates Stream 3 before sending SETTINGS ACK.
+  // Since Stream 1 did not burn the pre-SETTINGS-ACK quota, the quota is still
+  // 1. Stream 3 is accepted, decrementing the quota to 0.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Step 5: Client initiates Stream 5 before sending SETTINGS ACK.
+  // Since the quota was consumed by Stream 3 and is now 0, Stream 5 is rejected
+  // with RST_STREAM (ENHANCE_YOUR_CALM).
+  const std::shared_ptr<EventSequenceEndpoint::Step> step3 =
+      endpoint()->NewStep();
+  step3->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/5u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step3->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/5u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kEnhanceYourCalm)),
+  });
+  step3->Wait();
+  event_engine()->Tick();
+
+  // Step 6: Teardown the transport. Active Stream 3 is reset and GOAWAY is
+  // sent.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  teardown_step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
+  teardown_step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kConnectionClosed, /*last_stream_id=*/5u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3u,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestServerGracefulGoAwayRefusedStreamNotReportedInFinalGoaway) {
+  // Verifies that when an incoming stream is refused (e.g. exceeds
+  // MAX_CONCURRENT_STREAMS) while a graceful GOAWAY ping is pending, the
+  // final GOAWAY frame reports last_accepted_stream_id (Stream 1) rather than
+  // last_incoming_stream_id (Stream 3).
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport with MAX_CONCURRENT_STREAMS = 1 and tarpit
+  // disabled.
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false)
+                    .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
+
+  const std::vector<Http2SettingsFrame::Setting> server_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
+      {Http2Settings::kInitialWindowSizeWireId, 65535u},
+      {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+  };
+  SpawnTransportLoopsAndExchangeSettings(server_settings);
+
+  // Step 2: Client initiates Stream 1, which is accepted and becomes active.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            return Map(call_handler.WasCancelled(),
+                       [](bool) { return absl::OkStatus(); });
+          });
+    };
+  });
+
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+  step1->ThenExpectWrite({
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+
+  // Step 3: Trigger graceful GOAWAY. Server sends initial GOAWAY frame with
+  // last_stream_id = 2^31 - 1 and initiates an RTT ping.
+  uint64_t ping_opaque_id = 0u;
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenExpectWrite(
+      [&, expected_goaway = helper_.SerializedGoawayFrame(
+              /*debug_data=*/kGoawayDebugData,
+              /*last_stream_id=*/RFC9113::kMaxStreamId31Bit,
+              /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))](
+          SliceBuffer& buffer) mutable {
+        Slice joined = buffer.JoinIntoSlice();
+        const size_t goaway_len = expected_goaway.length();
+        EXPECT_GE(joined.length(), goaway_len + 17u);
+        EXPECT_EQ(absl::string_view(
+                      reinterpret_cast<const char*>(joined.data()), goaway_len),
+                  expected_goaway.as_string_view());
+
+        Slice ping_slice =
+            Slice::FromCopiedBuffer(joined.as_string_view().substr(goaway_len));
+        SliceBuffer ping_buffer;
+        ping_buffer.Append(std::move(ping_slice));
+        ping_opaque_id =
+            VerifyPingFrameAndReturnOpaqueId(ping_buffer, /*is_ack=*/false);
+      });
+
+  grpc_transport_op* const op = grpc_make_transport_op(nullptr);
+  op->goaway_error = absl::UnavailableError(kGoawayDebugData);
+  server_transport()->PerformOp(op);
+
+  step2->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Client attempts to initiate Stream 3 while RTT ping is pending.
+  // Since active stream count (1) >= MAX_CONCURRENT_STREAMS (1), Stream 3 is
+  // refused with RST_STREAM (REFUSED_STREAM).
+  // Although last_incoming_stream_id becomes 3, last_accepted_stream_id remains
+  // 1.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step3 =
+      endpoint()->NewStep();
+  step3->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3u,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+  step3->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/3u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kRefusedStream)),
+  });
+  step3->Wait();
+  event_engine()->Tick();
+
+  // Step 5: Client responds with PING ACK. Verify the server writes the final
+  // GOAWAY frame with last_stream_id = 1 (last_accepted_stream_id), NOT 3.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step4 =
+      endpoint()->NewStep();
+  step4->ThenPerformRead({
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/ping_opaque_id),
+  });
+  step4->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"Server is stopping to serve requests.",
+          /*last_stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  step4->Wait();
+
+  // Step 6: Close active Stream 1. Verify connection closes cleanly.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step5 =
+      endpoint()->NewStep();
+  step5->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+  });
+  step5->Wait();
+  event_engine()->Tick();
+}
+TEST_F(Http2ServerTransportTest,
+       TestHttp2ServerTransportOutOfOrderStreamIgnoredAndConnectionSurvives) {
+  // Based on CHTTP2's init_header_skip_frame_parser in parsing.cc:693-699:
+  // Verifies that when a HEADERS frame with stream_id <=
+  // last_incoming_stream_id is received for a non-existent stream, the server
+  // ignores the frame, parses and discards the headers to keep HPACK in sync,
+  // and leaves the connection and active streams intact (no connection-level
+  // PROTOCOL_ERROR).
+  ExecCtx ctx;
+
+  // Step 1: Initialize transport with MAX_CONCURRENT_STREAMS = 1.
+  InitTransport(GetChannelArgs()
+                    .Set(GRPC_ARG_HTTP_ALLOW_TARPIT, false)
+                    .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
+
+  const std::vector<Http2SettingsFrame::Setting> server_settings = {
+      {Http2Settings::kMaxConcurrentStreamsWireId, 1u},
+      {Http2Settings::kInitialWindowSizeWireId, 65535u},
+      {Http2Settings::kMaxHeaderListSizeWireId, DEFAULT_MAX_HEADER_LIST_SIZE},
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true},
+  };
+  SpawnTransportLoopsAndExchangeSettings(server_settings);
+
+  // Step 2: Client initiates Stream 1, which is accepted and becomes active.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  AddStream([](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+                      return Map(call_handler.WasCancelled(),
+                                 [](const bool /*cancelled*/) -> absl::Status {
+                                   return absl::OkStatus();
+                                 });
+                    });
+    };
+  });
+
+  step1->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step1->Wait();
+  event_engine()->Tick();
+
+  EXPECT_EQ(server_transport()->TestOnlyLastIncomingStreamId(), 1u);
+
+  // Step 3: Client attempts to open Stream 5. Saturated concurrency causes
+  // Stream 5 to be refused with RST_STREAM (REFUSED_STREAM).
+  // last_incoming_stream_id advances to 5.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/5u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/5u,
+          /*error_code=*/
+          Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kRefusedStream)),
+  });
+  step2->Wait();
+  event_engine()->Tick();
+
+  EXPECT_EQ(server_transport()->TestOnlyLastIncomingStreamId(), 5u);
+
+  // Step 4: Client sends a HEADERS frame for Stream 3 (3 <= 5).
+  // Following CHTTP2, the server parses and discards the headers to maintain
+  // HPACK dynamic table sync, but emits NO write frames (no GOAWAY, no
+  // RST_STREAM). The connection and active Stream 1 remain intact.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step3 =
+      endpoint()->NewStep();
+  step3->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/3u, /*end_headers=*/true, /*end_stream=*/false),
+  });
+  step3->Wait();
+  event_engine()->Tick();
+
+  // last_incoming_stream_id remains 5.
+  EXPECT_EQ(server_transport()->TestOnlyLastIncomingStreamId(), 5u);
+
+  // Step 5: Cleanly reset active Stream 1 to confirm connection survived.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step4 =
+      endpoint()->NewStep();
+  step4->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+  });
+  step4->Wait();
+  event_engine()->Tick();
+
+  // Step 6: Teardown the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/5u);
+  teardown_step->Wait();
+}
+
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
