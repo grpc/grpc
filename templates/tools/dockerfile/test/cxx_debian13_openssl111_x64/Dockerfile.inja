@@ -33,6 +33,8 @@ RUN cd /tmp && \
     ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
     make -j 4 && \
     make install && \
+    echo "/usr/local/ssl/lib" > /etc/ld.so.conf.d/openssl-1.1.1.conf && \
+    ldconfig && \
     rm -rf /tmp/openssl-1.1.1w*
 ENV OPENSSL_ROOT_DIR=/usr/local/ssl
 
