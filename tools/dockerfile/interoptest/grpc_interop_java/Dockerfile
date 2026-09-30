@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:trixie
+FROM debian:13
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends openjdk-21-jdk-headless && \

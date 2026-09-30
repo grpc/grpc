@@ -125,16 +125,17 @@ RUN mkdir /var/local/jenkins
 
 
 # Install openssl 1.1.1 from source
-RUN apt-get update && apt-get install -y build-essential zlib1g-dev
-RUN bash -c "echo 'cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8  openssl-1.1.1w.tar.gz' > /tmp/openssl-1.1.1w.tar.gz.sha256"
+RUN apt-get update && apt-get install -y zlib1g-dev
 RUN cd /tmp && \
     wget https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
-    sha256sum -c "/tmp/openssl-1.1.1w.tar.gz.sha256" && \
+    echo "cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8  openssl-1.1.1w.tar.gz" | sha256sum -c - && \
     tar -xf openssl-1.1.1w.tar.gz && \
     cd openssl-1.1.1w && \
     ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
     make -j 4 && \
     make install && \
+    echo "/usr/local/ssl/lib" > /etc/ld.so.conf.d/openssl-1.1.1.conf && \
+    ldconfig && \
     rm -rf /tmp/openssl-1.1.1w*
 ENV OPENSSL_ROOT_DIR=/usr/local/ssl
 

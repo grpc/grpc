@@ -78,10 +78,8 @@ RUN mkdir /var/local/jenkins
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 
-# Make cc points to clang
-RUN  update-alternatives --install /usr/bin/cc cc /usr/bin/clang-14 100 \
-        --slave /usr/bin/asan_symbolize asan_symbolize /usr/bin/asan_symbolize-14 \
-        --slave /usr/bin/clang++ clang++ /usr/bin/clang++-14 \
-        --slave /usr/bin/clang-cpp clang-cpp /usr/bin/clang-cpp-14
+# Make cc and c++ point to clang
+RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100 && \
+    update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
 # Define the default command.
 CMD ["bash"]
