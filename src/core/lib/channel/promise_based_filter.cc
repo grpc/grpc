@@ -618,6 +618,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       // fully done first. If the call is cancelled while the half-close is
       // pending, we never get here and the half-close is dropped.
       if (IsPromiseFilterClientHalfCloseEnabled() && half_close_) {
+        push_.reset();
         interceptor()->Push()->Close();
         state_ = State::kClosed;
       }
@@ -683,9 +684,6 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kBatchCompleted:
       if (push_.has_value() && (*push_)().pending()) {
         break;
-      }
-      if (IsPromiseFilterClientHalfCloseEnabled()) {
-        push_.reset();
       }
       if (completed_status_.ok()) {
         state_ = State::kIdle;
