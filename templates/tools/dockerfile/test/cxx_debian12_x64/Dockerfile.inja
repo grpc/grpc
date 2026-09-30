@@ -15,7 +15,7 @@
 FROM debian:12
 
 {% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps_pep668.include" %}
+{% include "../../run_tests_python_deps_venv.include" %}
 {% include "../../cxx_test_deps.include" %}
 {% include "../../cxx_deps.include" %}
 {% include "../../cmake.include" %}
@@ -24,8 +24,7 @@ FROM debian:12
 
 
 # Used by generate_projects.sh
-RUN apt-get update && apt-get install -y \
-  python3-mako && apt-get clean
+RUN pip install mako
 
 #=================
 # Setup git to access working directory across docker boundary
