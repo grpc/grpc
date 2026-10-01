@@ -42,6 +42,10 @@ _UNARY_STREAM = "UnaryStream"
 _STREAM_UNARY = "StreamUnary"
 _STREAM_STREAM = "StreamStream"
 
+# Bounds the RPCs of the status accessor tests, which would otherwise hang
+# forever on a regression.
+_STATUS_ACCESSOR_TIMEOUT = 20
+
 _TEST_CONTEXT_VAR: ContextVar[str] = ContextVar("")
 
 
@@ -306,6 +310,30 @@ class _GenericClientInterceptor(
         )
         response_it = continuation(new_details, new_request_iterator)
         return postprocess(response_it) if postprocess else response_it
+
+
+class _StatusAccessorClientInterceptor(
+    grpc.UnaryStreamClientInterceptor, grpc.StreamStreamClientInterceptor
+):
+    """Calls a status accessor on the response before it is iterated."""
+
+    def __init__(self, accessor, results):
+        self._accessor = accessor
+        self._results = results
+
+    def _access(self, response_iterator):
+        self._results.append(getattr(response_iterator, self._accessor)())
+        return response_iterator
+
+    def intercept_unary_stream(
+        self, continuation, client_call_details, request
+    ):
+        return self._access(continuation(client_call_details, request))
+
+    def intercept_stream_stream(
+        self, continuation, client_call_details, request_iterator
+    ):
+        return self._access(continuation(client_call_details, request_iterator))
 
 
 class _ContextVarSettingInterceptor(grpc.ServerInterceptor):
@@ -957,6 +985,91 @@ class InterceptorTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             exception.result()
         self.assertIsInstance(exception.exception(), grpc.RpcError)
+
+    def _status_accessor_channel(self, accessor, results):
+        return grpc.intercept_channel(
+            self._channel, _StatusAccessorClientInterceptor(accessor, results)
+        )
+
+    def testUnaryStreamStatusAccessorsBeforeIteration(self):
+        request = b"\x37\x58"
+        for accessor in ("trailing_metadata", "code", "details", "exception"):
+            with self.subTest(accessor=accessor):
+                results = []
+                channel = self._status_accessor_channel(accessor, results)
+
+                multi_callable = _unary_stream_multi_callable(channel)
+                response_iterator = multi_callable(
+                    request, timeout=_STATUS_ACCESSOR_TIMEOUT
+                )
+
+                self.assertEqual(1, len(results))
+                self.assertSequenceEqual(
+                    (request,) * test_constants.STREAM_LENGTH,
+                    tuple(response_iterator),
+                )
+                self.assertIs(grpc.StatusCode.OK, response_iterator.code())
+                self.assertIn(
+                    ("testkey", "testvalue"),
+                    response_iterator.trailing_metadata(),
+                )
+
+    def testUnaryStreamStatusAccessorsBeforeIterationWithError(self):
+        results = []
+        channel = self._status_accessor_channel("code", results)
+
+        multi_callable = _unary_stream_multi_callable(channel)
+        response_iterator = multi_callable(
+            _EXCEPTION_REQUEST, timeout=_STATUS_ACCESSOR_TIMEOUT
+        )
+
+        self.assertSequenceEqual([grpc.StatusCode.UNKNOWN], results)
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            tuple(response_iterator)
+        self.assertIs(
+            grpc.StatusCode.UNKNOWN, exception_context.exception.code()
+        )
+
+    def testStreamStreamStatusAccessorsBeforeIteration(self):
+        requests = tuple(
+            b"\x77\x58" for _ in range(test_constants.STREAM_LENGTH)
+        )
+        for accessor in ("trailing_metadata", "code", "details", "exception"):
+            with self.subTest(accessor=accessor):
+                results = []
+                channel = self._status_accessor_channel(accessor, results)
+
+                multi_callable = _stream_stream_multi_callable(channel)
+                response_iterator = multi_callable(
+                    iter(requests), timeout=_STATUS_ACCESSOR_TIMEOUT
+                )
+
+                self.assertEqual(1, len(results))
+                self.assertSequenceEqual(requests, tuple(response_iterator))
+                self.assertIs(grpc.StatusCode.OK, response_iterator.code())
+
+    def testUnaryStreamStatusAccessorWhileIterating(self):
+        request = b"\x37\x58"
+        multi_callable = _unary_stream_multi_callable(self._channel)
+        response_iterator = multi_callable(
+            request, timeout=_STATUS_ACCESSOR_TIMEOUT
+        )
+        trailing_metadata = []
+        accessor_thread = threading.Thread(
+            target=lambda: trailing_metadata.append(
+                response_iterator.trailing_metadata()
+            )
+        )
+        accessor_thread.start()
+
+        responses = tuple(response_iterator)
+        accessor_thread.join()
+
+        self.assertSequenceEqual(
+            (request,) * test_constants.STREAM_LENGTH, responses
+        )
+        self.assertIn(("testkey", "testvalue"), trailing_metadata[0])
+        self.assertIs(grpc.StatusCode.OK, response_iterator.code())
 
     def testServerInterceptorWithCorrectHandlerCallDetails(self):
         request = b"\x07\x08"
