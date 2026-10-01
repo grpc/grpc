@@ -50,6 +50,7 @@ using ::envoy::extensions::filters::http::ext_proc::v3::ExtProcPerRoute;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
 using ::envoy::service::ext_proc::v3::ProcessingRequest;
+using ExtProcService = ::envoy::service::ext_proc::v3::ExternalProcessor;
 
 constexpr absl::string_view kFilterInstanceName = "ext_proc_instance";
 
@@ -68,8 +69,7 @@ constexpr char kEmptyBody[] = "";
 // A stream-based fake external processor service that provides fine-grained,
 // sequential control over incoming ext_proc stream requests and outgoing
 // responses/statuses for test assertions.
-class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
-                                     ExternalProcessor::CallbackService {
+class FakeExtProcService final : public ExtProcService::CallbackService {
  public:
   // Represents a single bidirectional stream between the client ext_proc filter
   // and this service, implemented as a ServerBidiReactor.
@@ -138,7 +138,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     }
 
     void MaybeFinish(const grpc::Status& status) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       MaybeFinishLocked(status);
     }
 
@@ -152,7 +152,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     }
 
     void OnReadDone(bool ok) override {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       if (ok) {
         requests_.push(std::move(request_));
         cv_.SignalAll();
@@ -163,7 +163,7 @@ class FakeExtProcService final : public ::envoy::service::ext_proc::v3::
     }
 
     void OnWriteDone(bool /*ok*/) override {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       write_in_flight_ = false;
       cv_.SignalAll();
     }

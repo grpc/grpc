@@ -602,9 +602,7 @@ ExtProcFilter::ExtProcCall::ExtProcCall(
       ext_proc_filter_(std::move(ext_proc_filter)) {
   const char* method = "/envoy.service.ext_proc.v3.ExternalProcessor/Process";
   streaming_call_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
-      *transport, method,
-      XdsTransportFactory::XdsTransport::CallOptions().set_wait_for_ready(
-          false));
+      *transport, method, XdsTransportFactory::XdsTransport::CallOptions());
 }
 
 std::string ExtProcFilter::ExtProcCall::DebugTag() const {

@@ -234,7 +234,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
 
 void FakeXdsTransportFactory::FakeXdsTransport::Orphaned() {
   {
-    MutexLock lock(&factory_->mu_);
+    MutexLock lock(factory_->mu_);
     auto it = factory_->transport_map_.find(server_key_);
     if (it != factory_->transport_map_.end() && it->second == this) {
       factory_->transport_map_.erase(it);
@@ -268,7 +268,7 @@ FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(const char* method) {
 
 void FakeXdsTransportFactory::FakeXdsTransport::RegisterStream(
     const char* method, RefCountedPtr<FakeStreamingCall> call) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   active_calls_[method] = std::move(call);
 }
 
