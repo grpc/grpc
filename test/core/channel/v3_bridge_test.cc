@@ -123,6 +123,36 @@ TEST_F(V3BridgeTest, EarlyFailureDoesNotHang) {
   });
 }
 
+TEST_F(V3BridgeTest, EarlyFailureWithServerInitialMetadataPipe) {
+  RunInActivity([&]() {
+    EarlyFailureInterceptor bridge;
+    auto next_promise_factory = [](CallArgs) {
+      return ArenaPromise<ServerMetadataHandle>(
+          []() -> Poll<ServerMetadataHandle> { return Pending{}; });
+    };
+    Pipe<ServerMetadataHandle> server_initial_metadata_pipe(arena_.get());
+    CallArgs args{Arena::MakePooledForOverwrite<ClientMetadata>(),
+                  ClientInitialMetadataOutstandingToken::Empty(),
+                  nullptr,
+                  &server_initial_metadata_pipe.sender,
+                  nullptr,
+                  nullptr};
+    auto promise =
+        bridge.MakeCallPromise(std::move(args), next_promise_factory);
+    Poll<ServerMetadataHandle> result = Pending{};
+    for (int i = 0; i < 100 && result.pending(); ++i) {
+      result = promise();
+    }
+    EXPECT_TRUE(result.ready());
+    if (result.ready()) {
+      auto status = result.value()
+                        ->get(GrpcStatusMetadata())
+                        .value_or(GRPC_STATUS_UNKNOWN);
+      EXPECT_EQ(status, GRPC_STATUS_INTERNAL);
+    }
+  });
+}
+
 TEST_F(V3BridgeTest, EarlyFailureCleansUpArena) {
   auto factory = SimpleArenaAllocator();
   auto arena = factory->MakeArena();
