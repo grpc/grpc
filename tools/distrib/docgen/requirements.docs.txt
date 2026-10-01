@@ -16,5 +16,5 @@
 # and execute the command:
 # pip install -r requirements.docs.txt && pip freeze > requirements.docs.lock 
 
-Sphinx
+Sphinx==8.1.3
 pydata_sphinx_theme==0.16.1
