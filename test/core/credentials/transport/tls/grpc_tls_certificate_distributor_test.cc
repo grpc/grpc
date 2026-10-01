@@ -249,7 +249,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
 
   WatcherState* MakeWatcher(std::optional<std::string> root_cert_name,
                             std::optional<std::string> identity_cert_name) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     watchers_.emplace_back();
     // TlsCertificatesTestWatcher ctor takes a pointer to the WatcherState.
     // It sets WatcherState::watcher to point to itself.
@@ -264,7 +264,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   }
 
   void CancelWatch(WatcherState* state) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     distributor_.CancelTlsCertificatesWatch(state->watcher);
     EXPECT_EQ(state->watcher, nullptr);
   }

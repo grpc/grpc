@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n<envoy/extensions/matching/common_inputs/stats/v3/stats.proto\x12\x30\x65nvoy.extensions.matching.common_inputs.stats.v3\x1a\x1dudpa/annotations/status.proto\"\x18\n\x16StatFullNameMatchInputB\xb7\x01\n>io.envoyproxy.envoy.extensions.matching.common_inputs.stats.v3B\nStatsProtoP\x01Z_github.com/envoyproxy/go-control-plane/envoy/extensions/matching/common_inputs/stats/v3;statsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n<envoy/extensions/matching/common_inputs/stats/v3/stats.proto\x12\x30\x65nvoy.extensions.matching.common_inputs.stats.v3\x1a\x1dudpa/annotations/status.proto\"\x18\n\x16StatFullNameMatchInput\"\x13\n\x11StatTagValueInputB\xb7\x01\n>io.envoyproxy.envoy.extensions.matching.common_inputs.stats.v3B\nStatsProtoP\x01Z_github.com/envoyproxy/go-control-plane/envoy/extensions/matching/common_inputs/stats/v3;statsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,4 +35,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._serialized_options = b'\n>io.envoyproxy.envoy.extensions.matching.common_inputs.stats.v3B\nStatsProtoP\001Z_github.com/envoyproxy/go-control-plane/envoy/extensions/matching/common_inputs/stats/v3;statsv3\272\200\310\321\006\002\020\002'
   _globals['_STATFULLNAMEMATCHINPUT']._serialized_start=145
   _globals['_STATFULLNAMEMATCHINPUT']._serialized_end=169
+  _globals['_STATTAGVALUEINPUT']._serialized_start=171
+  _globals['_STATTAGVALUEINPUT']._serialized_end=190
 # @@protoc_insertion_point(module_scope)

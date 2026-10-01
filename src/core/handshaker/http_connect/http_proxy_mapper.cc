@@ -33,7 +33,6 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
@@ -54,6 +53,8 @@
 
 namespace grpc_core {
 namespace {
+
+constexpr int kDefaultSecurePortInt = 443;
 
 bool ServerInCIDRRange(const grpc_resolved_address& server_address,
                        absl::string_view cidr_range) {

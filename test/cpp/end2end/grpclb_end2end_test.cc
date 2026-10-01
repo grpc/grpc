@@ -16,6 +16,7 @@
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
+#include <grpc/lb/v1/load_balancer.grpc.pb.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -50,7 +51,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
@@ -151,13 +151,13 @@ class BackendServiceImpl : public BackendService {
   void Shutdown() {}
 
   std::set<std::string> clients() {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     return clients_;
   }
 
  private:
   void AddClient(const std::string& client) {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     clients_.insert(client);
   }
 
@@ -212,19 +212,19 @@ class BalancerServiceImpl : public BalancerService {
 
   void Start() {
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       shutdown_ = false;
       response_queue_.clear();
     }
     {
-      grpc_core::MutexLock lock(&load_report_mu_);
+      grpc_core::MutexLock lock(load_report_mu_);
       load_report_queue_.clear();
     }
   }
 
   void Shutdown() {
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       shutdown_ = true;
     }
     ShutdownStream();
@@ -236,19 +236,19 @@ class BalancerServiceImpl : public BalancerService {
   }
 
   void SendResponse(LoadBalanceResponse response) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     response_queue_.emplace_back(std::move(response));
     if (response_cond_ != nullptr) response_cond_->SignalAll();
   }
 
   void ShutdownStream() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     response_queue_.emplace_back(std::nullopt);
     if (response_cond_ != nullptr) response_cond_->SignalAll();
   }
 
   std::optional<ClientStats> WaitForLoadReport(absl::Duration timeout) {
-    grpc_core::MutexLock lock(&load_report_mu_);
+    grpc_core::MutexLock lock(load_report_mu_);
     if (load_report_queue_.empty()) {
       grpc_core::CondVar condition;
       load_report_cond_ = &condition;
@@ -264,7 +264,7 @@ class BalancerServiceImpl : public BalancerService {
 
   bool WaitForNewStream(size_t prev_seen_count,
                         absl::Duration timeout = absl::Seconds(5)) {
-    grpc_core::MutexLock lock(&stream_count_mu_);
+    grpc_core::MutexLock lock(stream_count_mu_);
     if (stream_count_ == prev_seen_count) {
       grpc_core::CondVar condition;
       stream_count_cond_ = &condition;
@@ -276,12 +276,12 @@ class BalancerServiceImpl : public BalancerService {
   }
 
   std::vector<std::string> service_names() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return service_names_;
   }
 
   std::set<std::string> clients() {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     return clients_;
   }
 
@@ -290,7 +290,7 @@ class BalancerServiceImpl : public BalancerService {
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
     LOG(INFO) << "LB[" << this << "]: BalanceLoad";
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       if (shutdown_) {
         LOG(INFO) << "LB[" << this << "]: shutdown at stream start";
         return Status::OK;
@@ -317,7 +317,7 @@ class BalancerServiceImpl : public BalancerService {
     }
     EXPECT_TRUE(request.has_initial_request());
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       service_names_.push_back(request.initial_request().name());
     }
     IncreaseRequestCount();
@@ -383,7 +383,7 @@ class BalancerServiceImpl : public BalancerService {
       }
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
-      grpc_core::MutexLock lock(&load_report_mu_);
+      grpc_core::MutexLock lock(load_report_mu_);
       load_report_queue_.emplace_back(std::move(load_report));
       if (load_report_cond_ != nullptr) load_report_cond_->Signal();
     }
@@ -393,7 +393,7 @@ class BalancerServiceImpl : public BalancerService {
   // sent on the stream.  Returns nullopt when the test has requested
   // stream shutdown.
   std::optional<LoadBalanceResponse> GetNextResponse() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (response_queue_.empty()) {
       grpc_core::CondVar condition;
       response_cond_ = &condition;
@@ -406,12 +406,12 @@ class BalancerServiceImpl : public BalancerService {
   }
 
   void AddClient(const std::string& client) {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     clients_.insert(client);
   }
 
   void IncrementStreamCount() {
-    grpc_core::MutexLock lock(&stream_count_mu_);
+    grpc_core::MutexLock lock(stream_count_mu_);
     ++stream_count_;
     if (stream_count_cond_ != nullptr) stream_count_cond_->Signal();
   }
@@ -460,7 +460,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       grpc_core::Mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
       // by ServerThread::Serve from firing before the wait below is hit.
-      grpc_core::MutexLock lock(&mu);
+      grpc_core::MutexLock lock(mu);
       grpc_core::CondVar cond;
       thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, &mu, &cond));
@@ -471,7 +471,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     void Serve(grpc_core::Mutex* mu, grpc_core::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
-      grpc_core::MutexLock lock(mu);
+      grpc_core::MutexLock lock(*mu);
       ServerBuilder builder;
       std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
           grpc_fake_transport_security_server_credentials_create()));
