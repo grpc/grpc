@@ -128,9 +128,8 @@ class FilterTest : public YodelTest {
 
   // Sets the implicit handler to the next call started against the bottom of
   // the stack. Returns false if none shows up within `timeout`.
-  bool WaitForHandler(
-      grpc_event_engine::experimental::EventEngine::Duration timeout =
-          std::chrono::seconds(30));
+  bool WaitForHandler(grpc_event_engine::experimental::EventEngine::Duration
+                          timeout = std::chrono::seconds(30));
 
   // Driving the six call operations.
   //
