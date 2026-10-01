@@ -1524,8 +1524,8 @@ TEST_P(XdsExtProcEnd2endTest,
   // yet.
   if (!GetParam().filter_on_server()) {
     req = ext_proc_stream->GetNextRequest();
-    ASSERT_THAT(req, ::testing::Optional(
-                         MatchesRequestBody(kEmptyBody, kEndOfStream)));
+    ASSERT_THAT(
+        req, ::testing::Optional(MatchesRequestBody(kEmptyBody, kEndOfStream)));
     ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
         /*body=*/"", kEndOfStream));
   }

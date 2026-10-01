@@ -98,7 +98,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       MutexLock lock(mu_);
       return half_closed_;
     }
-    
+
     bool wait_for_ready() const { return wait_for_ready_; }
 
    private:
