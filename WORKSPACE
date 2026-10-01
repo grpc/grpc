@@ -1,5 +1,6 @@
 workspace(name = "com_github_grpc_grpc")
 
+# buildifier: disable=print
 print("""
 ============================================================================
 [WARNING] gRPC will deprecate WORKSPACE support in 1.87 in favor of bzlmod
