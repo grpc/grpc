@@ -1063,6 +1063,12 @@ class _StreamingResponseRendezvous(
         with self._state.condition:
             if self._buffered_responses:
                 return self._buffered_responses.popleft()
+            # A receive started by a status wait that timed out may have
+            # completed since, possibly followed by the status.
+            if self._state.response is not None:
+                response = self._state.response
+                self._state.response = None
+                return response
             if self._state.code is None:
                 # A thread waiting for the status may already be receiving.
                 if cygrpc.OperationType.receive_message not in self._state.due:

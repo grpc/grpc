@@ -20,6 +20,7 @@ import itertools
 import logging
 import os
 import threading
+import time
 import unittest
 
 import grpc
@@ -1047,6 +1048,26 @@ class InterceptorTest(unittest.TestCase):
                 self.assertEqual(1, len(results))
                 self.assertSequenceEqual(requests, tuple(response_iterator))
                 self.assertIs(grpc.StatusCode.OK, response_iterator.code())
+
+    def testStreamStreamLastResponseReceivedAfterStatusWaitTimesOut(self):
+        request = b"\x77\x58"
+        multi_callable = _stream_stream_multi_callable(self._channel)
+        with self._control.pause():
+            response_iterator = multi_callable(
+                iter((request,)), timeout=_STATUS_ACCESSOR_TIMEOUT
+            )
+            self._control.block_until_paused()
+            # Times out with a receive started on the application's behalf.
+            with self.assertRaises(grpc.FutureTimeoutError):
+                response_iterator.exception(timeout=0)
+        # That receive gets the only response, after which the RPC completes
+        # without the response having been iterated.
+        deadline = time.time() + _STATUS_ACCESSOR_TIMEOUT
+        while response_iterator.running():
+            self.assertLess(time.time(), deadline)
+            time.sleep(0.01)
+
+        self.assertSequenceEqual((request,), tuple(response_iterator))
 
     def testUnaryStreamStatusAccessorWhileIterating(self):
         request = b"\x37\x58"
