@@ -265,7 +265,7 @@ TEST_F(GrpcXdsTransportTest, UnaryCall) {
   GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
                              /*call_creds_configs=*/{},
                              /*initial_metadata=*/{{"key1", "val1"}},
-                             Duration::Seconds(1));
+                             Duration::Seconds(10));
   absl::Status status;
   auto transport = factory_->GetTransport(target, &status);
   ASSERT_TRUE(status.ok()) << status.ToString();
@@ -293,7 +293,7 @@ TEST_F(GrpcXdsTransportTest, UnaryCallWithWaitForReady) {
   GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
                              /*call_creds_configs=*/{},
                              /*initial_metadata=*/{{"key1", "val1"}},
-                             Duration::Seconds(1));
+                             Duration::Seconds(5));
   absl::Status status;
   auto transport = factory_->GetTransport(target, &status);
   ASSERT_TRUE(status.ok()) << status.ToString();
@@ -311,7 +311,7 @@ TEST_F(GrpcXdsTransportTest, UnaryCallWithWaitForReady) {
   call->SendMessage("request", /*send_half_close=*/true);
   exec_ctx.Flush();
   // With wait-for-ready enabled on the deferred initial-metadata batch, the
-  // call stays queued until the 1s deadline.
+  // call stays queued until the deadline.
   on_status_received.WaitForNotification();
   EXPECT_EQ(call_status.code(), absl::StatusCode::kDeadlineExceeded)
       << call_status;

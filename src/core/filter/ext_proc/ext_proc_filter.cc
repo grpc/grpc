@@ -618,9 +618,7 @@ ExtProcFilter::ExtProcCall::ExtProcCall(
       ext_proc_filter_(std::move(ext_proc_filter)) {
   const char* method = "/envoy.service.ext_proc.v3.ExternalProcessor/Process";
   streaming_call_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
-      *transport, method,
-      XdsTransportFactory::XdsTransport::CallOptions().set_wait_for_ready(
-          false));
+      *transport, method, XdsTransportFactory::XdsTransport::CallOptions());
 }
 
 std::string ExtProcFilter::ExtProcCall::DebugTag() const {
@@ -1756,8 +1754,9 @@ auto ExtProcFilter::ExtProcCall::HandleReadFromSideStreamLoop() {
             // Process the message; stop loop if end-of-stream (nullopt) or
             // error.
             [self](std::optional<std::string> msg) {
+              const bool is_end_of_stream = !msg.has_value();
               return If(
-                  !msg.has_value(), Immediate(LoopCtl<StatusFlag>(Success{})),
+                  is_end_of_stream, Immediate(LoopCtl<StatusFlag>(Success{})),
                   [self, msg = std::move(msg)]() mutable {
                     return Map(self->ProcessSideStreamResponse(std::move(*msg)),
                                [](StatusFlag status) -> LoopCtl<StatusFlag> {
