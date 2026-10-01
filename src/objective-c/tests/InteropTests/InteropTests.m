@@ -941,25 +941,26 @@ static dispatch_once_t initGlobalInterceptorFactory;
     request.responseSize = kPayloadSize;
 
     __weak RMTTestService *weakService = service;
-    [service unaryCallWithRequest:request
-                          handler:^(RMTSimpleResponse *response, NSError *error) {
-                            if (weakService == nil) {
-                              return;
-                            }
-                            // TODO(jcanizales): Catch the error and rethrow it with an
-                            // actionable message:
-                            // - Use +[GRPCCall setResponseSizeLimit:forHost:] to set a
-                            // higher limit.
-                            // - If you're developing the server, consider using response
-                            // streaming, or let clients filter
-                            //   responses by setting a google.protobuf.FieldMask in the
-                            //   request:
-                            //   https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/field_mask.proto
-                            XCTAssertEqualObjects(
-                                error.localizedDescription,
-                                @"CLIENT: Received message larger than max (4194305 vs. 4194304)");
-                            [expectation fulfill];
-                          }];
+    [service
+        unaryCallWithRequest:request
+                     handler:^(RMTSimpleResponse *response, NSError *error) {
+                       if (weakService == nil) {
+                         return;
+                       }
+                       // TODO(jcanizales): Catch the error and rethrow it with an
+                       // actionable message:
+                       // - Use +[GRPCCall setResponseSizeLimit:forHost:] to set a
+                       // higher limit.
+                       // - If you're developing the server, consider using response
+                       // streaming, or let clients filter
+                       //   responses by setting a google.protobuf.FieldMask in the
+                       //   request:
+                       //   https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/field_mask.proto
+                       XCTAssertTrue([error.localizedDescription
+                           containsString:
+                               @"CLIENT: Received message larger than max (4194305 vs. 4194304)"]);
+                       [expectation fulfill];
+                     }];
     waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
@@ -1598,10 +1599,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
   });
 }
 
-// TODO(b/268379869): This test has a race and is flaky in any configurations. One possible way to
-// deflake this test is to find a way to disable ping ack on the interop server for this test case.
 - (void)testKeepaliveWithV2API {
-  return;
+  // Skipping this test when test case is running with ping ack is true.
+#ifndef GRPC_RUN_KEEPALIVE_TEST
+  if (getenv("GRPC_RUN_KEEPALIVE_TEST") == NULL) {
+    return;
+  }
+#endif
 
   GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
@@ -1620,6 +1624,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.hostNameOverride = [[self class] hostNameOverride];
     options.keepaliveInterval = 1.5;
     options.keepaliveTimeout = 0;
+    options.additionalChannelArgs = @{@"grpc.http2.ping_timeout_ms" : @200};
 
     __weak RMTTestService *weakService = service;
     GRPCStreamingProtoCall *call = [service

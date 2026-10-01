@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_SPECIFIER_PLUGIN_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_SPECIFIER_PLUGIN_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <utility>

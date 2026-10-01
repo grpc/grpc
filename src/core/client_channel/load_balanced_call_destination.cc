@@ -179,9 +179,11 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "client_channel: " << GetContext<Activity>()->DebugTag()
             << " pick dropped: " << drop_pick->status;
-        return grpc_error_set_int(MaybeRewriteIllegalStatusCode(
-                                      std::move(drop_pick->status), "LB drop"),
-                                  StatusIntProperty::kLbPolicyDrop, 1);
+        // TODO(roth): Need to set the LbPolicyDrop trait in server
+        // trailing metadata, so that the retry interceptor can know not
+        // to retry.
+        return MaybeRewriteIllegalStatusCode(std::move(drop_pick->status),
+                                             "LB drop");
       });
 }
 

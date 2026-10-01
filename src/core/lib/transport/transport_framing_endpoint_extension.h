@@ -33,10 +33,10 @@ class TransportFramingEndpointExtension {
            "extension";
   }
 
-  // Send data to transport through `cb`. The data will be sent in a single
-  // frame.
+  // Send data to transport through the given callback. The data will be sent in
+  // a single frame.
   virtual void SetSendFrameCallback(
-      absl::AnyInvocable<void(SliceBuffer* data)> cb) = 0;
+      absl::AnyInvocable<void(SliceBuffer data)> cb) = 0;
 
   /// Receive data from transport. The data will be from a single frame.
   virtual void ReceiveFrame(SliceBuffer data) = 0;

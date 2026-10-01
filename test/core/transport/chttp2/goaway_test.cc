@@ -282,7 +282,7 @@ YODEL_TEST(GoawayTest, GracefulGoawayWorks) {
                   http2::GoawayState::kInitialGracefulGoawayScheduled);
         goaway_manager.NotifyGoawaySent();
         EXPECT_EQ(goaway_manager.TestOnlyGetGoawayState(),
-                  http2::GoawayState::kInitialGracefulGoawayScheduled);
+                  http2::GoawayState::kInitialGracefulGoawaySent);
         goaway1_sent.Set();
         return Empty{};
       },
@@ -385,7 +385,7 @@ YODEL_TEST(GoawayTest, ImmediateGoawayTakesPrecedenceOverGracefulGoaway1) {
         EXPECT_EQ(goaway_frame, expected_goaway_frame);
         goaway_manager.NotifyGoawaySent();
         EXPECT_EQ(goaway_manager.TestOnlyGetGoawayState(),
-                  http2::GoawayState::kInitialGracefulGoawayScheduled);
+                  http2::GoawayState::kInitialGracefulGoawaySent);
         goaway1_sent.Set();
         return Empty{};
       },
@@ -439,9 +439,12 @@ YODEL_TEST(GoawayTest, ImmediateGoawayTakesPrecedenceOverGracefulGoaway2) {
       return absl::OkStatus();
     });
   });
-  mock_goaway_interface->ExpectTriggerWriteCycle();
-  mock_goaway_interface->ExpectTriggerWriteCycle();
-  mock_goaway_interface->ExpectTriggerWriteCycle();
+  EXPECT_CALL(*mock_goaway_interface, TriggerWriteCycle)
+      .Times(3)
+      .WillRepeatedly([]() {
+        LOG(INFO) << "MockGoawayInterface TriggerWriteCycle Polled";
+        return absl::OkStatus();
+      });
 
   GoawayManager goaway_manager(std::move(goaway_interface));
   EXPECT_EQ(goaway_manager.TestOnlyGetGoawayState(), http2::GoawayState::kIdle);
@@ -489,7 +492,7 @@ YODEL_TEST(GoawayTest, ImmediateGoawayTakesPrecedenceOverGracefulGoaway2) {
                   http2::GoawayState::kInitialGracefulGoawayScheduled);
         goaway_manager.NotifyGoawaySent();
         EXPECT_EQ(goaway_manager.TestOnlyGetGoawayState(),
-                  http2::GoawayState::kInitialGracefulGoawayScheduled);
+                  http2::GoawayState::kInitialGracefulGoawaySent);
         goaway1_sent.Set();
         return Empty{};
       },

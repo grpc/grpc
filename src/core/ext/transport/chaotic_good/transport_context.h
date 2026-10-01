@@ -16,6 +16,9 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_CONTEXT_H
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+
+#include <utility>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -32,7 +35,9 @@ struct TransportContext : public RefCounted<TransportContext> {
             args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
         stats_plugin_group(
             args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
-        socket_node(std::move(socket_node)) {
+        socket_node(std::move(socket_node)),
+        trace_full_buffer(
+            args.GetBool(GRPC_ARG_TCP_TRACE_FULL_BUFFER).value_or(false)) {
     CHECK(this->event_engine != nullptr);
   }
   TransportContext(std::shared_ptr<grpc_event_engine::experimental::EventEngine>
@@ -40,7 +45,8 @@ struct TransportContext : public RefCounted<TransportContext> {
                    RefCountedPtr<channelz::SocketNode> socket_node)
       : event_engine(std::move(event_engine)),
         stats_plugin_group(nullptr),
-        socket_node(std::move(socket_node)) {
+        socket_node(std::move(socket_node)),
+        trace_full_buffer(false) {
     CHECK(this->event_engine != nullptr);
   }
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
@@ -48,6 +54,7 @@ struct TransportContext : public RefCounted<TransportContext> {
   const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
       stats_plugin_group;
   const RefCountedPtr<channelz::SocketNode> socket_node;
+  const bool trace_full_buffer;
 };
 
 using TransportContextPtr = RefCountedPtr<TransportContext>;

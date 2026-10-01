@@ -21,9 +21,9 @@ def grpc_python_deps():
     if "rules_python" not in native.existing_rules():
         http_archive(
             name = "rules_python",
-            sha256 = "2f5c284fbb4e86045c2632d3573fc006facbca5d1fa02976e89dc0cd5488b590",
-            strip_prefix = "rules_python-1.6.3",
-            url = "https://github.com/bazel-contrib/rules_python/releases/download/1.6.3/rules_python-1.6.3.tar.gz",
+            sha256 = "2119ca04726066c53b8f1ff42dffa090ea7f3e42a75679f1cfda937406cf7753",
+            strip_prefix = "rules_python-2.0.2",
+            url = "https://github.com/bazel-contrib/rules_python/releases/download/2.0.2/rules_python-2.0.2.tar.gz",
         )
 
     # This version should be same as that in G3
@@ -39,9 +39,9 @@ def grpc_python_deps():
         http_archive(
             name = "cython",
             build_file = "@com_github_grpc_grpc//third_party:cython.BUILD",
-            sha256 = "2ec7d66d23d6da2328fb24f5c1bec6c63a59ec2e91027766ab904f417e1078aa",
-            strip_prefix = "cython-3.0.11",
+            sha256 = "46ff1a7cd4cd6e92ff13682e0bff603d84c4c8ec3c1c57eefe2120852901ac41",
+            strip_prefix = "cython-3.2.8",
             urls = [
-                "https://github.com/cython/cython/archive/3.0.11.tar.gz",
+                "https://github.com/cython/cython/archive/3.2.8.tar.gz",
             ],
         )

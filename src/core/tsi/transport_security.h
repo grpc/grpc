@@ -80,9 +80,16 @@ struct tsi_handshaker_vtable {
                      tsi_handshaker_result** handshaker_result,
                      tsi_handshaker_on_next_done_cb cb, void* user_data,
                      std::string* error);
-  void (*shutdown)(tsi_handshaker* self);
+  void (*shutdown)(tsi_handshaker* self, bool peer_closed);
 };
 struct tsi_handshaker {
+  tsi_handshaker() = default;
+  explicit tsi_handshaker(const tsi_handshaker_vtable* vtable)
+      : vtable(vtable),
+        frame_protector_created(false),
+        handshaker_result_created(false),
+        handshake_shutdown(false) {}
+
   const tsi_handshaker_vtable* vtable;
   bool frame_protector_created;
   bool handshaker_result_created;

@@ -61,12 +61,13 @@ Promise<absl::Status> PingManager::PingPromiseCallbacks::WaitForPingAck() {
 }
 
 // Ping System implementation
-PingManager::PingManager(const ChannelArgs& channel_args, Duration ping_timeout,
+PingManager::PingManager(const ChannelArgs& channel_args, const bool is_client,
+                         Duration ping_timeout,
                          std::unique_ptr<PingInterface> ping_interface,
                          std::shared_ptr<EventEngine> event_engine)
     : ping_callbacks_(event_engine),
       ping_abuse_policy_(channel_args),
-      ping_rate_policy_(channel_args, /*is_client=*/true),
+      ping_rate_policy_(channel_args, is_client),
       ping_interface_(std::move(ping_interface)),
       ping_timeout_(ping_timeout) {}
 
@@ -115,7 +116,7 @@ std::optional<Duration> PingManager::MaybeGetSerializedPingFrames(
                       << " next_allowed_ping_interval: "
                       << next_allowed_ping_interval;
   GRPC_DCHECK(!opaque_data_.has_value());
-  frame_sender.ReserveRegularFrames(pending_ping_acks_.size() + 1);
+  frame_sender.ReserveRegularFrames(pending_ping_acks_.size());
 
   // Get the serialized ping acks if needed.
   for (uint64_t opaque_data : pending_ping_acks_) {

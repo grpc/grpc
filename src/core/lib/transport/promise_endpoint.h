@@ -222,14 +222,12 @@ class PromiseEndpoint {
                });
   }
 
-  // Enables RPC receive coalescing and alignment of memory holding received
-  // RPCs.
-  void EnforceRxMemoryAlignmentAndCoalescing() {
+  // Enables RPC receive coalescing and memory alignment for received RPCs.
+  void EnableRpcReceiveCoalescing() {
     auto* ext = grpc_event_engine::experimental::QueryExtension<
         grpc_event_engine::experimental::ReceiveCoalescingExtension>(
         endpoint_.get());
     if (ext != nullptr) {
-      ext->EnforceRxMemoryAlignment();
       ext->EnableRpcReceiveCoalescing();
     }
   }

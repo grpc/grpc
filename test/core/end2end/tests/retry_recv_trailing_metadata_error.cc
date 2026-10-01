@@ -83,9 +83,7 @@ class InjectStatusFilter {
       auto* calld = static_cast<CallData*>(arg);
       Closure::Run(DEBUG_LOCATION,
                    calld->original_recv_trailing_metadata_ready_,
-                   grpc_error_set_int(GRPC_ERROR_CREATE("injected error"),
-                                      StatusIntProperty::kRpcStatus,
-                                      GRPC_STATUS_INVALID_ARGUMENT));
+                   absl::InvalidArgumentError("injected error"));
     }
 
     grpc_closure recv_trailing_metadata_ready_;

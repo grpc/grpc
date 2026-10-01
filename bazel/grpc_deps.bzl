@@ -33,11 +33,11 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            sha256 = "bacdc92ab6ee2e1b1047638ca0c830247bdf6f62be55081be0e319cfa3478719",
-            strip_prefix = "boringssl-2b44a3701a4788e1ef866ddc7f143060a3d196c9",
+            sha256 = "0db063f7484f25492a8e9ce149f1a2fc18e795f57086d528ae6dda6e08969ad8",
+            strip_prefix = "boringssl-3adc3d1aba162a578e2547f329fcce8659b8e89c",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/2b44a3701a4788e1ef866ddc7f143060a3d196c9.tar.gz",
-                "https://github.com/google/boringssl/archive/2b44a3701a4788e1ef866ddc7f143060a3d196c9.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/3adc3d1aba162a578e2547f329fcce8659b8e89c.tar.gz",
+                "https://github.com/google/boringssl/archive/3adc3d1aba162a578e2547f329fcce8659b8e89c.tar.gz",
             ],
         )
 
@@ -59,10 +59,10 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-e59364c38e10de3686a3305ff11fbfc59a10dbd8",
+            strip_prefix = "protobuf-35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/e59364c38e10de3686a3305ff11fbfc59a10dbd8.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/e59364c38e10de3686a3305ff11fbfc59a10dbd8.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -151,11 +151,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "9b7a064305e9fd94d124ffa6cc358592eb42b5da588fb4e07d09254aa40086db",
-            strip_prefix = "abseil-cpp-20250512.1",
+            sha256 = "6e1aee535473414164bf83e4ebc40240dec71a4701f8a642d906e95bea1aea0c",
+            strip_prefix = "abseil-cpp-20260526.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20260526.0.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20260526.0.tar.gz",
             ],
             repo_mapping = {
                 "@googletest": "@com_google_googletest",
@@ -369,6 +369,26 @@ def grpc_deps():
             ],
         )
 
+    if "cel_c" not in native.existing_rules():
+        http_archive(
+            name = "cel_c",
+            # cel-c's BUILD files use the bzlmod module names of its
+            # dependencies, which differ from the repo names used here.
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@cel-spec": "@dev_cel",
+                "@googleapis": "@com_google_googleapis",
+                "@googletest": "@com_google_googletest",
+                "@protobuf": "@com_google_protobuf",
+            },
+            sha256 = "4ac93b6424dddebde797226c096607756b17e688efbd6f0574ff9dd3b091a76c",
+            strip_prefix = "cel-c-bbdb358f202b275731a0d7ee3162fd211886c945",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cel-expr/cel-c/archive/bbdb358f202b275731a0d7ee3162fd211886c945.tar.gz",
+                "https://github.com/cel-expr/cel-c/archive/bbdb358f202b275731a0d7ee3162fd211886c945.tar.gz",
+            ],
+        )
+
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
@@ -378,6 +398,28 @@ def grpc_deps():
                 # v1.19.0
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
                 "https://github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
+            ],
+        )
+
+    if "grpc_proto" not in native.existing_rules():
+        http_archive(
+            name = "grpc_proto",
+            sha256 = "6aaa807572edfe307eaddc15161ce684d02d054e3fca36b38993efc85575ddfa",
+            strip_prefix = "grpc-proto-dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz",
+                "https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz",
+            ],
+        )
+
+    if "autosharding" not in native.existing_rules():
+        http_archive(
+            name = "autosharding",
+            sha256 = "12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2",
+            strip_prefix = "autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
+                "https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
             ],
         )
 

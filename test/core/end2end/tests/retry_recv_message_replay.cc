@@ -74,10 +74,7 @@ class FailFirstSendOpFilter {
       }
       if (calld->fail_ && !batch->cancel_stream) {
         grpc_transport_stream_op_batch_finish_with_failure(
-            batch,
-            grpc_error_set_int(
-                GRPC_ERROR_CREATE("FailFirstSendOpFilter failing batch"),
-                StatusIntProperty::kRpcStatus, GRPC_STATUS_ABORTED),
+            batch, absl::AbortedError("FailFirstSendOpFilter failing batch"),
             calld->call_combiner_);
         return;
       }

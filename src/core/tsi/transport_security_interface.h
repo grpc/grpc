@@ -505,7 +505,7 @@ tsi_result tsi_handshaker_next(tsi_handshaker* self,
 // This method will be invoked when TSI handshake should be terminated before
 // being finished in order to free any resources being used.
 //
-void tsi_handshaker_shutdown(tsi_handshaker* self);
+void tsi_handshaker_shutdown(tsi_handshaker* self, bool peer_closed = false);
 
 // This method releases the tsi_handshaker object. After this method is called,
 // no other method can be called on the object.

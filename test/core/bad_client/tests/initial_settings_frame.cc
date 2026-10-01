@@ -131,13 +131,7 @@ static void single_request_verifier(grpc_server* server,
   }
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-  grpc_tracer_set_enabled("api", true);
-  grpc_tracer_set_enabled("http", true);
-
+TEST(InitialSettingsFrameTest, VariousPartialPrefixes) {
   // various partial prefixes
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
@@ -168,11 +162,17 @@ int main(int argc, char** argv) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x04\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(InitialSettingsFrameTest, MustNotSendFramesWithStreamId0) {
   // must not send frames with stream id != 0
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x04\x00\x00\x00\x00\x01", 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x04\x00\x40\x00\x00\x00", 0);
+}
+
+TEST(InitialSettingsFrameTest, SettingsFrameMustBeAMultipleOfSixBytesLong) {
   // settings frame must be a multiple of six bytes long
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x01\x04\x00\x00\x00\x00\x00", 0);
@@ -192,30 +192,51 @@ int main(int argc, char** argv) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR ONE_SETTING_HDR "\x00\x06\xff\xff\xff\xff",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(InitialSettingsFrameTest, UpdateInitialWindowSize) {
   // update initial window size
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR ONE_SETTING_HDR "\x00\x04\x00\x01\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(InitialSettingsFrameTest, AckWithData) {
   // ack with data
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
                            "\x00\x00\x01\x04\x01\x00\x00\x00\x00",
                            0);
+}
+
+TEST(InitialSettingsFrameTest, SettingsFrameWithInvalidFlags) {
   // settings frame with invalid flags
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x04\x10\x00\x00\x00\x00", 0);
+}
+
+TEST(InitialSettingsFrameTest, UnknownSettingsShouldBeIgnored) {
   // unknown settings should be ignored
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR ONE_SETTING_HDR "\x00\x99\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(InitialSettingsFrameTest,
+     TooManyRequestsBeforeTheSettingsAckIsSentShouldBeCancelled) {
   // too many requests before the settings ack is sent should be cancelled
   GRPC_RUN_BAD_CLIENT_TEST(single_request_verifier, nullptr,
                            PFX_STR ZERO_SETTING_HDR FOOBAR_0 FOOBAR_2
                                SETTING_ACK RST_STREAM_1 RST_STREAM_3 FOOBAR_1,
                            GRPC_BAD_CLIENT_MAX_CONCURRENT_REQUESTS_OF_ONE);
+}
 
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
+  int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return result;
 }

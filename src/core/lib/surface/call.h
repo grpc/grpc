@@ -70,6 +70,8 @@ typedef struct grpc_call_create_args {
 
   grpc_core::Timestamp send_deadline;
   bool registered_method;  // client_only
+
+  std::optional<absl::FunctionRef<void(grpc_core::Arena*)>> arena_init_function;
 } grpc_call_create_args;
 
 namespace grpc_core {
@@ -125,7 +127,7 @@ class Call : public CppImplOf<Call, grpc_call>,
       ABSL_LOCKS_EXCLUDED(deadline_mu_);
   void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
   Timestamp deadline() {
-    MutexLock lock(&deadline_mu_);
+    MutexLock lock(deadline_mu_);
     return deadline_;
   }
 
@@ -192,12 +194,12 @@ class Call : public CppImplOf<Call, grpc_call>,
   }
 
   Slice GetPeerString() const {
-    MutexLock lock(&peer_mu_);
+    MutexLock lock(peer_mu_);
     return peer_string_.Ref();
   }
 
   void SetPeerString(Slice peer_string) {
-    MutexLock lock(&peer_mu_);
+    MutexLock lock(peer_mu_);
     peer_string_ = std::move(peer_string);
   }
 

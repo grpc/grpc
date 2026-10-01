@@ -25,6 +25,7 @@ EXTERNAL_REPOS=(
     @@protoc-gen-validate+
     @@opencensus-proto+
     @@envoy_api+
+    @@grpc-proto+
 )
 
 # PHASE 0: query bazel for information we'll need

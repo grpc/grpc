@@ -1559,7 +1559,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
                           "connections to all backends failing; last error: "));
   // Start an RPC with wait_for_ready=true and no deadline.  This will
   // stay pending until backend 0 is reachable.
-  LongRunningRpc rpc;
+  AsyncRpc rpc;
   rpc.StartRpc(stub_.get(),
                RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
   // Send an updated RouteConfiguration that points to the new cluster.

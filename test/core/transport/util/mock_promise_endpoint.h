@@ -124,7 +124,7 @@ class MockTelemetryInfo : public grpc_event_engine::experimental::EventEngine::
 struct MockTransportFramingEndpointExtension
     : public TransportFramingEndpointExtension {
   MOCK_METHOD(void, SetSendFrameCallback,
-              (absl::AnyInvocable<void(SliceBuffer*)>), (override));
+              (absl::AnyInvocable<void(SliceBuffer)>), (override));
   MOCK_METHOD(void, ReceiveFrame, (SliceBuffer), (override));
 };
 
@@ -190,6 +190,13 @@ struct MockPromiseEndpoint {
   void ExpectWrite(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
+  void ExpectWriteAndRunMetricsSink(
+      std::initializer_list<grpc_event_engine::experimental::Slice> slices,
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      std::vector<
+          grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric>
+          metrics = {},
       DebugLocation whence = {});
   void ExpectWriteWithCallback(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,

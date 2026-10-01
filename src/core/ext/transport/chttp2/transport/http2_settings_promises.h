@@ -71,8 +71,7 @@ struct ApplySettingsResult {
   bool should_spawn_security_frame_loop = false;
 };
 
-// This class can only be used only from a promise based HTTP2 transports
-// general_party_ .
+// This class can only be used only from a promise based HTTP2 transports party.
 // This class is designed with the assumption that only 1 SETTINGS frame will be
 // in flight at a time. And we do not send a second SETTINGS frame till we
 // receive and process the SETTINGS ACK and resolve the ACK promise.
@@ -335,15 +334,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   };
 
  private:
-  Http2SettingsManager settings_;
-
   //////////////////////////////////////////////////////////////////////////////
   // Plumbing Settings with Chttp2Connector class
 
   void MaybeReportInitialSettings(
       grpc_event_engine::experimental::EventEngine* event_engine) {
-    // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
-    // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {
       GRPC_DCHECK(state_ == SettingsState::kFirstPeerSettingsReceived);
       GRPC_DCHECK(event_engine != nullptr);
@@ -364,8 +359,6 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
 
   void MaybeReportInitialSettingsAbort(
       grpc_event_engine::experimental::EventEngine* event_engine) {
-    // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
-    // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {
       GRPC_DCHECK(event_engine != nullptr);
       GRPC_DCHECK(state_ != SettingsState::kReady);
@@ -485,6 +478,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // make them writable. This is tracked via channelz in case it causes any
   // performance issues in the future.
   size_t num_peer_initial_window_size_increases_ = 0;
+  Http2SettingsManager settings_;
 };
 
 }  // namespace grpc_core

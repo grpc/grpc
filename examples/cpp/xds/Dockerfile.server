@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.9-slim-bookworm
+FROM python:3.10-slim-bookworm
 
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
 
@@ -25,7 +25,7 @@ COPY . .
 RUN tools/bazel build //examples/cpp/xds:xds_greeter_server
 RUN cp -rL /workdir/bazel-bin/examples/cpp/xds/xds_greeter_server /artifacts/
 
-FROM python:3.9-slim-bookworm
+FROM python:3.10-slim-bookworm
 
 RUN apt-get update \
     && apt-get -y upgrade \

@@ -1514,6 +1514,8 @@ TEST_P(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
   GetExpectedHeaderAndContinuationFrames(
       max_frame_length, expected_close_frames, kPathDemoServiceStep3,
       /*end_stream=*/true);
+  expected_close_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
 
   RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
       MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(GetArena(),
@@ -1552,23 +1554,10 @@ TEST_P(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
       stream_data_queue, std::move(expected_close_frames), encoder,
       /*can_send_reset_stream=*/true, /*expected_flags=*/
       (DequeueFlags::kTrailingMetadataDequeued |
-       DequeueFlags::kMessageDequeued),
+       DequeueFlags::kMessageDequeued | DequeueFlags::kResetStreamDequeued),
       /*max_tokens=*/6, max_frame_length, /*flow_control_tokens_consumed=*/6u,
       /*expected_writable_state=*/false);
 
-  EnqueueResetStreamAndCheckSuccess(
-      stream_data_queue,
-      /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
-  expected_close_frames.clear();
-  expected_close_frames.emplace_back(
-      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
-  DequeueAndCheckSuccess(
-      stream_data_queue, std::move(expected_close_frames), encoder,
-      /*can_send_reset_stream=*/true, /*expected_flags=*/
-      DequeueFlags::kResetStreamDequeued,
-      /*max_tokens=*/6, max_frame_length, /*flow_control_tokens_consumed=*/0u,
-      /*expected_writable_state=*/false);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 

@@ -1134,7 +1134,8 @@ TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
   // Priority 0: backend 0 and a non-existent backend.
   // Priority 1: backend 1.
   EdsResourceArgs args({
-      {"locality0", {CreateEndpoint(0), MakeNonExistentEndpoint()}},
+      {"locality_not_existing", {MakeNonExistentEndpoint()}},
+      {"locality0", {CreateEndpoint(0)}},
       {"locality1", {CreateEndpoint(1)}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -1154,8 +1155,12 @@ TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
   // Now send an EDS update that moves backend 0 to priority 1.
   // We also add backend 2, so that we know when the client sees the update.
   args = EdsResourceArgs({
-      {"locality0", {MakeNonExistentEndpoint()}},
-      {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
+      {"locality_not_existing", {MakeNonExistentEndpoint()}},
+      {"locality0", {CreateEndpoint(0)}, kDefaultLocalityWeight, 1},
+      {"locality1",
+       {CreateEndpoint(1), CreateEndpoint(2)},
+       kDefaultLocalityWeight,
+       1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(DEBUG_LOCATION, 2);

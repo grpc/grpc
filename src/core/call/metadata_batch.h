@@ -342,6 +342,16 @@ struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "x-envoy-peer-metadata"; }
 };
 
+// x-envoy-auth-failure-mode-allowed metadata trait for ext_authz failure mode
+// allow.
+struct XEnvoyAuthFailureModeAllowedMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = true;
+  static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "x-envoy-auth-failure-mode-allowed"; }
+};
+
 // x-forwarded-for metadata trait for HTTP connect.
 struct XForwardedForMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kPublishToApp = true;
@@ -594,6 +604,14 @@ struct GrpcStreamNetworkState {
   static std::string DisplayValue(ValueType x);
 };
 
+// Annotation added to indicate that the LB policy dropped the call.
+struct LbPolicyDrop {
+  static absl::string_view DebugKey() { return "LbPolicyDrop"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = bool;
+  static absl::string_view DisplayValue(bool x) { return x ? "true" : "false"; }
+};
+
 // Annotation added by a server transport to note the peer making a request.
 struct PeerString {
   static absl::string_view DebugKey() { return "PeerString"; }
@@ -714,7 +732,7 @@ template <typename MustBeVoid, typename... Traits>
 struct EncodableTraits;
 
 template <typename Trait, typename... Traits>
-struct EncodableTraits<absl::enable_if_t<IsEncodableTrait<Trait>::value, void>,
+struct EncodableTraits<std::enable_if_t<IsEncodableTrait<Trait>::value, void>,
                        Trait, Traits...> {
   using List =
       typename EncodableTraits<void,
@@ -722,7 +740,7 @@ struct EncodableTraits<absl::enable_if_t<IsEncodableTrait<Trait>::value, void>,
 };
 
 template <typename Trait, typename... Traits>
-struct EncodableTraits<absl::enable_if_t<!IsEncodableTrait<Trait>::value, void>,
+struct EncodableTraits<std::enable_if_t<!IsEncodableTrait<Trait>::value, void>,
                        Trait, Traits...> {
   using List = typename EncodableTraits<void, Traits...>::List;
 };
@@ -875,7 +893,7 @@ class GetStringValueHelper {
       : container_(container), backing_(backing) {}
 
   template <typename Trait>
-  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+  GPR_ATTRIBUTE_NOINLINE std::enable_if_t<
       Trait::kRepeatable == false &&
           std::is_same<Slice, typename Trait::ValueType>::value,
       std::optional<absl::string_view>>
@@ -886,7 +904,7 @@ class GetStringValueHelper {
   }
 
   template <typename Trait>
-  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+  GPR_ATTRIBUTE_NOINLINE std::enable_if_t<
       Trait::kRepeatable == true &&
           std::is_same<Slice, typename Trait::ValueType>::value,
       std::optional<absl::string_view>>
@@ -902,7 +920,7 @@ class GetStringValueHelper {
   }
 
   template <typename Trait>
-  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+  GPR_ATTRIBUTE_NOINLINE std::enable_if_t<
       Trait::kRepeatable == true &&
           !std::is_same<Slice, typename Trait::ValueType>::value,
       std::optional<absl::string_view>>
@@ -919,7 +937,7 @@ class GetStringValueHelper {
   }
 
   template <typename Trait>
-  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+  GPR_ATTRIBUTE_NOINLINE std::enable_if_t<
       Trait::kRepeatable == false &&
           !std::is_same<Slice, typename Trait::ValueType>::value,
       std::optional<absl::string_view>>
@@ -995,9 +1013,9 @@ template <typename Which, typename Ignored = void>
 struct Value;
 
 template <typename Which>
-struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
-                                          IsEncodableTrait<Which>::value,
-                                      void>> {
+struct Value<Which, std::enable_if_t<Which::kRepeatable == false &&
+                                         IsEncodableTrait<Which>::value,
+                                     void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) : value(value) {}
   explicit Value(typename Which::ValueType&& value)
@@ -1026,9 +1044,9 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
 };
 
 template <typename Which>
-struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
-                                          !IsEncodableTrait<Which>::value,
-                                      void>> {
+struct Value<Which, std::enable_if_t<Which::kRepeatable == false &&
+                                         !IsEncodableTrait<Which>::value,
+                                     void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) : value(value) {}
   explicit Value(typename Which::ValueType&& value)
@@ -1055,9 +1073,9 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
 };
 
 template <typename Which>
-struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
-                                          IsEncodableTrait<Which>::value,
-                                      void>> {
+struct Value<Which, std::enable_if_t<Which::kRepeatable == true &&
+                                         IsEncodableTrait<Which>::value,
+                                     void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) {
     this->value.push_back(value);
@@ -1093,9 +1111,9 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
 };
 
 template <typename Which>
-struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
-                                          !IsEncodableTrait<Which>::value,
-                                      void>> {
+struct Value<Which, std::enable_if_t<Which::kRepeatable == true &&
+                                         !IsEncodableTrait<Which>::value,
+                                     void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) {
     this->value.push_back(value);
@@ -1191,13 +1209,13 @@ struct FilterWrapper {
   Filterer filter_fn;
 
   template <typename Which,
-            absl::enable_if_t<IsEncodableTrait<Which>::value, bool> = true>
+            std::enable_if_t<IsEncodableTrait<Which>::value, bool> = true>
   bool operator()(const Value<Which>& /*which*/) {
     return filter_fn(Which());
   }
 
   template <typename Which,
-            absl::enable_if_t<!IsEncodableTrait<Which>::value, bool> = true>
+            std::enable_if_t<!IsEncodableTrait<Which>::value, bool> = true>
   bool operator()(const Value<Which>& /*which*/) {
     return true;
   }
@@ -1298,14 +1316,14 @@ struct StatefulCompressor<Factory> {};
 // Helper function for encoders
 // Given a metadata trait, convert the value to a slice.
 template <typename Which>
-absl::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value,
-                  const Slice&>
+std::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value,
+                 const Slice&>
 MetadataValueAsSlice(const Slice& slice) {
   return slice;
 }
 
 template <typename Which>
-absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
+std::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
 MetadataValueAsSlice(typename Which::ValueType value) {
   return Slice(Which::Encode(value));
 }
@@ -1572,13 +1590,13 @@ class MetadataMap {
   // Set the value of some known metadata.
   // Returns a pointer to the new value.
   template <typename Which, typename... Args>
-  absl::enable_if_t<Which::kRepeatable == false, void> Set(Which,
-                                                           Args&&... args) {
+  std::enable_if_t<Which::kRepeatable == false, void> Set(Which,
+                                                          Args&&... args) {
     table_.template set<Value<Which>>(std::forward<Args>(args)...);
   }
   template <typename Which, typename... Args>
-  absl::enable_if_t<Which::kRepeatable == true, void> Set(Which,
-                                                          Args&&... args) {
+  std::enable_if_t<Which::kRepeatable == true, void> Set(Which,
+                                                         Args&&... args) {
     GetOrCreatePointer(Which())->emplace_back(std::forward<Args>(args)...);
   }
 
@@ -1610,8 +1628,8 @@ class MetadataMap {
   //  auto value = m.get(T());
   //  m.Remove(T());
   template <typename Which>
-  absl::enable_if_t<Which::kRepeatable == false,
-                    std::optional<typename Which::ValueType>>
+  std::enable_if_t<Which::kRepeatable == false,
+                   std::optional<typename Which::ValueType>>
   Take(Which which) {
     if (auto* p = get_pointer(which)) {
       std::optional<typename Which::ValueType> value(std::move(*p));
@@ -1624,8 +1642,8 @@ class MetadataMap {
   // Extract repeated known metadata.
   // Returns an empty vector if the metadata was not present.
   template <typename Which>
-  absl::enable_if_t<Which::kRepeatable == true,
-                    typename metadata_detail::Value<Which>::StorageType>
+  std::enable_if_t<Which::kRepeatable == true,
+                   typename metadata_detail::Value<Which>::StorageType>
   Take(Which which) {
     if (auto* p = get_pointer(which)) {
       typename Value<Which>::StorageType value = std::move(*p);
@@ -1749,14 +1767,16 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
-    grpc_core::XEnvoyPeerMetadata, grpc_core::XForwardedForMetadata,
-    grpc_core::XForwardedHostMetadata, grpc_core::W3CTraceParentMetadata,
+    grpc_core::XEnvoyPeerMetadata,
+    grpc_core::XEnvoyAuthFailureModeAllowedMetadata,
+    grpc_core::XForwardedForMetadata, grpc_core::XForwardedHostMetadata,
+    grpc_core::W3CTraceParentMetadata,
     // Non-encodable things
-    grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
-    grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
-    grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::IsTransparentRetry, grpc_core::GrpcTrailersOnly,
-    grpc_core::GrpcTarPit,
+    grpc_core::GrpcStreamNetworkState, grpc_core::LbPolicyDrop,
+    grpc_core::PeerString, grpc_core::GrpcStatusContext,
+    grpc_core::GrpcStatusFromWire, grpc_core::GrpcCallWasCancelled,
+    grpc_core::WaitForReady, grpc_core::IsTransparentRetry,
+    grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit,
     grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 

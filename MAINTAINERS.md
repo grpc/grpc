@@ -32,6 +32,7 @@ for general contribution guidelines.
 - [pfreixes](https://github.com/pfreixes), Skyscanner Ltd
 - [ran-su](https://github.com/ran-su), Google LLC
 - [rishesh007](https://github.com/rishesh007), Google LLC
+- [ritulb18](https://github.com/ritulb18), Google LLC
 - [sergiitk](https://github.com/sergiitk), Google LLC
 - [siddharthnohria](https://github.com/siddharthnohria), Google LLC
 - [soheilhy](https://github.com/soheilhy), Google LLC
@@ -39,6 +40,7 @@ for general contribution guidelines.
 - [thisisnotapril](https://github.com/thisisnotapril), Google LLC
 - [tjagtap](https://github.com/tjagtap), Google LLC
 - [veblush](https://github.com/veblush), Google LLC
+- [vidhikpatel](https://github.com/vidhikpatel), Google LLC
 - [vishalpowar](https://github.com/vishalpowar), Google LLC
 - [wenbozhu](https://github.com/wenbozhu), Google LLC
 - [yashykt](https://github.com/yashykt), Google LLC

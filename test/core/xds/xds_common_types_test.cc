@@ -53,7 +53,12 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_grpc_service_parser.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/grpc/xds_tls_context.h"
+#include "src/core/xds/grpc/xds_tls_context_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -91,7 +96,7 @@ class XdsCommonTypesTest : public ::testing::Test {
   static RefCountedPtr<XdsClient> MakeXdsClient(
       absl::string_view extra_bootstrap_text = "",
       bool trusted_xds_server = false) {
-    auto bootstrap = GrpcXdsBootstrap::Create(
+    auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         absl::StrCat("{\n"
                      "  \"xds_servers\": [\n"
                      "    {\n"
@@ -1014,7 +1019,7 @@ class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
   // For convenience, tests build protos using the protobuf API, and
   // we convert it to a upb object, which is then passed to
   // ParseXdsGrpcService() for testing.
-  absl::StatusOr<XdsGrpcService> Parse(const GrpcService& proto) {
+  absl::StatusOr<GrpcXdsServerTarget> Parse(const GrpcService& proto) {
     // Serialize the protobuf proto.
     std::string serialized_proto;
     if (!proto.SerializeToString(&serialized_proto)) {
@@ -1028,13 +1033,13 @@ class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
     }
     // Now parse the upb proto.
     ValidationErrors errors;
-    XdsGrpcService xds_grpc_service =
+    GrpcXdsServerTarget target =
         ParseXdsGrpcService(MakeDecodeContext(), upb_proto, &errors);
     if (!errors.ok()) {
       return errors.status(absl::StatusCode::kInvalidArgument,
                            "validation failed");
     }
-    return xds_grpc_service;
+    return target;
   }
 };
 
@@ -1064,13 +1069,10 @@ TEST_F(ParseXdsGrpcServiceTest,
   google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  ASSERT_NE(xds_grpc_service->server_target, nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
-            "dns:server.example.com");
-  ASSERT_NE(xds_grpc_service->server_target->channel_creds_config(), nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
-            "insecure");
-  EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
+  EXPECT_EQ(xds_grpc_service->server_uri(), "dns:server.example.com");
+  ASSERT_NE(xds_grpc_service->channel_creds_config(), nullptr);
+  EXPECT_EQ(xds_grpc_service->channel_creds_config()->type(), "insecure");
+  EXPECT_THAT(xds_grpc_service->call_creds_configs(),
               ::testing::ElementsAre(EqCredsConfig(
                   "jwt_token_file", "", "{path=\"/path/to/file\"}")));
 }
@@ -1113,13 +1115,10 @@ TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithCredentials) {
   google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  ASSERT_NE(xds_grpc_service->server_target, nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
-            "dns:server.example.com");
-  ASSERT_NE(xds_grpc_service->server_target->channel_creds_config(), nullptr);
-  EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
-            "google_default");
-  EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
+  EXPECT_EQ(xds_grpc_service->server_uri(), "dns:server.example.com");
+  ASSERT_NE(xds_grpc_service->channel_creds_config(), nullptr);
+  EXPECT_EQ(xds_grpc_service->channel_creds_config()->type(), "google_default");
+  EXPECT_THAT(xds_grpc_service->call_creds_configs(),
               ::testing::ElementsAre(
                   EqCredsConfig("",
                                 "envoy.extensions.grpc_service.call_credentials"
@@ -1130,8 +1129,8 @@ TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithCredentials) {
                                 ".access_token.v3.AccessTokenCredentials",
                                 "{token=\"bar\"}")));
   // Unset fields have default values.
-  EXPECT_EQ(xds_grpc_service->timeout, Duration::Zero());
-  EXPECT_THAT(xds_grpc_service->initial_metadata, ::testing::ElementsAre());
+  EXPECT_EQ(xds_grpc_service->timeout(), Duration::Infinity());
+  EXPECT_THAT(xds_grpc_service->initial_metadata(), ::testing::ElementsAre());
 }
 
 TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithChannelCredsUnset) {
@@ -1172,7 +1171,7 @@ TEST_F(ParseXdsGrpcServiceTest, Timeout) {
           InsecureCredentials());
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
+  EXPECT_EQ(xds_grpc_service->timeout(), Duration::Seconds(5));
 }
 
 TEST_F(ParseXdsGrpcServiceTest, InvalidTimeout) {
@@ -1191,7 +1190,7 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidTimeout) {
                 "field:timeout error:duration must be positive]"));
 }
 
-TEST_F(ParseXdsGrpcServiceTest, HeaderValueForNonBinaryHeader) {
+TEST_F(ParseXdsGrpcServiceTest, InitialMetadata) {
   xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
   GrpcService grpc_service;
   auto* header_value = grpc_service.add_initial_metadata();
@@ -1204,14 +1203,14 @@ TEST_F(ParseXdsGrpcServiceTest, HeaderValueForNonBinaryHeader) {
           GoogleDefaultCredentials());
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  EXPECT_THAT(xds_grpc_service->initial_metadata,
+  EXPECT_THAT(xds_grpc_service->initial_metadata(),
               ::testing::ElementsAre(::testing::Pair("foo", "bar")));
 }
 
 // Note: This shows that we include validation errors from ParseXdsHeader()
 // itself.  We don't need to test every possible matcher validation failure
 // case here, because those are covered in the tests for ParseXdsHeader().
-TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSet) {
+TEST_F(ParseXdsGrpcServiceTest, InvalidInitialMetadata) {
   xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
   GrpcService grpc_service;
   auto* header_value = grpc_service.add_initial_metadata();
@@ -1227,6 +1226,28 @@ TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSet) {
                 "validation failed: ["
                 "field:initial_metadata[0] "
                 "error:either value or raw_value must be set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, InitialMetadataIgnoredFromUntrustedServer) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
+  xds_client_ = MakeXdsClient(
+      "  \"allowed_grpc_services\": {\n"
+      "    \"dns:server.example.com\": {\n"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]\n"
+      "    }\n"
+      "  },\n");
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  header_value->set_value("bar");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_THAT(xds_grpc_service->initial_metadata(), ::testing::ElementsAre());
 }
 
 TEST_F(ParseXdsGrpcServiceTest, GoogleGrpcNotSet) {
@@ -1322,6 +1343,19 @@ TEST_F(ParseHeaderMutationRulesTest, Basic) {
   EXPECT_EQ(rules.allow_expression->pattern(), "allow");
   ASSERT_NE(rules.disallow_expression, nullptr);
   EXPECT_EQ(rules.disallow_expression->pattern(), "disallow");
+}
+
+TEST_F(ParseHeaderMutationRulesTest, ExplicitFalse) {
+  HeaderMutationRulesProto proto;
+  proto.mutable_disallow_all()->set_value(false);
+  proto.mutable_disallow_is_error()->set_value(false);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto rules = Parse(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok());
+  EXPECT_FALSE(rules.disallow_all);
+  EXPECT_FALSE(rules.disallow_is_error);
 }
 
 TEST_F(ParseHeaderMutationRulesTest, InvalidRegex) {

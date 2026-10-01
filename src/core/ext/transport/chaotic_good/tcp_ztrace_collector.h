@@ -201,18 +201,6 @@ struct WriteBytesToControlChannelTrace {
   }
 };
 
-struct ChunkStreamAssociationTrace {
-  int64_t stream_id;
-  uint64_t flow_id;
-
-  channelz::PropertyList ChannelzProperties() const {
-    return channelz::PropertyList()
-        .Set("metadata_type", "CHUNK_STREAM_ASSOCIATION")
-        .Set("stream_id", stream_id)
-        .Set("flow_id", flow_id);
-  }
-};
-
 struct FinishWriteBytesToControlChannelTrace {
   absl::Status status;
 
@@ -256,8 +244,8 @@ using TcpZTraceCollector = channelz::ZTraceCollector<
     WriteLargeFrameHeaderTrace, EndpointWriteMetricsTrace,
     WriteBytesToEndpointTrace, FinishWriteBytesToEndpointTrace,
     WriteBytesToControlChannelTrace, FinishWriteBytesToControlChannelTrace,
-    ChunkStreamAssociationTrace, TransportError<true>, TransportError<false>,
-    OrphanTrace, EndpointCloseTrace>;
+    TransportError<true>, TransportError<false>, OrphanTrace,
+    EndpointCloseTrace>;
 
 }  // namespace grpc_core::chaotic_good
 

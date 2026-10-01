@@ -2,7 +2,7 @@ gRPC C++ - Building from source
 ===========================
 
 This document has detailed instructions on how to build gRPC C++ from source. Note that it only covers the build of gRPC itself and is meant for gRPC C++ contributors and/or power users. 
-Other should follow the user instructions. See the [How to use](https://github.com/grpc/grpc/tree/master/src/cpp#to-start-using-grpc-c) instructions for guidance on how to add gRPC as a dependency to a C++ application (there are several ways and system-wide installation is often not the best choice).
+Others should follow the user instructions. See the [How to use](https://github.com/grpc/grpc/tree/master/src/cpp#to-start-using-grpc-c) instructions for guidance on how to add gRPC as a dependency to a C++ application (there are several ways and system-wide installation is often not the best choice).
 
 # Pre-requisites
 
@@ -158,7 +158,7 @@ installed to be able to compile the C/C++ sources.
 > cd cmake
 > md build
 > cd build
-> call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
+> call "%VS170COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" x64
 > cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ..\..
 > cmake --build .
 ```

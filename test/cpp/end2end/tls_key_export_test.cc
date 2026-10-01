@@ -31,6 +31,7 @@
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
@@ -255,6 +256,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 };
 
 TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Flakes on PH2");
   // Cover all valid statuses.
   for (int i = 0; i <= NUM_REQUESTS_PER_CHANNEL; ++i) {
     for (int j = 0; j < GetParam().num_listening_ports(); ++j) {

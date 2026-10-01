@@ -68,6 +68,7 @@ class TlsCustomVerificationCheckRequest {
   // ex: "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU"
   // ex: "CN=GTS Root R1,O=Google Trust Services LLC,C=US"
   grpc::string_ref verified_root_cert_subject() const;
+  grpc::string_ref negotiated_key_exchange_group() const;
   std::vector<grpc::string_ref> uri_names() const;
   std::vector<grpc::string_ref> dns_names() const;
   std::vector<grpc::string_ref> email_names() const;

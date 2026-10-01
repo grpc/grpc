@@ -14,10 +14,9 @@
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
 
+#include "src/core/util/string.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -51,36 +50,71 @@ Rbac& Rbac::operator=(Rbac&& other) noexcept {
   return *this;
 }
 
-std::string Rbac::ToString() const {
-  std::vector<std::string> contents;
-  absl::string_view condition_str;
+bool Rbac::operator==(const Rbac& other) const {
+  if (name != other.name) return false;
+  if (action != other.action) return false;
+  if (policies != other.policies) return false;
+  if (audit_condition != other.audit_condition) return false;
+  if (logger_configs.size() != other.logger_configs.size()) return false;
+  for (size_t i = 0; i < logger_configs.size(); ++i) {
+    if (logger_configs[i] == nullptr) {
+      if (other.logger_configs[i] != nullptr) return false;
+      continue;
+    }
+    if (other.logger_configs[i] == nullptr) return false;
+    if (logger_configs[i]->name() != other.logger_configs[i]->name() ||
+        logger_configs[i]->ToString() != other.logger_configs[i]->ToString()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+namespace {
+
+absl::string_view AuditConditionString(Rbac::AuditCondition audit_condition) {
   switch (audit_condition) {
     case Rbac::AuditCondition::kNone:
-      condition_str = "None";
-      break;
-    case AuditCondition::kOnDeny:
-      condition_str = "OnDeny";
-      break;
-    case AuditCondition::kOnAllow:
-      condition_str = "OnAllow";
-      break;
-    case AuditCondition::kOnDenyAndAllow:
-      condition_str = "OnDenyAndAllow";
-      break;
+      return "None";
+    case Rbac::AuditCondition::kOnDeny:
+      return "OnDeny";
+    case Rbac::AuditCondition::kOnAllow:
+      return "OnAllow";
+    case Rbac::AuditCondition::kOnDenyAndAllow:
+      return "OnDenyAndAllow";
   }
-  contents.push_back(absl::StrFormat(
-      "Rbac name=%s action=%s audit_condition=%s{", name,
-      action == Rbac::Action::kAllow ? "Allow" : "Deny", condition_str));
-  for (const auto& p : policies) {
-    contents.push_back(absl::StrFormat("{\n  policy_name=%s\n%s\n}", p.first,
-                                       p.second.ToString()));
+  return "<UNKNOWN>";
+}
+
+}  // namespace
+
+std::string Rbac::ToString() const {
+  std::string str = "Rbac{name=";
+  StrAppend(str, name);
+  StrAppend(str, ", action=");
+  StrAppend(str, action == Rbac::Action::kAllow ? "Allow" : "Deny");
+  StrAppend(str, ", audit_condition=");
+  StrAppend(str, AuditConditionString(audit_condition));
+  StrAppend(str, ", policies={");
+  bool is_first = true;
+  for (const auto& [name, policy] : policies) {
+    if (!is_first) StrAppend(str, ", ");
+    StrAppend(str, name);
+    StrAppend(str, "=");
+    StrAppend(str, policy.ToString());
+    is_first = false;
   }
+  StrAppend(str, "}, audit_loggers={");
+  is_first = true;
   for (const auto& config : logger_configs) {
-    contents.push_back(absl::StrFormat("{\n  audit_logger=%s\n%s\n}",
-                                       config->name(), config->ToString()));
+    if (!is_first) StrAppend(str, ", ");
+    StrAppend(str, config->name());
+    StrAppend(str, "=");
+    StrAppend(str, config->ToString());
+    is_first = false;
   }
-  contents.push_back("}");
-  return absl::StrJoin(contents, "\n");
+  StrAppend(str, "}}");
+  return str;
 }
 
 //
@@ -98,6 +132,11 @@ Rbac::CidrRange& Rbac::CidrRange::operator=(Rbac::CidrRange&& other) noexcept {
   address_prefix = std::move(other.address_prefix);
   prefix_len = other.prefix_len;
   return *this;
+}
+
+bool Rbac::CidrRange::operator==(const Rbac::CidrRange& other) const {
+  return address_prefix == other.address_prefix &&
+         prefix_len == other.prefix_len;
 }
 
 std::string Rbac::CidrRange::ToString() const {
@@ -125,11 +164,11 @@ Rbac::Permission Rbac::Permission::MakeOrPermission(
   return permission;
 }
 
-Rbac::Permission Rbac::Permission::MakeNotPermission(Permission permission) {
+Rbac::Permission Rbac::Permission::MakeNotPermission(
+    std::unique_ptr<Permission> permission) {
   Permission not_permission;
   not_permission.type = Permission::RuleType::kNot;
-  not_permission.permissions.push_back(
-      std::make_unique<Rbac::Permission>(std::move(permission)));
+  not_permission.permissions.push_back(std::move(permission));
   return not_permission;
 }
 
@@ -237,6 +276,25 @@ Rbac::Permission& Rbac::Permission::operator=(
   return *this;
 }
 
+bool Rbac::Permission::operator==(const Rbac::Permission& other) const {
+  if (type != other.type) return false;
+  if (header_matcher != other.header_matcher) return false;
+  if (string_matcher != other.string_matcher) return false;
+  if (ip != other.ip) return false;
+  if (port != other.port) return false;
+  if (invert != other.invert) return false;
+  if (permissions.size() != other.permissions.size()) return false;
+  for (size_t i = 0; i < permissions.size(); ++i) {
+    if (permissions[i] == nullptr) {
+      if (other.permissions[i] != nullptr) return false;
+    } else {
+      if (other.permissions[i] == nullptr) return false;
+      if (*permissions[i] != *other.permissions[i]) return false;
+    }
+  }
+  return true;
+}
+
 std::string Rbac::Permission::ToString() const {
   switch (type) {
     case RuleType::kAnd: {
@@ -245,7 +303,7 @@ std::string Rbac::Permission::ToString() const {
       for (const auto& permission : permissions) {
         contents.push_back(permission->ToString());
       }
-      return absl::StrFormat("and=[%s]", absl::StrJoin(contents, ","));
+      return absl::StrFormat("{and=[%s]}", absl::StrJoin(contents, ", "));
     }
     case RuleType::kOr: {
       std::vector<std::string> contents;
@@ -253,24 +311,24 @@ std::string Rbac::Permission::ToString() const {
       for (const auto& permission : permissions) {
         contents.push_back(permission->ToString());
       }
-      return absl::StrFormat("or=[%s]", absl::StrJoin(contents, ","));
+      return absl::StrFormat("{or=[%s]}", absl::StrJoin(contents, ", "));
     }
     case RuleType::kNot:
-      return absl::StrFormat("not %s", permissions[0]->ToString());
+      return absl::StrFormat("{not %s}", permissions[0]->ToString());
     case RuleType::kAny:
-      return "any";
+      return "{any}";
     case RuleType::kHeader:
-      return absl::StrFormat("header=%s", header_matcher.ToString());
+      return absl::StrFormat("{header=%s}", header_matcher.ToString());
     case RuleType::kPath:
-      return absl::StrFormat("path=%s", string_matcher.ToString());
+      return absl::StrFormat("{path=%s}", string_matcher.ToString());
     case RuleType::kDestIp:
-      return absl::StrFormat("dest_ip=%s", ip.ToString());
+      return absl::StrFormat("{dest_ip=%s}", ip.ToString());
     case RuleType::kDestPort:
-      return absl::StrFormat("dest_port=%d", port);
+      return absl::StrFormat("{dest_port=%d}", port);
     case RuleType::kMetadata:
-      return absl::StrFormat("%smetadata", invert ? "invert " : "");
+      return absl::StrFormat("{%smetadata}", invert ? "invert " : "");
     case RuleType::kReqServerName:
-      return absl::StrFormat("requested_server_name=%s",
+      return absl::StrFormat("{requested_server_name=%s}",
                              string_matcher.ToString());
     default:
       return "";
@@ -297,11 +355,11 @@ Rbac::Principal Rbac::Principal::MakeOrPrincipal(
   return principal;
 }
 
-Rbac::Principal Rbac::Principal::MakeNotPrincipal(Principal principal) {
+Rbac::Principal Rbac::Principal::MakeNotPrincipal(
+    std::unique_ptr<Principal> principal) {
   Principal not_principal;
   not_principal.type = Principal::RuleType::kNot;
-  not_principal.principals.push_back(
-      std::make_unique<Rbac::Principal>(std::move(principal)));
+  not_principal.principals.push_back(std::move(principal));
   return not_principal;
 }
 
@@ -409,6 +467,24 @@ Rbac::Principal& Rbac::Principal::operator=(Rbac::Principal&& other) noexcept {
   return *this;
 }
 
+bool Rbac::Principal::operator==(const Rbac::Principal& other) const {
+  if (type != other.type) return false;
+  if (header_matcher != other.header_matcher) return false;
+  if (string_matcher != other.string_matcher) return false;
+  if (ip != other.ip) return false;
+  if (invert != other.invert) return false;
+  if (principals.size() != other.principals.size()) return false;
+  for (size_t i = 0; i < principals.size(); ++i) {
+    if (principals[i] == nullptr) {
+      if (other.principals[i] != nullptr) return false;
+    } else {
+      if (other.principals[i] == nullptr) return false;
+      if (*principals[i] != *other.principals[i]) return false;
+    }
+  }
+  return true;
+}
+
 std::string Rbac::Principal::ToString() const {
   switch (type) {
     case RuleType::kAnd: {
@@ -417,7 +493,7 @@ std::string Rbac::Principal::ToString() const {
       for (const auto& principal : principals) {
         contents.push_back(principal->ToString());
       }
-      return absl::StrFormat("and=[%s]", absl::StrJoin(contents, ","));
+      return absl::StrFormat("{and=[%s]}", absl::StrJoin(contents, ", "));
     }
     case RuleType::kOr: {
       std::vector<std::string> contents;
@@ -425,26 +501,26 @@ std::string Rbac::Principal::ToString() const {
       for (const auto& principal : principals) {
         contents.push_back(principal->ToString());
       }
-      return absl::StrFormat("or=[%s]", absl::StrJoin(contents, ","));
+      return absl::StrFormat("{or=[%s]}", absl::StrJoin(contents, ", "));
     }
     case RuleType::kNot:
-      return absl::StrFormat("not %s", principals[0]->ToString());
+      return absl::StrFormat("{not %s}", principals[0]->ToString());
     case RuleType::kAny:
-      return "any";
+      return "{any}";
     case RuleType::kPrincipalName:
-      return absl::StrFormat("principal_name=%s", string_matcher->ToString());
+      return absl::StrFormat("{principal_name=%s}", string_matcher->ToString());
     case RuleType::kSourceIp:
-      return absl::StrFormat("source_ip=%s", ip.ToString());
+      return absl::StrFormat("{source_ip=%s}", ip.ToString());
     case RuleType::kDirectRemoteIp:
-      return absl::StrFormat("direct_remote_ip=%s", ip.ToString());
+      return absl::StrFormat("{direct_remote_ip=%s}", ip.ToString());
     case RuleType::kRemoteIp:
-      return absl::StrFormat("remote_ip=%s", ip.ToString());
+      return absl::StrFormat("{remote_ip=%s}", ip.ToString());
     case RuleType::kHeader:
-      return absl::StrFormat("header=%s", header_matcher.ToString());
+      return absl::StrFormat("{header=%s}", header_matcher.ToString());
     case RuleType::kPath:
-      return absl::StrFormat("path=%s", string_matcher->ToString());
+      return absl::StrFormat("{path=%s}", string_matcher->ToString());
     case RuleType::kMetadata:
-      return absl::StrFormat("%smetadata", invert ? "invert " : "");
+      return absl::StrFormat("{%smetadata}", invert ? "invert " : "");
     default:
       return "";
   }
@@ -467,10 +543,17 @@ Rbac::Policy& Rbac::Policy::operator=(Rbac::Policy&& other) noexcept {
   return *this;
 }
 
+bool Rbac::Policy::operator==(const Rbac::Policy& other) const {
+  return permissions == other.permissions && principals == other.principals;
+}
+
 std::string Rbac::Policy::ToString() const {
-  return absl::StrFormat(
-      "  Policy  {\n    Permissions{%s}\n    Principals{%s}\n  }",
-      permissions.ToString(), principals.ToString());
+  std::string str = "{permissions=";
+  StrAppend(str, permissions.ToString());
+  StrAppend(str, ", principals=");
+  StrAppend(str, principals.ToString());
+  StrAppend(str, "}");
+  return str;
 }
 
 }  // namespace grpc_core

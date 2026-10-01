@@ -37,14 +37,13 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   }
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-
+TEST(HeadersTest, PartialHttp2HeaderPrefixes) {
   // partial http2 header prefixes
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(HeadersTest, DisconnectTest) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00",
@@ -72,13 +71,18 @@ int main(int argc, char** argv) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x01\x04\x00\x00\x00\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(HeadersTest, TestAddingPrioritizationData) {
   // test adding prioritization data
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x01\x01\x24\x00\x00\x00\x01"
                            "\x00",
                            0);
+}
+
+TEST(HeadersTest, Test) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x02\x01\x24\x00\x00\x00\x01"
@@ -124,13 +128,18 @@ int main(int argc, char** argv) {
                            "\x00\x00\x05\x01\x24\x00\x00\x00\x01"
                            "\x00\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(HeadersTest, TestLookingUpAnInvalidIndex) {
   // test looking up an invalid index
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x01\x01\x04\x00\x00\x00\x01"
                            "\xfe",
                            0);
+}
+
+TEST(HeadersTest, Test2) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x04\x01\x04\x00\x00\x00\x01"
@@ -149,6 +158,9 @@ int main(int argc, char** argv) {
                            "\x1f\x7f\x01"
                            "a",
                            0);
+}
+
+TEST(HeadersTest, TestNvrNotIndexedInStaticTable) {
   // test nvr, not indexed in static table
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
@@ -156,24 +168,36 @@ int main(int argc, char** argv) {
                            "\x01\x01"
                            "a",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(HeadersTest, Test3) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
                            "\x11\x01"
                            "a",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(HeadersTest, IllegalOpCode) {
   // illegal op code
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x01\x01\x04\x00\x00\x00\x01"
                            "\x80",
                            0);
+}
+
+TEST(HeadersTest, ParseSomeLongIndices) {
   // parse some long indices
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x02\x01\x04\x00\x00\x00\x01"
                            "\xff\x00",
                            0);
+}
+
+TEST(HeadersTest, Test4) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
@@ -239,67 +263,99 @@ int main(int argc, char** argv) {
                            "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
                            "\xff\x80\x80\x80\x80\x80\x80\x00",
                            0);
+}
+
+TEST(HeadersTest, OverflowOnByte4) {
   // overflow on byte 4
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x06\x01\x04\x00\x00\x00\x01"
                            "\xff\x80\x80\x80\x80\x7f",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(HeadersTest, Test5) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x06\x01\x04\x00\x00\x00\x01"
                            "\xff\xff\xff\xff\xff\x0f",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(HeadersTest, OverflowAfterByte4) {
   // overflow after byte 4
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
                            "\xff\x80\x80\x80\x80\x80\x80\x02",
                            0);
+}
+
+TEST(HeadersTest, EndOfHeadersMidOpcode) {
   // end of headers mid-opcode
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x01\x01\x04\x00\x00\x00\x01"
                            "\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(HeadersTest, DynamicTableSizeUpdateSetToDefault) {
   // dynamic table size update: set to default
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
                            "\x3f\xe1\x1f",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(HeadersTest, DynamicTableSizeUpdateSetTooLarge) {
   // dynamic table size update: set too large
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
                            "\x3f\xf1\x1f",
                            0);
+}
+
+TEST(HeadersTest, DynamicTableSizeUpdateSetTwice) {
   // dynamic table size update: set twice
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x04\x01\x04\x00\x00\x00\x01"
                            "\x20\x3f\xe1\x1f",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(HeadersTest, DynamicTableSizeUpdateSetThrice) {
   // dynamic table size update: set thrice
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
                            "\x20\x20\x20",
                            0);
+}
 
+TEST(HeadersTest, NonEndingHeaderFollowedByContinuationFrame) {
   // non-ending header followed by continuation frame
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x00\x01\x00\x00\x00\x00\x01"
                            "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(HeadersTest, NonEndingHeaderFollowedByNonContinuationFrame) {
   // non-ending header followed by non-continuation frame
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x00\x01\x00\x00\x00\x00\x01"
                            "\x00\x00\x00\x00\x04\x00\x00\x00\x01",
                            0);
+}
+
+TEST(HeadersTest,
+     NonEndingHeaderFollowedByAContinuationFrameForADifferentStream) {
   // non-ending header followed by a continuation frame for a different stream
   //
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
@@ -308,9 +364,15 @@ int main(int argc, char** argv) {
                            "\x00\x00\x00\x01\x00\x00\x00\x00\x03"
                            "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
                            0);
+}
+
+TEST(HeadersTest, OpeningWithAContinuationFrame) {
   // opening with a continuation frame
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x09\x04\x00\x00\x00\x01", 0);
+}
+
+TEST(HeadersTest, ThreeHeaderFrames) {
   // three header frames
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
@@ -318,12 +380,16 @@ int main(int argc, char** argv) {
                            "\x00\x00\x00\x01\x04\x00\x00\x00\x01"
                            "\x00\x00\x00\x01\x04\x00\x00\x00\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(HeadersTest, AnInvalidHeaderFoundWithFuzzing) {
   // an invalid header found with fuzzing
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x01\x39\x67\xed\x1d\x64",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+TEST(HeadersTest, ABadlyEncodedTimeoutValue) {
   // a badly encoded timeout value
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
@@ -331,6 +397,9 @@ int main(int argc, char** argv) {
                            "\x10\x0cgrpc-timeout\x0a"
                            "15 seconds",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(HeadersTest, ABadlyEncodedTimeoutValueTwiceCatchesCaching) {
   // a badly encoded timeout value: twice (catches caching)
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
@@ -341,7 +410,13 @@ int main(int argc, char** argv) {
                            "\x10\x0cgrpc-timeout\x0a"
                            "15 seconds",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
 
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
+  int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return result;
 }

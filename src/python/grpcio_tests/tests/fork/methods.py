@@ -206,16 +206,17 @@ class _ChildProcess:
     def finish(self):
         terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
 
-        waitstatus = self._rc
-        exit_code = os.waitstatus_to_exitcode(waitstatus)
-        sys.stderr.write(f"Exit code: {exit_code} ({waitstatus=})\n")
-
         if not terminated:
             sys.stderr.write("Finishing child %d\n" % self._child_pid)
             debugger.print_backtraces(self._child_pid)
             raise RuntimeError(
                 "Child process %d did not terminate" % self._child_pid
             )
+
+        waitstatus = self._rc
+        exit_code = os.waitstatus_to_exitcode(waitstatus)
+        sys.stderr.write(f"Exit code: {exit_code} ({waitstatus=})\n")
+
         if self._rc != 0:
             raise ValueError(
                 f"Child process {self._child_pid} failed"

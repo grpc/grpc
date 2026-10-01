@@ -77,7 +77,7 @@ def check_linker_need_libatomic():
     )
     cxx = os.environ.get("CXX", "c++")
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++17", "-"],
+        shlex.split(cxx) + ["-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -88,7 +88,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++17", "-", "-latomic"],
+        shlex.split(cxx) + ["-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -247,7 +247,17 @@ EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 if BUILD_WITH_STATIC_LIBSTDCXX:
     EXTRA_LINK_ARGS.append("-static-libstdc++")
 
-CC_FILES = [os.path.normpath(cc_file) for cc_file in protoc_lib_deps.CC_FILES]
+
+def _get_cc_files():
+    cc_files = list(protoc_lib_deps.CC_FILES)
+    if "win32" in sys.platform:
+        cc_files += protoc_lib_deps.CC_FILES_WINDOWS_ONLY
+    return [os.path.normpath(cc_file) for cc_file in cc_files]
+
+
+CC_FILES = _get_cc_files()
+
+
 PROTO_FILES = [
     os.path.normpath(proto_file) for proto_file in protoc_lib_deps.PROTO_FILES
 ]
@@ -337,7 +347,7 @@ if __name__ == "__main__":
         ext_modules=extension_modules(),
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=[
-            "protobuf>=6.33.5,<8.0.0",
+            "protobuf>=7.35.1,<8.0.0",
             "grpcio>={version}".format(version=grpc_version.VERSION),
             "setuptools>=77.0.1",
         ],

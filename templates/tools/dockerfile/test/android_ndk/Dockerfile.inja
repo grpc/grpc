@@ -16,7 +16,7 @@ FROM debian:11
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_python_deps.include" %}
-{% include "../../cmake.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 {% include "../../run_tests_addons.include" %}
 RUN apt update && apt upgrade -y
 

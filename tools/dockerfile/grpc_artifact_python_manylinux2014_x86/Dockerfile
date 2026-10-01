@@ -16,7 +16,7 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_x86/Dockerfile.inja`!!!
 
-FROM quay.io/pypa/manylinux2014_i686:2025.07.14-5
+FROM quay.io/pypa/manylinux2014_i686:2026.08.15-1
 
 RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc && \
@@ -39,16 +39,13 @@ RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache
 
 #===================================
 # Install Python build requirements
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1'
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.2.8' && \
+  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.2.8' && \
+  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.2.8' && \
+  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.2.8' && \
+  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.2.8' && \
+  /opt/python/cp315-cp315/bin/pip install --upgrade 'cython==3.2.8'
 
-
-# TODO(jtattermusch): revisit which of the deps are really required
-RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH

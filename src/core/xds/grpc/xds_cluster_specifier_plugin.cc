@@ -16,19 +16,17 @@
 
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <map>
 #include <utility>
 #include <variant>
 
+#include "grpc/lookup/v1/rls_config.upb.h"
+#include "grpc/lookup/v1/rls_config.upbdefs.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
-#include "src/proto/grpc/lookup/v1/rls_config.upb.h"
-#include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 #include "upb/base/status.hpp"
 #include "upb/json/encode.h"
 #include "upb/mem/arena.hpp"

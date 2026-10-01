@@ -22,13 +22,14 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/impl/channel_interface.h>
 #include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/stub_options.h>
 
-#include <functional>
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace grpc {
 namespace experimental {
@@ -47,12 +48,13 @@ class GenericStubSession {
   /// it will not be activated until StartCall is invoked on its reactor.
   void PrepareSessionCall(ClientContext* context, const std::string& method,
                           StubOptions options, const RequestType* request,
-                          ClientSessionReactor* reactor) {
+                          ClientSessionReactor* reactor,
+                          ChannelArguments virtual_args = {}) {
     internal::ClientCallbackSessionFactory::Create<RequestType>(
         channel_.get(),
         grpc::internal::RpcMethod(method.c_str(), options.suffix_for_stats(),
                                   grpc::internal::RpcMethod::SESSION_RPC),
-        context, request, reactor);
+        context, request, reactor, std::move(virtual_args));
   }
 
  private:

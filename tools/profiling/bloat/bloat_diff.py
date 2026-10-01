@@ -24,6 +24,8 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import traceback
+from typing import Optional, TextIO
 
 sys.path.append(
     os.path.join(
@@ -52,24 +54,43 @@ LIBS = [
 ]
 
 
-def _build(output_dir):
+def _print_banner(
+    msg: str, file: Optional[TextIO] = None, max_width: int = 120
+) -> None:
+    """Prints a prominent banner line to the specified stream."""
+    if file is None:
+        file = sys.stdout
+    sys.stdout.flush()
+    sys.stderr.flush()
+    padded_msg = f" {msg} "
+    width = max(max_width, len(padded_msg) + 20)
+    print(f"\n{padded_msg:#^{width}}", file=file, flush=True)
+
+
+def _build(output_dir: str) -> None:
     """Perform the cmake build under the output_dir."""
+    _print_banner(f"BUILD START: {output_dir}")
     shutil.rmtree(output_dir, ignore_errors=True)
-    subprocess.check_call("mkdir -p %s" % output_dir, shell=True, cwd=".")
-    subprocess.check_call(
-        [
-            "cmake",
-            "-DgRPC_BUILD_TESTS=OFF",
-            "-DCMAKE_CXX_STANDARD=17",
-            "-DBUILD_SHARED_LIBS=ON",
-            "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
-            '-DCMAKE_C_FLAGS="-gsplit-dwarf"',
-            '-DCMAKE_CXX_FLAGS="-gsplit-dwarf"',
-            "..",
-        ],
-        cwd=output_dir,
-    )
-    subprocess.check_call("make -j%d" % args.jobs, shell=True, cwd=output_dir)
+    pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+    try:
+        subprocess.check_call(
+            [
+                "cmake",
+                "-DgRPC_BUILD_TESTS=OFF",
+                "-DCMAKE_CXX_STANDARD=17",
+                "-DBUILD_SHARED_LIBS=ON",
+                "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+                '-DCMAKE_C_FLAGS="-gsplit-dwarf"',
+                '-DCMAKE_CXX_FLAGS="-gsplit-dwarf"',
+                "..",
+            ],
+            cwd=output_dir,
+        )
+        subprocess.check_call(["make", f"-j{args.jobs}"], cwd=output_dir)
+    except Exception:
+        _print_banner(f"BUILD END: {output_dir} FAILED", file=sys.stderr)
+        raise
+    _print_banner(f"BUILD END: {output_dir} SUCCEEDED")
 
 
 def _rank_diff_bytes(diff_bytes):
@@ -90,20 +111,35 @@ def _rank_diff_bytes(diff_bytes):
 _build("bloat_diff_new")
 
 if args.diff_base:
-    where_am_i = (
-        subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-        .decode()
-        .strip()
-    )
-    # checkout the diff base (="old")
-    subprocess.check_call(["git", "checkout", args.diff_base])
-    subprocess.check_call(["git", "submodule", "update"])
+    where_am_i = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], text=True
+    ).strip()
     try:
+        # checkout the diff base (="old")
+        subprocess.check_call(["git", "checkout", args.diff_base])
+        subprocess.check_call(
+            ["git", "submodule", "update", "--init", "--recursive"]
+        )
         _build("bloat_diff_old")
+    except Exception as e:
+        traceback.print_exc()
+        _print_banner(
+            "MAIN BUILD SUCCEEDED, BUT DIFF BASE BUILD FAILED", file=sys.stderr
+        )
+        sys.exit(getattr(e, "returncode", None) or 1)
     finally:
         # restore the original revision (="new")
-        subprocess.check_call(["git", "checkout", where_am_i])
-        subprocess.check_call(["git", "submodule", "update"])
+        try:
+            subprocess.check_call(["git", "checkout", where_am_i])
+            subprocess.check_call(
+                ["git", "submodule", "update", "--init", "--recursive"]
+            )
+        except Exception as e:
+            traceback.print_exc()
+            _print_banner(
+                "FAILED TO RESTORE ORIGINAL GIT REVISION", file=sys.stderr
+            )
+            sys.exit(getattr(e, "returncode", None) or 1)
 
 pathlib.Path("bloaty-build").mkdir(exist_ok=True)
 subprocess.check_call(

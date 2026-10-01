@@ -16,32 +16,20 @@
 
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
-#include <grpc/support/port_platform.h>
-
-#include <optional>
-
-#include "src/core/util/env.h"
-#include "src/core/util/string.h"
+#include "src/core/config/experiment_env_var.h"
 
 namespace grpc_core {
 
 // TODO(roth,apolcyn): remove this federation env var after the 1.55
 // release.
 bool XdsFederationEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
-  if (!value.has_value()) return true;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_FEDERATION",
+                                   /*default_value=*/true);
 }
 
 // TODO(roth): Remove this once the feature passes interop tests.
 bool XdsDataErrorHandlingEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
 }
 
 }  // namespace grpc_core

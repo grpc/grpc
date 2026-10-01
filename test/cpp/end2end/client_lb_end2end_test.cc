@@ -14,6 +14,7 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
+#include <grpc/health/v1/health.grpc.pb.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/time.h>
@@ -67,14 +68,15 @@
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
-#include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_lb_policies.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -109,12 +111,12 @@ class NoopHealthCheckServiceImpl : public health::v1::Health::Service {
   }
   Status Watch(ServerContext*, const health::v1::HealthCheckRequest*,
                ServerWriter<health::v1::HealthCheckResponse>*) override {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     request_count_++;
     return Status::OK;
   }
   int request_count() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return request_count_;
   }
 
@@ -130,7 +132,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       ++request_count_;
     }
     AddClient(context->peer());
@@ -182,23 +184,23 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   size_t request_count() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return request_count_;
   }
 
   void ResetCounters() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     request_count_ = 0;
   }
 
   std::set<std::string> clients() {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     return clients_;
   }
 
  private:
   void AddClient(const std::string& client) {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     clients_.insert(client);
   }
 
@@ -460,7 +462,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     void Start() {
       LOG(INFO) << "starting server on port " << port_;
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       started_ = true;
       thread_ =
           std::make_unique<std::thread>(std::bind(&ServerData::Serve, this));
@@ -491,13 +493,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
       grpc::ServerBuilder::experimental_type(&builder)
           .EnableCallMetricRecording(server_metric_recorder_.get());
       server_ = builder.BuildAndStart();
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       server_ready_ = true;
       cond_.Signal();
     }
 
     void Shutdown() {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       if (!started_) return;
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
@@ -1746,6 +1748,7 @@ TEST_F(RoundRobinTest, ManyUpdates) {
 }
 
 TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start 3 servers.
   StartServers(3);
   // Create channel.
@@ -1942,6 +1945,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start connection injector.
   ConnectionAttemptInjector injector;
   // Start server.
@@ -2002,6 +2006,7 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
 
 TEST_F(RoundRobinTest, SingleReconnect) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug (flake)");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   const int kNumServers = 3;
   StartServers(kNumServers);
   const auto ports = GetServersPorts();
@@ -2058,6 +2063,7 @@ TEST_F(RoundRobinTest, SingleReconnect) {
 // is not running on the server, the channel should be treated as healthy.
 TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P2] Fix bug");
   StartServers(1);  // Single server
   ChannelArguments args;
   args.SetServiceConfigJSON(
@@ -2185,6 +2191,8 @@ TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
   for (size_t i = 0; i < 100; i++) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
 }
 
 TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
@@ -2364,7 +2372,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
   }
 
   std::vector<grpc_core::PickArgsSeen> args_seen_list() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return args_seen_list_;
   }
 
@@ -2386,7 +2394,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
  private:
   static void SavePickArgs(const grpc_core::PickArgsSeen& args_seen) {
     ClientLbPickArgsTest* self = current_test_instance_;
-    grpc_core::MutexLock lock(&self->mu_);
+    grpc_core::MutexLock lock(self->mu_);
     self->args_seen_list_.emplace_back(args_seen);
   }
 
@@ -2547,28 +2555,28 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   }
 
   int num_trailers_intercepted() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return num_trailers_intercepted_;
   }
 
   absl::Status last_status() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return last_status_;
   }
 
   grpc_core::MetadataVector trailing_metadata() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return std::move(trailing_metadata_);
   }
 
   std::optional<OrcaLoadReport> backend_load_report() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return std::move(load_report_);
   }
 
   // Returns true if received callback within deadline.
   bool WaitForLbCallback() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     while (!trailer_intercepted_) {
       if (cond_.WaitWithTimeout(&mu_, absl::Seconds(3))) return false;
     }
@@ -2603,7 +2611,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
       const grpc_core::TrailingMetadataArgsSeen& args_seen) {
     const auto* backend_metric_data = args_seen.backend_metric_data;
     ClientLbInterceptTrailingMetadataTest* self = current_test_instance_;
-    grpc_core::MutexLock lock(&self->mu_);
+    grpc_core::MutexLock lock(self->mu_);
     self->last_status_ = args_seen.status;
     self->num_trailers_intercepted_++;
     self->trailer_intercepted_ = true;
@@ -2960,14 +2968,14 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
   std::vector<std::string> addresses_seen() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return addresses_seen_;
   }
 
  private:
   static void SaveAddress(const grpc_core::EndpointAddresses& address) {
     ClientLbAddressTest* self = current_test_instance_;
-    grpc_core::MutexLock lock(&self->mu_);
+    grpc_core::MutexLock lock(self->mu_);
     self->addresses_seen_.emplace_back(address.ToString());
   }
 
@@ -3029,7 +3037,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
   }
 
   std::optional<BackendMetricReport> GetBackendMetricReport() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (backend_metric_reports_.empty()) return std::nullopt;
     auto result = std::move(backend_metric_reports_.front());
     backend_metric_reports_.pop_front();
@@ -3042,7 +3050,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
       const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());
-    grpc_core::MutexLock lock(&current_test_instance_->mu_);
+    grpc_core::MutexLock lock(current_test_instance_->mu_);
     current_test_instance_->backend_metric_reports_.push_back(
         {port, std::move(load_report)});
   }
@@ -3454,7 +3462,7 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
       request_.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
       stub->async()->Echo(&context_, &request_, &response_,
                           [this](Status status) {
-                            grpc_core::MutexLock lock(&mu_);
+                            grpc_core::MutexLock lock(mu_);
                             status_ = std::move(status);
                             cv_.Signal();
                           });
@@ -3468,7 +3476,7 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
 
     // Gets the RPC's status.  Blocks if the RPC is not yet complete.
     Status GetStatus() {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       while (!status_.has_value()) {
         cv_.Wait(&mu_);
       }
@@ -3514,6 +3522,7 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
 
 TEST_F(ConnectionScalingTest, SingleConnection) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   const int kMaxConcurrentStreams = 3;
   // Start a server with MAX_CONCURRENT_STREAMS set.
   StartServers(1, {}, nullptr,
@@ -3551,12 +3560,8 @@ TEST_F(ConnectionScalingTest, SingleConnection) {
 }
 
 TEST_F(ConnectionScalingTest, MultipleConnections) {
-  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    GTEST_SKIP()
-        << "this test requires the subchannel_connection_scaling experiment";
-  }
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3599,12 +3604,8 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
 }
 
 TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
-  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    GTEST_SKIP()
-        << "this test requires the subchannel_connection_scaling experiment";
-  }
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3650,12 +3651,7 @@ TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
 
 TEST_F(ConnectionScalingTest,
        QueuedRpcsTriggerNewConnectionAttemptAfterBackoff) {
-  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    GTEST_SKIP()
-        << "this test requires the subchannel_connection_scaling experiment";
-  }
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3711,12 +3707,7 @@ TEST_F(ConnectionScalingTest,
 }
 
 TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
-  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    GTEST_SKIP()
-        << "this test requires the subchannel_connection_scaling experiment";
-  }
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3771,12 +3762,8 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
 }
 
 TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
-  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    GTEST_SKIP()
-        << "this test requires the subchannel_connection_scaling experiment";
-  }
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3844,12 +3831,7 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
 
 TEST_F(ConnectionScalingTest,
        QueuedRpcsTransparentlyRetriedWhenLastConnectionCloses) {
-  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    GTEST_SKIP()
-        << "this test requires the subchannel_connection_scaling experiment";
-  }
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3925,12 +3907,7 @@ TEST_F(ConnectionScalingTest,
 // deeply enough to verify.  When we finish migrating to v3, try writing
 // that test again.
 TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
-  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    GTEST_SKIP()
-        << "this test requires the subchannel_connection_scaling experiment";
-  }
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3987,12 +3964,7 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
 
 TEST_F(ConnectionScalingTest,
        MaxConnectionsPerSubchannelChangeTriggersConnectionAttempt) {
-  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    GTEST_SKIP()
-        << "this test requires the subchannel_connection_scaling experiment";
-  }
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   constexpr char kServiceConfig1[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -4056,12 +4028,8 @@ TEST_F(ConnectionScalingTest,
 }
 
 TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
-  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
-    GTEST_SKIP()
-        << "this test requires the subchannel_connection_scaling experiment";
-  }
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -4149,6 +4117,212 @@ TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
     if (socket_nodes.size() < 2) break;
   }
   EXPECT_EQ(socket_nodes.size(), 1);
+}
+
+//
+// subchannel metrics tests
+//
+
+class ClientLbSubchannelMetricsTest : public ClientLbEnd2endTest {
+ protected:
+  void SetUp() override {
+    ClientLbEnd2endTest::SetUp();
+    stats_plugin_ = grpc_core::FakeStatsPluginBuilder()
+                        .UseDisabledByDefaultMetrics(true)
+                        .BuildAndRegister();
+  }
+
+  void TearDown() override {
+    grpc_core::GlobalStatsPluginRegistryTestPeer::
+        ResetGlobalStatsPluginRegistry();
+    ClientLbEnd2endTest::TearDown();
+  }
+
+  std::shared_ptr<Channel> CreateChannelWithBackoff(const std::string& target) {
+    ChannelArguments args;
+    args.SetInt("grpc.testing.fixed_reconnect_backoff_ms", 10);
+    return grpc::CreateCustomChannel(target, grpc::InsecureChannelCredentials(),
+                                     args);
+  }
+
+  std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
+};
+
+TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
+  StartServers(1, {}, grpc::InsecureServerCredentials());
+  const int port = servers_[0]->port_;
+  std::string target = grpc_core::LocalIpAndPort(port);
+  EXPECT_EQ(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
+      std::nullopt);
+  EXPECT_EQ(stats_plugin_->GetInt64MetricValueByName(
+                "grpc.subchannel.open_connections", {target, "none", "", ""}),
+            std::nullopt);
+  auto channel = grpc::CreateChannel(grpc_core::LocalIpUri(port),
+                                     grpc::InsecureChannelCredentials());
+  auto stub = BuildStub(channel);
+  // Need to actually send an RPC here rather than just waiting for the
+  // channel to report READY, since that ensures that the new connection
+  // has actually been registered with the server before we tell the
+  // server to send GOAWAYs.
+  CheckRpcSendOk(DEBUG_LOCATION, stub);
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
+      ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections", {target, "none", "", ""}),
+              ::testing::Optional(1));
+  servers_[0]->Shutdown();
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
+        return state == GRPC_CHANNEL_IDLE;
+      }));
+  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
+                  "grpc.subchannel.disconnections",
+                  {target, "", "", "GOAWAY NO_ERROR"}),
+              ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections", {target, "none", "", ""}),
+              ::testing::Optional(0));
+}
+
+TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
+  // Flake rate is less than once in 3 days.
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix flake");
+  ConnectionAttemptInjector injector;
+  const int port = grpc_pick_unused_port_or_die();
+  std::string target = grpc_core::LocalIpAndPort(port);
+  auto channel = CreateChannelWithBackoff(target);
+  std::vector<std::unique_ptr<ConnectionAttemptInjector::Hold>> holds;
+  constexpr int kConnecionAttempts = 3;
+  for (int i = 0; i < kConnecionAttempts + 1; ++i) {
+    holds.push_back(injector.AddHold(port));
+  }
+  channel->GetState(true);
+  for (int i = 0; i < kConnecionAttempts; ++i) {
+    holds[i]->Wait();
+    holds[i]->Fail(absl::UnavailableError("test failure"));
+  }
+  holds[kConnecionAttempts]->Wait();
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
+      ::testing::Optional(kConnecionAttempts));
+  holds[kConnecionAttempts]->Resume();
+}
+
+TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
+  ConnectionAttemptInjector injector;
+  const int port1 = grpc_pick_unused_port_or_die();
+  const int port2 = grpc_pick_unused_port_or_die();
+  StartServers(1, {port2}, grpc::InsecureServerCredentials());
+  FakeResolverResponseGeneratorWrapper response_generator;
+  ChannelArguments args;
+  args.SetInt("grpc.testing.fixed_reconnect_backoff_ms", 10);
+  auto channel = BuildChannel("", response_generator, args,
+                              grpc::InsecureChannelCredentials());
+  auto hold1 = injector.AddHold(port1);
+  auto hold2 = injector.AddHold(port2);
+  response_generator.SetNextResolution({port1});
+  channel->GetState(true);
+  hold1->Wait();
+  response_generator.SetNextResolution({port2});
+  hold2->Wait();
+  hold2->Resume();
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
+        return state == GRPC_CHANNEL_READY;
+      }));
+  hold1->Fail(absl::UnavailableError("first attempt failed"));
+  std::string target = std::string(kDefaultAuthority);
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
+      ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
+      ::testing::Optional(0));
+}
+
+TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
+  using grpc_core::testing::GetFileContents;
+  const int port = grpc_pick_unused_port_or_die();
+  std::string target = grpc_core::LocalIpAndPort(port);
+  grpc::SslServerCredentialsOptions ssl_opts_server;
+  std::string ca_cert = GetFileContents("src/core/tsi/test_creds/ca.pem");
+  grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
+      GetFileContents("src/core/tsi/test_creds/server1.key"),
+      GetFileContents("src/core/tsi/test_creds/server1.pem")};
+  ssl_opts_server.pem_key_cert_pairs.push_back(key_cert_pair);
+  ssl_opts_server.pem_root_certs = ca_cert;
+  ssl_opts_server.client_certificate_request =
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
+  auto server_creds = grpc::SslServerCredentials(ssl_opts_server);
+  StartServers(1, {port}, server_creds);
+  grpc::SslCredentialsOptions ssl_opts_client;
+  ssl_opts_client.pem_root_certs = ca_cert;
+  ssl_opts_client.pem_private_key =
+      GetFileContents("src/core/tsi/test_creds/client.key");
+  ssl_opts_client.pem_cert_chain =
+      GetFileContents("src/core/tsi/test_creds/client.pem");
+  auto channel_creds = grpc::SslCredentials(ssl_opts_client);
+  ChannelArguments channel_args;
+  channel_args.SetSslTargetNameOverride("foo.test.google.fr");
+  auto channel = grpc::CreateCustomChannel(grpc_core::LocalIpUri(port),
+                                           channel_creds, channel_args);
+  channel->GetState(true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections",
+                  {"foo.test.google.fr", "privacy_and_integrity", "", ""}),
+              ::testing::Optional(1));
+  servers_[0]->Shutdown();
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
+        return state == GRPC_CHANNEL_IDLE;
+      }));
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections",
+                  {"foo.test.google.fr", "privacy_and_integrity", "", ""}),
+              ::testing::Optional(0));
+}
+
+TEST_F(ClientLbSubchannelMetricsTest, DisconnectionOnSubchannelShutdown) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
+  StartServers(1, {}, grpc::InsecureServerCredentials());
+  const int port1 = servers_[0]->port_;
+  const int port2 = grpc_pick_unused_port_or_die();
+  FakeResolverResponseGeneratorWrapper response_generator;
+  ChannelArguments args;
+  args.SetInt("grpc.testing.fixed_reconnect_backoff_ms", 10);
+  auto channel = BuildChannel("", response_generator, args,
+                              grpc::InsecureChannelCredentials());
+  response_generator.SetNextResolution({port1});
+  channel->GetState(true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  response_generator.SetNextResolution({port2});
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
+        return state != GRPC_CHANNEL_READY;
+      }));
+  channel->GetState(true);
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
+        return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+      }));
+  std::string target = std::string(kDefaultAuthority);
+  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
+                  "grpc.subchannel.disconnections",
+                  {target, "", "", "subchannel shutdown"}),
+              ::testing::Optional(1));
 }
 
 }  // namespace

@@ -51,6 +51,7 @@ struct PosixTcpOptions {
   static constexpr int kDefaultMaxReadChunksize = 4 * 1024 * 1024;
   static constexpr int kZerocpTxEnabledDefault = 0;
   static constexpr int kMaxChunkSize = 32 * 1024 * 1024;
+  static constexpr int kMaxReadBufferSizeUnset = -1;
   static constexpr int kDefaultMaxSends = 4;
   static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;
   // Let the system decide the proper buffer size.
@@ -59,6 +60,7 @@ struct PosixTcpOptions {
   int tcp_read_chunk_size = kDefaultReadChunkSize;
   int tcp_min_read_chunk_size = kDefaultMinReadChunksize;
   int tcp_max_read_chunk_size = kDefaultMaxReadChunksize;
+  int tcp_max_read_buffer_size = kMaxReadBufferSizeUnset;
   int tcp_tx_zerocopy_send_bytes_threshold = kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simultaneous_sends = kDefaultMaxSends;
   int tcp_receive_buffer_size = kReadBufferSizeUnset;
@@ -128,6 +130,7 @@ struct PosixTcpOptions {
     tcp_read_chunk_size = other.tcp_read_chunk_size;
     tcp_min_read_chunk_size = other.tcp_min_read_chunk_size;
     tcp_max_read_chunk_size = other.tcp_max_read_chunk_size;
+    tcp_max_read_buffer_size = other.tcp_max_read_buffer_size;
     tcp_tx_zerocopy_send_bytes_threshold =
         other.tcp_tx_zerocopy_send_bytes_threshold;
     tcp_tx_zerocopy_max_simultaneous_sends =

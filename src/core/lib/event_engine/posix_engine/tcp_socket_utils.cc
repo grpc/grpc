@@ -84,6 +84,9 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
       AdjustValue(PosixTcpOptions::kDefaultMaxReadChunksize, 1,
                   PosixTcpOptions::kMaxChunkSize,
                   config.GetInt(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE));
+  options.tcp_max_read_buffer_size =
+      AdjustValue(PosixTcpOptions::kMaxReadBufferSizeUnset, 1, INT_MAX,
+                  config.GetInt(GRPC_ARG_TCP_MAX_READ_BUFFER_SIZE));
   options.tcp_tx_zerocopy_send_bytes_threshold =
       AdjustValue(PosixTcpOptions::kDefaultSendBytesThreshold, 0, INT_MAX,
                   config.GetInt(GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD));

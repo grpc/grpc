@@ -488,6 +488,8 @@ class ArtifactGen {
         {"@@protoc-gen-validate+", "@com_envoyproxy_protoc_gen_validate"},
         {"@@opencensus-proto+", "opencensus_proto"},
         {"@@envoy_api+", "@envoy_api"},
+        {"@@grpc-proto+", "@grpc_proto"},
+        {"@@autosharding+", "@autosharding"},
     };
     const std::map<std::string, std::string> kExternalLinks{
         {"@com_google_protobuf//", "src/"},
@@ -497,11 +499,17 @@ class ArtifactGen {
         {"@dev_cel//", "proto/"},
         {"@envoy_api//", ""},
         {"@opencensus_proto//", ""},
+        {"@grpc_proto//", ""},
+        {"@autosharding//", ""},
     };
     for (auto& [name, bazel_rule] : rules_) {
+      const bool is_dev_cel_upb = bazel_rule.clazz == "upb_c_proto_library" &&
+                                  (absl::StartsWith(name, "@dev_cel//") ||
+                                   absl::StartsWith(name, "@@cel-spec+"));
       if (bazel_rule.generator_function != "grpc_upb_proto_library" &&
           bazel_rule.generator_function !=
-              "grpc_upb_proto_reflection_library") {
+              "grpc_upb_proto_reflection_library" &&
+          !is_dev_cel_upb) {
         continue;
       }
       CHECK_EQ(bazel_rule.deps.size(), 1u) << bazel_rule;
@@ -555,7 +563,8 @@ class ArtifactGen {
             TryExtractSourceFilePath(proto_src).value();
         std::vector<std::string> extensions;
         std::string root;
-        if (bazel_rule.generator_function == "grpc_upb_proto_library") {
+        if (bazel_rule.generator_function == "grpc_upb_proto_library" ||
+            is_dev_cel_upb) {
           extensions = {".upb.h", ".upb_minitable.h", ".upb_minitable.c"};
           root = kGenUpbRoot;
         } else {
@@ -1215,6 +1224,8 @@ class ArtifactGen {
           "@zlib//",
           "third_party/zlib",
       },
+      {"@cel_c//cel-c", "third_party/cel-c/cel-c"},
+      {"@@cel-c+//cel-c", "third_party/cel-c/cel-c"},
   };
   const std::map<std::string, ExternalProtoLibrary> external_proto_libraries_ =
       {{"envoy_api",
@@ -1238,6 +1249,20 @@ class ArtifactGen {
            {
                "third_party/opencensus-proto/src",
                "third_party/opencensus-proto/src/",
+           },
+       },
+       {
+           "grpc_proto",
+           {
+               "third_party/grpc-proto",
+               "third_party/grpc-proto/",
+           },
+       },
+       {
+           "autosharding",
+           {
+               "third_party/autosharding",
+               "third_party/autosharding/",
            },
        }};
 };
