@@ -1756,14 +1756,17 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
       config_(std::move(config)),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
-      default_authority_(Slice::FromCopiedString(
-          is_server_ ? args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")
-                     : args.GetString(GRPC_ARG_DEFAULT_AUTHORITY)
-                           .value_or(CoreConfiguration::Get()
-                                         .resolver_registry()
-                                         .GetDefaultAuthority(
-                                             args.GetString(GRPC_ARG_SERVER_URI)
-                                                 .value_or(""))))),
+      default_authority_([&]() -> Slice {
+        // On the server, :authority always comes from the incoming request.
+        if (is_server_) return Slice();
+        if (auto authority = args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
+            authority.has_value()) {
+          return Slice::FromCopiedString(*authority);
+        }
+        return Slice::FromCopiedString(
+            CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
+                args.GetString(GRPC_ARG_SERVER_URI).value_or("")));
+      }()),
       telemetry_storage_([&]() -> TelemetryStorage {
         auto stats_plugin_group =
             args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
