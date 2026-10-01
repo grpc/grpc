@@ -11,6 +11,7 @@
 
 #include "upb/generated_code_support.h"
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.h"
+#include "envoy/config/core/v3/address.upb_minitable.h"
 #include "envoy/config/core/v3/base.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 
@@ -24,6 +25,7 @@ typedef struct envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUp
   upb_Message UPB_PRIVATE(base);
 } envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport;
 
+struct envoy_config_core_v3_Address;
 struct envoy_config_core_v3_TransportSocket;
 
 
@@ -67,25 +69,42 @@ UPB_INLINE char* envoy_extensions_transport_sockets_http_11_proxy_v3_Http11Proxy
   return ptr;
 }
 UPB_INLINE void envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_clear_transport_socket(envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_TransportSocket* envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_transport_socket(const envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg) {
   const struct envoy_config_core_v3_TransportSocket* default_val = NULL;
   const struct envoy_config_core_v3_TransportSocket* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TransportSocket_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_has_transport_socket(const envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_clear_default_proxy_address(envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct envoy_config_core_v3_Address* envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_default_proxy_address(const envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg) {
+  const struct envoy_config_core_v3_Address* default_val = NULL;
+  const struct envoy_config_core_v3_Address* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_has_default_proxy_address(const envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
 UPB_INLINE void envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_set_transport_socket(envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg, struct envoy_config_core_v3_TransportSocket* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TransportSocket_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -95,6 +114,20 @@ UPB_INLINE struct envoy_config_core_v3_TransportSocket* envoy_extensions_transpo
   if (sub == NULL) {
     sub = (struct envoy_config_core_v3_TransportSocket*)_upb_Message_New(&envoy__config__core__v3__TransportSocket_msg_init, arena);
     if (sub) envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_set_transport_socket(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_set_default_proxy_address(envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg, struct envoy_config_core_v3_Address* value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE struct envoy_config_core_v3_Address* envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_mutable_default_proxy_address(
+    envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_Address* sub = (struct envoy_config_core_v3_Address*)envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_default_proxy_address(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_Address*)_upb_Message_New(&envoy__config__core__v3__Address_msg_init, arena);
+    if (sub) envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_set_default_proxy_address(msg, sub);
   }
   return sub;
 }
