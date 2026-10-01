@@ -80,10 +80,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
-    bool half_closed() const {
-      MutexLock lock(&mu_);
-      return half_closed_;
-    }
     std::optional<std::string> WaitForMessageFromClient();
 
     // If FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient()
@@ -98,12 +94,18 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool WaitForReadsStarted(size_t expected);
 
+    bool half_closed() const {
+      MutexLock lock(mu_);
+      return half_closed_;
+    }
+
     bool wait_for_ready() const { return wait_for_ready_; }
 
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
      public:
       explicit RefCountedEventHandler(
+          std::unique_ptr<StreamingCall::EventHandler> event_handler)
           : event_handler_(std::move(event_handler)) {}
 
       void OnRequestSent(bool ok) { event_handler_->OnRequestSent(ok); }
