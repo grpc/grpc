@@ -1202,10 +1202,8 @@ cdef class AioServer:
             self._shutdown_callback_wrapper.c_functor())
 
         # Ensures the serving task (coroutine) exits.
-        try:
-            await self._serving_task
-        except _RequestCallError:
-            pass
+        await self._serving_task
+
 
     async def shutdown(self, grace):
         """Gracefully shutdown the Core server.
