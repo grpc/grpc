@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_MESSAGES_H
 #define GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_MESSAGES_H
 
+#include <grpc/grpc_security.h>
 #include <grpc/status.h>
 
 #include <optional>
@@ -25,6 +26,7 @@
 #include <vector>
 
 #include "google/protobuf/struct.upb.h"
+#include "src/core/call/evaluate_args.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/util/matchers.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -45,8 +47,8 @@ namespace grpc_core {
 // send_response_body), it always operates in GRPC mode (deframed gRPC messages
 // sent one at a time).
 struct ExtProcProcessingMode {
-  bool send_request_headers = false;
-  bool send_response_headers = false;
+  bool send_request_headers = true;
+  bool send_response_headers = true;
   bool send_response_trailers = false;
   bool send_request_body = false;
   bool send_response_body = false;
@@ -137,8 +139,9 @@ absl::StatusOr<std::string> CreateExtProcServerHeadersRequest(
 //  processing modes as per gRFC A93).
 //  - end_of_stream: If true, indicates that this body chunk is the last message
 //  on the stream.
-//  - end_of_stream_without_message: If true, indicates end of stream with an
-//  empty body chunk.
+//  - end_of_stream_without_message: If end_of_stream is true and this is true,
+//  indicates end of stream without a message (e.g. half-close). Ignored if
+//  end_of_stream is false.
 absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
     upb_Arena* arena, absl::string_view body,
     ::google_protobuf_Struct* attributes, bool observability_mode,
@@ -193,6 +196,21 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
     ::google_protobuf_Struct* attributes, bool observability_mode,
     std::optional<ExtProcProcessingMode> processing_mode);
 
+// Computes the value of the "connection.sha256_peer_certificate_digest"
+// attribute (see gRFC A103): the hex-encoded SHA-256 digest of the peer's
+// leaf certificate, which is obtained from \a auth_context. Returns an empty
+// string if there is no peer certificate or if it cannot be parsed.
+//
+// Note that this requires parsing and hashing the peer certificate, so
+// callers must invoke this at most once per connection, and only if the
+// ext_proc config actually requests the attribute.
+//
+// TODO(rishesh): Computing this in the ext_proc filter is sub-optimal, because
+// we will wind up computing it once for each filter chain. We should
+// eventually fix that by creating a common connection context object, and this
+// should be storable as one of the elements of that context.
+std::string ComputeSha256PeerCertificateDigest(grpc_auth_context* auth_context);
+
 // Creates a protobuf Struct message (::google_protobuf_Struct*) containing
 // connection and request metadata attributes requested by the external
 // processor configuration.
@@ -201,16 +219,25 @@ absl::StatusOr<std::string> CreateExtProcServerTrailersRequest(
 //  - arena: The upb arena used for allocating the Struct message and its
 //  fields.
 //  - requested_attributes: A list of attribute names (e.g., "request.path",
-//  "request.method", "request.host") to extract and populate.
-//  - metadata: The gRPC metadata batch from which attribute values (like
-//  authority, method, path, or headers) are extracted.
+//  "request.method", "request.host", "source.address", "source.port",
+//  "connection.requested_server_name", "connection.tls_version",
+//  "connection.sha256_peer_certificate_digest") to extract and populate.
+//  - args: Provides the request metadata (authority, method, path, headers)
+//  and, on the server side, the connection-level attributes (peer IP/port,
+//  TLS security properties).
+//  - default_authority: Default authority fallback for request.host.
+//  - sha256_peer_certificate_digest: The value for the
+//  "connection.sha256_peer_certificate_digest" attribute, as returned by
+//  ComputeSha256PeerCertificateDigest(). Empty if the attribute is not
+//  requested or unavailable.
 //
 // Returns:
 //  A pointer to the newly created ::google_protobuf_Struct message on the
 //  arena, or nullptr if no requested attributes were matched or populated.
 ::google_protobuf_Struct* CreateExtProcAttributesProtoStruct(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,
-    const grpc_metadata_batch& metadata);
+    const EvaluateArgs& args, absl::string_view default_authority,
+    absl::string_view sha256_peer_certificate_digest = "");
 
 // Represents the parsed response from an external processor, corresponding to
 // envoy.service.ext_proc.v3.ProcessingResponse in gRFC A93.
@@ -260,7 +287,7 @@ struct ExtProcResponse {
     // error message to return with.
     std::string details;
     // Headers to set in the response.
-    HeaderMutation header_mutation;
+    HeaderMutation mutation;
   };
 
   // The variant representing the actual response content.

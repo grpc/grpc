@@ -59,7 +59,8 @@ Pod::Spec.new do |s|
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-gen"'\
         ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'\
         ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'\
-        ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
+        ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/cel-c"',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
     'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
@@ -234,7 +235,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '~> 1.20250512.1'
+    abseil_version = '~> 1.20260526.0'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -290,6 +291,7 @@ Pod::Spec.new do |s|
                       'src/core/call/channelz_context.h',
                       'src/core/call/client_call.h',
                       'src/core/call/custom_metadata.h',
+                      'src/core/call/evaluate_args.h',
                       'src/core/call/filter_fusion.h',
                       'src/core/call/interception_chain.h',
                       'src/core/call/message.h',
@@ -417,7 +419,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/alpn/alpn.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/transport/chttp2/server/chttp2_server.h',
-                      'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                       'src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
@@ -460,6 +461,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/ping_promise.h',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                       'src/core/ext/transport/chttp2/transport/read_context.h',
+                      'src/core/ext/transport/chttp2/transport/reclaimer.h',
                       'src/core/ext/transport/chttp2/transport/security_frame.h',
                       'src/core/ext/transport/chttp2/transport/stream.h',
                       'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
@@ -757,6 +759,20 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
                       'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h',
                       'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h',
+                      'src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h',
+                      'src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h',
+                      'src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/health/v1/health.upb.h',
+                      'src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb.h',
+                      'src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h',
+                      'src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h',
+                      'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h',
+                      'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -765,20 +781,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb.h',
-                      'src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.h',
                       'src/core/ext/upb-gen/udpa/annotations/migrate.upb.h',
                       'src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h',
                       'src/core/ext/upb-gen/udpa/annotations/security.upb.h',
@@ -977,11 +979,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
                       'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/grpc/lookup/v1/rls_config.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h',
-                      'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h',
                       'src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h',
                       'src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.h',
                       'src/core/ext/upbdefs-gen/udpa/annotations/sensitive.upbdefs.h',
@@ -1228,7 +1230,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/audit_logging.h',
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/authorization_policy_provider.h',
-                      'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/authorization/grpc_authorization_engine.h',
                       'src/core/lib/security/authorization/grpc_server_authz_filter.h',
                       'src/core/lib/security/authorization/matchers.h',
@@ -1268,6 +1269,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/transport_framing_endpoint_extension.h',
                       'src/core/lib/transport/transport_fwd.h',
                       'src/core/load_balancing/address_filtering.h',
+                      'src/core/load_balancing/autosharding/autosharding.h',
                       'src/core/load_balancing/backend_metric_data.h',
                       'src/core/load_balancing/backend_metric_parser.h',
                       'src/core/load_balancing/child_policy_handler.h',
@@ -1463,6 +1465,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/certificate_provider_store.h',
                       'src/core/xds/grpc/certificate_provider_store_interface.h',
                       'src/core/xds/grpc/file_watcher_certificate_provider_factory.h',
+                      'src/core/xds/grpc/streaming_call_promise_wrapper.h',
                       'src/core/xds/grpc/xds_audit_logger_registry.h',
                       'src/core/xds/grpc/xds_bootstrap_grpc.h',
                       'src/core/xds/grpc/xds_bootstrap_grpc_builder.h',
@@ -1747,6 +1750,7 @@ Pod::Spec.new do |s|
                               'src/core/call/channelz_context.h',
                               'src/core/call/client_call.h',
                               'src/core/call/custom_metadata.h',
+                              'src/core/call/evaluate_args.h',
                               'src/core/call/filter_fusion.h',
                               'src/core/call/interception_chain.h',
                               'src/core/call/message.h',
@@ -1873,7 +1877,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/alpn/alpn.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',
-                              'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                               'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                               'src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h',
                               'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
@@ -1916,6 +1919,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/ping_promise.h',
                               'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                               'src/core/ext/transport/chttp2/transport/read_context.h',
+                              'src/core/ext/transport/chttp2/transport/reclaimer.h',
                               'src/core/ext/transport/chttp2/transport/security_frame.h',
                               'src/core/ext/transport/chttp2/transport/stream.h',
                               'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
@@ -2213,6 +2217,20 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
                               'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h',
                               'src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h',
+                              'src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h',
+                              'src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h',
+                              'src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/health/v1/health.upb.h',
+                              'src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb.h',
+                              'src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h',
+                              'src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h',
+                              'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h',
+                              'src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
@@ -2221,20 +2239,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb.h',
-                              'src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.h',
                               'src/core/ext/upb-gen/udpa/annotations/migrate.upb.h',
                               'src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h',
                               'src/core/ext/upb-gen/udpa/annotations/security.upb.h',
@@ -2433,11 +2437,11 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
                               'src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/grpc/lookup/v1/rls_config.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h',
-                              'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h',
                               'src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h',
                               'src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.h',
                               'src/core/ext/upbdefs-gen/udpa/annotations/sensitive.upbdefs.h',
@@ -2684,7 +2688,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/audit_logging.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/authorization_policy_provider.h',
-                              'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/authorization/grpc_authorization_engine.h',
                               'src/core/lib/security/authorization/grpc_server_authz_filter.h',
                               'src/core/lib/security/authorization/matchers.h',
@@ -2724,6 +2727,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_framing_endpoint_extension.h',
                               'src/core/lib/transport/transport_fwd.h',
                               'src/core/load_balancing/address_filtering.h',
+                              'src/core/load_balancing/autosharding/autosharding.h',
                               'src/core/load_balancing/backend_metric_data.h',
                               'src/core/load_balancing/backend_metric_parser.h',
                               'src/core/load_balancing/child_policy_handler.h',
@@ -2919,6 +2923,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/grpc/certificate_provider_store.h',
                               'src/core/xds/grpc/certificate_provider_store_interface.h',
                               'src/core/xds/grpc/file_watcher_certificate_provider_factory.h',
+                              'src/core/xds/grpc/streaming_call_promise_wrapper.h',
                               'src/core/xds/grpc/xds_audit_logger_registry.h',
                               'src/core/xds/grpc/xds_bootstrap_grpc.h',
                               'src/core/xds/grpc/xds_bootstrap_grpc_builder.h',
@@ -3157,6 +3162,15 @@ Pod::Spec.new do |s|
   # patch include of openssl to openssl_grpc
   s.prepare_command = <<-END_OF_COMMAND
     set -e
+    # TODO(weizheyuan, bpawan) remove this block once 1.20260526.1 properly
+    # excludes windows-only files.
+    #
+    # See also https://github.com/abseil/abseil-cpp/pull/2138
+    for abseil_dir in ../abseil $(find . -type d -path "*/Pods/abseil" 2>/dev/null); do
+      if [ -d "$abseil_dir" ]; then
+        find "$abseil_dir" -name "time_zone_name_win.cc" -exec rm -f {} +
+      fi
+    done
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND

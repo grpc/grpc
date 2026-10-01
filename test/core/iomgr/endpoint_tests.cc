@@ -128,7 +128,7 @@ static void read_scheduler(void* data, grpc_error_handle error) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   if (error.ok() && state->bytes_read < state->target_bytes) {
-    grpc_core::MutexLock lock(&state->ep_mu);
+    grpc_core::MutexLock lock(state->ep_mu);
     if (state->read_ep != nullptr) {
       grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read,
                          /*urgent=*/false, /*min_progress_size=*/1);
@@ -162,7 +162,7 @@ static void write_scheduler(void* data, grpc_error_handle error) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   if (error.ok() && state->current_write_size != 0) {
-    grpc_core::MutexLock lock(&state->ep_mu);
+    grpc_core::MutexLock lock(state->ep_mu);
     if (state->write_ep != nullptr) {
       grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
       args.set_max_frame_size(state->max_write_frame_size);
@@ -262,7 +262,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read,
                      /*urgent=*/false, /*min_progress_size=*/1);
   if (shutdown) {
-    grpc_core::MutexLock lock(&state.ep_mu);
+    grpc_core::MutexLock lock(state.ep_mu);
     VLOG(2) << "shutdown read";
     grpc_endpoint_destroy(state.read_ep);
     state.read_ep = nullptr;

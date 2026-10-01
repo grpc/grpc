@@ -70,8 +70,15 @@ const grpc_channel_filter* XdsHttpExtProcFilterFactory::channel_filter() const {
 
 namespace {
 
-bool ParseHeaderProcessingMode(int32_t value, ValidationErrors* errors) {
+// Parses a ProcessingMode.HeaderSendMode value.  Returns true if the headers
+// or trailers should be sent to the ext_proc server.  DEFAULT resolves to
+// default_value, which per the proto docs is SEND for request and response
+// headers and SKIP for trailers.
+bool ParseHeaderProcessingMode(int32_t value, bool default_value,
+                               ValidationErrors* errors) {
   switch (value) {
+    case envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_DEFAULT:
+      return default_value;
     case envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_SEND:
       return true;
     case envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_SKIP:
@@ -100,30 +107,27 @@ ExtProcFilter::ProcessingMode ParseProcessingMode(
     const envoy_extensions_filters_http_ext_proc_v3_ProcessingMode* proto,
     ValidationErrors* errors) {
   ExtProcFilter::ProcessingMode processing_mode;
-  if (proto == nullptr) {
-    errors->AddError("field not set");
-    return processing_mode;
-  }
+  if (proto == nullptr) return processing_mode;
   {
     ValidationErrors::ScopedField field(errors, ".request_header_mode");
     processing_mode.send_request_headers = ParseHeaderProcessingMode(
         envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_request_header_mode(
             proto),
-        errors);
+        /*default_value=*/true, errors);
   }
   {
     ValidationErrors::ScopedField field(errors, ".response_header_mode");
     processing_mode.send_response_headers = ParseHeaderProcessingMode(
         envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_response_header_mode(
             proto),
-        errors);
+        /*default_value=*/true, errors);
   }
   {
     ValidationErrors::ScopedField field(errors, ".response_trailer_mode");
     processing_mode.send_response_trailers = ParseHeaderProcessingMode(
         envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_response_trailer_mode(
             proto),
-        errors);
+        /*default_value=*/false, errors);
   }
   {
     ValidationErrors::ScopedField field(errors, ".request_body_mode");
@@ -403,13 +407,12 @@ RefCountedPtr<const FilterConfig> XdsHttpExtProcFilterFactory::MergeConfigs(
   if (const auto* target =
           std::get_if<GrpcXdsServerTarget>(&config->channel_info);
       target != nullptr) {
-    std::string key = target->Key();
-    config->channel_info =
-        blackboard.GetOrSet<ExtProcFilter::ExtProcChannel>(key, [&]() {
-          std::shared_ptr<const XdsBootstrap::XdsServerTarget> target_shared =
-              std::make_shared<GrpcXdsServerTarget>(*target);
+    config->channel_info = blackboard.GetOrSet<ExtProcFilter::ExtProcChannel>(
+        target->Key(), [&]() {
+          absl::Status status;
+          auto transport = transport_factory.GetTransport(*target, &status);
           return MakeRefCounted<ExtProcFilter::ExtProcChannel>(
-              std::move(target_shared), transport_factory.Ref());
+              *target, std::move(transport));
         });
   }
   return config;
