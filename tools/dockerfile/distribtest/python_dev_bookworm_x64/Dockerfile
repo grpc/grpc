@@ -14,13 +14,10 @@
 
 FROM python:3.10-bookworm
 
-{% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_addons.include" %}
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    build-essential \
+    python3-dev
 
-RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
-RUN ln -s $(which python3) /usr/bin/python
-
-{% include "../../gcp_api_libraries.include" %}
-
-{% include "../../cmake.include" %}
-{% include "../../ccache.include" %}
+RUN python3 -m pip install virtualenv
