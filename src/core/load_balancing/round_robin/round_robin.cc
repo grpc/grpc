@@ -390,11 +390,14 @@ void RoundRobin::RoundRobinEndpointList::
         << this;
     std::string reason = CountersString();
     if (!last_failure_.ok()) {
-      absl::StrAppend(&reason, "; ", last_failure_.message());
+      absl::StrAppend(&reason,
+                      "; previous attempt failed: ", last_failure_.message());
     }
     round_robin->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-        MakeRefCounted<QueuePicker>(nullptr, "connecting", std::move(reason)));
+        MakeRefCounted<QueuePicker>(
+            nullptr,
+            PickResult::Queue(kDelayTypeConnecting, std::move(reason))));
   } else if (num_transient_failure_ == size()) {
     GRPC_TRACE_LOG(round_robin, INFO)
         << "[RR " << round_robin

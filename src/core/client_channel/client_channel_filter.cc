@@ -1592,11 +1592,10 @@ grpc_error_handle ClientChannelFilter::DoPingLocked(grpc_transport_op* op) {
   if (state_tracker_.state() != GRPC_CHANNEL_READY) {
     return GRPC_ERROR_CREATE("channel not connected");
   }
-  LoadBalancingPolicy::PickResult result;
-  {
+  LoadBalancingPolicy::PickResult result = [this] {
     MutexLock lock(&lb_mu_);
-    result = picker_->Pick(LoadBalancingPolicy::PickArgs());
-  }
+    return picker_->Pick(LoadBalancingPolicy::PickArgs());
+  }();
   return HandlePickResult<grpc_error_handle>(
       &result,
       // Complete pick.
