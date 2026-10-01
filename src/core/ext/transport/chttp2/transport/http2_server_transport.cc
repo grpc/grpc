@@ -515,28 +515,17 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
                          "Reset stream frame received.");
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream != nullptr) {
-    if (stream->IsTarpitted()) {
-      // If the stream is already in the Tarpit state, we do not want to process
-      // the RST_STREAM frame. The stream will be closed once the Tarpit timer
-      // expires.
-      GRPC_HTTP2_SERVER_DLOG
-          << "Http2ServerTransport::ProcessIncomingFrame(ResetStreamFrame) "
-             "ignoring RST_STREAM for already tarpitted stream_id="
-          << frame.stream_id;
-    } else if (tarpit_manager_.allow_tarpit()) {
-      // If tarpit is enabled, we will enqueue the RST_STREAM frame to the
-      // Tarpit manager and delay the stream reset.
-      StatusFlag tarpit_status = tarpit_manager_.RequestTarpitIncomingReset(
-          stream->GetStreamId(), std::move(status));
-      if (GPR_UNLIKELY(!tarpit_status.ok())) {
-        return Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kInternalError, "Failed to enqueue tarpit entry");
-      }
-    } else {
-      // If tarpit is not enabled, we will process the RST_STREAM frame inline.
-      HandleStreamStateChange(*stream,
-                              stream->OnResetReceived(std::move(status)));
-    }
+    // Based on CHTTP2's grpc_chttp2_rst_stream_parser_parse in
+    // frame_rst_stream.cc, the stream is closed immediately, even if it is
+    // tarpitted. This frees the MAX_CONCURRENT_STREAMS slot right away. For a
+    // tarpitted stream, the pending tarpit entry is dropped when it expires,
+    // because ActOnTarpitEntries will no longer find the stream.
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::ProcessIncomingFrame(ResetStreamFrame) "
+           "closing stream_id="
+        << frame.stream_id << " is_tarpitted=" << stream->IsTarpitted();
+    HandleStreamStateChange(*stream,
+                            stream->OnResetReceived(std::move(status)));
   }
 
   // In case of stream error, we do not want the Read Loop to be broken. Hence
@@ -1769,13 +1758,7 @@ void Http2ServerTransport::ActOnTarpitEntries(
       continue;
     }
     stream->SetTarpitCompleted();
-    if (entry.IsIncomingReset()) {
-      std::optional<TarpitEntry::IncomingResetPayload> reset =
-          entry.TakeIncomingResetPayload();
-      GRPC_DCHECK(reset.has_value());
-      HandleStreamStateChange(
-          *stream, stream->OnResetReceived(std::move(reset->status)));
-    } else if (entry.IsOutgoingReset()) {
+    if (entry.IsOutgoingReset()) {
       std::optional<TarpitEntry::OutgoingResetPayload> reset =
           entry.TakeOutgoingResetPayload();
       GRPC_DCHECK(reset.has_value());
