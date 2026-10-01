@@ -1023,6 +1023,19 @@ class _StreamingResponseRendezvous(
     ) -> bool:
         end = None if timeout is None else time.time() + timeout
         receiving = True
+
+        def _progress():
+            return (
+                wait_complete_fn()
+                or self._state.response is not None
+                or (
+                    receiving
+                    and self._state.code is None
+                    and cygrpc.OperationType.receive_message
+                    not in self._state.due
+                )
+            )
+
         while True:
             if self._state.response is not None:
                 self._buffered_responses.append(self._state.response)
@@ -1037,18 +1050,6 @@ class _StreamingResponseRendezvous(
                 # If the operation could not be started, the status is on its
                 # way and there is nothing left to receive.
                 receiving = self._receive_message()
-
-            def _progress():
-                return (
-                    wait_complete_fn()
-                    or self._state.response is not None
-                    or (
-                        receiving
-                        and self._state.code is None
-                        and cygrpc.OperationType.receive_message
-                        not in self._state.due
-                    )
-                )
 
             remaining = None if end is None else end - time.time()
             if remaining is not None and remaining <= 0:
