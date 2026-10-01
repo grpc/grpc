@@ -35,7 +35,7 @@ RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod
 RUN DOTNET_DOWNLOAD_VERSION=3.1.415 \
     && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-x64.tar.gz \
     && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet --exclude=dotnet \
     && rm dotnet.tar.gz
 
 # Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
