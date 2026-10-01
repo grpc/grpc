@@ -335,8 +335,7 @@ void XdsEnd2endTest::BalancerServerThread::ShutdownAllServices() {
 // XdsEnd2endTest::RpcOptions
 //
 
-void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
-                                          EchoRequest* request) const {
+void XdsEnd2endTest::RpcOptions::SetupContext(ClientContext* context) const {
   for (const auto& [key, value] : metadata) {
     context->AddMetadata(key, value);
   }
@@ -344,6 +343,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
     context->set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
   }
   if (wait_for_ready) context->set_wait_for_ready(true);
+}
+
+void XdsEnd2endTest::RpcOptions::SetupRequest(EchoRequest* request) const {
   request->set_message(kRequestMessage);
   if (server_fail) {
     request->mutable_param()->mutable_expected_error()->set_code(
@@ -375,6 +377,15 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (echo_metadata_initially) {
     request->mutable_param()->set_echo_metadata_initially(true);
   }
+  if (echo_metadata) {
+    request->mutable_param()->set_echo_metadata(true);
+  }
+}
+
+void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
+                                          EchoRequest* request) const {
+  SetupContext(context);
+  SetupRequest(request);
 }
 
 //
