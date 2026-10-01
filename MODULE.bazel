@@ -57,15 +57,7 @@ bazel_dep(name = "cel-c", version = "0.0.0-20260820-bbdb358", repo_name = "cel_c
 # The version must match what the module graph resolves to (xds, envoy_api,
 # cel-c and cel-cpp all require 0.25.1) and what CMakeLists.txt downloads.
 bazel_dep(name = "cel-spec", version = "0.25.1", repo_name = "dev_cel")
-bazel_dep(name = "envoy_api", version = "0.0.0-20260901-005c18a")
-single_version_override(
-    module_name = "envoy_api",
-    patch_strip = 1,
-    patches = [
-        "//bazel:envoy_api.patch",
-    ],
-    version = "0.0.0-20260901-005c18a",
-)
+bazel_dep(name = "envoy_api", version = "0.0.0-20260901-005c18a.bcr.1")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")

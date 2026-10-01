@@ -420,10 +420,10 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOA
   # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz
-    https://github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz
-    5cba6b0029e727d1f4d8fd134de4e747cecc0bc293d026017d7edc48058d09f7
-    cel-spec-0.24.0
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz
+    https://github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz
+    13583c5a312861648449845b709722676a3c9b43396b6b8e9cbe4538feb74ad2
+    cel-spec-0.25.1
   )
 endif()
 # Setup external proto library at third_party/envoy-api if it doesn't exist
@@ -46401,6 +46401,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -46601,6 +46609,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
