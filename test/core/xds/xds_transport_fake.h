@@ -80,6 +80,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
+    bool half_closed() const {
+      MutexLock lock(&mu_);
+      return half_closed_;
+    }
     std::optional<std::string> WaitForMessageFromClient();
 
     // If FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient()
@@ -94,10 +98,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool WaitForReadsStarted(size_t expected);
 
-    bool half_closed() const {
-      MutexLock lock(mu_);
-      return half_closed_;
-    }
+    bool wait_for_ready() const { return wait_for_ready_; }
 
     bool wait_for_ready() const { return wait_for_ready_; }
 
