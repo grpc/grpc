@@ -40,6 +40,7 @@ _parallel_compile_patch.monkeypatch_compile_maybe()
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ] + [
