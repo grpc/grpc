@@ -743,14 +743,6 @@ void XdsExtProcEnd2endTest::ClientHalfCloseHandler::HandleIfNotYetSeen() {
 //
 // Tests
 //
-// Detailed ext_proc filter behavior (processing modes, mutations, ordering,
-// drain, failure modes, metrics, etc.) is covered by the much faster
-// FilterTest-based suite in test/core/filters/ext_proc_filter_test.cc. This
-// file only keeps a small set of tests that exercise the filter end-to-end
-// through xDS configuration (listener and route-override) with a real ext_proc
-// server: a full success case, and the fail-closed and fail-open behavior on
-// ext_proc stream failure.
-//
 
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
   auto ext_proc_config = MakeFilterConfigBuilder()
