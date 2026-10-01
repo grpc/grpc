@@ -1,4 +1,4 @@
-cython==3.1.1
+cython==3.2.8
 cryptography==50.0.0
 PyJWT==2.13.0
 pyOpenSSL==26.4.0
