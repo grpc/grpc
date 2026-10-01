@@ -84,7 +84,7 @@ class FakeExtProcService final : public ExtProcService::CallbackService {
     Stream()
         : grpc_core::InternallyRefCounted<Stream>(/*trace=*/nullptr,
                                                   /*initial_refcount=*/2) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       StartRead(&request_);
     }
 
@@ -100,7 +100,7 @@ class FakeExtProcService final : public ExtProcService::CallbackService {
     // request.
     std::optional<::envoy::service::ext_proc::v3::ProcessingRequest>
     GetNextRequest(absl::Duration timeout = absl::Seconds(10)) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       const absl::Time deadline =
           absl::Now() + timeout * grpc_test_slowdown_factor();
       while (requests_.empty() && !is_done_) {
@@ -119,7 +119,7 @@ class FakeExtProcService final : public ExtProcService::CallbackService {
     // Sends a response on the stream.
     void SendResponse(
         ::envoy::service::ext_proc::v3::ProcessingResponse response) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       response_ = std::move(response);
       write_in_flight_ = true;
       StartWrite(&response_);
@@ -130,7 +130,7 @@ class FakeExtProcService final : public ExtProcService::CallbackService {
 
     // Closes the stream with the specified status.
     void SendStatus(const grpc::Status& status) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       MaybeFinishLocked(status);
       while (!is_done_) {
         cv_.Wait(&mu_);
@@ -172,7 +172,7 @@ class FakeExtProcService final : public ExtProcService::CallbackService {
 
     void OnDone() override {
       {
-        grpc_core::MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(mu_);
         is_done_ = true;
         cv_.SignalAll();
       }
@@ -197,7 +197,7 @@ class FakeExtProcService final : public ExtProcService::CallbackService {
   // stream; the stream is cancelled when the returned pointer is destroyed.
   grpc_core::OrphanablePtr<Stream> GetStream(
       absl::Duration timeout = absl::Seconds(10)) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     const absl::Time deadline =
         absl::Now() + timeout * grpc_test_slowdown_factor();
     while (streams_.empty() && !is_shutdown_) {
@@ -217,7 +217,7 @@ class FakeExtProcService final : public ExtProcService::CallbackService {
     // Cancels any streams that were never consumed via GetStream().  Streams
     // already handed to the test are owned by the test.
     std::queue<grpc_core::OrphanablePtr<Stream>> streams;
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     is_shutdown_ = true;
     streams = std::move(streams_);
     cv_.SignalAll();
@@ -226,7 +226,7 @@ class FakeExtProcService final : public ExtProcService::CallbackService {
   Stream* Process(grpc::CallbackServerContext* /*context*/) override {
     auto stream = grpc_core::MakeOrphanable<Stream>();
     Stream* active_stream = stream.get();
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (is_shutdown_) {
       stream->MaybeFinish(
           grpc::Status(grpc::StatusCode::UNAVAILABLE, "Server shutdown"));
