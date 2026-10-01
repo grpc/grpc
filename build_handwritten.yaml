@@ -16,7 +16,7 @@ settings:
   '#12': Protobuf Upgrade
   '#13': IMPORTANT! We need to update 'protobuf_version' manually when upgrading protobuf.
   '#14': The versions below can be retrieved from third_party/protobuf/version.json.
-  core_version: 57.0.0
+  core_version: 58.0.0
   csharp_major_version: 2
   g_stands_for: gimbal
   protobuf_version:
