@@ -2987,6 +2987,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
   grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
