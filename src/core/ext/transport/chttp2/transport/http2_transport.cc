@@ -498,8 +498,6 @@ std::string TarpitEntry::DebugString() const {
       std::get_if<OutgoingResetPayload>(&payload_);
   const OutgoingTrailingMetadataPayload* const trailers =
       std::get_if<OutgoingTrailingMetadataPayload>(&payload_);
-  const IncomingResetPayload* const incoming_reset =
-      std::get_if<IncomingResetPayload>(&payload_);
   if (reset != nullptr) {
     payload_str = absl::StrCat(
         "OutgoingReset(error_code=", reset->http2_error_code,
@@ -510,9 +508,6 @@ std::string TarpitEntry::DebugString() const {
                                    ? trailers->metadata->DebugString()
                                    : "null",
                                ")");
-  } else if (incoming_reset != nullptr) {
-    payload_str = absl::StrCat(
-        "IncomingReset(status=", incoming_reset->status.ToString(), ")");
   } else {
     payload_str = "unknown type";
   }
@@ -576,22 +571,6 @@ StatusFlag TarpitManager::StartTarpitTrailers(const uint32_t stream_id,
   const StatusFlag status =
       sender_.UnbufferedImmediateSend(std::move(entry), 1);
   return status;
-}
-
-StatusFlag TarpitManager::RequestTarpitIncomingReset(const uint32_t stream_id,
-                                                     absl::Status status) {
-  GRPC_DCHECK(allow_tarpit_);
-  GRPC_DCHECK_NE(stream_id, kInvalidStreamId);
-  GRPC_HTTP2_COMMON_DLOG
-      << "TarpitManager::RequestTarpitIncomingReset Stream id: " << stream_id
-      << " status: " << status;
-
-  const Timestamp expire_time = Timestamp::Now() + GetTarpitDuration();
-  TarpitEntry entry = TarpitEntry::CreateIncomingReset(
-      stream_id, std::move(status), expire_time);
-  const StatusFlag send_status =
-      sender_.UnbufferedImmediateSend(std::move(entry), 1);
-  return send_status;
 }
 
 StreamStateChange TarpitManager::OnTarpit(Stream& stream) {
