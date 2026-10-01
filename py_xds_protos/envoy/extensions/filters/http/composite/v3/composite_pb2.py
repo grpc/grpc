@@ -25,12 +25,13 @@ _sym_db = _symbol_database.Default()
 from envoy.config.core.v3 import base_pb2 as envoy_dot_config_dot_core_dot_v3_dot_base__pb2
 from envoy.config.core.v3 import config_source_pb2 as envoy_dot_config_dot_core_dot_v3_dot_config__source__pb2
 from envoy.config.core.v3 import extension_pb2 as envoy_dot_config_dot_core_dot_v3_dot_extension__pb2
+from xds.type.matcher.v3 import matcher_pb2 as xds_dot_type_dot_matcher_dot_v3_dot_matcher__pb2
 from udpa.annotations import migrate_pb2 as udpa_dot_annotations_dot_migrate__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n:envoy/extensions/filters/http/composite/v3/composite.proto\x12*envoy.extensions.filters.http.composite.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a(envoy/config/core/v3/config_source.proto\x1a$envoy/config/core/v3/extension.proto\x1a\x1eudpa/annotations/migrate.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x0b\n\tComposite\"\\\n\x18\x46ilterChainConfiguration\x12@\n\x0ctyped_config\x18\x01 \x03(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfig\"m\n\rDynamicConfig\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x45\n\x10\x63onfig_discovery\x18\x02 \x01(\x0b\x32+.envoy.config.core.v3.ExtensionConfigSource\"\xf8\x02\n\x13\x45xecuteFilterAction\x12U\n\x0ctyped_config\x18\x01 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB\x13\xf2\x98\xfe\x8f\x05\r\x12\x0b\x63onfig_type\x12\x66\n\x0e\x64ynamic_config\x18\x02 \x01(\x0b\x32\x39.envoy.extensions.filters.http.composite.v3.DynamicConfigB\x13\xf2\x98\xfe\x8f\x05\r\x12\x0b\x63onfig_type\x12Z\n\x0c\x66ilter_chain\x18\x04 \x01(\x0b\x32\x44.envoy.extensions.filters.http.composite.v3.FilterChainConfiguration\x12\x46\n\x0esample_percent\x18\x03 \x01(\x0b\x32..envoy.config.core.v3.RuntimeFractionalPercentB\xb3\x01\n8io.envoyproxy.envoy.extensions.filters.http.composite.v3B\x0e\x43ompositeProtoP\x01Z]github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/composite/v3;compositev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n:envoy/extensions/filters/http/composite/v3/composite.proto\x12*envoy.extensions.filters.http.composite.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a(envoy/config/core/v3/config_source.proto\x1a$envoy/config/core/v3/extension.proto\x1a!xds/type/matcher/v3/matcher.proto\x1a\x1eudpa/annotations/migrate.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xa5\x02\n\tComposite\x12i\n\x13named_filter_chains\x18\x01 \x03(\x0b\x32L.envoy.extensions.filters.http.composite.v3.Composite.NamedFilterChainsEntry\x12-\n\x07matcher\x18\x02 \x01(\x0b\x32\x1c.xds.type.matcher.v3.Matcher\x1a~\n\x16NamedFilterChainsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12S\n\x05value\x18\x02 \x01(\x0b\x32\x44.envoy.extensions.filters.http.composite.v3.FilterChainConfiguration:\x02\x38\x01\"L\n\x11\x43ompositePerRoute\x12\x37\n\x07matcher\x18\x01 \x01(\x0b\x32\x1c.xds.type.matcher.v3.MatcherB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\"\\\n\x18\x46ilterChainConfiguration\x12@\n\x0ctyped_config\x18\x01 \x03(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfig\"m\n\rDynamicConfig\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x45\n\x10\x63onfig_discovery\x18\x02 \x01(\x0b\x32+.envoy.config.core.v3.ExtensionConfigSource\"\x93\x03\n\x13\x45xecuteFilterAction\x12U\n\x0ctyped_config\x18\x01 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB\x13\xf2\x98\xfe\x8f\x05\r\x12\x0b\x63onfig_type\x12\x66\n\x0e\x64ynamic_config\x18\x02 \x01(\x0b\x32\x39.envoy.extensions.filters.http.composite.v3.DynamicConfigB\x13\xf2\x98\xfe\x8f\x05\r\x12\x0b\x63onfig_type\x12Z\n\x0c\x66ilter_chain\x18\x04 \x01(\x0b\x32\x44.envoy.extensions.filters.http.composite.v3.FilterChainConfiguration\x12\x19\n\x11\x66ilter_chain_name\x18\x05 \x01(\t\x12\x46\n\x0esample_percent\x18\x03 \x01(\x0b\x32..envoy.config.core.v3.RuntimeFractionalPercentB\xb3\x01\n8io.envoyproxy.envoy.extensions.filters.http.composite.v3B\x0e\x43ompositeProtoP\x01Z]github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/composite/v3;compositev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -38,18 +39,26 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.filters.ht
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n8io.envoyproxy.envoy.extensions.filters.http.composite.v3B\016CompositeProtoP\001Z]github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/composite/v3;compositev3\272\200\310\321\006\002\020\002'
+  _globals['_COMPOSITE_NAMEDFILTERCHAINSENTRY']._loaded_options = None
+  _globals['_COMPOSITE_NAMEDFILTERCHAINSENTRY']._serialized_options = b'8\001'
+  _globals['_COMPOSITEPERROUTE'].fields_by_name['matcher']._loaded_options = None
+  _globals['_COMPOSITEPERROUTE'].fields_by_name['matcher']._serialized_options = b'\372B\005\212\001\002\020\001'
   _globals['_DYNAMICCONFIG'].fields_by_name['name']._loaded_options = None
   _globals['_DYNAMICCONFIG'].fields_by_name['name']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_EXECUTEFILTERACTION'].fields_by_name['typed_config']._loaded_options = None
   _globals['_EXECUTEFILTERACTION'].fields_by_name['typed_config']._serialized_options = b'\362\230\376\217\005\r\022\013config_type'
   _globals['_EXECUTEFILTERACTION'].fields_by_name['dynamic_config']._loaded_options = None
   _globals['_EXECUTEFILTERACTION'].fields_by_name['dynamic_config']._serialized_options = b'\362\230\376\217\005\r\022\013config_type'
-  _globals['_COMPOSITE']._serialized_start=307
-  _globals['_COMPOSITE']._serialized_end=318
-  _globals['_FILTERCHAINCONFIGURATION']._serialized_start=320
-  _globals['_FILTERCHAINCONFIGURATION']._serialized_end=412
-  _globals['_DYNAMICCONFIG']._serialized_start=414
-  _globals['_DYNAMICCONFIG']._serialized_end=523
-  _globals['_EXECUTEFILTERACTION']._serialized_start=526
-  _globals['_EXECUTEFILTERACTION']._serialized_end=902
+  _globals['_COMPOSITE']._serialized_start=343
+  _globals['_COMPOSITE']._serialized_end=636
+  _globals['_COMPOSITE_NAMEDFILTERCHAINSENTRY']._serialized_start=510
+  _globals['_COMPOSITE_NAMEDFILTERCHAINSENTRY']._serialized_end=636
+  _globals['_COMPOSITEPERROUTE']._serialized_start=638
+  _globals['_COMPOSITEPERROUTE']._serialized_end=714
+  _globals['_FILTERCHAINCONFIGURATION']._serialized_start=716
+  _globals['_FILTERCHAINCONFIGURATION']._serialized_end=808
+  _globals['_DYNAMICCONFIG']._serialized_start=810
+  _globals['_DYNAMICCONFIG']._serialized_end=919
+  _globals['_EXECUTEFILTERACTION']._serialized_start=922
+  _globals['_EXECUTEFILTERACTION']._serialized_end=1325
 # @@protoc_insertion_point(module_scope)

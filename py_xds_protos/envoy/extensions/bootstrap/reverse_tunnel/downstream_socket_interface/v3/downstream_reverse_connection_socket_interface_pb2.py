@@ -22,10 +22,15 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from envoy.config.accesslog.v3 import accesslog_pb2 as envoy_dot_config_dot_accesslog_dot_v3_dot_accesslog__pb2
+from envoy.config.core.v3 import base_pb2 as envoy_dot_config_dot_core_dot_v3_dot_base__pb2
+from envoy.config.core.v3 import extension_pb2 as envoy_dot_config_dot_core_dot_v3_dot_extension__pb2
+from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
+from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n}envoy/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/v3/downstream_reverse_connection_socket_interface.proto\x12Henvoy.extensions.bootstrap.reverse_tunnel.downstream_socket_interface.v3\x1a\x1dudpa/annotations/status.proto\"`\n*DownstreamReverseConnectionSocketInterface\x12\x13\n\x0bstat_prefix\x18\x01 \x01(\t\x12\x1d\n\x15\x65nable_detailed_stats\x18\x02 \x01(\x08\x42\xa3\x02\nVio.envoyproxy.envoy.extensions.bootstrap.reverse_tunnel.downstream_socket_interface.v3B/DownstreamReverseConnectionSocketInterfaceProtoP\x01Z\x8d\x01github.com/envoyproxy/go-control-plane/envoy/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/v3;downstream_socket_interfacev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n}envoy/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/v3/downstream_reverse_connection_socket_interface.proto\x12Henvoy.extensions.bootstrap.reverse_tunnel.downstream_socket_interface.v3\x1a)envoy/config/accesslog/v3/accesslog.proto\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a$envoy/config/core/v3/extension.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x96\x05\n*DownstreamReverseConnectionSocketInterface\x12\x13\n\x0bstat_prefix\x18\x01 \x01(\t\x12\x1d\n\x15\x65nable_detailed_stats\x18\x02 \x01(\x08\x12\xa1\x01\n\x0ehttp_handshake\x18\x03 \x01(\x0b\x32\x88\x01.envoy.extensions.bootstrap.reverse_tunnel.downstream_socket_interface.v3.DownstreamReverseConnectionSocketInterface.HttpHandshakeConfig\x12\x38\n\naccess_log\x18\x04 \x03(\x0b\x32$.envoy.config.accesslog.v3.AccessLog\x12\x44\n\x15max_reconnect_backoff\x18\x05 \x01(\x0b\x32\x19.google.protobuf.DurationB\n\xfa\x42\x07\xaa\x01\x04\x32\x02\x08\x01\x12\x43\n\x11maintain_interval\x18\x06 \x01(\x0b\x32\x19.google.protobuf.DurationB\r\xfa\x42\n\xaa\x01\x07\x32\x05\x10\x80\xc2\xd7/\x1a\xca\x01\n\x13HttpHandshakeConfig\x12\x14\n\x0crequest_path\x18\x01 \x01(\t\x12\x43\n\x12\x61\x64\x64itional_headers\x18\x02 \x03(\x0b\x32\'.envoy.config.core.v3.HeaderValueOption\x12\x18\n\x10use_http_upgrade\x18\x03 \x01(\x08\x12>\n\nformatters\x18\x04 \x03(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB\xa3\x02\nVio.envoyproxy.envoy.extensions.bootstrap.reverse_tunnel.downstream_socket_interface.v3B/DownstreamReverseConnectionSocketInterfaceProtoP\x01Z\x8d\x01github.com/envoyproxy/go-control-plane/envoy/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/v3;downstream_socket_interfacev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,6 +38,12 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.bootstrap.
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\nVio.envoyproxy.envoy.extensions.bootstrap.reverse_tunnel.downstream_socket_interface.v3B/DownstreamReverseConnectionSocketInterfaceProtoP\001Z\215\001github.com/envoyproxy/go-control-plane/envoy/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/v3;downstream_socket_interfacev3\272\200\310\321\006\002\020\002'
-  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE']._serialized_start=234
-  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE']._serialized_end=330
+  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE'].fields_by_name['max_reconnect_backoff']._loaded_options = None
+  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE'].fields_by_name['max_reconnect_backoff']._serialized_options = b'\372B\007\252\001\0042\002\010\001'
+  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE'].fields_by_name['maintain_interval']._loaded_options = None
+  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE'].fields_by_name['maintain_interval']._serialized_options = b'\372B\n\252\001\0072\005\020\200\302\327/'
+  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE']._serialized_start=406
+  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE']._serialized_end=1068
+  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE_HTTPHANDSHAKECONFIG']._serialized_start=866
+  _globals['_DOWNSTREAMREVERSECONNECTIONSOCKETINTERFACE_HTTPHANDSHAKECONFIG']._serialized_end=1068
 # @@protoc_insertion_point(module_scope)

@@ -57,7 +57,7 @@ bazel_dep(name = "cel-c", version = "0.0.0-20260820-bbdb358", repo_name = "cel_c
 # The version must match what the module graph resolves to (xds, envoy_api,
 # cel-c and cel-cpp all require 0.25.1) and what CMakeLists.txt downloads.
 bazel_dep(name = "cel-spec", version = "0.25.1", repo_name = "dev_cel")
-bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
+bazel_dep(name = "envoy_api", version = "0.0.0-20260901-005c18a.bcr.1")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")
@@ -68,7 +68,7 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 
 # --- Protobuf related packages.
 bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
-bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
+bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.2", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
