@@ -958,7 +958,8 @@ cdef class AioServer:
         self._shutdown_callback_wrapper = CallbackWrapper(
             self._shutdown_completed,
             self._loop,
-            SERVER_SHUTDOWN_FAILURE_HANDLER)
+            SERVER_SHUTDOWN_FAILURE_HANDLER,
+            tag=None)
         self._crash_exception = None
 
         if interceptors:
@@ -1000,7 +1001,8 @@ cdef class AioServer:
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             self._loop,
-            REQUEST_REGISTERED_CALL_FAILURE_HANDLER)
+            REQUEST_REGISTERED_CALL_FAILURE_HANDLER,
+            rpc_state)
         cdef RegisteredMethod registered_method = self._server.registered_methods[method]
         error = grpc_server_request_registered_call(
             self._server.c_server, 
@@ -1026,7 +1028,8 @@ cdef class AioServer:
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             self._loop,
-            REQUEST_CALL_FAILURE_HANDLER)
+            REQUEST_CALL_FAILURE_HANDLER,
+            rpc_state)
         error = grpc_server_request_call(
             self._server.c_server, &rpc_state.call, &rpc_state.details,
             &rpc_state.request_metadata,

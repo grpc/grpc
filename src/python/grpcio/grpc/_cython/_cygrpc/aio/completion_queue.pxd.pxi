@@ -40,6 +40,14 @@ cdef extern from *:
 
 cdef void _unified_socket_write(int fd) noexcept nogil
 
+# One event loop's mailbox, filled by the poller thread without the GIL:
+# the events owned by that loop plus write end of the loop's private wake-up
+# socket. A plain C++ object so the nogil poller can use it through a raw ptr
+cdef cppclass _LoopMailbox:
+    mutex mtx
+    cpp_event_queue events
+    int write_fd
+
 
 cdef class BaseCompletionQueue:
     cdef grpc_completion_queue *_cq
@@ -49,19 +57,25 @@ cdef class BaseCompletionQueue:
 
 cdef class _BoundEventLoop:
     cdef readonly object loop
-    cdef readonly object read_socket  # socket.socket
+    cdef object _read_socket    # socket.socket
+    cdef object _write_socket   # socket.socket
+    cdef _LoopMailbox _mailbox
+    cdef object _loop_owning_thread_id
     cdef bint _has_reader
+
+    cdef _drain_queue(self, bint complete_futures)
+    cdef close_read_socket(self)
+    cdef close_write_socket(self)
 
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
     cdef atomic[bint] _shutdown
-    cdef cpp_event_queue _queue
-    cdef mutex _queue_mutex
+    cdef mutex _mailboxes_mutex
+    cdef unordered_map[size_t, _LoopMailbox*] _mailboxes
     cdef object _poller_thread  # threading.Thread
-    cdef int _write_fd
-    cdef object _read_socket    # socket.socket
-    cdef object _write_socket   # socket.socket
     cdef dict _loops            # Mapping[asyncio.AbstractLoop, _BoundEventLoop]
 
     cdef int _poll(self) except -1 nogil
+    cdef void _dispatch(self, grpc_event event) noexcept nogil
     cdef shutdown(self)
+    cdef _unbind_loops(self)
