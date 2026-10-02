@@ -97,8 +97,9 @@ cdef extern from "grpc/support/alloc.h":
 cdef extern from "grpc/byte_buffer_reader.h":
 
   struct grpc_byte_buffer_reader:
-    # We don't care about the internals
-    pass
+    # The buffer the reader iterates, which grpc_byte_buffer_reader_readall
+    # sizes its result from; the remaining internals are not needed.
+    grpc_byte_buffer *buffer_out
 
 
 cdef extern from "grpc/impl/codegen/grpc_types.h":
@@ -842,3 +843,6 @@ cdef extern from "src/core/config/config_vars.h" namespace "grpc_core":
   cdef cppclass ConfigVars:
     @staticmethod
     void Reset()
+
+cdef extern from "src/core/lib/experiments/experiments.h" namespace "grpc_core" nogil:
+  bint IsPythonSingleCopyRecvEnabled()
