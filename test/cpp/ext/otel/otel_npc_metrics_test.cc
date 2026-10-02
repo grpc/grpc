@@ -66,6 +66,16 @@ class OpenTelemetryIntegrationTestInstrumentDomain final
   static inline const auto kTestUpDownCounter =
       RegisterUpDownCounter("test.otel_int64_up_down_counter",
                             "A simple int64 up down counter.", "unit");
+
+  static inline const auto kTestInt64Histogram =
+      RegisterInt64Histogram<grpc_core::ExponentialInt64HistogramShape>(
+          "test.otel_int64_histogram", "A simple int64 histogram.", "unit",
+          1024, 20);
+
+  static inline const auto kTestDoubleHistogram =
+      RegisterDoubleHistogram<grpc_core::ExponentialDoubleHistogramShape>(
+          "test.otel_double_histogram", "A simple double histogram.", "unit",
+          1000.0, 10, 1.0);
 };
 
 template <typename T>
@@ -287,6 +297,123 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordExportedInt64UpDownCounter) {
                   OptionalLabelValues<
                       OpenTelemetryIntegrationTestInstrumentDomain>(*storage)),
               CounterResultEq(::testing::Eq(kFinalCounterResult)))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordExportedInt64Histogram) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  constexpr int64_t kHistogramValues[] = {1, 1, 2, 3, 4, 4, 5, 6};
+  constexpr int64_t kSum = 26;
+  constexpr int64_t kMin = 1;
+  constexpr int64_t kMax = 6;
+  constexpr int64_t kCount = 8;
+  Init(std::move(
+      Options()
+          .set_metric_names(
+              {OpenTelemetryIntegrationTestInstrumentDomain::kTestInt64Histogram
+                   .name()})
+          .set_channel_scope_filter(
+              [](const OpenTelemetryPluginBuilder::ChannelScope&
+                     channel_scope) {
+                return absl::StartsWith(channel_scope.target(), "dns:///");
+              })
+          .add_optional_label("test_optional.2")));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", "", endpoint_config_));
+  auto storage = OpenTelemetryIntegrationTestInstrumentDomain::GetStorage(
+      stats_plugins->GetCollectionScope(), "label_value_1", "label_value_2");
+  for (auto v : kHistogramValues) {
+    storage->Increment(
+        OpenTelemetryIntegrationTestInstrumentDomain::kTestInt64Histogram, v);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(
+            OpenTelemetryIntegrationTestInstrumentDomain::kTestInt64Histogram
+                .name());
+      });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          OpenTelemetryIntegrationTestInstrumentDomain::kTestInt64Histogram
+              .name(),
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(
+                  RequiredLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  RequiredLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage),
+                  OptionalLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  OptionalLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage)),
+              HistogramResultEq(::testing::Eq(kSum), ::testing::Eq(kMin),
+                                ::testing::Eq(kMax), kCount))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordExportedDoubleHistogram) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  constexpr double kHistogramValues[] = {1.1, 1.2, 2.2, 3.3,
+                                         4.4, 4.5, 5.5, 6.6};
+  constexpr double kSum = 28.8;
+  constexpr double kMin = 1.1;
+  constexpr double kMax = 6.6;
+  constexpr int64_t kCount = 8;
+  Init(std::move(
+      Options()
+          .set_metric_names({OpenTelemetryIntegrationTestInstrumentDomain::
+                                 kTestDoubleHistogram.name()})
+          .set_channel_scope_filter(
+              [](const OpenTelemetryPluginBuilder::ChannelScope&
+                     channel_scope) {
+                return absl::StartsWith(channel_scope.target(), "dns:///");
+              })
+          .add_optional_label("test_optional.2")));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", "", endpoint_config_));
+  auto storage = OpenTelemetryIntegrationTestInstrumentDomain::GetStorage(
+      stats_plugins->GetCollectionScope(), "label_value_1", "label_value_2");
+  for (auto v : kHistogramValues) {
+    storage->Increment(
+        OpenTelemetryIntegrationTestInstrumentDomain::kTestDoubleHistogram, v);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(
+            OpenTelemetryIntegrationTestInstrumentDomain::kTestDoubleHistogram
+                .name());
+      });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          OpenTelemetryIntegrationTestInstrumentDomain::kTestDoubleHistogram
+              .name(),
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(
+                  RequiredLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  RequiredLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage),
+                  OptionalLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  OptionalLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage)),
+              HistogramResultEq(::testing::DoubleEq(kSum),
+                                ::testing::DoubleEq(kMin),
+                                ::testing::DoubleEq(kMax), kCount))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
