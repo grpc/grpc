@@ -306,5 +306,5 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                     bound.close_read_socket()
             except Exception as exc:  # pylint: disable=broad-except
                 _LOGGER.debug(
-                    f"Failed to unbind {self.loop} from the poller: {exc}"
+                    f"Failed to unbind {bound.loop} from the poller: {exc}"
                 )
