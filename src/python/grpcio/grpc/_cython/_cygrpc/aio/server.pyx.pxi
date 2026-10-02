@@ -959,7 +959,7 @@ cdef class AioServer:
             self._shutdown_completed,
             self._loop,
             SERVER_SHUTDOWN_FAILURE_HANDLER,
-            tag=None)
+            None)
         self._crash_exception = None
 
         if interceptors:

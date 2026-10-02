@@ -87,7 +87,7 @@ cdef class AioChannel:
             future,
             self.loop,
             _WATCH_CONNECTIVITY_FAILURE_HANDLER,
-            tag=None)
+            None)
         grpc_channel_watch_connectivity_state(
             self.channel,
             last_observed_state,
