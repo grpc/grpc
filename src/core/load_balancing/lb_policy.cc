@@ -72,7 +72,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   // returns, then by the time this function returns, the pick will already
   // have been processed, and we'll be trying to re-process the same pick
   // again, leading to a crash.
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (parent_ != nullptr) {
     auto* parent = parent_.release();  // ref held by lambda.
     ExecCtx::Run(DEBUG_LOCATION,

@@ -325,7 +325,6 @@ libs:
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
-  - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
@@ -648,8 +647,6 @@ libs:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -664,6 +661,16 @@ libs:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb.h
   - src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h
@@ -676,16 +683,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/security.upb.h
@@ -1172,6 +1169,7 @@ libs:
   - src/core/lib/transport/transport_framing_endpoint_extension.h
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
+  - src/core/load_balancing/autosharding/autosharding.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -1346,6 +1344,7 @@ libs:
   - src/core/xds/grpc/certificate_provider_store.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.h
+  - src/core/xds/grpc/streaming_call_promise_wrapper.h
   - src/core/xds/grpc/xds_audit_logger_registry.h
   - src/core/xds/grpc/xds_bootstrap_grpc.h
   - src/core/xds/grpc/xds_bootstrap_grpc_builder.h
@@ -1529,7 +1528,6 @@ libs:
   - src/core/ext/transport/chttp2/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
-  - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
@@ -1705,7 +1703,6 @@ libs:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -1713,17 +1710,17 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
@@ -2134,6 +2131,7 @@ libs:
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
+  - src/core/load_balancing/autosharding/autosharding.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -2269,6 +2267,7 @@ libs:
   - src/core/xds/grpc/blackboard.cc
   - src/core/xds/grpc/certificate_provider_store.cc
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
+  - src/core/xds/grpc/streaming_call_promise_wrapper.cc
   - src/core/xds/grpc/xds_audit_logger_registry.cc
   - src/core/xds/grpc/xds_bootstrap_grpc.cc
   - src/core/xds/grpc/xds_bootstrap_grpc_builder.cc
@@ -2579,7 +2578,6 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
-  - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
@@ -2638,8 +2636,6 @@ libs:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -2652,6 +2648,16 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb.h
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
@@ -2662,16 +2668,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/validate/validate.upb.h
   - src/core/ext/upb-gen/validate/validate.upb_minitable.h
   - src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb.h
@@ -2931,6 +2927,7 @@ libs:
   - src/core/lib/transport/transport_framing_endpoint_extension.h
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
+  - src/core/load_balancing/autosharding/autosharding.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -3149,7 +3146,6 @@ libs:
   - src/core/ext/transport/chttp2/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
-  - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
@@ -3193,23 +3189,22 @@ libs:
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/validate/validate.upb_minitable.c
   - src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
@@ -3422,6 +3417,7 @@ libs:
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
+  - src/core/load_balancing/autosharding/autosharding.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -3683,6 +3679,7 @@ libs:
   public_headers: []
   headers:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
@@ -4790,6 +4787,12 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -4798,12 +4801,6 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
@@ -5176,13 +5173,13 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -5591,6 +5588,7 @@ targets:
 - name: activity_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/channelz/channel_trace.h
@@ -5787,6 +5785,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: address_sorting_test
   gtest: true
   build: test
@@ -6181,6 +6180,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: alloc_test
   gtest: true
   build: test
@@ -6191,6 +6191,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: alpn_test
   gtest: true
   build: test
@@ -6204,6 +6205,7 @@ targets:
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -6296,17 +6298,17 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
   src:
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
@@ -6392,6 +6394,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: arena_test
   gtest: true
   build: test
@@ -6402,6 +6405,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: async_end2end_test
   gtest: true
   build: test
@@ -6410,13 +6414,13 @@ targets:
   - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/async_end2end_test.cc
@@ -6434,6 +6438,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -6444,6 +6449,7 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+  uses_polling: false
 - name: authorization_matchers_test
   gtest: true
   build: test
@@ -6467,6 +6473,35 @@ targets:
   - grpc++
   - grpc_authorization_provider
   - grpc_test_util
+- name: autosharding_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/load_balancing/autosharding_config_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
+- name: autosharding_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/load_balancing/lb_policy_test_lib.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/load_balancing/autosharding_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: avl_test
   gtest: true
   build: test
@@ -6483,6 +6518,7 @@ targets:
   - gtest
   - absl/hash:hash
   - gpr
+  uses_polling: false
 - name: aws_request_signer_test
   gtest: true
   build: test
@@ -6522,6 +6558,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: bad_server_response_test
   gtest: true
   build: test
@@ -6646,16 +6683,7 @@ targets:
   - linux
   - posix
   - mac
-- name: bin_decoder_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_decoder_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
+  uses_polling: false
 - name: bin_encoder_test
   gtest: true
   build: test
@@ -6666,6 +6694,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: bitset_test
   gtest: true
   build: test
@@ -6681,6 +6710,7 @@ targets:
   - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
+  uses_polling: false
 - name: blackboard_test
   gtest: true
   build: test
@@ -6861,6 +6891,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: buffer_list_test
   gtest: true
   build: test
@@ -6881,6 +6912,7 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+  uses_polling: false
 - name: c_slice_buffer_test
   gtest: true
   build: test
@@ -6891,6 +6923,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: call_arena_allocator_test
   gtest: true
   build: test
@@ -6905,6 +6938,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: call_credentials_test
   gtest: true
   build: test
@@ -6948,6 +6982,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: call_filters_test
   gtest: true
   build: test
@@ -7205,6 +7240,7 @@ targets:
   - absl/utility:utility
   - gpr
   - protobuf
+  uses_polling: false
 - name: call_finalization_test
   gtest: true
   build: test
@@ -7410,6 +7446,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: call_utils_test
   gtest: true
   build: test
@@ -7456,6 +7493,12 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -7464,12 +7507,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
@@ -7807,13 +7844,13 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -8298,6 +8335,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: cds_test
   gtest: true
   build: test
@@ -8316,6 +8354,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -8435,8 +8474,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -8574,7 +8611,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -8656,6 +8692,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: cf_engine_test
   gtest: true
   build: test
@@ -8726,6 +8763,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -8737,6 +8775,7 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+  uses_polling: false
 - name: channel_creds_registry_test
   gtest: true
   build: test
@@ -8823,6 +8862,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: channel_init_test
   gtest: true
   build: test
@@ -8833,6 +8873,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: channel_stack_builder_test
   gtest: true
   build: test
@@ -8853,6 +8894,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: channel_trace_test
   gtest: true
   build: test
@@ -8878,6 +8920,7 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+  uses_polling: false
 - name: channelz_service_test
   gtest: true
   build: test
@@ -9339,6 +9382,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: cli_call_test
   gtest: true
   build: test
@@ -9393,6 +9437,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: client_callback_end2end_test
   gtest: true
   build: test
@@ -9426,6 +9471,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: client_context_test_peer_test
   gtest: true
   build: test
@@ -9472,6 +9518,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: client_interceptors_end2end_test
   gtest: true
   build: test
@@ -9497,6 +9544,7 @@ targets:
 - name: client_lb_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/util/json/json_util.h
@@ -9513,7 +9561,6 @@ targets:
   src:
   - src/proto/grpc/channelz/v2/channelz.proto
   - src/proto/grpc/channelz/v2/property_list.proto
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -9521,6 +9568,7 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/core/util/json/json_util.cc
@@ -9584,6 +9632,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: codegen_test_full
   gtest: true
   build: test
@@ -9595,6 +9644,7 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+  uses_polling: false
 - name: codegen_test_minimal
   gtest: true
   build: test
@@ -9606,9 +9656,11 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+  uses_polling: false
 - name: combiner_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -9635,6 +9687,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: completion_queue_threading_test
   gtest: true
   build: test
@@ -9667,6 +9720,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: concurrent_connectivity_test
   gtest: true
   build: test
@@ -9687,6 +9741,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: connection_prefix_bad_client_test
   gtest: true
   build: test
@@ -9918,6 +9973,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: core_configuration_test
   gtest: true
   build: test
@@ -9928,6 +9984,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: cpp_impl_of_test
   gtest: true
   build: test
@@ -9938,6 +9995,7 @@ targets:
   - test/core/util/cpp_impl_of_test.cc
   deps:
   - gtest
+  uses_polling: false
 - name: cpu_test
   gtest: true
   build: test
@@ -9948,6 +10006,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: crl_provider_test
   gtest: true
   build: test
@@ -10000,6 +10059,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -10029,6 +10089,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: dns_fork_test
   gtest: true
   build: test
@@ -10067,6 +10128,7 @@ targets:
   deps:
   - gtest
   - gpr
+  uses_polling: false
 - name: dual_ref_counted_test
   gtest: true
   build: test
@@ -10107,6 +10169,7 @@ targets:
   - absl/functional:any_invocable
   - absl/log:check
   - absl/strings:str_format
+  uses_polling: false
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -12202,6 +12265,7 @@ targets:
 - name: end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/end2end_test_utils.h
@@ -12579,6 +12643,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: endpoint_config_test
   gtest: true
   build: test
@@ -12648,6 +12713,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: endpoint_pair_test
   gtest: true
   build: test
@@ -12670,6 +12736,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: error_details_test
   gtest: true
   build: test
@@ -12698,6 +12765,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: error_utils_test
   gtest: true
   build: test
@@ -12721,6 +12789,7 @@ targets:
   platforms:
   - linux
   - posix
+  uses_polling: false
 - name: evaluate_args_test
   gtest: true
   build: test
@@ -12742,6 +12811,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: event_poller_posix_test
   gtest: true
   build: test
@@ -12772,6 +12842,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: exception_test
   gtest: true
   build: test
@@ -12980,6 +13051,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: experiments_tag_test
   gtest: true
   build: test
@@ -12997,6 +13069,7 @@ targets:
   - gtest
   - absl/status:statusor
   - gpr
+  uses_polling: false
 - name: experiments_test
   gtest: true
   build: test
@@ -13013,163 +13086,12 @@ targets:
   deps:
   - gtest
   - gpr
+  uses_polling: false
 - name: ext_proc_message_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-gen/envoy/annotations/deprecation.upb.h
-  - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/annotations/resource.upb.h
-  - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h
-  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb.h
-  - src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb.h
-  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb.h
-  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb.h
-  - src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/node.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/node.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/number.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/number.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/path.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/path.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/regex.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/regex.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/status_code_input.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/status_code_input.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/string.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/string.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/struct.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/struct.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/value.upb.h
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/value.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/v3/hash_policy.upb.h
-  - src/core/ext/upb-gen/envoy/type/v3/hash_policy.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/v3/http.upb.h
-  - src/core/ext/upb-gen/envoy/type/v3/http.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/v3/http_status.upb.h
-  - src/core/ext/upb-gen/envoy/type/v3/http_status.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/v3/percent.upb.h
-  - src/core/ext/upb-gen/envoy/type/v3/percent.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/v3/range.upb.h
-  - src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb.h
-  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h
-  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h
-  - src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb.h
-  - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.h
-  - src/core/ext/upb-gen/google/api/annotations.upb.h
-  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.h
-  - src/core/ext/upb-gen/google/api/http.upb.h
-  - src/core/ext/upb-gen/google/api/http.upb_minitable.h
-  - src/core/ext/upb-gen/google/api/httpbody.upb.h
-  - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/any.upb.h
-  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
-  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
-  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/struct.upb.h
-  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/wrappers.upb.h
-  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
-  - src/core/ext/upb-gen/google/rpc/status.upb.h
-  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
-  - src/core/ext/upb-gen/udpa/annotations/migrate.upb.h
-  - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h
-  - src/core/ext/upb-gen/udpa/annotations/security.upb.h
-  - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.h
-  - src/core/ext/upb-gen/udpa/annotations/sensitive.upb.h
-  - src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.h
-  - src/core/ext/upb-gen/udpa/annotations/status.upb.h
-  - src/core/ext/upb-gen/udpa/annotations/status.upb_minitable.h
-  - src/core/ext/upb-gen/udpa/annotations/versioning.upb.h
-  - src/core/ext/upb-gen/udpa/annotations/versioning.upb_minitable.h
-  - src/core/ext/upb-gen/validate/validate.upb.h
-  - src/core/ext/upb-gen/validate/validate.upb_minitable.h
-  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb.h
-  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.h
-  - src/core/ext/upb-gen/xds/annotations/v3/security.upb.h
-  - src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.h
-  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb.h
-  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.h
-  - src/core/ext/upb-gen/xds/annotations/v3/status.upb.h
-  - src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.h
-  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb.h
-  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.h
-  - src/core/ext/upb-gen/xds/core/v3/authority.upb.h
-  - src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.h
-  - src/core/ext/upb-gen/xds/core/v3/cidr.upb.h
-  - src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.h
-  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb.h
-  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.h
-  - src/core/ext/upb-gen/xds/core/v3/context_params.upb.h
-  - src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.h
-  - src/core/ext/upb-gen/xds/core/v3/extension.upb.h
-  - src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.h
-  - src/core/ext/upb-gen/xds/core/v3/resource.upb.h
-  - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.h
-  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb.h
-  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.h
-  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb.h
-  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -13241,87 +13163,12 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
-  - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/node.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/number.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/path.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/regex.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/status_code_input.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/string.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/struct.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/matcher/v3/value.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/v3/hash_policy.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/v3/http.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/v3/http_status.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/v3/percent.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
-  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
-  - src/core/ext/upb-gen/google/api/http.upb_minitable.c
-  - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
-  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
-  - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
-  - src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
-  - src/core/ext/upb-gen/udpa/annotations/status.upb_minitable.c
-  - src/core/ext/upb-gen/udpa/annotations/versioning.upb_minitable.c
-  - src/core/ext/upb-gen/validate/validate.upb_minitable.c
-  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.c
-  - src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.c
-  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.c
-  - src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.c
-  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.c
-  - src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.c
-  - src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.c
-  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.c
-  - src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.c
-  - src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.c
-  - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
-  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
-  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
   - test/core/filters/ext_proc_message_test.cc
   deps:
   - gtest
   - grpc++
   - grpc_test_util
+  uses_polling: false
 - name: factory_test
   gtest: true
   build: test
@@ -13334,6 +13181,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: fake_resolver_test
   gtest: true
   build: test
@@ -13401,6 +13249,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: filter_fusion_test
   gtest: true
   build: test
@@ -13448,6 +13297,12 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -13456,12 +13311,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
@@ -13799,13 +13648,13 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -14075,6 +13924,7 @@ targets:
   - grpc_unsecure
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: flaky_network_test
   gtest: true
   build: test
@@ -14556,6 +14406,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: for_each_test
   gtest: true
   build: test
@@ -14784,6 +14635,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: fork_test
   gtest: true
   build: test
@@ -14798,6 +14650,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: format_request_test
   gtest: true
   build: test
@@ -15049,6 +14902,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: function_signature_test
   gtest: true
   build: test
@@ -15088,6 +14942,7 @@ targets:
   platforms:
   - linux
   - posix
+  uses_polling: false
 - name: fuzzing_event_engine_unittest
   gtest: true
   build: test
@@ -15123,6 +14978,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: gdch_service_account_credentials_test
   gtest: true
   build: test
@@ -15162,6 +15018,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: goaway_server_test
   gtest: true
   build: test
@@ -15209,6 +15066,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: graceful_shutdown_test
   gtest: true
   build: test
@@ -15297,6 +15155,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: grpc_cli
   build: test
   run: false
@@ -15567,7 +15426,7 @@ targets:
   language: c++
   headers: []
   src:
-  - src/proto/grpc/lb/v1/load_balancer.proto
+  - third_party/grpc-proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - gtest
@@ -15575,6 +15434,7 @@ targets:
 - name: grpclb_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/test_util/test_call_creds.h
@@ -15582,13 +15442,13 @@ targets:
   - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
-  - src/proto/grpc/lb/v1/load_balancer.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/lb/v1/load_balancer.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/test_util/test_call_creds.cc
@@ -15749,6 +15609,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: handshake_server_with_readahead_handshaker_test
   gtest: true
   build: test
@@ -15821,13 +15682,13 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.h
   - test/cpp/end2end/test_service_impl.h
   src:
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/health_service_end2end_test.cc
@@ -15846,6 +15707,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: host_port_test
   gtest: true
   build: test
@@ -15856,6 +15718,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: hpack_encoder_test
   gtest: true
   build: test
@@ -15867,6 +15730,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -15877,6 +15741,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: hpack_parser_test
   gtest: true
   build: test
@@ -15887,6 +15752,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: http2_client
   build: test
   run: false
@@ -15924,6 +15790,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: http2_security_frame_test
   gtest: true
   build: test
@@ -15945,6 +15812,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: http2_server_transport_test
   gtest: true
   build: test
@@ -15972,6 +15840,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: http2_settings_test
   gtest: true
   build: test
@@ -16024,6 +15893,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: http_proxy_mapper_test
   gtest: true
   build: test
@@ -16035,6 +15905,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: httpcli_test
   gtest: true
   build: test
@@ -16105,6 +15976,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+  uses_polling: false
 - name: if_list_test
   gtest: true
   build: test
@@ -16117,6 +15989,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+  uses_polling: false
 - name: if_test
   gtest: true
   build: test
@@ -16302,6 +16175,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: info_tool_test
   gtest: true
   build: test
@@ -16348,6 +16222,12 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -16356,12 +16236,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
@@ -16702,13 +16576,13 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -16975,6 +16849,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: initial_settings_frame_bad_client_test
   gtest: true
   build: test
@@ -17020,6 +16895,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: inter_activity_latch_test
   gtest: true
   build: test
@@ -17031,6 +16907,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: inter_activity_mutex_test
   gtest: true
   build: test
@@ -17238,6 +17115,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: interception_chain_test
   gtest: true
   build: test
@@ -17249,6 +17127,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: interceptor_list_test
   gtest: true
   build: test
@@ -17469,6 +17348,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: interop_client
   build: test
   run: false
@@ -17536,6 +17416,7 @@ targets:
   - linux
   - posix
   - windows
+  uses_polling: false
 - name: istio_echo_server_test
   gtest: true
   build: test
@@ -17741,6 +17622,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: json_object_loader_test
   gtest: true
   build: test
@@ -17751,6 +17633,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: json_test
   gtest: true
   build: test
@@ -17761,6 +17644,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: json_token_test
   gtest: true
   build: test
@@ -17771,6 +17655,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: jwt_util_test
   gtest: true
   build: test
@@ -17781,6 +17666,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: jwt_verifier_test
   gtest: true
   build: test
@@ -17791,6 +17677,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: lame_client_test
   gtest: true
   build: test
@@ -18001,6 +17888,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: latent_see_service_test
   gtest: true
   build: test
@@ -18259,6 +18147,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: latent_see_tool_test
   gtest: true
   build: test
@@ -18448,6 +18337,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: load_config_test
   gtest: true
   build: test
@@ -18458,6 +18348,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: load_file_test
   gtest: true
   build: test
@@ -18468,6 +18359,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: local_security_connector_test
   gtest: true
   build: test
@@ -18687,6 +18579,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: loop_test
   gtest: true
   build: test
@@ -18881,6 +18774,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: lru_cache_test
   gtest: true
   build: test
@@ -19057,6 +18951,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: map_pipe_test
   gtest: true
   build: test
@@ -19285,6 +19180,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: match_promise_test
   gtest: true
   build: test
@@ -19472,6 +19368,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: match_test
   gtest: true
   build: test
@@ -19485,6 +19382,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+  uses_polling: false
 - name: matchers_test
   gtest: true
   build: test
@@ -19508,6 +19406,7 @@ targets:
   platforms:
   - linux
   - posix
+  uses_polling: false
 - name: memory_quota_test
   gtest: true
   build: test
@@ -19519,6 +19418,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: memory_usage_test
   gtest: true
   build: test
@@ -19603,6 +19503,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: message_size_service_config_test
   gtest: true
   build: test
@@ -19635,6 +19536,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: minimal_stack_is_minimal_test
   gtest: true
   build: test
@@ -19645,6 +19547,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: miscompile_with_no_unique_address_test
   gtest: true
   build: test
@@ -19656,6 +19559,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+  uses_polling: false
 - name: mitigation_engine_provider_test
   gtest: true
   build: test
@@ -19716,6 +19620,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: no_destruct_test
   gtest: true
   build: test
@@ -19729,6 +19634,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+  uses_polling: false
 - name: no_server_test
   gtest: true
   build: test
@@ -19769,6 +19675,7 @@ targets:
   deps:
   - gtest
   - gpr
+  uses_polling: false
 - name: num_external_connectivity_watchers_test
   gtest: true
   build: test
@@ -19976,6 +19883,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: oracle_event_engine_posix_test
   gtest: true
   build: test
@@ -20218,6 +20126,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: outlier_detection_test
   gtest: true
   build: test
@@ -20235,6 +20144,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: overload_test
   gtest: true
   build: test
@@ -20247,6 +20157,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+  uses_polling: false
 - name: parse_address_test
   gtest: true
   build: test
@@ -20271,6 +20182,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: parsed_metadata_test
   gtest: true
   build: test
@@ -20296,6 +20208,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: party_mpsc_test
   gtest: true
   build: test
@@ -20311,6 +20224,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: party_test
   gtest: true
   build: test
@@ -20321,6 +20235,7 @@ targets:
   deps:
   - gtest
   - grpc_unsecure
+  uses_polling: false
 - name: percent_encoding_test
   gtest: true
   build: test
@@ -20331,9 +20246,11 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: periodic_update_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/channelz/property_list.h
@@ -20438,6 +20355,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: pick_first_test
   gtest: true
   build: test
@@ -20458,6 +20376,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: ping_abuse_policy_test
   gtest: true
   build: test
@@ -20468,6 +20387,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: ping_callbacks_test
   gtest: true
   build: test
@@ -20479,6 +20399,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: ping_configuration_test
   gtest: true
   build: test
@@ -20489,6 +20410,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: ping_rate_policy_test
   gtest: true
   build: test
@@ -20499,6 +20421,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: pipe_test
   gtest: true
   build: test
@@ -20511,6 +20434,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: poll_test
   gtest: true
   build: test
@@ -20687,6 +20611,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: poller_fork_test
   gtest: true
   build: test
@@ -20744,6 +20669,8 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  args:
+  - --grpc_experiments=tcp_rcv_lowat,tcp_frame_size_tuning
   platforms:
   - linux
   - posix
@@ -20856,6 +20783,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: pre_stop_hook_server_test
   gtest: true
   build: test
@@ -20867,7 +20795,6 @@ targets:
   - test/cpp/interop/xds_interop_server_lib.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
-  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/istio_echo.proto
   - src/proto/grpc/testing/messages.proto
@@ -20975,6 +20902,7 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/grpc-proto/grpc/health/v1/health.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
@@ -21200,6 +21128,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: private_key_offload_test
   gtest: true
   build: test
@@ -21416,6 +21345,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: promise_map_test
   gtest: true
   build: test
@@ -21601,6 +21531,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: promise_mutex_test
   gtest: true
   build: test
@@ -21982,6 +21913,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: property_list_test
   gtest: true
   build: test
@@ -22047,6 +21979,7 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+  uses_polling: false
 - name: proto_buffer_writer_test
   gtest: true
   build: test
@@ -22057,6 +21990,7 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+  uses_polling: false
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -22092,6 +22026,7 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+  uses_polling: false
 - name: qps_json_driver
   build: test
   run: false
@@ -22526,6 +22461,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: race_test
   gtest: true
   build: test
@@ -22706,6 +22642,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: random_early_detection_test
   gtest: true
   build: test
@@ -22722,6 +22659,7 @@ targets:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/random:random
+  uses_polling: false
 - name: raw_end2end_test
   gtest: true
   build: test
@@ -22753,6 +22691,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: rbac_translator_test
   gtest: true
   build: test
@@ -23146,6 +23085,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: resource_tracker_test
   gtest: true
   build: test
@@ -23171,6 +23111,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -23181,6 +23122,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: ring_buffer_test
   gtest: true
   build: test
@@ -23193,6 +23135,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+  uses_polling: false
 - name: ring_hash_test
   gtest: true
   build: test
@@ -23211,9 +23154,11 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: rls_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/util/json/json_util.h
@@ -23257,6 +23202,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: round_robin_test
   gtest: true
   build: test
@@ -23274,6 +23220,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -23308,6 +23255,7 @@ targets:
 - name: secure_endpoint_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
@@ -23517,6 +23465,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: sequential_connectivity_test
   gtest: true
   build: test
@@ -23603,6 +23552,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: server_chttp2_test
   gtest: true
   build: test
@@ -23623,6 +23573,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: server_context_test_spouse_test
   gtest: true
   build: test
@@ -23818,6 +23769,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: settings_timeout_test
   gtest: true
   build: test
@@ -23841,6 +23793,7 @@ targets:
   - gtest
   - absl/random:distributions
   - absl/random:random
+  uses_polling: false
 - name: shutdown_test
   gtest: true
   build: test
@@ -23890,6 +23843,7 @@ targets:
   - gtest
   - absl/hash:hash
   - gpr
+  uses_polling: false
 - name: sleep_test
   gtest: true
   build: test
@@ -23902,6 +23856,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: slice_string_helpers_test
   gtest: true
   build: test
@@ -23927,6 +23882,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - gpr
+  uses_polling: false
 - name: sockaddr_resolver_test
   gtest: true
   build: test
@@ -23974,6 +23930,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+  uses_polling: false
 - name: spiffe_bundle_map_end2end_test
   gtest: true
   build: test
@@ -24035,6 +23992,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: ssl_telemetry_utils_test
   gtest: true
   build: test
@@ -24103,6 +24061,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: stat_test
   gtest: true
   build: test
@@ -24113,6 +24072,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: static_stride_scheduler_test
   gtest: true
   build: test
@@ -24290,6 +24250,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: status_conversion_test
   gtest: true
   build: test
@@ -24300,6 +24261,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: status_flag_test
   gtest: true
   build: test
@@ -24477,6 +24439,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: status_helper_test
   gtest: true
   build: test
@@ -24487,6 +24450,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: status_test
   gtest: true
   build: test
@@ -24518,6 +24482,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: stream_data_queue_test
   gtest: true
   build: test
@@ -24575,6 +24540,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: stream_test
   gtest: true
   build: test
@@ -24585,20 +24551,19 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: streaming_call_promise_wrapper_test
   gtest: true
   build: test
   language: c++
   headers:
   - src/core/lib/promise/join.h
-  - src/core/xds/grpc/streaming_call_promise_wrapper.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/test_wakeup_schedulers.h
   - test/core/xds/xds_transport_fake.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - src/core/xds/grpc/streaming_call_promise_wrapper.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/xds/streaming_call_promise_wrapper_test.cc
@@ -24607,6 +24572,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -24653,6 +24619,7 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+  uses_polling: false
 - name: string_test
   gtest: true
   build: test
@@ -24663,6 +24630,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: subchannel_args_test
   gtest: true
   build: test
@@ -24673,6 +24641,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: subchannel_metrics_test
   gtest: true
   build: test
@@ -24693,6 +24662,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: switch_test
   gtest: true
   build: test
@@ -24880,6 +24850,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: sync_test
   gtest: true
   build: test
@@ -24890,6 +24861,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: system_roots_test
   gtest: true
   build: test
@@ -24918,6 +24890,7 @@ targets:
   - absl/meta:type_traits
   - absl/numeric:bits
   - absl/utility:utility
+  uses_polling: false
 - name: tcp_client_posix_test
   gtest: true
   build: test
@@ -24946,6 +24919,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: tcp_posix_test
   gtest: true
   build: test
@@ -24985,6 +24959,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: test_core_credentials_transport_ssl_ssl_credentials_test
   gtest: true
   build: test
@@ -25200,6 +25175,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
   gtest: true
   build: test
@@ -25384,6 +25360,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: test_core_iomgr_fd_conservation_posix_test
   gtest: true
   build: test
@@ -25408,6 +25385,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: test_core_slice_slice_buffer_test
   gtest: true
   build: test
@@ -25418,6 +25396,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: test_core_slice_slice_test
   gtest: true
   build: test
@@ -25430,6 +25409,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: test_core_util_time_test
   gtest: true
   build: test
@@ -25445,6 +25425,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test
@@ -25520,6 +25501,7 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+  uses_polling: false
 - name: test_cpp_util_time_test
   gtest: true
   build: test
@@ -25531,6 +25513,7 @@ targets:
   - gtest
   - grpc++_test_config
   - grpc++_test_util
+  uses_polling: false
 - name: test_timeout_test
   gtest: true
   build: test
@@ -25552,6 +25535,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: thread_manager_test
   gtest: true
   build: test
@@ -25574,6 +25558,7 @@ targets:
   - gtest
   - grpc
   - grpc_test_util_unsecure
+  uses_polling: false
 - name: thread_quota_test
   gtest: true
   build: test
@@ -25751,6 +25736,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: thread_stress_test
   gtest: true
   build: test
@@ -25826,6 +25812,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: timeout_encoding_test
   gtest: true
   build: test
@@ -25836,6 +25823,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: timer_list_test
   gtest: true
   build: test
@@ -25857,6 +25845,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: timer_manager_test
   gtest: true
   build: test
@@ -25867,9 +25856,11 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: timer_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -25968,6 +25959,7 @@ targets:
 - name: too_many_pings_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -26024,6 +26016,12 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -26032,12 +26030,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
@@ -26377,13 +26369,13 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -26649,6 +26641,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: traced_buffer_list_test
   gtest: true
   build: test
@@ -26663,6 +26656,7 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: transport_security_common_api_test
   gtest: true
   build: test
@@ -26881,6 +26875,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: try_seq_metadata_test
   gtest: true
   build: test
@@ -26891,6 +26886,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: try_seq_test
   gtest: true
   build: test
@@ -27119,6 +27115,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: unique_ptr_with_bitset_test
   gtest: true
   build: test
@@ -27295,6 +27292,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: unique_type_name_test
   gtest: true
   build: test
@@ -27312,6 +27310,7 @@ targets:
   - absl/log:check
   - absl/numeric:bits
   - absl/strings:str_format
+  uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
   build: test
@@ -27350,6 +27349,7 @@ targets:
   - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
+  uses_polling: false
 - name: uuid_v4_test
   gtest: true
   build: test
@@ -27360,6 +27360,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: v3_bridge_test
   gtest: true
   build: test
@@ -27406,6 +27407,12 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -27414,12 +27421,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
@@ -27758,13 +27759,13 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
@@ -28023,6 +28024,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: varint_test
   gtest: true
   build: test
@@ -28033,6 +28035,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: wait_for_callback_test
   gtest: true
   build: test
@@ -28226,6 +28229,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: wait_for_single_owner_test
   gtest: true
   build: test
@@ -28236,6 +28240,7 @@ targets:
   deps:
   - gtest
   - grpc
+  uses_polling: false
 - name: wakeup_fd_posix_test
   gtest: true
   build: test
@@ -28263,6 +28268,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: weighted_round_robin_test
   gtest: true
   build: test
@@ -28283,6 +28289,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: win_socket_test
   gtest: true
   build: test
@@ -28299,6 +28306,7 @@ targets:
   - linux
   - posix
   - windows
+  uses_polling: false
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
@@ -28329,9 +28337,11 @@ targets:
   - linux
   - posix
   - windows
+  uses_polling: false
 - name: work_serializer_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
@@ -28550,6 +28560,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
 - name: writes_per_rpc_test
   gtest: true
   build: test
@@ -28694,6 +28705,7 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
+  uses_polling: false
 - name: xds_bootstrap_test
   gtest: true
   build: test
@@ -28705,6 +28717,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: xds_certificate_provider_test
   gtest: true
   build: test
@@ -28716,6 +28729,7 @@ targets:
   - gtest
   - absl/functional:overload
   - grpc_test_util
+  uses_polling: false
 - name: xds_client_grpc_test
   gtest: true
   build: test
@@ -28726,6 +28740,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: xds_client_test
   gtest: true
   build: test
@@ -28891,9 +28906,11 @@ targets:
   - absl/strings:internal
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: xds_cluster_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/test_util/fake_stats_plugin.h
@@ -29189,9 +29206,11 @@ targets:
   - absl/strings:internal
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: xds_cluster_type_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -29450,8 +29469,6 @@ targets:
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -29646,7 +29663,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -29685,9 +29701,11 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
+  uses_polling: false
 - name: xds_composite_filter_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -29845,6 +29863,7 @@ targets:
 - name: xds_core_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/test_util/fake_stats_plugin.h
@@ -30202,6 +30221,7 @@ targets:
 - name: xds_enabled_server_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -30440,6 +30460,166 @@ targets:
   - absl/strings:internal
   - protobuf
   - grpc_test_util
+  uses_polling: false
+- name: xds_ext_proc_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/scoped_env_var.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
+  - test/cpp/util/tls_test_utils.h
+  - third_party/protoc-gen-validate/validate/validate.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/listener/v3/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener_components.proto
+  - third_party/envoy-api/envoy/config/listener/v3/quic_config.proto
+  - third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/config/trace/v3/datadog.proto
+  - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
+  - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
+  - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
+  - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
+  - third_party/envoy-api/envoy/config/trace/v3/service.proto
+  - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
+  - third_party/envoy-api/envoy/config/trace/v3/trace.proto
+  - third_party/envoy-api/envoy/config/trace/v3/xray.proto
+  - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
+  - third_party/envoy-api/envoy/data/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/ext_proc/v3/ext_proc.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/ext_proc/v3/processing_mode.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
+  - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/ext_proc/v3/external_processor.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/type/http/v3/cookie.proto
+  - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/status_code_input.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_strategy.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/cidr.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - third_party/xds/xds/type/v3/cel.proto
+  - third_party/xds/xds/type/v3/range.proto
+  - third_party/xds/xds/type/v3/typed_struct.proto
+  - test/core/test_util/fake_stats_plugin.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_ext_proc_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - gtest
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: xds_fallback_end2end_test
   gtest: true
   build: test
@@ -30594,6 +30774,7 @@ targets:
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -30745,6 +30926,7 @@ targets:
 - name: xds_gcp_authn_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -31198,6 +31380,7 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
+  uses_polling: false
 - name: xds_lb_policy_registry_test
   gtest: true
   build: test
@@ -31326,6 +31509,7 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
+  uses_polling: false
 - name: xds_listener_resource_type_test
   gtest: true
   build: test
@@ -31470,6 +31654,7 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
+  uses_polling: false
 - name: xds_matcher_parse_test
   gtest: true
   build: test
@@ -31487,8 +31672,6 @@ targets:
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -31646,7 +31829,6 @@ targets:
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
@@ -31683,6 +31865,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: xds_matcher_test
   gtest: true
   build: test
@@ -31693,6 +31876,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: xds_metadata_test
   gtest: true
   build: test
@@ -31771,9 +31955,11 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: xds_outlier_detection_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -32086,6 +32272,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: xds_override_host_test
   gtest: true
   build: test
@@ -32103,6 +32290,7 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: xds_pick_first_end2end_test
   gtest: true
   build: test
@@ -32261,6 +32449,7 @@ targets:
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -32687,9 +32876,11 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
+  uses_polling: false
 - name: xds_routing_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -32858,9 +33049,11 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: xds_security_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/test_util/audit_logging_utils.h
@@ -33522,6 +33715,13 @@ targets:
   - posix
   - mac
 external_proto_libraries:
+- destination: third_party/autosharding
+  hash: 12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2
+  proto_prefix: third_party/autosharding/
+  strip_path_prefix: ''
+  strip_prefix: autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7
+  urls:
+  - https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz
 - destination: third_party/cel-spec
   hash: 13583c5a312861648449845b709722676a3c9b43396b6b8e9cbe4538feb74ad2
   proto_prefix: third_party/cel-spec/
@@ -33544,12 +33744,12 @@ external_proto_libraries:
   urls:
   - https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip
 - destination: third_party/grpc-proto
-  hash: 5e9b520b22afbd53a662cc29017064be253c1dfa6df8958738594e7fec6ade33
+  hash: 6aaa807572edfe307eaddc15161ce684d02d054e3fca36b38993efc85575ddfa
   proto_prefix: third_party/grpc-proto/
   strip_path_prefix: ''
-  strip_prefix: grpc-proto-ec30f589e2519d595688b9a42f88a91bdd6b733f
+  strip_prefix: grpc-proto-dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f
   urls:
-  - https://github.com/grpc/grpc-proto/archive/ec30f589e2519d595688b9a42f88a91bdd6b733f.tar.gz
+  - https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
 - destination: third_party/protoc-gen-validate
   hash: e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
   proto_prefix: third_party/protoc-gen-validate/

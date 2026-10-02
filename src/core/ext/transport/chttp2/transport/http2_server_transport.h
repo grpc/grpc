@@ -29,7 +29,9 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
@@ -45,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -60,6 +63,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -180,6 +184,11 @@ class Http2ServerTransport final : public ServerTransport,
     return NextAllowedPingInterval();
   }
 
+  void TestOnlySetLocalMaxConcurrentStreams(
+      const uint32_t max_concurrent_streams) {
+    settings_->mutable_local().SetMaxConcurrentStreams(max_concurrent_streams);
+  }
+
  private:
   //////////////////////////////////////////////////////////////////////////////
   // Endpoint Helpers
@@ -260,7 +269,8 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   template <typename T>
-  Http2Status ProcessIncomingMetadata(T&& frame);
+  Http2Status ProcessIncomingMetadata(T&& frame,
+                                      const RefCountedPtr<Stream>& stream);
 
   auto ReadAndProcessOneFrame();
 
@@ -472,12 +482,18 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   bool IsTransportIdle() {
-    MutexLock lock(&transport_mutex_);
+    MutexLock lock(transport_mutex_);
     return GetActiveStreamCountLocked() == 0;
   }
 
   void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
                                             uint32_t reset_stream_error_code);
+
+  // Enqueues a RST_STREAM frame directly onto the transport write context when
+  // no Stream object exists yet (e.g. when an incoming stream is rejected
+  // before stream creation).
+  void EnqueueResetStreamFromTransportParty(
+      const uint32_t stream_id, const uint32_t reset_stream_error_code);
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
@@ -488,8 +504,18 @@ class Http2ServerTransport final : public ServerTransport,
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, uint32_t stream_id);
 
+  // Validates the transport-level conditions for the incoming stream before
+  // creating the stream object.
+  Http2Status ValidateIncomingStream(uint32_t stream_id);
+
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
+
+  // This MUST be called from the transport party only.
+  // Recomputes the MAX_CONCURRENT_STREAMS that we advertise to the peer, based
+  // on the process wide StreamQuota.
+  // Based on CHTTP2's use of GetConnectionMaxConcurrentRequests in parsing.cc
+  void UpdateMaxConcurrentStreamsFromStreamQuota();
 
   // Call this when a stream needs to be closed and we must notify the client by
   // sending a RST_STREAM frame (e.g., due to local stream error, cancellation).
@@ -729,6 +755,7 @@ class Http2ServerTransport final : public ServerTransport,
   bool is_goaway_received_;
 
   bool should_reset_ping_clock_;
+  bool max_concurrent_streams_overload_protection_ = false;
   ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
@@ -737,6 +764,9 @@ class Http2ServerTransport final : public ServerTransport,
 
   // Tracks last stream id received by the transport.
   uint32_t last_incoming_stream_id_;
+
+  // Tracks last stream id accepted for processing (for graceful GOAWAY).
+  uint32_t last_accepted_stream_id_;
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
@@ -749,6 +779,8 @@ class Http2ServerTransport final : public ServerTransport,
   GoawayManager goaway_manager_;
 
   MemoryOwner memory_owner_;
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+  RefCountedPtr<StreamQuota> stream_quota_;
   chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 

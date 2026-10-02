@@ -888,7 +888,7 @@ template <typename FilterType, typename T, typename R,
           R (FilterType::Call::*impl)(typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T, R (FilterType::Call::*)(typename T::element_type&), impl,
-    absl::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
+    std::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     class Promise {
      public:
@@ -940,8 +940,8 @@ template <typename FilterType, typename T, typename R,
 struct AddOpImpl<
     FilterType, T,
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
-    absl::enable_if_t<!std::is_same<R, absl::Status>::value &&
-                      std::is_same<absl::Status, PromiseResult<R>>::value>> {
+    std::enable_if_t<!std::is_same<R, absl::Status>::value &&
+                     std::is_same<absl::Status, PromiseResult<R>>::value>> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     class Promise {
      public:
@@ -993,8 +993,8 @@ struct AddOpImpl<
 template <typename FilterType, typename T, typename R,
           R (FilterType::Call::*impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
-                 absl::enable_if_t<std::is_same<absl::StatusOr<T>,
-                                                PromiseResult<R>>::value>> {
+                 std::enable_if_t<std::is_same<absl::StatusOr<T>,
+                                               PromiseResult<R>>::value>> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
 #if defined(__GNUC__) && __GNUC__ == 9
     // Workaround for a bug in GNU C++ 9 compilers that fail to compile this
@@ -1198,7 +1198,7 @@ struct StackData {
   // we have exactly one caller for is warranted for a more thorough testing
   // story.
   template <typename FilterType>
-  absl::enable_if_t<!std::is_empty<typename FilterType::Call>::value, size_t>
+  std::enable_if_t<!std::is_empty<typename FilterType::Call>::value, size_t>
   AddFilterConstructor(FilterType* channel_data) {
     const size_t alignment = alignof(typename FilterType::Call);
     call_data_alignment = std::max(call_data_alignment, alignment);
@@ -1219,7 +1219,7 @@ struct StackData {
   }
 
   template <typename FilterType>
-  absl::enable_if_t<
+  std::enable_if_t<
       std::is_empty<typename FilterType::Call>::value &&
           !std::is_trivially_constructible<typename FilterType::Call>::value,
       size_t>
@@ -1238,7 +1238,7 @@ struct StackData {
   }
 
   template <typename FilterType>
-  absl::enable_if_t<
+  std::enable_if_t<
       std::is_empty<typename FilterType::Call>::value &&
           std::is_trivially_constructible<typename FilterType::Call>::value,
       size_t>
@@ -1249,7 +1249,7 @@ struct StackData {
   }
 
   template <typename FilterType>
-  absl::enable_if_t<
+  std::enable_if_t<
       !std::is_trivially_destructible<typename FilterType::Call>::value>
   AddFilterDestructor(size_t call_offset) {
     filter_destructor.push_back(FilterDestructor{
@@ -1261,7 +1261,7 @@ struct StackData {
   }
 
   template <typename FilterType>
-  absl::enable_if_t<
+  std::enable_if_t<
       std::is_trivially_destructible<typename FilterType::Call>::value>
   AddFilterDestructor(size_t) {}
 
