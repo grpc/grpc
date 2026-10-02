@@ -30,8 +30,12 @@ cdef _default_asyncio_engine():
     return AsyncIOEngine.POLLER
 
 
-cdef grpc_completion_queue *global_completion_queue():
-    return _global_aio_state.cq.c_ptr()
+cdef grpc_completion_queue *global_completion_queue() except NULL:
+    cdef BaseCompletionQueue cq = _global_aio_state.cq
+    if cq is None:
+        raise RuntimeError('gRPC AsyncIO is not initialized: unbalanced '
+                           'init_grpc_aio()/shutdown_grpc_aio() calls?')
+    return cq.c_ptr()
 
 
 cdef class _AioState:
@@ -75,10 +79,13 @@ def _grpc_shutdown_wrapper(_):
     grpc_shutdown()
 
 
-cdef _actual_aio_shutdown():
+cdef _actual_aio_shutdown(object engine, BaseCompletionQueue cq):
     if _global_aio_state.engine is AsyncIOEngine.POLLER:
-        (<PollerCompletionQueue>_global_aio_state.cq).shutdown()
-        grpc_shutdown()
+        try:
+            (<PollerCompletionQueue>cq).shutdown()
+        finally:
+            # Core's init count must stay balanced whatever happened above
+            grpc_shutdown()
     else:
         raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
 
@@ -108,6 +115,8 @@ cpdef shutdown_grpc_aio():
     Expected to be invoked on critical class destructors.
     E.g., AioChannel, AioServer.
     """
+    cdef BaseCompletionQueue cq = None
+    cdef object engine = None
     with _global_aio_state.lock:
         assert _global_aio_state.refcount > 0
         _global_aio_state.refcount -= 1
@@ -139,4 +148,12 @@ cpdef shutdown_grpc_aio():
         # a positive refcount when called manually. See #22365, #38679, #33342.
         # TODO(sergiitk): consider deprecating init_grpc_aio from public APIs.
         if not _global_aio_state.refcount:
-            _actual_aio_shutdown()
+            # detach this generation under the lock and tear it down outside
+            # of it. A concurrent init_grpc_aio() then starts a fresh generation
+            # right away instead of blocking behind the teardown
+            cq = _global_aio_state.cq
+            engine = _global_aio_state.engine
+            _global_aio_state.cq = None
+
+    if cq is not None:
+        _actual_aio_shutdown(engine, cq)
