@@ -69,6 +69,7 @@ cdef extern from "<unordered_map>" namespace "std" nogil:
     unordered_map()
     size_t count(const K&)
     V& operator[](const K&)
+    size_t erase(const K&)
     void clear()
 
 # gRPC Core Declarations

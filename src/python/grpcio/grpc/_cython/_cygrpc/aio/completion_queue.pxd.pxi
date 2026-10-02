@@ -77,5 +77,6 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
 
     cdef int _poll(self) except -1 nogil
     cdef void _dispatch(self, grpc_event event) noexcept nogil
+    cdef _sweep_closed_loops(self)
     cdef shutdown(self)
     cdef _unbind_loops(self)

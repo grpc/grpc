@@ -185,11 +185,29 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         if loop in self._loops:
             return
         else:
+            self._sweep_closed_loops()
             bound = _BoundEventLoop(loop)
             self._loops[loop] = bound
             self._mailboxes_mutex.lock()
             self._mailboxes[<size_t>(<void *>loop)] = &bound._mailbox
             self._mailboxes_mutex.unlock()
+
+    cdef _sweep_closed_loops(self):
+        cdef _BoundEventLoop bound
+        cdef list closed_loops = [l for l in self._loops if l.is_closed()]
+
+        for loop in closed_loops:
+            bound = self._loops.pop(loop)
+            self._mailboxes_mutex.lock()
+            self._mailboxes.erase(<size_t>(<void *>loop))
+            self._mailboxes_mutex.unlock()
+            try:
+                bound.close_write_socket()
+                bound.close_read_socket()
+            except Exception as exc:  # pylint: disable=broad-except
+                _LOGGER.debug(
+                    f"Failed to unbind closed loop {loop}: {exc}"
+                )
 
     cdef int _poll(self) except -1 nogil:
         cdef grpc_event event
@@ -224,19 +242,18 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
             self._mailboxes_mutex.lock()
             if self._mailboxes.count(key):
                 mailbox = self._mailboxes[key]
+                mailbox.mtx.lock()
+                was_empty = mailbox.events.empty()
+                mailbox.events.push(event)
+                mailbox.mtx.unlock()
+                # wake-up the loop on the empty -> non-empty transition
+                if was_empty:
+                    _unified_socket_write(mailbox.write_fd)
             self._mailboxes_mutex.unlock()
-        if mailbox != NULL:
-            mailbox.mtx.lock()
-            was_empty = mailbox.events.empty()
-            mailbox.events.push(event)
-            mailbox.mtx.unlock()
-            # wake-up the loop on the empty -> non-empty transition
-            if was_empty:
-                _unified_socket_write(mailbox.write_fd)
-        else:
-            # no mailbox for this loop (it was never bound or loops do not
-            # support file descriptors at all); the poller thread delegates the
-            # event to the loop owning thread
+        if mailbox == NULL:
+            # no mailbox for this loop (it was never bound, it was closed and
+            # swept or loops do not support file descriptors at all); the poller
+            # thread delegates the event to the loop owning thread
             with gil:
                 try:
                     (<object>context.loop).call_soon_threadsafe(
