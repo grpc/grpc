@@ -186,6 +186,11 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_python_single_copy_recv =
+    "Copy each message received by gRPC Python out of its slices into one "
+    "bytes object instead of materializing a bytes object per slice and "
+    "joining them.";
+const char* const additional_constraints_python_single_copy_recv = "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -390,6 +395,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
+    {"python_single_copy_recv", description_python_single_copy_recv,
+     additional_constraints_python_single_copy_recv, nullptr, 0, false, true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
@@ -621,6 +628,11 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_python_single_copy_recv =
+    "Copy each message received by gRPC Python out of its slices into one "
+    "bytes object instead of materializing a bytes object per slice and "
+    "joining them.";
+const char* const additional_constraints_python_single_copy_recv = "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -825,6 +837,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
+    {"python_single_copy_recv", description_python_single_copy_recv,
+     additional_constraints_python_single_copy_recv, nullptr, 0, false, true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
@@ -1056,6 +1070,11 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_python_single_copy_recv =
+    "Copy each message received by gRPC Python out of its slices into one "
+    "bytes object instead of materializing a bytes object per slice and "
+    "joining them.";
+const char* const additional_constraints_python_single_copy_recv = "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -1260,6 +1279,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
+    {"python_single_copy_recv", description_python_single_copy_recv,
+     additional_constraints_python_single_copy_recv, nullptr, 0, false, true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
