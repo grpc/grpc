@@ -289,7 +289,7 @@ g_stands_for = "gimbal"  # @unused
 
 core_version = "58.0.0"  # @unused
 
-version = "1.85.0-dev"  # @unused
+version = "1.85.0-pre1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
