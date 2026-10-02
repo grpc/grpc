@@ -1002,6 +1002,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
     const auto& queue =
         std::get<LoadBalancingPolicy::PickResult::Queue>(pick_result.result);
+    EXPECT_FALSE(queue.delay_type.empty())
+        << "at " << location.file() << ":" << location.line();
+    EXPECT_FALSE(queue.delay_reason.empty())
+        << "at " << location.file() << ":" << location.line();
     if (expected_delay_type.has_value()) {
       EXPECT_EQ(queue.delay_type, *expected_delay_type)
           << "at " << location.file() << ":" << location.line();

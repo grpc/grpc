@@ -98,6 +98,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// LB Delay types: Delay types used in metrics and tracing to explain
   /// why an RPC is blocked.
   static constexpr char kDelayTypeConnecting[] = "connecting";
+  static constexpr char kDelayTypeResolving[] = "resolving";
+  static constexpr char kDelayTypeRlsLookupPending[] = "rls_lookup_pending";
+  static constexpr char kDelayTypeCdsDynamicDiscovery[] =
+      "cds_dynamic_discovery";
 
   /// Interface for accessing per-call state.
   /// Implemented by the client channel and used by the SubchannelPicker.
@@ -453,6 +457,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // first pick is seen.
   class QueuePicker final : public SubchannelPicker {
    public:
+    QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent,
+                std::string delay_type, std::string delay_reason)
+        : parent_(std::move(parent)),
+          queue_(std::move(delay_type), std::move(delay_reason)) {}
+
     QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent,
                 PickResult::Queue queue)
         : parent_(std::move(parent)), queue_(std::move(queue)) {}

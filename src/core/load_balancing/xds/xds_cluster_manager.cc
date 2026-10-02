@@ -367,8 +367,10 @@ void XdsClusterManagerLb::UpdateStateLocked() {
       GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
           << "[xds_cluster_manager_lb " << this << "] child " << cluster_name
           << " has not yet returned a picker; creating a QueuePicker.";
-      child_picker =
-          MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
+      child_picker = MakeRefCounted<QueuePicker>(
+          Ref(DEBUG_LOCATION, "QueuePicker"), kDelayTypeConnecting,
+          absl::StrCat("xds cluster manager: cluster '", cluster_name,
+                       "' waiting for initial picker"));
     }
   }
   auto picker = MakeRefCounted<ClusterPicker>(std::move(cluster_map));
@@ -390,7 +392,10 @@ XdsClusterManagerLb::ClusterChild::ClusterChild(
     const std::string& name)
     : xds_cluster_manager_policy_(std::move(xds_cluster_manager_policy)),
       name_(name),
-      picker_(MakeRefCounted<QueuePicker>(nullptr)) {
+      picker_(MakeRefCounted<QueuePicker>(
+          nullptr, kDelayTypeConnecting,
+          absl::StrCat("xds cluster manager: cluster '", name_,
+                       "' waiting for initial picker"))) {
   GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
       << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
       << "] created ClusterChild " << this << " for " << name_;

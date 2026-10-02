@@ -191,7 +191,8 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "connecting", "connecting to ipv4:127.0.0.1:443 (subchannel 0 of 2)");
+      LoadBalancingPolicy::kDelayTypeConnecting,
+      "connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The first subchannel's connection attempt fails.
@@ -203,9 +204,9 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   // CONNECTING.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   ExpectConnectingUpdate(
-      "connecting",
-      "connecting to ipv4:127.0.0.1:444 (subchannel 1 of 2); last error: "
-      "failed to connect");
+      LoadBalancingPolicy::kDelayTypeConnecting,
+      "connecting to ipv4:127.0.0.1:444 (subchannel 2 of 2); previous attempt "
+      "failed: failed to connect");
   // The connection attempt succeeds.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
@@ -1035,8 +1036,10 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   // We should see a re-resolution request.
   ExpectReresolutionRequest();
   // LB policy reports IDLE with a queueing picker.
-  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(), "connecting",
-                              "idle");
+  ExpectStateAndQueuingPicker(
+      GRPC_CHANNEL_IDLE, absl::OkStatus(),
+      LoadBalancingPolicy::kDelayTypeConnecting,
+      "subchannel is IDLE, waiting for connection attempt");
   // By checking the picker, we told the LB policy to trigger a new
   // connection attempt, so it should start over with the first
   // subchannel.
