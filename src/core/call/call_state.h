@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <optional>
 
 #include "src/core/lib/debug/trace.h"
@@ -330,6 +331,7 @@ class CallState {
   IntraActivityWaiter client_to_server_push_waiter_;
   IntraActivityWaiter server_to_client_push_waiter_;
   IntraActivityWaiter server_trailing_metadata_waiter_;
+  std::atomic<bool> was_cancelled_pushed_{false};
 };
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline CallState::CallState()
@@ -696,6 +698,9 @@ CallState::PushServerTrailingMetadata(bool cancel) {
   if (server_trailing_metadata_state_ !=
       ServerTrailingMetadataState::kNotPushed) {
     return false;
+  }
+  if (cancel) {
+    was_cancelled_pushed_.store(true, std::memory_order_release);
   }
   server_trailing_metadata_state_ =
       cancel ? ServerTrailingMetadataState::kPushedCancel
@@ -1172,19 +1177,7 @@ CallState::PollWasCancelled() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool CallState::WasCancelledPushed()
     const {
-  GRPC_TRACE_LOG(call_state, INFO)
-      << "[call_state] PollWasCancelledPushed: "
-      << GRPC_DUMP_ARGS(this, server_trailing_metadata_state_);
-  switch (server_trailing_metadata_state_) {
-    case ServerTrailingMetadataState::kNotPushed:
-    case ServerTrailingMetadataState::kPulled:
-    case ServerTrailingMetadataState::kPushed:
-      return false;
-    case ServerTrailingMetadataState::kPushedCancel:
-    case ServerTrailingMetadataState::kPulledCancel:
-      return true;
-  }
-  Crash("Unreachable");
+  return was_cancelled_pushed_.load(std::memory_order_acquire);
 }
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<Empty>
