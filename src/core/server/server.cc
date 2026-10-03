@@ -887,10 +887,18 @@ class Server::AllocatingRequestMatcherBatch
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
+    auto cleanup_ref =
+        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
+    // Acquire a shutdown ref to ensure the server is active during matching.
+    // If the server has already initiated shutdown, return CancelledError so
+    // CallSpine can gracefully reject the call and reset the transport stream.
+    if (!server()->ShutdownRefOnRequest()) {
+      return Immediate(absl::CancelledError());
+    }
     BatchCallAllocation call_info = allocator_();
     GRPC_CHECK(server()->ValidateServerRequest(
-                   cq(), static_cast<void*>(call_info.tag), nullptr, nullptr) ==
-               GRPC_CALL_OK);
+                   cq(), static_cast<void*>(call_info.tag), nullptr,
+                   nullptr) == GRPC_CALL_OK);
     RequestedCall* rc = new RequestedCall(
         static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
         call_info.initial_metadata, call_info.details);
@@ -934,6 +942,14 @@ class Server::AllocatingRequestMatcherRegistered
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
+    auto cleanup_ref =
+        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
+    // Acquire a shutdown ref to ensure the server is active during matching.
+    // If the server has already initiated shutdown, return CancelledError so
+    // CallSpine can gracefully reject the call and reset the transport stream.
+    if (!server()->ShutdownRefOnRequest()) {
+      return Immediate(absl::CancelledError());
+    }
     RegisteredCallAllocation call_info = allocator_();
     GRPC_CHECK(server()->ValidateServerRequest(
                    cq(), call_info.tag, call_info.optional_payload,
