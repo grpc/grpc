@@ -743,7 +743,8 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
           GRPC_TRACE_FLAG_ENABLED(rls_lb) ? "ChildPolicyWrapper" : nullptr),
       lb_policy_(std::move(lb_policy)),
       target_(std::move(target)),
-      picker_(MakeRefCounted<QueuePicker>(nullptr)) {
+      picker_(MakeRefCounted<QueuePicker>(
+          nullptr, kDelayTypeConnecting, "Route Lookup Service initializing")) {
   lb_policy_->child_policy_map_.emplace(target_, this);
 }
 
@@ -1024,7 +1025,10 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   GRPC_TRACE_LOG(rls_lb, INFO)
       << "[rlslb " << lb_policy_.get() << "] picker=" << this
       << ": RLS request pending; queuing pick";
-  return PickResult::Queue();
+  return PickResult::Queue(
+      kDelayTypeRlsLookupPending,
+      absl::StrCat("Route Lookup Service query pending on ",
+                   config_->lookup_service()));
 }
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(

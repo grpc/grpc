@@ -1020,9 +1020,16 @@ void WeightedRoundRobin::WrrEndpointList::
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting CONNECTING with endpoint list "
         << this;
+    std::string reason = CountersString();
+    if (!last_failure_.ok()) {
+      absl::StrAppend(&reason,
+                      "; previous attempt failed: ", last_failure_.message());
+    }
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-        MakeRefCounted<QueuePicker>(nullptr));
+        MakeRefCounted<QueuePicker>(
+            nullptr,
+            PickResult::Queue(kDelayTypeConnecting, std::move(reason))));
   } else if (num_transient_failure_ == size()) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting TRANSIENT_FAILURE with endpoint list "

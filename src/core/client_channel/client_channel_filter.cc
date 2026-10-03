@@ -1347,7 +1347,9 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannelFilter::CreateLbPolicyLocked(
   // channel into TRANSIENT_FAILURE) and make sure we have a queueing picker.
   UpdateStateAndPickerLocked(
       GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
-      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
+      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(
+          nullptr, LoadBalancingPolicy::kDelayTypeResolving,
+          "waiting for initial picker from LB policy"));
   // Now create the LB policy.
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
@@ -1592,11 +1594,10 @@ grpc_error_handle ClientChannelFilter::DoPingLocked(grpc_transport_op* op) {
   if (state_tracker_.state() != GRPC_CHANNEL_READY) {
     return GRPC_ERROR_CREATE("channel not connected");
   }
-  LoadBalancingPolicy::PickResult result;
-  {
-    MutexLock lock(lb_mu_);
-    result = picker_->Pick(LoadBalancingPolicy::PickArgs());
-  }
+  LoadBalancingPolicy::PickResult result = [this] {
+    MutexLock lock(&lb_mu_);
+    return picker_->Pick(LoadBalancingPolicy::PickArgs());
+  }();
   return HandlePickResult<grpc_error_handle>(
       &result,
       // Complete pick.

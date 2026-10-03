@@ -368,6 +368,12 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           << cluster_name_.as_string_view()
           << ", waiting for subsequent update";
       // Stay in CONNECTING until we get an update that has the cluster.
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+          MakeRefCounted<QueuePicker>(
+              nullptr, kDelayTypeCdsDynamicDiscovery,
+              absl::StrCat("waiting for CDS resource definition for cluster ",
+                           cluster_name_.as_string_view())));
       return absl::OkStatus();
     }
     // Not a dynamic cluster.  This should never happen.

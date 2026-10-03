@@ -87,7 +87,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                      parent, nullptr),
                  absl::OkStatus());
   }
-  return PickResult::Queue();
+  return queue_;
 }
 
 }  // namespace grpc_core
