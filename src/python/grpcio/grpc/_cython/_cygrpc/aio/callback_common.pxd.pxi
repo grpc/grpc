@@ -44,6 +44,7 @@ cdef class CallbackWrapper:
     cdef CallbackContext context
     cdef object _reference_of_future
     cdef object _reference_of_failure_handler
+    cdef object _reference_of_rpc_state
 
     @staticmethod
     cdef void functor_run(
