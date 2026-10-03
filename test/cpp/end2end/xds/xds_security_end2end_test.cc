@@ -14,8 +14,12 @@
 // limitations under the License.
 //
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -27,6 +31,9 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/xds_server_builder.h>
 
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
@@ -43,18 +50,29 @@
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/experiments/config.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/tsi/tls_telemetry.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
@@ -77,9 +95,14 @@
 #include "gtest/gtest.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
 namespace grpc {
@@ -101,6 +124,7 @@ using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
 using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
+using ::grpc_event_engine::experimental::EventEngine;
 using ::xds::type::v3::TypedStruct;
 
 using ::grpc::experimental::ExternalCertificateVerifier;
@@ -1803,6 +1827,412 @@ TEST_P(XdsRbacTest, LogAction) {
   // A Log action is identical to no rbac policy being configured.
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {});
+}
+
+//
+// RBAC tests where both routing and RBAC match on the "host" header
+//
+
+class XdsRbacHostHeaderTest : public XdsRbacTest {
+ protected:
+  XdsRbacHostHeaderTest() {
+    SetConfigVarOverrides("map_host_header_to_authority");
+  }
+  ~XdsRbacHostHeaderTest() override { SetConfigVarOverrides(std::nullopt); }
+
+  // Sets the experiments config var, keeping the other overrides from main().
+  static void SetConfigVarOverrides(std::optional<std::string> experiments) {
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    overrides.experiments = std::move(experiments);
+    grpc_core::ConfigVars::SetOverrides(overrides);
+    grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
+  }
+
+  // A minimal plaintext HTTP/2 client that writes raw frames. This lets a test
+  // send request headers that a normal gRPC client never sends, such as both
+  // "host" and ":authority" with different values.
+  class RawHttp2Client {
+   public:
+    struct Header {
+      std::string key;
+      std::string value;
+    };
+    explicit RawHttp2Client(int port)
+        : event_engine_(
+              grpc_event_engine::experimental::GetDefaultEventEngine()),
+          memory_quota_(std::make_unique<grpc_core::MemoryQuota>(
+              grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+                  "raw_http2_client"))) {
+      auto addr = grpc_event_engine::experimental::URIToResolvedAddress(
+          grpc_core::LocalIpUri(port));
+      GRPC_CHECK_OK(addr);
+      grpc_core::Notification connected;
+      absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint;
+      event_engine_->Connect(
+          [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
+            endpoint = std::move(ep);
+            connected.Notify();
+          },
+          *addr, grpc_event_engine::experimental::ChannelArgsEndpointConfig(),
+          memory_quota_->CreateMemoryAllocator("raw_http2_client"),
+          std::chrono::seconds(kTimeoutSeconds * grpc_test_slowdown_factor()));
+      connected.WaitForNotification();
+      GRPC_CHECK_OK(endpoint);
+      endpoint_ = std::move(*endpoint);
+    }
+    // Sends a unary EchoTestService/Echo request on stream 1 with the given
+    // request headers, then waits for the server to end the stream. Returns
+    // the RPC status from the grpc-status and grpc-message trailers. If the
+    // stream or connection ends without trailers, returns an INTERNAL error
+    // that starts with "RawHttp2Client:".
+    absl::Status SendEchoRequest(const std::vector<Header>& headers) {
+      std::string header_block;
+      for (const Header& header : headers) {
+        AppendHpackLiteral(header.key, header.value, &header_block);
+      }
+      EchoRequest request;
+      request.set_message("hello");
+      std::string message = request.SerializeAsString();
+      std::string grpc_message(1, '\0');
+      AppendUint32(message.size(), &grpc_message);
+      grpc_message += message;
+      std::string out = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+      out += Frame(kSettings, 0, 0, "");
+      out += Frame(kHeaders, kEndHeaders, 1, header_block);
+      out += Frame(kData, kEndStream, 1, grpc_message);
+      if (!WriteAll(out)) return ClientError("write failed");
+      // Server HEADERS frames must all go through the same HPACK parser so
+      // that its dynamic table stays in sync with the server's encoder.
+      grpc_core::HPackParser hpack_parser;
+      // Header block fragments of a HEADERS frame and its CONTINUATIONs.
+      std::string pending_block;
+      uint8_t pending_flags = 0;
+      uint32_t pending_stream_id = 0;
+      while (true) {
+        std::string frame_header;
+        if (!ReadExact(9, &frame_header)) {
+          return ClientError("connection closed or timed out");
+        }
+        const grpc_core::Http2FrameHeader header =
+            grpc_core::Http2FrameHeader::Parse(
+                reinterpret_cast<const uint8_t*>(frame_header.data()));
+        std::string payload;
+        if (!ReadExact(header.length, &payload)) {
+          return ClientError("connection closed or timed out");
+        }
+        if (header.type == kSettings && (header.flags & kAck) == 0) {
+          if (!WriteAll(Frame(kSettings, kAck, 0, ""))) {
+            return ClientError("write failed");
+          }
+        } else if (header.type == kPing && (header.flags & kAck) == 0) {
+          if (!WriteAll(Frame(kPing, kAck, 0, payload))) {
+            return ClientError("write failed");
+          }
+        } else if (header.type == kGoaway) {
+          return ClientError("got GOAWAY");
+        } else if (header.stream_id == 1 && header.type == kRstStream) {
+          return ClientError("got RST_STREAM");
+        } else if (header.type == kHeaders || header.type == kContinuation) {
+          if (header.type == kHeaders) {
+            // The gRPC server does not send padding or priority.
+            GRPC_CHECK_EQ(header.flags & (kPadded | kPriority), 0);
+            pending_block.clear();
+            pending_flags = header.flags;
+            pending_stream_id = header.stream_id;
+          }
+          pending_block += payload;
+          if ((header.flags & kEndHeaders) == 0) continue;
+          grpc_metadata_batch metadata;
+          ParseHeaderBlock(pending_block, pending_stream_id,
+                           (pending_flags & kEndStream) != 0, &hpack_parser,
+                           &metadata);
+          if (pending_stream_id == 1 && (pending_flags & kEndStream) != 0) {
+            return StatusFromTrailers(metadata);
+          }
+        }
+      }
+    }
+
+   private:
+    static absl::Status ClientError(absl::string_view message) {
+      return absl::InternalError(absl::StrCat("RawHttp2Client: ", message));
+    }
+    static void ParseHeaderBlock(absl::string_view block, uint32_t stream_id,
+                                 bool end_stream,
+                                 grpc_core::HPackParser* parser,
+                                 grpc_metadata_batch* metadata) {
+      grpc_core::ExecCtx exec_ctx;
+      parser->BeginFrame(metadata, /*metadata_size_soft_limit=*/65536,
+                         /*metadata_size_hard_limit=*/65536,
+                         end_stream
+                             ? grpc_core::HPackParser::Boundary::EndOfStream
+                             : grpc_core::HPackParser::Boundary::EndOfHeaders,
+                         grpc_core::HPackParser::Priority::None,
+                         grpc_core::HPackParser::LogInfo{
+                             stream_id,
+                             grpc_core::HPackParser::LogInfo::kDontKnow,
+                             /*is_client=*/true});
+      grpc_core::Slice slice = grpc_core::Slice::FromCopiedString(block);
+      absl::BitGen bitgen;
+      GRPC_CHECK_OK(parser->Parse(slice.c_slice(), /*is_last=*/true,
+                                  absl::BitGenRef(bitgen),
+                                  /*call_tracer=*/nullptr));
+      parser->FinishFrame();
+    }
+    static absl::Status StatusFromTrailers(
+        const grpc_metadata_batch& trailers) {
+      std::optional<grpc_status_code> code =
+          trailers.get(grpc_core::GrpcStatusMetadata());
+      if (!code.has_value()) return ClientError("trailers have no grpc-status");
+      const grpc_core::Slice* message =
+          trailers.get_pointer(grpc_core::GrpcMessageMetadata());
+      return absl::Status(
+          static_cast<absl::StatusCode>(*code),
+          message == nullptr ? "" : message->as_string_view());
+    }
+    static void AppendUint32(uint32_t value, std::string* out) {
+      out->push_back(static_cast<char>((value >> 24) & 0xff));
+      out->push_back(static_cast<char>((value >> 16) & 0xff));
+      out->push_back(static_cast<char>((value >> 8) & 0xff));
+      out->push_back(static_cast<char>(value & 0xff));
+    }
+    // Encodes a "literal header field without indexing - new name" entry with
+    // no Huffman coding. Keys and values must be shorter than 127 bytes.
+    static void AppendHpackLiteral(absl::string_view key,
+                                   absl::string_view value, std::string* out) {
+      GRPC_CHECK_LT(key.size(), 127u);
+      GRPC_CHECK_LT(value.size(), 127u);
+      out->push_back('\0');
+      out->push_back(static_cast<char>(key.size()));
+      out->append(key);
+      out->push_back(static_cast<char>(value.size()));
+      out->append(value);
+    }
+    static std::string Frame(uint8_t type, uint8_t flags, uint32_t stream_id,
+                             absl::string_view payload) {
+      std::string frame(9, '\0');
+      grpc_core::Http2FrameHeader{static_cast<uint32_t>(payload.size()), type,
+                                  flags, stream_id}
+          .Serialize(reinterpret_cast<uint8_t*>(frame.data()));
+      frame.append(payload);
+      return frame;
+    }
+    // State for one endpoint Read or Write. It is shared with the callback so
+    // that it stays alive if we stop waiting because of a timeout.
+    struct IoState {
+      grpc_event_engine::experimental::SliceBuffer buffer;
+      absl::Status status;
+      grpc_core::Notification done;
+    };
+    static absl::Duration Timeout() {
+      return absl::Seconds(kTimeoutSeconds * grpc_test_slowdown_factor());
+    }
+    // Returns false on error or timeout.
+    bool WriteAll(absl::string_view data) {
+      auto state = std::make_shared<IoState>();
+      state->buffer.Append(
+          grpc_event_engine::experimental::Slice::FromCopiedString(data));
+      if (endpoint_->Write(
+              [state](absl::Status status) {
+                state->status = std::move(status);
+                state->done.Notify();
+              },
+              &state->buffer, EventEngine::Endpoint::WriteArgs())) {
+        return true;
+      }
+      return state->done.WaitForNotificationWithTimeout(Timeout()) &&
+             state->status.ok();
+    }
+    // Returns false on EOF, error, or timeout.
+    bool ReadExact(size_t n, std::string* out) {
+      while (read_buffer_.size() < n) {
+        auto state = std::make_shared<IoState>();
+        if (!endpoint_->Read(
+                [state](absl::Status status) {
+                  state->status = std::move(status);
+                  state->done.Notify();
+                },
+                &state->buffer, EventEngine::Endpoint::ReadArgs())) {
+          if (!state->done.WaitForNotificationWithTimeout(Timeout()) ||
+              !state->status.ok()) {
+            return false;
+          }
+        }
+        const size_t length = state->buffer.Length();
+        if (length == 0) return false;
+        std::string chunk(length, '\0');
+        state->buffer.MoveFirstNBytesIntoBuffer(length, chunk.data());
+        read_buffer_ += chunk;
+      }
+      *out = read_buffer_.substr(0, n);
+      read_buffer_.erase(0, n);
+      return true;
+    }
+
+    static constexpr int kTimeoutSeconds = 10;
+    static constexpr uint8_t kData = 0x0;
+    static constexpr uint8_t kHeaders = 0x1;
+    static constexpr uint8_t kRstStream = 0x3;
+    static constexpr uint8_t kSettings = 0x4;
+    static constexpr uint8_t kPing = 0x6;
+    static constexpr uint8_t kGoaway = 0x7;
+    static constexpr uint8_t kContinuation = 0x9;
+    static constexpr uint8_t kEndStream = 0x1;
+    static constexpr uint8_t kAck = 0x1;
+    static constexpr uint8_t kEndHeaders = 0x4;
+    static constexpr uint8_t kPadded = 0x8;
+    static constexpr uint8_t kPriority = 0x20;
+    std::shared_ptr<EventEngine> event_engine_;
+    std::unique_ptr<grpc_core::MemoryQuota> memory_quota_;
+    // Bytes read from the endpoint but not yet returned by ReadExact().
+    std::string read_buffer_;
+    std::unique_ptr<EventEngine::Endpoint> endpoint_;
+  };
+};
+
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacHostHeaderTest,
+    ::testing::Values(
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
+
+// The route only matches "host: bar" and RBAC denies "host: bar". Only
+// ":authority: bar" is sent. The route matches and RBAC denies the RPC.
+TEST_P(XdsRbacHostHeaderTest, AuthorityOnlyIsDenied) {
+  auto* route_header = default_server_route_config_.mutable_virtual_hosts(0)
+                           ->mutable_routes(0)
+                           ->mutable_match()
+                           ->add_headers();
+  route_header->set_name("host");
+  route_header->mutable_string_match()->set_exact("bar");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(RBAC_Action_DENY);
+  Policy policy;
+  auto* rbac_header = policy.add_permissions()->mutable_header();
+  rbac_header->set_name("host");
+  rbac_header->mutable_string_match()->set_exact("bar");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  absl::Status status =
+      RawHttp2Client(backends_[0]->port())
+          .SendEchoRequest({{":method", "POST"},
+                            {":scheme", "http"},
+                            {":path", "/grpc.testing.EchoTestService/Echo"},
+                            {":authority", "bar"},
+                            {"content-type", "application/grpc"},
+                            {"te", "trailers"}});
+  EXPECT_EQ(status.code(), absl::StatusCode::kPermissionDenied) << status;
+}
+
+// The route only matches "host: bar" and RBAC denies "host: bar".
+// ":authority: bar" and "host: bar" are both sent. The route matches and RBAC
+// denies the RPC.
+TEST_P(XdsRbacHostHeaderTest, MatchingHostAndAuthorityIsDenied) {
+  auto* route_header = default_server_route_config_.mutable_virtual_hosts(0)
+                           ->mutable_routes(0)
+                           ->mutable_match()
+                           ->add_headers();
+  route_header->set_name("host");
+  route_header->mutable_string_match()->set_exact("bar");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(RBAC_Action_DENY);
+  Policy policy;
+  auto* rbac_header = policy.add_permissions()->mutable_header();
+  rbac_header->set_name("host");
+  rbac_header->mutable_string_match()->set_exact("bar");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  absl::Status status =
+      RawHttp2Client(backends_[0]->port())
+          .SendEchoRequest({{":method", "POST"},
+                            {":scheme", "http"},
+                            {":path", "/grpc.testing.EchoTestService/Echo"},
+                            {":authority", "bar"},
+                            {"host", "bar"},
+                            {"content-type", "application/grpc"},
+                            {"te", "trailers"}});
+  EXPECT_EQ(status.code(), absl::StatusCode::kPermissionDenied) << status;
+}
+
+// The route only matches "host: bar" and RBAC denies "host: bar". Only
+// "host: bar" is sent. It is used as the authority, so the route matches and
+// RBAC denies the RPC.
+TEST_P(XdsRbacHostHeaderTest, HostOnlyIsDenied) {
+  auto* route_header = default_server_route_config_.mutable_virtual_hosts(0)
+                           ->mutable_routes(0)
+                           ->mutable_match()
+                           ->add_headers();
+  route_header->set_name("host");
+  route_header->mutable_string_match()->set_exact("bar");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(RBAC_Action_DENY);
+  Policy policy;
+  auto* rbac_header = policy.add_permissions()->mutable_header();
+  rbac_header->set_name("host");
+  rbac_header->mutable_string_match()->set_exact("bar");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  absl::Status status =
+      RawHttp2Client(backends_[0]->port())
+          .SendEchoRequest({{":method", "POST"},
+                            {":scheme", "http"},
+                            {":path", "/grpc.testing.EchoTestService/Echo"},
+                            {"host", "bar"},
+                            {"content-type", "application/grpc"},
+                            {"te", "trailers"}});
+  EXPECT_EQ(status.code(), absl::StatusCode::kPermissionDenied) << status;
+}
+
+// The route only matches "host: bar" and RBAC denies "host: bar".
+// ":authority: foo" and "host: bar" are sent. ":authority" wins, so routing
+// and RBAC both see "foo". The route does not match, so the RPC fails with
+// UNAVAILABLE. Routing must not see "bar" while RBAC sees "foo", since that
+// would let the RPC reach the route without being denied.
+TEST_P(XdsRbacHostHeaderTest, MismatchedHostAndAuthorityDoesNotBypassRbac) {
+  auto* route_header = default_server_route_config_.mutable_virtual_hosts(0)
+                           ->mutable_routes(0)
+                           ->mutable_match()
+                           ->add_headers();
+  route_header->set_name("host");
+  route_header->mutable_string_match()->set_exact("bar");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(RBAC_Action_DENY);
+  Policy policy;
+  auto* rbac_header = policy.add_permissions()->mutable_header();
+  rbac_header->set_name("host");
+  rbac_header->mutable_string_match()->set_exact("bar");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  absl::Status status =
+      RawHttp2Client(backends_[0]->port())
+          .SendEchoRequest({{":method", "POST"},
+                            {":scheme", "http"},
+                            {":path", "/grpc.testing.EchoTestService/Echo"},
+                            {":authority", "foo"},
+                            {"host", "bar"},
+                            {"content-type", "application/grpc"},
+                            {"te", "trailers"}});
+  EXPECT_EQ(status.code(), absl::StatusCode::kUnavailable) << status;
 }
 
 //

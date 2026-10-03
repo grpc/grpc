@@ -148,6 +148,14 @@ class ParsedMetadata {
         transport_size_(transport_size) {
     value_.slice = value.TakeCSlice();
   }
+  struct FromHostSliceTag {};
+  template <typename AuthorityTrait>
+  ParsedMetadata(FromHostSliceTag, AuthorityTrait, Slice value,
+                 uint32_t transport_size)
+      : vtable_(ParsedMetadata::template HostSliceVTable<AuthorityTrait>()),
+        transport_size_(transport_size) {
+    value_.slice = value.TakeCSlice();
+  }
   // Construct metadata from a string key, slice value pair.
   // FromSlicePair() is used to adjust the overload set so that we don't
   // inadvertently match against any of the previous overloads.
@@ -240,6 +248,8 @@ class ParsedMetadata {
   static const VTable* NonTrivialTraitVTable();
   template <typename Which>
   static const VTable* SliceTraitVTable();
+  template <typename AuthorityTrait>
+  static const VTable* HostSliceVTable();
 
   template <Slice (*ParseMemento)(Slice, bool, MetadataParseErrorFn)>
   GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetSlice(
@@ -383,6 +393,34 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       },
       // key
       Which::key(),
+      nullptr,
+  };
+  return &vtable;
+}
+
+// VTable for parsed "host" headers: keeps key() == "host" for HPACK table size
+// accounting and duplicate header detection, while populating AuthorityTrait
+// (HttpAuthorityMetadata) on the map only if :authority is not already set.
+template <typename MetadataContainer>
+template <typename AuthorityTrait>
+const typename ParsedMetadata<MetadataContainer>::VTable*
+ParsedMetadata<MetadataContainer>::HostSliceVTable() {
+  static const VTable vtable = {
+      false,
+      metadata_detail::DestroySliceValue,
+      [](const Buffer& value, MetadataContainer* map) {
+        if (map->get_pointer(AuthorityTrait()) == nullptr) {
+          metadata_detail::SetSliceValue<AuthorityTrait::MementoToValue>(
+              map->GetOrCreatePointer(AuthorityTrait()), value);
+        }
+      },
+      WithNewValueSetSlice<AuthorityTrait::ParseMemento>,
+      [](const Buffer& value) {
+        return metadata_detail::MakeDebugStringPipeline(
+            "host", value, metadata_detail::SliceFromBuffer,
+            AuthorityTrait::DisplayMemento);
+      },
+      "host",
       nullptr,
   };
   return &vtable;

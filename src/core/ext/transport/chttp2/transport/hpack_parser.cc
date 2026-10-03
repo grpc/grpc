@@ -37,6 +37,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
@@ -727,6 +728,35 @@ class HPackParser::Parser {
       // Reject any requests with invalid metadata.
       input_->SetErrorAndContinueParsing(*md.parse_status);
     }
+    if (IsMapHostHeaderToAuthorityEnabled()) {
+      if (GPR_LIKELY(metadata_buffer_ != nullptr) &&
+          metadata_buffer_->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+        state_.seen_authority = false;
+        state_.seen_host = false;
+      }
+      if (md.md.key() == HttpAuthorityMetadata::key()) {
+        if (state_.seen_authority) {
+          input_->SetErrorAndContinueParsing(
+              HpackParseResult::DuplicateHeaderError(
+                  HttpAuthorityMetadata::key()));
+        } else if (state_.seen_host) {
+          GRPC_TRACE_LOG(chttp2_hpack_parser, INFO)
+              << "HTTP:" << log_info_.stream_id
+              << ": ':authority' overrides previously received 'host' header";
+        }
+        state_.seen_authority = true;
+      } else if (md.md.key() == "host") {
+        if (state_.seen_host) {
+          input_->SetErrorAndContinueParsing(
+              HpackParseResult::DuplicateHeaderError("host"));
+        } else if (state_.seen_authority) {
+          GRPC_TRACE_LOG(chttp2_hpack_parser, INFO)
+              << "HTTP:" << log_info_.stream_id
+              << ": dropping 'host' header since ':authority' is already set";
+        }
+        state_.seen_host = true;
+      }
+    }
     if (GPR_LIKELY(metadata_buffer_ != nullptr)) {
       metadata_buffer_->Set(md.md);
     }
@@ -1124,6 +1154,11 @@ void HPackParser::BeginFrame(
   if (metadata_buffer != nullptr) {
     metadata_buffer->Set(GrpcStatusFromWire(), true);
   }
+  if (metadata_buffer == nullptr ||
+      metadata_buffer->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+    state_.seen_authority = false;
+    state_.seen_host = false;
+  }
   boundary_ = boundary;
   priority_ = priority;
   state_.mitigation_engine = mitigation_engine;
@@ -1196,6 +1231,8 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last,
       state_.frame_error = HpackParseResult::IncompleteHeaderAtBoundaryError();
     }
     state_.frame_length = 0;
+    state_.seen_authority = false;
+    state_.seen_host = false;
     return std::exchange(state_.frame_error, HpackParseResult()).Materialize();
   } else {
     if (input.eof_error() && !state_.frame_error.connection_error()) {

@@ -509,6 +509,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config_vars",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
@@ -518,6 +519,7 @@ grpc_cc_test(
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:experiments",
         "//src/core:memory_quota",
         "//src/core:mitigation_engine",
         "//src/core:resource_quota",

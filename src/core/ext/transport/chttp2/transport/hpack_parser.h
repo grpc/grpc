@@ -252,6 +252,8 @@ class HPackParser {
     bool is_string_huff_compressed;
     // Is the value being parsed binary?
     bool is_binary_header;
+    bool seen_authority = false;
+    bool seen_host = false;
     // How many more dynamic table updates are allowed
     uint8_t dynamic_table_updates_allowed;
     // Current parse state

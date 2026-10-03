@@ -332,11 +332,13 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:config_vars",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
         "//:ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:experiments",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
         "//src/core:resource_quota",

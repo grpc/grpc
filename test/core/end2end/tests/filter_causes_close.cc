@@ -81,7 +81,6 @@ class TestFilterFailOnMessage
       if (message.payload()->JoinIntoString() == kGoodMessage) {
         return nullptr;
       }
-
       auto md = GetContext<Arena>()->MakePooled<ServerMetadata>();
       md->Set(GrpcStatusMetadata(), GRPC_STATUS_PERMISSION_DENIED);
       md->Set(GrpcMessageMetadata(),
