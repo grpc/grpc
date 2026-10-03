@@ -21,13 +21,39 @@ import json
 import multiprocessing
 import os
 import re
+import socket
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
 
+_collector_port = None
+_collector_spans_file = None
+
+
+def get_free_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("", 0))
+    port = s.getsockname()[1]
+    s.close()
+    return port
+
+
+def wait_for_port(port, host="localhost", timeout=5.0):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            with socket.create_connection((host, port), timeout=0.2):
+                return True
+        except (ConnectionRefusedError, OSError):
+            time.sleep(0.05)
+    return False
+
+
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
+from python_utils.otel_tracing_verifier import verify_tracing_spans
 import python_utils.report_utils as report_utils
 
 # It's ok to not import because this is only necessary to upload results to BQ.
@@ -736,6 +762,7 @@ _TEST_CASES = [
     "special_status_message",
     "orca_per_rpc",
     "orca_oob",
+    "test_unary_rpc_tracing_export",
 ]
 
 _AUTH_TEST_CASES = [
@@ -950,13 +977,22 @@ def cloud_to_prod_jobspec(
         transport_security_options = ["--use_tls=true"]
     elif transport_security == "google_default_credentials" and str(
         language
-    ) in ["c++", "go", "java", "javaokhttp"]:
+    ) in [
+        "c++",
+        "go",
+        "java",
+        "javaokhttp",
+    ]:
         transport_security_options = [
             "--custom_credentials_type=google_default_credentials"
         ]
     elif transport_security == "compute_engine_channel_creds" and str(
         language
-    ) in ["go", "java", "javaokhttp"]:
+    ) in [
+        "go",
+        "java",
+        "javaokhttp",
+    ]:
         transport_security_options = [
             "--custom_credentials_type=compute_engine_channel_creds"
         ]
@@ -1054,6 +1090,24 @@ def cloud_to_cloud_jobspec(
         sys.exit(1)
 
     client_test_case = test_case
+    if test_case == "test_unary_rpc_tracing_export":
+        client_test_case = "empty_unary"
+        interop_only_options += ["--enable_opentelemetry=true"]
+        if _collector_port:
+            interop_only_options += [
+                f"--otel_collector_address=localhost:{_collector_port}"
+            ]
+        add_env = add_env.copy()
+        add_env["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"
+        add_env["OTEL_TRACES_EXPORTER"] = "otlp"
+        add_env["OTEL_EXPORTER_OTLP_PROTOCOL"] = "grpc"
+        add_env["OTEL_METRICS_EXPORTER"] = "none"
+        add_env["OTEL_LOGS_EXPORTER"] = "none"
+        if _collector_port:
+            # Client containers use --net=host, so localhost connects directly to host.
+            add_env["OTEL_EXPORTER_OTLP_ENDPOINT"] = (
+                f"http://localhost:{_collector_port}"
+            )
     if test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
         client_test_case = _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES[
             test_case
@@ -1147,6 +1201,22 @@ def server_jobspec(
         "interop_server_%s" % language.safename
     )
     server_cmd = ["--port=%s" % _DEFAULT_SERVER_PORT]
+    environ = language.global_env()
+    if _collector_port and language.safename in ["cxx", "java", "go"]:
+        server_cmd += ["--enable_opentelemetry=true"]
+        collector_host = "host.docker.internal" if docker_image else "localhost"
+        server_cmd += [
+            f"--otel_collector_address={collector_host}:{_collector_port}"
+        ]
+        environ = environ.copy()
+        environ["GRPC_EXPERIMENTAL_ENABLE_OTEL_TRACING"] = "true"
+        environ["OTEL_TRACES_EXPORTER"] = "otlp"
+        environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "grpc"
+        environ["OTEL_METRICS_EXPORTER"] = "none"
+        environ["OTEL_LOGS_EXPORTER"] = "none"
+        environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = (
+            f"http://{collector_host}:{_collector_port}"
+        )
     if transport_security == "tls":
         server_cmd += ["--use_tls=true"]
     elif transport_security == "alts":
@@ -1164,7 +1234,6 @@ def server_jobspec(
             "--max_concurrent_streams_limit=%d" % max_concurrent_streams_limit
         ]
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
-    environ = language.global_env()
     docker_args = ["--name=%s" % container_name]
     if language.safename == "http2":
         # we are running the http2 interop server. Open next N ports beginning
@@ -1195,6 +1264,11 @@ def server_jobspec(
 
     else:
         docker_args += ["-p", str(_DEFAULT_SERVER_PORT)]
+
+    if docker_image:
+        docker_args = docker_args + [
+            "--add-host=host.docker.internal:host-gateway"
+        ]
 
     docker_cmdline = docker_run_cmdline(
         cmdline,
@@ -1442,6 +1516,11 @@ argp.add_argument(
     nargs="?",
     help="Upload test results to a specified BQ table.",
 )
+argp.add_argument(
+    "--test_case",
+    type=str,
+    help="Run a specific test case. If not specified, all test cases will be run.",
+)
 args = argp.parse_args()
 
 servers = set(
@@ -1567,7 +1646,86 @@ client_manual_cmd_log = [] if args.manual_run else None
 # Start interop servers.
 server_jobs = {}
 server_addresses = {}
+collector_proc = None
+collector_container_name = None
 try:
+    if not args.manual_run:
+        tracing_test_enabled = (not args.test_case) or (
+            args.test_case == "test_unary_rpc_tracing_export"
+        )
+        allowed_tracing_languages = {"c++", "java", "go"}
+        has_tracing_client = bool(
+            allowed_tracing_languages.intersection(args.language)
+            or "all" in args.language
+        )
+        has_tracing_server = bool(
+            allowed_tracing_languages.intersection(servers)
+            or "all" in servers
+            or bool(args.override_server)
+        )
+        has_tracing = (
+            tracing_test_enabled and has_tracing_client and has_tracing_server
+        )
+        if has_tracing:
+            _collector_port = get_free_port()
+            pid = os.getpid()
+            timestamp = int(time.time() * 1000)
+            _collector_spans_file = os.path.join(
+                tempfile.gettempdir(), f"captured_spans_{pid}_{timestamp}.json"
+            )
+            if os.path.exists(_collector_spans_file):
+                os.remove(_collector_spans_file)
+            if args.use_docker:
+                collector_container_name = f"otlp_collector_{pid}_{timestamp}"
+                collector_cmd = [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--name",
+                    collector_container_name,
+                    "--net=host",
+                    "-v",
+                    f"{tempfile.gettempdir()}:{tempfile.gettempdir()}",
+                    docker_images.get("c++"),
+                    "/var/local/git/grpc/bazel-bin/test/cpp/interop/otlp_collector",
+                    f"--port={_collector_port}",
+                    f"--file={_collector_spans_file}",
+                ]
+            else:
+                collector_bin = os.path.abspath(
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        "../../bazel-bin/test/cpp/interop/otlp_collector",
+                    )
+                )
+                if not os.path.exists(collector_bin):
+                    grpc_root = os.path.abspath(
+                        os.path.join(os.path.dirname(__file__), "../..")
+                    )
+                    print(f"Building OTLP collector binary...")
+                    subprocess.check_call(
+                        [
+                            "tools/bazel",
+                            "build",
+                            "//test/cpp/interop:otlp_collector",
+                        ],
+                        cwd=grpc_root,
+                    )
+                collector_cmd = [
+                    collector_bin,
+                    f"--port={_collector_port}",
+                    f"--file={_collector_spans_file}",
+                ]
+            print(f"Starting OTLP collector on port {_collector_port}...")
+            collector_proc = subprocess.Popen(
+                collector_cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            if not wait_for_port(_collector_port, timeout=10.0):
+                print(
+                    f"Warning: OTLP collector on port {_collector_port} did not respond within timeout."
+                )
     for s in servers:
         lang = str(s)
         spec = server_jobspec(
@@ -1586,6 +1744,10 @@ try:
         else:
             # don't run the server, set server port to a placeholder value
             server_addresses[lang] = ("localhost", "${SERVER_PORT}")
+
+    if not args.manual_run and "java" in server_jobs:
+        # Because the gRPC Java server takes some time to come up
+        time.sleep(5)
 
     http2_server_job = None
     if args.http2_server_interop:
@@ -1610,6 +1772,10 @@ try:
         for server_host_nickname in args.prod_servers:
             for language in languages:
                 for test_case in _TEST_CASES:
+                    if (
+                        args.test_case and test_case != args.test_case
+                    ) or test_case == "test_unary_rpc_tracing_export":
+                        continue
                     if not test_case in language.unimplemented_test_cases():
                         if (
                             not test_case
@@ -1654,6 +1820,8 @@ try:
                                 jobs.append(test_job)
             if args.http2_interop:
                 for test_case in _HTTP2_TEST_CASES:
+                    if args.test_case and test_case != args.test_case:
+                        continue
                     test_job = cloud_to_prod_jobspec(
                         http2Interop,
                         test_case,
@@ -1674,6 +1842,8 @@ try:
         for server_host_nickname in args.prod_servers:
             for language in languages:
                 for test_case in _AUTH_TEST_CASES:
+                    if args.test_case and test_case != args.test_case:
+                        continue
                     if (
                         not args.skip_compute_engine_creds
                         or not compute_engine_creds_required(
@@ -1726,6 +1896,15 @@ try:
             skip_server = server_language.unimplemented_test_cases_server()
         for language in languages:
             for test_case in _TEST_CASES:
+                if args.test_case and test_case != args.test_case:
+                    continue
+                if test_case == "test_unary_rpc_tracing_export":
+                    allowed_tracing_languages = ["c++", "java", "go"]
+                    if (
+                        str(language) not in allowed_tracing_languages
+                        or server_name not in allowed_tracing_languages
+                    ):
+                        continue
                 if not test_case in language.unimplemented_test_cases():
                     if not test_case in skip_server:
                         test_job = cloud_to_cloud_jobspec(
@@ -1742,6 +1921,8 @@ try:
 
         if args.http2_interop:
             for test_case in _HTTP2_TEST_CASES:
+                if args.test_case and test_case != args.test_case:
+                    continue
                 if server_name == "go":
                     # TODO(carl-mastrangelo): Reenable after https://github.com/grpc/grpc-go/issues/434
                     continue
@@ -1764,6 +1945,8 @@ try:
             for test_case in set(_HTTP2_SERVER_TEST_CASES) - set(
                 _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS
             ):
+                if args.test_case and test_case != args.test_case:
+                    continue
                 offset = sorted(_HTTP2_SERVER_TEST_CASES).index(test_case)
                 server_port = _DEFAULT_SERVER_PORT + offset
                 if not args.manual_run:
@@ -1810,7 +1993,10 @@ try:
                     )
                     jobs.append(test_job)
 
-    if "java" in servers:
+    if "java" in servers and (
+        not args.test_case
+        or args.test_case == "max_concurrent_streams_connection_scaling"
+    ):
         languages_for_mcs_cs = set(
             _LANGUAGES[l]
             for l in _LANGUAGES_FOR_MCS_TEST_CASE
@@ -1863,6 +2049,18 @@ try:
         maxjobs=args.jobs,
         skip_jobs=args.manual_run,
     )
+    if not num_failures and not args.manual_run:
+        tracing_jobs = [
+            job
+            for job in jobs
+            if job.shortname.find("test_unary_rpc_tracing_export") != -1
+        ]
+        if tracing_jobs and _collector_spans_file:
+            if not verify_tracing_spans(
+                _collector_spans_file,
+                expected_runs_count=len(tracing_jobs),
+            ):
+                num_failures = 1
     if args.bq_result_table and resultset:
         upload_interop_results_to_bq(resultset, args.bq_result_table)
     if num_failures:
@@ -1888,6 +2086,32 @@ try:
     else:
         sys.exit(0)
 finally:
+    if collector_container_name:
+        try:
+            subprocess.run(
+                ["docker", "kill", collector_container_name],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            pass
+    if collector_proc:
+        print("Terminating OTLP collector...")
+        try:
+            collector_proc.terminate()
+            collector_proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            try:
+                collector_proc.kill()
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"Error terminating OTLP collector: {e}")
+    if _collector_spans_file and os.path.exists(_collector_spans_file):
+        try:
+            os.remove(_collector_spans_file)
+        except OSError:
+            pass
     # Check if servers are still running.
     for server, job in list(server_jobs.items()):
         if not job.is_running():

@@ -30,6 +30,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
+#include "test/cpp/interop/otel_helper.h"
 #include "test/cpp/util/test_config.h"
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
@@ -204,6 +205,7 @@ ParseAdditionalMetadataFlag(const std::string& flag) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
+  grpc::testing::interop::MaybeRegisterOpenTelemetry();
   LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   int ret = 0;
 
@@ -357,5 +359,6 @@ int main(int argc, char** argv) {
     ret = 1;
   }
 
+  grpc::testing::interop::ForceFlushOpenTelemetry();
   return ret;
 }
