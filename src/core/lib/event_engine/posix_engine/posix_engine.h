@@ -238,6 +238,15 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
    private:
     void PollerWorkInternal();
 
+    class PollingClosure : public EventEngine::Closure {
+     public:
+      explicit PollingClosure(PollingCycle* cycle) : cycle_(cycle) {}
+      void Run() override { cycle_->PollerWorkInternal(); }
+
+     private:
+      PollingCycle* cycle_;
+    };
+    PollingClosure closure_{this};
     std::shared_ptr<ThreadPool> executor_;
     std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
     grpc_core::Mutex mu_;
