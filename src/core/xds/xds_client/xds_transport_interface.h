@@ -1,0 +1,137 @@
+//
+// Copyright 2022 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_TRANSPORT_INTERFACE_H
+#define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_TRANSPORT_INTERFACE_H
+
+#include <memory>
+#include <string>
+
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/orphanable.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+
+// Represents a transport for xDS communication (e.g., a gRPC channel).
+class XdsTransport : public DualRefCounted<XdsTransport> {
+ public:
+  // Options for creating a streaming call.
+  struct CallOptions {
+    // If true, the send_initial_metadata op is not started when the call
+    // is created; instead, it is started by the first call to
+    // SendMessage().  This allows a unary call to send initial metadata,
+    // the request message, and the half-close in a single batch:
+    //   auto call = transport->CreateStreamingCall(
+    //       method, std::move(handler),
+    //       CallOptions().set_start_upon_send_message(true));
+    //   call->SendMessage(payload, /*send_half_close=*/true);
+    bool start_upon_send_message = false;
+
+    // If true, the call will be queued until the transport is connected
+    // instead of failing fast when the transport is not connected.
+    bool wait_for_ready = false;
+
+    CallOptions& set_start_upon_send_message(bool value) {
+      start_upon_send_message = value;
+      return *this;
+    }
+
+    CallOptions& set_wait_for_ready(bool value) {
+      wait_for_ready = value;
+      return *this;
+    }
+  };
+
+  // Represents a bidi streaming RPC call.
+  class StreamingCall : public InternallyRefCounted<StreamingCall> {
+   public:
+    // An interface for handling events on a streaming call.
+    class EventHandler {
+     public:
+      virtual ~EventHandler() = default;
+
+      // Called when a SendMessage() operation completes.
+      virtual void OnRequestSent(bool ok) = 0;
+      // Called when a message is received on the stream.
+      virtual void OnRecvMessage(absl::string_view payload) = 0;
+      // Called when status is received on the stream.
+      virtual void OnStatusReceived(absl::Status status) = 0;
+    };
+
+    // Sends a message on the stream.  When the message has been sent,
+    // the EventHandler::OnRequestSent() method will be called.
+    // Only one message will be in flight at a time; subsequent
+    // messages will not be sent until this one is done.
+    //
+    // If send_half_close is true, the client-side half-close is sent in
+    // the same batch as the message, in which case SendHalfClose() must
+    // not be called afterwards.
+    void SendMessage(std::string payload) {
+      SendMessage(std::move(payload), /*send_half_close=*/false);
+    }
+    virtual void SendMessage(std::string payload, bool send_half_close) = 0;
+
+    // Starts a recv_message operation on the stream.
+    virtual void StartRecvMessage() = 0;
+
+    // Half-closes the stream from the client side.
+    virtual void SendHalfClose() = 0;
+  };
+
+  // A watcher for connectivity failures.
+  class ConnectivityFailureWatcher
+      : public RefCounted<ConnectivityFailureWatcher> {
+   public:
+    // Will be invoked whenever there is a connectivity failure on the
+    // transport.
+    virtual void OnConnectivityFailure(absl::Status status) = 0;
+  };
+
+  explicit XdsTransport(const char* trace = nullptr) : DualRefCounted(trace) {}
+
+  // Starts a connectivity failure watcher on the transport.
+  virtual void StartConnectivityFailureWatch(
+      RefCountedPtr<ConnectivityFailureWatcher> watcher) = 0;
+  // Stops a connectivity failure watcher on the transport.
+  virtual void StopConnectivityFailureWatch(
+      const RefCountedPtr<ConnectivityFailureWatcher>& watcher) = 0;
+
+  // Create a streaming call on this transport for the specified method
+  // using default CallOptions.
+  // Events on the stream will be reported to event_handler.
+  OrphanablePtr<StreamingCall> CreateStreamingCall(
+      const char* method,
+      std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+    return CreateStreamingCall(method, std::move(event_handler), CallOptions());
+  }
+
+  // Create a streaming call on this transport for the specified method
+  // with custom options.
+  // Events on the stream will be reported to event_handler.
+  virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
+      const char* method,
+      std::unique_ptr<StreamingCall::EventHandler> event_handler,
+      CallOptions options) = 0;
+
+  // Resets connection backoff for the transport.
+  virtual void ResetBackoff() = 0;
+};
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_TRANSPORT_INTERFACE_H

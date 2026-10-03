@@ -66,267 +66,16 @@
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
-//
-// GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
-//
-
-GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
-    WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
-    const char* method,
-    std::unique_ptr<StreamingCall::EventHandler> event_handler,
-    grpc_call_credentials* call_creds,
-    const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-    Duration timeout, CallOptions options)
-    : factory_(std::move(factory)),
-      event_handler_(std::move(event_handler)),
-      options_(options) {
-  Timestamp deadline = (timeout == Duration::Infinity())
-                           ? Timestamp::InfFuture()
-                           : Timestamp::Now() + timeout;
-  // Create call.
-  call_ = channel->CreateCall(
-      /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
-      factory_->interested_parties(), Slice::FromStaticString(method),
-      /*authority=*/std::nullopt, deadline,
-      /*registered_method=*/true, /*arena_init_function=*/std::nullopt);
-  GRPC_CHECK_NE(call_, nullptr);
-  // Set call creds, if any.
-  if (call_creds != nullptr) grpc_call_set_credentials(call_, call_creds);
-  // Init data associated with the call.
-  grpc_metadata_array_init(&initial_metadata_recv_);
-  grpc_metadata_array_init(&trailing_metadata_recv_);
-  send_initial_metadata_.resize(initial_metadata.size());
-  for (size_t i = 0; i < initial_metadata.size(); ++i) {
-    send_initial_metadata_[i].key =
-        grpc_slice_from_cpp_string(initial_metadata[i].first);
-    send_initial_metadata_[i].value =
-        grpc_slice_from_cpp_string(initial_metadata[i].second);
-  }
-  // Initialize closures.
-  GRPC_CLOSURE_INIT(&on_recv_initial_metadata_, OnRecvInitialMetadata, this,
-                    nullptr);
-  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this, nullptr);
-  GRPC_CLOSURE_INIT(&on_half_closed_, OnHalfClosed, this, nullptr);
-  GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
-  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
-  // Start batch for recv_initial_metadata (and send_initial_metadata, unless
-  // the caller asked us to wait until the first message is sent).
-  OpList op_list;
-  if (!options_.start_upon_send_message) {
-    sent_initial_metadata_ = true;
-    AddSendInitialMetadataOp(op_list);
-  }
-  AddRecvInitialMetadataOp(op_list);
-  StartBatch(op_list, "OnRecvInitialMetadata", &on_recv_initial_metadata_);
-  // Start batch for recv_trailing_metadata.
-  op_list.clear();
-  AddRecvTrailingMetadataOp(op_list);
-  StartBatch(op_list, "OnStatusReceived", &on_status_received_);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    AddSendInitialMetadataOp(OpList& op_list) {
-  grpc_op& op = op_list.emplace_back();
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_INITIAL_METADATA;
-  op.data.send_initial_metadata.count = send_initial_metadata_.size();
-  op.data.send_initial_metadata.metadata =
-      send_initial_metadata_.empty() ? nullptr : send_initial_metadata_.data();
-  op.flags = options_.wait_for_ready
-                 ? GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-                       GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
-                 : 0;
-  op.reserved = nullptr;
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    AddRecvInitialMetadataOp(OpList& op_list) {
-  grpc_op& op = op_list.emplace_back();
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_INITIAL_METADATA;
-  op.data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv_;
-  op.flags = 0;
-  op.reserved = nullptr;
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    AddRecvTrailingMetadataOp(OpList& op_list) {
-  grpc_op& op = op_list.emplace_back();
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op.data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
-  op.data.recv_status_on_client.status = &status_code_;
-  op.data.recv_status_on_client.status_details = &status_details_;
-  op.flags = 0;
-  op.reserved = nullptr;
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    AddSendCloseFromClientOp(OpList& op_list) {
-  grpc_op& op = op_list.emplace_back();
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op.flags = 0;
-  op.reserved = nullptr;
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    AddSendMessageOp(std::string payload, OpList& op_list) {
-  grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
-  send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
-  CSliceUnref(slice);
-  grpc_op& op = op_list.emplace_back();
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_MESSAGE;
-  op.data.send_message.send_message = send_message_payload_;
-  op.flags = 0;
-  op.reserved = nullptr;
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::StartBatch(
-    const OpList& op_list, const char* ref_reason, grpc_closure* closure) {
-  Ref(DEBUG_LOCATION, ref_reason).release();
-  grpc_call_error call_error = grpc_call_start_batch_and_execute(
-      call_, op_list.data(), op_list.size(), closure);
-  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
-}
-
-GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    ~GrpcStreamingCall() {
-  grpc_metadata_array_destroy(&trailing_metadata_recv_);
-  grpc_byte_buffer_destroy(send_message_payload_);
-  grpc_byte_buffer_destroy(recv_message_payload_);
-  CSliceUnref(status_details_);
-  for (auto& md : send_initial_metadata_) {
-    CSliceUnref(md.key);
-    CSliceUnref(md.value);
-  }
-  GRPC_CHECK_NE(call_, nullptr);
-  grpc_call_unref(call_);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Orphan() {
-  GRPC_CHECK_NE(call_, nullptr);
-  // If we are here because xds_client wants to cancel the call,
-  // OnStatusReceived() will complete the cancellation and clean up.
-  // Otherwise, we are here because xds_client has to orphan a failed call,
-  // in which case the following cancellation will be a no-op.
-  grpc_call_cancel_internal(call_);
-  Unref(DEBUG_LOCATION, "Orphan");
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
-    std::string payload, bool send_half_close) {
-  OpList op_list;
-  if (!sent_initial_metadata_) {
-    sent_initial_metadata_ = true;
-    AddSendInitialMetadataOp(op_list);
-  }
-  AddSendMessageOp(std::move(payload), op_list);
-  if (send_half_close) {
-    AddSendCloseFromClientOp(op_list);
-  }
-  StartBatch(op_list, "OnRequestSent", &on_request_sent_);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    StartRecvMessage() {
-  OpList op_list;
-  grpc_op& op = op_list.emplace_back();
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_MESSAGE;
-  op.data.recv_message.recv_message = &recv_message_payload_;
-  op.flags = 0;
-  op.reserved = nullptr;
-  StartBatch(op_list, "StartRecvMessage", &on_response_received_);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    SendHalfClose() {
-  OpList op_list;
-  AddSendCloseFromClientOp(op_list);
-  StartBatch(op_list, "SendHalfClose", &on_half_closed_);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/) {
-  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
-  grpc_metadata_array_destroy(&self->initial_metadata_recv_);
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    OnRequestSent(void* arg, grpc_error_handle error) {
-  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
-  // Clean up the sent message.
-  grpc_byte_buffer_destroy(self->send_message_payload_);
-  self->send_message_payload_ = nullptr;
-  // Invoke request handler.
-  self->event_handler_->OnRequestSent(error.ok());
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::OnHalfClosed(
-    void* arg, grpc_error_handle /*error*/) {
-  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    OnResponseReceived(void* arg, grpc_error_handle /*error*/) {
-  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
-  // If there was no payload, then we received status before we received
-  // another message, so we stop reading.
-  if (self->recv_message_payload_ != nullptr) {
-    // Process the response.
-    grpc_byte_buffer_reader bbr;
-    grpc_byte_buffer_reader_init(&bbr, self->recv_message_payload_);
-    grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
-    grpc_byte_buffer_reader_destroy(&bbr);
-    grpc_byte_buffer_destroy(self->recv_message_payload_);
-    self->recv_message_payload_ = nullptr;
-    self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
-    CSliceUnref(response_slice);
-  }
-}
-
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    OnStatusReceived(void* arg, grpc_error_handle /*error*/) {
-  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
-  self->event_handler_->OnStatusReceived(
-      absl::Status(static_cast<absl::StatusCode>(self->status_code_),
-                   StringViewFromSlice(self->status_details_)));
-}
-
-//
-// GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
-//
-
-class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
-    : public AsyncConnectivityStateWatcherInterface {
- public:
-  explicit StateWatcher(RefCountedPtr<ConnectivityFailureWatcher> watcher)
-      : watcher_(std::move(watcher)) {}
-
- private:
-  void OnConnectivityStateChange(grpc_connectivity_state new_state,
-                                 const absl::Status& status) override {
-    if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      watcher_->OnConnectivityFailure(absl::Status(
-          status.code(),
-          absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
-    }
-  }
-
-  RefCountedPtr<ConnectivityFailureWatcher> watcher_;
-};
-
-//
-// GrpcXdsTransportFactory::GrpcXdsTransport
-//
-
 namespace {
+
+ChannelArgs ModifyChannelArgs(const ChannelArgs& args) {
+  return args.Set(GRPC_ARG_KEEPALIVE_TIME_MS, Duration::Minutes(5).millis());
+}
 
 RefCountedPtr<Channel> CreateXdsChannel(
     const ChannelArgs& args,
@@ -376,7 +125,326 @@ RefCountedPtr<grpc_call_credentials> GetCallCredsForTransport(
   return call_creds;
 }
 
+//
+// StateWatcher
+//
+
+class StateWatcher final : public AsyncConnectivityStateWatcherInterface {
+ public:
+  explicit StateWatcher(
+      RefCountedPtr<XdsTransport::ConnectivityFailureWatcher> watcher)
+      : watcher_(std::move(watcher)) {}
+
+ private:
+  void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                 const absl::Status& status) override {
+    if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      watcher_->OnConnectivityFailure(absl::Status(
+          status.code(),
+          absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
+    }
+  }
+
+  RefCountedPtr<XdsTransport::ConnectivityFailureWatcher> watcher_;
+};
+
+//
+// TransportImpl and GrpcCoreTransport
+//
+
+class TransportImpl final : public TransportFactory::Transport {
+ public:
+  explicit TransportImpl(RefCountedPtr<XdsTransport> transport)
+      : transport_(std::move(transport)) {}
+  ~TransportImpl() override = default;
+
+  const RefCountedPtr<XdsTransport>& transport() const { return transport_; }
+
+ private:
+  RefCountedPtr<XdsTransport> transport_;
+};
+
+class GrpcCoreTransport final : public XdsTransport {
+ public:
+  explicit GrpcCoreTransport(RefCountedPtr<Channel> channel)
+      : channel_(std::move(channel)),
+        interested_parties_(grpc_pollset_set_create()) {}
+
+  ~GrpcCoreTransport() override {
+    grpc_pollset_set_destroy(interested_parties_);
+  }
+
+  void Orphaned() override {}
+
+  void StartConnectivityFailureWatch(
+      RefCountedPtr<ConnectivityFailureWatcher> watcher) override {
+    if (channel_->IsLame()) return;
+    auto* state_watcher = new StateWatcher(watcher);
+    {
+      MutexLock lock(mu_);
+      watchers_.emplace(std::move(watcher), state_watcher);
+    }
+    channel_->AddConnectivityWatcher(
+        GRPC_CHANNEL_IDLE,
+        OrphanablePtr<AsyncConnectivityStateWatcherInterface>(state_watcher));
+  }
+
+  void StopConnectivityFailureWatch(
+      const RefCountedPtr<ConnectivityFailureWatcher>& watcher) override {
+    if (channel_->IsLame()) return;
+    AsyncConnectivityStateWatcherInterface* state_watcher = nullptr;
+    {
+      MutexLock lock(mu_);
+      auto it = watchers_.find(watcher);
+      if (it == watchers_.end()) return;
+      state_watcher = it->second;
+      watchers_.erase(it);
+    }
+    channel_->RemoveConnectivityWatcher(state_watcher);
+  }
+
+  OrphanablePtr<StreamingCall> CreateStreamingCall(
+      const char* method,
+      std::unique_ptr<StreamingCall::EventHandler> event_handler,
+      CallOptions options) override {
+    std::vector<std::pair<std::string, std::string>> initial_metadata;
+    return MakeOrphanable<GrpcStreamingCall>(
+        interested_parties_, channel_.get(), method, std::move(event_handler),
+        /*call_creds=*/nullptr, initial_metadata, Duration::Zero(), options);
+  }
+
+  void ResetBackoff() override { channel_->ResetConnectionBackoff(); }
+
+ private:
+  RefCountedPtr<Channel> channel_;
+  grpc_pollset_set* interested_parties_;
+  Mutex mu_;
+  absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>,
+                      AsyncConnectivityStateWatcherInterface*>
+      watchers_ ABSL_GUARDED_BY(&mu_);
+};
+
 }  // namespace
+
+//
+// GrpcStreamingCall
+//
+
+GrpcStreamingCall::GrpcStreamingCall(
+    grpc_pollset_set* interested_parties, Channel* channel, const char* method,
+    std::unique_ptr<StreamingCall::EventHandler> event_handler,
+    grpc_call_credentials* call_creds,
+    const std::vector<std::pair<std::string, std::string>>& initial_metadata,
+    Duration timeout, XdsTransport::CallOptions options)
+    : event_handler_(std::move(event_handler)), options_(options) {
+  Timestamp deadline = (timeout == Duration::Infinity())
+                           ? Timestamp::InfFuture()
+                           : Timestamp::Now() + timeout;
+  // Create call.
+  call_ = channel->CreateCall(
+      /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
+      interested_parties, Slice::FromStaticString(method),
+      /*authority=*/std::nullopt, deadline,
+      /*registered_method=*/true, /*arena_init_function=*/std::nullopt);
+  GRPC_CHECK_NE(call_, nullptr);
+  // Set call creds, if any.
+  if (call_creds != nullptr) grpc_call_set_credentials(call_, call_creds);
+  // Init data associated with the call.
+  grpc_metadata_array_init(&initial_metadata_recv_);
+  grpc_metadata_array_init(&trailing_metadata_recv_);
+  send_initial_metadata_.resize(initial_metadata.size());
+  for (size_t i = 0; i < initial_metadata.size(); ++i) {
+    send_initial_metadata_[i].key =
+        grpc_slice_from_cpp_string(initial_metadata[i].first);
+    send_initial_metadata_[i].value =
+        grpc_slice_from_cpp_string(initial_metadata[i].second);
+  }
+  // Initialize closures.
+  GRPC_CLOSURE_INIT(&on_recv_initial_metadata_, OnRecvInitialMetadata, this,
+                    nullptr);
+  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this, nullptr);
+  GRPC_CLOSURE_INIT(&on_half_closed_, OnHalfClosed, this, nullptr);
+  GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
+  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
+  // Start batch for recv_initial_metadata (and send_initial_metadata, unless
+  // the caller asked us to wait until the first message is sent).
+  OpList op_list;
+  if (!options_.start_upon_send_message) {
+    sent_initial_metadata_ = true;
+    AddSendInitialMetadataOp(op_list);
+  }
+  AddRecvInitialMetadataOp(op_list);
+  StartBatch(op_list, "OnRecvInitialMetadata", &on_recv_initial_metadata_);
+  // Start batch for recv_trailing_metadata.
+  op_list.clear();
+  AddRecvTrailingMetadataOp(op_list);
+  StartBatch(op_list, "OnStatusReceived", &on_status_received_);
+}
+
+void GrpcStreamingCall::AddSendInitialMetadataOp(OpList& op_list) {
+  grpc_op& op = op_list.emplace_back();
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  op.data.send_initial_metadata.count = send_initial_metadata_.size();
+  op.data.send_initial_metadata.metadata =
+      send_initial_metadata_.empty() ? nullptr : send_initial_metadata_.data();
+  op.flags = options_.wait_for_ready
+                 ? GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+                       GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
+                 : 0;
+  op.reserved = nullptr;
+}
+
+void GrpcStreamingCall::AddRecvInitialMetadataOp(OpList& op_list) {
+  grpc_op& op = op_list.emplace_back();
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_INITIAL_METADATA;
+  op.data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv_;
+  op.flags = 0;
+  op.reserved = nullptr;
+}
+
+void GrpcStreamingCall::AddRecvTrailingMetadataOp(OpList& op_list) {
+  grpc_op& op = op_list.emplace_back();
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op.data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
+  op.data.recv_status_on_client.status = &status_code_;
+  op.data.recv_status_on_client.status_details = &status_details_;
+  op.flags = 0;
+  op.reserved = nullptr;
+}
+
+void GrpcStreamingCall::AddSendCloseFromClientOp(OpList& op_list) {
+  grpc_op& op = op_list.emplace_back();
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op.flags = 0;
+  op.reserved = nullptr;
+}
+
+void GrpcStreamingCall::AddSendMessageOp(std::string payload, OpList& op_list) {
+  grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
+  send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
+  CSliceUnref(slice);
+  grpc_op& op = op_list.emplace_back();
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_MESSAGE;
+  op.data.send_message.send_message = send_message_payload_;
+  op.flags = 0;
+  op.reserved = nullptr;
+}
+
+void GrpcStreamingCall::StartBatch(const OpList& op_list,
+                                   const char* ref_reason,
+                                   grpc_closure* closure) {
+  Ref(DEBUG_LOCATION, ref_reason).release();
+  grpc_call_error call_error = grpc_call_start_batch_and_execute(
+      call_, op_list.data(), op_list.size(), closure);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
+}
+
+GrpcStreamingCall::~GrpcStreamingCall() {
+  grpc_metadata_array_destroy(&trailing_metadata_recv_);
+  grpc_byte_buffer_destroy(send_message_payload_);
+  grpc_byte_buffer_destroy(recv_message_payload_);
+  CSliceUnref(status_details_);
+  for (auto& md : send_initial_metadata_) {
+    CSliceUnref(md.key);
+    CSliceUnref(md.value);
+  }
+  GRPC_CHECK_NE(call_, nullptr);
+  grpc_call_unref(call_);
+}
+
+void GrpcStreamingCall::Orphan() {
+  GRPC_CHECK_NE(call_, nullptr);
+  // If we are here because xds_client wants to cancel the call,
+  // OnStatusReceived() will complete the cancellation and clean up.
+  // Otherwise, we are here because xds_client has to orphan a failed call,
+  // in which case the following cancellation will be a no-op.
+  grpc_call_cancel_internal(call_);
+  Unref(DEBUG_LOCATION, "Orphan");
+}
+
+void GrpcStreamingCall::SendMessage(std::string payload, bool send_half_close) {
+  OpList op_list;
+  if (!sent_initial_metadata_) {
+    sent_initial_metadata_ = true;
+    AddSendInitialMetadataOp(op_list);
+  }
+  AddSendMessageOp(std::move(payload), op_list);
+  if (send_half_close) {
+    AddSendCloseFromClientOp(op_list);
+  }
+  StartBatch(op_list, "OnRequestSent", &on_request_sent_);
+}
+
+void GrpcStreamingCall::StartRecvMessage() {
+  OpList op_list;
+  grpc_op& op = op_list.emplace_back();
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_MESSAGE;
+  op.data.recv_message.recv_message = &recv_message_payload_;
+  op.flags = 0;
+  op.reserved = nullptr;
+  StartBatch(op_list, "StartRecvMessage", &on_response_received_);
+}
+
+void GrpcStreamingCall::SendHalfClose() {
+  OpList op_list;
+  AddSendCloseFromClientOp(op_list);
+  StartBatch(op_list, "SendHalfClose", &on_half_closed_);
+}
+
+void GrpcStreamingCall::OnRecvInitialMetadata(void* arg,
+                                              grpc_error_handle /*error*/) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
+  grpc_metadata_array_destroy(&self->initial_metadata_recv_);
+}
+
+void GrpcStreamingCall::OnRequestSent(void* arg, grpc_error_handle error) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
+  // Clean up the sent message.
+  grpc_byte_buffer_destroy(self->send_message_payload_);
+  self->send_message_payload_ = nullptr;
+  // Invoke request handler.
+  self->event_handler_->OnRequestSent(error.ok());
+}
+
+void GrpcStreamingCall::OnHalfClosed(void* arg, grpc_error_handle /*error*/) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
+}
+
+void GrpcStreamingCall::OnResponseReceived(void* arg,
+                                           grpc_error_handle /*error*/) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
+  // If there was no payload, then we received status before we received
+  // another message, so we stop reading.
+  if (self->recv_message_payload_ != nullptr) {
+    // Process the response.
+    grpc_byte_buffer_reader bbr;
+    grpc_byte_buffer_reader_init(&bbr, self->recv_message_payload_);
+    grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
+    grpc_byte_buffer_reader_destroy(&bbr);
+    grpc_byte_buffer_destroy(self->recv_message_payload_);
+    self->recv_message_payload_ = nullptr;
+    self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
+    CSliceUnref(response_slice);
+  }
+}
+
+void GrpcStreamingCall::OnStatusReceived(void* arg,
+                                         grpc_error_handle /*error*/) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
+  self->event_handler_->OnStatusReceived(
+      absl::Status(static_cast<absl::StatusCode>(self->status_code_),
+                   StringViewFromSlice(self->status_details_)));
+}
+
+//
+// GrpcXdsTransportFactory::GrpcXdsTransport
+//
 
 class GrpcXdsTransportFactory::SharedChannel final
     : public RefCounted<SharedChannel> {
@@ -464,7 +532,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::StartConnectivityFailureWatch(
 void GrpcXdsTransportFactory::GrpcXdsTransport::StopConnectivityFailureWatch(
     const RefCountedPtr<ConnectivityFailureWatcher>& watcher) {
   if (channel_->channel()->IsLame()) return;
-  StateWatcher* state_watcher = nullptr;
+  AsyncConnectivityStateWatcherInterface* state_watcher = nullptr;
   {
     MutexLock lock(mu_);
     auto it = watchers_.find(watcher);
@@ -481,9 +549,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
     CallOptions options) {
   return MakeOrphanable<GrpcStreamingCall>(
-      factory_.WeakRef(DEBUG_LOCATION, "StreamingCall"), channel_->channel(),
-      method, std::move(event_handler), call_creds_.get(), initial_metadata_,
-      timeout_, options);
+      factory_->interested_parties(), channel_->channel(), method,
+      std::move(event_handler), call_creds_.get(), initial_metadata_, timeout_,
+      options);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
@@ -497,14 +565,6 @@ Channel* GrpcXdsTransportFactory::GrpcXdsTransport::channel() const {
 //
 // GrpcXdsTransportFactory
 //
-
-namespace {
-
-ChannelArgs ModifyChannelArgs(const ChannelArgs& args) {
-  return args.Set(GRPC_ARG_KEEPALIVE_TIME_MS, Duration::Minutes(5).millis());
-}
-
-}  // namespace
 
 GrpcXdsTransportFactory::GrpcXdsTransportFactory(
     const ChannelArgs& args,
@@ -559,6 +619,44 @@ GrpcXdsTransportFactory::GetTransport(
     transports_[std::move(key)] = transport.get();
   }
   return transport;
+}
+
+//
+// TransportFactory
+//
+
+std::unique_ptr<TransportFactory::Transport>
+TransportFactory::CreateCoreTransport(absl::string_view target,
+                                      grpc_channel_credentials* creds) {
+  ChannelArgs channel_args = ModifyChannelArgs(ChannelArgs());
+  RefCountedPtr<Channel> channel(Channel::FromC(grpc_channel_create(
+      std::string(target).c_str(), creds, channel_args.ToC().get())));
+  return std::make_unique<TransportImpl>(
+      MakeRefCounted<GrpcCoreTransport>(std::move(channel)));
+}
+
+std::unique_ptr<TransportFactory::Transport>
+TransportFactory::CreateLameTransport(absl::string_view target,
+                                      absl::Status status) {
+  // A lame channel must fail RPCs, so an OK status is a caller bug.
+  GRPC_CHECK(!status.ok());
+  RefCountedPtr<Channel> channel(Channel::FromC(grpc_lame_client_channel_create(
+      std::string(target).c_str(), static_cast<grpc_status_code>(status.code()),
+      std::string(status.message()).c_str())));
+  return std::make_unique<TransportImpl>(
+      MakeRefCounted<GrpcCoreTransport>(std::move(channel)));
+}
+
+const grpc_arg_pointer_vtable* TransportFactory::ChannelArgVtable() {
+  return ChannelArgTypeTraits<std::shared_ptr<TransportFactory>>::VTable();
+}
+
+std::shared_ptr<TransportFactory> GetTransportFactoryFromChannelArgs(
+    const ChannelArgs& args) {
+  auto* factory = static_cast<std::shared_ptr<TransportFactory>*>(
+      args.GetVoidPointer(GRPC_ARG_TRANSPORT_FACTORY));
+  if (factory == nullptr) return nullptr;
+  return *factory;
 }
 
 }  // namespace grpc_core

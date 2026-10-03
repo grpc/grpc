@@ -329,6 +329,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_audit_logging.h",
     "include/grpc/grpc_crl_provider.h",
     "include/grpc/private_key_signer.h",
+    "include/grpc/transport_factory.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -4720,6 +4721,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name  = "xds_transport_interface",
+    hdrs = [
+        "//src/core:xds/xds_client/xds_transport_interface.h",
+    ],
+    visibility = ["//bazel:xds_client_core"],
+    deps = [
+        "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_client",
     srcs = [
         "//src/core:xds/xds_client/lrs_client.cc",
@@ -4777,6 +4789,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "uri",
         "work_serializer",
+        "xds_transport_interface",
         "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:experiment_env_var",

@@ -21,8 +21,8 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/transport_factory.h>
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -81,8 +81,6 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
 class GrpcXdsTransportFactory::GrpcXdsTransport final
     : public XdsTransportFactory::XdsTransport {
  public:
-  class GrpcStreamingCall;
-
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
                    RefCountedPtr<SharedChannel> channel,
                    const GrpcXdsServerInterface& server, absl::Status* status);
@@ -105,8 +103,6 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   Channel* channel() const;
 
  private:
-  class StateWatcher;
-
   WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
   std::string key_;
   RefCountedPtr<SharedChannel> channel_;
@@ -115,20 +111,20 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   Duration timeout_;
 
   Mutex mu_;
-  absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>, StateWatcher*>
+  absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>,
+                      AsyncConnectivityStateWatcherInterface*>
       watchers_ ABSL_GUARDED_BY(&mu_);
 };
 
-class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
-    : public XdsTransportFactory::XdsTransport::StreamingCall {
+class GrpcStreamingCall final : public XdsTransport::StreamingCall {
  public:
   GrpcStreamingCall(
-      WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
+      grpc_pollset_set* interested_parties, Channel* channel,
       const char* method,
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
       grpc_call_credentials* call_creds,
       const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-      Duration timeout, CallOptions options);
+      Duration timeout, XdsTransport::CallOptions options);
   ~GrpcStreamingCall() override;
 
   void Orphan() override;
@@ -155,8 +151,6 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   static void OnHalfClosed(void* arg, grpc_error_handle error);
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
   static void OnStatusReceived(void* arg, grpc_error_handle /*error*/);
-
-  WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
 
   std::unique_ptr<StreamingCall::EventHandler> event_handler_;
 
@@ -188,8 +182,12 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   grpc_slice status_details_ = grpc_empty_slice();
   grpc_closure on_status_received_;
 
-  const CallOptions options_;
+  const XdsTransport::CallOptions options_;
 };
+
+// Extracts TransportFactory from ChannelArgs. Returns nullptr if not set.
+std::shared_ptr<TransportFactory> GetTransportFactoryFromChannelArgs(
+    const ChannelArgs& args);
 
 }  // namespace grpc_core
 
