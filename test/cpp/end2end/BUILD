@@ -873,6 +873,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_public_hdrs",
+        "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
         "//:grpc_resolver_fake",

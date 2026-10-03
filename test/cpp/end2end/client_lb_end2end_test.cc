@@ -34,6 +34,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <random>
 #include <set>
 #include <string>
@@ -51,6 +52,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
@@ -132,8 +134,13 @@ class MyTestServiceImpl : public TestServiceImpl {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     {
+      // A Call V3 server call (ServerCall) has no grpc_call_stack, while a
+      // Call V1 server call (FilterStackCall) always has one.
+      const bool is_call_v3 =
+          grpc_call_get_call_stack(context->c_call()) == nullptr;
       grpc_core::MutexLock lock(mu_);
       ++request_count_;
+      last_call_is_call_v3_ = is_call_v3;
     }
     AddClient(context->peer());
     if (request->has_param() && request->param().has_backend_metrics()) {
@@ -198,6 +205,13 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
+  // Returns whether the most recent Echo RPC was handled by a Call V3 server
+  // call. Returns std::nullopt if no Echo RPC has been handled yet.
+  std::optional<bool> last_call_is_call_v3() {
+    grpc_core::MutexLock lock(mu_);
+    return last_call_is_call_v3_;
+  }
+
  private:
   void AddClient(const std::string& client) {
     grpc_core::MutexLock lock(clients_mu_);
@@ -206,6 +220,7 @@ class MyTestServiceImpl : public TestServiceImpl {
 
   grpc_core::Mutex mu_;
   size_t request_count_ ABSL_GUARDED_BY(&mu_) = 0;
+  std::optional<bool> last_call_is_call_v3_ ABSL_GUARDED_BY(&mu_);
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(&clients_mu_);
@@ -1748,7 +1763,6 @@ TEST_F(RoundRobinTest, ManyUpdates) {
 }
 
 TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start 3 servers.
   StartServers(3);
   // Create channel.
@@ -1945,7 +1959,6 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start connection injector.
   ConnectionAttemptInjector injector;
   // Start server.
@@ -2006,7 +2019,6 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
 
 TEST_F(RoundRobinTest, SingleReconnect) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug (flake)");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   const int kNumServers = 3;
   StartServers(kNumServers);
   const auto ports = GetServersPorts();
@@ -2063,7 +2075,6 @@ TEST_F(RoundRobinTest, SingleReconnect) {
 // is not running on the server, the channel should be treated as healthy.
 TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P2] Fix bug");
   StartServers(1);  // Single server
   ChannelArguments args;
   args.SetServiceConfigJSON(
@@ -3760,7 +3771,6 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
 
 TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -4147,7 +4157,6 @@ class ClientLbSubchannelMetricsTest : public ClientLbEnd2endTest {
 
 TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port = servers_[0]->port_;
   std::string target = grpc_core::LocalIpAndPort(port);
@@ -4166,6 +4175,11 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   // has actually been registered with the server before we tell the
   // server to send GOAWAYs.
   CheckRpcSendOk(DEBUG_LOCATION, stub);
+  // Record whether the server handled the RPC using a Call V3 server call.
+  // This decides which GOAWAY the server is expected to send on shutdown.
+  const std::optional<bool> is_call_v3_server =
+      servers_[0]->service_.last_call_is_call_v3();
+  ASSERT_TRUE(is_call_v3_server.has_value());
   EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
@@ -4178,18 +4192,37 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
         return state == GRPC_CHANNEL_IDLE;
       }));
-  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
-                  "grpc.subchannel.disconnections",
-                  {target, "", "", "GOAWAY NO_ERROR"}),
-              ::testing::Optional(1));
+  const std::optional<uint64_t> goaway_no_error =
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.disconnections",
+          {target, "", "", "GOAWAY NO_ERROR"});
+  if (*is_call_v3_server) {
+    // Call V3 server: Server::Shutdown() with a zero deadline first requests
+    // a graceful GOAWAY (NO_ERROR) and then cancels all calls, which requests
+    // an immediate GOAWAY (INTERNAL_ERROR). Depending on timing, either one
+    // can be the first GOAWAY to reach the client. The client records the
+    // disconnection using the first GOAWAY it receives, so assert that
+    // exactly one disconnection was recorded with either label.
+    const std::optional<uint64_t> goaway_internal_error =
+        stats_plugin_->GetUInt64MetricValueByName(
+            "grpc.subchannel.disconnections",
+            {target, "", "", "GOAWAY INTERNAL_ERROR"});
+    EXPECT_EQ(goaway_no_error.value_or(0u) + goaway_internal_error.value_or(0u),
+              1u)
+        << "GOAWAY NO_ERROR count: " << goaway_no_error.value_or(0u)
+        << ", GOAWAY INTERNAL_ERROR count: "
+        << goaway_internal_error.value_or(0u);
+  } else {
+    // Call V1 server: the initial graceful GOAWAY (NO_ERROR) is always
+    // written before the immediate GOAWAY, so the client records NO_ERROR.
+    EXPECT_THAT(goaway_no_error, ::testing::Optional(1));
+  }
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(0));
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
-  // Flake rate is less than once in 3 days.
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix flake");
   ConnectionAttemptInjector injector;
   const int port = grpc_pick_unused_port_or_die();
   std::string target = grpc_core::LocalIpAndPort(port);
@@ -4214,7 +4247,6 @@ TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
 
 TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   ConnectionAttemptInjector injector;
   const int port1 = grpc_pick_unused_port_or_die();
   const int port2 = grpc_pick_unused_port_or_die();
@@ -4293,7 +4325,6 @@ TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
 
 TEST_F(ClientLbSubchannelMetricsTest, DisconnectionOnSubchannelShutdown) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port1 = servers_[0]->port_;
   const int port2 = grpc_pick_unused_port_or_die();
