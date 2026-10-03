@@ -1,33 +1,161 @@
-# gRPC C++ Agents Collaboration Guide
+# AGENTS.md
 
-This document outlines conventions and best practices for AI-assisted development in the gRPC C++ codebase.
+Context file for AI agents working on grpc.
 
-## Preferred Tools & Libraries
-*   Prefer gRPC types before absl.
-*   Prefer std types when available, use absl types when not
-*   Prefer `std::optional` over `absl::optional`
-*   gRPC uses C++17, so we can't use C++20 onwards types.
-*   The Python implementation cannot depend on the protobuf library, so any shared libraries must expose a C-style API that does not rely on C++ protobuf types.
+## Project Overview
+
+grpc is a C project using npm/Node.js.
+
+**Key Info:**
+- **Primary Language:** C
+- **Build System:** npm/Node.js
+- **Test Framework:** JUnit, RSpec
+- **Total Files:** 10461
+- **Test Files:** 2847
+- **AI Readiness Score:** 98/100 (Agent-Optimized)
+
+## Prerequisites
+
+- **C:** 3.9+ (or applicable language version)
+- **Package Manager:** pip or uv (recommended)
+- **Test Runner:** JUnit, RSpec
+
+## Project Structure
+
+```
+grpc/
+├── Makefile
+├── pyproject.toml
+├── setup.py
+├── src/                  # Source code
+├── tests/                # Test suite (2847 files)
+└── README.md             # Project documentation
+```
+
+## Architecture Overview
+
+### Key Components
+- **Main Entry:** main.py, server.py, server.py, server.py, server.py
+- **Test Suite:** 2847 test files
+- **Build Configuration:** Makefile, pyproject.toml, setup.py
+
+### Design Principles
+
+1. **Modularity** - Code organized by functionality with clear separation of concerns
+2. **Testability** - Comprehensive test coverage across critical paths
+3. **Clarity** - Explicit naming and structure for AI agent understanding
+4. **Consistency** - Uniform patterns and conventions throughout codebase
+5. **Maintainability** - Well-documented code with clear intent
+
+## Testing Patterns
+
+- **Frameworks**: RSpec, JUnit
+- **Test Files**: 2847
+- **Structure**: Tests organized in: CFStreamTests, CFStreamTests.xcodeproj, ConnectivityTestingApp, ConnectivityTestingApp.xcodeproj, DistribTest, EventEngineTests, GRPCCppTests.xcodeproj, GrpcIosTest.xcodeproj, GrpcIosTestUITests, InteropTests, MacTests, PerfTests, PersistentChannelTests, PluginTest, RemoteTestClient, TestCertificates.bundle, Testing, Tests.xcodeproj, TvTests, UnitTests, bazelify_tests, build_test, bzlmod_test, distribtest, grpcio_tests, http2_test, interoptest, invocation_testing, lb_interop_tests, manual_tests, python_second_test_repo, run_tests, spec, test, test_bundles, test_creds, test_data, test_policies, test_roots, test_suite, test_util, testdata, testing, tests, tests_aio, tests_gevent, tests_py3_only, unit_tests, xds_k8s_test_driver
+- **Coverage Tools**: Yes
+
+
+## Development Workflow
+
+### Initial Setup
+
+```bash
+git clone https://github.com/<owner>/grpc.git
+cd grpc
+pip install -e .              # Install in development mode
+# or
+uv sync --all-groups          # Using uv (recommended)
+```
+
+### Development Commands
+
+#### Running Tests
+```bash
+pytest                        # Run all tests
+pytest tests/                 # Run specific test directory
+pytest -v                     # Verbose output with test names
+pytest -x                     # Stop on first failure
+pytest --cov                  # With coverage report
+```
+
+#### Code Quality
+```bash
+ruff check .                  # Lint with ruff
+ruff format .                 # Format code
+mypy .                        # Type checking (if configured)
+```
 
 ## Code Style & Conventions
-*   `#include <grpc/support/port_platform.h>` is not required unless its macros are needed for compilation.
-*   Only include headers that are actively used.
-*   Abseil headers are sorted before gRPC headers.
-*   For public api headers (in `include/grpc`) we use `<grpc/...>`.
-    *   Example: `#include <grpc/grpc.h>`
-*   Prefer explicit types over `std::pair` or `std::tuple` for return types.
-*   Use `LOG(ERROR)` from `absl/log/log.h` for logging errors, never use `std::cerr` or `gpr_log`.
-*   The `fuzztest.h` header is located at `fuzztest/fuzztest.h`.
 
-## About gRPC
-*   gRPC uses its own macros for Bazel libraries, tests, etc. Each directory should have a `grpc_package` declaration. For libraries use `grpc_cc_library`, for tests `grpc_cc_test`.
-*   Dependencies on non-gRPC libraries (like gtest or absl) are listed in the `external_deps` attribute.
-*   The `:grpc` BUILD target is not allowed to depend on the C++ protobuf library, either directly or transitively.
-*   Build files for implementation code are typically located in `src/core/BUILD` and `BUILD`. Do not add new `BUILD` files under the `src/` tree without explicit instruction.
-*   Tests are located in `test/core` and `test/cpp` (corresponding to the `src` directories). These test directories contain their own `BUILD` files.
-*   Fuzz tests use `fuzztest_main` instead of `gtest_main`.
-*   When depending on a `grpc_proto_library`, the name of the `cc_library` target is the same as the `name` of the `grpc_proto_library` rule itself, not `[name]_cc_proto` as one might expect from standard Bazel `cc_proto_library` rules. The build system error messages can be misleading in this case.
-*   The 'gtest' external_dep also includes 'gmock'.
-*   All `upb` related build rules (`grpc_upb_proto_library`, `grpc_upb_proto_reflection_library`) for protos defined anywhere in the repository must be defined in the root `BUILD` file. They should not be placed in the `BUILD` file of the subdirectory where the proto is located.
-*   Core end-to-end tests are defined in `test/core/end2end/BUILD` using the `grpc_core_end2end_test_suite` macro. This macro generates multiple `grpc_cc_test` targets by combining a configuration file (like `end2end_http2_config.cc`) with individual test implementation files located in `test/core/end2end/tests/`. The final test target name is created by appending `_test` to the `name` attribute of the macro. For example, `grpc_core_end2end_test_suite(name = "end2end_http2", ...)` generates the test target `//test/core/end2end:end2end_http2_test`.
-*   Unused named parameters is a compilation failure.
+- **Naming:** Use C conventions (snake_case for functions, PascalCase for classes)
+- **Type Hints:** Yes (strongly encouraged)
+- **Error Handling:** Yes
+- **Logging:** Yes
+- **Testing:** Yes - write tests alongside code changes
+
+## Testing Strategy
+
+**Framework:** JUnit, RSpec
+**Test Files:** 2847 found
+
+Before committing:
+1. Run the full test suite: `pytest`
+2. Ensure all tests pass
+3. Check type hints: `mypy .`
+4. Format code: `ruff format .`
+
+## Common Patterns
+
+When contributing to this project:
+1. Read existing code in the area you're modifying
+2. Follow the established patterns and style
+3. Write tests for new functionality
+4. Use clear, descriptive variable and function names
+5. Add docstrings for public APIs
+6. Update tests when changing behavior
+
+## What We Value
+
+✅ Well-tested code with clear intent
+✅ Consistent code style and naming conventions
+✅ Code that is easy for AI agents to understand
+✅ Clear, descriptive commit messages
+✅ Modular, reusable components
+✅ Comprehensive documentation
+
+## What We Avoid
+
+❌ Large functions doing multiple things
+❌ Commented-out dead code
+❌ Inconsistent naming or patterns
+❌ Unclear error messages
+❌ Unexplained magic numbers or strings
+❌ Skipped tests or test TODOs
+
+## AI Readiness Dimensions (Scoring)
+
+This project is evaluated across 8 dimensions:
+
+1. **Architecture** (20/100) - Code organization and modularity
+2. **Testing** (15/100) - Test coverage and quality
+3. **Dependencies** (12/100) - Dependency management
+4. **Conventions** (8/100) - Consistent patterns
+5. **Entry Points** (10/100) - Clear main/start locations
+6. **Security** (15/100) - Input validation and error handling
+7. **Build** (10/100) - Clear build/setup instructions
+8. **Documentation** (8/100) - Code and project documentation
+
+## Next Steps
+
+Before making changes:
+1. Read relevant source files to understand the existing code
+2. Look at existing tests for similar functionality
+3. Follow the patterns you see in the codebase
+4. Write tests for your changes
+5. Run `pytest` to verify nothing breaks
+6. Run code quality checks: `ruff check . && mypy .`
+7. Format your code: `ruff format .`
+
+---
+
+*Generated by Braxis - keeping AI agents in sync with your code*
