@@ -102,10 +102,16 @@ void grpc_postfork_child() {
 
 void grpc_fork_handlers_auto_register() {
   if (grpc_core::Fork::Enabled() & !registered_handlers) {
+    auto custom_register_func = grpc_core::Fork::GetRegisterHandlersFunc();
+    if (custom_register_func != nullptr) {
+      custom_register_func(grpc_prefork, grpc_postfork_parent, grpc_postfork_child);
+      registered_handlers = true;
+    } else {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-    pthread_atfork(grpc_prefork, grpc_postfork_parent, grpc_postfork_child);
-    registered_handlers = true;
+      pthread_atfork(grpc_prefork, grpc_postfork_parent, grpc_postfork_child);
+      registered_handlers = true;
 #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+    }
   }
 }
 

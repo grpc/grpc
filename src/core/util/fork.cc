@@ -234,8 +234,24 @@ void Fork::AwaitThreads() {
   }
 }
 
+void Fork::SetRegisterHandlersFunc(
+    grpc_custom_fork_handler_register_cb register_func) {
+  custom_fork_handler_register_func_ = register_func;
+}
+
+grpc_custom_fork_handler_register_cb Fork::GetRegisterHandlersFunc() {
+  return custom_fork_handler_register_func_;
+}
+
 std::atomic<bool> Fork::support_enabled_(false);
 bool Fork::override_enabled_ = false;
 std::set<Fork::child_postfork_func>* Fork::reset_child_polling_engine_ =
     nullptr;
+grpc_custom_fork_handler_register_cb Fork::custom_fork_handler_register_func_ =
+    nullptr;
 }  // namespace grpc_core
+
+void grpc_set_custom_fork_handler_registration(
+    grpc_custom_fork_handler_register_cb register_func) {
+  grpc_core::Fork::SetRegisterHandlersFunc(register_func);
+}

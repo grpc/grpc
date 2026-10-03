@@ -47,4 +47,20 @@ void grpc_postfork_child(void);
 
 void grpc_fork_handlers_auto_register(void);
 
+/* Function pointer type for a fork handler */
+typedef void (*grpc_fork_handler_cb)(void);
+
+/* Function pointer type for the custom fork handler registration function */
+typedef void (*grpc_custom_fork_handler_register_cb)(
+    grpc_fork_handler_cb prefork, grpc_fork_handler_cb postfork_parent,
+    grpc_fork_handler_cb postfork_child);
+
+/* Registers a custom fork handler registration function.
+ *
+ * If this is called, gRPC will use this function to register its fork handlers
+ * instead of using pthread_atfork.
+ */
+GRPCAPI void grpc_set_custom_fork_handler_registration(
+    grpc_custom_fork_handler_register_cb register_func);
+
 #endif /* GRPC_FORK_H */
