@@ -46,6 +46,7 @@ bool PythonCensusTracingEnabled() {
 
 void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
                            absl::string_view parent_span_id,
+                           const std::optional<bool> parent_span_sampled,
                            PythonCensusContext* context) {
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
@@ -54,11 +55,10 @@ void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
     new (context) PythonCensusContext();
     return;
   }
-  if (!parent_span_id.empty()) {
-    // Note that parent_span_id exist also means it was marked as sampled at
-    // Python OC, we'll respect that decision.
+  if (!parent_span_id.empty() && parent_span_sampled.has_value()) {
     SpanContext parent_context =
-        SpanContext(std::string(trace_id), std::string(parent_span_id), true);
+        SpanContext(std::string(trace_id), std::string(parent_span_id),
+                    parent_span_sampled.value());
     new (context) PythonCensusContext(method, parent_context);
     return;
   }
@@ -221,11 +221,6 @@ Span Span::StartSpan(absl::string_view name,
   std::string parent_span_id = parent_context.SpanId();
   std::string span_id = GenerateSpanId();
   bool should_sample = parent_context.IsSampled();
-  if (!should_sample) {
-    // Resampling here so that it's possible to collect trace on server side
-    // if client tracing is not enabled.
-    should_sample = ShouldSample(std::string(trace_id));
-  }
   auto start_time = absl::Now();
   SpanContext context(trace_id, span_id, should_sample);
   return Span(std::string(name), parent_span_id, start_time, context);
@@ -240,40 +235,44 @@ Span Span::StartSpan(absl::string_view name, absl::string_view trace_id) {
 }
 
 void Span::SetStatus(absl::string_view status) {
+  grpc_core::MutexLock lock(mu_.get());
   status_ = std::string(status);
 }
 
 void Span::AddAttribute(absl::string_view key, absl::string_view value) {
+  grpc_core::MutexLock lock(mu_.get());
   span_labels_.emplace_back(std::string(key), std::string(value));
 }
 
-void Span::AddAnnotation(absl::string_view description) {
-  // Need a string format which can be converted to Python datetime.datetime
-  // class directly.
-  std::string time_stamp =
-      absl::FormatTime("%Y-%m-%d %H:%M:%E3S", absl::Now(), absl::UTCTimeZone());
-  span_annotations_.emplace_back(
-      Annotation{time_stamp, std::string(description)});
+void Span::AddEvent(
+    absl::string_view name,
+    std::vector<std::pair<absl::string_view, absl::string_view>> attributes) {
+  Event event{};
+  event.name = std::string(name);
+  event.attributes.reserve(attributes.size());
+  for (const auto& [key, value] : attributes) {
+    event.attributes.emplace_back(std::string(key), std::string(value));
+  }
+  // Unix epoch nanoseconds in decimal string form
+  event.time_stamp = std::to_string(absl::ToUnixNanos(absl::Now()));
+  grpc_core::MutexLock lock(mu_.get());
+  span_events_.emplace_back(event);
 }
 
 SpanCensusData Span::ToCensusData() const {
+  grpc_core::MutexLock lock(mu_.get());
   SpanCensusData census_data;
-  absl::TimeZone utc = absl::UTCTimeZone();
   census_data.name = name_;
-  // Need a string format which can be exported to StackDriver directly.
-  // See format details:
-  // https://cloud.google.com/trace/docs/reference/v2/rest/v2/projects.traces/batchWrite
-  census_data.start_time =
-      absl::FormatTime("%Y-%m-%dT%H:%M:%E6SZ", start_time_, utc);
-  census_data.end_time =
-      absl::FormatTime("%Y-%m-%dT%H:%M:%E6SZ", end_time_, utc);
+  // Unix epoch nanoseconds in decimal string form
+  census_data.start_time = std::to_string(absl::ToUnixNanos(start_time_));
+  census_data.end_time = std::to_string(absl::ToUnixNanos(end_time_));
   census_data.trace_id = Context().TraceId();
   census_data.span_id = Context().SpanId();
   census_data.should_sample = Context().IsSampled();
   census_data.parent_span_id = parent_span_id_;
   census_data.status = status_;
   census_data.span_labels = span_labels_;
-  census_data.span_annotations = span_annotations_;
+  census_data.span_events = span_events_;
   census_data.child_span_count = child_span_count_;
   return census_data;
 }
