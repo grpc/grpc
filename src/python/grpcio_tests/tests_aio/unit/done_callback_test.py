@@ -14,8 +14,10 @@
 """Testing the done callbacks mechanism."""
 
 import asyncio
+import gc
 import logging
 import unittest
+import weakref
 
 import grpc
 from grpc.experimental import aio
@@ -279,6 +281,67 @@ class TestServerSideDoneCallback(AioTestBase):
             await self._channel.unary_unary(_FAKE_METHOD)(_REQUEST)
         rpc_error = exception_context.exception
         self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
+
+
+class TestDoneCallbackCallLifetime(AioTestBase):
+    """An abandoned call must stay collectible so __del__ can cancel it."""
+
+    async def setUp(self):
+        self._server = aio.server()
+        port = self._server.add_insecure_port("[::]:0")
+        self._channel = aio.insecure_channel("localhost:%d" % port)
+
+    async def tearDown(self):
+        await self._channel.close()
+        await self._server.stop(None)
+
+    async def _start_endless_stream(self):
+        async def endless_stream(request: bytes, context: aio.ServicerContext):
+            yield _RESPONSE
+            await asyncio.Event().wait()  # never terminates on its own
+
+        generic_handler = grpc.method_handlers_generic_handler(
+            "test",
+            dict(Test=grpc.unary_stream_rpc_method_handler(endless_stream)),
+        )
+        self._server.add_generic_rpc_handlers((generic_handler,))
+        await self._server.start()
+
+    async def _abandon_call(self, with_user_callback: bool):
+        async def read_one_chunk_then_drop():
+            call = self._channel.unary_stream(_TEST_METHOD)(_REQUEST)
+            if with_user_callback:
+                call.add_done_callback(lambda call: None)
+            call_ref = weakref.ref(call)
+            async for _ in call:
+                # Abandon the call without cancelling it.
+                return call_ref
+
+        return await read_one_chunk_then_drop()
+
+    async def _assert_collected(self, call_ref) -> None:
+        collected = False
+        for _ in range(50):
+            gc.collect()
+            await asyncio.sleep(0.01)
+            if call_ref() is None:
+                collected = True
+                break
+        self.assertTrue(
+            collected,
+            "abandoned call was never garbage collected;"
+            " done callbacks must not pin the call",
+        )
+
+    async def test_abandoned_call_is_collected(self):
+        await self._start_endless_stream()
+        call_ref = await self._abandon_call(with_user_callback=False)
+        await self._assert_collected(call_ref)
+
+    async def test_abandoned_call_with_done_callback_is_collected(self):
+        await self._start_endless_stream()
+        call_ref = await self._abandon_call(with_user_callback=True)
+        await self._assert_collected(call_ref)
 
 
 if __name__ == "__main__":
