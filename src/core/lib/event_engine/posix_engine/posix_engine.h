@@ -211,7 +211,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
     grpc_core::Mutex mu;
     bool disallow_new_timers ABSL_GUARDED_BY(mu) = false;
     TaskHandleSet known_handles ABSL_GUARDED_BY(mu);
-  };
+  } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
   TimerShard& TimerShardForHandle(TaskHandle handle) {
     // Select the shard without dereferencing the pointer: Cancel() may receive
