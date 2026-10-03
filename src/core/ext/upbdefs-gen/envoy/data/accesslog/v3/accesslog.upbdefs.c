@@ -22,7 +22,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[9079] = {
+static const char descriptor[9103] = {
     '\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'd', 'a', 't', 'a',
     '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '/', 'v',
     '3', '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.',
@@ -739,13 +739,15 @@ static const char descriptor[9079] = {
     'a', '.', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.',
     'v', '2', '.', 'H', 'T', 'T', 'P', 'R', 'e', 's', 'p', 'o',
     'n', 's', 'e', 'P', 'r', 'o', 'p', 'e', 'r', 't', 'i', 'e',
-    's', '*', '\313', '\002', '\n', '\r', 'A', 'c', 'c', 'e', 's', 's',
+    's', '*', '\343', '\002', '\n', '\r', 'A', 'c', 'c', 'e', 's', 's',
     'L', 'o', 'g', 'T', 'y', 'p', 'e', '\022', '\n', '\n', '\006', 'N',
     'o', 't', 'S', 'e', 't', '\020', '\000', '\022', '\030', '\n', '\024', 'T',
     'c', 'p', 'U', 'p', 's', 't', 'r', 'e', 'a', 'm', 'C', 'o',
     'n', 'n', 'e', 'c', 't', 'e', 'd', '\020', '\001', '\022', '\017', '\n',
     '\013', 'T', 'c', 'p', 'P', 'e', 'r', 'i', 'o', 'd', 'i', 'c',
-    '\020', '\002', '\022', '\024', '\n', '\020', 'T', 'c', 'p', 'C', 'o', 'n',
+    '\020', '\002', '\022', '\026', '\n', '\022', 'T', 'c', 'p', 'C', 'o', 'n',
+    'n', 'e', 'c', 't', 'i', 'o', 'n', 'S', 't', 'a', 'r', 't',
+    '\020', '\016', '\022', '\024', '\n', '\020', 'T', 'c', 'p', 'C', 'o', 'n',
     'n', 'e', 'c', 't', 'i', 'o', 'n', 'E', 'n', 'd', '\020', '\003',
     '\022', '\023', '\n', '\017', 'D', 'o', 'w', 'n', 's', 't', 'r', 'e',
     'a', 'm', 'S', 't', 'a', 'r', 't', '\020', '\004', '\022', '\026', '\n',

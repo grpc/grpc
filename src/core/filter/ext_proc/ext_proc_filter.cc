@@ -377,6 +377,18 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     kExpectNothing,
   };
 
+  // Shared enum for tracking directional body drain states.
+  enum class BodyDrainState : uint8_t {
+    // Normal processing.
+    kNotDraining,
+    // ExtProc requested drain; drain_complete control frame sent, awaiting
+    // server ack.
+    kDrainInFlight,
+    // ExtProc acknowledged drain_complete; data plane messages pass through
+    // directly.
+    kDrained,
+  };
+
   // Handle the read-from-client loop on handler_.
   // Called when the ExtProcCall is created.
   //
@@ -552,9 +564,13 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // attached to subsequent request body processing requests. Synchronized by
   // the handler_ activity.
   ::google_protobuf_Struct* request_attributes_ = nullptr;
-  // Indicates whether a stream drain operation has been requested by the
-  // filter. Synchronized by the handler_ activity.
-  bool drain_requested_ = false;
+  // Request body drain state. Synchronized by the handler_ activity.
+  BodyDrainState request_body_drain_state_ = BodyDrainState::kNotDraining;
+  Latch<void> request_body_drain_complete_latch_;
+
+  // Response body drain state. Synchronized by the handler_ activity.
+  BodyDrainState response_body_drain_state_ = BodyDrainState::kNotDraining;
+  Latch<void> response_body_drain_complete_latch_;
   // True if no messages have been sent on the external processor side-stream
   // yet. Used to include overall processing_mode in the initial stream header
   // request. Synchronized by the handler_ activity.
@@ -653,8 +669,7 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
             if (self->streaming_call_ == nullptr ||
                 self->ext_proc_send_state_ ==
                     SideStreamSendState::kSendFailed ||
-                self->side_stream_closed_latch_.is_set() ||
-                self->drain_requested_) {
+                self->side_stream_closed_latch_.is_set()) {
               return Failure{};
             }
             if (self->ext_proc_send_state_ != SideStreamSendState::kIdle) {
@@ -768,6 +783,17 @@ ExtProcFilter::ExtProcCall::HandleClientInitialMetadataFromSidestream(
 
 StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
     const ExtProcResponse::RequestBody& response) {
+  if (response.mutation.drain_complete) {
+    if (request_body_drain_state_ != BodyDrainState::kDrainInFlight) {
+      CancelCallWithError(absl::InternalError(
+          "Received unexpected drain_complete from external processor"));
+      return Failure{};
+    }
+    request_body_drain_state_ = BodyDrainState::kDrained;
+    request_body_drain_complete_latch_.Set();
+    request_event_state_ = SideStreamRequestEventState::kExpectNothing;
+    return Success{};
+  }
   if (request_event_state_ != SideStreamRequestEventState::kExpectBody) {
     CancelCallWithError(absl::InternalError(
         "Received unexpected request body response from external processor"));
@@ -879,6 +905,19 @@ ExtProcFilter::ExtProcCall::HandleServerInitialMetadataFromSidestream(
 
 StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
     const ExtProcResponse::ResponseBody& response) {
+  if (response.mutation.drain_complete) {
+    if (response_body_drain_state_ != BodyDrainState::kDrainInFlight) {
+      CancelCallWithError(absl::InternalError(
+          "Received unexpected drain_complete from external processor"));
+      return Failure{};
+    }
+    response_body_drain_state_ = BodyDrainState::kDrained;
+    response_body_drain_complete_latch_.Set();
+    response_event_state_ = processing_mode().send_response_trailers
+                                ? SideStreamResponseEventState::kExpectTrailers
+                                : SideStreamResponseEventState::kExpectNothing;
+    return Success{};
+  }
   if (response_event_state_ !=
       SideStreamResponseEventState::kExpectBodyOrTrailers) {
     CancelCallWithError(absl::InternalError(
@@ -993,16 +1032,57 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
     HandleSideStreamStatus(parsed_response.status());
     return Immediate(StatusFlag(Failure{}));
   }
-  // If the server requests a drain, we half-close the stream to signal
-  // we are done sending requests.
-  if (parsed_response->request_drain) {
-    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-        << DebugTag() << "received request_drain=true";
-    drain_requested_ = true;
-    if (streaming_call_ != nullptr) {
+  // Handle request body drain initiation.
+  if (!side_stream_closed_latch_.is_set() &&
+      parsed_response->request_drain_requests &&
+      processing_mode().send_request_body && !c2s_writes_done_ &&
+      !ext_proc_closed_c2s_) {
+    if (request_body_drain_state_ == BodyDrainState::kNotDraining) {
       GRPC_TRACE_LOG(ext_proc_filter, INFO)
-          << DebugTag() << "sending half-close";
-      streaming_call_->SendHalfClose();
+          << DebugTag() << "initiating request body drain";
+      request_body_drain_state_ = BodyDrainState::kDrainInFlight;
+      upb::Arena arena;
+      auto drain_payload = CreateExtProcClientBodyRequest(
+          arena.ptr(), /*body=*/"", /*attributes=*/nullptr,
+          config().observability_mode, /*processing_mode=*/std::nullopt,
+          /*end_of_stream=*/false, /*end_of_stream_without_message=*/false,
+          /*drain_complete=*/true);
+      if (drain_payload.ok()) {
+        handler_.SpawnGuarded(
+            "ext_proc_send_request_drain",
+            [self = WeakRef(), payload = std::move(*drain_payload)]() mutable {
+              return self->SendMessageToSideStream(std::move(payload));
+            });
+      } else {
+        HandleSideStreamStatus(drain_payload.status());
+        return Immediate(StatusFlag(Failure{}));
+      }
+    }
+  }
+  // Handle response body drain initiation.
+  if (!side_stream_closed_latch_.is_set() &&
+      parsed_response->request_drain_responses &&
+      processing_mode().send_response_body && !is_trailers_only_ &&
+      (server_trailing_metadata_ == nullptr)) {
+    if (response_body_drain_state_ == BodyDrainState::kNotDraining) {
+      GRPC_TRACE_LOG(ext_proc_filter, INFO)
+          << DebugTag() << "initiating response body drain";
+      response_body_drain_state_ = BodyDrainState::kDrainInFlight;
+      upb::Arena arena;
+      auto drain_payload = CreateExtProcServerBodyRequest(
+          arena.ptr(), /*body=*/"", /*attributes=*/nullptr,
+          config().observability_mode, /*processing_mode=*/std::nullopt,
+          /*drain_complete=*/true);
+      if (drain_payload.ok()) {
+        handler_.SpawnGuarded(
+            "ext_proc_send_response_drain",
+            [self = WeakRef(), payload = std::move(*drain_payload)]() mutable {
+              return self->SendMessageToSideStream(std::move(payload));
+            });
+      } else {
+        HandleSideStreamStatus(drain_payload.status());
+        return Immediate(StatusFlag(Failure{}));
+      }
     }
   }
   // Dispatch the parsed response to the appropriate processor based on the
@@ -1039,19 +1119,25 @@ bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
       << DebugTag() << "status received: " << status;
   const bool has_outstanding_messages =
       outstanding_c2s_messages_ > 0 || outstanding_s2c_messages_ > 0;
-  const bool must_drain =
-      !config().observability_mode && (processing_mode().send_request_body ||
-                                       processing_mode().send_response_body);
   // Check if a clean stream closure violated draining or message-in-flight
   // requirements.
   if (status.ok()) {
-    if (must_drain && !drain_requested_) {
-      status = absl::InternalError("Stream closed cleanly without drain");
-    }
-    // TODO(rishesh): removed this check once PH2 work is done
-    else if (has_outstanding_messages && !config().observability_mode) {
-      status = absl::InternalError(
-          "Stream closed cleanly with outstanding messages");
+    if (!config().observability_mode) {
+      const bool send_request_body = processing_mode().send_request_body;
+      const bool send_response_body = processing_mode().send_response_body;
+      if (request_body_drain_state_ == BodyDrainState::kDrainInFlight ||
+          (send_request_body && !c2s_writes_done_ && !ext_proc_closed_c2s_ &&
+           request_body_drain_state_ != BodyDrainState::kDrained)) {
+        status = absl::InternalError("Stream closed cleanly without drain");
+      } else if (response_body_drain_state_ == BodyDrainState::kDrainInFlight ||
+                 (send_response_body && !is_trailers_only_ &&
+                  (server_trailing_metadata_ == nullptr) &&
+                  response_body_drain_state_ != BodyDrainState::kDrained)) {
+        status = absl::InternalError("Stream closed cleanly without drain");
+      } else if (has_outstanding_messages) {
+        status = absl::InternalError(
+            "Stream closed cleanly with outstanding messages");
+      }
     }
   } else if (status.code() != absl::StatusCode::kInternal) {
     status = absl::InternalError(
@@ -1082,6 +1168,14 @@ bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
       !is_trailers_only_ && server_trailing_metadata_ != nullptr) {
     (void)HandleServerTrailingMetadataFromSidestream(
         ExtProcResponse::ResponseTrailers{});
+  }
+  request_body_drain_state_ = BodyDrainState::kDrained;
+  response_body_drain_state_ = BodyDrainState::kDrained;
+  if (!request_body_drain_complete_latch_.is_set()) {
+    request_body_drain_complete_latch_.Set();
+  }
+  if (!response_body_drain_complete_latch_.is_set()) {
+    response_body_drain_complete_latch_.Set();
   }
   return true;
 }
@@ -1167,10 +1261,15 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
 
 auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
     MessageHandle message) {
-  const bool send_request_body = processing_mode().send_request_body &&
-                                 !side_stream_closed_latch_.is_set();
+  const bool send_request_body =
+      processing_mode().send_request_body &&
+      !side_stream_closed_latch_.is_set() &&
+      request_body_drain_state_ == BodyDrainState::kNotDraining;
   absl::StatusOr<std::string> payload = "";
-  if (!send_request_body) {
+  if (request_body_drain_state_ != BodyDrainState::kNotDraining) {
+    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+        << DebugTag() << "Client message in drain mode";
+  } else if (!send_request_body) {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << DebugTag()
         << "Client message non-processing mode (processing disabled or "
@@ -1185,7 +1284,7 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
     payload = absl::InternalError(
         "Client tried to send a message but external processor server has "
         "already force sent half close to the server");
-  } else if (!drain_requested_) {
+  } else {
     // Construct message for sidestream.
     std::string message_bytes;
     if (message != nullptr) {
@@ -1208,19 +1307,23 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
-  const bool send_to_sidestream = send_request_body && payload.ok() &&
-                                  !drain_requested_ &&
-                                  !side_stream_closed_latch_.is_set();
+  const bool send_to_sidestream =
+      send_request_body && payload.ok() && !side_stream_closed_latch_.is_set();
   return If(
       call_cancelled, Immediate(StatusFlag(Failure{})),
       TrySeq(
-          // Wait for side-stream to finish draining if drain mode was
-          // requested.
+          // Wait for request body drain to complete if in flight.
           If(
-              drain_requested_ && send_request_body,
+              request_body_drain_state_ == BodyDrainState::kDrainInFlight,
               [self = WeakRef()]() {
-                return TrySeq(self->side_stream_closed_latch_.Wait(),
-                              []() -> StatusFlag { return Success{}; });
+                return TrySeq(self->request_body_drain_complete_latch_.Wait(),
+                              [self]() -> StatusFlag {
+                                if (self->request_body_drain_state_ !=
+                                    BodyDrainState::kDrained) {
+                                  return Failure{};
+                                }
+                                return Success{};
+                              });
               },
               Immediate(StatusFlag(Success{}))),
           Map(TryJoin<ValueOrFailure>(
@@ -1263,7 +1366,8 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
   c2s_writes_done_ = true;
   const bool send_request_body =
       processing_mode().send_request_body && !ext_proc_closed_c2s_ &&
-      !side_stream_closed_latch_.is_set() && !drain_requested_;
+      !side_stream_closed_latch_.is_set() &&
+      request_body_drain_state_ == BodyDrainState::kNotDraining;
   absl::StatusOr<std::string> payload = "";
   if (send_request_body) {
     if (!config().observability_mode) {
@@ -1287,13 +1391,19 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
       send_request_body && payload.ok() && !side_stream_closed_latch_.is_set();
   return If(call_cancelled, Immediate(StatusFlag(Failure{})),
             TrySeq(
-                // Wait for side-stream to finish draining if drain mode was
-                // requested.
+                // Wait for request body drain to complete if in flight.
                 If(
-                    drain_requested_ && send_request_body,
+                    request_body_drain_state_ == BodyDrainState::kDrainInFlight,
                     [self = WeakRef()]() {
-                      return TrySeq(self->side_stream_closed_latch_.Wait(),
-                                    []() -> StatusFlag { return Success{}; });
+                      return TrySeq(
+                          self->request_body_drain_complete_latch_.Wait(),
+                          [self]() -> StatusFlag {
+                            if (self->request_body_drain_state_ !=
+                                BodyDrainState::kDrained) {
+                              return Failure{};
+                            }
+                            return Success{};
+                          });
                     },
                     Immediate(StatusFlag(Success{}))),
                 // Forward half-close to backend if not waiting for side-stream
@@ -1332,9 +1442,9 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
   } else {
     server_initial_metadata_ = std::move(*metadata);
   }
-  const bool send_response_headers =
-      !is_trailers_only && processing_mode().send_response_headers &&
-      !side_stream_closed_latch_.is_set() && !drain_requested_;
+  const bool send_response_headers = !is_trailers_only &&
+                                     processing_mode().send_response_headers &&
+                                     !side_stream_closed_latch_.is_set();
   absl::StatusOr<std::string> payload = "";
   if (send_response_headers) {
     // Include processing mode if this is the first message on the
@@ -1391,7 +1501,7 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
                   GRPC_TRACE_LOG(ext_proc_filter, INFO)
                       << self->DebugTag()
                       << "Skipping server initial metadata (processing "
-                         "disabled, stream closed, or drain mode)";
+                         "disabled or stream closed)";
                 }
                 return Immediate(StatusFlag(Success{}));
               })));
@@ -1405,8 +1515,7 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
       (is_trailers_only_ || IsStatusOk(*server_trailing_metadata_)) &&
       !side_stream_closed_latch_.is_set() &&
       (is_trailers_only_ ? processing_mode().send_response_headers
-                         : processing_mode().send_response_trailers) &&
-      !drain_requested_;
+                         : processing_mode().send_response_trailers);
   absl::StatusOr<std::string> payload = "";
   if (send_metadata) {
     // Include processing mode if this is the first message on
@@ -1437,16 +1546,22 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
   return If(
       call_cancelled, Immediate(StatusFlag(Failure{})),
       TrySeq(
-          // Wait for side-stream to finish draining if drain mode was
-          // requested.
+          // Wait for response body drain to complete if in flight.
           If(
-              drain_requested_ && send_metadata,
+              response_body_drain_state_ == BodyDrainState::kDrainInFlight,
               [self = WeakRef()]() {
                 GRPC_TRACE_LOG(ext_proc_filter, INFO)
                     << self->DebugTag()
-                    << "Handling server trailing metadata in drain mode";
-                return TrySeq(self->side_stream_closed_latch_.Wait(),
-                              []() -> StatusFlag { return Success{}; });
+                    << "Waiting for response body drain before handling server "
+                       "trailing metadata";
+                return TrySeq(self->response_body_drain_complete_latch_.Wait(),
+                              [self]() -> StatusFlag {
+                                if (self->response_body_drain_state_ !=
+                                    BodyDrainState::kDrained) {
+                                  return Failure{};
+                                }
+                                return Success{};
+                              });
               },
               Immediate(StatusFlag(Success{}))),
           // Forward server trailing metadata downstream to client if not
@@ -1476,7 +1591,7 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
                 return self->SendMessageToSideStream(std::move(*payload));
               },
               [self = WeakRef(), send_metadata]() {
-                if (!send_metadata || self->drain_requested_) {
+                if (!send_metadata) {
                   GRPC_TRACE_LOG(ext_proc_filter, INFO)
                       << self->DebugTag()
                       << "Skipping server trailing metadata (processing "
@@ -1492,13 +1607,18 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
 
 auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
     MessageHandle message) {
-  const bool send_body = processing_mode().send_response_body &&
-                         !side_stream_closed_latch_.is_set();
+  const bool send_body =
+      processing_mode().send_response_body &&
+      !side_stream_closed_latch_.is_set() &&
+      response_body_drain_state_ == BodyDrainState::kNotDraining;
   absl::StatusOr<std::string> payload = "";
-  if (!send_body) {
+  if (response_body_drain_state_ != BodyDrainState::kNotDraining) {
+    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+        << DebugTag() << "Server message in drain mode";
+  } else if (!send_body) {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << DebugTag() << "Server message non-processing mode";
-  } else if (!drain_requested_) {
+  } else {
     // Construct message for sidestream.
     std::string message_bytes;
     if (message != nullptr) {
@@ -1518,19 +1638,23 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
-  const bool send_to_sidestream = send_body && payload.ok() &&
-                                  !drain_requested_ &&
-                                  !side_stream_closed_latch_.is_set();
+  const bool send_to_sidestream =
+      send_body && payload.ok() && !side_stream_closed_latch_.is_set();
   return If(
       call_cancelled, Immediate(StatusFlag(Failure{})),
       TrySeq(
-          // Wait for side-stream to finish draining if drain mode was
-          // requested.
+          // Wait for response body drain to complete if in flight.
           If(
-              drain_requested_ && send_body,
+              response_body_drain_state_ == BodyDrainState::kDrainInFlight,
               [self = WeakRef()]() {
-                return TrySeq(self->side_stream_closed_latch_.Wait(),
-                              []() -> StatusFlag { return Success{}; });
+                return TrySeq(self->response_body_drain_complete_latch_.Wait(),
+                              [self]() -> StatusFlag {
+                                if (self->response_body_drain_state_ !=
+                                    BodyDrainState::kDrained) {
+                                  return Failure{};
+                                }
+                                return Success{};
+                              });
               },
               Immediate(StatusFlag(Success{}))),
           Map(TryJoin<ValueOrFailure>(
