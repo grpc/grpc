@@ -12,6 +12,7 @@
 #include "envoy/type/v3/percent.upb_minitable.h"
 #include "google/protobuf/any.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
+#include "google/protobuf/wrappers.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "udpa/annotations/versioning.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
@@ -163,6 +164,28 @@ const upb_MiniTable envoy__config__overload__v3__ScaleTimersOverloadActionConfig
 };
 
 typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} envoy__config__overload__v3__ShrinkHeapConfig_msg_init_Fields;
+
+static const envoy__config__overload__v3__ShrinkHeapConfig_msg_init_Fields envoy_config_overload_v3_ShrinkHeapConfig__fields = {{
+  {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init},
+}};
+
+const upb_MiniTable envoy__config__overload__v3__ShrinkHeapConfig_msg_init = {
+  &envoy_config_overload_v3_ShrinkHeapConfig__fields.fields[0],
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.ShrinkHeapConfig",
+#endif
+};
+
+typedef struct {
   upb_MiniTableField fields[3];
   upb_MiniTableSubInternal subs[2];
 } envoy__config__overload__v3__OverloadAction_msg_init_Fields;
@@ -262,13 +285,14 @@ const upb_MiniTable envoy__config__overload__v3__OverloadManager_msg_init = {
 #endif
 };
 
-static const upb_MiniTable *messages_layout[10] = {
+static const upb_MiniTable *messages_layout[11] = {
   &envoy__config__overload__v3__ResourceMonitor_msg_init,
   &envoy__config__overload__v3__ThresholdTrigger_msg_init,
   &envoy__config__overload__v3__ScaledTrigger_msg_init,
   &envoy__config__overload__v3__Trigger_msg_init,
   &envoy__config__overload__v3__ScaleTimersOverloadActionConfig_msg_init,
   &envoy__config__overload__v3__ScaleTimersOverloadActionConfig__ScaleTimer_msg_init,
+  &envoy__config__overload__v3__ShrinkHeapConfig_msg_init,
   &envoy__config__overload__v3__OverloadAction_msg_init,
   &envoy__config__overload__v3__LoadShedPoint_msg_init,
   &envoy__config__overload__v3__BufferFactoryConfig_msg_init,
@@ -279,7 +303,7 @@ const upb_MiniTableFile envoy_config_overload_v3_overload_proto_upb_file_layout 
   messages_layout,
   NULL,
   NULL,
-  10,
+  11,
   0,
   0,
 };
