@@ -9492,7 +9492,9 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "grpc_check",
         "grpc_promise_endpoint",
+        "http2_stats_collector",
         "slice",
+        "stats_data",
         ":header_assembler",
         ":http2_status",
         ":http2_transport",
@@ -9692,6 +9694,7 @@ grpc_cc_library(
         "sync",
         "time",
         "transport_common",
+        "transport_stats_tracker",
         "writable_streams",
         "write_cycle",
         ":chttp2_flow_control",
@@ -9793,6 +9796,7 @@ grpc_cc_library(
         "sync",
         "time",
         "transport_common",
+        "transport_stats_tracker",
         "writable_streams",
         "write_cycle",
         ":chttp2_flow_control",
@@ -9864,6 +9868,21 @@ grpc_cc_library(
         "stats_data",
         "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "transport_stats_tracker",
+    hdrs = [
+        "ext/transport/chttp2/transport/transport_stats_tracker.h",
+    ],
+    deps = [
+        "channel_args",
+        "http2_stats_collector",
+        "stats_data",
+        "//:gpr_platform",
+        "//:grpc_core_credentials_header",
+        "//:transport_auth_context",
     ],
 )
 

@@ -473,6 +473,7 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/stream_lists.h",
         "src/core/ext/transport/chttp2/transport/transport_common.cc",
         "src/core/ext/transport/chttp2/transport/transport_common.h",
+        "src/core/ext/transport/chttp2/transport/transport_stats_tracker.h",
         "src/core/ext/transport/chttp2/transport/varint.cc",
         "src/core/ext/transport/chttp2/transport/varint.h",
         "src/core/ext/transport/chttp2/transport/writable_streams.h",

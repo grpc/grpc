@@ -461,6 +461,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/transport_common.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/transport_common.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/transport_stats_tracker.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writable_streams.h" role="src" />

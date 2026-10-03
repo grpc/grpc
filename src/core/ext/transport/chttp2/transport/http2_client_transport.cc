@@ -1213,9 +1213,11 @@ Http2ClientTransport::Http2ClientTransport(
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner_),
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
-      ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()) {
+      ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
+      stats_tracker_(channel_args) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::Http2ClientTransport Begin";
   // Initialize the transport party and write party.
+  read_context_.SetHttp2StatsCollector(stats_tracker_.stats_collector_shared());
   RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<EventEngine>(event_engine_.get());
   transport_party_ = Party::Make(std::move(party_arena));

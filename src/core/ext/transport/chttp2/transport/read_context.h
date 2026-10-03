@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -37,6 +38,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/shared_bit_gen.h"
@@ -248,6 +250,12 @@ class ReadContext {
 
   void SetMaxHeaderTableSize(const uint32_t size) {
     parser_.hpack_table()->SetMaxBytes(size);
+  }
+
+  void SetHttp2StatsCollector(
+      std::shared_ptr<Http2StatsCollector> http2_stats_collector) {
+    parser_.hpack_table()->SetHttp2StatsCollector(
+        std::move(http2_stats_collector));
   }
 
   // This function is used to partially process a HEADER or CONTINUATION frame.
