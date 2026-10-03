@@ -159,6 +159,8 @@ struct tsi_ssl_client_handshaker_factory {
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
 #endif
+  std::string exported_keying_material_label;
+  size_t exported_keying_material_length;
 };
 
 // Wrapper of the SSL_CTX for use on the server side. In addition to the
@@ -193,6 +195,8 @@ struct tsi_ssl_server_handshaker_factory {
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::CertificateSelector> certificate_selector;
 #endif  // defined(OPENSSL_IS_BORINGSSL)
+  std::string exported_keying_material_label;
+  size_t exported_keying_material_length;
 };
 
 // Tracks the arguments for a pending call to tsi_handshaker_next().
@@ -216,6 +220,8 @@ struct tsi_ssl_handshaker_result {
   BIO* network_io;
   unsigned char* unused_bytes;
   size_t unused_bytes_size;
+  char* exported_keying_material_label;
+  size_t exported_keying_material_length;
 };
 
 struct SslHandshakeResult {
@@ -231,7 +237,9 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
       tsi_ssl_handshaker_factory* factory_ref,
       grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
       bool is_client, std::shared_ptr<grpc_core::PrivateKeySigner> signer,
-      std::string target, std::string locality, std::string backend_service)
+      std::string target, std::string locality, std::string backend_service,
+      std::string exported_keying_material_label,
+      size_t exported_keying_material_length)
       : tsi_handshaker(handshaker_vtable),
         ssl(ssl),
         network_io(network_io),
@@ -245,7 +253,10 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
         is_client(is_client),
         target(std::move(target)),
         locality(std::move(locality)),
-        backend_service(std::move(backend_service)) {
+        backend_service(std::move(backend_service)),
+        exported_keying_material_label(
+            std::move(exported_keying_material_label)),
+        exported_keying_material_length(exported_keying_material_length) {
 #if defined(OPENSSL_IS_BORINGSSL)
     key_signer = std::move(signer);
 #endif
@@ -281,6 +292,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   std::string target;
   std::string locality;
   std::string backend_service;
+  std::string exported_keying_material_label;
+  size_t exported_keying_material_length;
   bool metric_recorded ABSL_GUARDED_BY(mu) = false;
 
   void MaybeRecordTelemetry(const SslHandshakeResult& handshake_result)
@@ -2304,6 +2317,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (verified_root_cert != nullptr) new_property_count++;
   if (server_name != nullptr) new_property_count++;
   if (tls_version != nullptr) new_property_count++;
+  if (impl->exported_keying_material_label != nullptr) new_property_count++;
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   int nid = SSL_get_negotiated_group(impl->ssl);
   const char* negotiated_group_name =
@@ -2380,6 +2394,28 @@ static tsi_result ssl_handshaker_result_extract_peer(
   }
 #endif
 
+  if (impl->exported_keying_material_label != nullptr) {
+    size_t ekm_len = impl->exported_keying_material_length;
+    result = tsi_construct_allocated_string_peer_property(
+        TSI_SSL_EXPORTED_KEYING_MATERIAL, ekm_len,
+        &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
+    // The exporter context is not part of the public API, so the keying
+    // material is derived without one.
+    if (SSL_export_keying_material(
+            impl->ssl,
+            reinterpret_cast<unsigned char*>(
+                peer->properties[peer->property_count].value.data),
+            ekm_len, impl->exported_keying_material_label,
+            strlen(impl->exported_keying_material_label), /*context=*/nullptr,
+            /*context_len=*/0, /*use_context=*/0) != 1) {
+      LOG(ERROR) << "Failed to export keying material.";
+      tsi_peer_property_destruct(&peer->properties[peer->property_count]);
+      return TSI_INTERNAL_ERROR;
+    }
+    peer->property_count++;
+  }
+
   return result;
 }
 
@@ -2451,6 +2487,7 @@ static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->unused_bytes);
+  gpr_free(impl->exported_keying_material_label);
   gpr_free(impl);
 }
 
@@ -2475,6 +2512,14 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
   tsi_ssl_handshaker_result* result =
       grpc_core::Zalloc<tsi_ssl_handshaker_result>();
   result->base.vtable = &handshaker_result_vtable;
+
+  if (!handshaker->exported_keying_material_label.empty()) {
+    result->exported_keying_material_label =
+        gpr_strdup(handshaker->exported_keying_material_label.c_str());
+  }
+  result->exported_keying_material_length =
+      handshaker->exported_keying_material_length;
+
   // Transfer ownership of ssl and network_io to the handshaker result.
   result->ssl = handshaker->ssl;
   handshaker->ssl = nullptr;
@@ -2936,7 +2981,8 @@ static tsi_result create_tsi_ssl_handshaker(
     tsi_ssl_handshaker_factory* factory,
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
     std::string target, std::string locality, std::string backend_service,
-    tsi_handshaker** handshaker) {
+    std::string exported_keying_material_label,
+    size_t exported_keying_material_length, tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
   BIO* ssl_io = nullptr;
@@ -3033,7 +3079,8 @@ static tsi_result create_tsi_ssl_handshaker(
       &handshaker_vtable, ssl, network_io,
       tsi_ssl_handshaker_factory_ref(factory), std::move(collection_scope),
       is_client, std::move(key_signer), std::move(target), std::move(locality),
-      std::move(backend_service));
+      std::move(backend_service), std::move(exported_keying_material_label),
+      exported_keying_material_length);
   *handshaker = impl;
 
   if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
@@ -3092,7 +3139,8 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
       network_bio_buf_size, ssl_bio_buf_size, alpn_preferred_protocol_list,
       std::move(key_signer), &factory->base, std::move(collection_scope),
       std::move(target), std::move(locality), std::move(backend_service),
-      handshaker);
+      factory->exported_keying_material_label,
+      factory->exported_keying_material_length, handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -3149,7 +3197,9 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
       /*server_name_indication=*/nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, std::move(key_signer), &factory->base,
       std::move(collection_scope), /*target=*/"",
-      /*locality=*/"", /*backend_service=*/"", handshaker);
+      /*locality=*/"", /*backend_service=*/"",
+      factory->exported_keying_material_label,
+      factory->exported_keying_material_length, handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(
@@ -3308,6 +3358,22 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
                                                                factory);
 }
 
+// Exported keying material is an opt-in feature, so leaving both the label and
+// the length unset is valid. If it's requested, then both values must be valid.
+static bool exported_keying_material_options_are_valid(const std::string& label,
+                                                       size_t length) {
+  if (label.empty() && length == 0) return true;
+  if (label.empty()) {
+    LOG(ERROR) << "Exported keying material label must not be empty.";
+    return false;
+  }
+  if (length == 0) {
+    LOG(ERROR) << "Exported keying material length must be greater than 0.";
+    return false;
+  }
+  return true;
+}
+
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
     tsi_ssl_client_handshaker_factory** factory) {
@@ -3321,6 +3387,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   *factory = nullptr;
   if (options->root_store == nullptr && options->root_cert_info == nullptr &&
       !options->skip_server_certificate_verification) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  if (!exported_keying_material_options_are_valid(
+          options->exported_keying_material_label,
+          options->exported_keying_material_length)) {
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -3345,6 +3416,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   impl = new tsi_ssl_client_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &client_handshaker_factory_vtable;
+  impl->exported_keying_material_label =
+      options->exported_keying_material_label;
+  impl->exported_keying_material_length =
+      options->exported_keying_material_length;
   impl->ssl_context = ssl_context;
   if (options->session_cache != nullptr) {
     // Unref is called manually on factory destruction.
@@ -3702,10 +3777,19 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
+  if (!exported_keying_material_options_are_valid(
+          options->exported_keying_material_label,
+          options->exported_keying_material_length)) {
+    return TSI_INVALID_ARGUMENT;
+  }
 
   impl = new tsi_ssl_server_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
+  impl->exported_keying_material_label =
+      options->exported_keying_material_label;
+  impl->exported_keying_material_length =
+      options->exported_keying_material_length;
 
   tsi_result result = grpc_core::Match(
       options->key_cert_pairs_or_selector,
