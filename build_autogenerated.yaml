@@ -30466,7 +30466,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -30537,8 +30536,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
-  - third_party/envoy-api/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto
-  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.proto
   - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
@@ -30606,7 +30603,6 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
-  - test/core/test_util/fake_stats_plugin.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_ext_proc_end2end_test.cc
