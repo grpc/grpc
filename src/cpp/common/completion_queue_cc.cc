@@ -155,10 +155,10 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
             static_cast<grpc::internal::CompletionQueueTag*>(ev.tag);
         *ok = ev.success != 0;
         *tag = core_cq_tag;
-        if (core_cq_tag->FinalizeResult(tag, ok)) {
-          return GOT_EVENT;
+        if (GPR_UNLIKELY(!core_cq_tag->FinalizeResult(tag, ok))) {
+          break;
         }
-        break;
+        return GOT_EVENT;
     }
   }
 }
