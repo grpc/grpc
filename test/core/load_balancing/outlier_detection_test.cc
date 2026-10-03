@@ -28,15 +28,21 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
+#include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/telemetry/instrument.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -46,6 +52,13 @@
 namespace grpc_core {
 namespace testing {
 namespace {
+
+constexpr absl::string_view kLocalityName = "locality0";
+constexpr absl::string_view kBackendServiceName = "backend_service0";
+constexpr absl::string_view kEjectionsEnforced =
+    "grpc.lb.outlier_detection.ejections_enforced";
+constexpr absl::string_view kEjectionsUnenforced =
+    "grpc.lb.outlier_detection.ejections_unenforced";
 
 class OutlierDetectionTest : public LoadBalancingPolicyTest {
  protected:
@@ -143,15 +156,45 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
   };
 
   OutlierDetectionTest()
-      : LoadBalancingPolicyTest("outlier_detection_experimental") {}
+      : LoadBalancingPolicyTest(
+            "outlier_detection_experimental",
+            ChannelArgs()
+                .Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD, kLocalityName)
+                .Set(GRPC_ARG_BACKEND_SERVICE, kBackendServiceName)) {}
 
   void SetUp() override {
+    TestOnlyResetInstruments();
+    stats_plugin_ = std::make_shared<FakeStatsPlugin>(
+        /*channel_filter=*/nullptr, /*use_disabled_by_default_metrics=*/true);
+    stats_plugin_group_.AddStatsPlugin(stats_plugin_, nullptr);
+    stats_plugin_group_.Finish();
     LoadBalancingPolicyTest::SetUp();
     SetExpectedTimerDuration(std::chrono::seconds(10));
   }
 
-  std::optional<std::string> DoPickWithFailedCall(
-      LoadBalancingPolicy::SubchannelPicker* picker) {
+  uint64_t GetEnforcedEjectionCount(absl::string_view detection_method) {
+    const absl::string_view kLabelValues[] = {target_, kBackendServiceName,
+                                              kLocalityName, detection_method};
+    return stats_plugin_
+        ->GetUInt64MetricValueByName(kEjectionsEnforced, kLabelValues)
+        .value_or(0);
+  }
+
+  uint64_t GetUnenforcedEjectionCount(absl::string_view detection_method,
+                                      absl::string_view unenforced_reason) {
+    const absl::string_view kLabelValues[] = {target_, kBackendServiceName,
+                                              kLocalityName, detection_method,
+                                              unenforced_reason};
+    return stats_plugin_
+        ->GetUInt64MetricValueByName(kEjectionsUnenforced, kLabelValues)
+        .value_or(0);
+  }
+
+  std::shared_ptr<FakeStatsPlugin> stats_plugin_;
+
+  std::optional<std::string> DoPickWithStatus(
+      LoadBalancingPolicy::SubchannelPicker* picker,
+      const absl::Status& status) {
     std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
         subchannel_call_tracker;
     auto address = ExpectPickComplete(picker, {}, {}, &subchannel_call_tracker);
@@ -159,11 +202,30 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
       FakeMetadata metadata({});
       FakeBackendMetricAccessor backend_metric_accessor({});
       LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
-          *address, absl::UnavailableError("uh oh"), &metadata,
-          &backend_metric_accessor};
+          *address, status, &metadata, &backend_metric_accessor};
       subchannel_call_tracker->Finish(args);
     }
     return address;
+  }
+
+  std::optional<std::string> DoPickWithFailedCall(
+      LoadBalancingPolicy::SubchannelPicker* picker) {
+    return DoPickWithStatus(picker, absl::UnavailableError("uh oh"));
+  }
+
+  std::optional<std::string> DoPickWithSuccessfulCall(
+      LoadBalancingPolicy::SubchannelPicker* picker) {
+    return DoPickWithStatus(picker, absl::OkStatus());
+  }
+
+  // Drives `failed` failed RPCs followed by `succeeded` successful RPCs
+  // on a round-robin picker. Useful for setting up the call counters
+  // that the outlier detection ejection algorithms read.
+  void SendFailedAndSuccessfulRpcs(
+      LoadBalancingPolicy::SubchannelPicker* picker, size_t failed,
+      size_t succeeded) {
+    for (size_t i = 0; i < failed; ++i) DoPickWithFailedCall(picker);
+    for (size_t i = 0; i < succeeded; ++i) DoPickWithSuccessfulCall(picker);
   }
 };
 
@@ -220,6 +282,9 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   LOG(INFO) << "### ejection complete";
+  // The failure_percentage enforced ejection metric should have been
+  // reported exactly once.
+  EXPECT_EQ(GetEnforcedEjectionCount("failure_percentage"), 1);
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {
@@ -456,6 +521,210 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   ExpectQueueEmpty();
   // Subchannel should not see a reconnection request.
   EXPECT_FALSE(subchannel->ConnectionRequested());
+}
+
+//
+// Metric tests
+//
+
+TEST_F(OutlierDetectionTest, SuccessRateEjectionEnforced) {
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
+  // stdev_factor=900 (i.e. 0.9 stdev) plus 1 endpoint at 0% and 2 at 100%
+  // gives a threshold of 24.2, so the 0% endpoint is below threshold.
+  // enforcement_percentage=100 forces ejection (random_key < 100 always).
+  // max_ejection_percent is 100% so the ejection is allowed.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, ConfigBuilder()
+                                  .SetSuccessRateStdevFactor(900)
+                                  .SetSuccessRateEnforcementPercentage(100)
+                                  .SetSuccessRateMinHosts(1)
+                                  .SetSuccessRateRequestVolume(1)
+                                  .SetMaxEjectionPercent(100)
+                                  .SetMaxEjectionTime(Duration::Seconds(1))
+                                  .SetBaseEjectionTime(Duration::Seconds(1))
+                                  .Build()),
+      lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  auto picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Rotate out call counters from ExpectRoundRobinStartup.
+  IncrementTimeBy(Duration::Seconds(10));
+  // Pick 1: failure (the first endpoint hit by RR will be the outlier).
+  // Picks 2 and 3: successes on the other two endpoints.
+  auto failed_address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(failed_address.has_value());
+  DoPickWithSuccessfulCall(picker.get());
+  DoPickWithSuccessfulCall(picker.get());
+  // Run the timer to trigger ejection.
+  IncrementTimeBy(Duration::Seconds(10));
+  // success_rate enforced ejection should have been reported once, and no
+  // unenforced ejections.
+  EXPECT_EQ(GetEnforcedEjectionCount("success_rate"), 1);
+  EXPECT_EQ(
+      GetUnenforcedEjectionCount("success_rate", "enforcement_percentage"), 0);
+  EXPECT_EQ(GetUnenforcedEjectionCount("success_rate", "max_ejection_overflow"),
+            0);
+  // Drain the picker update from the ejection.
+  std::vector<absl::string_view> remaining_addresses;
+  for (const auto& addr : kAddresses) {
+    if (addr != *failed_address) remaining_addresses.push_back(addr);
+  }
+  WaitForRoundRobinListChange(kAddresses, remaining_addresses);
+  // Run the timer again to un-eject and drain that picker update.
+  IncrementTimeBy(Duration::Seconds(10));
+  WaitForRoundRobinListChange(remaining_addresses, kAddresses);
+}
+
+TEST_F(OutlierDetectionTest,
+       SuccessRateEjectionUnenforcedDueToEnforcementPercentage) {
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
+  // enforcement_percentage=0 means random_key < 0 is never true, so any
+  // detected outlier will be reported as unenforced(enforcement_percentage).
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, ConfigBuilder()
+                                  .SetSuccessRateStdevFactor(900)
+                                  .SetSuccessRateEnforcementPercentage(0)
+                                  .SetSuccessRateMinHosts(1)
+                                  .SetSuccessRateRequestVolume(1)
+                                  .SetMaxEjectionPercent(100)
+                                  .Build()),
+      lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  auto picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Rotate out call counters from ExpectRoundRobinStartup.
+  IncrementTimeBy(Duration::Seconds(10));
+  DoPickWithFailedCall(picker.get());
+  DoPickWithSuccessfulCall(picker.get());
+  DoPickWithSuccessfulCall(picker.get());
+  IncrementTimeBy(Duration::Seconds(10));
+  // Outlier is detected but the ejection is not enforced.
+  EXPECT_EQ(
+      GetUnenforcedEjectionCount("success_rate", "enforcement_percentage"), 1);
+  EXPECT_EQ(GetEnforcedEjectionCount("success_rate"), 0);
+}
+
+TEST_F(OutlierDetectionTest,
+       SuccessRateEjectionUnenforcedDueToMaxEjectionOverflow) {
+  // Use 4 addresses so that a single ejection brings current_percent to 25%,
+  // which is above max_ejection_percent=10.  We pre-load 2 outliers, so the
+  // first goes through enforced and the second falls into
+  // max_ejection_overflow.
+  constexpr std::array<absl::string_view, 4> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
+      "ipv4:127.0.0.1:446"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses,
+                  ConfigBuilder()
+                      .SetSuccessRateStdevFactor(900)
+                      .SetSuccessRateEnforcementPercentage(100)
+                      .SetSuccessRateMinHosts(1)
+                      .SetSuccessRateRequestVolume(1)
+                      // Default is 10%; with 4 endpoints, ejecting 1 puts
+                      // current_percent at 25%, blocking further ejections.
+                      .SetMaxEjectionPercent(10)
+                      .SetMaxEjectionTime(Duration::Seconds(1))
+                      .SetBaseEjectionTime(Duration::Seconds(1))
+                      .Build()),
+      lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  auto picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  LOG(INFO) << "### RR startup complete";
+  // Run the timer once to rotate out the call counters that
+  // ExpectRoundRobinStartup auto-completes as successes.  At this point all
+  // endpoints have 100% success rate, so no candidates are below threshold
+  // and no ejection happens.
+  IncrementTimeBy(Duration::Seconds(10));
+  LOG(INFO) << "### startup buckets flushed";
+  // 2 failures + 2 successes => success rates [0, 0, 100, 100].
+  // mean=50, stdev=50, threshold(sf=900) = 50 - 0.9*50 = 5.
+  // Both 0% endpoints are below threshold, so we get 2 candidates.
+  DoPickWithFailedCall(picker.get());
+  DoPickWithFailedCall(picker.get());
+  DoPickWithSuccessfulCall(picker.get());
+  DoPickWithSuccessfulCall(picker.get());
+  IncrementTimeBy(Duration::Seconds(10));
+  LOG(INFO) << "### ejection complete";
+  // First candidate gets ejected (count=0).  Second candidate hits the
+  // max_ejection cap (current_percent=25% > 10%) and is reported unenforced.
+  EXPECT_EQ(GetEnforcedEjectionCount("success_rate"), 1);
+  EXPECT_EQ(GetUnenforcedEjectionCount("success_rate", "max_ejection_overflow"),
+            1);
+  // Drain the picker update generated by the ejection.  We don't know
+  // which address was ejected (depends on EndpointState pointer ordering),
+  // so just consume the queued state update.
+  WaitForStateUpdate([](FakeHelper::StateUpdate) { return false; });
+  // Run the timer again to un-eject and drain that picker update too.
+  IncrementTimeBy(Duration::Seconds(10));
+  LOG(INFO) << "### un-ejection complete";
+  WaitForStateUpdate([](FakeHelper::StateUpdate) { return false; });
+}
+
+TEST_F(OutlierDetectionTest,
+       FailurePercentageEjectionUnenforcedDueToEnforcementPercentage) {
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, ConfigBuilder()
+                                  .SetFailurePercentageThreshold(1)
+                                  .SetFailurePercentageEnforcementPercentage(0)
+                                  .SetFailurePercentageMinimumHosts(1)
+                                  .SetFailurePercentageRequestVolume(1)
+                                  .SetMaxEjectionPercent(100)
+                                  .Build()),
+      lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  auto picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  auto address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(address.has_value());
+  IncrementTimeBy(Duration::Seconds(10));
+  EXPECT_EQ(GetUnenforcedEjectionCount("failure_percentage",
+                                       "enforcement_percentage"),
+            1);
+  EXPECT_EQ(GetEnforcedEjectionCount("failure_percentage"), 0);
+}
+
+TEST_F(OutlierDetectionTest,
+       FailurePercentageEjectionUnenforcedDueToMaxEjectionOverflow) {
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
+  // 3 endpoints, all failing.  With max_ejection_percent=10, only the first
+  // can be ejected; the other 2 hit max_ejection_overflow.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses,
+                  ConfigBuilder()
+                      .SetFailurePercentageThreshold(1)
+                      .SetFailurePercentageEnforcementPercentage(100)
+                      .SetFailurePercentageMinimumHosts(1)
+                      .SetFailurePercentageRequestVolume(1)
+                      .SetMaxEjectionPercent(10)
+                      .SetMaxEjectionTime(Duration::Seconds(1))
+                      .SetBaseEjectionTime(Duration::Seconds(1))
+                      .Build()),
+      lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  auto picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  LOG(INFO) << "### RR startup complete";
+  DoPickWithFailedCall(picker.get());
+  DoPickWithFailedCall(picker.get());
+  DoPickWithFailedCall(picker.get());
+  IncrementTimeBy(Duration::Seconds(10));
+  LOG(INFO) << "### ejection complete";
+  EXPECT_EQ(GetEnforcedEjectionCount("failure_percentage"), 1);
+  EXPECT_EQ(
+      GetUnenforcedEjectionCount("failure_percentage", "max_ejection_overflow"),
+      2);
+  // Drain the ejection picker update (we don't know which address was
+  // ejected) and then advance time to un-eject and drain that update too.
+  WaitForStateUpdate([](FakeHelper::StateUpdate) { return false; });
+  IncrementTimeBy(Duration::Seconds(10));
+  LOG(INFO) << "### un-ejection complete";
+  WaitForStateUpdate([](FakeHelper::StateUpdate) { return false; });
 }
 
 }  // namespace
