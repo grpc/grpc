@@ -72,6 +72,14 @@ _DATA_MEMBERS = [
         test_value_2="true",
     ),
     DataMember(
+        name="verification_key_purpose",
+        type="grpc_tls_verification_key_purpose",
+        default_initializer="GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT",
+        test_name="DifferentVerificationKeyPurpose",
+        test_value_1="GRPC_TLS_VERIFICATION_KEY_PURPOSE_DEFAULT",
+        test_value_2="GRPC_TLS_VERIFICATION_KEY_PURPOSE_ALLOW_ANY",
+    ),
+    DataMember(
         name="min_tls_version",
         type="grpc_tls_version",
         default_initializer="grpc_tls_version::TLS1_2",
