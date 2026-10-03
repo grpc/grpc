@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -93,32 +93,64 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
+#================
+# C# dependencies
+
+# Install mono
+RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
+RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+RUN echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list
+RUN apt-get update && apt-get install -y \
+    mono-devel \
+    ca-certificates-mono \
+    nuget \
+    && apt-get clean
+
+# Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
+RUN DOTNET_DOWNLOAD_VERSION=3.1.415 \
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
+    && mkdir -p /usr/share/dotnet \
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
+    && rm dotnet.tar.gz
+
+# Install .NET 6
+RUN DOTNET_DOWNLOAD_VERSION=6.0.428 \
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
+    && mkdir -p /usr/share/dotnet \
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
+    && rm dotnet.tar.gz
+
+# Make sure "dotnet" is on PATH
+RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+
+# Trigger the population of the local package cache
+ENV NUGET_XMLDOC_MODE skip
+RUN mkdir warmup \
+    && cd warmup \
+    && dotnet new console \
+    && cd .. \
+    && rm -rf warmup
+
+#=================
+# Install ccache
+
+# Install ccache from source since ccache 3.x packaged with most linux distributions
+# does not support Redis backend for caching.
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
+    && tar -zxf ccache.tar.gz \
+    && cd ccache-4.11.3 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
+    && make -j4 && make install \
+    && cd ../.. \
+    && rm -rf ccache-4.11.3 ccache.tar.gz
+
 
 RUN mkdir /var/local/jenkins
 
-RUN apt update && apt upgrade -y
-
-# Java
-RUN apt-get install -y openjdk-17-jdk
-
-# Install Android SDK
-ENV ANDROID_HOME /opt/android-sdk
-RUN mkdir -p $ANDROID_HOME && \
-    wget -O cmd.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
-    unzip cmd.zip && rm cmd.zip && \
-    yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platform-tools' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'build-tools;30.0.2' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platforms;android-26' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;25.1.8937393' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'cmake;3.22.1'
-
-# Install gcloud
-RUN wget -O google-cloud-cli.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-467.0.0-linux-x86_64.tar.gz && \
-    tar -xf google-cloud-cli.tar.gz && \
-    ./google-cloud-sdk/install.sh --bash-completion=false --path-update=true && \
-    rm -rf google-cloud-cli.tar.gz
-RUN ln -s /google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
 
 # Define the default command.
 CMD ["bash"]
+
