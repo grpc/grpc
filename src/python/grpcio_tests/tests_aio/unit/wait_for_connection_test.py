@@ -51,6 +51,13 @@ class TestWaitForConnection(AioTestBase):
         await self._channel.close()
         await self._server.stop(None)
 
+    async def test_cancel_then_wait_for_connection(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        call.cancel()
+
+        with self.assertRaises(asyncio.CancelledError):
+            await call.wait_for_connection()
+
     async def test_unary_unary_ok(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 

@@ -588,9 +588,10 @@ class UnaryUnaryCall(
             self._request, self._request_serializer
         )
 
-        # NOTE(lidiz) asyncio.CancelledError is not a good transport for status,
-        # because the asyncio.Task class do not cache the exception object.
-        # https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785
+        # NOTE(lidiz) msg survives via Task._cancel_message even though the
+        # exception object itself isn't cached — returning EOF instead of
+        # re-raising is what actually broke propagation, by keeping the
+        # task out of CANCELLED state.
         try:
             serialized_response = await self._cython_call.unary_unary(
                 serialized_request, self._metadata, self._context
@@ -598,7 +599,7 @@ class UnaryUnaryCall(
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()
-            return cygrpc.EOF
+            raise
 
         if self._cython_call.is_ok():
             return _common.deserialize(
