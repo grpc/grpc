@@ -179,8 +179,6 @@ let package = Package(
         "src/core/channelz/v2tov1/property_list.cc",
         "src/core/channelz/v2tov1/property_list.h",
         "src/core/channelz/ztrace_collector.h",
-        "src/core/client_channel/backup_poller.cc",
-        "src/core/client_channel/backup_poller.h",
         "src/core/client_channel/buffered_call.cc",
         "src/core/client_channel/buffered_call.h",
         "src/core/client_channel/client_channel.cc",

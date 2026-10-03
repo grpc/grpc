@@ -28,7 +28,6 @@
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/type/matcher/v3/http_inputs.pb.h"
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -420,11 +419,6 @@ TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  // Make the backup poller poll very frequently in order to pick up
-  // updates from all the subchannels's FDs.
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms = 1;
-  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

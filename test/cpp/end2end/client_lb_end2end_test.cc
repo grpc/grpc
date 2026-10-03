@@ -41,7 +41,6 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/channelz_registry.h"
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
@@ -4329,11 +4328,6 @@ TEST_F(ClientLbSubchannelMetricsTest, DisconnectionOnSubchannelShutdown) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  // Make the backup poller poll very frequently in order to pick up
-  // updates from all the subchannels's FDs.
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms = 1;
-  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

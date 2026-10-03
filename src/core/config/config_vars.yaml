@@ -36,16 +36,6 @@
     prefixed with a '-' to disable them.
   default:
   fuzz: true
-- name: client_channel_backup_poll_interval_ms
-  type: int
-  default: 5000
-  description:
-    Declares the interval in ms between two backup polls on client channels.
-    These polls are run in the timer thread so that gRPC can process
-    connection failures while there is no active polling thread.
-    They help reconnect disconnected client channels (mostly due to
-    idleness), so that the next RPC on this channel won't fail. Set to 0 to
-    turn off the backup polls.
 - name: dns_resolver
   default:
   type: string
