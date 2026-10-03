@@ -9493,6 +9493,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "slice",
+        "stats_data",
         ":header_assembler",
         ":http2_status",
         ":http2_transport",
@@ -9910,6 +9911,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_stats_collector",
         "http2_status",
         "slice",
         "slice_buffer",
@@ -9952,6 +9954,7 @@ grpc_cc_library(
         "http2_settings",
         "http2_settings_manager",
         "http2_settings_promises",
+        "http2_stats_collector",
         "http2_status",
         "if",
         "internal_channel_arg_names",
@@ -9986,6 +9989,7 @@ grpc_cc_library(
         "//:hpack_parser",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:transport_auth_context",
     ],
 )
 

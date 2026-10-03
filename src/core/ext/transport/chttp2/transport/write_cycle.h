@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -146,6 +147,7 @@ class WriteBufferTracker {
 
   struct SerializeStats {
     bool& should_reset_ping_clock;
+    Http2StatsCollector* stats_collector = nullptr;
   };
 
   SliceBuffer SerializeRegularFrames(SerializeStats stats) {
@@ -162,6 +164,28 @@ class WriteBufferTracker {
   template <typename FrameContainer>
   SliceBuffer SerializeFrames(FrameContainer& frames, SerializeStats stats) {
     SliceBuffer output_buf;
+    if (stats.stats_collector != nullptr) {
+      for (const Http2Frame& frame : frames) {
+        if (const Http2DataFrame* data_frame =
+                std::get_if<Http2DataFrame>(&frame)) {
+          stats.stats_collector->IncrementHttp2WriteDataFrameSize(
+              data_frame->payload.Length());
+        } else if (const Http2SettingsFrame* settings_frame =
+                       std::get_if<Http2SettingsFrame>(&frame)) {
+          // Based on CHTTP2's FlushSettings in writing.cc.
+          if (!settings_frame->ack) {
+            stats.stats_collector->IncrementHttp2SettingsWrites();
+          }
+        } else if (const Http2PingFrame* ping_frame =
+                       std::get_if<Http2PingFrame>(&frame)) {
+          // Based on CHTTP2's ping send in writing.cc.
+          if (!ping_frame->ack) {
+            stats.stats_collector->IncrementHttp2PingsSent();
+          }
+        }
+      }
+    }
+
     if (GPR_UNLIKELY(is_first_write_)) {
       // https://www.rfc-editor.org/rfc/rfc9113.html#name-http-2-connection-preface
       // RFC9113:
@@ -239,10 +263,16 @@ class WriteCycle {
  public:
   WriteCycle(Chttp2WriteSizePolicy* write_size_policy, bool& is_first_write,
              const bool& is_client,
-             std::vector<Http2RstStreamFrame>&& rst_streams)
+             std::vector<Http2RstStreamFrame>&& rst_streams,
+             Http2StatsCollector* stats_collector = nullptr)
       : write_buffer_tracker_(is_first_write, is_client),
         write_quota_(write_size_policy->WriteTargetSize()),
         write_size_policy_(write_size_policy) {
+    if (stats_collector != nullptr) {
+      stats_collector->IncrementHttp2WritesBegun();
+      stats_collector->IncrementHttp2WriteTargetSize(
+          write_quota_.GetTargetWriteSize());
+    }
     for (const Http2RstStreamFrame& rst_frame : rst_streams) {
       GetFrameSender().AddRegularFrame(rst_frame);
     }
@@ -269,6 +299,10 @@ class WriteCycle {
   // Wrappers for WriteQuota
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION size_t GetWriteBytesRemaining() const {
     return write_quota_.GetWriteBytesRemaining();
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION size_t GetTargetWriteSize() const {
+    return write_quota_.GetTargetWriteSize();
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SliceBuffer
@@ -331,9 +365,9 @@ class TransportWriteContext {
   TransportWriteContext(TransportWriteContext&&) = delete;
   TransportWriteContext& operator=(TransportWriteContext&&) = delete;
 
-  void StartWriteCycle() {
+  void StartWriteCycle(Http2StatsCollector* stats_collector = nullptr) {
     write_cycle_.emplace(&write_size_policy_, is_first_write_, is_client_,
-                         TakeRstStreams());
+                         TakeRstStreams(), stats_collector);
   }
 
   void EndWriteCycle() { write_cycle_.reset(); }
