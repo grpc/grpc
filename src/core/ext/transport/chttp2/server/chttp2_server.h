@@ -67,6 +67,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     class HandshakingState : public InternallyRefCounted<HandshakingState> {
      public:
       HandshakingState(RefCountedPtr<ActiveConnection> connection_ref,
+                       RefCountedPtr<Server::ListenerInterface> listener_ref,
                        grpc_tcp_server* tcp_server,
                        grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
                        const ChannelArgs& args,
@@ -88,6 +89,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
 
       RefCountedPtr<ActiveConnection> const connection_;
+      RefCountedPtr<Server::ListenerInterface> const listener_;
       grpc_tcp_server* const tcp_server_;
       grpc_pollset* const accepting_pollset_;
       const AcceptorPtr acceptor_;
@@ -102,6 +104,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     };
 
     ActiveConnection(RefCountedPtr<Server::ListenerState> listener_state,
+                     RefCountedPtr<Server::ListenerInterface> listener_ref,
                      grpc_tcp_server* tcp_server,
                      grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
                      const ChannelArgs& args, MemoryOwner memory_owner,
