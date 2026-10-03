@@ -86,6 +86,14 @@ cdef extern from "src/core/lib/surface/call.h":
 
   void* grpc_call_tracer_get(grpc_call* call) nogil
 
+cdef extern from "grpc/server_call_hook.h":
+
+  ctypedef struct grpc_server_call_hook_vtable:
+    pass
+
+  void grpc_server_call_hook_register(
+      const grpc_server_call_hook_vtable* vtable) nogil
+
 cdef extern from "grpc/support/alloc.h":
 
   void *gpr_malloc(size_t size) nogil
