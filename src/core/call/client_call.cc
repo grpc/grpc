@@ -488,6 +488,12 @@ char* ClientCall::GetPeer() {
   return gpr_strdup("unknown");
 }
 
+// TODO(b/568493863): Plumb the local address through to the client side.
+// This requires setting LocalAddressString() on the server initial metadata
+// in the client transport (e.g. Http2ClientTransport, alongside PeerString())
+// and then returning GetLocalAddressString() here, as GetPeer() does.
+char* ClientCall::GetLocalAddress() { return gpr_strdup("unknown"); }
+
 grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           grpc_completion_queue* cq, Slice path,
                           std::optional<Slice> authority,

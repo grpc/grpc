@@ -317,6 +317,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
 
   grpc_core::Slice peer_string;
+  grpc_core::Slice local_address_string;
 
   grpc_core::TransportFramingEndpointExtension*
       transport_framing_endpoint_extension = nullptr;
