@@ -21,8 +21,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <limits>
 #include <memory>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
@@ -83,6 +86,19 @@ TEST(CompressionTest, CompressionAlgorithmName) {
       grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT, &name);
   ASSERT_EQ(success, 0);
   // the value of "name" is undefined upon failure
+}
+
+TEST(CompressionTest, DefaultCompressionAlgorithmClampsIntegerChannelArg) {
+  using grpc_core::ChannelArgs;
+  using grpc_core::DefaultCompressionAlgorithmFromChannelArgs;
+
+  EXPECT_EQ(DefaultCompressionAlgorithmFromChannelArgs(ChannelArgs().Set(
+                GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, -1)),
+            GRPC_COMPRESS_NONE);
+  EXPECT_EQ(DefaultCompressionAlgorithmFromChannelArgs(
+                ChannelArgs().Set(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                                  std::numeric_limits<int>::max())),
+            GRPC_COMPRESS_GZIP);
 }
 
 TEST(CompressionTest, CompressionAlgorithmForLevel) {
