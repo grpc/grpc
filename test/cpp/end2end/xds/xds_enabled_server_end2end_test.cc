@@ -919,11 +919,36 @@ TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       default_route_config_ /* inappropriate route config for servers */);
   StartBackend(0);
-  // The server should be ready to serve but RPCs should fail.
-  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "UNAVAILABLE:matching route has unsupported action",
-                      RpcOptions().set_wait_for_ready(true));
+  // FIXME: Not sure if this is the behavior we really want -- need to
+  // think about this more.
+  // If using RDS, the server will be serving, but RPCs will fail.
+  if (GetParam().enable_rds_testing()) {
+    EXPECT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                        "RDS resource route_config_name: invalid resource: "
+                        "errors validating RouteConfiguration resource: \\["
+                        "field:virtual_hosts\\[0\\].routes\\[0\\].route "
+                        "error:field not supported on server\\] "
+                        "\\(node ID:xds_end2end_test\\)",
+                        RpcOptions().set_wait_for_ready(true));
+  }
+  // If the RouteConfig is inlined in LDS, the server will not be serving.
+  else {
+    EXPECT_EQ(backends_[0]->GetNextStatus(),
+              absl::InvalidArgumentError(absl::StrCat(
+                  "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                  ": invalid resource: errors validating server Listener: ["
+                  "field:default_filter_chain.filters[0].typed_config.value["
+                  "envoy.extensions.filters.network.http_connection_manager.v3"
+                  ".HttpConnectionManager].route_config.virtual_hosts[0]"
+                  ".routes[0].route "
+                  "error:field not supported on server] "
+                  "(node ID:xds_end2end_test)")));
+    CheckRpcSendFailure(
+        DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+        MakeConnectionFailureRegex(
+            "connections to all backends failing; last error: "));
+  }
 }
 
 // Test that non-inline route configuration also works for non-default filter

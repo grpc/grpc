@@ -356,15 +356,18 @@ GrpcXdsClient::GrpcXdsClient(
       key_(key),
       certificate_provider_store_(std::move(certificate_provider_store)),
       stats_plugin_group_(std::move(stats_plugin_group)),
-      registered_metric_callback_(stats_plugin_group_->RegisterCallback(
-          [this](CallbackMetricReporter& reporter) {
-            ReportCallbackMetrics(reporter);
-          },
-          Duration::Seconds(5), kMetricConnected, kMetricResources)),
       lrs_client_(MakeRefCounted<LrsClient>(
           std::move(bootstrap), UserAgentName(), UserAgentVersion(),
           std::move(transport_factory),
-          grpc_event_engine::experimental::GetDefaultEventEngine())) {}
+          grpc_event_engine::experimental::GetDefaultEventEngine())) {
+  if (stats_plugin_group_ != nullptr) {
+    registered_metric_callback_ = stats_plugin_group_->RegisterCallback(
+        [this](CallbackMetricReporter& reporter) {
+          ReportCallbackMetrics(reporter);
+        },
+        Duration::Seconds(5), kMetricConnected, kMetricResources);
+  }
+}
 
 void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
