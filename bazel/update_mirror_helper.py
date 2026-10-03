@@ -48,10 +48,10 @@ _SUPPORTED_RULE_KINDS = [
 _LOGGED_FIELDS = ["repoRuleName", "name", "canonicalName", "apparentName"]
 
 _BAZEL_URLS = [
-    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-arm64",
-    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-x86_64",
-    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-darwin-x86_64",
-    "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-windows-x86_64.exe",
+    "https://github.com/bazelbuild/bazel/releases/download/9.2.0/bazel-9.2.0-linux-arm64",
+    "https://github.com/bazelbuild/bazel/releases/download/9.2.0/bazel-9.2.0-linux-x86_64",
+    "https://github.com/bazelbuild/bazel/releases/download/9.2.0/bazel-9.2.0-darwin-x86_64",
+    "https://github.com/bazelbuild/bazel/releases/download/9.2.0/bazel-9.2.0-windows-x86_64.exe",
 ]
 
 logger = logging.getLogger(__name__)

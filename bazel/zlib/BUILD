@@ -15,4 +15,5 @@
 exports_files([
     "add_custom_build_file.patch",
     "add_module_dot_bazel.patch",
+    "bazel_9_support.patch",
 ])
