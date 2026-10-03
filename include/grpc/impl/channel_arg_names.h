@@ -398,6 +398,10 @@
  */
 #define GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES \
   "grpc.address_http_proxy_enabled_addresses"
+/** The host to connect to for HTTP CONNECT proxy. */
+#define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
+/** Additional HTTP headers to send in HTTP CONNECT request. */
+#define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
