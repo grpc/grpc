@@ -249,7 +249,9 @@ void FilterCloseOnMessage(CoreEnd2endTest& test) {
             "Failing as requested.");
   EXPECT_EQ(server_status.GetTrailingMetadata("test-failure-bin"),
             "Failing as requested binary.");
-  EXPECT_EQ(server_status.GetTrailingMetadata(HostMetadata::key()),
+  // The value of HostMetadata is discarded by the transport and instead
+  // assigned to HttpAuthorityMetadata.
+  EXPECT_EQ(server_status.GetTrailingMetadata(HttpAuthorityMetadata::key()),
             "test-host");
 }
 
