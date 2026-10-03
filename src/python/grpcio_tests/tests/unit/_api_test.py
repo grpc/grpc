@@ -60,6 +60,7 @@ class AllTest(unittest.TestCase):
             "Server",
             "ServerInterceptor",
             "LocalConnectionType",
+            "TLSVersion",
             "local_channel_credentials",
             "local_server_credentials",
             "alts_channel_credentials",

@@ -64,6 +64,8 @@ cdef class SSLChannelCredentials(ChannelCredentials):
   cdef readonly object _private_key
   cdef readonly object _certificate_chain
   cdef readonly object _private_key_signer
+  cdef readonly object _minimum_tls_version
+  cdef readonly object _maximum_tls_version
 
   cdef grpc_channel_credentials *c(self) except *
 
