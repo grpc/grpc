@@ -916,7 +916,7 @@ cdef class _ConcurrentRpcLimiter:
         self._active_rpcs = 0
         self.limiter_concurrency_exceeded = False
 
-    def check_before_request_call(self):
+    def check_before_handling_call(self):
         if self._active_rpcs >= self._maximum_concurrent_rpcs:
             self.limiter_concurrency_exceeded = True
         else:
@@ -1054,111 +1054,96 @@ cdef class AioServer:
             return self._loop.create_task(self._request_call())
 
 
-    async def _server_main_loop(self,
-                                object server_started):
+    async def _call_handler_loop(self, set rpc_tasks,
+                                 bytes method=None):
+        """ Request and handle calls in a loop.
+
+        When `method` is provided, handles registered calls for that specific
+        method. Otherwise handles generic (unregistered) calls.
+        """
         cdef RPCState rpc_state
         cdef str method_name
-
-        self._server.start(backup_queue=False)
-        server_started.set_result(True)
-        rpc_tasks = set()
 
         method_resolver = _MethodResolver(
             self._generic_handlers,
             self._registered_method_handlers
         )
 
-        pending_futures = {}
+        while True:
+            # When shutdown begins, no more new connections.
+            if self._status != AIO_SERVER_STATUS_RUNNING:
+                break
 
+            # Accepts new request from Core
+            try:
+                if method:
+                    rpc_state = await self._request_registered_call(method)
+                    method_name = method.decode()
+                else:
+                    rpc_state = await self._request_call()
+                    method_name = rpc_state.method().decode()
+            except _RequestCallError:
+                # Only _RequestCallError (the async failure) is retried.
+                # A synchronous error from issuing the request (InternalError /
+                # KeyError) is persistent - retrying it would busy-loop. So it
+                # propagates to the serving task's crash handler (fail loud)
+                # instead.
+                continue
+
+            concurrency_exceeded = False
+            if self._limiter is not None:
+                self._limiter.check_before_handling_call()
+                concurrency_exceeded = self._limiter.limiter_concurrency_exceeded
+
+            # Creates the dedicated RPC coroutine. If we schedule it right now,
+            # there is no guarantee if the cancellation listening coroutine is
+            # ready or not. So, we should control the ordering by scheduling
+            # the coroutine onto event loop inside of the cancellation
+            # coroutine.
+            rpc_coro = _handle_rpc(method_name,
+                                    method_resolver,
+                                    self._interceptors,
+                                    rpc_state,
+                                    self._loop,
+                                    concurrency_exceeded)
+
+            # Fires off a task that listens on the cancellation from client.
+            rpc_task = self._loop.create_task(
+                _schedule_rpc_coro(
+                    rpc_coro,
+                    rpc_state,
+                    self._loop,
+                    method_name,
+                ),
+                name="rpc_task",
+            )
+
+            # loop.create_task only holds a weakref to the task.
+            # Maintain reference to tasks to avoid garbage collection.
+            rpc_tasks.add(rpc_task)
+            rpc_task.add_done_callback(rpc_tasks.discard)
+
+            if self._limiter is not None and not concurrency_exceeded:
+                self._limiter.decrease_once_finished(rpc_task)
+
+
+    async def _server_main_loop(self,
+                                object server_started):
+        self._server.start(backup_queue=False)
+        server_started.set_result(True)
+        rpc_tasks = set()
+
+        coros = []
+
+        # Request a call for each registered method so we can handle any of them
         for method in self._registered_method_handlers:
-            method_bytes = str_to_bytes(method)
-            fut = self._make_request_call_future(method_bytes)
-            pending_futures[fut] = method_bytes
+            coros.append(
+                self._call_handler_loop(rpc_tasks, str_to_bytes(method))
+            )
+        # Also request a call for non registered method
+        coros.append(self._call_handler_loop(rpc_tasks))
 
-        generic_fut = self._make_request_call_future(None)
-        pending_futures[generic_fut] = None
-
-        try:
-            while True:
-                # When shutdown begins, no more new connections.
-                if self._status != AIO_SERVER_STATUS_RUNNING:
-                    break
-
-                done, _ = await asyncio.wait(
-                    pending_futures.keys(),
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-
-                for completed in done:
-                    method_bytes = pending_futures.pop(completed)
-                    try:
-                        rpc_state = completed.result()
-                    except _RequestCallError:
-                        # Only _RequestCallError (the async failure) is caught
-                        # here. A synchronous error from re-issuing the call
-                        # (InternalError / KeyError) is persistent - re-arming
-                        # it would busy-loop. So it is left to propagate to the
-                        # serving task's crash handler (fail loud) instead.
-                        if self._status == AIO_SERVER_STATUS_RUNNING:
-                            new_fut = self._make_request_call_future(method_bytes)
-                            pending_futures[new_fut] = method_bytes
-                        continue
-
-                    concurrency_exceeded = False
-                    if self._limiter is not None:
-                        self._limiter.check_before_request_call()
-                        concurrency_exceeded = self._limiter.limiter_concurrency_exceeded
-
-                    if method_bytes is not None:
-                        method_name = method_bytes.decode()
-                    else:
-                        method_name = rpc_state.method().decode()
-
-                    # Creates the dedicated RPC coroutine. If we schedule it right now,
-                    # there is no guarantee if the cancellation listening coroutine is
-                    # ready or not. So, we should control the ordering by scheduling
-                    # the coroutine onto event loop inside of the cancellation
-                    # coroutine.
-                    rpc_coro = _handle_rpc(method_name,
-                                           method_resolver,
-                                           self._interceptors,
-                                           rpc_state,
-                                           self._loop,
-                                           concurrency_exceeded)
-
-                    # Fires off a task that listens on the cancellation from client.
-                    rpc_task = self._loop.create_task(
-                        _schedule_rpc_coro(
-                            rpc_coro,
-                            rpc_state,
-                            self._loop,
-                            method_name,
-                        ),
-                        name="rpc_task",
-                    )
-
-                    # loop.create_task only holds a weakref to the task.
-                    # Maintain reference to tasks to avoid garbage collection.
-                    rpc_tasks.add(rpc_task)
-                    rpc_task.add_done_callback(rpc_tasks.discard)
-
-                    if self._limiter is not None and not concurrency_exceeded:
-                        self._limiter.decrease_once_finished(rpc_task)
-
-                    if self._status == AIO_SERVER_STATUS_RUNNING:
-                        # Unconditionally re-arm the call request future even when concurrency_exceeded
-                        # is True. This enables application-layer load shedding (fast RESOURCE_EXHAUSTED
-                        # rejection in _handle_rpc) without blocking Core completion queues.
-                        new_fut = self._make_request_call_future(method_bytes)
-                        pending_futures[new_fut] = method_bytes
-        finally:
-            for fut in pending_futures:
-                if not fut.done():
-                    fut.cancel()
-            if pending_futures:
-                await asyncio.gather(
-                    *pending_futures.keys(), return_exceptions=True
-                )
+        await asyncio.gather(*coros)
 
 
     def _serving_task_crash_handler(self, object task):
