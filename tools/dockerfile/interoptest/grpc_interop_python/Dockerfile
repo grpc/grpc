@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10-bullseye
+FROM python:3.14-trixie
 
 #=================
 # Basic C core dependencies
@@ -75,12 +75,10 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# Install cmake from bullseye-backports
-# Note that this step should be only used for Debian 11 (bullseye) images.
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 #=================
 # Install ccache
