@@ -171,9 +171,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     listener_state_ = std::move(listener_state);
   }
 
-  const grpc_resolved_address* resolved_address() const override {
-    return &resolved_address_;
-  }
+  std::optional<std::string> listening_address() const override;
 
   void SetOnDestroyDone(grpc_closure* on_destroy_done) override;
 
@@ -212,7 +210,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
   }
 
   grpc_tcp_server* tcp_server_ = nullptr;
-  grpc_resolved_address resolved_address_;
+  std::optional<grpc_resolved_address> resolved_address_;
   RefCountedPtr<Server::ListenerState> listener_state_;
   ChannelArgs args_;
   Mutex mu_;
