@@ -38,12 +38,14 @@ cdef struct CallbackContext:
     cpython.PyObject *loop
     cpython.PyObject *failure_handler
     cpython.PyObject *callback_wrapper
+    cpython.PyObject *on_complete
 
 
 cdef class CallbackWrapper:
     cdef CallbackContext context
     cdef object _reference_of_future
     cdef object _reference_of_failure_handler
+    cdef object _reference_of_on_complete
 
     @staticmethod
     cdef void functor_run(
