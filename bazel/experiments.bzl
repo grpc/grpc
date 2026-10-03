@@ -165,7 +165,6 @@ EXPERIMENTS = {
                 "ph2_server",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
-                "recv_message_filter_bypass_fix",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -216,6 +215,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "recv_message_filter_bypass_fix",
                 "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
