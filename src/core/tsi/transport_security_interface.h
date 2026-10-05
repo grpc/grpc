@@ -27,6 +27,10 @@
 
 #include "src/core/lib/debug/trace.h"
 
+namespace grpc_core {
+class ConnectionContext;
+}  // namespace grpc_core
+
 // --- tsi result ---
 
 typedef enum {
@@ -278,6 +282,15 @@ tsi_result tsi_handshaker_result_create_frame_protector(
 tsi_result tsi_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
     size_t* bytes_size);
+
+// This method lets the handshaker result attach per-connection state that is
+// too costly to compute eagerly as peer properties (e.g. a reference to the
+// certificate this endpoint presented) to \a connection_context, so that it
+// can be computed lazily by the components that actually need it.  It is a
+// no-op for implementations that have nothing to attach.
+void tsi_handshaker_result_populate_connection_context(
+    const tsi_handshaker_result* self,
+    grpc_core::ConnectionContext* connection_context);
 
 // This method releases the tsi_handshaker_handshaker object. After this method
 // is called, no other method can be called on the object.

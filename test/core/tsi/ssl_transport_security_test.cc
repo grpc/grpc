@@ -25,7 +25,6 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
-#include <openssl/x509v3.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,7 +38,9 @@
 #include <tuple>
 #include <vector>
 
+#include "src/core/lib/surface/connection_context.h"
 #include "src/core/telemetry/instrument.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/tls_telemetry.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -164,49 +165,6 @@ class TestMetricsSink;
 
 class SslTransportSecurityTest
     : public ::testing::TestWithParam<std::tuple<tsi_tls_version, bool>> {
- public:
-  static X509* LoadTestCertificate(absl::string_view cert_file) {
-    std::string pem =
-        GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, cert_file));
-    BIO* bio = BIO_new_mem_buf(pem.data(), static_cast<int>(pem.size()));
-    if (bio == nullptr) return nullptr;
-    X509* cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
-    BIO_free(bio);
-    return cert;
-  }
-
-  static void AddIa5San(GENERAL_NAMES* gens, int type,
-                        absl::string_view value) {
-    GENERAL_NAME* gen = GENERAL_NAME_new();
-    gen->type = type;
-    ASN1_IA5STRING* str = ASN1_IA5STRING_new();
-    ASN1_STRING_set(str, value.data(), static_cast<int>(value.size()));
-    if (type == GEN_URI) {
-      gen->d.uniformResourceIdentifier = str;
-    } else if (type == GEN_DNS) {
-      gen->d.dNSName = str;
-    } else if (type == GEN_EMAIL) {
-      gen->d.rfc822Name = str;
-    }
-    sk_GENERAL_NAME_push(gens, gen);
-  }
-
-  static void AddIpSan(GENERAL_NAMES* gens, const unsigned char* ip,
-                       size_t len) {
-    GENERAL_NAME* gen = GENERAL_NAME_new();
-    gen->type = GEN_IPADD;
-    gen->d.iPAddress = ASN1_OCTET_STRING_new();
-    ASN1_OCTET_STRING_set(gen->d.iPAddress, ip, static_cast<int>(len));
-    sk_GENERAL_NAME_push(gens, gen);
-  }
-
-  static void AttachSansAndFree(X509* cert, GENERAL_NAMES* gens) {
-    EXPECT_EQ(X509_add1_ext_i2d(cert, NID_subject_alt_name, gens, 0,
-                                X509V3_ADD_DEFAULT),
-              1);
-    sk_GENERAL_NAME_pop_free(gens, GENERAL_NAME_free);
-  }
-
  protected:
   // A tsi_test_fixture implementation
   class SslTsiTestFixture {
@@ -616,24 +574,8 @@ class SslTransportSecurityTest
       }
     }
 
-    // The local-certificate properties are emitted on the server side only,
-    // so a peer extracted from a client handshaker result must not have any
-    // of them.
-    static void CheckNoLocalCertProperties(const tsi_peer* peer) {
-      EXPECT_EQ(
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_URI_PROPERTY),
-          nullptr);
-      EXPECT_EQ(
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_DNS_PROPERTY),
-          nullptr);
-      EXPECT_EQ(
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_SUBJECT_PROPERTY),
-          nullptr);
-    }
-
     // This is tied specifically to server0.pem loaded by the fixture.
     static void CheckServer0Peer(tsi_peer* peer) {
-      CheckNoLocalCertProperties(peer);
       const tsi_peer_property* property =
           CheckBasicAuthenticatedPeerAndGetCommonName(peer);
       std::string expected_match = "*.test.google.com.au";
@@ -656,7 +598,6 @@ class SslTransportSecurityTest
 
     // This is tied specifically to server1.pem loaded by the fixture.
     static void CheckServer1Peer(tsi_peer* peer) {
-      CheckNoLocalCertProperties(peer);
       const tsi_peer_property* property =
           CheckBasicAuthenticatedPeerAndGetCommonName(peer);
       std::string expected_match = "*.test.google.com";
@@ -688,64 +629,41 @@ class SslTransportSecurityTest
              ssl_fixture->server_name_indication_ != kSslTsiTestInvalidSni;
     }
 
-    // Checks the properties describing the server's own certificate, which
-    // extract_peer() adds on the server side only, and adds them to
-    // \a expected_property_count.  \a peer must be a peer extracted from a
-    // server handshaker result.
+    // Checks the server's own certificate, which the server handshaker result
+    // records in the connection context.
     //
     // These assertions are deliberately exact: they must distinguish the
     // certificate that the server actually presented on this connection
     // (which SNI can change) from the default one, because reporting the
     // wrong one would misreport the server's identity to an authorization
     // service.
-    static void CheckLocalCertProperties(SslTsiTestFixture* ssl_fixture,
-                                         const tsi_peer* peer,
-                                         size_t* expected_property_count) {
-      const tsi_peer_property* local_uri =
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_URI_PROPERTY);
-      const tsi_peer_property* local_dns =
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_DNS_PROPERTY);
-      const tsi_peer_property* local_subject =
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_SUBJECT_PROPERTY);
-      ASSERT_NE(local_subject, nullptr);
-      ++*expected_property_count;
+    static void CheckLocalCertificate(SslTsiTestFixture* ssl_fixture) {
+      auto connection_context = grpc_core::ConnectionContext::Create();
+      tsi_handshaker_result_populate_connection_context(
+          ssl_fixture->base_.server_result, connection_context.get());
+      tsi::LocalCertificate* local_cert =
+          connection_context->Get<tsi::LocalCertificate>();
+      ASSERT_NE(local_cert, nullptr);
+      const tsi::LocalCertificate::Identity& identity = local_cert->identity();
       if (ssl_fixture->use_multi_domain_server_cert_) {
         // multi-domain.pem has three URI SANs and two DNS SANs; only the first
         // of each is reported.
-        ASSERT_NE(local_uri, nullptr);
-        EXPECT_EQ(std::string(local_uri->value.data, local_uri->value.length),
-                  "https://foo.test.domain.com/test");
-        ++*expected_property_count;
-        ASSERT_NE(local_dns, nullptr);
-        EXPECT_EQ(std::string(local_dns->value.data, local_dns->value.length),
-                  "foo.test.domain.com");
-        ++*expected_property_count;
-        EXPECT_EQ(
-            std::string(local_subject->value.data, local_subject->value.length),
-            "CN=xpigors,OU=Google,L=SF,ST=CA,C=US");
+        EXPECT_EQ(identity.uri_san, "https://foo.test.domain.com/test");
+        EXPECT_EQ(identity.dns_san, "foo.test.domain.com");
+        EXPECT_EQ(identity.subject, "CN=xpigors,OU=Google,L=SF,ST=CA,C=US");
         return;
       }
       const bool is_server1 = ServerPresentsServer1Cert(ssl_fixture);
       // Neither server0.pem nor server1.pem has a URI SAN.
-      ASSERT_EQ(local_uri, nullptr);
+      EXPECT_EQ(identity.uri_san, "");
       // server0.pem has no SAN extension at all; server1.pem's first DNS SAN
       // is *.test.google.fr.
-      if (is_server1) {
-        ASSERT_NE(local_dns, nullptr);
-        EXPECT_EQ(std::string(local_dns->value.data, local_dns->value.length),
-                  "*.test.google.fr");
-        ++*expected_property_count;
-      } else {
-        ASSERT_EQ(local_dns, nullptr);
-      }
-      // The subject is the server's own, in RFC 2253 form, and never the
-      // subject of the client that this peer describes.
-      EXPECT_EQ(
-          std::string(local_subject->value.data, local_subject->value.length),
-          is_server1 ? "CN=*.test.google.com,O=Example\\, "
-                       "Co.,L=Chicago,ST=Illinois,C=US"
-                     : "CN=*.test.google.com.au,O=Internet Widgits Pty "
-                       "Ltd,ST=Some-State,C=AU");
+      EXPECT_EQ(identity.dns_san, is_server1 ? "*.test.google.fr" : "");
+      EXPECT_EQ(identity.subject,
+                is_server1 ? "CN=*.test.google.com,O=Example\\, "
+                             "Co.,L=Chicago,ST=Illinois,C=US"
+                           : "CN=*.test.google.com.au,O=Internet Widgits Pty "
+                             "Ltd,ST=Some-State,C=AU");
     }
 
     static void CheckClientPeer(SslTsiTestFixture* ssl_fixture,
@@ -789,7 +707,6 @@ class SslTransportSecurityTest
                                 tls_version_prop->value.length),
                     expected_tls_version);
         }
-        CheckLocalCertProperties(ssl_fixture, peer, &expected_property_count);
         ASSERT_EQ(peer->property_count, expected_property_count);
 
       } else {
@@ -798,10 +715,6 @@ class SslTransportSecurityTest
         std::string expected_match = "testclient";
         ASSERT_EQ(expected_match,
                   std::string(property->value.data, property->value.length));
-        // The client's identity above must not have been taken from the
-        // server's own certificate.
-        size_t ignored_count = 0;
-        CheckLocalCertProperties(ssl_fixture, peer, &ignored_count);
       }
       tsi_peer_destruct(peer);
     }
@@ -870,10 +783,15 @@ class SslTransportSecurityTest
             CheckVerifiedRootCertSubjectUnset(&peer);
           }
         }
+        // The local certificate is recorded on the server side only.
+        auto client_connection_context = grpc_core::ConnectionContext::Create();
+        tsi_handshaker_result_populate_connection_context(
+            ssl_fixture->base_.client_result, client_connection_context.get());
+        EXPECT_EQ(client_connection_context->Get<tsi::LocalCertificate>(),
+                  nullptr);
         if (ssl_fixture->use_multi_domain_server_cert_) {
-          // Not server0.pem or server1.pem; the server-side peer check below
-          // is what this configuration exists for.
-          CheckNoLocalCertProperties(&peer);
+          // Not server0.pem or server1.pem; the server-side check below is
+          // what this configuration exists for.
           tsi_peer_destruct(&peer);
         } else if (ssl_fixture->server_name_indication_.empty() ||
                    ssl_fixture->server_name_indication_ ==
@@ -903,6 +821,7 @@ class SslTransportSecurityTest
           CheckVerifiedRootCertSubjectUnset(&peer);
         }
         CheckClientPeer(ssl_fixture, &peer);
+        CheckLocalCertificate(ssl_fixture);
       } else {
         ASSERT_EQ(ssl_fixture->base_.server_result, nullptr);
       }
@@ -1686,420 +1605,6 @@ TEST(SslTransportSecurityTest, ExtractCertChain) {
   tsi_peer_property_destruct(&chain_property);
   sk_X509_INFO_pop_free(certInfos, X509_INFO_free);
   sk_X509_pop_free(cert_chain, X509_free);
-}
-
-TEST(SslTransportSecurityTest, X509SubjectRfc2253NullCert) {
-  std::string subject = "untouched";
-  EXPECT_EQ(x509_subject_rfc2253(nullptr, &subject), TSI_INVALID_ARGUMENT);
-  EXPECT_EQ(subject, "untouched");
-}
-
-TEST(SslTransportSecurityTest, X509SubjectRfc2253NullSubject) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  EXPECT_EQ(x509_subject_rfc2253(cert, nullptr), TSI_INVALID_ARGUMENT);
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, X509SubjectRfc2253BothInputsNull) {
-  EXPECT_EQ(x509_subject_rfc2253(nullptr, nullptr), TSI_INVALID_ARGUMENT);
-}
-
-TEST(SslTransportSecurityTest, X509SubjectRfc2253EmptySubject) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  std::string subject;
-  EXPECT_EQ(x509_subject_rfc2253(cert, &subject), TSI_OK);
-  EXPECT_TRUE(subject.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, X509SubjectRfc2253StandardSubject) {
-  X509* cert = SslTransportSecurityTest::LoadTestCertificate("server0.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string subject;
-  EXPECT_EQ(x509_subject_rfc2253(cert, &subject), TSI_OK);
-  EXPECT_EQ(
-      subject,
-      "CN=*.test.google.com.au,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, X509SubjectRfc2253EscapedCommaInSubject) {
-  X509* cert = SslTransportSecurityTest::LoadTestCertificate("server1.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string subject;
-  EXPECT_EQ(x509_subject_rfc2253(cert, &subject), TSI_OK);
-  EXPECT_EQ(subject,
-            "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, X509SubjectRfc2253MultipleAttributesInSubject) {
-  X509* cert =
-      SslTransportSecurityTest::LoadTestCertificate("multi-domain.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string subject;
-  EXPECT_EQ(x509_subject_rfc2253(cert, &subject), TSI_OK);
-  EXPECT_EQ(subject, "CN=xpigors,OU=Google,L=SF,ST=CA,C=US");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, X509SubjectRfc2253PrintExFailure) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  X509_NAME* name = X509_get_subject_name(cert);
-  ASSERT_NE(name, nullptr);
-  ASSERT_EQ(X509_NAME_add_entry_by_txt(
-                name, "CN", MBSTRING_ASC,
-                reinterpret_cast<const unsigned char*>("test"), 4, -1, 0),
-            1);
-  X509_NAME_ENTRY* entry = X509_NAME_get_entry(name, 0);
-  ASSERT_NE(entry, nullptr);
-  ASN1_STRING* val = X509_NAME_ENTRY_get_data(entry);
-  ASSERT_NE(val, nullptr);
-  const unsigned char invalid_utf8[] = {0xff, 0xff};
-  ASN1_STRING_set(val, invalid_utf8, sizeof(invalid_utf8));
-  val->type = V_ASN1_UTF8STRING;
-  std::string subject = "untouched_subject";
-  EXPECT_EQ(x509_subject_rfc2253(cert, &subject), TSI_INTERNAL_ERROR);
-  EXPECT_EQ(subject, "untouched_subject");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesNullCertAndNullOutputs) {
-  tsi_first_subject_alt_names_from_x509(nullptr, nullptr, nullptr);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesNullCertClearsUriOutput) {
-  std::string uri_san = "initial_uri";
-  tsi_first_subject_alt_names_from_x509(nullptr, &uri_san, nullptr);
-  EXPECT_TRUE(uri_san.empty());
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesNullCertClearsDnsOutput) {
-  std::string dns_san = "initial_dns";
-  tsi_first_subject_alt_names_from_x509(nullptr, nullptr, &dns_san);
-  EXPECT_TRUE(dns_san.empty());
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesValidCertNullOutputs) {
-  X509* cert =
-      SslTransportSecurityTest::LoadTestCertificate("multi-domain.pem");
-  ASSERT_NE(cert, nullptr);
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, nullptr);
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesOnlyUriRequested) {
-  X509* cert =
-      SslTransportSecurityTest::LoadTestCertificate("multi-domain.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string uri_san = "initial_uri";
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_EQ(uri_san, "https://foo.test.domain.com/test");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesOnlyDnsRequested) {
-  X509* cert =
-      SslTransportSecurityTest::LoadTestCertificate("multi-domain.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string dns_san = "initial_dns";
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_EQ(dns_san, "foo.test.domain.com");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesCertWithoutSansLeavesUriEmpty) {
-  X509* cert = SslTransportSecurityTest::LoadTestCertificate("server0.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string uri_san = "dirty_uri";
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_TRUE(uri_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesCertWithoutSansLeavesDnsEmpty) {
-  X509* cert = SslTransportSecurityTest::LoadTestCertificate("server0.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string dns_san = "dirty_dns";
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_TRUE(dns_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesCertWithOnlyDnsSanLeavesUriEmpty) {
-  X509* cert = SslTransportSecurityTest::LoadTestCertificate("server1.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string uri_san = "dirty_uri";
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_TRUE(uri_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesCertWithOnlyDnsSanExtractsDns) {
-  X509* cert = SslTransportSecurityTest::LoadTestCertificate("server1.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string dns_san;
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_EQ(dns_san, "*.test.google.fr");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesSimultaneousUriAndDnsExtraction) {
-  X509* cert =
-      SslTransportSecurityTest::LoadTestCertificate("multi-domain.pem");
-  ASSERT_NE(cert, nullptr);
-  std::string uri_san;
-  std::string dns_san;
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, &dns_san);
-  EXPECT_EQ(uri_san, "https://foo.test.domain.com/test");
-  EXPECT_EQ(dns_san, "foo.test.domain.com");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesUriSanWithEmbeddedNullRejected) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(
-      gens, GEN_URI, std::string("https://bad\0example.com", 23));
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string uri_san = "dirty_uri";
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_TRUE(uri_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesDnsSanWithEmbeddedNullRejected) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_DNS,
-                                      std::string("bad\0dns.com", 11));
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string dns_san = "dirty_dns";
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_TRUE(dns_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesEmptyUriSanSkipped) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_URI, "");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string uri_san = "dirty_uri";
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_TRUE(uri_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesEmptyDnsSanSkipped) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string dns_san = "dirty_dns";
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_TRUE(dns_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesSkipsEmbeddedNullUriSanAndExtractsValidUri) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(
-      gens, GEN_URI, std::string("https://bad\0example.com", 23));
-  SslTransportSecurityTest::AddIa5San(gens, GEN_URI,
-                                      "https://valid.example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string uri_san;
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_EQ(uri_san, "https://valid.example.com");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesSkipsEmptyUriSanAndExtractsValidUri) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_URI, "");
-  SslTransportSecurityTest::AddIa5San(gens, GEN_URI,
-                                      "https://valid.example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string uri_san;
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_EQ(uri_san, "https://valid.example.com");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesSkipsEmbeddedNullDnsSanAndExtractsValidDns) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_DNS,
-                                      std::string("bad\0dns.com", 11));
-  SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "valid.example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string dns_san;
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_EQ(dns_san, "valid.example.com");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesSkipsEmptyDnsSanAndExtractsValidDns) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "");
-  SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "valid.example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string dns_san;
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_EQ(dns_san, "valid.example.com");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesEmailSanIgnoredForUri) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_EMAIL, "test@example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string uri_san = "dirty_uri";
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_TRUE(uri_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesEmailSanIgnoredForDns) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_EMAIL, "test@example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string dns_san = "dirty_dns";
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_TRUE(dns_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesIpAddressSanIgnoredForUri) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  const unsigned char ip_bytes[] = {127, 0, 0, 1};
-  SslTransportSecurityTest::AddIpSan(gens, ip_bytes, sizeof(ip_bytes));
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string uri_san = "dirty_uri";
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_TRUE(uri_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest, FirstSubjectAltNamesIpAddressSanIgnoredForDns) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  const unsigned char ip_bytes[] = {127, 0, 0, 1};
-  SslTransportSecurityTest::AddIpSan(gens, ip_bytes, sizeof(ip_bytes));
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string dns_san = "dirty_dns";
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_TRUE(dns_san.empty());
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesSkipsEmailSanAndExtractsValidUri) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_EMAIL, "test@example.com");
-  SslTransportSecurityTest::AddIa5San(gens, GEN_URI,
-                                      "https://valid.example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string uri_san;
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_EQ(uri_san, "https://valid.example.com");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesSkipsEmailSanAndExtractsValidDns) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  SslTransportSecurityTest::AddIa5San(gens, GEN_EMAIL, "test@example.com");
-  SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "valid.example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string dns_san;
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_EQ(dns_san, "valid.example.com");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesSkipsIpAddressSanAndExtractsValidUri) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  const unsigned char ip_bytes[] = {127, 0, 0, 1};
-  SslTransportSecurityTest::AddIpSan(gens, ip_bytes, sizeof(ip_bytes));
-  SslTransportSecurityTest::AddIa5San(gens, GEN_URI,
-                                      "https://valid.example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string uri_san;
-  tsi_first_subject_alt_names_from_x509(cert, &uri_san, nullptr);
-  EXPECT_EQ(uri_san, "https://valid.example.com");
-  X509_free(cert);
-}
-
-TEST(SslTransportSecurityTest,
-     FirstSubjectAltNamesSkipsIpAddressSanAndExtractsValidDns) {
-  X509* cert = X509_new();
-  ASSERT_NE(cert, nullptr);
-  GENERAL_NAMES* gens = sk_GENERAL_NAME_new_null();
-  ASSERT_NE(gens, nullptr);
-  const unsigned char ip_bytes[] = {127, 0, 0, 1};
-  SslTransportSecurityTest::AddIpSan(gens, ip_bytes, sizeof(ip_bytes));
-  SslTransportSecurityTest::AddIa5San(gens, GEN_DNS, "valid.example.com");
-  SslTransportSecurityTest::AttachSansAndFree(cert, gens);
-  std::string dns_san;
-  tsi_first_subject_alt_names_from_x509(cert, nullptr, &dns_san);
-  EXPECT_EQ(dns_san, "valid.example.com");
-  X509_free(cert);
 }
 
 // Attempt to perform a handshake between a client and server with ALPN enabled

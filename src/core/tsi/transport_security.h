@@ -125,6 +125,11 @@ struct tsi_handshaker_result_vtable {
                                  const unsigned char** bytes,
                                  size_t* bytes_size);
   void (*destroy)(tsi_handshaker_result* self);
+  // May be null if the implementation has nothing to attach to the connection
+  // context.  Kept last so that existing vtable initializers leave it null.
+  void (*populate_connection_context)(
+      const tsi_handshaker_result* self,
+      grpc_core::ConnectionContext* connection_context);
 };
 struct tsi_handshaker_result {
   const tsi_handshaker_result_vtable* vtable;

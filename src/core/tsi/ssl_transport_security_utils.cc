@@ -31,11 +31,16 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <string>
+#include <utility>
+
+#include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 
 namespace tsi {
 
@@ -431,26 +436,147 @@ absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(
   return pkey;
 }
 
-absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name) {
-  if (subject_alt_name == nullptr || subject_alt_name->type != GEN_URI) {
-    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
-  }
-  // This shouldn't be a possible if statement to enter because if the type is
-  // GEN_URI it then by definition should have a d.uniformResourceIdentifier.
-  // But we can still keep it for safety.
-  if (subject_alt_name->d.uniformResourceIdentifier == nullptr) {
+namespace {
+
+// Converts \a value to a UTF-8 string.  An empty \a value yields an empty
+// string.
+absl::StatusOr<std::string> Asn1StringToUtf8(ASN1_STRING* value) {
+  if (value == nullptr) {
     return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
   }
   unsigned char* name = nullptr;
-  int name_size =
-      ASN1_STRING_to_UTF8(&name, subject_alt_name->d.uniformResourceIdentifier);
-  if (name_size < 0 || name == nullptr) {
-    OPENSSL_free(name);
+  const int name_size = ASN1_STRING_to_UTF8(&name, value);
+  // On failure ASN1_STRING_to_UTF8 does not allocate `name`; on success it
+  // always does, even for an empty string.
+  if (name_size < 0) {
     return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
   }
   std::string ret(reinterpret_cast<char const*>(name), name_size);
   OPENSSL_free(name);
   return ret;
+}
+
+}  // namespace
+
+absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name) {
+  if (subject_alt_name == nullptr || subject_alt_name->type != GEN_URI) {
+    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+  }
+  return Asn1StringToUtf8(subject_alt_name->d.uniformResourceIdentifier);
+}
+
+absl::StatusOr<std::string> ParseDnsString(GENERAL_NAME* subject_alt_name) {
+  if (subject_alt_name == nullptr || subject_alt_name->type != GEN_DNS) {
+    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+  }
+  return Asn1StringToUtf8(subject_alt_name->d.dNSName);
+}
+
+absl::StatusOr<std::string> X509SubjectRfc2253(X509* cert) {
+  if (cert == nullptr) {
+    return absl::InvalidArgumentError("cert is null");
+  }
+  X509_NAME* subject_name = X509_get_subject_name(cert);
+  if (subject_name == nullptr) {
+    return absl::NotFoundError("Could not get subject name from certificate.");
+  }
+  BIO* bio = BIO_new(BIO_s_mem());
+  if (bio == nullptr) {
+    return absl::ResourceExhaustedError("Could not allocate BIO.");
+  }
+  int status = X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
+  char* contents = nullptr;
+  long len = BIO_get_mem_data(bio, &contents);
+  if (status < 0 || len < 0 || (len > 0 && contents == nullptr)) {
+    BIO_free(bio);
+    return absl::InternalError("Could not get subject entry from certificate.");
+  }
+  std::string subject;
+  if (len > 0) {
+    subject.assign(contents, static_cast<size_t>(len));
+  }
+  // Otherwise len == 0: the certificate has a well-formed but empty subject (an
+  // X509_NAME with no RDNs), so X509_NAME_print_ex wrote nothing to the BIO.
+  // RFC 5280 section 4.1.2.6 permits this when the subject identity is instead
+  // carried in a critical subjectAltName extension. In this case `contents` may
+  // be nullptr or point to an empty buffer, so it must not be dereferenced;
+  // report an empty subject instead.
+  BIO_free(bio);
+  return subject;
+}
+
+namespace {
+
+// Returns the first non-empty SAN of \a san_type (GEN_URI or GEN_DNS) in
+// \a cert.  SANs that cannot be decoded, or that contain an embedded null
+// byte, are skipped.
+absl::StatusOr<std::string> FirstSanOfType(X509* cert, int san_type) {
+  GRPC_DCHECK_NE(cert, nullptr);
+  GRPC_DCHECK(san_type == GEN_URI || san_type == GEN_DNS);
+  GENERAL_NAMES* subject_alt_names = static_cast<GENERAL_NAMES*>(
+      X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
+  if (subject_alt_names == nullptr) {
+    return absl::NotFoundError("Certificate has no subjectAltName extension.");
+  }
+  absl::StatusOr<std::string> result =
+      absl::NotFoundError("Certificate has no usable SAN of this type.");
+  const size_t subject_alt_name_count = sk_GENERAL_NAME_num(subject_alt_names);
+  for (size_t i = 0; i < subject_alt_name_count; ++i) {
+    GENERAL_NAME* subject_alt_name =
+        sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
+    if (subject_alt_name == nullptr || subject_alt_name->type != san_type) {
+      continue;
+    }
+    absl::StatusOr<std::string> parsed = san_type == GEN_URI
+                                             ? ParseUriString(subject_alt_name)
+                                             : ParseDnsString(subject_alt_name);
+    if (!parsed.ok()) {
+      LOG(ERROR) << "Could not parse SAN: " << parsed.status();
+      continue;
+    }
+    // Skip empty SANs.
+    if (parsed->empty()) continue;
+    if (absl::StrContains(*parsed, '\0')) {
+      LOG(ERROR) << "SAN contains embedded null byte.";
+      continue;
+    }
+    result = std::move(parsed);
+    break;
+  }
+  sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
+  return result;
+}
+
+}  // namespace
+
+absl::StatusOr<std::string> FirstUriSanFromX509(X509* cert) {
+  return FirstSanOfType(cert, GEN_URI);
+}
+
+absl::StatusOr<std::string> FirstDnsSanFromX509(X509* cert) {
+  return FirstSanOfType(cert, GEN_DNS);
+}
+
+LocalCertificate::LocalCertificate(X509* cert) : cert_(cert) {
+  GRPC_DCHECK_NE(cert_, nullptr);
+}
+
+LocalCertificate::~LocalCertificate() { X509_free(cert_); }
+
+const LocalCertificate::Identity& LocalCertificate::identity() {
+  grpc_core::MutexLock lock(&mu_);
+  if (!identity_.has_value()) {
+    Identity identity;
+    absl::StatusOr<std::string> uri_san = FirstUriSanFromX509(cert_);
+    if (uri_san.ok()) identity.uri_san = std::move(*uri_san);
+    absl::StatusOr<std::string> dns_san = FirstDnsSanFromX509(cert_);
+    if (dns_san.ok()) identity.dns_san = std::move(*dns_san);
+    absl::StatusOr<std::string> subject = X509SubjectRfc2253(cert_);
+    if (subject.ok()) identity.subject = std::move(*subject);
+    identity_ = std::move(identity);
+  }
+  // Safe to return after unlocking: the value is never modified once set.
+  return *identity_;
 }
 
 absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(

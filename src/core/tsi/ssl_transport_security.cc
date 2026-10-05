@@ -68,6 +68,7 @@
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/surface/connection_context.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
@@ -90,6 +91,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -1078,115 +1080,20 @@ static tsi_result peer_property_from_x509_common_name(
   return result;
 }
 
-// Gets the subject of an X509 cert in RFC 2253 form.  \a subject is left
-// untouched unless TSI_OK is returned.
-tsi_result x509_subject_rfc2253(X509* cert, std::string* subject) {
-  if (cert == nullptr || subject == nullptr) {
-    return TSI_INVALID_ARGUMENT;
-  }
-  auto* subject_name = X509_get_subject_name(cert);
-  if (subject_name == nullptr) {
-    GRPC_TRACE_LOG(tsi, INFO) << "Could not get subject name from certificate.";
-    return TSI_NOT_FOUND;
-  }
-  BIO* bio = BIO_new(BIO_s_mem());
-  if (bio == nullptr) {
-    LOG(ERROR) << "Could not allocate BIO.";
-    return TSI_OUT_OF_RESOURCES;
-  }
-  int status = X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
-  char* contents = nullptr;
-  long len = BIO_get_mem_data(bio, &contents);
-  if (status < 0 || len < 0 || (len > 0 && contents == nullptr)) {
-    LOG(ERROR) << "Could not get subject entry from certificate.";
-    BIO_free(bio);
-    return TSI_INTERNAL_ERROR;
-  }
-  if (len > 0) {
-    subject->assign(contents, static_cast<size_t>(len));
-  } else {
-    subject->clear();
-  }
-  BIO_free(bio);
-  return TSI_OK;
-}
-
-// Finds the first URI SAN and the first DNS SAN of \a cert, storing them in
-// \a uri_san and \a dns_san respectively.  Either one is left empty if the
-// certificate has no SAN of that type.
-void tsi_first_subject_alt_names_from_x509(X509* cert, std::string* uri_san,
-                                           std::string* dns_san) {
-  if (uri_san != nullptr) uri_san->clear();
-  if (dns_san != nullptr) dns_san->clear();
-  if (cert == nullptr) return;
-  bool found_uri = (uri_san == nullptr);
-  bool found_dns = (dns_san == nullptr);
-  if (found_uri && found_dns) return;
-  GENERAL_NAMES* subject_alt_names = static_cast<GENERAL_NAMES*>(
-      X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
-  if (subject_alt_names == nullptr) return;
-  const size_t subject_alt_name_count = sk_GENERAL_NAME_num(subject_alt_names);
-  for (size_t i = 0; i < subject_alt_name_count && !(found_uri && found_dns);
-       ++i) {
-    GENERAL_NAME* subject_alt_name =
-        sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
-    if (subject_alt_name == nullptr) continue;
-    std::string* destination = nullptr;
-    const ASN1_STRING* value = nullptr;
-    bool is_uri = false;
-    if (subject_alt_name->type == GEN_URI && !found_uri) {
-      is_uri = true;
-      destination = uri_san;
-      value = subject_alt_name->d.uniformResourceIdentifier;
-    } else if (subject_alt_name->type == GEN_DNS && !found_dns) {
-      destination = dns_san;
-      value = subject_alt_name->d.dNSName;
-    } else {
-      continue;
-    }
-    if (value == nullptr) {
-      continue;
-    }
-    unsigned char* name = nullptr;
-    const int name_size =
-        ASN1_STRING_to_UTF8(&name, const_cast<ASN1_STRING*>(value));
-    if (name_size <= 0 || name == nullptr) {
-      if (name_size < 0) {
-        LOG(ERROR) << "Could not get utf8 from asn1 string.";
-      }
-      if (name != nullptr) {
-        OPENSSL_free(name);
-      }
-      continue;
-    }
-    if (memchr(name, '\0', static_cast<size_t>(name_size)) != nullptr) {
-      LOG(ERROR) << "SAN contains embedded null byte.";
-      OPENSSL_free(name);
-      continue;
-    }
-    destination->assign(reinterpret_cast<const char*>(name),
-                        static_cast<size_t>(name_size));
-    OPENSSL_free(name);
-    if (is_uri) {
-      found_uri = true;
-    } else {
-      found_dns = true;
-    }
-  }
-  sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
-}
-
 // Gets the subject of an X509 cert as a tsi_peer_property.
 static tsi_result peer_property_from_x509_subject(X509* cert,
                                                   tsi_peer_property* property,
                                                   bool is_verified_root_cert) {
-  std::string subject;
-  tsi_result result = x509_subject_rfc2253(cert, &subject);
-  if (result != TSI_OK) return result;
+  absl::StatusOr<std::string> subject = tsi::X509SubjectRfc2253(cert);
+  if (!subject.ok()) {
+    LOG(ERROR) << "Could not get subject from certificate: "
+               << subject.status();
+    return TSI_INTERNAL_ERROR;
+  }
   return tsi_construct_string_peer_property(
       is_verified_root_cert ? TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY
                             : TSI_X509_SUBJECT_PEER_PROPERTY,
-      subject.data(), subject.size(), property);
+      subject->data(), subject->size(), property);
 }
 
 // Gets the X509 cert in PEM format as a tsi_peer_property.
@@ -2344,21 +2251,6 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
   return result;
 }
 
-// Appends \a value to \a peer under the property name \a name, unless \a value
-// is empty, in which case this is a no-op.  The caller must have reserved
-// space for the property.
-static tsi_result maybe_add_string_peer_property(tsi_peer* peer,
-                                                 const char* name,
-                                                 const std::string& value) {
-  if (value.empty()) return TSI_OK;
-  tsi_result result = tsi_construct_string_peer_property(
-      name, value.data(), value.size(),
-      &peer->properties[peer->property_count]);
-  if (result != TSI_OK) return result;
-  peer->property_count++;
-  return TSI_OK;
-}
-
 // --- tsi_handshaker_result methods implementation. ---
 static tsi_result ssl_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
@@ -2391,27 +2283,6 @@ static tsi_result ssl_handshaker_result_extract_peer(
   const char* tls_version = SSL_get_version(impl->ssl);
   X509* verified_root_cert = static_cast<X509*>(
       SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
-  // Identity of the certificate that *this* endpoint presented on this
-  // connection.  Note that this describes the local endpoint, not the peer.
-  // Only servers need it (it backs AttributeContext.destination.principal in
-  // the ext_authz filter, which is populated only for incoming calls), so
-  // clients pay nothing for it.
-  std::string local_uri_san;
-  std::string local_dns_san;
-  std::string local_subject;
-  if (SSL_is_server(impl->ssl)) {
-    // Returns the leaf actually configured for this connection, taking SNI
-    // and certificate selection into account.  The returned certificate is
-    // owned by the SSL object and must not be freed.
-    X509* local_cert = SSL_get_certificate(impl->ssl);
-    if (local_cert != nullptr) {
-      tsi_first_subject_alt_names_from_x509(local_cert, &local_uri_san,
-                                            &local_dns_san);
-      if (x509_subject_rfc2253(local_cert, &local_subject) != TSI_OK) {
-        local_subject.clear();
-      }
-    }
-  }
   // 1 is for session reused property.
   size_t new_property_count = peer->property_count + 3;
   if (alpn_selected != nullptr) new_property_count++;
@@ -2419,9 +2290,6 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (verified_root_cert != nullptr) new_property_count++;
   if (server_name != nullptr) new_property_count++;
   if (tls_version != nullptr) new_property_count++;
-  if (!local_uri_san.empty()) new_property_count++;
-  if (!local_dns_san.empty()) new_property_count++;
-  if (!local_subject.empty()) new_property_count++;
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   int nid = SSL_get_negotiated_group(impl->ssl);
   const char* negotiated_group_name =
@@ -2481,26 +2349,16 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (verified_root_cert != nullptr) {
     result = peer_property_from_x509_subject(
         verified_root_cert, &peer->properties[peer->property_count], true);
-    if (result != TSI_OK) {
+    if (result == TSI_OK) {
+      peer->property_count++;
+    } else {
+      // Not fatal: the handshake has already succeeded, and this property is
+      // informational only.  Leave the slot unpopulated and carry on.
       VLOG(2) << "Problem extracting subject from verified_root_cert. result: "
               << result;
+      result = TSI_OK;
     }
-    peer->property_count++;
   }
-  // Properties describing the local endpoint's own certificate.  These are
-  // deliberately named differently from the peer properties above so that no
-  // consumer can confuse them with the peer's identity.  Note that these must
-  // not overwrite `result`, which is what this function returns and which may
-  // already carry an error from the verified-root-cert block above.
-  tsi_result local_result = maybe_add_string_peer_property(
-      peer, TSI_X509_LOCAL_URI_PROPERTY, local_uri_san);
-  if (local_result != TSI_OK) return local_result;
-  local_result = maybe_add_string_peer_property(
-      peer, TSI_X509_LOCAL_DNS_PROPERTY, local_dns_san);
-  if (local_result != TSI_OK) return local_result;
-  local_result = maybe_add_string_peer_property(
-      peer, TSI_X509_LOCAL_SUBJECT_PROPERTY, local_subject);
-  if (local_result != TSI_OK) return local_result;
 
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   if (negotiated_group_name != nullptr) {
@@ -2586,6 +2444,25 @@ static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(impl);
 }
 
+static void ssl_handshaker_result_populate_connection_context(
+    const tsi_handshaker_result* self,
+    grpc_core::ConnectionContext* connection_context) {
+  const tsi_ssl_handshaker_result* impl =
+      reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+  // Only servers need their own certificate: it backs
+  // AttributeContext.destination.principal in the ext_authz filter, which is
+  // populated only for incoming calls.
+  if (!SSL_is_server(impl->ssl)) return;
+  // Returns the leaf actually configured for this connection, taking SNI and
+  // certificate selection into account.  It is owned by the SSL object, so
+  // take our own reference.  Its identity is only computed if a component asks
+  // for it (see tsi::LocalCertificate::identity()).
+  X509* local_cert = SSL_get_certificate(impl->ssl);
+  if (local_cert == nullptr) return;
+  X509_up_ref(local_cert);
+  connection_context->Update<tsi::LocalCertificate>(local_cert);
+}
+
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     ssl_handshaker_result_extract_peer,
     ssl_handshaker_result_get_frame_protector_type,
@@ -2593,6 +2470,7 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     ssl_handshaker_result_create_frame_protector,
     ssl_handshaker_result_get_unused_bytes,
     ssl_handshaker_result_destroy,
+    ssl_handshaker_result_populate_connection_context,
 };
 
 static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,

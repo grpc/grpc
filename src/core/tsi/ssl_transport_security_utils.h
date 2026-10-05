@@ -25,8 +25,13 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <optional>
+#include <string>
+
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -181,6 +186,56 @@ absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(absl::string_view private_key_pem);
 
 // Safely parses a URI from OpenSSL's GENERAL_NAME to a string representation.
 absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name);
+
+// Safely parses a DNS name from OpenSSL's GENERAL_NAME to a string
+// representation.
+absl::StatusOr<std::string> ParseDnsString(GENERAL_NAME* subject_alt_name);
+
+// Returns the subject of \a cert in RFC 2253 form.  A certificate with a
+// well-formed but empty subject yields an empty string.
+absl::StatusOr<std::string> X509SubjectRfc2253(X509* cert);
+
+// Returns the first non-empty URI SAN of \a cert, which must be non-null.
+// SANs that cannot be decoded, or that contain an embedded null byte, are
+// skipped.  Returns NotFound if the certificate has no usable URI SAN.
+absl::StatusOr<std::string> FirstUriSanFromX509(X509* cert);
+
+// Returns the first non-empty DNS SAN of \a cert, which must be non-null.
+// SANs that cannot be decoded, or that contain an embedded null byte, are
+// skipped.  Returns NotFound if the certificate has no usable DNS SAN.
+absl::StatusOr<std::string> FirstDnsSanFromX509(X509* cert);
+
+// The certificate that *this* endpoint presented on a connection.  The SSL
+// handshaker stores one in the connection's ConnectionContext on the server
+// side, holding just a reference to the certificate; its identity is only
+// computed if and when a component asks for it, and at most once per
+// connection.
+class LocalCertificate {
+ public:
+  // Identity of the certificate.  A field is empty if the certificate has no
+  // usable value for it.
+  struct Identity {
+    std::string uri_san;
+    std::string dns_san;
+    std::string subject;
+  };
+
+  // Takes ownership of one reference to \a cert, which must be non-null.
+  explicit LocalCertificate(X509* cert);
+  ~LocalCertificate();
+
+  LocalCertificate(const LocalCertificate&) = delete;
+  LocalCertificate& operator=(const LocalCertificate&) = delete;
+
+  // Computes the identity on the first call and returns the cached value on
+  // later calls.  Thread-safe.
+  const Identity& identity();
+
+ private:
+  X509* const cert_;
+  grpc_core::Mutex mu_;
+  std::optional<Identity> identity_ ABSL_GUARDED_BY(mu_);
+};
 
 // Map grpc_tls_key_exchange_group to string.
 absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
