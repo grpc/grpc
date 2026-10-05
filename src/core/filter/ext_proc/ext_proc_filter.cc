@@ -1502,22 +1502,11 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
                               []() -> StatusFlag { return Success{}; });
               },
               Immediate(StatusFlag(Success{}))),
-          // Forward server trailing metadata downstream to client if not
-          // waiting for side-stream or running in observability mode.
-          If(
-              !send_to_sidestream || config().observability_mode,
-              [self = WeakRef()]() {
-                // server_trailing_metadata_ will be null if payload creation
-                // failed with fail-open enabled, in which case
-                // HandleSideStreamStatus() has already forwarded the metadata.
-                if (self->server_trailing_metadata_ != nullptr) {
-                  self->handler_.PushServerTrailingMetadata(
-                      std::move(self->server_trailing_metadata_));
-                }
-                return Immediate(StatusFlag(Success{}));
-              },
-              Immediate(StatusFlag(Success{}))),
           // Send server trailing metadata payload to the side-stream.
+          // In observability mode, this must happen before forwarding the
+          // trailing metadata downstream: forwarding completes the call,
+          // after which this send may never run. Once the write is accepted,
+          // deferred_close_timeout keeps the side-stream alive to flush it.
           If(
               send_to_sidestream,
               [self = WeakRef(), payload = std::move(payload)]() mutable {
@@ -1536,7 +1525,22 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
                          "disabled or stream closed)";
                 }
                 return Immediate(StatusFlag(Success{}));
-              })));
+              }),
+          // Forward server trailing metadata downstream to client if not
+          // waiting for side-stream or running in observability mode.
+          If(
+              !send_to_sidestream || config().observability_mode,
+              [self = WeakRef()]() {
+                // server_trailing_metadata_ will be null if payload creation
+                // failed with fail-open enabled, in which case
+                // HandleSideStreamStatus() has already forwarded the metadata.
+                if (self->server_trailing_metadata_ != nullptr) {
+                  self->handler_.PushServerTrailingMetadata(
+                      std::move(self->server_trailing_metadata_));
+                }
+                return Immediate(StatusFlag(Success{}));
+              },
+              Immediate(StatusFlag(Success{})))));
 }
 
 //

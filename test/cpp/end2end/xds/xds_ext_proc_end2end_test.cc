@@ -821,7 +821,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void TearDown() override {
-    ext_proc_server_->Shutdown();
+    if (ext_proc_server_ != nullptr) ext_proc_server_->Shutdown();
     env_var_.reset();
     XdsEnd2endTest::TearDown();
   }
