@@ -468,7 +468,7 @@ def targets():
         ),
         # C#
         CSharpDistribTest(
-            "linux", "x64", "debian11", use_dotnet_cli=True, presubmit=True
+            "linux", "x64", "debian12", use_dotnet_cli=True, presubmit=True
         ),
         CSharpDistribTest("linux", "x64", "ubuntu2204", use_dotnet_cli=True),
         CSharpDistribTest(
@@ -484,24 +484,24 @@ def targets():
         CSharpDistribTest("windows", "x86", presubmit=True),
         CSharpDistribTest("windows", "x64", presubmit=True),
         # Python
-        PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
-        PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
+        PythonDistribTest("linux", "x64", "bookworm", presubmit=True),
+        PythonDistribTest("linux", "x86", "bookworm", presubmit=True),
         PythonDistribTest("linux", "x64", "fedora40"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2404"),
         PythonDistribTest(
-            "linux", "aarch64", "python310_bullseye", presubmit=True
+            "linux", "aarch64", "python310_bookworm", presubmit=True
         ),
         PythonDistribTest("linux", "aarch64", "alpine", presubmit=True),
         PythonDistribTest(
             "linux", "x64", "alpine3.18", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x64", "bullseye", source=True, presubmit=True
+            "linux", "x64", "bookworm", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x86", "bullseye", source=True, presubmit=True
+            "linux", "x86", "bookworm", source=True, presubmit=True
         ),
         PythonDistribTest("linux", "x64", "fedora40", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),

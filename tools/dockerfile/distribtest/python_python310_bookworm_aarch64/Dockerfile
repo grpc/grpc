@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10-bookworm
+# this an aarch64 image, qemu emulator will be used to run the tests
+FROM --platform=linux/arm64 python:3.10-bookworm
 
-{% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_addons.include" %}
-
-RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
-RUN ln -s $(which python3) /usr/bin/python
-
-{% include "../../gcp_api_libraries.include" %}
-
-{% include "../../cmake.include" %}
-{% include "../../ccache.include" %}
+RUN python3 -m pip install virtualenv

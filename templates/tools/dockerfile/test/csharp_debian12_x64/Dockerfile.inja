@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10-bookworm
+FROM debian:12
 
 {% include "../../apt_get_basic.include" %}
+{% include "../../run_tests_python_deps_venv.include" %}
+{% include "../../cmake.include" %}
+{% include "../../csharp_deps.include" %}
+{% include "../../csharp_dotnetcli_deps.include" %}
+{% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
 
-RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
-RUN ln -s $(which python3) /usr/bin/python
+# Define the default command.
+CMD ["bash"]
 
-{% include "../../gcp_api_libraries.include" %}
-
-{% include "../../cmake.include" %}
-{% include "../../ccache.include" %}

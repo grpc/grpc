@@ -44,7 +44,7 @@ MAX_CONCURRENCY=${MAX_CONCURRENCY:-8}
 if [ "${CHECK_MODE}" == "" ]
 then
   # Check that docker is installed and sudoless docker works.
-  docker run --rm debian:11 bash -c 'echo "sudoless docker run works!"' || \
+  docker run --rm debian:12 bash -c 'echo "sudoless docker run works!"' || \
       (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
 
   if [ "${HOST_ARCH_ONLY}" == "" ]; then
@@ -54,7 +54,7 @@ then
     # an emulator.
     # Perform a check that "qemu-user-static" with binfmt-misc hook
     # is installed, to give an early warning (otherwise building arm64 images won't work)
-    docker run --rm --platform=linux/arm64 arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+    docker run --rm --platform=linux/arm64 arm64v8/debian:12 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
         (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
   fi
 fi
@@ -83,13 +83,13 @@ EXCLUDE_DIRS=(
 # a list of docker directories that are based on ARM64 base images
 ARM_DOCKERFILE_DIRS=(
   tools/dockerfile/distribtest/python_alpine_aarch64
-  tools/dockerfile/distribtest/python_python310_bullseye_aarch64
+  tools/dockerfile/distribtest/python_python310_bookworm_aarch64
   tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64
   tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64
   tools/dockerfile/test/bazel_arm64
-  tools/dockerfile/test/csharp_debian11_arm64
+  tools/dockerfile/test/csharp_debian12_arm64
   tools/dockerfile/test/php8_debian12_arm64
-  tools/dockerfile/test/python_debian11_default_arm64
+  tools/dockerfile/test/python_debian12_default_arm64
   tools/dockerfile/test/ruby_debian12_arm64
 )
 

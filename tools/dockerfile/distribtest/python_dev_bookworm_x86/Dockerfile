@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10-bookworm
+FROM --platform=linux/386 python:3.10-bookworm
 
-{% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_addons.include" %}
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    build-essential \
+    python3-dev
 
-RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
-RUN ln -s $(which python3) /usr/bin/python
+RUN python3 -m pip install virtualenv
 
-{% include "../../gcp_api_libraries.include" %}
-
-{% include "../../cmake.include" %}
-{% include "../../ccache.include" %}
+# docker is running on a 64-bit machine, so we need to
+# override "uname -m" to report i686 instead of x86_64, otherwise
+# python will choose a wrong binary package to install.
+ENTRYPOINT ["linux32"]
