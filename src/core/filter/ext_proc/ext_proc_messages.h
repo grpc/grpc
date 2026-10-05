@@ -47,8 +47,8 @@ namespace grpc_core {
 // send_response_body), it always operates in GRPC mode (deframed gRPC messages
 // sent one at a time).
 struct ExtProcProcessingMode {
-  bool send_request_headers = false;
-  bool send_response_headers = false;
+  bool send_request_headers = true;
+  bool send_response_headers = true;
   bool send_response_trailers = false;
   bool send_request_body = false;
   bool send_response_body = false;
@@ -139,8 +139,9 @@ absl::StatusOr<std::string> CreateExtProcServerHeadersRequest(
 //  processing modes as per gRFC A93).
 //  - end_of_stream: If true, indicates that this body chunk is the last message
 //  on the stream.
-//  - end_of_stream_without_message: If true, indicates end of stream with an
-//  empty body chunk.
+//  - end_of_stream_without_message: If end_of_stream is true and this is true,
+//  indicates end of stream without a message (e.g. half-close). Ignored if
+//  end_of_stream is false.
 absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
     upb_Arena* arena, absl::string_view body,
     ::google_protobuf_Struct* attributes, bool observability_mode,
@@ -286,7 +287,7 @@ struct ExtProcResponse {
     // error message to return with.
     std::string details;
     // Headers to set in the response.
-    HeaderMutation header_mutation;
+    HeaderMutation mutation;
   };
 
   // The variant representing the actual response content.
