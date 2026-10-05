@@ -102,7 +102,7 @@ cdef class _BoundEventLoop:
             # anyway, so the chunk size does not influence correctness. It
             # should be just "large enough"
             data = self._read_socket.recv(_WAKEUP_READ_SIZE)
-        except OSError:
+        except (BlockingIOError, InterruptedError):
             pass
 
         if data is not None and not data:
@@ -149,6 +149,7 @@ cdef class _BoundEventLoop:
         is a no-op and pending events can be only released.
         """
         if self._has_reader:
+            self._has_reader = False
             try:
                 self.loop.remove_reader(self._read_socket)
             except (KeyError, ValueError, RuntimeError) as exc:
@@ -158,6 +159,7 @@ cdef class _BoundEventLoop:
 
         self._drain_queue(not self.loop.is_closed())
         _close_socket(self._read_socket)
+        self._read_socket = None
 
     cdef close_write_socket(self):
         """Closes the write end of the socket.
@@ -167,6 +169,7 @@ cdef class _BoundEventLoop:
         time the loop runs, on the loop's own thread.
         """
         _close_socket(self._write_socket)
+        self._write_socket = None
 
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):

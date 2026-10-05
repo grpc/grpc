@@ -80,14 +80,14 @@ def _grpc_shutdown_wrapper(_):
 
 
 cdef _actual_aio_shutdown(object engine, BaseCompletionQueue cq):
-    if _global_aio_state.engine is AsyncIOEngine.POLLER:
+    if engine is AsyncIOEngine.POLLER:
         try:
             (<PollerCompletionQueue>cq).shutdown()
         finally:
             # Core's init count must stay balanced whatever happened above
             grpc_shutdown()
     else:
-        raise ValueError('Unsupported engine type [%s]' % _global_aio_state.engine)
+        raise ValueError('Unsupported engine type [%s]' % engine)
 
 
 cdef _initialize_per_loop():
