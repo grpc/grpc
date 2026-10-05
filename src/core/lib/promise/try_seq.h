@@ -157,7 +157,7 @@ struct TakeValueExists<T,
 // should terminate the sequence and return.
 template <typename T>
 struct TrySeqTraitsWithSfinae<
-    T, absl::enable_if_t<
+    T, std::enable_if_t<
            std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
                !TakeValueExists<T>::value && AllowGenericTrySeqTraits<T>::value,
            void>> {
@@ -188,7 +188,7 @@ struct TrySeqTraitsWithSfinae<
 };
 template <typename T>
 struct TrySeqTraitsWithSfinae<
-    T, absl::enable_if_t<
+    T, std::enable_if_t<
            std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value &&
                TakeValueExists<T>::value && AllowGenericTrySeqTraits<T>::value,
            void>> {

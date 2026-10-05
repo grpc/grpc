@@ -117,6 +117,14 @@ grpc_objc_library(
     ],
 )
 
+# The private headers of grpc_objc_client. They're in a separate target so that
+# grpc_objc_client doesn't export them to its dependents as textual headers.
+grpc_objc_library(
+    name = "grpc_objc_client_private",
+    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
+    visibility = ["//visibility:private"],
+)
+
 grpc_objc_library(
     name = "grpc_objc_client",
     srcs = [
@@ -134,8 +142,8 @@ grpc_objc_library(
     ],
     data = [":gRPCCertificates"],
     includes = ["."],
-    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
     deps = [
+        ":grpc_objc_client_private",
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
         ":grpc_objc_interface_types",

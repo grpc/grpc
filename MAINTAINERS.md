@@ -40,6 +40,7 @@ for general contribution guidelines.
 - [thisisnotapril](https://github.com/thisisnotapril), Google LLC
 - [tjagtap](https://github.com/tjagtap), Google LLC
 - [veblush](https://github.com/veblush), Google LLC
+- [vidhikpatel](https://github.com/vidhikpatel), Google LLC
 - [vishalpowar](https://github.com/vishalpowar), Google LLC
 - [wenbozhu](https://github.com/wenbozhu), Google LLC
 - [yashykt](https://github.com/yashykt), Google LLC

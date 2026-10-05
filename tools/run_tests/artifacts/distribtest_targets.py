@@ -449,7 +449,7 @@ def targets():
         CppDistribTest(
             "linux",
             "x64",
-            "debian11_aarch64_cross",
+            "debian13_aarch64_cross",
             "cmake_aarch64_cross",
             presubmit=False,
         ),

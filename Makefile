@@ -285,7 +285,7 @@ CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CFLAGS += -g
-CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2 -Ithird_party/upb -Isrc/core/ext/upb-gen -Isrc/core/ext/upbdefs-gen -Ithird_party/utf8_range -Ithird_party/xxhash -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares -Ithird_party/address_sorting/include
+CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2 -Ithird_party/upb -Isrc/core/ext/upb-gen -Isrc/core/ext/upbdefs-gen -Ithird_party/utf8_range -Ithird_party/xxhash -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares -Ithird_party/address_sorting/include -Ithird_party/cel-c
 COREFLAGS += -fno-exceptions
 LDFLAGS += -g
 
@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 57.0.0
-CPP_VERSION = 1.85.0-dev
+CORE_VERSION = 58.0.0
+CPP_VERSION = 1.86.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -57
+SHARED_VERSION_CORE = -58
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -798,7 +798,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/chttp2_plugin.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
-    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
@@ -982,17 +981,17 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
     src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c \
     src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c \
     src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c \
@@ -1404,6 +1403,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/autosharding/autosharding.cc \
     src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
@@ -1575,6 +1575,7 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/blackboard.cc \
     src/core/xds/grpc/certificate_provider_store.cc \
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
+    src/core/xds/grpc/streaming_call_promise_wrapper.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \
     src/core/xds/grpc/xds_bootstrap_grpc.cc \
     src/core/xds/grpc/xds_bootstrap_grpc_builder.cc \
@@ -1934,8 +1935,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.57 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.57
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.58 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.58
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif

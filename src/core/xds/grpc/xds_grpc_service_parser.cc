@@ -46,7 +46,7 @@ GrpcXdsServerTarget ParseXdsGrpcService(
                                /*call_creds_configs=*/{});
   }
   // timeout
-  Duration timeout = Duration::Zero();
+  Duration timeout = Duration::Infinity();
   if (auto* timeout_proto =
           envoy_config_core_v3_GrpcService_timeout(grpc_service);
       timeout_proto != nullptr) {

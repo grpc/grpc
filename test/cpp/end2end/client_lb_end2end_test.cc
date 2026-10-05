@@ -14,6 +14,7 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
+#include <grpc/health/v1/health.grpc.pb.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/time.h>
@@ -67,7 +68,6 @@
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
-#include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"
@@ -111,12 +111,12 @@ class NoopHealthCheckServiceImpl : public health::v1::Health::Service {
   }
   Status Watch(ServerContext*, const health::v1::HealthCheckRequest*,
                ServerWriter<health::v1::HealthCheckResponse>*) override {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     request_count_++;
     return Status::OK;
   }
   int request_count() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return request_count_;
   }
 
@@ -132,7 +132,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       ++request_count_;
     }
     AddClient(context->peer());
@@ -184,23 +184,23 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   size_t request_count() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return request_count_;
   }
 
   void ResetCounters() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     request_count_ = 0;
   }
 
   std::set<std::string> clients() {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     return clients_;
   }
 
  private:
   void AddClient(const std::string& client) {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(clients_mu_);
     clients_.insert(client);
   }
 
@@ -462,7 +462,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     void Start() {
       LOG(INFO) << "starting server on port " << port_;
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       started_ = true;
       thread_ =
           std::make_unique<std::thread>(std::bind(&ServerData::Serve, this));
@@ -493,13 +493,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
       grpc::ServerBuilder::experimental_type(&builder)
           .EnableCallMetricRecording(server_metric_recorder_.get());
       server_ = builder.BuildAndStart();
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       server_ready_ = true;
       cond_.Signal();
     }
 
     void Shutdown() {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       if (!started_) return;
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
@@ -2191,6 +2191,8 @@ TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
   for (size_t i = 0; i < 100; i++) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
 }
 
 TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
@@ -2370,7 +2372,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
   }
 
   std::vector<grpc_core::PickArgsSeen> args_seen_list() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return args_seen_list_;
   }
 
@@ -2392,7 +2394,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
  private:
   static void SavePickArgs(const grpc_core::PickArgsSeen& args_seen) {
     ClientLbPickArgsTest* self = current_test_instance_;
-    grpc_core::MutexLock lock(&self->mu_);
+    grpc_core::MutexLock lock(self->mu_);
     self->args_seen_list_.emplace_back(args_seen);
   }
 
@@ -2553,28 +2555,28 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   }
 
   int num_trailers_intercepted() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return num_trailers_intercepted_;
   }
 
   absl::Status last_status() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return last_status_;
   }
 
   grpc_core::MetadataVector trailing_metadata() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return std::move(trailing_metadata_);
   }
 
   std::optional<OrcaLoadReport> backend_load_report() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return std::move(load_report_);
   }
 
   // Returns true if received callback within deadline.
   bool WaitForLbCallback() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     while (!trailer_intercepted_) {
       if (cond_.WaitWithTimeout(&mu_, absl::Seconds(3))) return false;
     }
@@ -2609,7 +2611,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
       const grpc_core::TrailingMetadataArgsSeen& args_seen) {
     const auto* backend_metric_data = args_seen.backend_metric_data;
     ClientLbInterceptTrailingMetadataTest* self = current_test_instance_;
-    grpc_core::MutexLock lock(&self->mu_);
+    grpc_core::MutexLock lock(self->mu_);
     self->last_status_ = args_seen.status;
     self->num_trailers_intercepted_++;
     self->trailer_intercepted_ = true;
@@ -2966,14 +2968,14 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
   std::vector<std::string> addresses_seen() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return addresses_seen_;
   }
 
  private:
   static void SaveAddress(const grpc_core::EndpointAddresses& address) {
     ClientLbAddressTest* self = current_test_instance_;
-    grpc_core::MutexLock lock(&self->mu_);
+    grpc_core::MutexLock lock(self->mu_);
     self->addresses_seen_.emplace_back(address.ToString());
   }
 
@@ -3035,7 +3037,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
   }
 
   std::optional<BackendMetricReport> GetBackendMetricReport() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (backend_metric_reports_.empty()) return std::nullopt;
     auto result = std::move(backend_metric_reports_.front());
     backend_metric_reports_.pop_front();
@@ -3048,7 +3050,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
       const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());
-    grpc_core::MutexLock lock(&current_test_instance_->mu_);
+    grpc_core::MutexLock lock(current_test_instance_->mu_);
     current_test_instance_->backend_metric_reports_.push_back(
         {port, std::move(load_report)});
   }
@@ -3460,7 +3462,7 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
       request_.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
       stub->async()->Echo(&context_, &request_, &response_,
                           [this](Status status) {
-                            grpc_core::MutexLock lock(&mu_);
+                            grpc_core::MutexLock lock(mu_);
                             status_ = std::move(status);
                             cv_.Signal();
                           });
@@ -3474,7 +3476,7 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
 
     // Gets the RPC's status.  Blocks if the RPC is not yet complete.
     Status GetStatus() {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       while (!status_.has_value()) {
         cv_.Wait(&mu_);
       }

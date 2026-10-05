@@ -16,6 +16,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/utf8_range)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/xxhash)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cel-c)
 
   LIBS="-lpthread $LIBS"
 
@@ -173,7 +174,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/chttp2_plugin.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
-    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
@@ -357,17 +357,17 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
     src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c \
     src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c \
     src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c \
@@ -779,6 +779,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/autosharding/autosharding.cc \
     src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
@@ -950,6 +951,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/blackboard.cc \
     src/core/xds/grpc/certificate_provider_store.cc \
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
+    src/core/xds/grpc/streaming_call_promise_wrapper.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \
     src/core/xds/grpc/xds_bootstrap_grpc.cc \
     src/core/xds/grpc/xds_bootstrap_grpc_builder.cc \
@@ -1512,7 +1514,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.85.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.86.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)
@@ -1613,11 +1615,11 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/rpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/channelz/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/gcp)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/health/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/lb/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/lookup/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/channelz/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/gcp)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/health/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/lb/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/xds/annotations/v3)
@@ -1712,6 +1714,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/autosharding)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/outlier_detection)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/pick_first)
