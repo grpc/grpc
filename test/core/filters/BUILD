@@ -180,6 +180,40 @@ grpc_fuzz_test(
     ],
 )
 
+grpc_fuzz_test(
+    name = "finalization_filter_test",
+    srcs = ["finalization_filter_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    tags = ["finalization_filter_test"],
+    deps = [
+        ":filter_matchers",
+        ":filter_test",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_status",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:call_filters",
+        "//src/core:call_final_info",
+        "//src/core:call_spine",
+        "//src/core:channel_args",
+        "//src/core:channelz_property_list",
+        "//src/core:context",
+        "//src/core:experiments",
+        "//src/core:filter_args",
+        "//src/core:metadata",
+        "//src/core:status_flag",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
+
 grpc_cc_test(
     name = "filter_test_v2_test",
     srcs = ["filter_test_v2_test.cc"],
