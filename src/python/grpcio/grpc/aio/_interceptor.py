@@ -1211,7 +1211,6 @@ class InterceptedStreamStreamCall(  # pylint: disable=too-many-ancestors
 
 class UnaryUnaryCallResponse(
     _base_call.UnaryUnaryCall[RequestType, ResponseType],
-    Generic[RequestType, ResponseType],
 ):
     """Final UnaryUnaryCall class finished with a response."""
 
