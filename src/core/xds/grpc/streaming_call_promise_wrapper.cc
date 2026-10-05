@@ -88,6 +88,8 @@ XdsStreamingCallPromiseWrapper::PollPullMessage() {
       return Pending{};
     case RecvState::kReceivedStatus:
       return std::nullopt;
+    default:
+      return Pending{};
   }
 }
 
