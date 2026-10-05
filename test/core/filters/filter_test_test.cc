@@ -23,11 +23,14 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/status.h>
 
+#include <chrono>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
+#include "src/core/call/call_spine.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
@@ -45,7 +48,9 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/useful.h"
 #include "test/core/filters/filter_matchers.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -365,6 +370,165 @@ FILTER_TEST(FilterTest, ConsumingInterceptorCreatesNoChildCall) {
   EXPECT_EQ(PullServerTrailingStatus(initiator),
             absl::UnimplementedError("consumed by interceptor"));
 
+  WaitForAllPendingWork();
+}
+
+// For a filter that creates its child call right away, the deferred form
+// behaves just like StartCallForFilter(): the handler is there immediately.
+FILTER_TEST(FilterTest, DeferredHandlerWithFilterThatDoesNotDefer) {
+  ASSERT_TRUE(CreateFilterChain<PassThroughFilter>().ok());
+  StartCallWithDeferredHandler(NewClientMetadata({{"echo-test", "on"}}));
+  ASSERT_TRUE(WaitForHandler());
+  ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
+      PullClientInitialMetadata();
+  ASSERT_TRUE(client_initial_metadata.ok());
+  EXPECT_THAT(**client_initial_metadata,
+              HasMetadataKeyValue("echo-test", "on"));
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(), absl::OkStatus());
+  WaitForAllPendingWork();
+}
+
+namespace {
+
+// A one-shot signal the test opens by hand, standing in for an external
+// service (e.g. an ExtProc server) whose response a filter must wait for before
+// it can create its child call. Handed to GatedInterceptor via channel args.
+class Gate final : public RefCounted<Gate> {
+ public:
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.test.filter_test_gate";
+  }
+  static int ChannelArgsCompare(const Gate* a, const Gate* b) {
+    return QsortCompare(a, b);
+  }
+
+  void Open() {
+    open_ = true;
+    waker_.Wakeup();
+  }
+
+  // A promise that resolves once Open() has been called.
+  auto Wait() {
+    return [self = Ref()]() -> Poll<Empty> {
+      if (self->open_) return Empty{};
+      self->waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      return Pending{};
+    };
+  }
+
+ private:
+  bool open_ = false;
+  Waker waker_;
+};
+
+// An interceptor that reads the client's initial metadata, then holds the call
+// until its Gate opens before creating exactly one child call: the shape of a
+// filter that defers creating its child call.
+class GatedInterceptor final : public Interceptor {
+ public:
+  static absl::StatusOr<RefCountedPtr<GatedInterceptor>> Create(
+      const ChannelArgs& args, const FilterArgs&) {
+    RefCountedPtr<Gate> gate = args.GetObjectRef<Gate>();
+    if (gate == nullptr) return absl::InvalidArgumentError("no gate");
+    return MakeRefCounted<GatedInterceptor>(std::move(gate));
+  }
+
+  explicit GatedInterceptor(RefCountedPtr<Gate> gate)
+      : gate_(std::move(gate)) {}
+
+  void Orphaned() override {}
+
+ protected:
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    unstarted_call_handler.SpawnInfallible(
+        "gated-hijack", [this, unstarted_call_handler]() mutable {
+          return Seq(
+              Hijack(std::move(unstarted_call_handler)),
+              [gate = gate_](ValueOrFailure<HijackedCall> hijacked_call) {
+                return Map(gate->Wait(), [hijacked_call = std::move(
+                                              hijacked_call)](Empty) mutable {
+                  if (hijacked_call.ok()) {
+                    ForwardCall(hijacked_call.value().original_call_handler(),
+                                hijacked_call.value().MakeLastCall());
+                  }
+                  return Empty{};
+                });
+              });
+        });
+  }
+
+ private:
+  RefCountedPtr<Gate> gate_;
+};
+
+// A suite whose stack is a GatedInterceptor, with the gate held by the test.
+class DeferredHandlerFilterTest : public FilterTest {
+ protected:
+  using FilterTest::FilterTest;
+
+  absl::Status Init() {
+    return CreateFilterChain<GatedInterceptor>(ChannelArgs().SetObject(gate_));
+  }
+
+  // The gate may hold a waker into the call under test, so drop it only once
+  // FilterTest::Shutdown() has cancelled that call.
+  void Shutdown() override {
+    FilterTest::Shutdown();
+    gate_.reset();
+  }
+
+  RefCountedPtr<Gate> gate_ = MakeRefCounted<Gate>();
+};
+
+}  // namespace
+
+// The filter holds the call until the gate opens: until then WaitForHandler()
+// times out without setting the implicit handler (so it may be retried), and
+// once the gate opens the handler arrives and the call runs end to end. The
+// client's message is pushed while the call is held, as a client would while a
+// filter waits on an external service.
+FILTER_TEST(DeferredHandlerFilterTest, HandlerArrivesOnlyOnceFilterCreatesIt) {
+  ASSERT_TRUE(Init().ok());
+  StartCallWithDeferredHandler(NewClientMetadata({{"echo-test", "on"}}));
+  PushClientMessage(NewMessage("hello"));
+  PushClientHalfClose();
+  EXPECT_FALSE(WaitForHandler(std::chrono::seconds(5)));
+  gate_->Open();
+  ASSERT_TRUE(WaitForHandler());
+  ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
+      PullClientInitialMetadata();
+  ASSERT_TRUE(client_initial_metadata.ok());
+  EXPECT_THAT(**client_initial_metadata,
+              HasMetadataKeyValue("echo-test", "on"));
+  ClientToServerNextMessage request = PullClientMessage();
+  ASSERT_TRUE(request.ok());
+  ASSERT_TRUE(request.has_value());
+  EXPECT_THAT(request.value(), HasMessagePayload("hello"));
+  PushServerInitialMetadata(NewServerMetadata({{"server-hdr", "yes"}}));
+  PushServerMessage(NewMessage("world"));
+  ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_metadata =
+      PullServerInitialMetadata();
+  ASSERT_TRUE(server_initial_metadata.ok());
+  EXPECT_THAT(*server_initial_metadata,
+              ::testing::Optional(::testing::Pointee(
+                  HasMetadataKeyValue("server-hdr", "yes"))));
+  ServerToClientNextMessage response = PullServerMessage();
+  ASSERT_TRUE(response.ok());
+  ASSERT_TRUE(response.has_value());
+  EXPECT_THAT(response.value(), HasMessagePayload("world"));
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(), absl::OkStatus());
+  WaitForAllPendingWork();
+}
+
+// A filter that never creates its child call: WaitForHandler() reports that,
+// and the held call is torn down by the suite's Shutdown() override, which
+// chains to FilterTest::Shutdown() to cancel it.
+FILTER_TEST(DeferredHandlerFilterTest, NoHandlerIfFilterNeverCreatesIt) {
+  ASSERT_TRUE(Init().ok());
+  StartCallWithDeferredHandler(NewClientMetadata());
+  EXPECT_FALSE(WaitForHandler(std::chrono::seconds(5)));
   WaitForAllPendingWork();
 }
 

@@ -164,6 +164,7 @@ grpc_fuzz_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena_promise",
+        "//src/core:call_spine",
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
         "//src/core:context",
@@ -175,8 +176,10 @@ grpc_fuzz_test(
         "//src/core:metadata_batch",
         "//src/core:pipe",
         "//src/core:poll",
+        "//src/core:ref_counted",
         "//src/core:seq",
         "//src/core:slice",
+        "//src/core:useful",
     ],
 )
 
