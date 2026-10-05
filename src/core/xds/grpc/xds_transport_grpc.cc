@@ -71,161 +71,6 @@
 
 namespace grpc_core {
 
-namespace {
-
-ChannelArgs ModifyChannelArgs(const ChannelArgs& args) {
-  return args.Set(GRPC_ARG_KEEPALIVE_TIME_MS, Duration::Minutes(5).millis());
-}
-
-RefCountedPtr<Channel> CreateXdsChannel(
-    const ChannelArgs& args,
-    CertificateProviderStoreInterface& certificate_provider_store,
-    const GrpcXdsServerInterface& server) {
-  RefCountedPtr<grpc_channel_credentials> channel_creds =
-      CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_config(), certificate_provider_store);
-  ChannelArgs channel_args = args;
-  const grpc_channel_args* child_args =
-      args.GetPointer<grpc_channel_args>(GRPC_ARG_CHILD_CHANNEL_ARGS);
-  if (child_args != nullptr) {
-    channel_args = ChannelArgs::FromC(child_args).UnionWith(args);
-  }
-  return RefCountedPtr<Channel>(Channel::FromC(
-      grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
-                          channel_args.ToC().get())));
-}
-
-std::string GetChannelKey(const GrpcXdsServerInterface& server) {
-  std::string result = "{server_uri=";
-  absl::StrAppend(&result, server.server_uri());
-  if (server.channel_creds_config() != nullptr) {
-    absl::StrAppend(
-        &result,
-        ", channel_creds={type=", server.channel_creds_config()->type(),
-        ", config=", server.channel_creds_config()->ToString(), "}");
-  }
-  absl::StrAppend(&result, "}");
-  return result;
-}
-
-RefCountedPtr<grpc_call_credentials> GetCallCredsForTransport(
-    const GrpcXdsServerInterface& server) {
-  RefCountedPtr<grpc_call_credentials> call_creds;
-  for (const auto& call_creds_config : server.call_creds_configs()) {
-    RefCountedPtr<grpc_call_credentials> creds =
-        CoreConfiguration::Get().call_creds_registry().CreateCallCreds(
-            call_creds_config);
-    if (call_creds == nullptr) {
-      call_creds = std::move(creds);
-    } else {
-      call_creds = MakeRefCounted<grpc_composite_call_credentials>(
-          std::move(call_creds), std::move(creds));
-    }
-  }
-  return call_creds;
-}
-
-//
-// StateWatcher
-//
-
-class StateWatcher final : public AsyncConnectivityStateWatcherInterface {
- public:
-  explicit StateWatcher(
-      RefCountedPtr<XdsTransport::ConnectivityFailureWatcher> watcher)
-      : watcher_(std::move(watcher)) {}
-
- private:
-  void OnConnectivityStateChange(grpc_connectivity_state new_state,
-                                 const absl::Status& status) override {
-    if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      watcher_->OnConnectivityFailure(absl::Status(
-          status.code(),
-          absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
-    }
-  }
-
-  RefCountedPtr<XdsTransport::ConnectivityFailureWatcher> watcher_;
-};
-
-//
-// TransportImpl and GrpcCoreTransport
-//
-
-class TransportImpl final : public TransportFactory::Transport {
- public:
-  explicit TransportImpl(RefCountedPtr<XdsTransport> transport)
-      : transport_(std::move(transport)) {}
-  ~TransportImpl() override = default;
-
-  const RefCountedPtr<XdsTransport>& transport() const { return transport_; }
-
- private:
-  RefCountedPtr<XdsTransport> transport_;
-};
-
-class GrpcCoreTransport final : public XdsTransport {
- public:
-  explicit GrpcCoreTransport(RefCountedPtr<Channel> channel)
-      : channel_(std::move(channel)),
-        interested_parties_(grpc_pollset_set_create()) {}
-
-  ~GrpcCoreTransport() override {
-    grpc_pollset_set_destroy(interested_parties_);
-  }
-
-  void Orphaned() override {}
-
-  void StartConnectivityFailureWatch(
-      RefCountedPtr<ConnectivityFailureWatcher> watcher) override {
-    if (channel_->IsLame()) return;
-    auto* state_watcher = new StateWatcher(watcher);
-    {
-      MutexLock lock(mu_);
-      watchers_.emplace(std::move(watcher), state_watcher);
-    }
-    channel_->AddConnectivityWatcher(
-        GRPC_CHANNEL_IDLE,
-        OrphanablePtr<AsyncConnectivityStateWatcherInterface>(state_watcher));
-  }
-
-  void StopConnectivityFailureWatch(
-      const RefCountedPtr<ConnectivityFailureWatcher>& watcher) override {
-    if (channel_->IsLame()) return;
-    AsyncConnectivityStateWatcherInterface* state_watcher = nullptr;
-    {
-      MutexLock lock(mu_);
-      auto it = watchers_.find(watcher);
-      if (it == watchers_.end()) return;
-      state_watcher = it->second;
-      watchers_.erase(it);
-    }
-    channel_->RemoveConnectivityWatcher(state_watcher);
-  }
-
-  OrphanablePtr<StreamingCall> CreateStreamingCall(
-      const char* method,
-      std::unique_ptr<StreamingCall::EventHandler> event_handler,
-      CallOptions options) override {
-    std::vector<std::pair<std::string, std::string>> initial_metadata;
-    return MakeOrphanable<GrpcStreamingCall>(
-        interested_parties_, channel_.get(), method, std::move(event_handler),
-        /*call_creds=*/nullptr, initial_metadata, Duration::Zero(), options);
-  }
-
-  void ResetBackoff() override { channel_->ResetConnectionBackoff(); }
-
- private:
-  RefCountedPtr<Channel> channel_;
-  grpc_pollset_set* interested_parties_;
-  Mutex mu_;
-  absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>,
-                      AsyncConnectivityStateWatcherInterface*>
-      watchers_ ABSL_GUARDED_BY(&mu_);
-};
-
-}  // namespace
-
 //
 // GrpcStreamingCall
 //
@@ -443,8 +288,87 @@ void GrpcStreamingCall::OnStatusReceived(void* arg,
 }
 
 //
+// StateWatcher
+//
+
+namespace {
+
+class StateWatcher final : public AsyncConnectivityStateWatcherInterface {
+ public:
+  explicit StateWatcher(
+      RefCountedPtr<XdsTransport::ConnectivityFailureWatcher> watcher)
+      : watcher_(std::move(watcher)) {}
+
+ private:
+  void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                 const absl::Status& status) override {
+    if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      watcher_->OnConnectivityFailure(absl::Status(
+          status.code(),
+          absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
+    }
+  }
+
+  RefCountedPtr<XdsTransport::ConnectivityFailureWatcher> watcher_;
+};
+
+}  // namespace
+
+//
 // GrpcXdsTransportFactory::GrpcXdsTransport
 //
+
+namespace {
+
+RefCountedPtr<Channel> CreateXdsChannel(
+    const ChannelArgs& args,
+    CertificateProviderStoreInterface& certificate_provider_store,
+    const GrpcXdsServerInterface& server) {
+  RefCountedPtr<grpc_channel_credentials> channel_creds =
+      CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
+          server.channel_creds_config(), certificate_provider_store);
+  ChannelArgs channel_args = args;
+  const grpc_channel_args* child_args =
+      args.GetPointer<grpc_channel_args>(GRPC_ARG_CHILD_CHANNEL_ARGS);
+  if (child_args != nullptr) {
+    channel_args = ChannelArgs::FromC(child_args).UnionWith(args);
+  }
+  return RefCountedPtr<Channel>(Channel::FromC(
+      grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
+                          channel_args.ToC().get())));
+}
+
+std::string GetChannelKey(const GrpcXdsServerInterface& server) {
+  std::string result = "{server_uri=";
+  absl::StrAppend(&result, server.server_uri());
+  if (server.channel_creds_config() != nullptr) {
+    absl::StrAppend(
+        &result,
+        ", channel_creds={type=", server.channel_creds_config()->type(),
+        ", config=", server.channel_creds_config()->ToString(), "}");
+  }
+  absl::StrAppend(&result, "}");
+  return result;
+}
+
+RefCountedPtr<grpc_call_credentials> GetCallCredsForTransport(
+    const GrpcXdsServerInterface& server) {
+  RefCountedPtr<grpc_call_credentials> call_creds;
+  for (const auto& call_creds_config : server.call_creds_configs()) {
+    RefCountedPtr<grpc_call_credentials> creds =
+        CoreConfiguration::Get().call_creds_registry().CreateCallCreds(
+            call_creds_config);
+    if (call_creds == nullptr) {
+      call_creds = std::move(creds);
+    } else {
+      call_creds = MakeRefCounted<grpc_composite_call_credentials>(
+          std::move(call_creds), std::move(creds));
+    }
+  }
+  return call_creds;
+}
+
+}  // namespace
 
 class GrpcXdsTransportFactory::SharedChannel final
     : public RefCounted<SharedChannel> {
@@ -566,6 +490,14 @@ Channel* GrpcXdsTransportFactory::GrpcXdsTransport::channel() const {
 // GrpcXdsTransportFactory
 //
 
+namespace {
+
+ChannelArgs ModifyChannelArgs(const ChannelArgs& args) {
+  return args.Set(GRPC_ARG_KEEPALIVE_TIME_MS, Duration::Minutes(5).millis());
+}
+
+}  // namespace
+
 GrpcXdsTransportFactory::GrpcXdsTransportFactory(
     const ChannelArgs& args,
     RefCountedPtr<CertificateProviderStoreInterface> certificate_provider_store)
@@ -622,8 +554,84 @@ GrpcXdsTransportFactory::GetTransport(
 }
 
 //
-// TransportFactory
+// TransportImpl and GrpcCoreTransport
 //
+
+namespace {
+
+class TransportImpl final : public TransportFactory::Transport {
+ public:
+  explicit TransportImpl(RefCountedPtr<XdsTransport> transport)
+      : transport_(std::move(transport)) {}
+  ~TransportImpl() override = default;
+
+  const RefCountedPtr<XdsTransport>& transport() const { return transport_; }
+
+ private:
+  RefCountedPtr<XdsTransport> transport_;
+};
+
+class GrpcCoreTransport final : public XdsTransport {
+ public:
+  explicit GrpcCoreTransport(RefCountedPtr<Channel> channel)
+      : channel_(std::move(channel)),
+        interested_parties_(grpc_pollset_set_create()) {}
+
+  ~GrpcCoreTransport() override {
+    grpc_pollset_set_destroy(interested_parties_);
+  }
+
+  void Orphaned() override {}
+
+  void StartConnectivityFailureWatch(
+      RefCountedPtr<ConnectivityFailureWatcher> watcher) override {
+    if (channel_->IsLame()) return;
+    auto* state_watcher = new StateWatcher(watcher);
+    {
+      MutexLock lock(mu_);
+      watchers_.emplace(std::move(watcher), state_watcher);
+    }
+    channel_->AddConnectivityWatcher(
+        GRPC_CHANNEL_IDLE,
+        OrphanablePtr<AsyncConnectivityStateWatcherInterface>(state_watcher));
+  }
+
+  void StopConnectivityFailureWatch(
+      const RefCountedPtr<ConnectivityFailureWatcher>& watcher) override {
+    if (channel_->IsLame()) return;
+    AsyncConnectivityStateWatcherInterface* state_watcher = nullptr;
+    {
+      MutexLock lock(mu_);
+      auto it = watchers_.find(watcher);
+      if (it == watchers_.end()) return;
+      state_watcher = it->second;
+      watchers_.erase(it);
+    }
+    channel_->RemoveConnectivityWatcher(state_watcher);
+  }
+
+  OrphanablePtr<StreamingCall> CreateStreamingCall(
+      const char* method,
+      std::unique_ptr<StreamingCall::EventHandler> event_handler,
+      CallOptions options) override {
+    std::vector<std::pair<std::string, std::string>> initial_metadata;
+    return MakeOrphanable<GrpcStreamingCall>(
+        interested_parties_, channel_.get(), method, std::move(event_handler),
+        /*call_creds=*/nullptr, initial_metadata, Duration::Zero(), options);
+  }
+
+  void ResetBackoff() override { channel_->ResetConnectionBackoff(); }
+
+ private:
+  RefCountedPtr<Channel> channel_;
+  grpc_pollset_set* interested_parties_;
+  Mutex mu_;
+  absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>,
+                      AsyncConnectivityStateWatcherInterface*>
+      watchers_ ABSL_GUARDED_BY(&mu_);
+};
+
+}  // namespace
 
 std::unique_ptr<TransportFactory::Transport>
 TransportFactory::CreateCoreTransport(absl::string_view target,
