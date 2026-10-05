@@ -121,14 +121,27 @@ std::optional<CallHandler> FilterTest::GetNextHandler(
 
 void FilterTest::StartCallForFilter(
     ClientMetadataHandle client_initial_metadata) {
-  GRPC_CHECK(!initiator_.has_value())
-      << "StartCallForFilter() may only be called once per test; use "
-         "StartCall()/GetNextHandler() for tests that create multiple calls";
-  initiator_ = StartCall(std::move(client_initial_metadata));
-  auto handler = GetNextHandler();
-  GRPC_CHECK(handler.has_value())
+  StartCallWithDeferredHandler(std::move(client_initial_metadata));
+  GRPC_CHECK(WaitForHandler())
       << "a filter must create exactly one child call per call started";
+}
+
+void FilterTest::StartCallWithDeferredHandler(
+    ClientMetadataHandle client_initial_metadata) {
+  GRPC_CHECK(!initiator_.has_value())
+      << "StartCallForFilter()/StartCallWithDeferredHandler() may only be "
+         "called once per test; use StartCall()/GetNextHandler() for tests "
+         "that create multiple calls";
+  initiator_ = StartCall(std::move(client_initial_metadata));
+}
+
+bool FilterTest::WaitForHandler(
+    grpc_event_engine::experimental::EventEngine::Duration timeout) {
+  GRPC_CHECK(!handler_.has_value()) << "WaitForHandler() called twice";
+  std::optional<CallHandler> handler = GetNextHandler(timeout);
+  if (!handler.has_value()) return false;
   handler_ = *std::move(handler);
+  return true;
 }
 
 void FilterTest::InitAfterCallArena(Arena* arena) {
