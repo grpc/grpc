@@ -206,9 +206,9 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   }
 
   template <typename T, typename... Args>
-  absl::enable_if_t<std::is_same<typename T::RefCountedUnrefBehaviorType,
-                                 UnrefCallDtor>::value,
-                    RefCountedPtr<T>>
+  std::enable_if_t<std::is_same<typename T::RefCountedUnrefBehaviorType,
+                                UnrefCallDtor>::value,
+                   RefCountedPtr<T>>
   MakeRefCounted(Args&&... args) {
     return RefCountedPtr<T>(New<T>(std::forward<Args>(args)...));
   }

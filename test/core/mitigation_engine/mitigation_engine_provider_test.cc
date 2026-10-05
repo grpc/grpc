@@ -37,17 +37,17 @@ class TestMitigationEngine : public MitigationEngine {
     if (destroyed_ != nullptr) *destroyed_ = true;
   }
   std::optional<Action> EvaluateIncomingConnection(
-      absl::string_view /*peer_address*/) override {
+      const EvaluateArgs& /*args*/) override {
     return std::nullopt;
   }
   std::optional<Action> EvaluateIncomingMetadata(
-      absl::string_view key, absl::string_view value,
-      absl::string_view /*peer_address*/) override {
+      absl::string_view /*key*/, absl::string_view /*value*/,
+      const EvaluateArgs& /*args*/) override {
     return std::nullopt;
   }
   std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch& metadata,
-      absl::string_view /*peer_address*/) override {
+      const grpc_metadata_batch& /*metadata*/,
+      const EvaluateArgs& /*args*/) override {
     return std::nullopt;
   }
 

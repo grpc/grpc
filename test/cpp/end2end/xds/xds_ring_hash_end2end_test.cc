@@ -295,7 +295,7 @@ TEST_P(RingHashTest,
                       10000 * grpc_test_slowdown_factor());
   SetUpChannel(&channel_args);
   // Start an RPC in the background.
-  LongRunningRpc rpc;
+  AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(5000));
   // Wait for connection attempt to the backend.
   hold->Wait();
@@ -309,7 +309,7 @@ TEST_P(RingHashTest,
   // Note that sending only the first RPC does not catch this case,
   // because if the priority policy fails to update the picker, then the
   // pick for the first RPC will not be retried.
-  LongRunningRpc rpc2;
+  AsyncRpc rpc2;
   rpc2.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(5000));
   // Allow the connection attempt to complete.
   hold->Resume();
@@ -973,7 +973,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
   ConnectionAttemptInjector injector;
   auto hold = injector.AddHold(non_existent_endpoint.port);
   // A long-running RPC, just used to send the RPC in another thread.
-  LongRunningRpc rpc;
+  AsyncRpc rpc;
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash",
        CreateMetadataValueThatHashesToBackendPort(non_existent_endpoint.port)}};

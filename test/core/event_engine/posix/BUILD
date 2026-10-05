@@ -284,6 +284,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "posix_endpoint_test",
     srcs = ["posix_endpoint_test.cc"],
+    args = ["--grpc_experiments=tcp_rcv_lowat,tcp_frame_size_tuning"],
     external_deps = [
         "absl/log:log",
         "absl/status:statusor",

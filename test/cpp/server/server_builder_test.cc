@@ -18,10 +18,14 @@
 
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 #include <sys/socket.h>
+
+#include <cstdint>
 
 #include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -84,6 +88,32 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
                 .AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0)
                 .BuildAndStart(),
             nullptr);
+}
+
+class TestServerBuilder : public ServerBuilder {
+ public:
+  ChannelArguments BuildChannelArgsForTest() { return BuildChannelArgs(); }
+};
+
+TEST_F(ServerBuilderTest, SetChildChannelArgs) {
+  TestServerBuilder builder;
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 1024);
+  args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr");
+  builder.SetChildChannelArgs(args);
+  ChannelArguments built_args = builder.BuildChannelArgsForTest();
+  grpc_channel_args c_args = built_args.c_channel_args();
+  const grpc_channel_args* extracted_child_args =
+      grpc_channel_args_find_pointer<grpc_channel_args>(
+          &c_args, GRPC_ARG_CHILD_CHANNEL_ARGS);
+  ASSERT_NE(extracted_child_args, nullptr);
+  EXPECT_EQ(grpc_channel_args_find_integer(extracted_child_args,
+                                           GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
+                                           {-1, 0, INT32_MAX}),
+            1024);
+  EXPECT_STREQ(grpc_channel_args_find_string(extracted_child_args,
+                                             GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+               "foo.test.google.fr");
 }
 
 TEST_F(ServerBuilderTest, AddPassiveListener) {

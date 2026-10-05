@@ -22,6 +22,7 @@ python3 tools/run_tests/start_port_server.py
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_test_c_cpp
 bazel_test_c_cpp/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
+  --bazelrc=tools/remote_build/include/absl_copts.bazelrc \
   test --config=opt \
   --test_tag_filters=-no_linux,-no_arm64 \
   --build_tag_filters=-no_linux,-no_arm64 \

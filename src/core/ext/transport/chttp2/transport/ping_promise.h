@@ -188,7 +188,8 @@ class PingManager {
   void SentPing() { ping_rate_policy_.SentPing(); }
 
  public:
-  PingManager(const ChannelArgs& channel_args, Duration ping_timeout,
+  PingManager(const ChannelArgs& channel_args, bool is_client,
+              Duration ping_timeout,
               std::unique_ptr<PingInterface> ping_interface,
               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                   event_engine);
