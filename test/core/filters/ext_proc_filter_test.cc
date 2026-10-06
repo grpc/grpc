@@ -305,7 +305,6 @@ class ExtProcFilterTest : public FilterTest {
           ADD_FAILURE() << "too many pending reads on ext_proc side stream";
         },
         event_engine());
-    AddShutdownCallback([this]() { ReleaseEventEngineRefs(); });
     // A failed call may leave requests the test never reads.
     transport_factory_->SetAbortOnUndrainedMessages(false);
     absl::Status status;
@@ -440,9 +439,9 @@ class ExtProcFilterTest : public FilterTest {
   }
 
   // Drops everything holding a ref to event_engine() before YodelTest waits
-  // for it to have a single owner. Registered as a shutdown callback by
-  // Init(), so it runs after FilterTest has cancelled the call under test.
-  void ReleaseEventEngineRefs() {
+  // for it to have a single owner. Runs after FilterTest has cancelled the
+  // call under test.
+  void Cleanup() override {
     {
       ExecCtx exec_ctx;
       // A real ext_proc server would see the side stream cancelled and finish

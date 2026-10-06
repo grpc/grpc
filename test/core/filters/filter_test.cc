@@ -91,12 +91,7 @@ void FilterTest::Shutdown() {
   while (destination_->PopHandler().has_value()) {
   }
   destination_.reset();
-  for (auto& callback : shutdown_callbacks_) callback();
-  shutdown_callbacks_.clear();
-}
-
-void FilterTest::AddShutdownCallback(absl::AnyInvocable<void()> callback) {
-  shutdown_callbacks_.push_back(std::move(callback));
+  Cleanup();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

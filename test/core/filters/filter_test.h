@@ -23,7 +23,6 @@
 #include <initializer_list>
 #include <optional>
 #include <utility>
-#include <vector>
 
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
@@ -38,7 +37,6 @@
 #include "test/core/call/yodel/yodel_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -220,17 +218,16 @@ class FilterTest : public YodelTest {
   // R"("maxRequestMessageBytes": 4)". Call before StartCall().
   void SetServiceConfig(absl::string_view method_config_fields);
 
-  // Registers `callback` to run at teardown, after the call under test has
-  // been cancelled and the stack under test torn down, but before the event
-  // engine goes away. Subclasses that own objects holding a reference to
-  // event_engine() must use this to release them. Callbacks run in the order
-  // they were added.
-  void AddShutdownCallback(absl::AnyInvocable<void()> callback);
+  // Called at teardown, after the call under test has been cancelled and the
+  // stack under test torn down, but before the event engine goes away.
+  // Subclasses that own objects holding a reference to event_engine() must
+  // override this to release them.
+  virtual void Cleanup() {}
 
  private:
   static constexpr absl::string_view kTestPath = "/test_method";
 
-  // Tears down the stack under test, then runs the shutdown callbacks.
+  // Tears down the stack under test, then calls Cleanup().
   void Shutdown() override;
 
   // The bottom of the chain under test: stands in for the transport (or for
@@ -285,9 +282,6 @@ class FilterTest : public YodelTest {
 
   // Set by SetServiceConfig(), installed by the default InitAfterCallArena().
   RefCountedPtr<ServiceConfig> service_config_;
-
-  // Added by AddShutdownCallback(), run by Shutdown().
-  std::vector<absl::AnyInvocable<void()>> shutdown_callbacks_;
 };
 
 }  // namespace grpc_core
