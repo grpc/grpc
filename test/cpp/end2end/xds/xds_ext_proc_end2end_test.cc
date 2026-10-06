@@ -822,7 +822,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   void TearDown() override {
     if (ext_proc_server_ != nullptr) ext_proc_server_->Shutdown();
-    env_var_.reset();
     XdsEnd2endTest::TearDown();
   }
 
@@ -833,8 +832,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
         num_backends, /*xds_enabled=*/GetParam().filter_on_server(),
         std::move(credentials));
     if (GetParam().filter_on_server()) {
-      for (size_t i = 0; i < num_backends; ++i) {
-        EXPECT_THAT(backends_[i]->GetNextStatus(),
+      for (auto& backend : backends_) {
+        EXPECT_THAT(backend->GetNextStatus(),
                     ::testing::Optional(absl::OkStatus()));
       }
     }
@@ -888,29 +887,11 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   void SetListenerAndRouteConfiguration(
       BalancerServerThread* balancer, const Listener& listener,
-      RouteConfiguration route_config = RouteConfiguration(),
-      int backend_port = 0) {
+      const RouteConfiguration& route_config) {
     if (GetParam().filter_on_server()) {
-      RouteConfiguration server_route_config = default_server_route_config_;
-      if (!route_config.virtual_hosts().empty() &&
-          !route_config.virtual_hosts(0).routes().empty()) {
-        const auto& per_filter_config =
-            route_config.virtual_hosts(0).routes(0).typed_per_filter_config();
-        *server_route_config.mutable_virtual_hosts(0)
-             ->mutable_routes(0)
-             ->mutable_typed_per_filter_config() = per_filter_config;
-      }
-      if (backend_port == 0 && !backends_.empty()) {
-        backend_port = backends_[0]->port();
-      }
-      if (backend_port != 0) {
-        SetServerListenerNameAndRouteConfiguration(
-            balancer, listener, backend_port, server_route_config);
-      }
+      SetServerListenerNameAndRouteConfiguration(
+          balancer, listener, backends_[0]->port(), route_config);
     } else {
-      if (route_config.virtual_hosts().empty()) {
-        route_config = default_route_config_;
-      }
       XdsEnd2endTest::SetListenerAndRouteConfiguration(balancer, listener,
                                                        route_config);
     }
@@ -935,7 +916,9 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInListener: {
         Listener listener = BuildListenerWithExtProcFilter(ext_proc);
         SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                         default_route_config_);
+                                         GetParam().filter_on_server()
+                                             ? default_server_route_config_
+                                             : default_route_config_);
         break;
       }
     }
@@ -1122,7 +1105,8 @@ XdsExtProcEnd2endTest::ClientHalfCloseHandler::MaybeHandle(
 void XdsExtProcEnd2endTest::ClientHalfCloseHandler::HandleIfNotYetSeen() {
   // TODO(rishesh): The server-side filter does not observe client half-close
   // yet, so don't wait for it.
-  if (seen_ || GetParam().filter_on_server()) return;
+  if (GetParam().filter_on_server()) return;
+  if (seen_) return;
   auto request = stream_->GetNextRequest();
   ASSERT_TRUE(request.has_value()) << "timed out waiting for client half-close";
   Handle(*request);
@@ -2680,14 +2664,14 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  const std::string metric_name =
+  const absl::string_view metric_name =
       GetParam().filter_on_server()
           ? "grpc.server_ext_proc.client_headers_duration"
           : "grpc.client_ext_proc.client_headers_duration";
-  const std::vector<absl::string_view> labels =
-      GetParam().filter_on_server()
-          ? std::vector<absl::string_view>{}
-          : std::vector<absl::string_view>{expected_target};
+  std::vector<absl::string_view> labels;
+  if (!GetParam().filter_on_server()) {
+    labels.emplace_back(expected_target);
+  }
   EXPECT_TRUE(
       stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
 }
@@ -2726,14 +2710,14 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  const std::string metric_name =
+  const absl::string_view metric_name =
       GetParam().filter_on_server()
           ? "grpc.server_ext_proc.client_half_close_duration"
           : "grpc.client_ext_proc.client_half_close_duration";
-  const std::vector<absl::string_view> labels =
-      GetParam().filter_on_server()
-          ? std::vector<absl::string_view>{}
-          : std::vector<absl::string_view>{expected_target};
+  std::vector<absl::string_view> labels;
+  if (!GetParam().filter_on_server()) {
+    labels.emplace_back(expected_target);
+  }
   EXPECT_TRUE(
       stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
 }
@@ -2759,14 +2743,14 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  const std::string metric_name =
+  const absl::string_view metric_name =
       GetParam().filter_on_server()
           ? "grpc.server_ext_proc.server_headers_duration"
           : "grpc.client_ext_proc.server_headers_duration";
-  const std::vector<absl::string_view> labels =
-      GetParam().filter_on_server()
-          ? std::vector<absl::string_view>{}
-          : std::vector<absl::string_view>{expected_target};
+  std::vector<absl::string_view> labels;
+  if (!GetParam().filter_on_server()) {
+    labels.emplace_back(expected_target);
+  }
   EXPECT_TRUE(
       stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
 }
@@ -2793,14 +2777,14 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  const std::string metric_name =
+  const absl::string_view metric_name =
       GetParam().filter_on_server()
           ? "grpc.server_ext_proc.server_trailers_duration"
           : "grpc.client_ext_proc.server_trailers_duration";
-  const std::vector<absl::string_view> labels =
-      GetParam().filter_on_server()
-          ? std::vector<absl::string_view>{}
-          : std::vector<absl::string_view>{expected_target};
+  std::vector<absl::string_view> labels;
+  if (!GetParam().filter_on_server()) {
+    labels.emplace_back(expected_target);
+  }
   EXPECT_TRUE(
       stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
 }
@@ -2812,7 +2796,6 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
 int main(int argc, char** argv) {
   grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
   grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
-  grpc_core::ForceEnableExperiment("xds_server_filter_chain_per_route", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up

@@ -142,15 +142,6 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   ExtProcFilter(const ChannelArgs& args, RefCountedPtr<const Config> config);
   ~ExtProcFilter() override;
 
-  bool is_server() const { return is_server_; }
-  const EvaluateArgs::PerChannelArgs* per_channel_evaluate_args() const {
-    return per_channel_evaluate_args_.has_value() ? &*per_channel_evaluate_args_
-                                                  : nullptr;
-  }
-  absl::string_view sha256_peer_certificate_digest() const {
-    return sha256_peer_certificate_digest_;
-  }
-
  private:
   class ExtProcCall;
 
@@ -194,6 +185,11 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
                    InstrumentStorageRefPtr<ServerTelemetryDomain>>;
 
   RefCountedPtr<ExtProcChannel> channel() const { return config_->channel(); }
+
+  const EvaluateArgs::PerChannelArgs* per_channel_evaluate_args() const {
+    return per_channel_evaluate_args_.has_value() ? &*per_channel_evaluate_args_
+                                                  : nullptr;
+  }
 
   void RecordDuration(ClientTelemetryDomain::DoubleHistogramHandle<
                           ExponentialDoubleHistogramShape>

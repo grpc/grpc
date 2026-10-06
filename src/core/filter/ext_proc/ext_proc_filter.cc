@@ -1159,7 +1159,7 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
     auto* header_attributes = CreateExtProcAttributesProtoStruct(
         arena.ptr(), config().request_attributes, args,
         ext_proc_filter_->default_authority_.as_string_view(),
-        ext_proc_filter_->sha256_peer_certificate_digest());
+        ext_proc_filter_->sha256_peer_certificate_digest_);
     payload = CreateExtProcClientHeadersRequest(
         arena.ptr(), client_initial_metadata_.get(),
         config().forwarding_allowed_headers,
@@ -1175,7 +1175,7 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
     request_attributes_ = CreateExtProcAttributesProtoStruct(
         request_attributes_arena_.ptr(), config().request_attributes, args,
         ext_proc_filter_->default_authority_.as_string_view(),
-        ext_proc_filter_->sha256_peer_certificate_digest());
+        ext_proc_filter_->sha256_peer_certificate_digest_);
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
