@@ -615,7 +615,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   // Helper for handling the client half-close event, which races with the
   // events on the response path and can therefore show up at any point once
-  // the request body has been processed.
+  // the request body has been processed.  On the client side, the test fails
+  // if the half-close is not seen by the time this object is destroyed.
   class ClientHalfCloseHandler {
    public:
     // In observability mode the filter does not expect a response from the
@@ -624,6 +625,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                                     bool send_response = true)
         : stream_(stream), send_response_(send_response) {}
 
+    ~ClientHalfCloseHandler();
     void Handle(const ProcessingRequest& request);
 
     // Wrapper for GetNextRequest() that handles the client half-close event
@@ -1082,6 +1084,14 @@ MATCHER_P(MatchesEchoResponse, message_matcher,
 // These methods are defined here rather than inline in the class, because
 // they use matchers defined above.
 //
+
+// TODO(rishesh): The server-side filter does not reliably observe client
+// half-close yet, so we only verify it on the client side.
+XdsExtProcEnd2endTest::ClientHalfCloseHandler::~ClientHalfCloseHandler() {
+  if (!GetParam().filter_on_server()) {
+    EXPECT_TRUE(seen_) << "client half-close not seen";
+  }
+}
 
 void XdsExtProcEnd2endTest::ClientHalfCloseHandler::Handle(
     const ProcessingRequest& request) {
