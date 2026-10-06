@@ -45,7 +45,10 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted.h"
@@ -441,19 +444,28 @@ class GatedInterceptor final : public Interceptor {
 
  protected:
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
-    unstarted_call_handler.SpawnInfallible(
+    unstarted_call_handler.SpawnGuarded(
         "gated-hijack", [this, unstarted_call_handler]() mutable {
-          return Seq(
+          return TrySeq(
               Hijack(std::move(unstarted_call_handler)),
-              [gate = gate_](ValueOrFailure<HijackedCall> hijacked_call) {
-                return Map(gate->Wait(), [hijacked_call = std::move(
-                                              hijacked_call)](Empty) mutable {
-                  if (hijacked_call.ok()) {
-                    ForwardCall(hijacked_call.value().original_call_handler(),
-                                hijacked_call.value().MakeLastCall());
-                  }
-                  return Empty{};
-                });
+              [gate = gate_](HijackedCall hijacked_call) {
+                CallHandler call_handler =
+                    hijacked_call.original_call_handler();
+                // While held, this promise keeps the hijacked call -- and so
+                // the party it runs on -- alive. Stop waiting once the call is
+                // done so that cycle is broken even if the gate never opens.
+                return Seq(Race(Map(call_handler.WasCancelled(),
+                                    [](bool) { return false; }),
+                                Map(gate->Wait(), [](Empty) { return true; })),
+                           [hijacked_call =
+                                std::move(hijacked_call)](bool opened) mutable {
+                             if (opened) {
+                               ForwardCall(
+                                   hijacked_call.original_call_handler(),
+                                   hijacked_call.MakeLastCall());
+                             }
+                             return StatusFlag(true);
+                           });
               });
         });
   }

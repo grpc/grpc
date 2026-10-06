@@ -176,9 +176,12 @@ grpc_fuzz_test(
         "//src/core:metadata_batch",
         "//src/core:pipe",
         "//src/core:poll",
+        "//src/core:race",
         "//src/core:ref_counted",
         "//src/core:seq",
         "//src/core:slice",
+        "//src/core:status_flag",
+        "//src/core:try_seq",
         "//src/core:useful",
     ],
 )
