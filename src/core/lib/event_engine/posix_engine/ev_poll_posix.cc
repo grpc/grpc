@@ -723,9 +723,7 @@ void PollPoller::Close() {
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
 void PollPoller::HandleForkInChild() {
-  if (grpc_core::IsEventEngineForkEnabled()) {
-    posix_interface().AdvanceGeneration();
-  }
+  posix_interface().AdvanceGeneration();
   PollEventHandle* handle;
   {
     grpc_core::MutexLock lock(mu_);

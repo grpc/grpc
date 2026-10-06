@@ -943,11 +943,9 @@ PosixEventEngine::CreatePosixListener(
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
   if (on_fork_role == OnForkRole::kChild) {
-    if (grpc_core::IsEventEngineForkEnabled()) {
-      AfterForkInChild();
-      if (poller_ != nullptr) {
-        poller_->HandleForkInChild();
-      }
+    AfterForkInChild();
+    if (poller_ != nullptr) {
+      poller_->HandleForkInChild();
     }
   }
   if (poller_ != nullptr) {
