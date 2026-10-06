@@ -349,8 +349,8 @@ grpc_cc_test(
         "absl/synchronization",
     ],
     tags = ["xds_test"],
-    uses_event_engine = False,
-    uses_polling = False,
+    uses_event_engine = True,
+    uses_polling = True,
     deps = [
         "//:config",
         "//:exec_ctx",

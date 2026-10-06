@@ -515,28 +515,17 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
                          "Reset stream frame received.");
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream != nullptr) {
-    if (stream->IsTarpitted()) {
-      // If the stream is already in the Tarpit state, we do not want to process
-      // the RST_STREAM frame. The stream will be closed once the Tarpit timer
-      // expires.
-      GRPC_HTTP2_SERVER_DLOG
-          << "Http2ServerTransport::ProcessIncomingFrame(ResetStreamFrame) "
-             "ignoring RST_STREAM for already tarpitted stream_id="
-          << frame.stream_id;
-    } else if (tarpit_manager_.allow_tarpit()) {
-      // If tarpit is enabled, we will enqueue the RST_STREAM frame to the
-      // Tarpit manager and delay the stream reset.
-      StatusFlag tarpit_status = tarpit_manager_.RequestTarpitIncomingReset(
-          stream->GetStreamId(), std::move(status));
-      if (GPR_UNLIKELY(!tarpit_status.ok())) {
-        return Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kInternalError, "Failed to enqueue tarpit entry");
-      }
-    } else {
-      // If tarpit is not enabled, we will process the RST_STREAM frame inline.
-      HandleStreamStateChange(*stream,
-                              stream->OnResetReceived(std::move(status)));
-    }
+    // Based on CHTTP2's grpc_chttp2_rst_stream_parser_parse in
+    // frame_rst_stream.cc, the stream is closed immediately, even if it is
+    // tarpitted. This frees the MAX_CONCURRENT_STREAMS slot right away. For a
+    // tarpitted stream, the pending tarpit entry is dropped when it expires,
+    // because ActOnTarpitEntries will no longer find the stream.
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::ProcessIncomingFrame(ResetStreamFrame) "
+           "closing stream_id="
+        << frame.stream_id << " is_tarpitted=" << stream->IsTarpitted();
+    HandleStreamStateChange(*stream,
+                            stream->OnResetReceived(std::move(status)));
   }
 
   // In case of stream error, we do not want the Read Loop to be broken. Hence
@@ -1427,6 +1416,18 @@ std::optional<RefCountedPtr<Stream>> Http2ServerTransport::MakeStream(
                                 settings_->peer().allow_true_binary_metadata());
 }
 
+// Based on CHTTP2's use of GetConnectionMaxConcurrentRequests in parsing.cc
+void Http2ServerTransport::UpdateMaxConcurrentStreamsFromStreamQuota() {
+  uint32_t current_open_streams = 0;
+  {
+    MutexLock lock(transport_mutex_);
+    current_open_streams = GetActiveStreamCountLocked();
+  }
+  const uint32_t max_concurrent_streams =
+      stream_quota_->GetConnectionMaxConcurrentRequests(current_open_streams);
+  settings_->mutable_local().UpdateMaxConcurrentStreams(max_concurrent_streams);
+}
+
 Http2Status Http2ServerTransport::ValidateIncomingStream(
     const uint32_t stream_id) {
   // 1. Transport shutdown & closed checks.
@@ -1521,6 +1522,7 @@ Http2Status Http2ServerTransport::IncomingStream(
   }
   RefCountedPtr<Stream> stream = std::move(result.value());
   AddToStreamList(stream);
+  UpdateMaxConcurrentStreamsFromStreamQuota();
   stream->SetInitialMetadataReceived();
 
   stream->GetCallInitiator().SpawnGuarded(
@@ -1769,13 +1771,7 @@ void Http2ServerTransport::ActOnTarpitEntries(
       continue;
     }
     stream->SetTarpitCompleted();
-    if (entry.IsIncomingReset()) {
-      std::optional<TarpitEntry::IncomingResetPayload> reset =
-          entry.TakeIncomingResetPayload();
-      GRPC_DCHECK(reset.has_value());
-      HandleStreamStateChange(
-          *stream, stream->OnResetReceived(std::move(reset->status)));
-    } else if (entry.IsOutgoingReset()) {
+    if (entry.IsOutgoingReset()) {
       std::optional<TarpitEntry::OutgoingResetPayload> reset =
           entry.TakeOutgoingResetPayload();
       GRPC_DCHECK(reset.has_value());
@@ -1959,7 +1955,7 @@ void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
                          << " location=" << whence.file() << ":"
                          << whence.line();
 
-  ReleasableMutexLock lock(&transport_mutex_);
+  ReleasableMutexLock lock(transport_mutex_);
   if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
     lock.Release();
     return;
@@ -2147,6 +2143,7 @@ Http2ServerTransport::Http2ServerTransport(
               ->memory_quota()
               ->CreateMemoryAllocator("http2_server"),
           kInitialCallArenaSize)),
+      stream_quota_(channel_args.GetObject<ResourceQuota>()->stream_quota()),
       flow_control_(
           /*peer_name=*/read_context_.peer_string().as_string_view(),
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),

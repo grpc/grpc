@@ -1361,23 +1361,28 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                                          [](bool x) { return StatusFlag(x); });
                             });
                       });
-                  call_args.client_to_server_messages->InterceptAndMap(
-                      [initiator, handler,
-                       pipe_owner](MessageHandle message) mutable {
-                        // Step 1: Push the message onto the v3 initiator in
-                        // its activity.
-                        initiator.SpawnPushMessage(std::move(message));
-                        // Step 3: Here in the v2 activity, read the message
-                        // from the inter-activity pipe and return it.
-                        return Map(
-                            pipe_owner->client_to_server_messages.receiver
-                                .Next(),
-                            [](InterActivityPipe<MessageHandle, 1>::NextResult
-                                   message) -> std::optional<MessageHandle> {
-                              if (!message.has_value()) return std::nullopt;
-                              return std::move(*message);
-                            });
-                      });
+                  call_args.client_to_server_messages
+                      ->InterceptAndMapWithHalfClose(
+                          [initiator, handler,
+                           pipe_owner](MessageHandle message) mutable {
+                            // Step 1: Push the message onto the v3 initiator in
+                            // its activity.
+                            initiator.SpawnPushMessage(std::move(message));
+                            // Step 3: Here in the v2 activity, read the message
+                            // from the inter-activity pipe and return it.
+                            return Map(
+                                pipe_owner->client_to_server_messages.receiver
+                                    .Next(),
+                                [](InterActivityPipe<MessageHandle,
+                                                     1>::NextResult message)
+                                    -> std::optional<MessageHandle> {
+                                  if (!message.has_value()) return std::nullopt;
+                                  return std::move(*message);
+                                });
+                          },
+                          [initiator]() mutable {
+                            initiator.SpawnFinishSends();
+                          });
                   // For server initial metadata, we do a similar thing, but
                   // in the opposite direction, and using an inter-activity
                   // latch instead of a pipe:
@@ -1496,8 +1501,42 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                         return Seq(
                             next_promise_factory(std::move(call_args)),
                             [handler](ServerMetadataHandle metadata) mutable {
+                              // Hand the v3 handler its own copy of the
+                              // metadata.
+                              //
+                              // On the client side the v2 stack gives us a
+                              // non-owning alias of
+                              // FilterStackCall::recv_trailing_metadata_:
+                              // ClientCallData::PollTrailingMetadata() wraps
+                              // that batch in a handle with a no-op deleter.
+                              // The v3 call runs in its own party, so pushing
+                              // the alias across lets v2-owned memory escape
+                              // the v2 activity.  That is usually harmless,
+                              // since this arm returns Never and only
+                              // completes once the v3 side pushes the metadata
+                              // back.  But if the v2 stack is cancelled,
+                              // ClientCallData destroys this promise and
+                              // propagates the batch straight up to the
+                              // surface without consulting it; the surface
+                              // then Takes/clears the batch while the v3
+                              // interceptor is still reading it.
+                              //
+                              // Copying keeps the two buffers independent.
+                              // Mutations made by the v3 interceptor still
+                              // come back through the latch, and
+                              // ClientCallData::WakeInsideCombiner() copies
+                              // them into recv_trailing_metadata_ because the
+                              // pointers now differ.  Note we copy rather than
+                              // move: moving would leave the v2 batch empty,
+                              // so the cancellation path above would report an
+                              // empty status instead of the transport's.
+                              ServerMetadataHandle md;
+                              if (metadata != nullptr) {
+                                md = Arena::MakePooled<ServerMetadata>(
+                                    metadata->Copy());
+                              }
                               handler.SpawnPushServerTrailingMetadata(
-                                  std::move(metadata));
+                                  std::move(md));
                               // We return a lambda (promise) here instead of
                               // returning `Pending{}` directly to make this
                               // step safe for subsequent polls. During V2 call
