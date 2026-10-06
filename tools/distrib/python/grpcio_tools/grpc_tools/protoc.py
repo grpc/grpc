@@ -14,15 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from importlib import resources
 import os
 import sys
 
 from grpc_tools import _protoc_compiler
-
-if sys.version_info >= (3, 9, 0):
-    from importlib import resources
-else:
-    import pkg_resources
 
 _PROTO_MODULE_SUFFIX = "_pb2"
 _SERVICE_MODULE_SUFFIX = "_pb2_grpc"
@@ -45,15 +41,9 @@ def _get_resource_file_name(
     package_or_requirement: str, resource_name: str
 ) -> str:
     """Obtain the filename for a resource on the file system."""
-    file_name = None
-    if sys.version_info >= (3, 9, 0):
-        file_name = (
-            resources.files(package_or_requirement) / resource_name
-        ).resolve()
-    else:
-        file_name = pkg_resources.resource_filename(
-            package_or_requirement, resource_name
-        )
+    file_name = (
+        resources.files(package_or_requirement) / resource_name
+    ).resolve()
     return str(file_name)
 
 

@@ -26,7 +26,6 @@ EXPERIMENT_ENABLES = {
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "custom_frame_check": "custom_frame_check",
     "event_engine_client": "event_engine_client",
-    "event_engine_fork": "event_engine_fork",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints,event_engine_listener",
@@ -87,7 +86,6 @@ EXPERIMENT_ENABLES = {
 
 EXPERIMENT_POLLERS = [
     "event_engine_client",
-    "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
     "pipelined_read_secure_endpoint",
@@ -108,14 +106,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -136,14 +130,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -214,15 +204,11 @@ EXPERIMENTS = {
                 "callv3_batch_validation",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
                 "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
