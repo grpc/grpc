@@ -1107,6 +1107,12 @@
   install(FILES <%text>${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem</%text>
     DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}</%text>)
 
+  # Install the raw health.proto schema (not generated code) so that users of
+  # an installed gRPC can compile it with their own protoc via
+  # `-I <prefix>/share/grpc/protos` and `import "grpc/health/v1/health.proto"`.
+  install(FILES <%text>${CMAKE_CURRENT_SOURCE_DIR}/third_party/grpc-proto/grpc/health/v1/health.proto</%text>
+    DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}/protos/grpc/health/v1</%text>)
+
   # Function to generate pkg-config files.
   function(generate_pkgconfig name description version requires requires_private
                               libs libs_private output_filename)
