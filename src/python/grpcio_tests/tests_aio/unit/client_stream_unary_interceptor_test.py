@@ -383,8 +383,8 @@ class TestStreamUnaryClientInterceptor(AioTestBase):
         self.assertTrue(call.cancelled())
         self.assertTrue(call.done())
         self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
-        self.assertEqual(await call.initial_metadata(), None)
-        self.assertEqual(await call.trailing_metadata(), None)
+        self.assertEqual(await call.initial_metadata(), aio.Metadata())
+        self.assertEqual(await call.trailing_metadata(), aio.Metadata())
         await channel.close()
 
     async def test_cancel_after_rpc(self):
@@ -426,8 +426,8 @@ class TestStreamUnaryClientInterceptor(AioTestBase):
         self.assertTrue(call.cancelled())
         self.assertTrue(call.done())
         self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
-        self.assertEqual(await call.initial_metadata(), None)
-        self.assertEqual(await call.trailing_metadata(), None)
+        self.assertEqual(await call.initial_metadata(), aio.Metadata())
+        self.assertEqual(await call.trailing_metadata(), aio.Metadata())
         await channel.close()
 
     async def test_cancel_while_writing(self):
