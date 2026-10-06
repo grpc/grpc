@@ -1088,7 +1088,6 @@ TEST_P(TarpitManagerTest, TarpitManagerRequestCloseStreamTest) {
   ReceiveAndProcessTarpitEntry(stream, [&](TarpitEntry& entry) {
     EXPECT_TRUE(entry.IsOutgoingReset());
     EXPECT_FALSE(entry.IsOutgoingTrailingMetadata());
-    EXPECT_FALSE(entry.IsIncomingReset());
 
     outgoing_reset = entry.TakeOutgoingResetPayload();
     ASSERT_TRUE(outgoing_reset.has_value());
@@ -1124,7 +1123,6 @@ TEST_P(TarpitManagerTest, TarpitManagerStartTarpitTrailersTest) {
   ReceiveAndProcessTarpitEntry(stream, [&](TarpitEntry& entry) {
     EXPECT_TRUE(entry.IsOutgoingTrailingMetadata());
     EXPECT_FALSE(entry.IsOutgoingReset());
-    EXPECT_FALSE(entry.IsIncomingReset());
 
     outgoing_trailers = entry.TakeOutgoingTrailingMetadataPayload();
     ASSERT_TRUE(outgoing_trailers.has_value());
@@ -1141,34 +1139,6 @@ TEST_P(TarpitManagerTest, TarpitManagerStartTarpitTrailersTest) {
           std::move(outgoing_trailers->metadata));
   EXPECT_TRUE(enqueue_result.ok());
   EXPECT_TRUE(stream->IsClosedForReads());
-}
-
-TEST_P(TarpitManagerTest, TarpitManagerIncomingResetTest) {
-  std::optional<TarpitEntry::IncomingResetPayload> incoming_reset;
-  const RefCountedPtr<Stream> stream = CreateMinimalTestStream(5u);
-  ExpectNeverTarpitted(stream);
-
-  const absl::Status incoming_status =
-      absl::CancelledError("RST_STREAM received");
-  const StatusFlag req_status = GetTarpitManager().RequestTarpitIncomingReset(
-      stream->GetStreamId(), incoming_status);
-  EXPECT_TRUE(req_status.ok());
-
-  ReceiveAndProcessTarpitEntry(stream, [&](TarpitEntry& entry) {
-    EXPECT_TRUE(entry.IsIncomingReset());
-    EXPECT_FALSE(entry.IsOutgoingReset());
-    EXPECT_FALSE(entry.IsOutgoingTrailingMetadata());
-
-    incoming_reset = entry.TakeIncomingResetPayload();
-    ASSERT_TRUE(incoming_reset.has_value());
-    EXPECT_EQ(incoming_reset->status, incoming_status);
-  });
-
-  // Post-tarpit: OnResetReceived closes the stream.
-  const StreamStateChange reset_change =
-      stream->OnResetReceived(std::move(incoming_reset->status));
-  EXPECT_TRUE(reset_change.stream_became_closed);
-  EXPECT_TRUE(stream->IsClosedForWrites());
 }
 
 // Verifies ordering and strict expiration (expire_time <= now) behavior of
@@ -1237,7 +1207,7 @@ TEST_P(TarpitManagerTest, TarpitManagerOrderingAndDrainTest) {
 }
 
 // Verifies that Shutdown() sets the shutdown flag and closes the receiver.
-// Enqueuing new tarpit entries across all three producer methods after
+// Enqueuing new tarpit entries across both producer methods after
 // Shutdown() fails and returns a non-OK status.
 TEST_P(TarpitManagerTest, TarpitManagerShutdownTest) {
   const RefCountedPtr<Stream> stream = CreateMinimalTestStream(1u);
@@ -1256,11 +1226,6 @@ TEST_P(TarpitManagerTest, TarpitManagerShutdownTest) {
       GetTarpitManager()
           .StartTarpitTrailers(stream->GetStreamId(), std::move(trailers))
           .ok());
-
-  EXPECT_FALSE(GetTarpitManager()
-                   .RequestTarpitIncomingReset(stream->GetStreamId(),
-                                               absl::CancelledError())
-                   .ok());
 }
 
 // Verifies that WaitForTimerExpire() suspends when queue is empty, resumes when
