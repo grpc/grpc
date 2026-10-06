@@ -23,6 +23,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
+#include <openssl/opensslv.h>
 #include <openssl/x509.h>
 
 #include <cstdint>
@@ -39,6 +40,10 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/strings/string_view.h"
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#error "OpenSSL versions older than 1.1.0 are no longer supported."
+#endif
 
 // Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs.
 #define TSI_X509_CERTIFICATE_TYPE "X509"
@@ -60,6 +65,8 @@
   "x509_verified_root_cert_subject"
 #define TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP \
   "ssl_negotiated_key_exchange_group"
+#define TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY "ssl_requested_server_name"
+#define TSI_SSL_TLS_VERSION_PEER_PROPERTY "ssl_tls_version"
 
 namespace tsi {
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
@@ -71,10 +78,10 @@ using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 // context.
 typedef struct tsi_ssl_root_certs_store tsi_ssl_root_certs_store;
 
-// Given a NULL-terminated string containing the PEM encoding of the root
-// certificates, creates a tsi_ssl_root_certs_store object.
+// Given a string containing the PEM encoding of the root certificates,
+// creates a tsi_ssl_root_certs_store object.
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
-    const char* pem_roots);
+    absl::string_view pem_roots);
 
 // Destroys the tsi_ssl_root_certs_store object.
 void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self);

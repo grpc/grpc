@@ -93,8 +93,7 @@ CliCredentials::GetChannelCredentials() const {
     grpc::SslCredentialsOptions ssl_creds_options;
     // TODO(@Capstan): This won't affect Google Default Credentials using SSL.
     if (!absl::GetFlag(FLAGS_ssl_client_cert).empty()) {
-      auto cert = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_cert),
-                                      /*add_null_terminator=*/false);
+      auto cert = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_cert));
       if (!cert.ok()) {
         LOG(ERROR) << "error loading file "
                    << absl::GetFlag(FLAGS_ssl_client_cert) << ": "
@@ -104,8 +103,7 @@ CliCredentials::GetChannelCredentials() const {
       }
     }
     if (!absl::GetFlag(FLAGS_ssl_client_key).empty()) {
-      auto key = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_key),
-                                     /*add_null_terminator=*/false);
+      auto key = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_key));
       if (!key.ok()) {
         LOG(ERROR) << "error loading file "
                    << absl::GetFlag(FLAGS_ssl_client_key) << ": "

@@ -55,7 +55,7 @@ Poll<uint32_t> OutputBuffers::PollWrite(SliceBuffer& output_buffer) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   const auto length = output_buffer.Length();
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   for (size_t i = 0; i < buffers_.size(); ++i) {
     if (buffers_[i].has_value() && buffers_[i]->Accept(output_buffer)) {
       waker = buffers_[i]->TakeWaker();
@@ -71,7 +71,7 @@ Poll<uint32_t> OutputBuffers::PollWrite(SliceBuffer& output_buffer) {
 Poll<SliceBuffer> OutputBuffers::PollNext(uint32_t connection_id) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto& buffer = buffers_[connection_id];
   CHECK(buffer.has_value());
   if (buffer->HavePending()) {
@@ -85,7 +85,7 @@ Poll<SliceBuffer> OutputBuffers::PollNext(uint32_t connection_id) {
 void OutputBuffers::AddEndpoint(uint32_t connection_id) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (buffers_.size() < connection_id + 1) {
     buffers_.resize(connection_id + 1);
   }
@@ -108,7 +108,7 @@ absl::StatusOr<uint64_t> InputQueues::CreateTicket(uint32_t connection_id,
                                                    size_t length) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (connection_id >= read_requests_.size()) {
     return absl::UnavailableError(
         absl::StrCat("Invalid connection id: ", connection_id));
@@ -125,7 +125,7 @@ absl::StatusOr<uint64_t> InputQueues::CreateTicket(uint32_t connection_id,
 }
 
 Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = outstanding_reads_.find(ticket);
   CHECK(it != outstanding_reads_.end()) << " ticket=" << ticket;
   if (auto* waker = std::get_if<Waker>(&it->second)) {
@@ -145,7 +145,7 @@ Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
 
 Poll<std::vector<InputQueues::ReadRequest>> InputQueues::PollNext(
     uint32_t connection_id) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto& q = read_requests_[connection_id];
   if (q.empty()) {
     read_request_waker_[connection_id] =
@@ -161,7 +161,7 @@ void InputQueues::CompleteRead(uint64_t ticket,
                                absl::StatusOr<SliceBuffer> buffer) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Complete ticket #" << ticket << ": " << buffer.status();
   ztrace_collector_->Append([&] {
@@ -176,12 +176,12 @@ void InputQueues::CompleteRead(uint64_t ticket,
 }
 
 void InputQueues::CancelTicket(uint64_t ticket) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   outstanding_reads_.erase(ticket);
 }
 
 void InputQueues::AddEndpoint(uint32_t connection_id) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   CHECK_EQ(read_requests_.size(), read_request_waker_.size());
   if (read_requests_.size() <= connection_id) {
     read_requests_.resize(connection_id + 1);

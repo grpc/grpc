@@ -17,7 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_STREAMING_CALL_PROMISE_WRAPPER_H
 #define GRPC_SRC_CORE_XDS_GRPC_STREAMING_CALL_PROMISE_WRAPPER_H
 
-#include <atomic>
 #include <optional>
 #include <string>
 
@@ -27,7 +26,9 @@
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -51,7 +52,9 @@ class XdsStreamingCallPromiseWrapper final
 
   // Constructs a new streaming call wrapper for the given method on the
   // transport.
-  XdsStreamingCallPromiseWrapper(XdsTransport& transport, const char* method);
+  XdsStreamingCallPromiseWrapper(
+      XdsTransport& transport, const char* method,
+      XdsTransport::CallOptions options = XdsTransport::CallOptions());
 
   // Pushes a message on the stream.
   //
@@ -59,13 +62,18 @@ class XdsStreamingCallPromiseWrapper final
   // message was sent successfully.
   //
   // Contract: The caller MUST NOT call PushMessage() again until the promise
-  // from the previous PushMessage() resolves.
-  auto PushMessage(std::string msg) {
-    SendState expected = SendState::kIdle;
-    GRPC_CHECK(send_state_.compare_exchange_strong(
-        expected, SendState::kSendMessageInFlight));
-    send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-    call_->SendMessage(std::move(msg));
+  // from the previous PushMessage() resolves. If send_half_close is true, no
+  // further messages can be pushed on the stream.
+  auto PushMessage(std::string msg, bool send_half_close = false) {
+    {
+      MutexLock lock(mu_);
+      GRPC_CHECK(send_state_ == SendState::kIdle);
+      send_state_ = send_half_close
+                        ? SendState::kSendMessageAndHalfCloseInFlight
+                        : SendState::kSendMessageInFlight;
+      send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    }
+    call_->SendMessage(std::move(msg), send_half_close);
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPushMessage();
     };
@@ -77,14 +85,20 @@ class XdsStreamingCallPromiseWrapper final
   // The value will be nullopt when the stream is closed without
   // receiving a message.
   auto PullMessage() {
-    RecvState recv_state = RecvState::kIdle;
-    if (!recv_state_.compare_exchange_strong(recv_state,
-                                             RecvState::kRecvMessageInFlight)) {
-      GRPC_CHECK(recv_state == RecvState::kReceivedStatus);
-      // Must be kReceivedStatus. Don't actually need to start the
-      // recv_message op; we'll return nullopt on the first poll.
-    } else {
-      recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    bool start_recv = false;
+    {
+      MutexLock lock(mu_);
+      if (recv_state_ == RecvState::kIdle) {
+        recv_state_ = RecvState::kRecvMessageInFlight;
+        recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+        start_recv = true;
+      } else {
+        // Must be kReceivedStatus. Don't actually need to start the
+        // recv_message op; we'll return nullopt on the first poll.
+        GRPC_CHECK(recv_state_ == RecvState::kReceivedStatus);
+      }
+    }
+    if (start_recv) {
       call_->StartRecvMessage();
     }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
@@ -97,7 +111,12 @@ class XdsStreamingCallPromiseWrapper final
   // Returns a promise that resolves to absl::Status, indicating
   // the final status of the call.
   auto PullServerTrailingMetadata() {
-    recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    {
+      MutexLock lock(mu_);
+      if (recv_state_ != RecvState::kReceivedStatus) {
+        recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      }
+    }
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPullServerTrailingMetadata();
     };
@@ -117,7 +136,8 @@ class XdsStreamingCallPromiseWrapper final
 
   enum class SendState {
     // Initial state: no send op in flight.
-    // Upon calling PushMessage(), transitions to kSendMessageInFlight.
+    // Upon calling PushMessage(), transitions to kSendMessageInFlight or
+    // kSendMessageAndHalfCloseInFlight.
     // Upon calling SendHalfClose(), transitions to kHalfCloseInFlight.
     kIdle,
     // Send message in flight.
@@ -126,6 +146,10 @@ class XdsStreamingCallPromiseWrapper final
     // transitions to kSendMessageInFlightAndHalfCloseRequested.
     // Otherwise, transitions to kIdle.
     kSendMessageInFlight,
+    // Send message and half close in flight.
+    // If the send fails, transitions to kSendFailed.
+    // Otherwise, transitions to kHalfCloseInFlight.
+    kSendMessageAndHalfCloseInFlight,
     // A send failed.
     // Once entering this state, we never leave.
     kSendFailed,
@@ -133,7 +157,7 @@ class XdsStreamingCallPromiseWrapper final
     // If the send fails, transitions to kSendFailed.
     // Otherwise, transitions to kHalfCloseInFlight.
     kSendMessageInFlightAndHalfCloseRequested,
-    // A half-close is in flight.
+    // A half-close is in flight or has completed.
     kHalfCloseInFlight,
   };
 
@@ -166,20 +190,22 @@ class XdsStreamingCallPromiseWrapper final
   void OnRecvMessage(absl::string_view payload);
   void OnStatusReceived(absl::Status status);
 
+  Mutex mu_;
+
   OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall> call_;
 
   // State for outgoing messages (PushMessage).
-  std::atomic<SendState> send_state_{SendState::kIdle};
-  Waker send_message_waker_;
+  SendState send_state_ ABSL_GUARDED_BY(mu_) = SendState::kIdle;
+  Waker send_message_waker_ ABSL_GUARDED_BY(mu_);
 
   // State for incoming messages (PullMessage).
-  std::atomic<RecvState> recv_state_{RecvState::kIdle};
-  Waker recv_message_waker_;
-  std::optional<std::string> recv_message_;
+  RecvState recv_state_ ABSL_GUARDED_BY(mu_) = RecvState::kIdle;
+  Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
+  std::optional<std::string> recv_message_ ABSL_GUARDED_BY(mu_);
 
   // Trailing metadata status from the server (PullServerTrailingMetadata).
-  Waker recv_status_waker_;
-  absl::Status status_;
+  Waker recv_status_waker_ ABSL_GUARDED_BY(mu_);
+  absl::Status status_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

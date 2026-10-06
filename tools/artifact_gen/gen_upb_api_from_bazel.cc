@@ -194,6 +194,7 @@ ExternalRepoPrefix GetExternalRepoPrefix(const std::string& file) {
       {"@@envoy_api+//", "@envoy_api//", ""},
       {"@@opencensus-proto+//", "@opencensus_proto//", ""},
       {"@@grpc-proto+//:", "@grpc_proto//:", ""},
+      {"@@autosharding+//", "@autosharding//", ""},
   };
   for (const auto& elink : kExternalLinks) {
     if (absl::StartsWith(file, elink.canonical_repo)) {

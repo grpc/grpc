@@ -239,12 +239,15 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   // Send kNumRpcs RPCs and count the delays.
   RpcOptions rpc_options =
       RpcOptions().set_timeout(kRpcTimeout).set_skip_cancelled_check(true);
-  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
-      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
+  std::vector<AsyncRpc> rpcs(kNumRpcs);
+  for (auto& rpc : rpcs) {
+    rpc.StartRpc(stub_.get(), rpc_options);
+  }
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
-    if (rpc->status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc->status.error_code());
+    Status status = rpc.GetStatus();
+    if (status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
     ++num_delayed;
   }
   // The delay rate should be roughly equal to the expectation.
@@ -294,12 +297,15 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
                                .set_metadata(metadata)
                                .set_timeout(kRpcTimeout)
                                .set_skip_cancelled_check(true);
-  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
-      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
+  std::vector<AsyncRpc> rpcs(kNumRpcs);
+  for (auto& rpc : rpcs) {
+    rpc.StartRpc(stub_.get(), rpc_options);
+  }
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
-    if (rpc->status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc->status.error_code());
+    Status status = rpc.GetStatus();
+    if (status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
     ++num_delayed;
   }
   // The delay rate should be roughly equal to the expectation.
@@ -378,14 +384,17 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   // resolution response is returned to the channel.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(15000));
   // Send kNumRpcs RPCs and count the aborts.
-  int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout(kRpcTimeout);
-  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
-      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
+  std::vector<AsyncRpc> rpcs(kNumRpcs);
   for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc->elapsed_time, kFixedDelay * grpc_test_slowdown_factor());
-    if (rpc->status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ("Fault injected", rpc->status.error_message());
+    rpc.StartRpc(stub_.get(), rpc_options);
+  }
+  size_t num_aborted = 0;
+  for (auto& rpc : rpcs) {
+    Status status = rpc.GetStatus();
+    EXPECT_GE(rpc.elapsed_time(), kFixedDelay * grpc_test_slowdown_factor());
+    if (status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ("Fault injected", status.error_message());
     ++num_aborted;
   }
   // The abort rate should be roughly equal to the expectation.
@@ -435,14 +444,17 @@ TEST_P(FaultInjectionTest,
   // resolution response is returned to the channel.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(15000));
   // Send kNumRpcs RPCs and count the aborts.
-  int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout(kRpcTimeout);
-  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
-      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
+  std::vector<AsyncRpc> rpcs(kNumRpcs);
   for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc->elapsed_time, kFixedDelay * grpc_test_slowdown_factor());
-    if (rpc->status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ("Fault injected", rpc->status.error_message());
+    rpc.StartRpc(stub_.get(), rpc_options);
+  }
+  size_t num_aborted = 0;
+  for (auto& rpc : rpcs) {
+    Status status = rpc.GetStatus();
+    EXPECT_GE(rpc.elapsed_time(), kFixedDelay * grpc_test_slowdown_factor());
+    if (status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ("Fault injected", status.error_message());
     ++num_aborted;
   }
   // The abort rate should be roughly equal to the expectation.
@@ -478,13 +490,16 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(15000));
   // Sends a batch of long running RPCs with long timeout to consume all
   // active faults quota.
-  int num_delayed = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout(kRpcTimeout);
-  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
-      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
+  std::vector<AsyncRpc> rpcs(kNumRpcs);
   for (auto& rpc : rpcs) {
-    if (rpc->status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc->status.error_code());
+    rpc.StartRpc(stub_.get(), rpc_options);
+  }
+  size_t num_delayed = 0;
+  for (auto& rpc : rpcs) {
+    Status status = rpc.GetStatus();
+    if (status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
     ++num_delayed;
   }
   // Only kMaxFault number of RPC should be fault injected.
@@ -492,10 +507,14 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   // Conduct one more round of RPCs after previous calls are finished. The goal
   // is to validate if the max fault counter is restored to zero.
   num_delayed = 0;
-  rpcs = SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
+  rpcs = std::vector<AsyncRpc>(kNumRpcs);
   for (auto& rpc : rpcs) {
-    if (rpc->status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc->status.error_code());
+    rpc.StartRpc(stub_.get(), rpc_options);
+  }
+  for (auto& rpc : rpcs) {
+    Status status = rpc.GetStatus();
+    if (status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
     ++num_delayed;
   }
   // Only kMaxFault number of RPC should be fault injected. If the max fault

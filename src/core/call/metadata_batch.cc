@@ -58,6 +58,7 @@ bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key) {
   if (key == TeMetadata::key()) return true;
   if (key == UserAgentMetadata::key()) return true;
   if (key == W3CTraceParentMetadata::key()) return true;
+  if (key == XEnvoyAuthFailureModeAllowedMetadata::key()) return true;
   if (key == XEnvoyPeerMetadata::key()) return true;
   if (key == XForwardedForMetadata::key()) return true;
   if (key == XForwardedHostMetadata::key()) return true;
