@@ -52,7 +52,7 @@ from ._interceptor import UnaryStreamClientInterceptor
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
 from ._server import server
-from ._typing import ChannelArgumentType  # pyright: ignore[reportUnusedImport]
+from ._typing import ChannelArgumentType
 
 ###################################  __all__  #################################
 
@@ -65,6 +65,7 @@ __all__ = (
     "Channel",
     "ClientCallDetails",
     "ClientInterceptor",
+    "ChannelArgumentType",
     "InterceptedUnaryUnaryCall",
     "InternalError",
     "Metadata",
