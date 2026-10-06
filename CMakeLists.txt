@@ -31158,6 +31158,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(recv_message_filter_bypass_test
   test/core/filters/recv_message_filter_bypass_test.cc
+  test/core/test_util/mock_transport_filter.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -38959,6 +38960,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(v3_bridge_test
   test/core/channel/v3_bridge_test.cc
+  test/core/test_util/mock_transport_filter.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

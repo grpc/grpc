@@ -46,6 +46,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/promise/poll_matcher.h"
+#include "test/core/test_util/mock_transport_filter.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -255,76 +256,6 @@ TEST_F(V3BridgeTest, ForceDestroyPromiseCancelsV3Call) {
     arena_.reset();
   });
 }
-
-class MockTransportFilter {
- public:
-  struct State {
-    struct RawPointerChannelArgTag {};
-    static absl::string_view ChannelArgName() {
-      return "grpc.test.v3_bridge_mock_transport";
-    }
-    CallCombiner* call_combiner = nullptr;
-    grpc_metadata_batch* recv_trailing_metadata = nullptr;
-    grpc_closure* recv_trailing_metadata_ready = nullptr;
-    bool hold_send_message_on_complete = false;
-    grpc_closure* held_send_message_on_complete = nullptr;
-  };
-
-  static const grpc_channel_filter kFilter;
-
- private:
-  static void StartBatch(grpc_call_element* elem,
-                         grpc_transport_stream_op_batch* op) {
-    auto* state = *static_cast<State**>(elem->channel_data);
-    if (op->recv_trailing_metadata) {
-      state->recv_trailing_metadata =
-          op->payload->recv_trailing_metadata.recv_trailing_metadata;
-      state->recv_trailing_metadata_ready =
-          op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    }
-    if (op->send_message && state->hold_send_message_on_complete) {
-      state->held_send_message_on_complete = op->on_complete;
-    } else if (op->on_complete != nullptr) {
-      GRPC_CALL_COMBINER_START(state->call_combiner, op->on_complete,
-                               absl::OkStatus(), "mock_on_complete");
-    }
-    GRPC_CALL_COMBINER_STOP(state->call_combiner,
-                            "mock passed batch to transport");
-  }
-  static void StartTransportOp(grpc_channel_element*, grpc_transport_op* op) {
-    if (op->on_consumed != nullptr) {
-      ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
-    }
-  }
-  static grpc_error_handle InitCallElem(grpc_call_element*,
-                                        const grpc_call_element_args*) {
-    return absl::OkStatus();
-  }
-  static void DestroyCallElem(grpc_call_element*, const grpc_call_final_info*,
-                              grpc_closure*) {}
-  static grpc_error_handle InitChannelElem(grpc_channel_element* elem,
-                                           grpc_channel_element_args* args) {
-    *static_cast<State**>(elem->channel_data) =
-        args->channel_args.GetObject<State>();
-    return absl::OkStatus();
-  }
-  static void DestroyChannelElem(grpc_channel_element*) {}
-};
-
-const grpc_channel_filter MockTransportFilter::kFilter = {
-    MockTransportFilter::StartBatch,
-    MockTransportFilter::StartTransportOp,
-    0,
-    MockTransportFilter::InitCallElem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    MockTransportFilter::DestroyCallElem,
-    sizeof(MockTransportFilter::State*),
-    MockTransportFilter::InitChannelElem,
-    grpc_channel_stack_no_post_init,
-    MockTransportFilter::DestroyChannelElem,
-    grpc_channel_next_get_info,
-    GRPC_UNIQUE_TYPE_NAME_HERE("v3_bridge_mock_transport"),
-};
 
 struct StartBatchCtx {
   grpc_call_element* elem = nullptr;
@@ -696,7 +627,7 @@ TEST_F(ClientHalfClosePropagationTest,
 
 TEST_F(ClientHalfClosePropagationTest,
        HalfCloseWhilePreviousSendMessageOpIsStillPending) {
-  transport_state_.hold_send_message_on_complete = true;
+  transport_state_.should_hold_send_message_on_complete = true;
   SliceBuffer send_msg_buf;
   send_msg_buf.Append(Slice::FromCopiedString("msg1"));
   grpc_closure on_complete1;
@@ -741,7 +672,7 @@ TEST_F(ClientHalfClosePropagationTest,
   EXPECT_THAT(recorder_.Events(), ::testing::ElementsAre("msg:msg1"));
   // Now release the held on_complete callback for send_message.
   grpc_closure* held =
-      std::exchange(transport_state_.held_send_message_on_complete, nullptr);
+      std::exchange(transport_state_.pending_send_message_on_complete, nullptr);
   ASSERT_NE(held, nullptr);
   GRPC_CALL_COMBINER_START(&call_combiner_, held, absl::OkStatus(),
                            "release_held_send_message");

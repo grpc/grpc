@@ -188,6 +188,7 @@ grpc_cc_test(
         "//src/core:wait_for_single_owner",
         "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:mock_transport_filter",
     ],
 )
 

@@ -22729,9 +22729,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/mock_transport_filter.h
   src:
   - test/core/filters/recv_message_filter_bypass_test.cc
+  - test/core/test_util/mock_transport_filter.cc
   deps:
   - gtest
   - grpc_unsecure
@@ -27367,8 +27369,10 @@ targets:
   language: c++
   headers:
   - test/core/promise/poll_matcher.h
+  - test/core/test_util/mock_transport_filter.h
   src:
   - test/core/channel/v3_bridge_test.cc
+  - test/core/test_util/mock_transport_filter.cc
   deps:
   - gtest
   - grpc_test_util
