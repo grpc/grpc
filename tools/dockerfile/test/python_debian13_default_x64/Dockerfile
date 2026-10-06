@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10-bullseye
+FROM python:3.14-trixie
 
 #=================
 # Basic C core dependencies
@@ -204,21 +204,16 @@ RUN apt-get update && apt-get install -y libsqlite3-dev
 # for Python test coverage reporting
 RUN python3.10 -m pip install coverage
 
-# six is required by the run_tests.py test harness
-RUN python3.10 -m pip install six
-
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
 #=================
-# Install cmake from bullseye-backports
-# Note that this step should be only used for Debian 11 (bullseye) images.
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 #=================
 # Install ccache
