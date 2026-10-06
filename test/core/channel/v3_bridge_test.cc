@@ -686,8 +686,8 @@ TEST_F(ClientHalfClosePropagationTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
   grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
   grpc_core::ForceEnableExperiment("promise_filter_client_half_close", true);
+  ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
