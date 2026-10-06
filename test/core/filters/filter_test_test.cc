@@ -468,14 +468,10 @@ class DeferredHandlerFilterTest : public FilterTest {
   using FilterTest::FilterTest;
 
   absl::Status Init() {
+    // The gate may hold a waker into the call under test, so drop it only once
+    // FilterTest has cancelled that call.
+    AddShutdownCallback([this]() { gate_.reset(); });
     return CreateFilterChain<GatedInterceptor>(ChannelArgs().SetObject(gate_));
-  }
-
-  // The gate may hold a waker into the call under test, so drop it only once
-  // FilterTest::Shutdown() has cancelled that call.
-  void Shutdown() override {
-    FilterTest::Shutdown();
-    gate_.reset();
   }
 
   RefCountedPtr<Gate> gate_ = MakeRefCounted<Gate>();
@@ -523,8 +519,8 @@ FILTER_TEST(DeferredHandlerFilterTest, HandlerArrivesOnlyOnceFilterCreatesIt) {
 }
 
 // A filter that never creates its child call: WaitForHandler() reports that,
-// and the held call is torn down by the suite's Shutdown() override, which
-// chains to FilterTest::Shutdown() to cancel it.
+// and the held call is cancelled by FilterTest at teardown, before the suite's
+// shutdown callback drops the gate.
 FILTER_TEST(DeferredHandlerFilterTest, NoHandlerIfFilterNeverCreatesIt) {
   ASSERT_TRUE(Init().ok());
   StartCallWithDeferredHandler(NewClientMetadata());
