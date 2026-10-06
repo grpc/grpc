@@ -48,6 +48,7 @@ grpc_cc_library(
     srcs = ["filter_test.cc"],
     hdrs = ["filter_test.h"],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
