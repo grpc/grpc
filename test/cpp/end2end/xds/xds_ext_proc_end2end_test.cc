@@ -1841,12 +1841,296 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponse) {
 // Stream Drain tests
 //
 
-TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
+TEST_P(XdsExtProcEnd2endTest, DrainRequestsStartedInRequestHeadersResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(
+      SetRequestDrains(MakeRequestHeadersMutationResponse({}),
+                       /*drain_requests=*/true, /*drain_responses=*/false));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  // Request messages and half-close are not sent to the ext_proc server.
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1)));
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+TEST_P(XdsExtProcEnd2endTest, DrainRequestsStartedInRequestBodyResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      SetRequestDrains(MakeRequestBodyMutationResponse(ModifyEchoRequest(
+                           req->request_body().body(), kMutatedSuffix)),
+                       /*drain_requests=*/true, /*drain_responses=*/false));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  // Subsequent request messages and half-close are not sent to the ext_proc
+  // server.
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+TEST_P(XdsExtProcEnd2endTest, DrainRequestsStartedInResponseHeadersResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      ModifyEchoRequest(req->request_body().body(), kMutatedSuffix)));
+  EXPECT_TRUE(stream.WaitForWrite());
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(
+      SetRequestDrains(MakeResponseHeadersMutationResponse({}),
+                       /*drain_requests=*/true, /*drain_responses=*/false));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  // Subsequent request messages and half-close are not sent to the ext_proc
+  // server.
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+TEST_P(XdsExtProcEnd2endTest, DrainRequestsStartedInResponseBodyResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseBodyMode(true)
+                             .SetResponseTrailerMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      ModifyEchoRequest(req->request_body().body(), kMutatedSuffix)));
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req,
+              ::testing::Optional(MatchesResponseBody(
+                  EchoResponseMessageIs(kMessage1Mutated), !kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      SetRequestDrains(MakeResponseBodyMutationResponse(ModifyEchoResponse(
+                           req->response_body().body(), kMutatedSuffix)),
+                       /*drain_requests=*/true, /*drain_responses=*/false));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1DoubleMutated)));
+  // Subsequent request messages and half-close are not sent to the ext_proc
+  // server.  The response message and trailers are still sent, since the
+  // response direction has not been drained.
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseBody(
+                       EchoResponseMessageIs(kMessage2), !kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      MakeResponseBodyMutationResponse(req->response_body().body()));
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseTrailersMutationResponse({}));
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+TEST_P(XdsExtProcEnd2endTest, DrainRequestsStartedInStandaloneResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      ModifyEchoRequest(req->request_body().body(), kMutatedSuffix)));
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  // Start the drain in a response that does not contain any other event.
+  ext_proc_stream->SendResponse(SetRequestDrains(ProcessingResponse(),
+                                                 /*drain_requests=*/true,
+                                                 /*drain_responses=*/false));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  // Subsequent request messages and half-close are not sent to the ext_proc
+  // server.
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+TEST_P(XdsExtProcEnd2endTest, DrainResponsesStartedInRequestHeadersResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseBodyMode(true)
+                             .SetResponseTrailerMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(
+      SetRequestDrains(MakeRequestHeadersMutationResponse({}),
+                       /*drain_requests=*/false, /*drain_responses=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
+  // Response headers, messages, and trailers are not sent to the ext_proc
+  // server.
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1)));
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+TEST_P(XdsExtProcEnd2endTest, DrainResponsesStartedInRequestBodyResponse) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
                              .SetRequestHeaderMode(false)
-                             .SetResponseHeaderMode(false)
                              .SetRequestBodyMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseBodyMode(true)
+                             .SetResponseTrailerMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
@@ -1859,18 +2143,85 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
   auto req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
                        EchoRequestMessageIs(kMessage1), !kEndOfStream)));
-  ext_proc_stream->SendResponse(SetRequestDrains(
-      MakeRequestBodyMutationResponse(
-          ModifyEchoRequest(req->request_body().body(), kMutatedSuffix),
-          !kEndOfStream),
-      /*drain_requests=*/true, /*drain_responses=*/false));
+  ext_proc_stream->SendResponse(
+      SetRequestDrains(MakeRequestBodyMutationResponse(ModifyEchoRequest(
+                           req->request_body().body(), kMutatedSuffix)),
+                       /*drain_requests=*/false, /*drain_responses=*/true));
   auto drain_req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(drain_req,
-              ::testing::Optional(MatchesRequestBodyDrainComplete()));
-  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
+  // Response headers, messages, and trailers are not sent to the ext_proc
+  // server.  Request messages and half-close are still sent, since the
+  // request direction has not been drained.
   EXPECT_TRUE(stream.WaitForWrite());
   EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
+                       EchoRequestMessageIs(kMessage2), !kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      MakeRequestBodyMutationResponse(req->request_body().body()));
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req, ::testing::Optional(MatchesRequestBody(kEmptyBody, kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      MakeRequestBodyMutationResponse(kEmptyBody, kEndOfStream));
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+TEST_P(XdsExtProcEnd2endTest, DrainResponsesStartedInResponseHeadersResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseBodyMode(true)
+                             .SetResponseTrailerMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(
+      SetRequestDrains(MakeResponseHeadersMutationResponse({}),
+                       /*drain_requests=*/false, /*drain_responses=*/true));
+  // The server sends its initial metadata together with the first message,
+  // so the filter may have already sent that message to the ext_proc server
+  // before it received the drain request.  If so, the ext_proc server must
+  // respond to it before acknowledging the drain.
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_TRUE(drain_req.has_value());
+  if (drain_req->has_response_body() &&
+      !drain_req->response_body().drain_complete()) {
+    EXPECT_THAT(
+        *drain_req,
+        MatchesResponseBody(EchoResponseMessageIs(kMessage1), !kEndOfStream));
+    ext_proc_stream->SendResponse(
+        MakeResponseBodyMutationResponse(drain_req->response_body().body()));
+    drain_req = ext_proc_stream->GetNextRequest();
+  }
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1)));
+  // Subsequent response messages and trailers are not sent to the ext_proc
+  // server.
   request.set_message(kMessage2);
   stream.StartWrite(request);
   EXPECT_TRUE(stream.WaitForWrite());
@@ -1878,162 +2229,138 @@ TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnClientBody) {
               ::testing::Optional(MatchesEchoResponse(kMessage2)));
   stream.StartWritesDone();
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
 }
 
-TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
+TEST_P(XdsExtProcEnd2endTest, DrainResponsesStartedInResponseBodyResponse) {
   auto ext_proc_config = MakeFilterConfigBuilder()
                              .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode(true)
-                             .SetResponseHeaderMode(false)
-                             .Build();
-  SetFilterConfig(ext_proc_config);
-  AsyncRpc rpc;
-  rpc.StartRpc(stub_.get());
-  auto ext_proc_stream = ext_proc_service().GetStream();
-  ASSERT_NE(ext_proc_stream, nullptr);
-  auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(
-      req,
-      ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
-          ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
-  ext_proc_stream->SendResponse(
-      SetRequestDrains(MakeRequestHeadersMutationResponse({}),
-                       /*drain_requests=*/true, /*drain_responses=*/false));
-  Status status = rpc.GetStatus();
-  EXPECT_THAT(status, IsStatusOk());
-  EXPECT_EQ(rpc.response().message(), kRequestMessage);
-}
-
-// Once the response direction has been drained, no further response events
-// (headers, body, or trailers) are sent to the ext_proc server, even though
-// the processing mode enables them.
-TEST_P(XdsExtProcEnd2endTest, NoResponseEventsSentAfterResponseDrain) {
-  auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode(true)
+                             .SetRequestHeaderMode(false)
                              .SetResponseHeaderMode(true)
                              .SetResponseBodyMode(true)
                              .SetResponseTrailerMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
-  AsyncRpc rpc;
-  rpc.StartRpc(stub_.get());
-  auto ext_proc_stream = ext_proc_service().GetStream();
-  ASSERT_NE(ext_proc_stream, nullptr);
-  auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(req, ::testing::Optional(MatchesRequestHeaders(::testing::_)));
-  ext_proc_stream->SendResponse(
-      SetRequestDrains(MakeRequestHeadersMutationResponse({}),
-                       /*drain_requests=*/false, /*drain_responses=*/true));
-  auto drain_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(drain_req,
-              ::testing::Optional(MatchesResponseBodyDrainComplete()));
-  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
-  Status status = rpc.GetStatus();
-  EXPECT_THAT(status, IsStatusOk());
-  EXPECT_EQ(rpc.response().message(), kRequestMessage);
-  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
-}
-
-TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
-  auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode(false)
-                             .SetResponseHeaderMode(true)
-                             .Build();
-  SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
   stream.Start(stub_.get());
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWrite());
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  auto resp_headers_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(resp_headers_req,
-              ::testing::Optional(MatchesResponseHeaders(::testing::_)));
-  ext_proc_stream->SendResponse(
-      SetRequestDrains(MakeResponseHeadersMutationResponse({}),
-                       /*drain_requests=*/false, /*drain_responses=*/true));
-  EXPECT_THAT(stream.ReadMessage(),
-              ::testing::Optional(MatchesEchoResponse(kMessage1)));
-  stream.StartWritesDone();
-  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
-}
-
-TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
-  auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode(false)
-                             .SetResponseHeaderMode(false)
-                             .SetResponseTrailerMode(true)
-                             .Build();
-  SetFilterConfig(ext_proc_config);
-  AsyncBidiStream stream;
-  stream.Start(stub_.get());
   EchoRequest request;
   request.set_message(kMessage1);
   stream.StartWrite(request);
   EXPECT_TRUE(stream.WaitForWrite());
   stream.StartReadMessage();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseBody(
+                       EchoResponseMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      SetRequestDrains(MakeResponseBodyMutationResponse(ModifyEchoResponse(
+                           req->response_body().body(), kMutatedSuffix)),
+                       /*drain_requests=*/false, /*drain_responses=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  // Subsequent response messages and trailers are not sent to the ext_proc
+  // server.
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+TEST_P(XdsExtProcEnd2endTest, DrainResponsesStartedInStandaloneResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseBodyMode(true)
+                             .SetResponseTrailerMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(MakeResponseHeadersMutationResponse({}));
+  req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseBody(
+                       EchoResponseMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      ModifyEchoResponse(req->response_body().body(), kMutatedSuffix)));
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  // Start the drain in a response that does not contain any other event.
+  ext_proc_stream->SendResponse(SetRequestDrains(ProcessingResponse(),
+                                                 /*drain_requests=*/false,
+                                                 /*drain_responses=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
+  // Subsequent response messages and trailers are not sent to the ext_proc
+  // server.
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+// A response drain requested after the server's trailers have been seen is
+// ignored, since there are no more response messages to drain.
+TEST_P(XdsExtProcEnd2endTest, DrainResponsesIgnoredInResponseTrailersResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseBodyMode(true)
+                             .SetResponseTrailerMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseBody(
+                       EchoResponseMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      MakeResponseBodyMutationResponse(req->response_body().body()));
   EXPECT_THAT(stream.WaitForRead(),
               ::testing::Optional(MatchesEchoResponse(kMessage1)));
   stream.StartWritesDone();
-  auto ext_proc_stream = ext_proc_service().GetStream();
-  ASSERT_NE(ext_proc_stream, nullptr);
-  auto req = ext_proc_stream->GetNextRequest();
+  req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
   ext_proc_stream->SendResponse(
       SetRequestDrains(MakeResponseTrailersMutationResponse({}),
                        /*drain_requests=*/false, /*drain_responses=*/true));
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
-}
-
-TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
-  auto ext_proc_config = MakeFilterConfigBuilder()
-                             .SetFailureModeAllow(false)
-                             .SetRequestHeaderMode(false)
-                             .SetResponseHeaderMode(false)
-                             .SetResponseTrailerMode(true)
-                             .SetResponseBodyMode(true)
-                             .Build();
-  SetFilterConfig(ext_proc_config);
-  AsyncBidiStream stream;
-  stream.Start(stub_.get());
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWrite());
-  stream.StartReadMessage();
-  auto ext_proc_stream = ext_proc_service().GetStream();
-  ASSERT_NE(ext_proc_stream, nullptr);
-  auto resp_body_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(resp_body_req,
-              ::testing::Optional(MatchesResponseBody(
-                  EchoResponseMessageIs(kMessage1), !kEndOfStream)));
-  ext_proc_stream->SendResponse(SetRequestDrains(
-      MakeResponseBodyMutationResponse(
-          ModifyEchoResponse(resp_body_req->response_body().body(),
-                             kMutatedSuffix),
-          !kEndOfStream),
-      /*drain_requests=*/false, /*drain_responses=*/true));
-  auto drain_req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(drain_req,
-              ::testing::Optional(MatchesResponseBodyDrainComplete()));
-  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
-  EXPECT_THAT(stream.WaitForRead(),
-              ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
-  request.set_message(kMessage2);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWrite());
-  stream.StartReadMessage();
-  EXPECT_THAT(stream.WaitForRead(),
-              ::testing::Optional(MatchesEchoResponse(kMessage2)));
-  stream.StartWritesDone();
-  // Response trailers are not sent to the ext_proc server once the response
-  // body has been drained, even though the processing mode enables them.
-  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  // No drain_complete is sent to the ext_proc server.
   EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
 }
 
