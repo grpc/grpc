@@ -32,6 +32,7 @@
   "tests.reflection._reflection_client_test.ReflectionClientTest",
   "tests.reflection._reflection_servicer_test.ReflectionServicerTest",
   "tests.status._grpc_status_test.StatusTest",
+  "tests.status._grpc_status_version_test.VersionTest",
   "tests.testing._client_test.ClientTest",
   "tests.testing._server_test.FirstServiceServicerTest",
   "tests.testing._time_test.StrictFakeTimeTest",
