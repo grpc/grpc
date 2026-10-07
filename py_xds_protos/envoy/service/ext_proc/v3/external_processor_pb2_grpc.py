@@ -28,33 +28,27 @@ if _version_not_supported:
 class ExternalProcessorStub(object):
     """[#protodoc-title: External processing service]
 
-    A service that can access and modify HTTP requests and responses
-    as part of a filter chain.
+    A service that can access and modify HTTP requests and responses as part of a filter chain.
     The overall external processing protocol works like this:
 
     1. The data plane sends to the service information about the HTTP request.
-    2. The service sends back a ProcessingResponse message that directs
-    the data plane to either stop processing, continue without it, or send
-    it the next chunk of the message body.
-    3. If so requested, the data plane sends the server the message body in
-    chunks, or the entire body at once. In either case, the server may send
-    back a ProcessingResponse for each message it receives, or wait for
-    a certain amount of body chunks received before streaming back the
-    ProcessingResponse messages.
-    4. If so requested, the data plane sends the server the HTTP trailers,
-    and the server sends back a ProcessingResponse.
-    5. At this point, request processing is done, and we pick up again
-    at step 1 when the data plane receives a response from the upstream
-    server.
-    6. At any point above, if the server closes the gRPC stream cleanly,
-    then the data plane proceeds without consulting the server.
-    7. At any point above, if the server closes the gRPC stream with an error,
-    then the data plane returns a 500 error to the client, unless the filter
-    was configured to ignore errors.
+    2. The service sends back a ``ProcessingResponse`` message that directs the data plane to either
+    stop processing, continue without it, or send it the next chunk of the message body.
+    3. If so requested, the data plane sends the server the message body in chunks, or the entire
+    body at once. In either case, the server may send back a ``ProcessingResponse`` for each
+    message it receives, or wait for a certain amount of body chunks to be received before
+    streaming back the ``ProcessingResponse`` messages.
+    4. If so requested, the data plane sends the server the HTTP trailers, and the server sends back
+    a ``ProcessingResponse``.
+    5. At this point, request processing is done, and we pick up again at step 1 when the data plane
+    receives a response from the upstream server.
+    6. At any point above, if the server closes the gRPC stream cleanly, then the data plane
+    proceeds without consulting the server.
+    7. At any point above, if the server closes the gRPC stream with an error, then the data plane
+    returns a ``500`` error to the client, unless the filter was configured to ignore errors.
 
-    In other words, the process is a request/response conversation, but
-    using a gRPC stream to make it easier for the server to
-    maintain state.
+    In other words, the process is a request/response conversation, but using a gRPC stream to make
+    it easier for the server to maintain state.
     """
 
     def __init__(self, channel):
@@ -73,39 +67,33 @@ class ExternalProcessorStub(object):
 class ExternalProcessorServicer(object):
     """[#protodoc-title: External processing service]
 
-    A service that can access and modify HTTP requests and responses
-    as part of a filter chain.
+    A service that can access and modify HTTP requests and responses as part of a filter chain.
     The overall external processing protocol works like this:
 
     1. The data plane sends to the service information about the HTTP request.
-    2. The service sends back a ProcessingResponse message that directs
-    the data plane to either stop processing, continue without it, or send
-    it the next chunk of the message body.
-    3. If so requested, the data plane sends the server the message body in
-    chunks, or the entire body at once. In either case, the server may send
-    back a ProcessingResponse for each message it receives, or wait for
-    a certain amount of body chunks received before streaming back the
-    ProcessingResponse messages.
-    4. If so requested, the data plane sends the server the HTTP trailers,
-    and the server sends back a ProcessingResponse.
-    5. At this point, request processing is done, and we pick up again
-    at step 1 when the data plane receives a response from the upstream
-    server.
-    6. At any point above, if the server closes the gRPC stream cleanly,
-    then the data plane proceeds without consulting the server.
-    7. At any point above, if the server closes the gRPC stream with an error,
-    then the data plane returns a 500 error to the client, unless the filter
-    was configured to ignore errors.
+    2. The service sends back a ``ProcessingResponse`` message that directs the data plane to either
+    stop processing, continue without it, or send it the next chunk of the message body.
+    3. If so requested, the data plane sends the server the message body in chunks, or the entire
+    body at once. In either case, the server may send back a ``ProcessingResponse`` for each
+    message it receives, or wait for a certain amount of body chunks to be received before
+    streaming back the ``ProcessingResponse`` messages.
+    4. If so requested, the data plane sends the server the HTTP trailers, and the server sends back
+    a ``ProcessingResponse``.
+    5. At this point, request processing is done, and we pick up again at step 1 when the data plane
+    receives a response from the upstream server.
+    6. At any point above, if the server closes the gRPC stream cleanly, then the data plane
+    proceeds without consulting the server.
+    7. At any point above, if the server closes the gRPC stream with an error, then the data plane
+    returns a ``500`` error to the client, unless the filter was configured to ignore errors.
 
-    In other words, the process is a request/response conversation, but
-    using a gRPC stream to make it easier for the server to
-    maintain state.
+    In other words, the process is a request/response conversation, but using a gRPC stream to make
+    it easier for the server to maintain state.
     """
 
     def Process(self, request_iterator, context):
         """This begins the bidirectional stream that the data plane will use to
         give the server control over what the filter does. The actual
-        protocol is described by the ProcessingRequest and ProcessingResponse
+        protocol is described by the ``ProcessingRequest`` and ``ProcessingResponse``
         messages below.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -131,33 +119,27 @@ def add_ExternalProcessorServicer_to_server(servicer, server):
 class ExternalProcessor(object):
     """[#protodoc-title: External processing service]
 
-    A service that can access and modify HTTP requests and responses
-    as part of a filter chain.
+    A service that can access and modify HTTP requests and responses as part of a filter chain.
     The overall external processing protocol works like this:
 
     1. The data plane sends to the service information about the HTTP request.
-    2. The service sends back a ProcessingResponse message that directs
-    the data plane to either stop processing, continue without it, or send
-    it the next chunk of the message body.
-    3. If so requested, the data plane sends the server the message body in
-    chunks, or the entire body at once. In either case, the server may send
-    back a ProcessingResponse for each message it receives, or wait for
-    a certain amount of body chunks received before streaming back the
-    ProcessingResponse messages.
-    4. If so requested, the data plane sends the server the HTTP trailers,
-    and the server sends back a ProcessingResponse.
-    5. At this point, request processing is done, and we pick up again
-    at step 1 when the data plane receives a response from the upstream
-    server.
-    6. At any point above, if the server closes the gRPC stream cleanly,
-    then the data plane proceeds without consulting the server.
-    7. At any point above, if the server closes the gRPC stream with an error,
-    then the data plane returns a 500 error to the client, unless the filter
-    was configured to ignore errors.
+    2. The service sends back a ``ProcessingResponse`` message that directs the data plane to either
+    stop processing, continue without it, or send it the next chunk of the message body.
+    3. If so requested, the data plane sends the server the message body in chunks, or the entire
+    body at once. In either case, the server may send back a ``ProcessingResponse`` for each
+    message it receives, or wait for a certain amount of body chunks to be received before
+    streaming back the ``ProcessingResponse`` messages.
+    4. If so requested, the data plane sends the server the HTTP trailers, and the server sends back
+    a ``ProcessingResponse``.
+    5. At this point, request processing is done, and we pick up again at step 1 when the data plane
+    receives a response from the upstream server.
+    6. At any point above, if the server closes the gRPC stream cleanly, then the data plane
+    proceeds without consulting the server.
+    7. At any point above, if the server closes the gRPC stream with an error, then the data plane
+    returns a ``500`` error to the client, unless the filter was configured to ignore errors.
 
-    In other words, the process is a request/response conversation, but
-    using a gRPC stream to make it easier for the server to
-    maintain state.
+    In other words, the process is a request/response conversation, but using a gRPC stream to make
+    it easier for the server to maintain state.
     """
 
     @staticmethod

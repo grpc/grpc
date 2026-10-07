@@ -37,8 +37,10 @@ EXPERIMENT_ENABLES = {
     "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
     "header_data_frame": "header_data_frame",
     "inproc_cancel_stream": "inproc_cancel_stream",
+    "internal_fix": "internal_fix",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
+    "map_host_header_to_authority": "map_host_header_to_authority",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
@@ -66,6 +68,7 @@ EXPERIMENT_ENABLES = {
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
+    "ring_hash_update_cleanup": "ring_hash_update_cleanup",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
@@ -155,6 +158,7 @@ EXPERIMENTS = {
                 "buffer_list_deletion_prep",
                 "fix_v3_filter_stack_server_side_ordering",
                 "local_connector_secure",
+                "map_host_header_to_authority",
                 "otel_export_telemetry_domains",
                 "ph2_client",
                 "ph2_client_server",
@@ -182,6 +186,12 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "hpack_test": [
+                "map_host_header_to_authority",
+            ],
+            "lb_unit_test": [
+                "ring_hash_update_cleanup",
+            ],
             "minimal_stack_test": [
                 "fuse_filters",
             ],
@@ -194,6 +204,9 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "ring_hash_update_cleanup",
             ],
         },
         "on": {

@@ -214,7 +214,7 @@ class TcpZerocopySendCtx {
   void NoteSend(TcpZerocopySendRecord* record) {
     record->Ref();
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       is_in_write_ = true;
       AssociateSeqWithSendRecordLocked(last_send_, record);
     }
@@ -246,7 +246,7 @@ class TcpZerocopySendCtx {
 
   // Get a send record for a send that we wish to do with zerocopy.
   TcpZerocopySendRecord* GetSendRecord() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return TryGetSendRecordLocked();
   }
 
@@ -260,7 +260,7 @@ class TcpZerocopySendCtx {
   // buffers for this sendmsg()) is received from the kernel - or, in case
   // sendmsg() was unsuccessful to begin with.
   TcpZerocopySendRecord* ReleaseSendRecord(uint32_t seq) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return ReleaseSendRecordLocked(seq);
   }
 
@@ -269,7 +269,7 @@ class TcpZerocopySendCtx {
   // max_sends_ tcp_write() instances with zerocopy enabled in flight at the
   // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     GRPC_DCHECK(record >= send_records_ && record < send_records_ + max_sends_);
     PutSendRecordLocked(record);
   }
@@ -281,7 +281,7 @@ class TcpZerocopySendCtx {
   // Indicates that there are no inflight tcp_write() instances with zerocopy
   // enabled.
   bool AllSendRecordsEmpty() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return free_send_records_size_ == max_sends_;
   }
 
@@ -322,7 +322,7 @@ class TcpZerocopySendCtx {
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
   bool UpdateZeroCopyOptMemStateAfterFree() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (is_in_write_) {
       zcopy_enobuf_state_ = OptMemState::kCheck;
       return false;
@@ -362,7 +362,7 @@ class TcpZerocopySendCtx {
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
   bool UpdateZeroCopyOptMemStateAfterSend(bool seen_enobuf, bool& constrained) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     is_in_write_ = false;
     constrained = false;
     if (seen_enobuf) {

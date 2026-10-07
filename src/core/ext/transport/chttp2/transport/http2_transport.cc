@@ -150,7 +150,9 @@ std::string TransportChannelArgs::DebugString() const {
       " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
       " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
       " initial_sequence_number: ", initial_sequence_number,
-      " test_only_ack_pings: ", test_only_ack_pings);
+      " test_only_ack_pings: ", test_only_ack_pings,
+      " max_concurrent_streams_overload_protection: ",
+      max_concurrent_streams_overload_protection);
 }
 
 void ReadChannelArgs(const ChannelArgs& channel_args,
@@ -185,6 +187,13 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
   args.keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
           .value_or(kDefaultKeepalivePermitWithoutCalls);
+
+  args.max_concurrent_streams_overload_protection =
+      is_client
+          ? false
+          : channel_args
+                .GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION)
+                .value_or(true);
 
   args.max_usable_hpack_table_size =
       channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
@@ -489,8 +498,6 @@ std::string TarpitEntry::DebugString() const {
       std::get_if<OutgoingResetPayload>(&payload_);
   const OutgoingTrailingMetadataPayload* const trailers =
       std::get_if<OutgoingTrailingMetadataPayload>(&payload_);
-  const IncomingResetPayload* const incoming_reset =
-      std::get_if<IncomingResetPayload>(&payload_);
   if (reset != nullptr) {
     payload_str = absl::StrCat(
         "OutgoingReset(error_code=", reset->http2_error_code,
@@ -501,9 +508,6 @@ std::string TarpitEntry::DebugString() const {
                                    ? trailers->metadata->DebugString()
                                    : "null",
                                ")");
-  } else if (incoming_reset != nullptr) {
-    payload_str = absl::StrCat(
-        "IncomingReset(status=", incoming_reset->status.ToString(), ")");
   } else {
     payload_str = "unknown type";
   }
@@ -567,22 +571,6 @@ StatusFlag TarpitManager::StartTarpitTrailers(const uint32_t stream_id,
   const StatusFlag status =
       sender_.UnbufferedImmediateSend(std::move(entry), 1);
   return status;
-}
-
-StatusFlag TarpitManager::RequestTarpitIncomingReset(const uint32_t stream_id,
-                                                     absl::Status status) {
-  GRPC_DCHECK(allow_tarpit_);
-  GRPC_DCHECK_NE(stream_id, kInvalidStreamId);
-  GRPC_HTTP2_COMMON_DLOG
-      << "TarpitManager::RequestTarpitIncomingReset Stream id: " << stream_id
-      << " status: " << status;
-
-  const Timestamp expire_time = Timestamp::Now() + GetTarpitDuration();
-  TarpitEntry entry = TarpitEntry::CreateIncomingReset(
-      stream_id, std::move(status), expire_time);
-  const StatusFlag send_status =
-      sender_.UnbufferedImmediateSend(std::move(entry), 1);
-  return send_status;
 }
 
 StreamStateChange TarpitManager::OnTarpit(Stream& stream) {

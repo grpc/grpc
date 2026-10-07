@@ -458,7 +458,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Post a reclamation function.
   template <typename F>
   void PostReclaimer(ReclamationPass pass, F fn) {
-    MutexLock lock(&reclaimer_mu_);
+    MutexLock lock(reclaimer_mu_);
     GRPC_CHECK(!shutdown_);
     InsertReclaimer(static_cast<size_t>(pass), std::move(fn));
   }

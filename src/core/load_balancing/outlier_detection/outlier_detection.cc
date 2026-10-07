@@ -240,12 +240,12 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<EndpointState> endpoint_state() {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       return endpoint_state_;
     }
 
     void set_endpoint_state(RefCountedPtr<EndpointState> endpoint_state) {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       endpoint_state_ = std::move(endpoint_state);
     }
 

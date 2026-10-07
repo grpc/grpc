@@ -26,7 +26,7 @@ include(../cmake/common.cmake)
 # Proto file
 get_filename_component(hw_proto "../../protos/helloworld.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
-get_filename_component(health_proto "../../../src/proto/grpc/health/v1/health.proto" ABSOLUTE)
+get_filename_component(health_proto "../../../third_party/grpc-proto/grpc/health/v1/health.proto" ABSOLUTE)
 get_filename_component(health_proto_path "${health_proto}" PATH)
 
 # Generated sources
