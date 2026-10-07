@@ -2307,6 +2307,7 @@ add_library(grpc
   src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
+  src/core/client_channel/lame_channel.cc
   src/core/client_channel/lb_metadata.cc
   src/core/client_channel/load_balanced_call_destination.cc
   src/core/client_channel/local_subchannel_pool.cc
@@ -3512,6 +3513,7 @@ add_library(grpc_unsecure
   src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
+  src/core/client_channel/lame_channel.cc
   src/core/client_channel/lb_metadata.cc
   src/core/client_channel/load_balanced_call_destination.cc
   src/core/client_channel/local_subchannel_pool.cc

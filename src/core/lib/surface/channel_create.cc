@@ -24,6 +24,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/direct_channel.h"
+#include "src/core/client_channel/lame_channel.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -105,6 +106,8 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
       return ClientChannel::Create(std::move(target), std::move(args));
     case GRPC_CLIENT_DIRECT_CHANNEL:
       return DirectChannel::Create(std::move(target), std::move(args));
+    case GRPC_CLIENT_LAME_CHANNEL:
+      return LameChannel::Create(std::move(target), std::move(args));
     default:
       Crash(absl::StrCat("Invalid channel stack type for ChannelCreate: ",
                          grpc_channel_stack_type_string(channel_stack_type)));
@@ -211,6 +214,18 @@ grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
 }
 }  // namespace experimental
 
+RefCountedPtr<Channel> CreateLameChannel(std::string target,
+                                         const ChannelArgs& args,
+                                         const absl::Status& status) {
+  return ChannelCreate(std::move(target),
+                       args.Set(GRPC_ARG_LAME_FILTER_ERROR,
+                                grpc_core::ChannelArgs::Pointer(
+                                    new absl::Status(status),
+                                    &grpc_core::kLameFilterErrorArgVtable)),
+                       GRPC_CLIENT_LAME_CHANNEL, nullptr)
+      .value();
+}
+
 }  // namespace grpc_core
 
 grpc_channel* grpc_lame_client_channel_create(const char* target,
@@ -222,20 +237,12 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       << ", error_code=" << (int)error_code
       << ", error_message=" << error_message << ")";
   if (error_code == GRPC_STATUS_OK) error_code = GRPC_STATUS_UNKNOWN;
-  grpc_core::ChannelArgs args =
-      grpc_core::CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(nullptr)
-          .Set(GRPC_ARG_LAME_FILTER_ERROR,
-               grpc_core::ChannelArgs::Pointer(
-                   new absl::Status(static_cast<absl::StatusCode>(error_code),
-                                    error_message),
-                   &grpc_core::kLameFilterErrorArgVtable));
-  auto channel =
-      grpc_core::ChannelCreate(target == nullptr ? "" : target, std::move(args),
-                               GRPC_CLIENT_LAME_CHANNEL, nullptr);
-  GRPC_CHECK(channel.ok());
-  return channel->release()->c_ptr();
+  absl::Status status(static_cast<absl::StatusCode>(error_code), error_message);
+  grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
+                                    .channel_args_preconditioning()
+                                    .PreconditionChannelArgs(nullptr);
+  auto channel = grpc_core::CreateLameChannel(target, args, status);
+  return channel.release()->c_ptr();
 }
 
 // Create a client channel:
