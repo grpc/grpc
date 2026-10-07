@@ -125,10 +125,8 @@ TEST_F(GrpcXdsTransportTest, DifferingCallCredsSharesChannel) {
   auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
-  auto* grpc_transport1 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
-  auto* grpc_transport2 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
+  auto* grpc_transport1 = DownCast<GrpcXdsTransport*>(transport1.get());
+  auto* grpc_transport2 = DownCast<GrpcXdsTransport*>(transport2.get());
   EXPECT_EQ(grpc_transport1->channel(), grpc_transport2->channel());
 }
 
@@ -150,10 +148,8 @@ TEST_F(GrpcXdsTransportTest, DifferingMetadataSharesChannel) {
   auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
-  auto* grpc_transport1 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
-  auto* grpc_transport2 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
+  auto* grpc_transport1 = DownCast<GrpcXdsTransport*>(transport1.get());
+  auto* grpc_transport2 = DownCast<GrpcXdsTransport*>(transport2.get());
   EXPECT_EQ(grpc_transport1->channel(), grpc_transport2->channel());
 }
 
@@ -175,10 +171,8 @@ TEST_F(GrpcXdsTransportTest, DifferingTimeoutSharesChannel) {
   auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
-  auto* grpc_transport1 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
-  auto* grpc_transport2 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
+  auto* grpc_transport1 = DownCast<GrpcXdsTransport*>(transport1.get());
+  auto* grpc_transport2 = DownCast<GrpcXdsTransport*>(transport2.get());
   EXPECT_EQ(grpc_transport1->channel(), grpc_transport2->channel());
 }
 
@@ -200,10 +194,8 @@ TEST_F(GrpcXdsTransportTest, DifferingServerUriDoesNotShareChannel) {
   auto transport2 = factory_->GetTransport(target2, &status2);
   ASSERT_TRUE(status2.ok()) << status2.ToString();
   EXPECT_NE(transport1, transport2);
-  auto* grpc_transport1 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport1.get());
-  auto* grpc_transport2 =
-      DownCast<GrpcXdsTransportFactory::GrpcXdsTransport*>(transport2.get());
+  auto* grpc_transport1 = DownCast<GrpcXdsTransport*>(transport1.get());
+  auto* grpc_transport2 = DownCast<GrpcXdsTransport*>(transport2.get());
   EXPECT_NE(grpc_transport1->channel(), grpc_transport2->channel());
 }
 

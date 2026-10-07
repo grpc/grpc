@@ -34,56 +34,52 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/certificate_provider_store_interface.h"
-#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
-class GrpcXdsTransportFactory final : public XdsTransportFactory {
+// An XdsTransport that uses a gRPC channel.  It has no xDS-specific
+// dependencies: the factory that creates it does all of the work with
+// server targets and credential registries, and hands the transport
+// everything it needs.
+class GrpcXdsTransport final : public XdsTransport {
  public:
-  class GrpcXdsTransport;
+  // Wraps a channel that more than one transport can use.  Transports
+  // that differ only in per-call settings (call creds, initial metadata,
+  // and timeout) share the same SharedChannel.  Each transport factory
+  // supplies its own implementation.
+  class SharedChannel : public RefCounted<SharedChannel> {
+   public:
+    // Returns the underlying channel.  Never null.
+    virtual Channel* channel() const = 0;
 
-  GrpcXdsTransportFactory(const ChannelArgs& args,
-                          RefCountedPtr<CertificateProviderStoreInterface>
-                              certificate_provider_store);
-  ~GrpcXdsTransportFactory() override;
+    // Returns the pollset_set to use for calls on the channel.  Must
+    // stay valid while this object is alive.
+    virtual grpc_pollset_set* interested_parties() const = 0;
 
-  void Orphaned() override {}
+    // Called when a transport that uses this channel is orphaned, so that
+    // the owning factory can remove the transport from its cache.
+    virtual void OnTransportOrphaned(absl::string_view key,
+                                     GrpcXdsTransport* transport) = 0;
+  };
 
-  RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServerTarget& server,
-      absl::Status* status) override;
-
-  grpc_pollset_set* interested_parties() const { return interested_parties_; }
-
- private:
-  class SharedChannel;
-
-  ChannelArgs args_;
-  RefCountedPtr<CertificateProviderStoreInterface> certificate_provider_store_;
-  grpc_pollset_set* interested_parties_;
-
-  Mutex mu_;
-  absl::flat_hash_map<std::string /*XdsServerTarget key*/, GrpcXdsTransport*>
-      transports_ ABSL_GUARDED_BY(&mu_);
-  absl::flat_hash_map<std::string /*Channel key*/, SharedChannel*> channels_
-      ABSL_GUARDED_BY(&mu_);
-};
-
-class GrpcXdsTransportFactory::GrpcXdsTransport final
-    : public XdsTransportFactory::XdsTransport {
- public:
-  GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-                   RefCountedPtr<SharedChannel> channel,
-                   const GrpcXdsServerInterface& server, absl::Status* status);
+  // key is an opaque cache key that is passed back to
+  // SharedChannel::OnTransportOrphaned().
+  GrpcXdsTransport(
+      std::string key, RefCountedPtr<SharedChannel> channel,
+      RefCountedPtr<grpc_call_credentials> call_creds,
+      std::vector<std::pair<std::string, std::string>> initial_metadata,
+      Duration timeout);
   ~GrpcXdsTransport() override;
 
   void Orphaned() override;
@@ -103,7 +99,6 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   Channel* channel() const;
 
  private:
-  WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
   std::string key_;
   RefCountedPtr<SharedChannel> channel_;
   RefCountedPtr<grpc_call_credentials> call_creds_;
@@ -116,10 +111,41 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
       watchers_ ABSL_GUARDED_BY(&mu_);
 };
 
+class GrpcXdsTransportFactory final : public XdsTransportFactory {
+ public:
+  GrpcXdsTransportFactory(const ChannelArgs& args,
+                          RefCountedPtr<CertificateProviderStoreInterface>
+                              certificate_provider_store);
+  ~GrpcXdsTransportFactory() override;
+
+  void Orphaned() override {}
+
+  RefCountedPtr<XdsTransport> GetTransport(
+      const XdsBootstrap::XdsServerTarget& server,
+      absl::Status* status) override;
+
+  grpc_pollset_set* interested_parties() const { return interested_parties_; }
+
+ private:
+  class XdsSharedChannel;
+
+  ChannelArgs args_;
+  RefCountedPtr<CertificateProviderStoreInterface> certificate_provider_store_;
+  grpc_pollset_set* interested_parties_;
+
+  Mutex mu_;
+  absl::flat_hash_map<std::string /*XdsServerTarget key*/, GrpcXdsTransport*>
+      transports_ ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<std::string /*Channel key*/, XdsSharedChannel*> channels_
+      ABSL_GUARDED_BY(&mu_);
+};
+
 class GrpcStreamingCall final : public XdsTransport::StreamingCall {
  public:
+  // Holds a ref to channel for the life of the call, which keeps the
+  // channel and its pollset_set alive.
   GrpcStreamingCall(
-      grpc_pollset_set* interested_parties, Channel* channel,
+      RefCountedPtr<GrpcXdsTransport::SharedChannel> channel,
       const char* method,
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
       grpc_call_credentials* call_creds,
@@ -151,6 +177,8 @@ class GrpcStreamingCall final : public XdsTransport::StreamingCall {
   static void OnHalfClosed(void* arg, grpc_error_handle error);
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
   static void OnStatusReceived(void* arg, grpc_error_handle /*error*/);
+
+  RefCountedPtr<GrpcXdsTransport::SharedChannel> channel_;
 
   std::unique_ptr<StreamingCall::EventHandler> event_handler_;
 
