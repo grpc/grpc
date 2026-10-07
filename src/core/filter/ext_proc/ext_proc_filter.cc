@@ -457,7 +457,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   auto SendMessageToSideStream(std::string payload);
 
   // Parses and processes an incoming response message payload from the
-  // side-stream.
+  // side-stream, then sends any resulting drain messages.
   auto ProcessSideStreamResponse(absl::string_view payload);
 
   // Handles transport status updates/closure on the ext_proc side-stream.
@@ -1015,29 +1015,33 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleImmediateResponseFromSidestream(
 
 auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
     absl::string_view payload) {
-  // In observability mode, we only log the message and ignore it.
-  // We must continue reading the stream to keep it alive.
-  if (config().observability_mode) {
+  std::optional<std::string> request_drain;
+  std::optional<std::string> response_drain;
+  // Synchronously parse and apply the response, collecting any drain messages
+  // that need to be sent to the side-stream.
+  const StatusFlag status = [&]() -> StatusFlag {
+    // In observability mode, we only log the message and ignore it.
+    // We must continue reading the stream to keep it alive.
+    if (config().observability_mode) {
+      GRPC_TRACE_LOG(ext_proc_filter, INFO)
+          << DebugTag()
+          << "message received in observability mode (ignored), size="
+          << payload.size();
+      return Success{};
+    }
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
-        << DebugTag()
-        << "message received in observability mode (ignored), size="
-        << payload.size();
-    return Immediate(StatusFlag(Success{}));
-  }
-  GRPC_TRACE_LOG(ext_proc_filter, INFO)
-      << DebugTag() << "message received, size=" << payload.size();
-  // Parse the response from the external processor.
-  auto parsed_response = ExtProcResponse::Parse(payload);
-  if (!parsed_response.ok()) {
-    HandleSideStreamStatus(parsed_response.status());
-    return Immediate(StatusFlag(Failure{}));
-  }
-  // Handle request body drain initiation.
-  if (!side_stream_closed_latch_.is_set() &&
-      parsed_response->request_drain_requests &&
-      processing_mode().send_request_body && !c2s_writes_done_ &&
-      !ext_proc_closed_c2s_) {
-    if (request_body_drain_state_ == BodyDrainState::kNotDraining) {
+        << DebugTag() << "message received, size=" << payload.size();
+    // Parse the response from the external processor.
+    auto parsed_response = ExtProcResponse::Parse(payload);
+    if (!parsed_response.ok()) {
+      HandleSideStreamStatus(parsed_response.status());
+      return Failure{};
+    }
+    // Handle request body drain initiation.
+    if (parsed_response->request_drain_requests &&
+        processing_mode().send_request_body && !c2s_writes_done_ &&
+        !ext_proc_closed_c2s_ &&
+        request_body_drain_state_ == BodyDrainState::kNotDraining) {
       GRPC_TRACE_LOG(ext_proc_filter, INFO)
           << DebugTag() << "initiating request body drain";
       request_body_drain_state_ = BodyDrainState::kDrainInFlight;
@@ -1047,24 +1051,17 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
           config().observability_mode, /*processing_mode=*/std::nullopt,
           /*end_of_stream=*/false, /*end_of_stream_without_message=*/false,
           /*drain_complete=*/true);
-      if (drain_payload.ok()) {
-        handler_.SpawnGuarded(
-            "ext_proc_send_request_drain",
-            [self = WeakRef(), payload = std::move(*drain_payload)]() mutable {
-              return self->SendMessageToSideStream(std::move(payload));
-            });
-      } else {
+      if (!drain_payload.ok()) {
         HandleSideStreamStatus(drain_payload.status());
-        return Immediate(StatusFlag(Failure{}));
+        return Failure{};
       }
+      request_drain = std::move(*drain_payload);
     }
-  }
-  // Handle response body drain initiation.
-  if (!side_stream_closed_latch_.is_set() &&
-      parsed_response->request_drain_responses &&
-      processing_mode().send_response_body && !is_trailers_only_ &&
-      (server_trailing_metadata_ == nullptr)) {
-    if (response_body_drain_state_ == BodyDrainState::kNotDraining) {
+    // Handle response body drain initiation.
+    if (parsed_response->request_drain_responses &&
+        processing_mode().send_response_body && !is_trailers_only_ &&
+        server_trailing_metadata_ == nullptr &&
+        response_body_drain_state_ == BodyDrainState::kNotDraining) {
       GRPC_TRACE_LOG(ext_proc_filter, INFO)
           << DebugTag() << "initiating response body drain";
       response_body_drain_state_ = BodyDrainState::kDrainInFlight;
@@ -1073,41 +1070,49 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
           arena.ptr(), /*body=*/"", /*attributes=*/nullptr,
           config().observability_mode, /*processing_mode=*/std::nullopt,
           /*drain_complete=*/true);
-      if (drain_payload.ok()) {
-        handler_.SpawnGuarded(
-            "ext_proc_send_response_drain",
-            [self = WeakRef(), payload = std::move(*drain_payload)]() mutable {
-              return self->SendMessageToSideStream(std::move(payload));
-            });
-      } else {
+      if (!drain_payload.ok()) {
         HandleSideStreamStatus(drain_payload.status());
-        return Immediate(StatusFlag(Failure{}));
+        return Failure{};
       }
+      response_drain = std::move(*drain_payload);
     }
-  }
-  // Dispatch the parsed response to the appropriate processor based on the
-  // response type.
-  return Match(
-      (*parsed_response).response,
-      [&](const ExtProcResponse::ImmediateResponse& response) {
-        return Immediate(HandleImmediateResponseFromSidestream(response));
-      },
-      [&](const ExtProcResponse::RequestHeaders& response) {
-        return Immediate(HandleClientInitialMetadataFromSidestream(response));
-      },
-      [&](const ExtProcResponse::ResponseHeaders& response) {
-        return Immediate(HandleServerInitialMetadataFromSidestream(response));
-      },
-      [&](const ExtProcResponse::ResponseTrailers& response) {
-        return Immediate(HandleServerTrailingMetadataFromSidestream(response));
-      },
-      [&](const ExtProcResponse::RequestBody& response) {
-        return Immediate(HandleClientMessageFromSidestream(response));
-      },
-      [&](const ExtProcResponse::ResponseBody& response) {
-        return Immediate(HandleServerMessageFromSidestream(response));
-      },
-      [](std::monostate) { return Immediate(StatusFlag(Success{})); });
+    // Dispatch the parsed response to the appropriate processor based on the
+    // response type.
+    return Match(
+        parsed_response->response,
+        [&](const ExtProcResponse::ImmediateResponse& response) {
+          return HandleImmediateResponseFromSidestream(response);
+        },
+        [&](const ExtProcResponse::RequestHeaders& response) {
+          return HandleClientInitialMetadataFromSidestream(response);
+        },
+        [&](const ExtProcResponse::ResponseHeaders& response) {
+          return HandleServerInitialMetadataFromSidestream(response);
+        },
+        [&](const ExtProcResponse::ResponseTrailers& response) {
+          return HandleServerTrailingMetadataFromSidestream(response);
+        },
+        [&](const ExtProcResponse::RequestBody& response) {
+          return HandleClientMessageFromSidestream(response);
+        },
+        [&](const ExtProcResponse::ResponseBody& response) {
+          return HandleServerMessageFromSidestream(response);
+        },
+        [](std::monostate) { return StatusFlag(Success{}); });
+  }();
+  // Send any drain messages to the side-stream. TrySeq stops early if `status`
+  // is a failure, so nothing is sent in that case.
+  auto maybe_send = [self = WeakRef()](std::optional<std::string> message) {
+    const bool has_message = message.has_value();
+    return If(
+        has_message,
+        [self, message = std::move(message)]() mutable {
+          return self->SendMessageToSideStream(std::move(*message));
+        },
+        []() { return StatusFlag(Success{}); });
+  };
+  return TrySeq(Immediate(status), maybe_send(std::move(request_drain)),
+                maybe_send(std::move(response_drain)));
 }
 
 bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
@@ -1442,9 +1447,10 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
   } else {
     server_initial_metadata_ = std::move(*metadata);
   }
-  const bool send_response_headers = !is_trailers_only &&
-                                     processing_mode().send_response_headers &&
-                                     !side_stream_closed_latch_.is_set();
+  const bool send_response_headers =
+      !is_trailers_only && processing_mode().send_response_headers &&
+      !side_stream_closed_latch_.is_set() &&
+      response_body_drain_state_ == BodyDrainState::kNotDraining;
   absl::StatusOr<std::string> payload = "";
   if (send_response_headers) {
     // Include processing mode if this is the first message on the
@@ -1514,6 +1520,7 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
   const bool send_metadata =
       (is_trailers_only_ || IsStatusOk(*server_trailing_metadata_)) &&
       !side_stream_closed_latch_.is_set() &&
+      response_body_drain_state_ == BodyDrainState::kNotDraining &&
       (is_trailers_only_ ? processing_mode().send_response_headers
                          : processing_mode().send_response_trailers);
   absl::StatusOr<std::string> payload = "";
