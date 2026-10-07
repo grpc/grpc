@@ -26,9 +26,8 @@ EXPERIMENT_ENABLES = {
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "custom_frame_check": "custom_frame_check",
     "event_engine_client": "event_engine_client",
-    "event_engine_listener": "event_engine_listener",
-    "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
-    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints,event_engine_listener",
+    "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client",
+    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints",
     "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
     "fix_v3_filter_stack_server_side_ordering": "fix_v3_filter_stack_server_side_ordering",
     "free_large_allocator": "free_large_allocator",
@@ -58,8 +57,8 @@ EXPERIMENT_ENABLES = {
     "ph2_perf_01": "ph2_perf_01",
     "ph2_server": "ph2_server",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
-    "pipelined_read_secure_endpoint": "event_engine_client,event_engine_listener,pipelined_read_secure_endpoint",
-    "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
+    "pipelined_read_secure_endpoint": "event_engine_client,pipelined_read_secure_endpoint",
+    "pollset_alternative": "event_engine_client,pollset_alternative",
     "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
@@ -69,9 +68,9 @@ EXPERIMENT_ENABLES = {
     "return_preexisting_errors": "return_preexisting_errors",
     "ring_hash_update_cleanup": "ring_hash_update_cleanup",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
-    "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
-    "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
-    "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
+    "secure_endpoint_offload_large_reads": "event_engine_client,secure_endpoint_offload_large_reads",
+    "secure_endpoint_offload_large_writes": "event_engine_client,secure_endpoint_offload_large_writes",
+    "secure_endpoint_read_coalescing": "event_engine_client,secure_endpoint_read_coalescing",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -86,7 +85,6 @@ EXPERIMENT_ENABLES = {
 
 EXPERIMENT_POLLERS = [
     "event_engine_client",
-    "event_engine_listener",
     "event_engine_for_all_other_endpoints",
     "pipelined_read_secure_endpoint",
 ]
@@ -106,13 +104,9 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
             ],
         },
     },
@@ -130,13 +124,9 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
             ],
         },
     },
@@ -204,14 +194,10 @@ EXPERIMENTS = {
                 "callv3_batch_validation",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_listener",
                 "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_listener_test": [
-                "event_engine_listener",
             ],
             "xds_end2end_test": [
                 "xds_server_filter_chain_per_route",
