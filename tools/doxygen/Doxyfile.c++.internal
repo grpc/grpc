@@ -959,6 +959,7 @@ include/grpc/support/sync_windows.h \
 include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
+include/grpc/transport_factory.h \
 include/grpcpp/alarm.h \
 include/grpcpp/call_context_types.h \
 include/grpcpp/channel.h \
@@ -3279,6 +3280,7 @@ src/core/xds/xds_client/xds_metrics.h \
 src/core/xds/xds_client/xds_resource_type.h \
 src/core/xds/xds_client/xds_resource_type_impl.h \
 src/core/xds/xds_client/xds_transport.h \
+src/core/xds/xds_client/xds_transport_interface.h \
 src/cpp/README.md \
 src/cpp/client/call_context_registry.cc \
 src/cpp/client/call_credentials.cc \

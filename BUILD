@@ -4721,7 +4721,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name  = "xds_transport_interface",
+    name = "xds_transport_interface",
     hdrs = [
         "//src/core:xds/xds_client/xds_transport_interface.h",
     ],

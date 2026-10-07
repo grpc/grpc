@@ -61,6 +61,7 @@ header "byte_buffer.h"
   header "support/thd_id.h"
   header "support/time.h"
   header "support/workaround_list.h"
+  header "transport_factory.h"
 
 textual header "impl/codegen/atm_gcc_atomic.h"
   textual header "impl/codegen/atm_gcc_sync.h"

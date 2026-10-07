@@ -111,6 +111,7 @@
     <file baseinstalldir="/" name="include/grpc/support/thd_id.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/transport_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/call_arena_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/call_arena_allocator.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/call_destination.h" role="src" />
@@ -2293,6 +2294,7 @@
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_resource_type.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_resource_type_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_transport_interface.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call.c" role="src" />

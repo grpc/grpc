@@ -959,6 +959,7 @@ include/grpc/support/sync_windows.h \
 include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
+include/grpc/transport_factory.h \
 include/grpcpp/alarm.h \
 include/grpcpp/call_context_types.h \
 include/grpcpp/channel.h \

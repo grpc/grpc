@@ -199,7 +199,8 @@ Pod::Spec.new do |s|
                       'include/grpc/support/sync_windows.h',
                       'include/grpc/support/thd_id.h',
                       'include/grpc/support/time.h',
-                      'include/grpc/support/workaround_list.h'
+                      'include/grpc/support/workaround_list.h',
+                      'include/grpc/transport_factory.h'
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
@@ -2429,6 +2430,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/xds_client/xds_resource_type.h',
                       'src/core/xds/xds_client/xds_resource_type_impl.h',
                       'src/core/xds/xds_client/xds_transport.h',
+                      'src/core/xds/xds_client/xds_transport_interface.h',
                       'third_party/address_sorting/address_sorting.c',
                       'third_party/address_sorting/address_sorting_internal.h',
                       'third_party/address_sorting/address_sorting_posix.c',
@@ -3910,6 +3912,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/xds_client/xds_resource_type.h',
                               'src/core/xds/xds_client/xds_resource_type_impl.h',
                               'src/core/xds/xds_client/xds_transport.h',
+                              'src/core/xds/xds_client/xds_transport_interface.h',
                               'third_party/address_sorting/address_sorting_internal.h',
                               'third_party/address_sorting/include/address_sorting/address_sorting.h',
                               'third_party/re2/re2/bitmap256.h',
