@@ -85,6 +85,9 @@ class ModuleVisitor(ast.NodeVisitor):
         self.http_archives = list()
 
     def visit_Call(self, node):
+        # Bazel 9 prints a load() of the repo rule before each repo definition.
+        if isinstance(node.func, ast.Name) and node.func.id == "load":
+            return
         sub_visitor = KeywordVisitor()
         sub_visitor.visit(node)
         self.http_archives.append(sub_visitor.http_archive)

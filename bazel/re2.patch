@@ -9,3 +9,17 @@ index 0000000..3c9e88f
 +# Match grpc main repo.
 +bazel_dep(name = "platforms", version = "0.0.11")
 +bazel_dep(name = "rules_cc", version = "0.1.1")
+diff --git a/BUILD b/BUILD
+--- a/BUILD
++++ b/BUILD
+@@ -4,6 +4,10 @@
+ 
+ # Bazel (http://bazel.io/) BUILD file for RE2.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
++
+ licenses(["notice"])
+ 
+ exports_files(["LICENSE"])

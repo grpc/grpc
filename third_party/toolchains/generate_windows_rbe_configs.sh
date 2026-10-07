@@ -53,3 +53,9 @@ ${RBE_CONFIGS_GEN_TOOL_PATH} \
     --exec_os=windows \
     --target_os=windows \
     --generate_java_configs=false
+
+# The rbe_configs_gen release above predates
+# https://github.com/bazelbuild/bazel-toolchains/pull/1072 and still emits
+# @local_config_platform, which Bazel 9 no longer provides.
+sed -i 's#"@local_config_platform//:host"#"@platforms//host"#' \
+    "${REPO_ROOT}/${CONFIG_OUTPUT_PATH}/config/BUILD"
