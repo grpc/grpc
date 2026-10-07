@@ -1382,7 +1382,7 @@ TEST_P(XdsMetricsTest, MetricValues) {
 
 TEST_P(XdsMetricsTest, SubchannelMetricsHaveLocalityAndBackendServiceLabels) {
   const std::string target = kServerName;
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateAndStartBackends(2);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
                         {"locality1", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));

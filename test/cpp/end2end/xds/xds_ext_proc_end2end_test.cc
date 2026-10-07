@@ -1372,12 +1372,17 @@ TEST_P(XdsExtProcEnd2endTest,
                        EchoRequestMessageIs(kRequestMessage), !kEndOfStream)));
   ClientHalfCloseHandler half_close_handler(ext_proc_stream.get(),
                                             /*send_response=*/false);
-  // ext_proc server sees response headers, which are sent in observability
-  // mode even for a trailers-only response.
+  // In observability mode the server's trailers-only response can race
+  // with the client half-close; if it wins, the filter closes the side
+  // stream and the remaining observability events are not delivered.
+  // Otherwise, the ext_proc server sees response headers, which are sent in
+  // observability mode even for a trailers-only response.
   req = half_close_handler.MaybeHandle(ext_proc_stream->GetNextRequest());
-  ASSERT_THAT(req, ::testing::Optional(
-                       MatchesResponseHeaders(::testing::_, kEndOfStream)));
-  half_close_handler.HandleIfNotYetSeen();
+  if (req.has_value()) {
+    EXPECT_THAT(req, ::testing::Optional(
+                         MatchesResponseHeaders(::testing::_, kEndOfStream)));
+    half_close_handler.HandleIfNotYetSeen();
+  }
   // For trailers-only response in observability mode, ext_proc server sees no
   // further requests.
   EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
@@ -2482,7 +2487,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyNotDrainedFails) {
   ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
                        EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::OkStatus());
-  stream.StartWritesDone();
+  // Don't half-close here: the half-close can reach the backend before the
+  // side-stream status is processed, letting the backend finish with OK.
   EXPECT_THAT(
       stream.WaitForStatus(),
       ::testing::Optional(GrpcStatusIs(StatusCode::INTERNAL,

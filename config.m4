@@ -341,7 +341,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c \
-    src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c \
     src/core/ext/upb-gen/google/api/annotations.upb_minitable.c \
@@ -518,7 +517,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c \
-    src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c \
     src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.c \
@@ -1516,7 +1514,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.85.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.86.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)

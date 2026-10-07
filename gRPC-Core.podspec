@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.85.0-dev'
+  version = '1.86.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -987,9 +987,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h',
                       'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h',
-                      'src/core/ext/upb-gen/envoy/type/v3/scope.upb.h',
-                      'src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c',
-                      'src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h',
                       'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h',
@@ -1401,8 +1398,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.h',
-                      'src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c',
-                      'src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c',
@@ -3129,8 +3124,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h',
                               'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h',
-                              'src/core/ext/upb-gen/envoy/type/v3/scope.upb.h',
-                              'src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h',
                               'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb.h',
@@ -3366,7 +3359,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.h',
-                              'src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.h',
