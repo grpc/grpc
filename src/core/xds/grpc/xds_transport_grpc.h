@@ -39,6 +39,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/certificate_provider_store_interface.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/container/flat_hash_map.h"
@@ -47,6 +48,8 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
+class XdsClient;
 
 // An XdsTransport that uses a gRPC channel.  It has no xDS-specific
 // dependencies: the factory that creates it does all of the work with
@@ -211,6 +214,45 @@ class GrpcStreamingCall final : public XdsTransport::StreamingCall {
   grpc_closure on_status_received_;
 
   const XdsTransport::CallOptions options_;
+};
+
+// The concrete TransportFactory::Transport returned by the factories in
+// this file.  Callers can DownCast to this type to get the XdsTransport.
+class TransportImpl final : public TransportFactory::Transport {
+ public:
+  explicit TransportImpl(RefCountedPtr<XdsTransport> transport)
+      : transport_(std::move(transport)) {}
+  ~TransportImpl() override = default;
+
+  const RefCountedPtr<XdsTransport>& transport() const { return transport_; }
+
+ private:
+  RefCountedPtr<XdsTransport> transport_;
+};
+
+// A TransportFactory for the xDS case.  Only the keys in the map are
+// supported: an unknown key gets a lame transport.  Transports come from
+// the XdsClient's existing GrpcXdsTransportFactory, so channels are shared
+// with other xDS users.
+class XdsTransportFactoryWrapper final : public TransportFactory {
+ public:
+  using TargetMap =
+      absl::flat_hash_map<std::string /*key*/, GrpcXdsServerTarget>;
+
+  // Gets the GrpcXdsTransportFactory from xds_client.
+  static std::shared_ptr<TransportFactory> Create(const XdsClient& xds_client,
+                                                  TargetMap targets);
+
+  XdsTransportFactoryWrapper(
+      RefCountedPtr<GrpcXdsTransportFactory> transport_factory,
+      TargetMap targets);
+
+  std::unique_ptr<Transport> CreateTransport(absl::string_view key) override;
+
+ private:
+  RefCountedPtr<GrpcXdsTransportFactory> transport_factory_;
+  // Does not change after construction, so no lock is needed.
+  const TargetMap targets_;
 };
 
 // Extracts TransportFactory from ChannelArgs. Returns nullptr if not set.

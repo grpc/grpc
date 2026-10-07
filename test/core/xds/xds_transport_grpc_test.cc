@@ -16,6 +16,7 @@
 
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 
 #include <memory>
@@ -330,6 +331,80 @@ TEST_F(GrpcXdsTransportTest, UnaryCallOrphanedBeforeSendMessage) {
   call.reset();
   exec_ctx.Flush();
   on_status_received.WaitForNotification();
+}
+
+// Returns the XdsTransport inside a TransportFactory::Transport.
+XdsTransport* GetXdsTransport(const TransportFactory::Transport& transport) {
+  return DownCast<const TransportImpl&>(transport).transport().get();
+}
+
+// Starts a streaming call on transport and returns its final status.
+absl::Status RunStreamingCall(XdsTransport& transport) {
+  ExecCtx exec_ctx;
+  absl::Notification on_status_received;
+  absl::Status call_status;
+  auto call = transport.CreateStreamingCall(
+      "/test.Service/TestMethod",
+      std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
+                                                      &call_status));
+  EXPECT_NE(call, nullptr);
+  exec_ctx.Flush();
+  on_status_received.WaitForNotification();
+  call.reset();
+  return call_status;
+}
+
+TEST_F(GrpcXdsTransportTest, WrapperKnownKeyReturnsFactoryTransport) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  XdsTransportFactoryWrapper::TargetMap targets;
+  targets.emplace("key1", target);
+  XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
+  auto transport = wrapper.CreateTransport("key1");
+  ASSERT_NE(transport, nullptr);
+  absl::Status status;
+  auto factory_transport = factory_->GetTransport(target, &status);
+  ASSERT_TRUE(status.ok()) << status;
+  EXPECT_EQ(GetXdsTransport(*transport), factory_transport.get());
+}
+
+TEST_F(GrpcXdsTransportTest, WrapperTwoKeysSameTargetShareTransport) {
+  ExecCtx exec_ctx;
+  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
+                             /*call_creds_configs=*/{},
+                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  XdsTransportFactoryWrapper::TargetMap targets;
+  targets.emplace("key1", target);
+  targets.emplace("key2", target);
+  XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
+  auto transport1 = wrapper.CreateTransport("key1");
+  auto transport2 = wrapper.CreateTransport("key2");
+  ASSERT_NE(transport1, nullptr);
+  ASSERT_NE(transport2, nullptr);
+  EXPECT_EQ(GetXdsTransport(*transport1), GetXdsTransport(*transport2));
+}
+
+TEST_F(GrpcXdsTransportTest, WrapperUnknownKeyReturnsLameTransport) {
+  XdsTransportFactoryWrapper wrapper(factory_, /*targets=*/{});
+  auto transport = wrapper.CreateTransport("unknown");
+  ASSERT_NE(transport, nullptr);
+  absl::Status call_status = RunStreamingCall(*GetXdsTransport(*transport));
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
+  EXPECT_EQ(call_status.message(), "transport key not allowed: unknown");
+}
+
+// Without wait-for-ready, a call on the core transport fails with
+// UNAVAILABLE when the connection attempt fails.  It must not fail with
+// DEADLINE_EXCEEDED, because the core transport has no deadline.
+TEST_F(GrpcXdsTransportTest, CoreTransportCallHasNoDeadline) {
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  auto transport = TransportFactory::CreateCoreTransport(server_uri_, creds);
+  grpc_channel_credentials_release(creds);
+  ASSERT_NE(transport, nullptr);
+  absl::Status call_status = RunStreamingCall(*GetXdsTransport(*transport));
+  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
 }
 
 class GrpcXdsServerTargetTest : public ::testing::Test {

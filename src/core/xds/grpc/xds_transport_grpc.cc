@@ -66,7 +66,9 @@
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client.h"
 #include "absl/container/inlined_vector.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
@@ -568,22 +570,10 @@ GrpcXdsTransportFactory::GetTransport(
 }
 
 //
-// TransportImpl and StandaloneSharedChannel
+// StandaloneSharedChannel
 //
 
 namespace {
-
-class TransportImpl final : public TransportFactory::Transport {
- public:
-  explicit TransportImpl(RefCountedPtr<XdsTransport> transport)
-      : transport_(std::move(transport)) {}
-  ~TransportImpl() override = default;
-
-  const RefCountedPtr<XdsTransport>& transport() const { return transport_; }
-
- private:
-  RefCountedPtr<XdsTransport> transport_;
-};
 
 // SharedChannel implementation for transports that are not created by
 // GrpcXdsTransportFactory.  Owns its channel and pollset_set, and is not
@@ -646,6 +636,43 @@ TransportFactory::CreateLameTransport(absl::string_view target,
 
 const grpc_arg_pointer_vtable* TransportFactory::ChannelArgVtable() {
   return ChannelArgTypeTraits<std::shared_ptr<TransportFactory>>::VTable();
+}
+
+//
+// XdsTransportFactoryWrapper
+//
+
+std::shared_ptr<TransportFactory> XdsTransportFactoryWrapper::Create(
+    const XdsClient& xds_client, TargetMap targets) {
+  // In gRPC, the XdsClient always uses a GrpcXdsTransportFactory.
+  auto* transport_factory =
+      DownCast<GrpcXdsTransportFactory*>(xds_client.transport_factory());
+  return std::make_shared<XdsTransportFactoryWrapper>(
+      transport_factory->RefAsSubclass<GrpcXdsTransportFactory>(),
+      std::move(targets));
+}
+
+XdsTransportFactoryWrapper::XdsTransportFactoryWrapper(
+    RefCountedPtr<GrpcXdsTransportFactory> transport_factory, TargetMap targets)
+    : transport_factory_(std::move(transport_factory)),
+      targets_(std::move(targets)) {}
+
+std::unique_ptr<TransportFactory::Transport>
+XdsTransportFactoryWrapper::CreateTransport(absl::string_view key) {
+  auto it = targets_.find(key);
+  if (it == targets_.end()) {
+    return CreateLameTransport(key, absl::UnavailableError(absl::StrCat(
+                                        "transport key not allowed: ", key)));
+  }
+  absl::Status status;
+  RefCountedPtr<XdsTransport> transport =
+      transport_factory_->GetTransport(it->second, &status);
+  GRPC_CHECK(transport != nullptr);
+  // On error, the transport is lame and fails calls, so return it anyway.
+  if (!status.ok()) {
+    LOG(ERROR) << "error creating transport for key " << key << ": " << status;
+  }
+  return std::make_unique<TransportImpl>(std::move(transport));
 }
 
 std::shared_ptr<TransportFactory> GetTransportFactoryFromChannelArgs(
