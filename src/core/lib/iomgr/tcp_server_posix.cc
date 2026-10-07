@@ -743,6 +743,7 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   if (listener_supports_fd != nullptr) {
     listener_supports_fd->ShutdownListeningFds();
   }
+  gpr_mu_unlock(&s->mu);
 }
 
 static int tcp_server_pre_allocated_fd(grpc_tcp_server* s) {
