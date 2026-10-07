@@ -58,8 +58,6 @@
   default: true
 - name: event_engine_for_all_other_endpoints
   default: true
-- name: event_engine_fork
-  default: true
 - name: event_engine_listener
   default: true
 - name: fail_recv_metadata_on_deadline_exceeded
@@ -112,8 +110,6 @@
   default: true
 - name: promise_filter_send_cancel_metadata
   default: true
-- name: recv_message_cancelled_status_fix
-  default: false
 - name: return_preexisting_errors
   default: true
 - name: schedule_cancellation_over_write

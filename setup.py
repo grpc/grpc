@@ -75,6 +75,7 @@ UPBDEFS_GRPC_GENERATED_INCLUDE = (
 )
 UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)
+CEL_C_INCLUDE = (os.path.join("third_party", "cel-c"),)
 ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
 README = os.path.join(PYTHON_STEM, "README.rst")
 
@@ -377,6 +378,7 @@ EXTENSION_INCLUDE_DIRECTORIES = (
     + UPBDEFS_GRPC_GENERATED_INCLUDE
     + UTF8_RANGE_INCLUDE
     + XXHASH_INCLUDE
+    + CEL_C_INCLUDE
     + ZLIB_INCLUDE
 )
 
@@ -582,8 +584,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        # 3.1.0 has async memory leak https://github.com/cython/cython/issues/6878
-        SETUP_REQUIRES += ("cython~=3.1,!=3.1.0",)
+        SETUP_REQUIRES += ("Cython~=3.2",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,

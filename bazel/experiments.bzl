@@ -26,7 +26,6 @@ EXPERIMENT_ENABLES = {
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "custom_frame_check": "custom_frame_check",
     "event_engine_client": "event_engine_client",
-    "event_engine_fork": "event_engine_fork",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints,event_engine_listener",
@@ -37,8 +36,10 @@ EXPERIMENT_ENABLES = {
     "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
     "header_data_frame": "header_data_frame",
     "inproc_cancel_stream": "inproc_cancel_stream",
+    "internal_fix": "internal_fix",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
+    "map_host_header_to_authority": "map_host_header_to_authority",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
@@ -63,7 +64,6 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
-    "recv_message_cancelled_status_fix": "recv_message_cancelled_status_fix",
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
@@ -87,7 +87,6 @@ EXPERIMENT_ENABLES = {
 
 EXPERIMENT_POLLERS = [
     "event_engine_client",
-    "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
     "pipelined_read_secure_endpoint",
@@ -108,14 +107,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -136,14 +131,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -158,13 +149,13 @@ EXPERIMENTS = {
                 "buffer_list_deletion_prep",
                 "fix_v3_filter_stack_server_side_ordering",
                 "local_connector_secure",
+                "map_host_header_to_authority",
                 "otel_export_telemetry_domains",
                 "ph2_client",
                 "ph2_client_server",
                 "ph2_server",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
-                "recv_message_cancelled_status_fix",
                 "recv_message_filter_bypass_fix",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
@@ -188,6 +179,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "hpack_test": [
+                "map_host_header_to_authority",
+            ],
             "lb_unit_test": [
                 "ring_hash_update_cleanup",
             ],
@@ -205,11 +199,7 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
-                "recv_message_cancelled_status_fix",
                 "ring_hash_update_cleanup",
-            ],
-            "xds_test": [
-                "recv_message_cancelled_status_fix",
             ],
         },
         "on": {
@@ -217,15 +207,11 @@ EXPERIMENTS = {
                 "callv3_batch_validation",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
                 "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",

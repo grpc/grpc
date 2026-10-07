@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"

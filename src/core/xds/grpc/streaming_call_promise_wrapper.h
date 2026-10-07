@@ -26,7 +26,9 @@
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -50,8 +52,9 @@ class XdsStreamingCallPromiseWrapper final
 
   // Constructs a new streaming call wrapper for the given method on the
   // transport.
-  XdsStreamingCallPromiseWrapper(XdsTransport& transport, const char* method,
-                                 bool start_upon_send_message = false);
+  XdsStreamingCallPromiseWrapper(
+      XdsTransport& transport, const char* method,
+      XdsTransport::CallOptions options = XdsTransport::CallOptions());
 
   // Pushes a message on the stream.
   //

@@ -164,6 +164,7 @@ grpc_fuzz_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena_promise",
+        "//src/core:call_spine",
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
         "//src/core:context",
@@ -175,8 +176,13 @@ grpc_fuzz_test(
         "//src/core:metadata_batch",
         "//src/core:pipe",
         "//src/core:poll",
+        "//src/core:race",
+        "//src/core:ref_counted",
         "//src/core:seq",
         "//src/core:slice",
+        "//src/core:status_flag",
+        "//src/core:try_seq",
+        "//src/core:useful",
     ],
 )
 
@@ -344,30 +350,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_library(
-    name = "fake_call_stack",
-    testonly = 1,
-    hdrs = ["fake_call_stack.h"],
-    external_deps = [
-        "absl/status",
-        "absl/strings",
-    ],
-    deps = [
-        "//:call_combiner",
-        "//:config",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc_base",
-        "//:ref_counted_ptr",
-        "//src/core:arena",
-        "//src/core:channel_args",
-        "//src/core:channel_args_preconditioning",
-        "//src/core:closure",
-        "//src/core:metadata_batch",
-        "//src/core:slice_buffer",
-    ],
-)
-
 grpc_cc_test(
     name = "recv_message_filter_bypass_test",
     srcs = ["recv_message_filter_bypass_test.cc"],
@@ -378,42 +360,28 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "fake_call_stack",
+        "//:call_combiner",
+        "//:config",
         "//:exec_ctx",
+        "//:gpr",
         "//:grpc",
         "//:grpc_base",
+        "//:grpc_unsecure",
+        "//:ref_counted_ptr",
         "//src/core:activity",
+        "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
+        "//src/core:channel_args_preconditioning",
+        "//src/core:closure",
         "//src/core:context",
         "//src/core:experiments",
         "//src/core:message",
         "//src/core:metadata_batch",
         "//src/core:poll",
         "//src/core:slice",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "recv_message_cancelled_status_test",
-    srcs = ["recv_message_cancelled_status_test.cc"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "gtest",
-    ],
-    deps = [
-        "fake_call_stack",
-        "//:exec_ctx",
-        "//:grpc",
-        "//:grpc_base",
-        "//src/core:arena_promise",
-        "//src/core:channel_args",
-        "//src/core:experiments",
-        "//src/core:message",
-        "//src/core:metadata_batch",
+        "//src/core:slice_buffer",
+        "//src/core:status_helper",
         "//test/core/test_util:grpc_test_util",
     ],
 )
