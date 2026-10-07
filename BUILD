@@ -4725,9 +4725,16 @@ grpc_cc_library(
     hdrs = [
         "//src/core:xds/xds_client/xds_transport_interface.h",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
     visibility = ["//bazel:xds_client_core"],
     deps = [
-        "grpc_public_hdrs",
+        "orphanable",
+        "ref_counted_ptr",
+        "//src/core:dual_ref_counted",
+        "//src/core:ref_counted",
     ],
 )
 

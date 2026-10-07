@@ -216,13 +216,14 @@ class GrpcStreamingCall final : public XdsTransport::StreamingCall {
   const XdsTransport::CallOptions options_;
 };
 
-// The concrete TransportFactory::Transport returned by the factories in
-// this file.  Callers can DownCast to this type to get the XdsTransport.
-class TransportImpl final : public TransportFactory::Transport {
+// The concrete experimental::TransportFactory::TransportHandle returned by the
+// factories in this file.  Callers can DownCast to this type to get the
+// XdsTransport.
+class TransportImpl final
+    : public experimental::TransportFactory::TransportHandle {
  public:
   explicit TransportImpl(RefCountedPtr<XdsTransport> transport)
       : transport_(std::move(transport)) {}
-  ~TransportImpl() override = default;
 
   const RefCountedPtr<XdsTransport>& transport() const { return transport_; }
 
@@ -234,20 +235,21 @@ class TransportImpl final : public TransportFactory::Transport {
 // supported: an unknown key gets a lame transport.  Transports come from
 // the XdsClient's existing GrpcXdsTransportFactory, so channels are shared
 // with other xDS users.
-class XdsTransportFactoryWrapper final : public TransportFactory {
+class XdsTransportFactoryWrapper final : public experimental::TransportFactory {
  public:
   using TargetMap =
       absl::flat_hash_map<std::string /*key*/, GrpcXdsServerTarget>;
 
   // Gets the GrpcXdsTransportFactory from xds_client.
-  static std::shared_ptr<TransportFactory> Create(const XdsClient& xds_client,
-                                                  TargetMap targets);
+  static std::shared_ptr<experimental::TransportFactory> Create(
+      const XdsClient& xds_client, TargetMap targets);
 
   XdsTransportFactoryWrapper(
       RefCountedPtr<GrpcXdsTransportFactory> transport_factory,
       TargetMap targets);
 
-  std::unique_ptr<Transport> CreateTransport(absl::string_view key) override;
+  std::unique_ptr<TransportHandle> CreateTransport(
+      absl::string_view key) override;
 
  private:
   RefCountedPtr<GrpcXdsTransportFactory> transport_factory_;
@@ -256,8 +258,8 @@ class XdsTransportFactoryWrapper final : public TransportFactory {
 };
 
 // Extracts TransportFactory from ChannelArgs. Returns nullptr if not set.
-std::shared_ptr<TransportFactory> GetTransportFactoryFromChannelArgs(
-    const ChannelArgs& args);
+std::shared_ptr<experimental::TransportFactory>
+GetTransportFactoryFromChannelArgs(const ChannelArgs& args);
 
 }  // namespace grpc_core
 

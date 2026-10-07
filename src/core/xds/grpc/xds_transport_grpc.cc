@@ -602,8 +602,9 @@ class StandaloneSharedChannel final : public GrpcXdsTransport::SharedChannel {
   grpc_pollset_set* interested_parties_;
 };
 
-std::unique_ptr<TransportFactory::Transport> MakeStandaloneTransport(
-    absl::string_view target, RefCountedPtr<Channel> channel) {
+std::unique_ptr<experimental::TransportFactory::TransportHandle>
+MakeStandaloneTransport(absl::string_view target,
+                        RefCountedPtr<Channel> channel) {
   return std::make_unique<TransportImpl>(MakeRefCounted<GrpcXdsTransport>(
       std::string(target),
       MakeRefCounted<StandaloneSharedChannel>(std::move(channel)),
@@ -614,16 +615,18 @@ std::unique_ptr<TransportFactory::Transport> MakeStandaloneTransport(
 
 }  // namespace
 
-std::unique_ptr<TransportFactory::Transport>
-TransportFactory::CreateCoreTransport(absl::string_view target,
-                                      grpc_channel_credentials* creds) {
+namespace experimental {
+
+std::unique_ptr<TransportFactory::TransportHandle>
+TransportFactory::CreateChannelTransport(absl::string_view target,
+                                         grpc_channel_credentials* creds) {
   ChannelArgs channel_args = ModifyChannelArgs(ChannelArgs());
   RefCountedPtr<Channel> channel(Channel::FromC(grpc_channel_create(
       std::string(target).c_str(), creds, channel_args.ToC().get())));
   return MakeStandaloneTransport(target, std::move(channel));
 }
 
-std::unique_ptr<TransportFactory::Transport>
+std::unique_ptr<TransportFactory::TransportHandle>
 TransportFactory::CreateLameTransport(absl::string_view target,
                                       absl::Status status) {
   // A lame channel must fail RPCs, so an OK status is a caller bug.
@@ -638,12 +641,15 @@ const grpc_arg_pointer_vtable* TransportFactory::ChannelArgVtable() {
   return ChannelArgTypeTraits<std::shared_ptr<TransportFactory>>::VTable();
 }
 
+}  // namespace experimental
+
 //
 // XdsTransportFactoryWrapper
 //
 
-std::shared_ptr<TransportFactory> XdsTransportFactoryWrapper::Create(
-    const XdsClient& xds_client, TargetMap targets) {
+std::shared_ptr<experimental::TransportFactory>
+XdsTransportFactoryWrapper::Create(const XdsClient& xds_client,
+                                   TargetMap targets) {
   // In gRPC, the XdsClient always uses a GrpcXdsTransportFactory.
   auto* transport_factory =
       DownCast<GrpcXdsTransportFactory*>(xds_client.transport_factory());
@@ -657,7 +663,7 @@ XdsTransportFactoryWrapper::XdsTransportFactoryWrapper(
     : transport_factory_(std::move(transport_factory)),
       targets_(std::move(targets)) {}
 
-std::unique_ptr<TransportFactory::Transport>
+std::unique_ptr<experimental::TransportFactory::TransportHandle>
 XdsTransportFactoryWrapper::CreateTransport(absl::string_view key) {
   auto it = targets_.find(key);
   if (it == targets_.end()) {
@@ -675,9 +681,9 @@ XdsTransportFactoryWrapper::CreateTransport(absl::string_view key) {
   return std::make_unique<TransportImpl>(std::move(transport));
 }
 
-std::shared_ptr<TransportFactory> GetTransportFactoryFromChannelArgs(
-    const ChannelArgs& args) {
-  auto* factory = static_cast<std::shared_ptr<TransportFactory>*>(
+std::shared_ptr<experimental::TransportFactory>
+GetTransportFactoryFromChannelArgs(const ChannelArgs& args) {
+  auto* factory = static_cast<std::shared_ptr<experimental::TransportFactory>*>(
       args.GetVoidPointer(GRPC_ARG_TRANSPORT_FACTORY));
   if (factory == nullptr) return nullptr;
   return *factory;

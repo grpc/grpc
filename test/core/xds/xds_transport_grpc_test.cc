@@ -333,8 +333,10 @@ TEST_F(GrpcXdsTransportTest, UnaryCallOrphanedBeforeSendMessage) {
   on_status_received.WaitForNotification();
 }
 
-// Returns the XdsTransport inside a TransportFactory::Transport.
-XdsTransport* GetXdsTransport(const TransportFactory::Transport& transport) {
+// Returns the XdsTransport inside an
+// experimental::TransportFactory::TransportHandle.
+XdsTransport* GetXdsTransport(
+    const experimental::TransportFactory::TransportHandle& transport) {
   return DownCast<const TransportImpl&>(transport).transport().get();
 }
 
@@ -395,12 +397,13 @@ TEST_F(GrpcXdsTransportTest, WrapperUnknownKeyReturnsLameTransport) {
   EXPECT_EQ(call_status.message(), "transport key not allowed: unknown");
 }
 
-// Without wait-for-ready, a call on the core transport fails with
+// Without wait-for-ready, a call on the channel transport fails with
 // UNAVAILABLE when the connection attempt fails.  It must not fail with
-// DEADLINE_EXCEEDED, because the core transport has no deadline.
-TEST_F(GrpcXdsTransportTest, CoreTransportCallHasNoDeadline) {
+// DEADLINE_EXCEEDED, because the channel transport has no deadline.
+TEST_F(GrpcXdsTransportTest, ChannelTransportCallHasNoDeadline) {
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  auto transport = TransportFactory::CreateCoreTransport(server_uri_, creds);
+  auto transport = experimental::TransportFactory::CreateChannelTransport(
+      server_uri_, creds);
   grpc_channel_credentials_release(creds);
   ASSERT_NE(transport, nullptr);
   absl::Status call_status = RunStreamingCall(*GetXdsTransport(*transport));

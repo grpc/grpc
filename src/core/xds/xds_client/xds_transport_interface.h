@@ -22,6 +22,8 @@
 
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 

@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2025 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,47 +18,58 @@
 
 #ifndef GRPC_TRANSPORT_FACTORY_H
 #define GRPC_TRANSPORT_FACTORY_H
+
 #include <grpc/credentials.h>
-#include <grpc/grpc.h>
+#include <grpc/impl/grpc_types.h>
 
 #include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
-#define GRPC_ARG_TRANSPORT_FACTORY "grpc.internal.transport_factory"
+// Channel argument key for a pointer to a
+// std::shared_ptr<grpc_core::experimental::TransportFactory>, stored with
+// TransportFactory::ChannelArgVtable().
+#define GRPC_ARG_TRANSPORT_FACTORY "grpc.sidechannel.transport_factory"
 
 namespace grpc_core {
+namespace experimental {
 
+// Implementations of this class must be thread-safe.
 class TransportFactory {
  public:
-  // Opaque type representing a transport.
-  class Transport {
+  // Opaque handle representing a side-channel transport (not a
+  // grpc_core::Transport). A TransportHandle may outlive the TransportFactory
+  // that created it.
+  class TransportHandle {
    public:
-    virtual ~Transport() = default;
+    virtual ~TransportHandle() = default;
   };
 
   virtual ~TransportFactory() = default;
-  virtual std::unique_ptr<Transport> CreateTransport(absl::string_view key) = 0;
+
+  // Creates a transport for key. Must be thread-safe.
+  // Implementations must return a TransportHandle obtained from
+  // CreateChannelTransport(), CreateLameTransport(), or another gRPC-provided
+  // TransportFactory, because gRPC core downcasts the returned handle.
+  virtual std::unique_ptr<TransportHandle> CreateTransport(
+      absl::string_view key) = 0;
 
   // Returns the channel argument vtable for std::shared_ptr<TransportFactory>.
   static const grpc_arg_pointer_vtable* ChannelArgVtable();
 
-  // Channel arg name.
-  static absl::string_view ChannelArgName() {
-    return GRPC_ARG_TRANSPORT_FACTORY;
-  }
-
-  // Creates a core transport. Returns a lame transport on failure.
-  static std::unique_ptr<Transport> CreateCoreTransport(
+  // Creates a channel-backed transport. Returns a lame transport on failure.
+  // Does not take ownership of creds.
+  static std::unique_ptr<TransportHandle> CreateChannelTransport(
       absl::string_view target, grpc_channel_credentials* creds);
 
   // Creates a lame transport. RPCs on it fail with status.
   // status must not be OK.
-  static std::unique_ptr<Transport> CreateLameTransport(
+  static std::unique_ptr<TransportHandle> CreateLameTransport(
       absl::string_view target, absl::Status status);
 };
 
+}  // namespace experimental
 }  // namespace grpc_core
 
 #endif /* GRPC_TRANSPORT_FACTORY_H */

@@ -27,7 +27,7 @@ namespace grpc_core {
 // A factory for creating new XdsTransport instances.
 class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
  public:
-  using XdsTransport = XdsTransport;
+  using XdsTransport = ::grpc_core::XdsTransport;
   // Returns a transport for the specified server.  If there is already
   // a transport for the server, returns a new ref to that transport;
   // otherwise, creates a new transport.
