@@ -2387,10 +2387,8 @@ void ServerCallData::Completed(grpc_error_handle error,
         batch->cancel_stream = true;
         batch->payload->cancel_stream.cancel_error = error;
         batch->payload->cancel_stream.tarpit = tarpit_cancellation;
-        if (IsPromiseFilterSendCancelMetadataEnabled()) {
-          batch->payload->cancel_stream.send_trailing_metadata =
-              std::move(trailing_metadata);
-        }
+        batch->payload->cancel_stream.send_trailing_metadata =
+            std::move(trailing_metadata);
         flusher->Resume(batch);
       }
       break;
@@ -2732,14 +2730,9 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GRPC_CHECK(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          if (IsPromiseFilterSendCancelMetadataEnabled()) {
-            absl::Status status = StatusFromMetadata(*md);
-            bool tar_pit_set = md->get(GrpcTarPit()).has_value();
-            Completed(std::move(status), std::move(md), tar_pit_set, flusher);
-          } else {
-            Completed(StatusFromMetadata(*md), /*trailing_metadata=*/nullptr,
-                      md->get(GrpcTarPit()).has_value(), flusher);
-          }
+          absl::Status status = StatusFromMetadata(*md);
+          bool tar_pit_set = md->get(GrpcTarPit()).has_value();
+          Completed(std::move(status), std::move(md), tar_pit_set, flusher);
         } break;
         case SendTrailingState::kCancelled:
           // Nothing to do.
