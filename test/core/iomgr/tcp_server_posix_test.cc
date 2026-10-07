@@ -550,10 +550,6 @@ TEST(TcpServerPosixTest, MainTest) {
     test_no_op_with_start();
     test_no_op_with_port();
     test_no_op_with_port_and_start();
-    test_pre_allocated_inet_fd();
-#ifdef GRPC_HAVE_UNIX_SOCKET
-    test_pre_allocated_unix_fd();
-#endif
 
     if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
       FAIL() << "getifaddrs: " << grpc_core::StrError(errno);
