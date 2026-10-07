@@ -499,6 +499,9 @@ class OpenTelemetryPluginImpl
   void RecordHistogram(
       const grpc_core::InstrumentMetadata::Description* description,
       double value, absl::Span<const std::string> label_values) override;
+  bool UsesInstrumentRecorder() const override {
+    return !uint64_histograms_.empty() || !double_histograms_.empty();
+  }
   void AddCallback(grpc_core::RegisteredMetricCallback* callback)
       ABSL_LOCKS_EXCLUDED(mu_) override;
   void RemoveCallback(grpc_core::RegisteredMetricCallback* callback)

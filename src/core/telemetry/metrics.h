@@ -354,6 +354,7 @@ class StatsPlugin {
   virtual void RecordHistogram(
       const InstrumentMetadata::Description* description, double value,
       absl::Span<const std::string> label_values) {}
+  virtual bool UsesInstrumentRecorder() const { return false; }
   // Adds a callback to be invoked when the stats plugin wants to
   // populate the corresponding metrics (see callback->metrics() for list).
   virtual void AddCallback(RegisteredMetricCallback* callback) = 0;
@@ -411,13 +412,17 @@ class GlobalStatsPluginRegistry {
       std::vector<RefCountedPtr<CollectionScope>> collection_scopes;
       collection_scopes.reserve(plugins_state_.size() + 1);
       collection_scopes.push_back(GlobalCollectionScope());
+      bool uses_instrument_recorder = false;
       for (auto& state : plugins_state_) {
         if (auto scope = state.plugin->GetCollectionScope(); scope != nullptr) {
           GRPC_DCHECK(scope->IsRoot());
           collection_scopes.push_back(scope);
         }
+        if (state.plugin->UsesInstrumentRecorder()) {
+          uses_instrument_recorder = true;
+        }
       }
-      if (collection_scopes.size() > 1) {
+      if (uses_instrument_recorder) {
         std::weak_ptr<InstrumentRecorder> instrument_recorder =
             weak_from_this();
         collection_scope_ =

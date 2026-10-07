@@ -821,6 +821,7 @@ TEST_F(MetricsQueryTest, ThreadStress) {
 class TestRecorderStatsPlugin : public FakeStatsPlugin {
  public:
   using FakeStatsPlugin::RecordHistogram;
+  bool UsesInstrumentRecorder() const override { return true; }
   void RecordHistogram(const InstrumentMetadata::Description* description,
                        int64_t value,
                        absl::Span<const std::string> label_values) override {
@@ -932,6 +933,19 @@ TEST_F(InstrumentTest, InstrumentRecorderInt64) {
       "exponential_histogram", label_keys, label);
   MetricsQuery().OnlyMetrics({"exponential_histogram"}).Run(scope, sink_after);
   EXPECT_EQ(sink_after.captured_value(), expected_counts);
+
+  // Verify a group with only non-push plugins does not attach an
+  // instrument_recorder at all.
+  auto no_recorder_group =
+      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  no_recorder_group->AddStatsPlugin(plugin3, nullptr);
+  no_recorder_group->Finish();
+  auto no_recorder_scope = no_recorder_group->GetCollectionScope();
+  EXPECT_TRUE(no_recorder_scope->instrument_recorder().expired());
+  auto no_recorder_storage =
+      LowContentionDomain::GetStorage(no_recorder_scope, "example.com");
+  no_recorder_storage->Increment(LowContentionDomain::kExponentialHistogram, 0);
+  EXPECT_EQ(plugin3->record_histogram_call_count(), 1);
 }
 
 TEST_F(InstrumentTest, InstrumentRecorderDouble) {
@@ -989,6 +1003,20 @@ TEST_F(InstrumentTest, InstrumentRecorderDouble) {
       .OnlyMetrics({"exponential_double_histogram"})
       .Run(scope, sink_after);
   EXPECT_EQ(sink_after.captured_value(), expected_counts);
+
+  // Verify a group with only non-push plugins does not attach an
+  // instrument_recorder at all.
+  auto no_recorder_group =
+      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  no_recorder_group->AddStatsPlugin(plugin3, nullptr);
+  no_recorder_group->Finish();
+  auto no_recorder_scope = no_recorder_group->GetCollectionScope();
+  EXPECT_TRUE(no_recorder_scope->instrument_recorder().expired());
+  auto no_recorder_storage =
+      LowContentionDomain::GetStorage(no_recorder_scope, "example.com");
+  no_recorder_storage->Increment(
+      LowContentionDomain::kExponentialDoubleHistogram, 0.5);
+  EXPECT_EQ(plugin3->record_histogram_call_count(), 1);
 }
 
 TEST_F(InstrumentLabelListTest, FixedToList) {
