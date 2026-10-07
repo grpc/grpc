@@ -14,14 +14,26 @@
 
 import asyncio
 import concurrent.futures
+import os
 import queue
 import threading
+import time
 import unittest
 
 import grpc
 from grpc.experimental import aio
 
 from tests_aio.unit._test_base import AioTestBase
+
+
+_LOOP_TIMEOUT_S = 45.0
+_LOOPS = 8
+_CONCURRENCY = 50
+_TIMEOUT_S = 90.0
+
+
+def _open_fds():
+    return len(os.listdir("/proc/self/fd"))
 
 
 class GenericService:
@@ -46,51 +58,121 @@ class MultithreadTest(AioTestBase):
         await server.start()
         return port, server
 
-    async def run_client(self, port):
+    async def run_client(self, port, num_of_rpcs=1):
         async with aio.insecure_channel(f"localhost:{port}") as channel:
             unary_call = channel.unary_unary(
                 "/grpc.testing.TestService/UnaryCall"
             )
-            response = await unary_call(b"request")
-            return response
+            return await asyncio.gather(
+                *(unary_call(b"request") for _ in range(num_of_rpcs))
+            )
 
-    def thread_target(self, port, queue):
+    def thread_target(self, coro_factory, results):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            response = loop.run_until_complete(self.run_client(port))
-            queue.put(response)
+            result = loop.run_until_complete(coro_factory())
+            results.put(result)
         except Exception as e:
-            queue.put(e)
+            results.put(e)
         finally:
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
 
-    async def _test_multithread(self, executor=None):
-        results_queue = queue.Queue()
-        port, server = await self._start_server()
-        threads = []
-        for _ in range(10):
-            t = threading.Thread(
-                target=self.thread_target, args=(port, results_queue)
+    async def _run_in_threads(
+        self, coro_factories, executor=None, timeout=None
+    ):
+        results = queue.Queue()
+        threads = [
+            threading.Thread(
+                target=self.thread_target,
+                args=(coro_factory, results),
+                daemon=True,
             )
-            t.start()
-            threads.append(t)
+            for coro_factory in coro_factories
+        ]
 
-        def join_threads():
+        def run():
             for t in threads:
-                t.join()
+                t.start()
+            deadline = time.monotonic() + timeout if timeout else None
+            for t in threads:
+                remaining = None
+                if deadline:
+                    remaining = max(0.0, deadline - time.monotonic())
+                t.join(remaining)
+            return sum(t.is_alive() for t in threads)
 
-        await self.loop.run_in_executor(executor, join_threads)
+        stalled = await self.loop.run_in_executor(executor, run)
+        self.assertEqual(
+            0, stalled, f"{stalled} of {len(threads)} threads stalled"
+        )
+        return [results.get_nowait() for _ in range(results.qsize())]
 
+    async def _test_multithread(self, executor=None):
+        port, server = await self._start_server()
+        results = await self._run_in_threads(
+            [lambda: self.run_client(port)] * _CONCURRENCY, executor=executor
+        )
         await server.stop(None)
 
         # Verify results
-        self.assertEqual(results_queue.qsize(), 10)
-        while not results_queue.empty():
-            result = results_queue.get_nowait()
-            self.assertIsInstance(result, bytes)
-            self.assertEqual(result, b"request")
+        self.assertEqual([[b"request"]] * _CONCURRENCY, results)
+
+    @unittest.skipUnless(
+        os.path.isdir("/proc/self/fd"), "Needs /proc/self/fd dir"
+    )
+    async def test_temporary_event_loops_do_not_lead_fds(self):
+        port, server = await self._start_server()
+        client = lambda: self.run_client(port)
+        keeper = aio.insecure_channel(f"localhost:{port}")
+        try:
+            await keeper.channel_ready()
+            # warm-up: lazily created core resources must not count as growth
+            self.assertEqual(
+                [[b"request"]],
+                await self._run_in_threads([client], timeout=_LOOP_TIMEOUT_S)
+            )
+            fds_before = _open_fds()
+
+            # spawn _CONCURRENCY count temporary loops, each one adding two fd's
+            self.assertEqual(
+                [[b"request"]] * _CONCURRENCY,
+                await self._run_in_threads(
+                    [client] * _CONCURRENCY, timeout=_LOOP_TIMEOUT_S
+                )
+            )
+
+            # sweep temporary loops
+            self.assertEqual(
+                [[b"request"]],
+                await self._run_in_threads([client], timeout=_LOOP_TIMEOUT_S)
+            )
+
+            delta_fds = _open_fds() - fds_before
+            self.assertEqual(
+                0, 
+                delta_fds,
+                f"{delta_fds} fds leaked over {_CONCURRENCY} event loops"
+            )
+        finally:
+            await keeper.close()
+            await server.stop(None)
+
+    async def test_concurrent_event_loops_do_no_hang(self):
+        async def serve_and_call():
+            port, server = await self._start_server()
+            try:
+                return await self.run_client(port, _CONCURRENCY)
+            finally:
+                await server.stop(None)
+
+        self.assertEqual(
+            [[b"request"] * _CONCURRENCY] * _LOOPS,
+            await self._run_in_threads(
+                [serve_and_call] * _LOOPS, timeout=_TIMEOUT_S
+            )
+        )
 
     async def test_multithread(self):
         await self._test_multithread(executor=None)
