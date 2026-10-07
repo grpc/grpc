@@ -318,10 +318,11 @@ def _on_rpc_done(
     if exception is not None:
         with _global_lock:
             _global_rpcs_failed[method] += 1
-        if exception.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
-            logger.error(f"RPC {rpc_id} timed out")
-        else:
-            logger.error(exception)
+        if print_response:
+            if exception.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+                logger.error(f"RPC {rpc_id} timed out")
+            else:
+                logger.error(exception)
     else:
         response = future.result()
         hostname = None
