@@ -241,7 +241,8 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
   grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
                                     .channel_args_preconditioning()
                                     .PreconditionChannelArgs(nullptr);
-  auto channel = grpc_core::CreateLameChannel(target, args, status);
+  auto channel = grpc_core::CreateLameChannel(
+      target == nullptr ? "" : target, args, status);
   return channel.release()->c_ptr();
 }
 
