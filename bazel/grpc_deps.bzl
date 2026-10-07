@@ -213,11 +213,29 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855",
-            strip_prefix = "data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff",
+            # envoy_api's BUILD files use the bzlmod module names of its
+            # dependencies, which differ from the repo names used here.
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@googleapis": "@com_google_googleapis",
+                "@googletest": "@com_google_googletest",
+                "@grpc": "@com_github_grpc_grpc",
+                "@protobuf": "@com_google_protobuf",
+                "@protoc-gen-validate": "@com_envoyproxy_protoc_gen_validate",
+                "@rules_go": "@io_bazel_rules_go",
+                "@xds": "@com_github_cncf_xds",
+            },
+            # Drops pgv_cc_proto_library() args not supported by the
+            # protoc-gen-validate version used here.
+            patches = [
+                "@com_github_grpc_grpc//third_party:envoy-api.patch",
+            ],
+            patch_args = ["-p1"],
+            sha256 = "40ba505a3c8e0d56f10ad5b95c05d54138228ff521cff22393276bb67188dfc3",
+            strip_prefix = "data-plane-api-005c18a923f166a793a1c227171398dab883cc5d",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz",
             ],
         )
 

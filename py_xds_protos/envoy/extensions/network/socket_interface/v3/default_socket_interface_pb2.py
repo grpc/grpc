@@ -24,9 +24,10 @@ _sym_db = _symbol_database.Default()
 
 from google.protobuf import wrappers_pb2 as google_dot_protobuf_dot_wrappers__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
+from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nKenvoy/extensions/network/socket_interface/v3/default_socket_interface.proto\x12,envoy.extensions.network.socket_interface.v3\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1dudpa/annotations/status.proto\"p\n\x16\x44\x65\x66\x61ultSocketInterface\x12V\n\x10io_uring_options\x18\x01 \x01(\x0b\x32<.envoy.extensions.network.socket_interface.v3.IoUringOptions\"\xde\x01\n\x0eIoUringOptions\x12\x33\n\rio_uring_size\x18\x01 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\x12\'\n\x1f\x65nable_submission_queue_polling\x18\x02 \x01(\x08\x12\x36\n\x10read_buffer_size\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\x12\x36\n\x10write_timeout_ms\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\xcb\x01\n:io.envoyproxy.envoy.extensions.network.socket_interface.v3B\x1b\x44\x65\x66\x61ultSocketInterfaceProtoP\x01Zfgithub.com/envoyproxy/go-control-plane/envoy/extensions/network/socket_interface/v3;socket_interfacev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nKenvoy/extensions/network/socket_interface/v3/default_socket_interface.proto\x12,envoy.extensions.network.socket_interface.v3\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"p\n\x16\x44\x65\x66\x61ultSocketInterface\x12V\n\x10io_uring_options\x18\x01 \x01(\x0b\x32<.envoy.extensions.network.socket_interface.v3.IoUringOptions\"\x97\x03\n\x0eIoUringOptions\x12\x33\n\rio_uring_size\x18\x01 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\x12\'\n\x1f\x65nable_submission_queue_polling\x18\x02 \x01(\x08\x12\x36\n\x10read_buffer_size\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\x12\x36\n\x10write_timeout_ms\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.UInt32Value\x12J\n\x1awrite_high_watermark_bytes\x18\x05 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\x08\xfa\x42\x05*\x03(\x80 \x12I\n\x19write_low_watermark_bytes\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\x08\xfa\x42\x05*\x03(\x80\x08\x12 \n\x18\x65nable_multishot_receive\x18\x07 \x01(\x08\x42\xcb\x01\n:io.envoyproxy.envoy.extensions.network.socket_interface.v3B\x1b\x44\x65\x66\x61ultSocketInterfaceProtoP\x01Zfgithub.com/envoyproxy/go-control-plane/envoy/extensions/network/socket_interface/v3;socket_interfacev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,8 +35,12 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.network.so
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n:io.envoyproxy.envoy.extensions.network.socket_interface.v3B\033DefaultSocketInterfaceProtoP\001Zfgithub.com/envoyproxy/go-control-plane/envoy/extensions/network/socket_interface/v3;socket_interfacev3\272\200\310\321\006\002\020\002'
-  _globals['_DEFAULTSOCKETINTERFACE']._serialized_start=188
-  _globals['_DEFAULTSOCKETINTERFACE']._serialized_end=300
-  _globals['_IOURINGOPTIONS']._serialized_start=303
-  _globals['_IOURINGOPTIONS']._serialized_end=525
+  _globals['_IOURINGOPTIONS'].fields_by_name['write_high_watermark_bytes']._loaded_options = None
+  _globals['_IOURINGOPTIONS'].fields_by_name['write_high_watermark_bytes']._serialized_options = b'\372B\005*\003(\200 '
+  _globals['_IOURINGOPTIONS'].fields_by_name['write_low_watermark_bytes']._loaded_options = None
+  _globals['_IOURINGOPTIONS'].fields_by_name['write_low_watermark_bytes']._serialized_options = b'\372B\005*\003(\200\010'
+  _globals['_DEFAULTSOCKETINTERFACE']._serialized_start=213
+  _globals['_DEFAULTSOCKETINTERFACE']._serialized_end=325
+  _globals['_IOURINGOPTIONS']._serialized_start=328
+  _globals['_IOURINGOPTIONS']._serialized_end=735
 # @@protoc_insertion_point(module_scope)
