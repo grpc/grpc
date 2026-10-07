@@ -91,7 +91,7 @@ class _ChannelServerPair:
             self.address, options=_ENABLE_CHANNELZ
         )
 
-    async def bind_channelz(self, channelz_stub):
+    async def bind_channelz(self, channelz_stub, known_server_ids):
         resp = await channelz_stub.GetTopChannels(
             channelz_pb2.GetTopChannelsRequest(start_channel_id=0)
         )
@@ -99,23 +99,39 @@ class _ChannelServerPair:
             if channel.data.target == "dns:///" + self.address:
                 self.channel_ref_id = channel.ref.channel_id
 
-        resp = await channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
-        )
-        self.server_ref_id = resp.server[-1].ref.server_id
+        server_ids = await _list_server_ids(channelz_stub)
+        new_server_ids = server_ids - known_server_ids
+        if len(new_server_ids) != 1:
+            raise AssertionError(
+                f"Expected exactly one new server, got {new_server_ids}"
+            )
+        self.server_ref_id = new_server_ids.pop()
 
     async def stop(self):
         await self.channel.close()
         await self.server.stop(None)
 
 
+async def _list_server_ids(channelz_stub):
+    if not channelz_stub:
+        return set()
+
+    resp = await channelz_stub.GetServers(
+        channelz_pb2.GetServersRequest(start_server_id=0)
+    )
+    if not resp.end:
+        raise AssertionError("GetServers response was paginated")
+    return {server.ref.server_id for server in resp.server}
+
+
 async def _create_channel_server_pairs(n, channelz_stub=None):
     """Create channel-server pairs."""
     pairs = [_ChannelServerPair() for i in range(n)]
     for pair in pairs:
+        known_server_ids = await _list_server_ids(channelz_stub)
         await pair.start()
         if channelz_stub:
-            await pair.bind_channelz(channelz_stub)
+            await pair.bind_channelz(channelz_stub, known_server_ids)
     return pairs
 
 

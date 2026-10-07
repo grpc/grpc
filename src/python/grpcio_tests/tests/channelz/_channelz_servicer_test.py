@@ -83,19 +83,34 @@ class _ChannelServerPair:
         )
         self.server_ref_id = None
 
-    def bind_channelz(self, channelz_stub):
-        resp = channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
-        )
-        self.server_ref_id = resp.server[-1].ref.server_id
+    def bind_channelz(self, channelz_stub, known_server_ids):
+        new_server_ids = _list_server_ids(channelz_stub) - known_server_ids
+        if len(new_server_ids) != 1:
+            raise AssertionError(
+                f"Expected exactly one new server, got {new_server_ids}"
+            )
+        self.server_ref_id = new_server_ids.pop()
+
+
+def _list_server_ids(channelz_stub):
+    if not channelz_stub:
+        return set()
+
+    resp = channelz_stub.GetServers(
+        channelz_pb2.GetServersRequest(start_server_id=0)
+    )
+    if not resp.end:
+        raise AssertionError("GetServers response was paginated")
+    return {server.ref.server_id for server in resp.server}
 
 
 def _generate_channel_server_pairs(n, channelz_stub=None):
     pairs = []
     for _ in range(n):
+        known_server_ids = _list_server_ids(channelz_stub)
         pair = _ChannelServerPair()
         if channelz_stub is not None:
-            pair.bind_channelz(channelz_stub)
+            pair.bind_channelz(channelz_stub, known_server_ids)
         pairs.append(pair)
     return pairs
 
