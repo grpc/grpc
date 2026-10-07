@@ -25,7 +25,6 @@ from grpc.experimental import aio
 
 from tests_aio.unit._test_base import AioTestBase
 
-
 _LOOP_TIMEOUT_S = 45.0
 _LOOPS = 8
 _CONCURRENCY = 50
@@ -131,7 +130,7 @@ class MultithreadTest(AioTestBase):
             # warm-up: lazily created core resources must not count as growth
             self.assertEqual(
                 [[b"request"]],
-                await self._run_in_threads([client], timeout=_LOOP_TIMEOUT_S)
+                await self._run_in_threads([client], timeout=_LOOP_TIMEOUT_S),
             )
             fds_before = _open_fds()
 
@@ -140,20 +139,20 @@ class MultithreadTest(AioTestBase):
                 [[b"request"]] * _CONCURRENCY,
                 await self._run_in_threads(
                     [client] * _CONCURRENCY, timeout=_LOOP_TIMEOUT_S
-                )
+                ),
             )
 
             # sweep temporary loops
             self.assertEqual(
                 [[b"request"]],
-                await self._run_in_threads([client], timeout=_LOOP_TIMEOUT_S)
+                await self._run_in_threads([client], timeout=_LOOP_TIMEOUT_S),
             )
 
             delta_fds = _open_fds() - fds_before
             self.assertEqual(
-                0, 
+                0,
                 delta_fds,
-                f"{delta_fds} fds leaked over {_CONCURRENCY} event loops"
+                f"{delta_fds} fds leaked over {_CONCURRENCY} event loops",
             )
         finally:
             await keeper.close()
@@ -171,7 +170,7 @@ class MultithreadTest(AioTestBase):
             [[b"request"] * _CONCURRENCY] * _LOOPS,
             await self._run_in_threads(
                 [serve_and_call] * _LOOPS, timeout=_TIMEOUT_S
-            )
+            ),
         )
 
     async def test_multithread(self):
