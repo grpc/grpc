@@ -27,7 +27,7 @@ from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioni
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nIcontrib/envoy/extensions/filters/network/mysql_proxy/v3/mysql_proxy.proto\x12/envoy.extensions.filters.network.mysql_proxy.v3\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\x82\x01\n\nMySQLProxy\x12\x1c\n\x0bstat_prefix\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x12\n\naccess_log\x18\x02 \x01(\t:B\x9a\xc5\x88\x1e=\n;envoy.config.filter.network.mysql_proxy.v1alpha1.MySQLProxyB\xc8\x01\n=io.envoyproxy.envoy.extensions.filters.network.mysql_proxy.v3B\x0fMysqlProxyProtoP\x01Zlgithub.com/envoyproxy/go-control-plane/contrib/envoy/extensions/filters/network/mysql_proxy/v3;mysql_proxyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nIcontrib/envoy/extensions/filters/network/mysql_proxy/v3/mysql_proxy.proto\x12/envoy.extensions.filters.network.mysql_proxy.v3\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\x8f\x02\n\nMySQLProxy\x12\x1c\n\x0bstat_prefix\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x12\n\naccess_log\x18\x02 \x01(\t\x12[\n\x0e\x64ownstream_ssl\x18\x03 \x01(\x0e\x32\x43.envoy.extensions.filters.network.mysql_proxy.v3.MySQLProxy.SSLMode\".\n\x07SSLMode\x12\x0b\n\x07\x44ISABLE\x10\x00\x12\x0b\n\x07REQUIRE\x10\x01\x12\t\n\x05\x41LLOW\x10\x02:B\x9a\xc5\x88\x1e=\n;envoy.config.filter.network.mysql_proxy.v1alpha1.MySQLProxyB\xc8\x01\n=io.envoyproxy.envoy.extensions.filters.network.mysql_proxy.v3B\x0fMysqlProxyProtoP\x01Zlgithub.com/envoyproxy/go-control-plane/contrib/envoy/extensions/filters/network/mysql_proxy/v3;mysql_proxyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -40,5 +40,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_MYSQLPROXY']._loaded_options = None
   _globals['_MYSQLPROXY']._serialized_options = b'\232\305\210\036=\n;envoy.config.filter.network.mysql_proxy.v1alpha1.MySQLProxy'
   _globals['_MYSQLPROXY']._serialized_start=218
-  _globals['_MYSQLPROXY']._serialized_end=348
+  _globals['_MYSQLPROXY']._serialized_end=489
+  _globals['_MYSQLPROXY_SSLMODE']._serialized_start=375
+  _globals['_MYSQLPROXY_SSLMODE']._serialized_end=421
 # @@protoc_insertion_point(module_scope)

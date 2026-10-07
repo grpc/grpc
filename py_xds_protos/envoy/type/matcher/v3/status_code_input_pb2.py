@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n-envoy/type/matcher/v3/status_code_input.proto\x12\x15\x65nvoy.type.matcher.v3\x1a\x1dudpa/annotations/status.proto\"\"\n HttpResponseStatusCodeMatchInput\"\'\n%HttpResponseStatusCodeClassMatchInputB\x8d\x01\n#io.envoyproxy.envoy.type.matcher.v3B\x14StatusCodeInputProtoP\x01ZFgithub.com/envoyproxy/go-control-plane/envoy/type/matcher/v3;matcherv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n-envoy/type/matcher/v3/status_code_input.proto\x12\x15\x65nvoy.type.matcher.v3\x1a\x1dudpa/annotations/status.proto\"\"\n HttpResponseStatusCodeMatchInput\"\'\n%HttpResponseStatusCodeClassMatchInput\"\"\n HttpResponseLocalReplyMatchInputB\x8d\x01\n#io.envoyproxy.envoy.type.matcher.v3B\x14StatusCodeInputProtoP\x01ZFgithub.com/envoyproxy/go-control-plane/envoy/type/matcher/v3;matcherv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,4 +37,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_HTTPRESPONSESTATUSCODEMATCHINPUT']._serialized_end=137
   _globals['_HTTPRESPONSESTATUSCODECLASSMATCHINPUT']._serialized_start=139
   _globals['_HTTPRESPONSESTATUSCODECLASSMATCHINPUT']._serialized_end=178
+  _globals['_HTTPRESPONSELOCALREPLYMATCHINPUT']._serialized_start=180
+  _globals['_HTTPRESPONSELOCALREPLYMATCHINPUT']._serialized_end=214
 # @@protoc_insertion_point(module_scope)

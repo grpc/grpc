@@ -33,6 +33,18 @@ typedef struct envoy_extensions_filters_http_gcp_authn_v3_Audience {
   upb_Message UPB_PRIVATE(base);
 } envoy_extensions_filters_http_gcp_authn_v3_Audience;
 
+typedef struct envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken {
+  upb_Message UPB_PRIVATE(base);
+} envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken;
+
+typedef struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt {
+  upb_Message UPB_PRIVATE(base);
+} envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt;
+
+typedef struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken {
+  upb_Message UPB_PRIVATE(base);
+} envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken;
+
 typedef struct envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig {
   upb_Message UPB_PRIVATE(base);
 } envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig;
@@ -298,10 +310,199 @@ UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_serialize_e
   return ptr;
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_clear_url(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
-  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_extensions_filters_http_gcp_authn_v3_Audience_url(const envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_clear_access_token(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_access_token(const envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  const envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* default_val = NULL;
+  const envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_filters_http_gcp_authn_v3_Audience_has_access_token(const envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_clear_bound_jwt(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* envoy_extensions_filters_http_gcp_authn_v3_Audience_bound_jwt(const envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* default_val = NULL;
+  const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_filters_http_gcp_authn_v3_Audience_has_bound_jwt(const envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_clear_bound_access_token(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 66, UPB_SIZE(5, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_bound_access_token(const envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* default_val = NULL;
+  const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 66, UPB_SIZE(5, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_filters_http_gcp_authn_v3_Audience_has_bound_access_token(const envoy_extensions_filters_http_gcp_authn_v3_Audience* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 66, UPB_SIZE(5, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+
+UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_set_url(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg, upb_StringView value) {
+  const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_set_access_token(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg, envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE struct envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_mutable_access_token(
+    envoy_extensions_filters_http_gcp_authn_v3_Audience* msg, upb_Arena* arena) {
+  struct envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* sub = (struct envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken*)envoy_extensions_filters_http_gcp_authn_v3_Audience_access_token(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken*)_upb_Message_New(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init, arena);
+    if (sub) envoy_extensions_filters_http_gcp_authn_v3_Audience_set_access_token(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_set_bound_jwt(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg, envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* envoy_extensions_filters_http_gcp_authn_v3_Audience_mutable_bound_jwt(
+    envoy_extensions_filters_http_gcp_authn_v3_Audience* msg, upb_Arena* arena) {
+  struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* sub = (struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt*)envoy_extensions_filters_http_gcp_authn_v3_Audience_bound_jwt(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt*)_upb_Message_New(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init, arena);
+    if (sub) envoy_extensions_filters_http_gcp_authn_v3_Audience_set_bound_jwt(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_set_bound_access_token(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg, envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* value) {
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 66, UPB_SIZE(5, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_mutable_bound_access_token(
+    envoy_extensions_filters_http_gcp_authn_v3_Audience* msg, upb_Arena* arena) {
+  struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* sub = (struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken*)envoy_extensions_filters_http_gcp_authn_v3_Audience_bound_access_token(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken*)_upb_Message_New(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init, arena);
+    if (sub) envoy_extensions_filters_http_gcp_authn_v3_Audience_set_bound_access_token(msg, sub);
+  }
+  return sub;
+}
+
+/* envoy.extensions.filters.http.gcp_authn.v3.Audience.AccessToken */
+UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_new(upb_Arena* arena) {
+  return (envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken*)_upb_Message_New(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init, arena);
+}
+UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
+  envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* ret = envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init, NULL, 0,
+                 arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* ret = envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_serialize(const envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* msg,
+                                      upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_Audience_AccessToken* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__AccessToken_msg_init, options, arena, &ptr, len);
+  return ptr;
+}
+
+
+/* envoy.extensions.filters.http.gcp_authn.v3.Audience.BoundJwt */
+UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_new(upb_Arena* arena) {
+  return (envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt*)_upb_Message_New(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init, arena);
+}
+UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
+  envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* ret = envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init, NULL, 0,
+                 arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* ret = envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_serialize(const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* msg,
+                                      upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundJwt_msg_init, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_clear_url(envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* msg) {
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_StringView envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_url(const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -310,10 +511,50 @@ UPB_INLINE upb_StringView envoy_extensions_filters_http_gcp_authn_v3_Audience_ur
   return ret;
 }
 
-UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_set_url(envoy_extensions_filters_http_gcp_authn_v3_Audience* msg, upb_StringView value) {
+UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt_set_url(envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundJwt* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
+
+/* envoy.extensions.filters.http.gcp_authn.v3.Audience.BoundAccessToken */
+UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_new(upb_Arena* arena) {
+  return (envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken*)_upb_Message_New(&envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init, arena);
+}
+UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
+  envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* ret = envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init, NULL, 0,
+                 arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* ret = envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_serialize(const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* msg,
+                                      upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken_serialize_ex(const envoy_extensions_filters_http_gcp_authn_v3_Audience_BoundAccessToken* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__http__gcp_0authn__v3__Audience__BoundAccessToken_msg_init, options, arena, &ptr, len);
+  return ptr;
+}
+
 
 /* envoy.extensions.filters.http.gcp_authn.v3.TokenCacheConfig */
 UPB_INLINE envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_new(upb_Arena* arena) {
