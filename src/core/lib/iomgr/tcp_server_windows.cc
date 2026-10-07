@@ -170,6 +170,10 @@ void unlink_if_unix_domain_socket(const grpc_resolved_address* resolved_addr) {
 #endif
 }
 
+static int tcp_pre_allocated_fd(grpc_tcp_server* /* s */) { return -1; }
+
+static void tcp_set_pre_allocated_fd(grpc_tcp_server* /* s */, int /* fd */) {}
+
 // ---- EventEngine shim ------------------------------------------------------
 
 namespace {
