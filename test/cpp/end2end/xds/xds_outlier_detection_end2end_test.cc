@@ -1175,9 +1175,7 @@ TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
 }
 
 // Verifies that grpc.lb.backend_service is populated on outlier detection
-// metrics under xDS (gRFC A91).  grpc.lb.locality is empty under xDS
-// because outlier_detection sits above weighted_target in the LB tree; the
-// non-xDS locality path is covered by the unit test.
+// metrics under xDS (gRFC A91).
 //
 // Own fixture so FakeStatsPlugin can be registered before InitClient().
 class OutlierDetectionMetricsTest : public XdsEnd2endTest {
@@ -1192,8 +1190,8 @@ TEST_P(OutlierDetectionMetricsTest, MetricsHaveBackendServiceLabel) {
   const std::string target = absl::StrCat("xds:", kServerName);
   // Labels for the ejections_enforced counter, in the order declared by
   // OutlierDetectionMetricsDomainEnforced.
-  const absl::string_view kLabelValues[] = {
-      target, kDefaultClusterName, /*locality=*/"", "failure_percentage"};
+  const absl::string_view kLabelValues[] = {target, kDefaultClusterName,
+                                            "failure_percentage"};
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
                           .BuildAndRegister();

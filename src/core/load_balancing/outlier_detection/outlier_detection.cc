@@ -454,15 +454,12 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
   OrphanablePtr<EjectionTimer> ejection_timer_;
 
   // gRFC A91 metric storages, pre-created at construction so that the
-  // {target, backend_service, locality, detection_method[, unenforced_reason]}
-  // label combinations are bound once per LB policy instance and the
-  // ejection timer only has to call Increment().
+  // {target, backend_service, detection_method[, unenforced_reason]} label
+  // combinations are bound once per LB policy instance and the ejection
+  // timer only has to call Increment().
   //
-  // target/backend_service/locality come from channel args populated by
-  // upstream policies (weighted_target sets the locality name; cds sets the
-  // backend service name).  Under xDS the locality label is empty because
-  // outlier_detection sits above weighted_target in the LB tree; the
-  // non-xDS path is exercised by the unit test.
+  // target comes from the channel control helper; backend_service comes
+  // from GRPC_ARG_BACKEND_SERVICE, which is set by the cds policy.
   InstrumentStorageRefPtr<OutlierDetectionMetricsDomainEnforced>
       enforced_success_rate_storage_;
   InstrumentStorageRefPtr<OutlierDetectionMetricsDomainEnforced>
@@ -600,10 +597,6 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
 
 OutlierDetectionLb::OutlierDetectionLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {
-  // Empty under xDS: this policy sits above weighted_target in the tree, so
-  // GRPC_ARG_LB_WEIGHTED_TARGET_CHILD does not reach it.
-  const absl::string_view locality =
-      channel_args().GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD).value_or("");
   const absl::string_view backend_service =
       channel_args().GetString(GRPC_ARG_BACKEND_SERVICE).value_or("");
   const absl::string_view target = channel_control_helper()->GetTarget();
@@ -611,33 +604,29 @@ OutlierDetectionLb::OutlierDetectionLb(Args args)
       channel_control_helper()->GetStatsPluginGroup().GetCollectionScope();
   enforced_success_rate_storage_ =
       OutlierDetectionMetricsDomainEnforced::GetStorage(
-          scope, target, backend_service, locality,
-          kDetectionMethodSuccessRate);
+          scope, target, backend_service, kDetectionMethodSuccessRate);
   enforced_failure_percentage_storage_ =
       OutlierDetectionMetricsDomainEnforced::GetStorage(
-          scope, target, backend_service, locality,
-          kDetectionMethodFailurePercentage);
+          scope, target, backend_service, kDetectionMethodFailurePercentage);
   unenforced_success_rate_enforcement_percentage_storage_ =
       OutlierDetectionMetricsDomainUnenforced::GetStorage(
-          scope, target, backend_service, locality, kDetectionMethodSuccessRate,
+          scope, target, backend_service, kDetectionMethodSuccessRate,
           kUnenforcedReasonEnforcementPercentage);
   unenforced_success_rate_max_ejection_overflow_storage_ =
       OutlierDetectionMetricsDomainUnenforced::GetStorage(
-          scope, target, backend_service, locality, kDetectionMethodSuccessRate,
+          scope, target, backend_service, kDetectionMethodSuccessRate,
           kUnenforcedReasonMaxEjectionOverflow);
   unenforced_failure_percentage_enforcement_percentage_storage_ =
       OutlierDetectionMetricsDomainUnenforced::GetStorage(
-          scope, target, backend_service, locality,
-          kDetectionMethodFailurePercentage,
+          scope, target, backend_service, kDetectionMethodFailurePercentage,
           kUnenforcedReasonEnforcementPercentage);
   unenforced_failure_percentage_max_ejection_overflow_storage_ =
       OutlierDetectionMetricsDomainUnenforced::GetStorage(
-          scope, target, backend_service, locality,
-          kDetectionMethodFailurePercentage,
+          scope, target, backend_service, kDetectionMethodFailurePercentage,
           kUnenforcedReasonMaxEjectionOverflow);
   GRPC_TRACE_LOG(outlier_detection_lb, INFO)
-      << "[outlier_detection_lb " << this << "] created -- locality=\""
-      << locality << "\", backend_service=\"" << backend_service << "\"";
+      << "[outlier_detection_lb " << this << "] created -- backend_service=\""
+      << backend_service << "\"";
 }
 
 OutlierDetectionLb::~OutlierDetectionLb() {
