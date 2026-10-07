@@ -197,6 +197,15 @@ void OutputBuffers::WakeupScheduler(bool async) {
         }
         return;
       case kSchedulingWorkAvailable:
+        // Must be an RMW, not a plain load: it totally orders our
+        // frames_queue_ Push against the scheduler's WorkAvailable->Processing
+        // transition. Otherwise (store-buffering) we may observe
+        // WorkAvailable while the scheduler's Peek misses our Push, and the
+        // scheduler goes idle with a frame queued.
+        if (!scheduling_state_.compare_exchange_weak(
+                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
+          continue;
+        }
         return;
       default: {
         // Idle: value is a pointer to a waker.
@@ -236,9 +245,12 @@ Poll<Empty> OutputBuffers::SchedulerPollForWork() {
         return Pending{};
       }
       case kSchedulingWorkAvailable: {
-        // No pointer exchange here, no need for barriers.
-        scheduling_state_.store(kSchedulingProcessing,
-                                std::memory_order_relaxed);
+        // Must be an acq_rel RMW (pairs with the RMW in WakeupScheduler): a
+        // relaxed store here can be reordered after the Peek in Schedule().
+        if (!scheduling_state_.compare_exchange_weak(
+                state, kSchedulingProcessing, std::memory_order_acq_rel)) {
+          continue;
+        }
         return Empty{};
       }
       default:
