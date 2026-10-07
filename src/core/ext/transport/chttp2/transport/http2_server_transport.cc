@@ -2233,10 +2233,6 @@ void Http2ServerTransport::PerformOp(grpc_transport_op* op) {
 
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
 
-  // TODO(tjagtap) : [PH2][P2] :
-  // Refer src/core/ext/transport/chttp2/transport/chttp2_transport.cc
-  // perform_transport_op_locked
-  // Maybe more operations needed to be implemented.
   // TODO(tjagtap) : [PH2][P2] : Consider either not using a transport level
   // lock, or making this run on the Transport party - whatever is better.
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp End";
