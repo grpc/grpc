@@ -20,18 +20,15 @@
 
 namespace grpc_core {
 
-absl::StatusOr<RefCountedPtr<LameChannel>> LameChannel::Create(
-    std::string target, ChannelArgs args) {
+RefCountedPtr<LameChannel> LameChannel::Create(std::string target,
+                                               ChannelArgs args) {
   absl::Status* status =
       args.GetPointer<absl::Status>(GRPC_ARG_LAME_FILTER_ERROR);
-  if (status == nullptr) {
-    return absl::InvalidArgumentError("Lame status not in ChannelArgs");
-  }
+  GRPC_CHECK_NE(status, nullptr) << "Lame status not in ChannelArgs";
   auto event_engine =
       args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
-  if (event_engine == nullptr) {
-    return absl::InvalidArgumentError("EventEngine not set in ChannelArgs");
-  }
+  GRPC_CHECK_NE(event_engine.get(), nullptr)
+      << "EventEngine not set in ChannelArgs";
   return MakeRefCounted<LameChannel>(
       std::move(target), args, std::move(event_engine), std::move(*status));
 }

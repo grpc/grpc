@@ -28,8 +28,8 @@ namespace grpc_core {
 
 class LameChannel final : public Channel {
  public:
-  static absl::StatusOr<RefCountedPtr<LameChannel>> Create(std::string target,
-                                                           ChannelArgs args);
+  static RefCountedPtr<LameChannel> Create(std::string target,
+                                           ChannelArgs args);
 
   LameChannel(std::string target, const ChannelArgs& args,
               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
