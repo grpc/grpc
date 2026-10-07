@@ -217,12 +217,12 @@ grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
 RefCountedPtr<Channel> CreateLameChannel(std::string target,
                                          const ChannelArgs& args,
                                          const absl::Status& status) {
-  return ChannelCreate(std::move(target),
-                       args.Set(GRPC_ARG_LAME_FILTER_ERROR,
-                                grpc_core::ChannelArgs::Pointer(
-                                    new absl::Status(status),
-                                    &grpc_core::kLameFilterErrorArgVtable)),
-                       GRPC_CLIENT_LAME_CHANNEL, nullptr)
+  return ChannelCreate(
+             std::move(target),
+             args.Set(GRPC_ARG_LAME_FILTER_ERROR,
+                      ChannelArgs::Pointer(new absl::Status(status),
+                                           &kLameFilterErrorArgVtable)),
+             GRPC_CLIENT_LAME_CHANNEL, nullptr)
       .value();
 }
 
