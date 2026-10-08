@@ -414,12 +414,20 @@ class Server : public ServerInterface,
                          void* tag)
       ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
-  void StopListening(bool send_goaways, Duration grace_period);
-
-  // FIXME: maybe don't need this anymore?
   void CancelAllCalls() ABSL_LOCKS_EXCLUDED(mu_global_);
 
-  // FIXME: maybe don't need this anymore?
+  // Stops listening.
+  //
+  // If send_goaways is true, also sends GOAWAYs on all existing connections
+  // and, if grace_period is non-zero, starts a timer to close those
+  // connections when the timer fires.
+  //
+  // Exposed for testing purposes.
+  void StopListening(bool send_goaways, Duration grace_period);
+
+  // Sends GOAWAYs on all existing connections.
+  //
+  // Exposed for testing purposes.
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
   grpc_compression_options compression_options() const override {

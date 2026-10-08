@@ -179,10 +179,10 @@ void Server::ListenerState::Stop(bool send_goaways, Duration grace_period) {
       connections;
   if (send_goaways) {
     MutexLock lock(mu_);
-    // Orphan the connections so that they can start cleaning up.
     if (IsServerConnectionTrackingEnabled()) {
       DrainConnectionsLocked(grace_period);
     } else {
+      // Orphan the connections so that they can start cleaning up.
       connections = std::move(connections_);
       connections_.clear();
     }
@@ -356,6 +356,7 @@ void Server::ListenerState::DrainConnectionsLocked(Duration grace_period) {
   for (auto& connection : connections_) {
     connection->SendGoAway();
   }
+// FIXME: use infinite future instead of zero here?
   if (grace_period == Duration::Zero()) return;
   auto& connections_to_be_drained = draining_connections_list_.emplace_back();
   connections_to_be_drained.connections = std::move(connections_);
