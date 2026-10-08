@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.85.0dev</release>
-  <api>1.85.0dev</api>
+  <release>1.86.0dev</release>
+  <api>1.86.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.85.0 update
+- gRPC Core 1.86.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -2201,6 +2201,8 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/streaming_call_promise_wrapper.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/streaming_call_promise_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_bootstrap_grpc.cc" role="src" />

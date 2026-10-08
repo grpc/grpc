@@ -76,7 +76,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     bool IsOrphaned();
 
     void StartRecvMessage() override;
-
     void SendHalfClose() override;
 
     using StreamingCall::Ref;  // Make it public.
@@ -196,7 +195,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
                      bool auto_complete_messages_from_client,
                      bool abort_on_undrained_messages)
         : factory_(std::move(factory)),
-          server_(server),
+          server_key_(server.Key()),
           auto_complete_messages_from_client_(
               auto_complete_messages_from_client),
           abort_on_undrained_messages_(abort_on_undrained_messages),
@@ -222,7 +221,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
 
-    const XdsBootstrap::XdsServerTarget* server() const { return &server_; }
+    const std::string& server_key() const { return server_key_; }
 
    private:
     void StartConnectivityFailureWatch(
@@ -238,7 +237,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void ResetBackoff() override {}
 
     WeakRefCountedPtr<FakeXdsTransportFactory> factory_;
-    const XdsBootstrap::XdsServerTarget& server_;
+    std::string server_key_;
     const bool auto_complete_messages_from_client_;
     const bool abort_on_undrained_messages_;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>

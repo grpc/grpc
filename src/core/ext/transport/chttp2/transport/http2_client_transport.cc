@@ -699,7 +699,7 @@ auto Http2ClientTransport::BdpLoop() {
     return TrySeq(
         flow_control_.WaitForBdpActivation(),
         [this]() {
-          // TODO(akshitpatel) : [PH2][P1] : Reset the keepalive ping timer
+          // TODO(akshitpatel) : [PH2][P2] : Reset the keepalive ping timer
           // when a BDP ping is sent, similar to CHTTP2's start_bdp_ping_locked.
           TriggerWriteCycleOrHandleError();
           return ping_manager_->RequestPing(
@@ -1480,7 +1480,7 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   // in the MPSC to be drained and block any additional frames from being
   // enqueued. Additionally this also prevents additional frames with non-zero
   // stream_ids from being processed by the read loop.
-  ReleasableMutexLock lock(&transport_mutex_);
+  ReleasableMutexLock lock(transport_mutex_);
   if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
     lock.Release();
     return;
@@ -1576,8 +1576,6 @@ RefCountedPtr<channelz::SocketNode> Http2ClientTransport::GetSocketNode()
 
 absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
   if (next_stream_id_ > GetMaxAllowedStreamId()) {
-    // TODO(tjagtap) : [PH2][P2] : Handle case if transport runs out of stream
-    // ids. Similar check is there in the same function. Check what to do.
     // RFC9113 : Stream identifiers cannot be reused. Long-lived connections
     // can result in an endpoint exhausting the available range of stream
     // identifiers. A client that is unable to establish a new stream
@@ -1591,10 +1589,6 @@ absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
   // starting new streams instead of failing them. This needs to be
   // implemented.
   {
-    // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
-    // this for incoming streams only. If a server receives more
-    // streams from a client than is allowed by the clients settings,
-    // whether or not we should fail is debatable.
     MutexLock lock(transport_mutex_);
     if (GetActiveStreamCountLocked() >=
         settings_->peer().max_concurrent_streams()) {

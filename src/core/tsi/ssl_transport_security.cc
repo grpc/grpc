@@ -2551,12 +2551,19 @@ static SslHandshakeResult ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl)
         return {TSI_ASYNC, SSL_ERROR_NONE, 0};
 #endif
       default: {
-        char err_str[256];
+        char err_str[512];
         unsigned long err_code = ERR_get_error();
         ERR_error_string_n(err_code, err_str, sizeof(err_str));
         long verify_result = SSL_get_verify_result(impl->ssl);
         std::string verify_result_str;
-        if (verify_result != X509_V_OK) {
+        // X509_V_ERR_INVALID_CALL will be returned by SSL_get_verify_result if
+        // the handshake fails for a reason unrelated to peer certificate
+        // verification. To avoid misleading users in this case, we do not
+        // append the verify result to the error message. In all of the cases
+        // where X509_V_ERR_INVALID_CALL is set during peer certificate
+        // verification, a more precise error will be added to the error queue.
+        if (verify_result != X509_V_OK &&
+            verify_result != X509_V_ERR_INVALID_CALL) {
           const char* verify_err = X509_verify_cert_error_string(verify_result);
           verify_result_str = absl::StrCat(": ", verify_err);
         }
