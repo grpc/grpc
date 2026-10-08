@@ -905,6 +905,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb.h )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/struct.upb.h )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.h )

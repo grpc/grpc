@@ -886,6 +886,7 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/struct.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.h" role="src" />

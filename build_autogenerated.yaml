@@ -3707,6 +3707,7 @@ libs:
   public_headers: []
   headers:
   - src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb.h
+  - src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.h
   - third_party/upb/upb/reflection/json_enumvalue_options_bootstrap.h
   src:
   - src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c
