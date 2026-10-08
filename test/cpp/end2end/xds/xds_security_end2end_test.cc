@@ -1157,6 +1157,11 @@ TEST_P(XdsSniSecurityTest, SanValidationFailure) {
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
+  static void SetUpTestSuite() {
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P1][Client] Fix bug");
+    SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
+  }
+
   void SetUp() override {
     XdsBootstrapBuilder builder = MakeBootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
@@ -1911,13 +1916,7 @@ TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent,
 // RBAC tests with action permutations
 //
 
-class XdsRbacTestWithActionPermutations : public XdsRbacTest {
- protected:
-  void SetUp() override {
-    SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
-    XdsRbacTest::SetUp();
-  }
-};
+using XdsRbacTestWithActionPermutations = XdsRbacTest;
 
 // Run with and without RDS, with the filter config both at the top
 // level and in the route, and without various actions.

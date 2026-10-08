@@ -343,6 +343,7 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/end2end:connection_attempt_injector",
+        "//test/cpp/end2end:end2end_test_utils",
         "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
     ],
 )
@@ -383,6 +384,7 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/end2end:connection_attempt_injector",
+        "//test/cpp/end2end:end2end_test_utils",
         "@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg_cc_proto",
     ],
 )
@@ -681,6 +683,7 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/end2end:connection_attempt_injector",
+        "//test/cpp/end2end:end2end_test_utils",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",

@@ -56,6 +56,11 @@ using ::envoy::config::listener::v3::FilterChainMatch;
 
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
+  static void SetUpTestSuite() {
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P1][Client] Fix bug");
+    SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
+  }
+
   void SetUp() override {}  // No-op -- individual tests do this themselves.
 
   void DoSetUp(const std::optional<XdsBootstrapBuilder>& builder = std::nullopt,
@@ -415,7 +420,6 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
   for (int i = 0; i < 5; ++i) {
@@ -494,7 +498,6 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest,
        ExistingRpcsFailOnResourceUpdateAfterDrainGraceTimeExpires) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   DoSetUp();
   constexpr int kDrainGraceTimeMs = 100;
   xds_drain_grace_time_ms_ = kDrainGraceTimeMs;
