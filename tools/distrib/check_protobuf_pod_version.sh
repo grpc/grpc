@@ -20,7 +20,12 @@ cd `dirname $0`/../..
 # get the version of protobuf in /third_party/protobuf
 pushd third_party/protobuf
 
-version1=$(git describe --tags | cut -f 1 -d'-')
+# Protobuf tags each release commit with both a "vX.Y" tag and a
+# "vA.X.Y-objectivec" tag. The podspecs use the objectivec version, so match
+# that tag explicitly; otherwise "git describe --tags" may return either one
+# (e.g. when both tags have the same timestamp).
+version1=$(git describe --tags --match 'v*-objectivec' 2>/dev/null || git describe --tags)
+version1=$(echo "$version1" | cut -f 1 -d'-')
 v1=${version1:1}
 # Protobuf has recently changed the versioning of the release branches/tags
 # and the same release commit can be tagged with multiple tag names
