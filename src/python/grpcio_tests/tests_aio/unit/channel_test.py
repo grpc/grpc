@@ -250,6 +250,7 @@ class TestChannel(AioTestBase):
         self.assertEqual(grpc.StatusCode.OK, await call.code())
         await channel.close()
 
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
