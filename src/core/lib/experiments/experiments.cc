@@ -45,9 +45,8 @@ const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_callv3_server_shutdown_broadcast =
-    "If enabled, Server::ShutdownAndNotify / CancelAllCalls / SendGoaways "
-    "broadcast the shutdown transport op to Call V3 server transports "
-    "(connections_), not just to legacy channels.";
+    "If enabled, broadcast the shutdown transport op to Call V3 server "
+    "transports.";
 const char* const additional_constraints_callv3_server_shutdown_broadcast =
     "{}";
 const char* const description_chaotic_good_framing_layer =
@@ -509,9 +508,8 @@ const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_callv3_server_shutdown_broadcast =
-    "If enabled, Server::ShutdownAndNotify / CancelAllCalls / SendGoaways "
-    "broadcast the shutdown transport op to Call V3 server transports "
-    "(connections_), not just to legacy channels.";
+    "If enabled, broadcast the shutdown transport op to Call V3 server "
+    "transports.";
 const char* const additional_constraints_callv3_server_shutdown_broadcast =
     "{}";
 const char* const description_chaotic_good_framing_layer =
@@ -973,9 +971,8 @@ const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_callv3_server_shutdown_broadcast =
-    "If enabled, Server::ShutdownAndNotify / CancelAllCalls / SendGoaways "
-    "broadcast the shutdown transport op to Call V3 server transports "
-    "(connections_), not just to legacy channels.";
+    "If enabled, broadcast the shutdown transport op to Call V3 server "
+    "transports.";
 const char* const additional_constraints_callv3_server_shutdown_broadcast =
     "{}";
 const char* const description_chaotic_good_framing_layer =
