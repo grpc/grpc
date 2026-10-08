@@ -89,12 +89,7 @@ cdef class _BoundEventLoop:
         _close_socket(self._write_socket)
 
     def _handle_events(self):
-        """Reader callback; runs on the loop's thread when the socket wakes.
-
-        The socket read MUST come before the `_drain_queue` call due to the fact
-        that poller thread writes a wake-up byte only when it pushes into an
-        empty mailbox. Otherwise we could end-up with stalled loop.
-        """
+        """Reader callback; runs on the loop's thread when the socket wakes."""
         cdef bytes data = None
         try:
             # reading a large chunk collapses all pending wake-ups into one
@@ -238,7 +233,6 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         cdef CallbackContext *context = <CallbackContext *>event.tag
         cdef _LoopMailbox *mailbox = NULL
         cdef size_t key
-        cdef bint was_empty
 
         if _has_fd_monitoring.load():
             key = <size_t>(<void *>context.loop)
@@ -246,12 +240,9 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
             if self._mailboxes.count(key):
                 mailbox = self._mailboxes[key]
                 mailbox.mtx.lock()
-                was_empty = mailbox.events.empty()
                 mailbox.events.push(event)
                 mailbox.mtx.unlock()
-                # wake-up the loop on the empty -> non-empty transition
-                if was_empty:
-                    _unified_socket_write(mailbox.write_fd)
+                _unified_socket_write(mailbox.write_fd)
             self._mailboxes_mutex.unlock()
         if mailbox == NULL:
             # no mailbox for this loop (it was never bound, it was closed and
