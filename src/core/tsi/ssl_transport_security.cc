@@ -27,6 +27,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -216,13 +217,16 @@ struct HandshakerNextArgs {
 
 struct tsi_ssl_handshaker_result {
   tsi_handshaker_result base;
-  SSL* ssl;
-  BIO* network_io;
-  unsigned char* unused_bytes;
-  size_t unused_bytes_size;
-  char* exported_keying_material_label;
-  size_t exported_keying_material_length;
+  SSL* ssl = nullptr;
+  BIO* network_io = nullptr;
+  unsigned char* unused_bytes = nullptr;
+  size_t unused_bytes_size = 0;
+  std::string exported_keying_material_label;
+  size_t exported_keying_material_length = 0;
 };
+// Required for reinterpret_cast between tsi_handshaker_result* and
+// tsi_ssl_handshaker_result*.
+static_assert(std::is_standard_layout_v<tsi_ssl_handshaker_result>);
 
 struct SslHandshakeResult {
   tsi_result tsi_handshake_result;
@@ -2317,7 +2321,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (verified_root_cert != nullptr) new_property_count++;
   if (server_name != nullptr) new_property_count++;
   if (tls_version != nullptr) new_property_count++;
-  if (impl->exported_keying_material_label != nullptr) new_property_count++;
+  if (!impl->exported_keying_material_label.empty()) new_property_count++;
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   int nid = SSL_get_negotiated_group(impl->ssl);
   const char* negotiated_group_name =
@@ -2394,7 +2398,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   }
 #endif
 
-  if (impl->exported_keying_material_label != nullptr) {
+  if (!impl->exported_keying_material_label.empty()) {
     size_t ekm_len = impl->exported_keying_material_length;
     result = tsi_construct_allocated_string_peer_property(
         TSI_SSL_EXPORTED_KEYING_MATERIAL, ekm_len,
@@ -2406,8 +2410,8 @@ static tsi_result ssl_handshaker_result_extract_peer(
             impl->ssl,
             reinterpret_cast<unsigned char*>(
                 peer->properties[peer->property_count].value.data),
-            ekm_len, impl->exported_keying_material_label,
-            strlen(impl->exported_keying_material_label), /*context=*/nullptr,
+            ekm_len, impl->exported_keying_material_label.data(),
+            impl->exported_keying_material_label.size(), /*context=*/nullptr,
             /*context_len=*/0, /*use_context=*/0) != 1) {
       LOG(ERROR) << "Failed to export keying material.";
       tsi_peer_property_destruct(&peer->properties[peer->property_count]);
@@ -2487,8 +2491,7 @@ static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->unused_bytes);
-  gpr_free(impl->exported_keying_material_label);
-  gpr_free(impl);
+  delete impl;
 }
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
@@ -2509,14 +2512,10 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
     handshaker->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
-  tsi_ssl_handshaker_result* result =
-      grpc_core::Zalloc<tsi_ssl_handshaker_result>();
+  auto* result = new tsi_ssl_handshaker_result();
   result->base.vtable = &handshaker_result_vtable;
-
-  if (!handshaker->exported_keying_material_label.empty()) {
-    result->exported_keying_material_label =
-        gpr_strdup(handshaker->exported_keying_material_label.c_str());
-  }
+  result->exported_keying_material_label =
+      handshaker->exported_keying_material_label;
   result->exported_keying_material_length =
       handshaker->exported_keying_material_length;
 

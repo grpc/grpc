@@ -582,9 +582,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->crl_provider(), options_->key_exchange_groups(),
-      options_->exported_keying_material_label().empty()
-          ? nullptr
-          : options_->exported_keying_material_label().c_str(),
+      options_->exported_keying_material_label(),
       options_->exported_keying_material_length(), &client_handshaker_factory_);
 }
 
@@ -861,9 +859,7 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->send_client_ca_list(), options_->crl_provider(),
       options_->key_exchange_groups(),
-      options_->exported_keying_material_label().empty()
-          ? nullptr
-          : options_->exported_keying_material_label().c_str(),
+      options_->exported_keying_material_label(),
       options_->exported_keying_material_length(), &server_handshaker_factory_);
 }
 
