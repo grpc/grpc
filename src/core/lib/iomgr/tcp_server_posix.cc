@@ -693,8 +693,6 @@ static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
 
 static void tcp_server_start(grpc_tcp_server* s,
                              const std::vector<grpc_pollset*>* pollsets) {
-  size_t i;
-  grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
   GRPC_CHECK(s->on_accept_cb);
   GRPC_CHECK_EQ(s->active_ports, 0u);
