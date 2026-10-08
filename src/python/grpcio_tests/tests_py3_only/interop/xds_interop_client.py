@@ -332,17 +332,10 @@ def _on_rpc_done(
                 break
         else:
             hostname = response.hostname
-        if future.code() == grpc.StatusCode.OK:
-            with _global_lock:
-                _global_rpcs_succeeded[method] += 1
-        else:
-            with _global_lock:
-                _global_rpcs_failed[method] += 1
+        with _global_lock:
+            _global_rpcs_succeeded[method] += 1
         if print_response:
-            if future.code() == grpc.StatusCode.OK:
-                logger.debug("Successful response.")
-            else:
-                logger.debug(f"RPC failed: {rpc_id}")
+            logger.debug("Successful response.")
     with _global_lock:
         for watcher in _watchers:
             watcher.on_rpc_complete(
