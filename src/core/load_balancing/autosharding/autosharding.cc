@@ -424,14 +424,17 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
     }
   }
   if (requested_connection || found_connecting) {
-    return PickResult::Queue();
+    return PickResult::Queue(LoadBalancingPolicy::kDelayTypeConnecting,
+                             "autosharding: connecting to endpoints");
   }
   // All endpoints in TRANSIENT_FAILURE. Delegate to the first endpoint's
   // picker to yield a detailed error message (or queue if the child policy
   // has not yet been created).
   const auto& endpoint_info = endpoints_[indices[first_index]];
   if (endpoint_info.picker == nullptr) {
-    return PickResult::Queue();
+    return PickResult::Queue(
+        LoadBalancingPolicy::kDelayTypeConnecting,
+        "autosharding: child policy has not yet returned a picker");
   }
   return endpoint_info.picker->Pick(args);
 }

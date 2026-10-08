@@ -388,11 +388,12 @@ void RoundRobin::RoundRobinEndpointList::
     GRPC_TRACE_LOG(round_robin, INFO)
         << "[RR " << round_robin << "] reporting CONNECTING with child list "
         << this;
-    std::string reason = CountersString();
-    if (!last_failure_.ok()) {
-      absl::StrAppend(&reason,
-                      "; previous attempt failed: ", last_failure_.message());
-    }
+    std::string reason = absl::StrCat(
+        "round_robin: connecting to endpoints (", CountersString(),
+        last_failure_.ok()
+            ? ""
+            : absl::StrCat("; last failure: ", last_failure_.ToString()),
+        ")");
     round_robin->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
         MakeRefCounted<QueuePicker>(

@@ -1020,11 +1020,12 @@ void WeightedRoundRobin::WrrEndpointList::
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting CONNECTING with endpoint list "
         << this;
-    std::string reason = CountersString();
-    if (!last_failure_.ok()) {
-      absl::StrAppend(&reason,
-                      "; previous attempt failed: ", last_failure_.message());
-    }
+    std::string reason = absl::StrCat(
+        "weighted_round_robin: connecting to endpoints (", CountersString(),
+        last_failure_.ok()
+            ? ""
+            : absl::StrCat("; last failure: ", last_failure_.ToString()),
+        ")");
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
         MakeRefCounted<QueuePicker>(

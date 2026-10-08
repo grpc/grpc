@@ -155,7 +155,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       // The subchannel will connect successfully.
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
       // Expect the initial CONNECTNG update with a picker that queues.
-      if (i == 0) ExpectConnectingUpdate(std::nullopt, std::nullopt, location);
+      if (i == 0) ExpectConnectingUpdate(::testing::_, ::testing::_, location);
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
     }
     return WaitForConnected(location);
@@ -1097,7 +1097,8 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
   subchannel1_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   ExpectConnectingUpdate(
       LoadBalancingPolicy::kDelayTypeConnecting,
-      "num_children=3 num_ready=0 num_connecting=1 num_transient_failure=0");
+      ::testing::HasSubstr("num_children=3 num_ready=0 num_connecting=1 "
+                           "num_transient_failure=0"));
   // In the second endpoint, the first subchannel reports CONNECTING.
   subchannel2_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // In the third endpoint, the first subchannel reports CONNECTING.

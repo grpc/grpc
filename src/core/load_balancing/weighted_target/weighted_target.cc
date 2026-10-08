@@ -441,7 +441,9 @@ void WeightedTargetLb::UpdateStateLocked() {
     case GRPC_CHANNEL_IDLE:
       picker = MakeRefCounted<QueuePicker>(
           Ref(DEBUG_LOCATION, "QueuePicker"), kDelayTypeConnecting,
-          "weighted_target: targets connecting or idle");
+          absl::StrCat("weighted_target: connecting to targets (num_targets=",
+                       config_->target_map().size(), " num_connecting=",
+                       num_connecting, " num_idle=", num_idle, ")"));
       break;
     default:
       picker = MakeRefCounted<WeightedPicker>(std::move(tf_picker_list));

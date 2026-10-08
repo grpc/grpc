@@ -29,6 +29,7 @@
 #include "src/core/util/time.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -103,7 +104,9 @@ TEST_F(AutoShardingTest, StartupFallback) {
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   // The pick should trigger a connection attempt on exactly one endpoint.
-  ExpectPickQueued(picker.get(), {}, MakeMetadata());
+  ExpectPickQueued(picker.get(), {}, MakeMetadata(),
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   SubchannelState* subchannel = nullptr;
@@ -136,7 +139,9 @@ TEST_F(AutoShardingTest, FallbackDisabledQueuesPicksUntilAssignmentTimeout) {
   // Before the initial assignment timer fires, we have no assignment yet,
   // so we queue picks and report CONNECTING.
   auto picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {}, MakeMetadata());
+  ExpectPickQueued(picker.get(), {}, MakeMetadata(),
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
   // When the initial assignment timer fires without an assignment, picks
   // fail, because fallback is disabled.
   IncrementTimeBy(Duration::Seconds(1));
@@ -165,7 +170,9 @@ TEST_F(AutoShardingTest, ResolutionNotePropagatedOnFallbackDisabled) {
   // Before the initial assignment timer fires, we have no assignment yet,
   // so we queue picks and report CONNECTING.
   auto picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {}, MakeMetadata());
+  ExpectPickQueued(picker.get(), {}, MakeMetadata(),
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
   // When the initial assignment timer fires without an assignment, picks
   // fail with a status that includes the resolution note.
   IncrementTimeBy(Duration::Seconds(1));
@@ -223,7 +230,9 @@ TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   // The pick should trigger a connection attempt on the endpoint that won
   // (the one with index 0).
-  ExpectPickQueued(picker.get(), {}, MakeMetadata());
+  ExpectPickQueued(picker.get(), {}, MakeMetadata(),
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
@@ -248,7 +257,9 @@ TEST_F(AutoShardingTest, RetainsEndpointForHostnameAcrossUpdates) {
                   lb_policy()),
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
-  ExpectPickQueued(picker.get(), {}, MakeMetadata());
+  ExpectPickQueued(picker.get(), {}, MakeMetadata(),
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -282,7 +293,9 @@ TEST_F(AutoShardingTest, EmptyKeyHeaderValueIsValidKey) {
                   lb_policy()),
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
-  ExpectPickQueued(picker.get(), {}, MakeMetadata(""));
+  ExpectPickQueued(picker.get(), {}, MakeMetadata(""),
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
 }
 
 TEST_F(AutoShardingTest, SameAddressListedMultipleTimes) {
@@ -295,7 +308,9 @@ TEST_F(AutoShardingTest, SameAddressListedMultipleTimes) {
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   const auto metadata = MakeMetadata();
-  ExpectPickQueued(picker.get(), {}, metadata);
+  ExpectPickQueued(picker.get(), {}, metadata,
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   SubchannelState* subchannel = nullptr;
@@ -328,7 +343,9 @@ TEST_F(AutoShardingTest, MultipleAddressesPerEndpoint) {
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   const auto metadata = MakeMetadata();
-  ExpectPickQueued(picker.get(), {}, metadata);
+  ExpectPickQueued(picker.get(), {}, metadata,
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   SubchannelState* subchannel = nullptr;
@@ -341,7 +358,9 @@ TEST_F(AutoShardingTest, MultipleAddressesPerEndpoint) {
   ASSERT_NE(subchannel, nullptr);
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(picker.get(), {}, metadata);
+  ExpectPickQueued(picker.get(), {}, metadata,
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   auto address = ExpectPickComplete(picker.get(), {}, metadata);
@@ -364,7 +383,9 @@ TEST_F(AutoShardingTest,
                   lb_policy()),
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
-  ExpectPickQueued(picker.get(), {}, MakeMetadata());
+  ExpectPickQueued(picker.get(), {}, MakeMetadata(),
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   "autosharding: connecting to endpoints");
   WaitForWorkSerializerToFlush();
   WaitForWorkSerializerToFlush();
   SubchannelState* subchannel0 = nullptr;

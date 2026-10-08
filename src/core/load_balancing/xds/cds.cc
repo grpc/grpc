@@ -170,6 +170,7 @@ bool XdsAggregateClusterBackwardCompatibilityEnabled() {
 }
 
 constexpr absl::string_view kCds = "cds_experimental";
+constexpr char kDelayTypeCdsDynamicDiscovery[] = "cds_dynamic_discovery";
 
 // Config for this LB policy.
 class CdsLbConfig final : public LoadBalancingPolicy::Config {
@@ -372,8 +373,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
           MakeRefCounted<QueuePicker>(
               nullptr, kDelayTypeCdsDynamicDiscovery,
-              absl::StrCat("waiting for CDS resource definition for cluster ",
-                           cluster_name_.as_string_view())));
+              absl::StrCat(
+                  "cds: waiting for CDS resource definition for cluster ",
+                  cluster_name_.as_string_view())));
       return absl::OkStatus();
     }
     // Not a dynamic cluster.  This should never happen.

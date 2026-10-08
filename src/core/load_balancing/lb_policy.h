@@ -95,13 +95,7 @@ namespace grpc_core {
 // interested_parties() hooks from the API.
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
-  /// LB Delay types: Delay types used in metrics and tracing to explain
-  /// why an RPC is blocked.
   static constexpr char kDelayTypeConnecting[] = "connecting";
-  static constexpr char kDelayTypeResolving[] = "resolving";
-  static constexpr char kDelayTypeRlsLookupPending[] = "rls_lookup_pending";
-  static constexpr char kDelayTypeCdsDynamicDiscovery[] =
-      "cds_dynamic_discovery";
 
   /// Interface for accessing per-call state.
   /// Implemented by the client channel and used by the SubchannelPicker.

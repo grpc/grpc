@@ -260,21 +260,31 @@ class RingHash final : public LoadBalancingPolicy {
 
     std::string MakeDelayReason(size_t target_endpoint_index,
                                 size_t first_endpoint_index,
-                                const absl::Status& last_failure) const {
+                                const absl::Status& last_failure,
+                                PickArgs args) const {
       const RingHashEndpoint::EndpointInfo& target_info =
           endpoints_[target_endpoint_index];
+      absl::string_view child_reason =
+          "child policy has not yet returned a picker";
+      std::optional<LoadBalancingPolicy::PickResult> child_pick;
+      if (target_info.picker != nullptr) {
+        child_pick.emplace(target_info.picker->Pick(args));
+        auto* queue = std::get_if<PickResult::Queue>(&child_pick->result);
+        if (queue != nullptr && !queue->delay_reason.empty()) {
+          child_reason = queue->delay_reason;
+        }
+      }
       if (target_endpoint_index == first_endpoint_index) {
-        return absl::StrCat("primary ring endpoint ",
-                            target_info.state == GRPC_CHANNEL_IDLE
-                                ? "was IDLE, connecting now"
-                                : "connecting");
+        return absl::StrCat("ring_hash: primary endpoint connecting: ",
+                            child_reason);
       }
-      std::string reason = "fallback ring endpoint connecting";
       if (!last_failure.ok()) {
-        absl::StrAppend(&reason,
-                        "; last attempt failed: ", last_failure.message());
+        return absl::StrCat(
+            "ring_hash: fallback endpoint connecting: ", child_reason,
+            " (primary endpoint failed: ", last_failure.ToString(), ")");
       }
-      return reason;
+      return absl::StrCat("ring_hash: fallback endpoint connecting: ",
+                          child_reason);
     }
 
     RefCountedPtr<RingHash> ring_hash_;
@@ -390,7 +400,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
           return PickResult::Queue(
               kDelayTypeConnecting,
               MakeDelayReason(entry.endpoint_index, first_endpoint_index,
-                              last_failure));
+                              last_failure, args));
         case GRPC_CHANNEL_TRANSIENT_FAILURE:
           last_failure = endpoint_info.status;
         default:
@@ -429,7 +439,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
           kDelayTypeConnecting,
           MakeDelayReason(
               connecting_endpoint_index.value_or(first_endpoint_index),
-              first_endpoint_index, last_failure));
+              first_endpoint_index, last_failure, args));
     }
   }
   std::string message = absl::StrCat(

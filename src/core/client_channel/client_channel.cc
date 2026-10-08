@@ -1313,8 +1313,8 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
   UpdateStateAndPickerLocked(
       GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
       MakeRefCounted<LoadBalancingPolicy::QueuePicker>(
-          nullptr, LoadBalancingPolicy::kDelayTypeResolving,
-          "waiting for initial picker from LB policy"));
+          nullptr, LoadBalancingPolicy::kDelayTypeConnecting,
+          "client_channel: waiting for initial picker from LB policy"));
   // Now create the LB policy.
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
