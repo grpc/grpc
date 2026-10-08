@@ -374,30 +374,34 @@ class _OpenTelemetryPlugin:
 
         # to prevent concurrent RPCs from overwriting shared state
         with self._tracer_lock:
-            # this step is needed to propagate span ID correctly
-            self._tracer.id_generator = _GrpcIdGenerator(
-                trace_id=tracing_data.trace_id, span_id=tracing_data.span_id
-            )
+            original_id_generator = self._tracer.id_generator
             try:
-                parsed_start_time = int(tracing_data.start_time)
-            except (ValueError, TypeError):
-                _LOGGER.warning(
-                    "Invalid start_time '%s' for span, defaulting to current "
-                    "time.",
-                    tracing_data.start_time,
+                # this step is needed to propagate span ID correctly
+                self._tracer.id_generator = _GrpcIdGenerator(
+                    trace_id=tracing_data.trace_id, span_id=tracing_data.span_id
                 )
-                # For None tracing library auto-generates the current time
-                parsed_start_time = None
-            span = self._tracer.start_span(
-                name=tracing_data.name,
-                context=local_ctx,
-                kind=trace.SpanKind.INTERNAL,
-                attributes=_convert_tracing_attributes(
-                    tracing_data.span_labels
-                ),
-                links=None,
-                start_time=parsed_start_time,
-            )
+                try:
+                    parsed_start_time = int(tracing_data.start_time)
+                except (ValueError, TypeError):
+                    _LOGGER.warning(
+                        "Invalid start_time '%s' for span, defaulting to current "
+                        "time.",
+                        tracing_data.start_time,
+                    )
+                    # For None tracing library auto-generates the current time
+                    parsed_start_time = None
+                span = self._tracer.start_span(
+                    name=tracing_data.name,
+                    context=local_ctx,
+                    kind=trace.SpanKind.INTERNAL,
+                    attributes=_convert_tracing_attributes(
+                        tracing_data.span_labels
+                    ),
+                    links=None,
+                    start_time=parsed_start_time,
+                )
+            finally:
+                self._tracer.id_generator = original_id_generator
 
         for event in tracing_data.span_events:
             try:
