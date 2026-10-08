@@ -19,6 +19,7 @@
 #include <iomanip>
 #include <iostream>
 #include <new>
+#include <string>
 
 #include "rpc_encoding.h"
 #include "src/core/lib/transport/transport.h"
@@ -27,6 +28,17 @@
 #include "absl/strings/escaping.h"
 
 namespace grpc_observability {
+namespace {
+// Decodes `hex` into exactly `size` bytes at `out`
+void HexStringToFixedBytes(absl::string_view hex, uint8_t* out, size_t size) {
+  std::string bytes;
+  if (!absl::HexStringToBytes(hex, &bytes) || bytes.size() != size) {
+    memset(out, 0, size);
+    return;
+  }
+  memcpy(out, bytes.data(), size);
+}
+}  // namespace
 
 void EnablePythonCensusStats(bool enable) {
   g_python_census_stats_enabled = enable;
@@ -88,18 +100,14 @@ void ToGrpcTraceBinHeader(const PythonCensusContext& ctx, uint8_t* out) {
   out[kTraceIdOfs] = kTraceIdField;
   uint8_t trace_options_rep_[kSizeTraceOptions];
 
-  std::string trace_id =
-      absl::HexStringToBytes(absl::string_view(ctx.GetSpanContext().TraceId()));
-  std::string span_id =
-      absl::HexStringToBytes(absl::string_view(ctx.GetSpanContext().SpanId()));
   trace_options_rep_[0] = ctx.GetSpanContext().IsSampled() ? 1 : 0;
 
-  memcpy(reinterpret_cast<uint8_t*>(&out[kTraceIdOfs + 1]), trace_id.c_str(),
-         kSizeTraceID);
+  HexStringToFixedBytes(ctx.GetSpanContext().TraceId(), &out[kTraceIdOfs + 1],
+                        kSizeTraceID);
 
   out[kSpanIdOfs] = kSpanIdField;
-  memcpy(reinterpret_cast<uint8_t*>(&out[kSpanIdOfs + 1]), span_id.c_str(),
-         kSizeSpanID);
+  HexStringToFixedBytes(ctx.GetSpanContext().SpanId(), &out[kSpanIdOfs + 1],
+                        kSizeSpanID);
 
   out[kTraceOptionsOfs] = kTraceOptionsField;
   memcpy(reinterpret_cast<uint8_t*>(&out[kTraceOptionsOfs + 1]),
