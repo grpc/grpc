@@ -51,6 +51,35 @@ def wait_for_port(port, host="localhost", timeout=5.0):
     return False
 
 
+def wait_for_server_ready(port, host="localhost", timeout=30.0):
+    """Waits until a server behind a docker port mapping is accepting RPCs.
+
+    A plain TCP connect is not sufficient: docker-proxy accepts the connection
+    even when nothing is listening inside the container yet, and then closes
+    it immediately. That shows up on the client as
+    "Handshake read failed (Socket closed)". A gRPC server (TLS or plaintext)
+    waits for the client to send the first bytes, so if the connection stays
+    open for a short while we know the real server is behind it.
+    """
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            with socket.create_connection((host, port), timeout=1.0) as sock:
+                sock.settimeout(0.5)
+                try:
+                    if sock.recv(1) == b"":
+                        # Peer closed immediately: docker-proxy with no
+                        # backend yet.
+                        raise ConnectionResetError()
+                except socket.timeout:
+                    # Server is holding the connection open waiting for us.
+                    return True
+        except (ConnectionRefusedError, ConnectionResetError, OSError):
+            pass
+        time.sleep(0.1)
+    return False
+
+
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 from python_utils.otel_tracing_verifier import verify_tracing_spans
@@ -1745,9 +1774,16 @@ try:
             # don't run the server, set server port to a placeholder value
             server_addresses[lang] = ("localhost", "${SERVER_PORT}")
 
-    if not args.manual_run and "java" in server_jobs:
-        # Because the gRPC Java server takes some time to come up
-        time.sleep(5)
+    if not args.manual_run:
+        # Servers (notably Java and Go) take some time to come up, especially
+        # when they also initialize an OpenTelemetry exporter. Wait until each
+        # one is actually accepting connections before launching clients.
+        for lang, (host, port) in server_addresses.items():
+            if not wait_for_server_ready(port, host=host):
+                print(
+                    'Warning: server "%s" on %s:%s did not become ready in '
+                    "time; tests may fail." % (lang, host, port)
+                )
 
     http2_server_job = None
     if args.http2_server_interop:
