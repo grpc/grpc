@@ -352,6 +352,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
