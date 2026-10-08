@@ -638,7 +638,7 @@ class SslTransportSecurityTest
     // wrong one would misreport the server's identity to an authorization
     // service.
     static void CheckLocalCertificate(SslTsiTestFixture* ssl_fixture) {
-      auto connection_context = grpc_core::ConnectionContext::Create();
+      auto connection_context = ConnectionContext::Create();
       tsi_handshaker_result_populate_connection_context(
           ssl_fixture->base_.server_result, connection_context.get());
       tsi::LocalCertificate* local_cert =
@@ -784,7 +784,7 @@ class SslTransportSecurityTest
           }
         }
         // The local certificate is recorded on the server side only.
-        auto client_connection_context = grpc_core::ConnectionContext::Create();
+        auto client_connection_context = ConnectionContext::Create();
         tsi_handshaker_result_populate_connection_context(
             ssl_fixture->base_.client_result, client_connection_context.get());
         EXPECT_EQ(client_connection_context->Get<tsi::LocalCertificate>(),
