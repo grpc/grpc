@@ -574,6 +574,6 @@ def targets():
             presubmit=True,
         ),
         # PHP8
-        PHP8DistribTest("linux", "x64", "debian12", presubmit=True),
+        PHP8DistribTest("linux", "x64", "debian13", presubmit=True),
         PHP8DistribTest("macos", "x64", presubmit=True),
     ]

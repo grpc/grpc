@@ -93,7 +93,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l php8 -c dbg",
     ],
-    docker_image_version = "tools/dockerfile/test/php8_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/php8_debian13_x64.current_version",
 )
 
 grpc_run_tests_harness_test(
@@ -102,7 +102,7 @@ grpc_run_tests_harness_test(
     args = [
         "-l php8 -c opt",
     ],
-    docker_image_version = "tools/dockerfile/test/php8_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/php8_debian13_x64.current_version",
 )
 
 # Python
@@ -279,7 +279,7 @@ grpc_build_artifact_task(
 grpc_build_artifact_task(
     name = "artifact_php_linux_x64",
     build_script = "build_artifact_php_linux.sh",
-    docker_image_version = "tools/dockerfile/test/php8_zts_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/php8_zts_debian13_x64.current_version",
 )
 
 # Python artifact build tasks
@@ -389,20 +389,20 @@ test_suite(
 # PHP distribtests
 
 grpc_run_distribtest_test(
-    name = "distribtest_php_linux_x64_debian12",
+    name = "distribtest_php_linux_x64_debian13",
     size = "enormous",
     artifact_deps = [
         "artifact_php_linux_x64",
     ],
     build_script = "run_distribtest_php_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/php8_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/php8_debian13_x64.current_version",
     docker_run_as_root = True,
 )
 
 test_suite(
     name = "php_distribtests_linux",
     tests = [
-        ":distribtest_php_linux_x64_debian12",
+        ":distribtest_php_linux_x64_debian13",
     ],
 )
 
