@@ -2324,7 +2324,8 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyNotDrainedFails) {
   ASSERT_THAT(req, ::testing::Optional(MatchesRequestBody(
                        EchoRequestMessageIs(kMessage1), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::OkStatus());
-  stream.StartWritesDone();
+  // Don't half-close here: the half-close can reach the backend before the
+  // side-stream status is processed, letting the backend finish with OK.
   EXPECT_THAT(
       stream.WaitForStatus(),
       ::testing::Optional(GrpcStatusIs(StatusCode::INTERNAL,
