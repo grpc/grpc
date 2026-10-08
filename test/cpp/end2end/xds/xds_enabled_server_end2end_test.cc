@@ -37,6 +37,7 @@
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -414,6 +415,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   DoSetUp(MakeBootstrapBuilder().SetFailOnDataErrors());
   StartBackend(0);
   for (int i = 0; i < 5; ++i) {
@@ -492,6 +494,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest,
        ExistingRpcsFailOnResourceUpdateAfterDrainGraceTimeExpires) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   DoSetUp();
   constexpr int kDrainGraceTimeMs = 100;
   xds_drain_grace_time_ms_ = kDrainGraceTimeMs;

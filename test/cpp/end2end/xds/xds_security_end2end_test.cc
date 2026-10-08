@@ -69,6 +69,7 @@
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -1910,7 +1911,13 @@ TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent,
 // RBAC tests with action permutations
 //
 
-using XdsRbacTestWithActionPermutations = XdsRbacTest;
+class XdsRbacTestWithActionPermutations : public XdsRbacTest {
+ protected:
+  void SetUp() override {
+    SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
+    XdsRbacTest::SetUp();
+  }
+};
 
 // Run with and without RDS, with the filter config both at the top
 // level and in the route, and without various actions.

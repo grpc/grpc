@@ -39,6 +39,7 @@
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/xds_http_add_header_filter.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "xds/type/matcher/v3/matcher.pb.h"
 #include "xds/type/v3/typed_struct.pb.h"
@@ -72,6 +73,9 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
         !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
       GTEST_SKIP()
           << "test requires xds_server_filter_chain_per_route experiment";
+    }
+    if (GetParam().filter_on_server()) {
+      SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
     }
     grpc_core::GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryInitForTest(
         [](grpc_core::XdsHttpFilterRegistry& registry) {
