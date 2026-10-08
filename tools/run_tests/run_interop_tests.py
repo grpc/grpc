@@ -313,9 +313,22 @@ class GoLanguage:
         self.client_cwd = "/go/src/google.golang.org/grpc/interop/client"
         self.server_cwd = "/go/src/google.golang.org/grpc/interop/server"
         self.http2_cwd = "/go/src/google.golang.org/grpc/interop/http2"
+        # The OpenTelemetry-enabled interop client and server live in a
+        # separate Go module (interop/otel) so that the OTLP exporter's
+        # dependencies stay out of the root grpc-go module. They are only used
+        # when OpenTelemetry is requested; `go -C` switches into that module
+        # before running.
+        self.otel_client_dir = "../otel/client"
+        self.otel_server_dir = "../otel/server"
         self.safename = str(self)
 
+    @staticmethod
+    def _otel_requested(args):
+        return "--enable_opentelemetry=true" in args
+
     def client_cmd(self, args):
+        if self._otel_requested(args):
+            return ["go", "-C", self.otel_client_dir, "run", "client.go"] + args
         return ["go", "run", "client.go"] + args
 
     def client_cmd_http2interop(self, args):
@@ -325,6 +338,8 @@ class GoLanguage:
         return {}
 
     def server_cmd(self, args):
+        if self._otel_requested(args):
+            return ["go", "-C", self.otel_server_dir, "run", "server.go"] + args
         return ["go", "run", "server.go"] + args
 
     def global_env(self):

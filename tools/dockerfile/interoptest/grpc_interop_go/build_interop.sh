@@ -31,3 +31,12 @@ cp -r /var/local/jenkins/service_account $HOME || true
 (cd src/google.golang.org/grpc/interop/client && go install)
 (cd src/google.golang.org/grpc/interop/server && go install)
 
+# Build the OpenTelemetry-enabled interop client and server, which live in a
+# separate Go module (interop/otel) so that the OTLP exporter dependencies do
+# not become dependencies of the root grpc-go module. Older grpc-go revisions
+# do not have this module; skip it if absent.
+if [ -d src/google.golang.org/grpc/interop/otel ]; then
+  (cd src/google.golang.org/grpc/interop/otel/client && go install)
+  (cd src/google.golang.org/grpc/interop/otel/server && go install)
+fi
+
