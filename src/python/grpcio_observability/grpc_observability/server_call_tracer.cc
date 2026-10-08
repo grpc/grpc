@@ -175,7 +175,8 @@ void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
   if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
-    const auto sent_message_count_str = absl::StrCat(sent_message_count_ - 1);
+    const auto sent_message_count_str =
+        absl::StrCat(sent_message_count_ > 0 ? sent_message_count_ - 1 : 0);
     attributes.emplace_back("sequence-number", sent_message_count_str);
     const auto message_size_str =
         absl::StrCat(send_compressed_message.payload()->Length());
@@ -211,7 +212,8 @@ void PythonOpenCensusServerCallTracer::RecordReceivedDecompressedMessage(
   if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
-    const auto recv_message_count_str = absl::StrCat(recv_message_count_ - 1);
+    const auto recv_message_count_str =
+        absl::StrCat(recv_message_count_ > 0 ? recv_message_count_ - 1 : 0);
     attributes.emplace_back("sequence-number", recv_message_count_str);
     const auto message_size_str =
         absl::StrCat(recv_decompressed_message.payload()->Length());
