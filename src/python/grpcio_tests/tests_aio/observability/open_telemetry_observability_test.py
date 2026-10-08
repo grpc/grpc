@@ -19,7 +19,17 @@ import logging
 import os
 import sys
 import time
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 import unittest
 
 import grpc
@@ -304,8 +314,12 @@ class OpenTelemetryObservabilityBase(AioTestBase):
         self,
         spans: Sequence[otel_trace.ReadableSpan],
         expected_span_size: int,
-        expected_server_events: Sequence[Tuple[str, dict[str, str]]],
-        expected_attempt_events: Sequence[Tuple[str, dict[str, str]]],
+        expected_server_events: Sequence[
+            Tuple[str, dict[str, Union[str, int]]]
+        ],
+        expected_attempt_events: Sequence[
+            Tuple[str, dict[str, Union[str, int]]]
+        ],
     ) -> None:
         self.assertTrue(
             expr=(len(spans) == expected_span_size),
@@ -335,9 +349,9 @@ class OpenTelemetryObservabilityBase(AioTestBase):
         # validate mandatory attributes
         attempt_attrs = dict(attempt_span.attributes)
         self.assertIn("transparent-retry", attempt_attrs)
-        self.assertEqual(attempt_attrs["transparent-retry"], "0")
+        self.assertEqual(attempt_attrs["transparent-retry"], False)
         self.assertIn("previous-rpc-attempts", attempt_attrs)
-        self.assertEqual(attempt_attrs["previous-rpc-attempts"], "0")
+        self.assertEqual(attempt_attrs["previous-rpc-attempts"], 0)
 
         # validate parent-child relationship
         self.assertEqual(
@@ -406,21 +420,21 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
             expected_server_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
             ],
             expected_attempt_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
             ],
         )
@@ -448,53 +462,53 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
             expected_server_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
             ],
             expected_attempt_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
         )
@@ -522,53 +536,53 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
             expected_server_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
             expected_attempt_events=[
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
         )
@@ -596,85 +610,85 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
             expected_server_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
             expected_attempt_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
         )
@@ -714,21 +728,21 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
             expected_server_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
             ],
             expected_attempt_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
             ],
         )
@@ -760,53 +774,53 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
             expected_server_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
             ],
             expected_attempt_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
         )
@@ -838,53 +852,53 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
             expected_server_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
             expected_attempt_events=[
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
         )
@@ -916,85 +930,85 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
             expected_server_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
             expected_attempt_events=[
                 (
                     "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Outbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
+                    {"sequence-number": 0, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "1", "message-size": "3"},
+                    {"sequence-number": 1, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "2", "message-size": "3"},
+                    {"sequence-number": 2, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "3", "message-size": "3"},
+                    {"sequence-number": 3, "message-size": 3},
                 ),
                 (
                     "Inbound message",
-                    {"sequence-number": "4", "message-size": "3"},
+                    {"sequence-number": 4, "message-size": 3},
                 ),
             ],
         )
