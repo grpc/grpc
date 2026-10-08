@@ -1375,7 +1375,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def _find_child_span(
         spans: Sequence[otel_trace.ReadableSpan],
         name_prefix: str,
-        parent: otel_trace.ReadableSpan
+        parent: otel_trace.ReadableSpan,
     ) -> Optional[otel_trace.ReadableSpan]:
         parent_span_id = parent.get_span_context().span_id
         return next(
@@ -1386,7 +1386,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 and span.parent is not None
                 and span.parent.span_id == parent_span_id
             ),
-            None
+            None,
         )
 
     def _validate_spans_exist(
@@ -1610,6 +1610,7 @@ class SharedTracerProviderTest(unittest.TestCase):
         self.assertIs(
             self._plugin_a._tracer.id_generator, self._provider.id_generator
         )
+
 
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
