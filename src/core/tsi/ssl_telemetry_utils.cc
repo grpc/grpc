@@ -48,7 +48,15 @@ TlsTelemetryHandshakeResult MapTsiResultToTlsTelemetryHandshakeResult(
 
 TlsTelemetryHandshakeResult MapVerifyResultToTlsTelemetryHandshakeResult(
     long verify_result) {
-  if (verify_result == X509_V_OK) return TlsTelemetryHandshakeResult::kSuccess;
+  // X509_V_ERR_INVALID_CALL will be returned by SSL_get_verify_result if
+  // the handshake fails for a reason unrelated to peer certificate
+  // verification. To avoid misleading users in this case, we do not append the
+  // verify result to the error message. In all of the cases where
+  // X509_V_ERR_INVALID_CALL is set during peer certificate verification, a more
+  // precise error will be added to the error queue.
+  if (verify_result == X509_V_OK || verify_result == X509_V_ERR_INVALID_CALL) {
+    return TlsTelemetryHandshakeResult::kSuccess;
+  }
   switch (verify_result) {
     case X509_V_ERR_CERT_REVOKED:
       return TlsTelemetryHandshakeResult::kCertificateRevoked;

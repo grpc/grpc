@@ -58,12 +58,12 @@
   allow_in_fuzzing_config: false
 - name: call_tracer_send_initial_metadata_is_an_annotation
   description: Use the new annotation-based CallTracer API.
-  expiry: 2026/10/01
+  expiry: 2026/02/01
   owner: aadik@google.com
   test_tags: []
 - name: call_tracer_send_trailing_metadata_is_an_annotation
   description: Use the new annotation-based CallTracer API.
-  expiry: 2026/10/01
+  expiry: 2026/02/01
   owner: aadik@google.com
   test_tags: []
 - name: callv3_batch_validation
@@ -115,14 +115,6 @@
       "event_engine_listener",
     ]
   platforms: ["all"]
-- name: event_engine_fork
-  description: Enables event engine fork handling, including onfork events and file descriptor generations
-  expiry: 2026/10/30
-  owner: mlumish@google.com
-  test_tags: ["core_end2end_test", "event_engine_fork_test"]
-  uses_polling: true
-  allow_in_fuzzing_config: false
-  platforms: ["all"]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
   expiry: 2026/10/30
@@ -145,7 +137,7 @@
   platforms: ["all"]
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2026/09/30
+  expiry: 2027/03/30
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: fuse_filters
@@ -169,6 +161,11 @@
   expiry: 2026/10/30
   owner: ritulb@google.com
   test_tags: []
+- name: internal_fix
+  description: Gate for the internal fix.
+  expiry: 2026/10/31
+  owner: bpawan@google.com
+  test_tags: []
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
@@ -181,6 +178,13 @@
   expiry: 2027/01/16
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
+- name: map_host_header_to_authority
+  description:
+    Map the HTTP host header directly to HttpAuthorityMetadata and reject
+    duplicate host/authority headers.
+  expiry: 2027/07/01
+  owner: rishesh@google.com
+  test_tags: ["core_end2end_test", "hpack_test"]
 - name: memory_optimization_01
   description: Memory Optimization
   expiry: 2026/10/30
@@ -245,7 +249,7 @@
   test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
-  expiry: 2026/10/01
+  expiry: 2026/02/01
   owner: aadik@google.com
   test_tags: [core_end2end_test]
 - name: ph2_client
@@ -283,7 +287,7 @@
   allow_in_fuzzing_config: true
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
-  expiry: 2026/10/01
+  expiry: 2027/02/01
   owner: roth@google.com
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
@@ -433,12 +437,12 @@
 - name: wildcard_ip_expansion_restriction
   description:
     If set, adds optional restriction on when to expand wildcard IPs.
-  expiry: 2026/10/01
+  expiry: 2027/03/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
 - name: xds_server_filter_chain_per_route
   description: xDS servers use a separate filter chain for each route.
-  expiry: 2026/10/01
+  expiry: 2026/10/31
   owner: roth@google.com
   test_tags: ["xds_end2end_test", "xds_test"]
   requires: ["v2_non_owning_waker_implementation"]

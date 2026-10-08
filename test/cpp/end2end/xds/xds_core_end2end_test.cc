@@ -196,7 +196,7 @@ class XdsServerTlsTest : public XdsEnd2endTest {
           auto [it, end] = md.equal_range("authorization");
           ASSERT_TRUE(it != end);
           absl::string_view value(it->second.data(), it->second.size());
-          grpc_core::MutexLock lock(&mu_);
+          grpc_core::MutexLock lock(mu_);
           seen_token_ = std::string(absl::StripPrefix(value, "Bearer "));
         });
   }
@@ -212,7 +212,7 @@ class XdsServerTlsTest : public XdsEnd2endTest {
   }
 
   std::string GetSeenToken() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return seen_token_;
   }
 
@@ -1382,7 +1382,7 @@ TEST_P(XdsMetricsTest, MetricValues) {
 
 TEST_P(XdsMetricsTest, SubchannelMetricsHaveLocalityAndBackendServiceLabels) {
   const std::string target = kServerName;
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateAndStartBackends(2);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
                         {"locality1", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));

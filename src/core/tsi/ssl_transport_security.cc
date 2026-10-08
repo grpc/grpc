@@ -584,7 +584,7 @@ void TlsOffloadSignDoneCallback(
   std::optional<HandshakerNextArgs> next_args;
   tsi_result result = TSI_INTERNAL_ERROR;
   {
-    grpc_core::MutexLock lock(&handshaker->mu);
+    grpc_core::MutexLock lock(handshaker->mu);
     if (handshaker->is_shutdown) return;
     handshaker->signed_bytes = std::move(signed_data);
     handshaker->signing_handle.reset();
@@ -798,7 +798,7 @@ void OnSelectCertificateDone(
   tsi_result next_result;
   std::optional<HandshakerNextArgs> next_args;
   {
-    grpc_core::MutexLock lock(&handshaker->mu);
+    grpc_core::MutexLock lock(handshaker->mu);
     if (handshaker->is_shutdown) return;
     if (!result.ok()) {
       VLOG(2) << "SelectCertificate failed " << result.status();
@@ -2551,12 +2551,19 @@ static SslHandshakeResult ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl)
         return {TSI_ASYNC, SSL_ERROR_NONE, 0};
 #endif
       default: {
-        char err_str[256];
+        char err_str[512];
         unsigned long err_code = ERR_get_error();
         ERR_error_string_n(err_code, err_str, sizeof(err_str));
         long verify_result = SSL_get_verify_result(impl->ssl);
         std::string verify_result_str;
-        if (verify_result != X509_V_OK) {
+        // X509_V_ERR_INVALID_CALL will be returned by SSL_get_verify_result if
+        // the handshake fails for a reason unrelated to peer certificate
+        // verification. To avoid misleading users in this case, we do not
+        // append the verify result to the error message. In all of the cases
+        // where X509_V_ERR_INVALID_CALL is set during peer certificate
+        // verification, a more precise error will be added to the error queue.
+        if (verify_result != X509_V_OK &&
+            verify_result != X509_V_ERR_INVALID_CALL) {
           const char* verify_err = X509_verify_cert_error_string(verify_result);
           verify_result_str = absl::StrCat(": ", verify_err);
         }
@@ -2811,7 +2818,7 @@ static tsi_result ssl_handshaker_next(
     return TSI_INVALID_ARGUMENT;
   }
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
-  grpc_core::MutexLock lock(&impl->mu);
+  grpc_core::MutexLock lock(impl->mu);
   if (impl->is_shutdown) {
     if (error != nullptr) *error = "Handshaker shutdown";
     return TSI_HANDSHAKE_SHUTDOWN;
@@ -2850,7 +2857,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self, bool peer_closed) {
   std::optional<HandshakerNextArgs> next_args;
 #endif  // defined(OPENSSL_IS_BORINGSSL)
   {
-    grpc_core::MutexLock lock(&impl->mu);
+    grpc_core::MutexLock lock(impl->mu);
     // Should never happen, if so something is very wrong
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;

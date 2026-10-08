@@ -872,7 +872,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
       << ", status=" << status << ", picker=" << picker.get() << ")";
   if (wrapper_->is_shutdown_) return;
   {
-    MutexLock lock(&wrapper_->lb_policy_->mu_);
+    MutexLock lock(wrapper_->lb_policy_->mu_);
     // TODO(roth): It looks like this ignores subsequent TF updates that
     // might change the status used to fail picks, which seems wrong.
     if (wrapper_->connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
@@ -973,7 +973,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
       << "[rlslb " << lb_policy_.get() << "] picker=" << this
       << ": request keys: " << key.ToString();
   Timestamp now = Timestamp::Now();
-  MutexLock lock(&lb_policy_->mu_);
+  MutexLock lock(lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
         absl::UnavailableError("LB policy already shut down"));
@@ -1090,7 +1090,7 @@ void RlsLb::Cache::Entry::BackoffTimer::Orphan() {
 
 void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimerLocked() {
   {
-    MutexLock lock(&entry_->lb_policy_->mu_);
+    MutexLock lock(entry_->lb_policy_->mu_);
     GRPC_TRACE_LOG(rls_lb, INFO)
         << "[rlslb " << entry_->lb_policy_.get()
         << "] cache entry=" << entry_.get() << " "
@@ -1418,7 +1418,7 @@ void RlsLb::Cache::OnCleanupTimer() {
       << "[rlslb " << lb_policy_ << "] cache cleanup timer fired";
   std::vector<RefCountedPtr<ChildPolicyWrapper>>
       child_policy_wrappers_to_delete;
-  MutexLock lock(&lb_policy_->mu_);
+  MutexLock lock(lb_policy_->mu_);
   if (!cleanup_timer_handle_.has_value()) return;
   if (lb_policy_->is_shutdown_) return;
   for (auto it = map_.begin(); it != map_.end();) {
@@ -1473,7 +1473,7 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
       << " StateWatcher=" << this << ": state changed to "
       << ConnectivityStateName(new_state) << " (" << status << ")";
   if (rls_channel_->is_shutdown_) return;
-  MutexLock lock(&lb_policy->mu_);
+  MutexLock lock(lb_policy->mu_);
   if (new_state == GRPC_CHANNEL_READY && was_transient_failure_) {
     was_transient_failure_ = false;
     // Reset the backoff of all cache entries, so that we don't
@@ -1691,7 +1691,7 @@ void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle /*error*/) {
 
 void RlsLb::RlsRequest::StartCallLocked() {
   {
-    MutexLock lock(&lb_policy_->mu_);
+    MutexLock lock(lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
   }
   Timestamp now = Timestamp::Now();
@@ -1781,7 +1781,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
       child_policy_wrappers_to_delete;
   OrphanablePtr<ChildPolicyHandler> child_policy_to_delete;
   {
-    MutexLock lock(&lb_policy_->mu_);
+    MutexLock lock(lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
     rls_channel_->ReportResponseLocked(response.status.ok());
     Cache::Entry* cache_entry =
@@ -1969,7 +1969,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
       child_policy_wrappers_to_delete;
   OrphanablePtr<ChildPolicyHandler> child_policy_to_delete;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // Swap out RLS channel if needed.
     if (old_config == nullptr ||
         config_->lookup_service() != old_config->lookup_service()) {
@@ -2026,7 +2026,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     registered_metric_callback_ =
         channel_control_helper()->GetStatsPluginGroup().RegisterCallback(
             [this](CallbackMetricReporter& reporter) {
-              MutexLock lock(&mu_);
+              MutexLock lock(mu_);
               cache_.ReportMetricsLocked(reporter);
             },
             Duration::Seconds(5), kMetricCacheSize, kMetricCacheEntries);
@@ -2047,7 +2047,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
 }
 
 void RlsLb::ExitIdleLocked() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   for (auto& [_, child] : child_policy_map_) {
     child->ExitIdleLocked();
   }
@@ -2055,7 +2055,7 @@ void RlsLb::ExitIdleLocked() {
 
 void RlsLb::ResetBackoffLocked() {
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     rls_channel_->ResetBackoff();
     cache_.ResetAllBackoff();
   }
@@ -2072,7 +2072,7 @@ void RlsLb::ShutdownLocked() {
       child_policy_wrappers_to_delete;
   OrphanablePtr<RlsChannel> rls_channel_to_delete;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     is_shutdown_ = true;
     config_.reset(DEBUG_LOCATION, "ShutdownLocked");
     child_policy_wrappers_to_delete = cache_.Shutdown();
@@ -2105,7 +2105,7 @@ void RlsLb::UpdatePickerLocked() {
     int num_idle = 0;
     int num_connecting = 0;
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (is_shutdown_) return;
       for (auto& [_, child] : child_policy_map_) {
         grpc_connectivity_state child_state = child->connectivity_state();

@@ -65,7 +65,7 @@ MATCHER_P(StatusIs, status, "") {
 class StatusListener {
  public:
   absl::Status AwaitStatus() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     while (statuses_.empty()) {
       cond_.Wait(&mu_);
     }
@@ -79,7 +79,7 @@ class StatusListener {
 
   absl::AnyInvocable<void(absl::Status)> Setter() {
     return [&](absl::Status status) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       statuses_.emplace_back(std::move(status));
       cond_.SignalAll();
     };
@@ -177,7 +177,7 @@ class PollerForkTest : public ::testing::Test {
     // Setup listener and establish socket connection, confirm they work
     auto listener_and_address = SetupListener(
         [&](auto endpoint, MemoryAllocator /* memory */) {
-          grpc_core::MutexLock lock(&mu_);
+          grpc_core::MutexLock lock(mu_);
           endpoints_.emplace(std::move(endpoint));
           cond_.SignalAll();
         },
@@ -194,7 +194,7 @@ class PollerForkTest : public ::testing::Test {
 
   void TearDown() override {
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       EXPECT_THAT(endpoints_, ::testing::IsEmpty());
       endpoints_ = {};
     }
@@ -205,7 +205,7 @@ class PollerForkTest : public ::testing::Test {
   }
 
   std::unique_ptr<EventEngine::Endpoint> AwaitEndpoint() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     while (endpoints_.empty()) {
       cond_.Wait(&mu_);
     }
