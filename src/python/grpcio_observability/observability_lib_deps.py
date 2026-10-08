@@ -27,6 +27,7 @@ CC_FILES=[
     'grpc_root/src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c',
     'grpc_root/src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c',
     'grpc_root/src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c',
+    'grpc_root/src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c',
     'grpc_root/src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c',
     'grpc_root/src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c',
     'grpc_root/src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c',
