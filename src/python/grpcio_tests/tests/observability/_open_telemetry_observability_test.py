@@ -1144,64 +1144,39 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         span_ids = {span.get_span_context().span_id for span in spans}
 
         root_client_span = next(
-            s for s in spans if s.name.startswith("Sent.") and not s.parent
+            (s for s in spans if s.name.startswith("Sent.") and not s.parent),
+            None,
         )
         self.assertIsNotNone(root_client_span, "Root client span not found")
 
-        attempt_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Attempt.")
-            and (
-                s.parent.span_id == root_client_span.get_span_context().span_id
-            )
+        attempt_span = self._find_child_span(
+            spans, "Attempt.", root_client_span
         )
         self.assertIsNotNone(attempt_span, "Attempt span not found")
 
-        propagating_server_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Recv.")
-            and (s.parent.span_id == attempt_span.get_span_context().span_id)
+        propagating_server_span = self._find_child_span(
+            spans, "Recv.", attempt_span
         )
         self.assertIsNotNone(
             propagating_server_span, "Propagating server span not found"
         )
 
-        propagating_client_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Sent.")
-            and (
-                s.parent.span_id
-                == propagating_server_span.get_span_context().span_id
-            )
+        propagating_client_span = self._find_child_span(
+            spans, "Sent.", propagating_server_span
         )
         self.assertIsNotNone(
             propagating_client_span, "Propagating client span not found"
         )
 
-        propagating_attempt_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Attempt.")
-            and (
-                s.parent.span_id
-                == propagating_client_span.get_span_context().span_id
-            )
+        propagating_attempt_span = self._find_child_span(
+            spans, "Attempt.", propagating_client_span
         )
         self.assertIsNotNone(
             propagating_attempt_span, "Propagating attempt span not found"
         )
 
-        server_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Recv.")
-            and (
-                s.parent.span_id
-                == propagating_attempt_span.get_span_context().span_id
-            )
+        server_span = self._find_child_span(
+            spans, "Recv.", propagating_attempt_span
         )
         self.assertIsNotNone(server_span, "Server span not found")
 
@@ -1303,72 +1278,44 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         )
 
         root_client_span = next(
-            s for s in spans if s.name.startswith("Sent.") and not s.parent
+            (s for s in spans if s.name.startswith("Sent.") and not s.parent),
+            None,
         )
         self.assertIsNotNone(root_client_span, "Root client span not found")
 
-        attempt_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Attempt.")
-            and (
-                s.parent.span_id == root_client_span.get_span_context().span_id
-            )
+        attempt_span = self._find_child_span(
+            spans, "Attempt.", root_client_span
         )
         self.assertIsNotNone(attempt_span, "Attempt span not found")
 
-        propagating_server_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Recv.")
-            and (s.parent.span_id == attempt_span.get_span_context().span_id)
+        propagating_server_span = self._find_child_span(
+            spans, "Recv.", attempt_span
         )
         self.assertIsNotNone(
             propagating_server_span, "Propagating server span not found"
         )
 
-        application_span = next(
-            s
-            for s in spans
-            if s.name.startswith(_test_server.APPLICATION_SPAN_NAME)
-            and (
-                s.parent.span_id
-                == propagating_server_span.get_span_context().span_id
-            )
+        application_span = self._find_child_span(
+            spans, _test_server.APPLICATION_SPAN_NAME, propagating_server_span
         )
         self.assertIsNotNone(application_span, "Application span not found")
 
-        propagating_client_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Sent.")
-            and s.parent.span_id == application_span.get_span_context().span_id
+        propagating_client_span = self._find_child_span(
+            spans, "Sent.", application_span
         )
         self.assertIsNotNone(
             propagating_client_span, "Propagating client span not found"
         )
 
-        propagating_attempt_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Attempt.")
-            and (
-                s.parent.span_id
-                == propagating_client_span.get_span_context().span_id
-            )
+        propagating_attempt_span = self._find_child_span(
+            spans, "Attempt.", propagating_client_span
         )
         self.assertIsNotNone(
             propagating_attempt_span, "Propagating attempt span not found"
         )
 
-        server_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Recv.")
-            and (
-                s.parent.span_id
-                == propagating_attempt_span.get_span_context().span_id
-            )
+        server_span = self._find_child_span(
+            spans, "Recv.", propagating_attempt_span
         )
         self.assertIsNotNone(server_span, "Server span not found")
 
@@ -1423,6 +1370,24 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     base_metric.name in metric_names,
                     msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
                 )
+
+    @staticmethod
+    def _find_child_span(
+        spans: Sequence[otel_trace.ReadableSpan],
+        name_prefix: str,
+        parent: otel_trace.ReadableSpan
+    ) -> Optional[otel_trace.ReadableSpan]:
+        parent_span_id = parent.get_span_context().span_id
+        return next(
+            (
+                span
+                for span in spans
+                if span.name.startswith(name_prefix)
+                and span.parent is not None
+                and span.parent.span_id == parent_span_id
+            ),
+            None
+        )
 
     def _validate_spans_exist(
         self,
