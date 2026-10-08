@@ -318,12 +318,10 @@ def _on_rpc_done(
     if exception is not None:
         with _global_lock:
             _global_rpcs_failed[method] += 1
+        msg = exception
+        if future.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+            msg = f"RPC {rpc_id} timed out"
         if print_response:
-            msg = (
-                f"RPC {rpc_id} timed out"
-                if future.code() == grpc.StatusCode.DEADLINE_EXCEEDED
-                else exception
-            )
             logger.error(msg)
     else:
         response = future.result()
