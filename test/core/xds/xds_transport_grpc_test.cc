@@ -16,7 +16,7 @@
 
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 
-#include <grpc/credentials.h>
+#include <grpc/channel_factory.h>
 #include <grpc/grpc.h>
 
 #include <memory>
@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/client_channel/channel_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/json/json_reader.h"
@@ -31,6 +32,7 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/grpc/xds_transport_factory_grpc.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
@@ -44,7 +46,7 @@ namespace testing {
 namespace {
 
 class FakeStreamingCallEventHandler
-    : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+    : public XdsTransport::StreamingCall::EventHandler {
  public:
   explicit FakeStreamingCallEventHandler(
       absl::Notification* on_status_received = nullptr,
@@ -214,8 +216,7 @@ TEST_F(GrpcXdsTransportTest, StreamingCallOrphan) {
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
                                                       &call_status),
-      XdsTransportFactory::XdsTransport::CallOptions().set_wait_for_ready(
-          true));
+      XdsTransport::CallOptions().set_wait_for_ready(true));
   ASSERT_NE(call, nullptr);
   exec_ctx.Flush();
   on_status_received.WaitForNotification();
@@ -268,8 +269,7 @@ TEST_F(GrpcXdsTransportTest, UnaryCall) {
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
                                                       &call_status),
-      XdsTransportFactory::XdsTransport::CallOptions()
-          .set_start_upon_send_message(true));
+      XdsTransport::CallOptions().set_start_upon_send_message(true));
   ASSERT_NE(call, nullptr);
   call->StartRecvMessage();
   call->SendMessage("request", /*send_half_close=*/true);
@@ -296,7 +296,7 @@ TEST_F(GrpcXdsTransportTest, UnaryCallWithWaitForReady) {
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received,
                                                       &call_status),
-      XdsTransportFactory::XdsTransport::CallOptions()
+      XdsTransport::CallOptions()
           .set_start_upon_send_message(true)
           .set_wait_for_ready(true));
   ASSERT_NE(call, nullptr);
@@ -325,8 +325,7 @@ TEST_F(GrpcXdsTransportTest, UnaryCallOrphanedBeforeSendMessage) {
   auto call = transport->CreateStreamingCall(
       "/test.Service/TestMethod",
       std::make_unique<FakeStreamingCallEventHandler>(&on_status_received),
-      XdsTransportFactory::XdsTransport::CallOptions()
-          .set_start_upon_send_message(true));
+      XdsTransport::CallOptions().set_start_upon_send_message(true));
   ASSERT_NE(call, nullptr);
   call.reset();
   exec_ctx.Flush();
@@ -334,10 +333,10 @@ TEST_F(GrpcXdsTransportTest, UnaryCallOrphanedBeforeSendMessage) {
 }
 
 // Returns the XdsTransport inside an
-// experimental::TransportFactory::TransportHandle.
+// experimental::ChannelFactory::ChannelHandle.
 XdsTransport* GetXdsTransport(
-    const experimental::TransportFactory::TransportHandle& transport) {
-  return DownCast<const TransportImpl&>(transport).transport().get();
+    const experimental::ChannelFactory::ChannelHandle& channel) {
+  return DownCast<const ChannelHandleImpl&>(channel).transport().get();
 }
 
 // Starts a streaming call on transport and returns its final status.
@@ -358,56 +357,49 @@ absl::Status RunStreamingCall(XdsTransport& transport) {
 
 TEST_F(GrpcXdsTransportTest, WrapperKnownKeyReturnsFactoryTransport) {
   ExecCtx exec_ctx;
-  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
-                             /*call_creds_configs=*/{},
-                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  auto target = std::make_shared<GrpcXdsServerTarget>(
+      server_uri_, channel_creds_config_,
+      /*call_creds_configs=*/
+      std::vector<RefCountedPtr<const CallCredsConfig>>{},
+      /*initial_metadata=*/std::vector<std::pair<std::string, std::string>>{},
+      Duration::Seconds(10));
   XdsTransportFactoryWrapper::TargetMap targets;
   targets.emplace("key1", target);
   XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
-  auto transport = wrapper.CreateTransport("key1");
-  ASSERT_NE(transport, nullptr);
+  auto channel = wrapper.CreateChannel("key1");
+  ASSERT_NE(channel, nullptr);
   absl::Status status;
-  auto factory_transport = factory_->GetTransport(target, &status);
+  auto factory_transport = factory_->GetTransport(*target, &status);
   ASSERT_TRUE(status.ok()) << status;
-  EXPECT_EQ(GetXdsTransport(*transport), factory_transport.get());
+  EXPECT_EQ(GetXdsTransport(*channel), factory_transport.get());
 }
 
 TEST_F(GrpcXdsTransportTest, WrapperTwoKeysSameTargetShareTransport) {
   ExecCtx exec_ctx;
-  GrpcXdsServerTarget target(server_uri_, channel_creds_config_,
-                             /*call_creds_configs=*/{},
-                             /*initial_metadata=*/{}, Duration::Seconds(10));
+  auto target = std::make_shared<GrpcXdsServerTarget>(
+      server_uri_, channel_creds_config_,
+      /*call_creds_configs=*/
+      std::vector<RefCountedPtr<const CallCredsConfig>>{},
+      /*initial_metadata=*/std::vector<std::pair<std::string, std::string>>{},
+      Duration::Seconds(10));
   XdsTransportFactoryWrapper::TargetMap targets;
   targets.emplace("key1", target);
   targets.emplace("key2", target);
   XdsTransportFactoryWrapper wrapper(factory_, std::move(targets));
-  auto transport1 = wrapper.CreateTransport("key1");
-  auto transport2 = wrapper.CreateTransport("key2");
-  ASSERT_NE(transport1, nullptr);
-  ASSERT_NE(transport2, nullptr);
-  EXPECT_EQ(GetXdsTransport(*transport1), GetXdsTransport(*transport2));
+  auto channel1 = wrapper.CreateChannel("key1");
+  auto channel2 = wrapper.CreateChannel("key2");
+  ASSERT_NE(channel1, nullptr);
+  ASSERT_NE(channel2, nullptr);
+  EXPECT_EQ(GetXdsTransport(*channel1), GetXdsTransport(*channel2));
 }
 
 TEST_F(GrpcXdsTransportTest, WrapperUnknownKeyReturnsLameTransport) {
   XdsTransportFactoryWrapper wrapper(factory_, /*targets=*/{});
-  auto transport = wrapper.CreateTransport("unknown");
-  ASSERT_NE(transport, nullptr);
-  absl::Status call_status = RunStreamingCall(*GetXdsTransport(*transport));
+  auto channel = wrapper.CreateChannel("unknown");
+  ASSERT_NE(channel, nullptr);
+  absl::Status call_status = RunStreamingCall(*GetXdsTransport(*channel));
   EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
-  EXPECT_EQ(call_status.message(), "transport key not allowed: unknown");
-}
-
-// Without wait-for-ready, a call on the channel transport fails with
-// UNAVAILABLE when the connection attempt fails.  It must not fail with
-// DEADLINE_EXCEEDED, because the channel transport has no deadline.
-TEST_F(GrpcXdsTransportTest, ChannelTransportCallHasNoDeadline) {
-  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  auto transport = experimental::TransportFactory::CreateChannelTransport(
-      server_uri_, creds);
-  grpc_channel_credentials_release(creds);
-  ASSERT_NE(transport, nullptr);
-  absl::Status call_status = RunStreamingCall(*GetXdsTransport(*transport));
-  EXPECT_EQ(call_status.code(), absl::StatusCode::kUnavailable) << call_status;
+  EXPECT_EQ(call_status.message(), "channel key not allowed: unknown");
 }
 
 class GrpcXdsServerTargetTest : public ::testing::Test {

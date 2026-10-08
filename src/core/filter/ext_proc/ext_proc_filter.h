@@ -34,6 +34,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "src/core/xds/xds_client/xds_transport_factory.h"
 
 namespace grpc_core {
 
@@ -133,13 +134,11 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       return server_;
     }
 
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport() const {
-      return transport_;
-    }
+    RefCountedPtr<XdsTransport> transport() const { return transport_; }
 
    private:
     std::shared_ptr<const XdsBootstrap::XdsServerTarget> server_;
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransport> transport_;
   };
 
  private:

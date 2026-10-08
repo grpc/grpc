@@ -85,7 +85,7 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
     WaitForSingleOwner(std::move(event_engine_));
   }
 
-  using CallOptions = XdsTransportFactory::XdsTransport::CallOptions;
+  using CallOptions = XdsTransport::CallOptions;
 
   void InitStream(bool auto_complete_messages_from_client = true,
                   CallOptions options = CallOptions()) {
@@ -109,7 +109,7 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
   std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   std::unique_ptr<FakeXdsServerTarget> target_;
-  RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+  RefCountedPtr<XdsTransport> transport_;
   RefCountedPtr<XdsStreamingCallPromiseWrapper> wrapper_;
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> stream_;
 };

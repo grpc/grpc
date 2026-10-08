@@ -44,6 +44,7 @@
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "src/core/xds/xds_client/xds_transport_factory.h"
 #include "upb/reflection/def.hpp"
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
@@ -291,7 +292,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
     std::shared_ptr<const XdsBootstrap::XdsServerTarget> server_;
 
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransport> transport_;
 
     // The retryable LRS call.
     OrphanablePtr<RetryableCall<LrsCall>> lrs_call_;

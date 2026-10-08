@@ -20,15 +20,12 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/transport_factory.h>
 
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -38,18 +35,13 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
-#include "src/core/xds/grpc/certificate_provider_store_interface.h"
-#include "src/core/xds/grpc/xds_server_grpc.h"
-#include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/inlined_vector.h"
-#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-class XdsClient;
 
 // An XdsTransport that uses a gRPC channel.  It has no xDS-specific
 // dependencies: the factory that creates it does all of the work with
@@ -112,35 +104,6 @@ class GrpcXdsTransport final : public XdsTransport {
   absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>,
                       AsyncConnectivityStateWatcherInterface*>
       watchers_ ABSL_GUARDED_BY(&mu_);
-};
-
-class GrpcXdsTransportFactory final : public XdsTransportFactory {
- public:
-  GrpcXdsTransportFactory(const ChannelArgs& args,
-                          RefCountedPtr<CertificateProviderStoreInterface>
-                              certificate_provider_store);
-  ~GrpcXdsTransportFactory() override;
-
-  void Orphaned() override {}
-
-  RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServerTarget& server,
-      absl::Status* status) override;
-
-  grpc_pollset_set* interested_parties() const { return interested_parties_; }
-
- private:
-  class XdsSharedChannel;
-
-  ChannelArgs args_;
-  RefCountedPtr<CertificateProviderStoreInterface> certificate_provider_store_;
-  grpc_pollset_set* interested_parties_;
-
-  Mutex mu_;
-  absl::flat_hash_map<std::string /*XdsServerTarget key*/, GrpcXdsTransport*>
-      transports_ ABSL_GUARDED_BY(&mu_);
-  absl::flat_hash_map<std::string /*Channel key*/, XdsSharedChannel*> channels_
-      ABSL_GUARDED_BY(&mu_);
 };
 
 class GrpcStreamingCall final : public XdsTransport::StreamingCall {
@@ -215,51 +178,6 @@ class GrpcStreamingCall final : public XdsTransport::StreamingCall {
 
   const XdsTransport::CallOptions options_;
 };
-
-// The concrete experimental::TransportFactory::TransportHandle returned by the
-// factories in this file.  Callers can DownCast to this type to get the
-// XdsTransport.
-class TransportImpl final
-    : public experimental::TransportFactory::TransportHandle {
- public:
-  explicit TransportImpl(RefCountedPtr<XdsTransport> transport)
-      : transport_(std::move(transport)) {}
-
-  const RefCountedPtr<XdsTransport>& transport() const { return transport_; }
-
- private:
-  RefCountedPtr<XdsTransport> transport_;
-};
-
-// A TransportFactory for the xDS case.  Only the keys in the map are
-// supported: an unknown key gets a lame transport.  Transports come from
-// the XdsClient's existing GrpcXdsTransportFactory, so channels are shared
-// with other xDS users.
-class XdsTransportFactoryWrapper final : public experimental::TransportFactory {
- public:
-  using TargetMap =
-      absl::flat_hash_map<std::string /*key*/, GrpcXdsServerTarget>;
-
-  // Gets the GrpcXdsTransportFactory from xds_client.
-  static std::shared_ptr<experimental::TransportFactory> Create(
-      const XdsClient& xds_client, TargetMap targets);
-
-  XdsTransportFactoryWrapper(
-      RefCountedPtr<GrpcXdsTransportFactory> transport_factory,
-      TargetMap targets);
-
-  std::unique_ptr<TransportHandle> CreateTransport(
-      absl::string_view key) override;
-
- private:
-  RefCountedPtr<GrpcXdsTransportFactory> transport_factory_;
-  // Does not change after construction, so no lock is needed.
-  const TargetMap targets_;
-};
-
-// Extracts TransportFactory from ChannelArgs. Returns nullptr if not set.
-std::shared_ptr<experimental::TransportFactory>
-GetTransportFactoryFromChannelArgs(const ChannelArgs& args);
 
 }  // namespace grpc_core
 

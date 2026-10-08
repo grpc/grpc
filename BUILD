@@ -329,7 +329,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_audit_logging.h",
     "include/grpc/grpc_crl_provider.h",
     "include/grpc/private_key_signer.h",
-    "include/grpc/transport_factory.h",
+    "include/grpc/channel_factory.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -668,6 +668,7 @@ grpc_cc_library(
         "server",
         "transport_auth_context",
         "//src/core:channel_args",
+        "//src/core:channel_factory",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:client_channel_backup_poller",
@@ -774,6 +775,7 @@ grpc_cc_library(
         "tsi_base",
         "uri",
         "//src/core:channel_args",
+        "//src/core:channel_factory",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:channelz_v2tov1_legacy_api",
@@ -4721,9 +4723,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "xds_transport_interface",
+    name = "xds_transport",
     hdrs = [
-        "//src/core:xds/xds_client/xds_transport_interface.h",
+        "//src/core:xds/xds_client/xds_transport.h",
     ],
     external_deps = [
         "absl/status",
@@ -4756,7 +4758,7 @@ grpc_cc_library(
         "//src/core:xds/xds_client/xds_metrics.h",
         "//src/core:xds/xds_client/xds_resource_type.h",
         "//src/core:xds/xds_client/xds_resource_type_impl.h",
-        "//src/core:xds/xds_client/xds_transport.h",
+        "//src/core:xds/xds_client/xds_transport_factory.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4796,7 +4798,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "uri",
         "work_serializer",
-        "xds_transport_interface",
+        "xds_transport",
         "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:experiment_env_var",

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_TRANSPORT_FACTORY_H
-#define GRPC_TRANSPORT_FACTORY_H
+#ifndef GRPC_CHANNEL_FACTORY_H
+#define GRPC_CHANNEL_FACTORY_H
 
 #include <grpc/credentials.h>
 #include <grpc/impl/grpc_types.h>
@@ -28,48 +28,48 @@
 #include "absl/strings/string_view.h"
 
 // Channel argument key for a pointer to a
-// std::shared_ptr<grpc_core::experimental::TransportFactory>, stored with
-// TransportFactory::ChannelArgVtable().
-#define GRPC_ARG_TRANSPORT_FACTORY "grpc.sidechannel.transport_factory"
+// std::shared_ptr<grpc_core::experimental::ChannelFactory>, stored with
+// ChannelFactory::ChannelArgVtable().
+#define GRPC_ARG_CHANNEL_FACTORY "grpc.sidechannel.channel_factory"
 
 namespace grpc_core {
 namespace experimental {
 
 // Implementations of this class must be thread-safe.
-class TransportFactory {
+class ChannelFactory {
  public:
-  // Opaque handle representing a side-channel transport (not a
-  // grpc_core::Transport). A TransportHandle may outlive the TransportFactory
+  // Opaque handle representing a side-channel (not a
+  // grpc_core::Channel). A ChannelHandle may outlive the ChannelFactory
   // that created it.
-  class TransportHandle {
+  class ChannelHandle {
    public:
-    virtual ~TransportHandle() = default;
+    virtual ~ChannelHandle() = default;
   };
 
-  virtual ~TransportFactory() = default;
+  virtual ~ChannelFactory() = default;
 
-  // Creates a transport for key. Must be thread-safe.
-  // Implementations must return a TransportHandle obtained from
-  // CreateChannelTransport(), CreateLameTransport(), or another gRPC-provided
-  // TransportFactory, because gRPC core downcasts the returned handle.
-  virtual std::unique_ptr<TransportHandle> CreateTransport(
+  // Creates a channel for key. Must be thread-safe.
+  // Implementations must return a ChannelHandle obtained from
+  // CreateCoreChannel(), CreateLameChannel(), or another gRPC-provided
+  // ChannelFactory, because gRPC core downcasts the returned handle.
+  virtual std::unique_ptr<ChannelHandle> CreateChannel(
       absl::string_view key) = 0;
 
-  // Returns the channel argument vtable for std::shared_ptr<TransportFactory>.
+  // Returns the channel argument vtable for std::shared_ptr<ChannelFactory>.
   static const grpc_arg_pointer_vtable* ChannelArgVtable();
 
-  // Creates a channel-backed transport. Returns a lame transport on failure.
+  // Creates a core channel. Returns a lame channel on failure.
   // Does not take ownership of creds.
-  static std::unique_ptr<TransportHandle> CreateChannelTransport(
+  static std::unique_ptr<ChannelHandle> CreateCoreChannel(
       absl::string_view target, grpc_channel_credentials* creds);
 
-  // Creates a lame transport. RPCs on it fail with status.
+  // Creates a lame channel. RPCs on it fail with status.
   // status must not be OK.
-  static std::unique_ptr<TransportHandle> CreateLameTransport(
+  static std::unique_ptr<ChannelHandle> CreateLameChannel(
       absl::string_view target, absl::Status status);
 };
 
 }  // namespace experimental
 }  // namespace grpc_core
 
-#endif /* GRPC_TRANSPORT_FACTORY_H */
+#endif /* GRPC_CHANNEL_FACTORY_H */
