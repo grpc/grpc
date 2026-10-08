@@ -42,14 +42,14 @@ const upb_MiniTable xds__core__v3__ResourceLocator_msg_init = {
   "xds.core.v3.ResourceLocator",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x002000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x003000003f000022, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0048000c0509002a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x004000003f0a0032, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -73,20 +73,20 @@ const upb_MiniTable xds__core__v3__ResourceLocator__Directive_msg_init = {
   "xds.core.v3.ResourceLocator.Directive",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080103000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x0010000802000012, &upb_DecodeFast_String_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_xds_core_v3_resource_locator_proto_upb_file_layout[2] = {
   &xds__core__v3__ResourceLocator_msg_init,
   &xds__core__v3__ResourceLocator__Directive_msg_init,
 };
 
 const upb_MiniTableFile xds_core_v3_resource_locator_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_core_v3_resource_locator_proto_upb_file_layout,
   NULL,
   NULL,
   2,

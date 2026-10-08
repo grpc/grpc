@@ -1459,7 +1459,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/json/encode.c \
     third_party/upb/upb/lex/atoi.c \
     third_party/upb/upb/lex/round_trip.c \
-    third_party/upb/upb/lex/strtod.c \
     third_party/upb/upb/lex/unicode.c \
     third_party/upb/upb/mem/alloc.c \
     third_party/upb/upb/mem/arena.c \
@@ -1474,6 +1473,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/message/map_sorter.c \
     third_party/upb/upb/message/merge.c \
     third_party/upb/upb/message/message.c \
+    third_party/upb/upb/message/unknown_fields.c \
     third_party/upb/upb/mini_descriptor/build_enum.c \
     third_party/upb/upb/mini_descriptor/decode.c \
     third_party/upb/upb/mini_descriptor/internal/base92.c \
@@ -1483,6 +1483,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mini_table/generated_registry.c \
     third_party/upb/upb/mini_table/internal/message.c \
     third_party/upb/upb/mini_table/message.c \
+    third_party/upb/upb/port/port.c \
     third_party/upb/upb/reflection/def_pool.c \
     third_party/upb/upb/reflection/def_type.c \
     third_party/upb/upb/reflection/desc_state.c \
@@ -1506,7 +1507,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/wire/decode_fast/select.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/internal/back_alloc.c \
     third_party/upb/upb/wire/internal/decoder.c \
+    third_party/upb/upb/wire/internal/encoder.c \
     third_party/upb/upb/wire/reader.c \
     third_party/utf8_range/utf8_range.c \
     , $ext_shared, , -fvisibility=hidden \
@@ -1847,6 +1850,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/port)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)

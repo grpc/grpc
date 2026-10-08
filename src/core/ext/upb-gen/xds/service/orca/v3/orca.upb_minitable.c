@@ -36,19 +36,19 @@ const upb_MiniTable xds__service__orca__v3__OrcaLoadReportRequest_msg_init = {
   "xds.service.orca.v3.OrcaLoadReportRequest",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001800003f000012, &upb_DecodeFast_String_Repeated_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_xds_service_orca_v3_orca_proto_upb_file_layout[1] = {
   &xds__service__orca__v3__OrcaLoadReportRequest_msg_init,
 };
 
 const upb_MiniTableFile xds_service_orca_v3_orca_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_service_orca_v3_orca_proto_upb_file_layout,
   NULL,
   NULL,
   1,

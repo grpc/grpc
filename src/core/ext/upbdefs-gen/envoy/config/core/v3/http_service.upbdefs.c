@@ -16,7 +16,7 @@ extern _upb_DefPool_Init envoy_config_core_v3_http_uri_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[511] = {
+static const char descriptor_envoy_config_core_v3_http_service_proto_upbdefinit[511] = {
     '\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'h',
     't', 't', 'p', '_', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.',
@@ -62,7 +62,7 @@ static const char descriptor[511] = {
     '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[5] = {
+static _upb_DefPool_Init* deps_envoy_config_core_v3_http_service_proto_upbdefinit[5] = {
     &envoy_config_core_v3_base_proto_upbdefinit,
     &envoy_config_core_v3_http_uri_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
@@ -71,8 +71,9 @@ static _upb_DefPool_Init *deps[5] = {
 };
 
 _upb_DefPool_Init envoy_config_core_v3_http_service_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_core_v3_http_service_proto_upbdefinit,
     &envoy_config_core_v3_http_service_proto_upb_file_layout,
     "envoy/config/core/v3/http_service.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_core_v3_http_service_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_core_v3_http_service_proto_upbdefinit)),
 };

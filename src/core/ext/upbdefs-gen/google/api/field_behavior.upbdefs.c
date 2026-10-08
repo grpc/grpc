@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 
-static const char descriptor[488] = {
+static const char descriptor_google_api_field_behavior_proto_upbdefinit[488] = {
     '\n', '\037', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'a', 'p', 'i',
     '/', 'f', 'i', 'e', 'l', 'd', '_', 'b', 'e', 'h', 'a', 'v',
     'i', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\n', 'g',
@@ -57,14 +57,15 @@ static const char descriptor[488] = {
     'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_google_api_field_behavior_proto_upbdefinit[2] = {
     &google_protobuf_descriptor_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init google_api_field_behavior_proto_upbdefinit = {
-    deps,
+    deps_google_api_field_behavior_proto_upbdefinit,
     &google_api_field_behavior_proto_upb_file_layout,
     "google/api/field_behavior.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_api_field_behavior_proto_upbdefinit,
+                        sizeof(descriptor_google_api_field_behavior_proto_upbdefinit)),
 };

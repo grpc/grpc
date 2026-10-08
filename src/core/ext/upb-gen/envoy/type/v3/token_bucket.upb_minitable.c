@@ -36,22 +36,24 @@ static const envoy__type__v3__TokenBucket_msg_init_Fields envoy_type_v3_TokenBuc
 
 const upb_MiniTable envoy__type__v3__TokenBucket_msg_init = {
   &envoy_type_v3_TokenBucket__fields.fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.v3.TokenBucket",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0010000000050012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x001800000106001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_type_v3_token_bucket_proto_upb_file_layout[1] = {
   &envoy__type__v3__TokenBucket_msg_init,
 };
 
 const upb_MiniTableFile envoy_type_v3_token_bucket_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_v3_token_bucket_proto_upb_file_layout,
   NULL,
   NULL,
   1,

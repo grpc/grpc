@@ -40,7 +40,8 @@ class Metadata extends \Google\Protobuf\Internal\Message
      *     @type string $value
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

@@ -14,7 +14,7 @@
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 
-static const char descriptor[439] = {
+static const char descriptor_envoy_admin_v3_mutex_stats_proto_upbdefinit[439] = {
     '\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i',
     'n', '/', 'v', '3', '/', 'm', 'u', 't', 'e', 'x', '_', 's',
     't', 'a', 't', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\016',
@@ -54,15 +54,16 @@ static const char descriptor[439] = {
     '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[3] = {
+static _upb_DefPool_Init* deps_envoy_admin_v3_mutex_stats_proto_upbdefinit[3] = {
     &udpa_annotations_status_proto_upbdefinit,
     &udpa_annotations_versioning_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_admin_v3_mutex_stats_proto_upbdefinit = {
-    deps,
+    deps_envoy_admin_v3_mutex_stats_proto_upbdefinit,
     &envoy_admin_v3_mutex_stats_proto_upb_file_layout,
     "envoy/admin/v3/mutex_stats.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_admin_v3_mutex_stats_proto_upbdefinit,
+                        sizeof(descriptor_envoy_admin_v3_mutex_stats_proto_upbdefinit)),
 };

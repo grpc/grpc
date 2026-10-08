@@ -22,7 +22,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[9079] = {
+static const char descriptor_envoy_data_accesslog_v3_accesslog_proto_upbdefinit[9079] = {
     '\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'd', 'a', 't', 'a',
     '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '/', 'v',
     '3', '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.',
@@ -782,7 +782,7 @@ static const char descriptor[9079] = {
     '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[11] = {
+static _upb_DefPool_Init* deps_envoy_data_accesslog_v3_accesslog_proto_upbdefinit[11] = {
     &envoy_config_core_v3_address_proto_upbdefinit,
     &envoy_config_core_v3_base_proto_upbdefinit,
     &google_protobuf_any_proto_upbdefinit,
@@ -797,8 +797,9 @@ static _upb_DefPool_Init *deps[11] = {
 };
 
 _upb_DefPool_Init envoy_data_accesslog_v3_accesslog_proto_upbdefinit = {
-    deps,
+    deps_envoy_data_accesslog_v3_accesslog_proto_upbdefinit,
     &envoy_data_accesslog_v3_accesslog_proto_upb_file_layout,
     "envoy/data/accesslog/v3/accesslog.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_data_accesslog_v3_accesslog_proto_upbdefinit,
+                        sizeof(descriptor_envoy_data_accesslog_v3_accesslog_proto_upbdefinit)),
 };

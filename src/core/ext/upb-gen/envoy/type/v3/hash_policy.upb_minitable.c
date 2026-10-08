@@ -33,10 +33,16 @@ static const envoy__type__v3__HashPolicy_msg_init_Fields envoy_type_v3_HashPolic
 
 const upb_MiniTable envoy__type__v3__HashPolicy_msg_init = {
   &envoy_type_v3_HashPolicy__fields.fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.v3.HashPolicy",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080103000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000802040012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 const upb_MiniTable envoy__type__v3__HashPolicy__SourceIp_msg_init = {
@@ -62,19 +68,19 @@ const upb_MiniTable envoy__type__v3__HashPolicy__FilterState_msg_init = {
   "envoy.type.v3.HashPolicy.FilterState",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[3] = {
+static const upb_MiniTable *messages_layout_envoy_type_v3_hash_policy_proto_upb_file_layout[3] = {
   &envoy__type__v3__HashPolicy_msg_init,
   &envoy__type__v3__HashPolicy__SourceIp_msg_init,
   &envoy__type__v3__HashPolicy__FilterState_msg_init,
 };
 
 const upb_MiniTableFile envoy_type_v3_hash_policy_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_v3_hash_policy_proto_upb_file_layout,
   NULL,
   NULL,
   3,

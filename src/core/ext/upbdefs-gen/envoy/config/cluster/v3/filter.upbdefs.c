@@ -17,7 +17,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[591] = {
+static const char descriptor_envoy_config_cluster_v3_filter_proto_upbdefinit[591] = {
     '\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v',
     '3', '/', 'f', 'i', 'l', 't', 'e', 'r', '.', 'p', 'r', 'o',
@@ -70,7 +70,7 @@ static const char descriptor[591] = {
     't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[6] = {
+static _upb_DefPool_Init* deps_envoy_config_cluster_v3_filter_proto_upbdefinit[6] = {
     &envoy_config_core_v3_config_source_proto_upbdefinit,
     &google_protobuf_any_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
@@ -80,8 +80,9 @@ static _upb_DefPool_Init *deps[6] = {
 };
 
 _upb_DefPool_Init envoy_config_cluster_v3_filter_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_cluster_v3_filter_proto_upbdefinit,
     &envoy_config_cluster_v3_filter_proto_upb_file_layout,
     "envoy/config/cluster/v3/filter.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_cluster_v3_filter_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_cluster_v3_filter_proto_upbdefinit)),
 };

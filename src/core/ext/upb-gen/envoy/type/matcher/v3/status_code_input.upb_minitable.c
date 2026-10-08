@@ -31,13 +31,13 @@ const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchIn
 #endif
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_type_matcher_v3_status_code_input_proto_upb_file_layout[2] = {
   &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init,
   &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init,
 };
 
 const upb_MiniTableFile envoy_type_matcher_v3_status_code_input_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_matcher_v3_status_code_input_proto_upb_file_layout,
   NULL,
   NULL,
   2,

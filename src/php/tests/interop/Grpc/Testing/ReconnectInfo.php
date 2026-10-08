@@ -37,7 +37,8 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
      *     @type int[] $backoff_ms
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

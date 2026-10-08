@@ -26,6 +26,9 @@ module Grpc
   module Health
     module V1
       module Health
+        # Health is gRPC's mechanism for checking whether a server is able to handle
+        # RPCs. Its semantics are documented in
+        # https://github.com/grpc/grpc/blob/master/doc/health-checking.md.
         class Service
 
           include ::GRPC::GenericService
@@ -34,9 +37,26 @@ module Grpc
           self.unmarshal_class_method = :decode
           self.service_name = 'grpc.health.v1.Health'
 
-          # If the requested service is unknown, the call will fail with status
-          # NOT_FOUND.
+          # Check gets the health of the specified service. If the requested service
+          # is unknown, the call will fail with status NOT_FOUND. If the caller does
+          # not specify a service name, the server should respond with its overall
+          # health status.
+          #
+          # Clients should set a deadline when calling Check, and can declare the
+          # server unhealthy if they do not receive a timely response.
           rpc :Check, ::Grpc::Health::V1::HealthCheckRequest, ::Grpc::Health::V1::HealthCheckResponse
+          # List provides a non-atomic snapshot of the health of all the available
+          # services.
+          #
+          # The server may respond with a RESOURCE_EXHAUSTED error if too many services
+          # exist.
+          #
+          # Clients should set a deadline when calling List, and can declare the server
+          # unhealthy if they do not receive a timely response.
+          #
+          # Clients should keep in mind that the list of health services exposed by an
+          # application can change over the lifetime of the process.
+          rpc :List, ::Grpc::Health::V1::HealthListRequest, ::Grpc::Health::V1::HealthListResponse
           # Performs a watch for the serving status of the requested service.
           # The server will immediately send back a message indicating the current
           # serving status.  It will then subsequently send a new message whenever

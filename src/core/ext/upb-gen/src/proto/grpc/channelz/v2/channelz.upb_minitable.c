@@ -31,13 +31,15 @@ static const grpc__channelz__v2__Data_msg_init_Fields grpc_channelz_v2_Data__fie
 
 const upb_MiniTable grpc__channelz__v2__Data_msg_init = {
   &grpc_channelz_v2_Data__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Data",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -67,14 +69,14 @@ const upb_MiniTable grpc__channelz__v2__Entity_msg_init = {
   "grpc.channelz.v2.Entity",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x002000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x002800003f00001a, &upb_DecodeFast_Varint64_Packed_Tag1Byte},
     {0x000800003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000900003f000028, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003000003f0b0032, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x003800003f0c003a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
   })
 };
 
@@ -95,24 +97,26 @@ static const grpc__channelz__v2__TraceEvent_msg_init_Fields grpc_channelz_v2_Tra
 
 const upb_MiniTable grpc__channelz__v2__TraceEvent_msg_init = {
   &grpc_channelz_v2_TraceEvent__fields.fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.TraceEvent",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000050012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002800003f06001a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[3] = {
+static const upb_MiniTable *messages_layout_src_proto_grpc_channelz_v2_channelz_proto_upb_file_layout[3] = {
   &grpc__channelz__v2__Data_msg_init,
   &grpc__channelz__v2__Entity_msg_init,
   &grpc__channelz__v2__TraceEvent_msg_init,
 };
 
 const upb_MiniTableFile src_proto_grpc_channelz_v2_channelz_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_src_proto_grpc_channelz_v2_channelz_proto_upb_file_layout,
   NULL,
   NULL,
   3,

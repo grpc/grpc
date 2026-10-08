@@ -38,10 +38,16 @@ static const envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_i
 
 const upb_MiniTable envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init = {
   &envoy_extensions_common_matching_v3_ExtensionWithMatcher__fields.fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.common.matching.v3.ExtensionWithMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000000207001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -58,19 +64,23 @@ static const envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRou
 
 const upb_MiniTable envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init = {
   &envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000002000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_common_matching_v3_extension_matcher_proto_upb_file_layout[2] = {
   &envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init,
   &envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_common_matching_v3_extension_matcher_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_common_matching_v3_extension_matcher_proto_upb_file_layout,
   NULL,
   NULL,
   2,

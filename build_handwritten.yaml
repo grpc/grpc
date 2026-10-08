@@ -20,9 +20,9 @@ settings:
   csharp_major_version: 2
   g_stands_for: googol
   protobuf_version:
-    csharp: 3.35.1
-    objectivec: 5.35.1
-    python: 7.35.1
+    csharp: 3.36.2
+    objectivec: 5.36.2
+    python: 7.36.2
   supported_python_versions:
   - '3.10'
   - '3.11'

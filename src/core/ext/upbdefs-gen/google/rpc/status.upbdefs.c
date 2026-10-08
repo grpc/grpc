@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
 
-static const char descriptor[275] = {
+static const char descriptor_google_rpc_status_proto_upbdefinit[275] = {
     '\n', '\027', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'r', 'p', 'c',
     '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't',
     'o', '\022', '\n', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'r', 'p',
@@ -39,14 +39,15 @@ static const char descriptor[275] = {
     'R', 'P', 'C', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_google_rpc_status_proto_upbdefinit[2] = {
     &google_protobuf_any_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init google_rpc_status_proto_upbdefinit = {
-    deps,
+    deps_google_rpc_status_proto_upbdefinit,
     &google_rpc_status_proto_upb_file_layout,
     "google/rpc/status.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_rpc_status_proto_upbdefinit,
+                        sizeof(descriptor_google_rpc_status_proto_upbdefinit)),
 };

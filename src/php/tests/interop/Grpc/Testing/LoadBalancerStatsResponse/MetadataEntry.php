@@ -49,7 +49,8 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
      *           Metadata type
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

@@ -121,7 +121,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      *           If set the server should record this metrics report data for the current RPC.
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

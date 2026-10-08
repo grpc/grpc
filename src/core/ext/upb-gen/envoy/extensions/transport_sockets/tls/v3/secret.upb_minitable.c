@@ -37,10 +37,14 @@ static const envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_i
 
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init = {
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.transport_sockets.tls.v3.GenericSecret",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -58,14 +62,10 @@ static const envoy__extensions__transport_0sockets__tls__v3__GenericSecret__Secr
 
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__GenericSecret__SecretsEntry_msg_init = {
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret_SecretsEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.transport_sockets.tls.v3.GenericSecret.SecretsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-  })
 };
 
 typedef struct {
@@ -83,13 +83,15 @@ static const envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg
 
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg_init = {
   &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.transport_sockets.tls.v3.SdsSecretConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -114,17 +116,23 @@ static const envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init_Fie
 
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init = {
   &envoy_extensions_transport_sockets_tls_v3_Secret__fields.fields[0],
-  UPB_SIZE(24, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.transport_sockets.tls.v3.Secret",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000802080012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x002000080309001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00200008040a0022, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00200008050b002a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[4] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_transport_sockets_tls_v3_secret_proto_upb_file_layout[4] = {
   &envoy__extensions__transport_0sockets__tls__v3__GenericSecret_msg_init,
   &envoy__extensions__transport_0sockets__tls__v3__GenericSecret__SecretsEntry_msg_init,
   &envoy__extensions__transport_0sockets__tls__v3__SdsSecretConfig_msg_init,
@@ -132,7 +140,7 @@ static const upb_MiniTable *messages_layout[4] = {
 };
 
 const upb_MiniTableFile envoy_extensions_transport_sockets_tls_v3_secret_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_transport_sockets_tls_v3_secret_proto_upb_file_layout,
   NULL,
   NULL,
   4,

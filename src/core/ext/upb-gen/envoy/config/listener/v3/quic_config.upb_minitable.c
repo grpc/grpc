@@ -68,31 +68,31 @@ const upb_MiniTable envoy__config__listener__v3__QuicProtocolOptions_msg_init = 
   "envoy.config.listener.v3.QuicProtocolOptions",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000015000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001160012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000000217001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0028000003180022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x003000000419002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00380000051a0032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00400000061b003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00480000071c0042, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00500000081d004a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00580000091e0052, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x006000000a1f005a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x006800003f200062, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x000a00003f000068, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x007000000b210072, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_config_listener_v3_quic_config_proto_upb_file_layout[1] = {
   &envoy__config__listener__v3__QuicProtocolOptions_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_listener_v3_quic_config_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_listener_v3_quic_config_proto_upb_file_layout,
   NULL,
   NULL,
   1,

@@ -22,12 +22,12 @@ const upb_MiniTable xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init
 #endif
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_xds_type_matcher_v3_http_inputs_proto_upb_file_layout[1] = {
   &xds__type__matcher__v3__HttpAttributesCelMatchInput_msg_init,
 };
 
 const upb_MiniTableFile xds_type_matcher_v3_http_inputs_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_type_matcher_v3_http_inputs_proto_upb_file_layout,
   NULL,
   NULL,
   1,

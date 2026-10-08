@@ -32,17 +32,17 @@ const upb_MiniTable envoy__type__v3__HttpStatus_msg_init = {
   "envoy.type.v3.HttpStatus",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_type_v3_http_status_proto_upb_file_layout[1] = {
   &envoy__type__v3__HttpStatus_msg_init,
 };
 
 const upb_MiniTableFile envoy_type_v3_http_status_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_v3_http_status_proto_upb_file_layout,
   NULL,
   NULL,
   1,

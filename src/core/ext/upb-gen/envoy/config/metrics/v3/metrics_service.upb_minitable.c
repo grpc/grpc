@@ -45,23 +45,23 @@ const upb_MiniTable envoy__config__metrics__v3__MetricsServiceConfig_msg_init = 
   "envoy.config.metrics.v3.MetricsServiceConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001800000009000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00200000010a0012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000c00003f000018, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x000900003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x001000003f000028, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001400003f000030, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_config_metrics_v3_metrics_service_proto_upb_file_layout[1] = {
   &envoy__config__metrics__v3__MetricsServiceConfig_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_metrics_v3_metrics_service_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_metrics_v3_metrics_service_proto_upb_file_layout,
   NULL,
   NULL,
   1,

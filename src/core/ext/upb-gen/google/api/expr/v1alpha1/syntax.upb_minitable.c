@@ -33,10 +33,16 @@ static const google__api__expr__v1alpha1__ParsedExpr_msg_init_Fields google_api_
 
 const upb_MiniTable google__api__expr__v1alpha1__ParsedExpr_msg_init = {
   &google_api_expr_v1alpha1_ParsedExpr__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.expr.v1alpha1.ParsedExpr",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0010000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x001800000104001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -66,15 +72,27 @@ static const google__api__expr__v1alpha1__Expr_msg_init_Fields google_api_expr_v
 
 const upb_MiniTable google__api__expr__v1alpha1__Expr_msg_init = {
   &google_api_expr_v1alpha1_Expr__fields.fields[0],
-  UPB_SIZE(24, 32), 8, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 8, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.expr.v1alpha1.Expr",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00180008030c001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00180008040d0022, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00180008050e002a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00180008060f0032, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001800080710003a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0018000808110042, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001800080912004a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -93,7 +111,7 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__Ident_msg_init = {
   "google.api.expr.v1alpha1.Expr.Ident",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
@@ -119,8 +137,8 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__Select_msg_init = {
   "google.api.expr.v1alpha1.Expr.Select",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x000900003f000018, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
@@ -148,10 +166,10 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__Call_msg_init = {
   "google.api.expr.v1alpha1.Expr.Call",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002800003f06001a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
   })
 };
 
@@ -175,10 +193,10 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__CreateList_msg_init = {
   "google.api.expr.v1alpha1.Expr.CreateList",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_Varint32_Packed_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -197,13 +215,15 @@ static const google__api__expr__v1alpha1__Expr__CreateStruct_msg_init_Fields goo
 
 const upb_MiniTable google__api__expr__v1alpha1__Expr__CreateStruct_msg_init = {
   &google_api_expr_v1alpha1_Expr_CreateStruct__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.expr.v1alpha1.Expr.CreateStruct",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x001800003f030012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -231,14 +251,14 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__CreateStruct__Entry_msg_i
   "google.api.expr.v1alpha1.Expr.CreateStruct.Entry",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x002000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x0010000c02000012, &upb_DecodeFast_String_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000c0308001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0028000000090022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000028, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -272,22 +292,22 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__Comprehension_msg_init = 
   "google.api.expr.v1alpha1.Expr.Comprehension",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00400000000c0012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x002000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00480000010d0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00500000020e002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00580000030f0032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x006000000410003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x003000003f000042, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -314,12 +334,12 @@ static const google__api__expr__v1alpha1__Constant_msg_init_Fields google_api_ex
 
 const upb_MiniTable google__api__expr__v1alpha1__Constant_msg_init = {
   &google_api_expr_v1alpha1_Constant__fields.fields[0],
-  UPB_SIZE(24, 32), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 32), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.expr.v1alpha1.Constant",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x0010000801000008, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
     {0x0010000802000010, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
     {0x0010000803000018, &upb_DecodeFast_Varint64_Oneof_Tag1Byte},
@@ -327,6 +347,14 @@ const upb_MiniTable google__api__expr__v1alpha1__Constant_msg_init = {
     {0x0010000805000029, &upb_DecodeFast_Fixed64_Oneof_Tag1Byte},
     {0x0010000806000032, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x001000080700003a, &upb_DecodeFast_Bytes_Oneof_Tag1Byte},
+    {0x00100008080e0042, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00100008090f004a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -351,7 +379,7 @@ static const google__api__expr__v1alpha1__SourceInfo_msg_init_Fields google_api_
 
 const upb_MiniTable google__api__expr__v1alpha1__SourceInfo_msg_init = {
   &google_api_expr_v1alpha1_SourceInfo__fields.fields[0],
-  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.expr.v1alpha1.SourceInfo",
 #endif
@@ -360,6 +388,10 @@ const upb_MiniTable google__api__expr__v1alpha1__SourceInfo_msg_init = {
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x002800003f00001a, &upb_DecodeFast_Varint32_Packed_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x004000003f0b0032, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
@@ -384,10 +416,10 @@ const upb_MiniTable google__api__expr__v1alpha1__SourceInfo__Extension_msg_init 
   "google.api.expr.v1alpha1.SourceInfo.Extension",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x002000003f000012, &upb_DecodeFast_Varint32_Packed_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002800000005001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
@@ -407,10 +439,10 @@ const upb_MiniTable google__api__expr__v1alpha1__SourceInfo__Extension__Version_
   "google.api.expr.v1alpha1.SourceInfo.Extension.Version",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x001000003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -425,16 +457,10 @@ static const google__api__expr__v1alpha1__SourceInfo__PositionsEntry_msg_init_Fi
 
 const upb_MiniTable google__api__expr__v1alpha1__SourceInfo__PositionsEntry_msg_init = {
   &google_api_expr_v1alpha1_SourceInfo_PositionsEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.expr.v1alpha1.SourceInfo.PositionsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-    {0x002000003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 typedef struct {
@@ -452,14 +478,10 @@ static const google__api__expr__v1alpha1__SourceInfo__MacroCallsEntry_msg_init_F
 
 const upb_MiniTable google__api__expr__v1alpha1__SourceInfo__MacroCallsEntry_msg_init = {
   &google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.expr.v1alpha1.SourceInfo.MacroCallsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-  })
 };
 
 typedef struct {
@@ -480,18 +502,18 @@ const upb_MiniTable google__api__expr__v1alpha1__SourcePosition_msg_init = {
   "google.api.expr.v1alpha1.SourcePosition",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x000800003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x000c00003f000018, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001000003f000020, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[16] = {
+static const upb_MiniTable *messages_layout_google_api_expr_v1alpha1_syntax_proto_upb_file_layout[16] = {
   &google__api__expr__v1alpha1__ParsedExpr_msg_init,
   &google__api__expr__v1alpha1__Expr_msg_init,
   &google__api__expr__v1alpha1__Expr__Ident_msg_init,
@@ -511,7 +533,7 @@ static const upb_MiniTable *messages_layout[16] = {
 };
 
 const upb_MiniTableFile google_api_expr_v1alpha1_syntax_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_google_api_expr_v1alpha1_syntax_proto_upb_file_layout,
   NULL,
   NULL,
   16,

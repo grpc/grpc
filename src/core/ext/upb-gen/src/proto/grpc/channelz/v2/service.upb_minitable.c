@@ -32,7 +32,7 @@ const upb_MiniTable grpc__channelz__v2__QueryEntitiesRequest_msg_init = {
   "grpc.channelz.v2.QueryEntitiesRequest",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x002000003f000018, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
@@ -59,10 +59,10 @@ const upb_MiniTable grpc__channelz__v2__QueryEntitiesResponse_msg_init = {
   "grpc.channelz.v2.QueryEntitiesResponse",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x000800003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -81,7 +81,7 @@ const upb_MiniTable grpc__channelz__v2__GetEntityRequest_msg_init = {
   "grpc.channelz.v2.GetEntityRequest",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
   })
 };
@@ -100,10 +100,14 @@ static const grpc__channelz__v2__GetEntityResponse_msg_init_Fields grpc_channelz
 
 const upb_MiniTable grpc__channelz__v2__GetEntityResponse_msg_init = {
   &grpc_channelz_v2_GetEntityResponse__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.GetEntityResponse",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000002000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -151,7 +155,7 @@ const upb_MiniTable grpc__channelz__v2__QueryTraceRequest__QueryArgValue_msg_ini
   "grpc.channelz.v2.QueryTraceRequest.QueryArgValue",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x0010000801000008, &upb_DecodeFast_Varint64_Oneof_Tag1Byte},
     {0x0010000802000012, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x0010000803000018, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
@@ -173,14 +177,10 @@ static const grpc__channelz__v2__QueryTraceRequest__ArgsEntry_msg_init_Fields gr
 
 const upb_MiniTable grpc__channelz__v2__QueryTraceRequest__ArgsEntry_msg_init = {
   &grpc_channelz_v2_QueryTraceRequest_ArgsEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.QueryTraceRequest.ArgsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-  })
 };
 
 typedef struct {
@@ -203,14 +203,14 @@ const upb_MiniTable grpc__channelz__v2__QueryTraceResponse_msg_init = {
   "grpc.channelz.v2.QueryTraceResponse",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x001000003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[8] = {
+static const upb_MiniTable *messages_layout_src_proto_grpc_channelz_v2_service_proto_upb_file_layout[8] = {
   &grpc__channelz__v2__QueryEntitiesRequest_msg_init,
   &grpc__channelz__v2__QueryEntitiesResponse_msg_init,
   &grpc__channelz__v2__GetEntityRequest_msg_init,
@@ -222,7 +222,7 @@ static const upb_MiniTable *messages_layout[8] = {
 };
 
 const upb_MiniTableFile src_proto_grpc_channelz_v2_service_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_src_proto_grpc_channelz_v2_service_proto_upb_file_layout,
   NULL,
   NULL,
   8,

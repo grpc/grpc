@@ -48,14 +48,14 @@ const upb_MiniTable envoy__type__matcher__v3__ValueMatcher_msg_init = {
   "envoy.type.matcher.v3.ValueMatcher",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x00100008010b000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00100008020c0012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00100008030d001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x0010000804000020, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
     {0x0010000805000028, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00100008060e0032, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00100008070f003a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
   })
 };
 
@@ -81,10 +81,14 @@ static const envoy__type__matcher__v3__ListMatcher_msg_init_Fields envoy_type_ma
 
 const upb_MiniTable envoy__type__matcher__v3__ListMatcher_msg_init = {
   &envoy_type_matcher_v3_ListMatcher__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.ListMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080102000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -101,13 +105,17 @@ static const envoy__type__matcher__v3__OrMatcher_msg_init_Fields envoy_type_matc
 
 const upb_MiniTable envoy__type__matcher__v3__OrMatcher_msg_init = {
   &envoy_type_matcher_v3_OrMatcher__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.OrMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
-static const upb_MiniTable *messages_layout[4] = {
+static const upb_MiniTable *messages_layout_envoy_type_matcher_v3_value_proto_upb_file_layout[4] = {
   &envoy__type__matcher__v3__ValueMatcher_msg_init,
   &envoy__type__matcher__v3__ValueMatcher__NullMatch_msg_init,
   &envoy__type__matcher__v3__ListMatcher_msg_init,
@@ -115,7 +123,7 @@ static const upb_MiniTable *messages_layout[4] = {
 };
 
 const upb_MiniTableFile envoy_type_matcher_v3_value_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_matcher_v3_value_proto_upb_file_layout,
   NULL,
   NULL,
   4,

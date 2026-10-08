@@ -35,6 +35,7 @@ cc_library(
         "//upb/port",
     ] + select({
         "//upb:fasttable_enabled_setting": [
+            "//upb/wire/decode_fast:field_parsers",
             "//upb/wire/decode_fast:function_array",
             "//upb/wire/decode_fast:select",
         ],
@@ -77,11 +78,9 @@ cc_test(
         "//src/google/protobuf",
         "//upb/base",
         "//upb/mem",
-        "//upb/message",
-        "//upb/message:internal",
         "//upb/mini_table",
+        "//upb/mini_table:internal",
         "//upb/port",
-        "//upb/wire",
         "@abseil-cpp//absl/container:flat_hash_set",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

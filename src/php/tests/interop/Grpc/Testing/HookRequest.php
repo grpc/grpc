@@ -46,7 +46,8 @@ class HookRequest extends \Google\Protobuf\Internal\Message
      *           Server port to listen to
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

@@ -15,7 +15,7 @@ extern _upb_DefPool_Init google_api_field_behavior_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
 
-static const char descriptor[2723] = {
+static const char descriptor_proto_autosharding_v1_autosharding_proto_upbdefinit[2723] = {
     '\n', '(', 'p', 'r', 'o', 't', 'o', '/', 'a', 'u', 't', 'o',
     's', 'h', 'a', 'r', 'd', 'i', 'n', 'g', '/', 'v', '1', '/',
     'a', 'u', 't', 'o', 's', 'h', 'a', 'r', 'd', 'i', 'n', 'g',
@@ -245,7 +245,7 @@ static const char descriptor[2723] = {
     'g', 'p', 'b', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_proto_autosharding_v1_autosharding_proto_upbdefinit[4] = {
     &google_api_field_behavior_proto_upbdefinit,
     &google_protobuf_duration_proto_upbdefinit,
     &google_protobuf_timestamp_proto_upbdefinit,
@@ -253,8 +253,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init proto_autosharding_v1_autosharding_proto_upbdefinit = {
-    deps,
+    deps_proto_autosharding_v1_autosharding_proto_upbdefinit,
     &proto_autosharding_v1_autosharding_proto_upb_file_layout,
     "proto/autosharding/v1/autosharding.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_proto_autosharding_v1_autosharding_proto_upbdefinit,
+                        sizeof(descriptor_proto_autosharding_v1_autosharding_proto_upbdefinit)),
 };

@@ -34,7 +34,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[24710] = {
+static const char descriptor_envoy_config_route_v3_route_components_proto_upbdefinit[24710] = {
     '\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'r', 'o', 'u', 't', 'e', '/', 'v', '3', '/',
     'r', 'o', 'u', 't', 'e', '_', 'c', 'o', 'm', 'p', 'o', 'n',
@@ -2097,7 +2097,7 @@ static const char descriptor[24710] = {
     'o', '3',
 };
 
-static _upb_DefPool_Init *deps[23] = {
+static _upb_DefPool_Init* deps_envoy_config_route_v3_route_components_proto_upbdefinit[23] = {
     &envoy_config_common_mutation_rules_v3_mutation_rules_proto_upbdefinit,
     &envoy_config_core_v3_base_proto_upbdefinit,
     &envoy_config_core_v3_extension_proto_upbdefinit,
@@ -2124,8 +2124,9 @@ static _upb_DefPool_Init *deps[23] = {
 };
 
 _upb_DefPool_Init envoy_config_route_v3_route_components_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_route_v3_route_components_proto_upbdefinit,
     &envoy_config_route_v3_route_components_proto_upb_file_layout,
     "envoy/config/route/v3/route_components.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_route_v3_route_components_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_route_v3_route_components_proto_upbdefinit)),
 };

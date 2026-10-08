@@ -15,7 +15,7 @@ extern _upb_DefPool_Init xds_type_v3_range_proto_upbdefinit;
 extern _upb_DefPool_Init xds_type_matcher_v3_matcher_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[1007] = {
+static const char descriptor_xds_type_matcher_v3_range_proto_upbdefinit[1007] = {
     '\n', '\037', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'm',
     'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'r', 'a',
     'n', 'g', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\023', 'x',
@@ -102,7 +102,7 @@ static const char descriptor[1007] = {
     '/', 'v', '3', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_xds_type_matcher_v3_range_proto_upbdefinit[4] = {
     &xds_type_v3_range_proto_upbdefinit,
     &xds_type_matcher_v3_matcher_proto_upbdefinit,
     &validate_validate_proto_upbdefinit,
@@ -110,8 +110,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init xds_type_matcher_v3_range_proto_upbdefinit = {
-    deps,
+    deps_xds_type_matcher_v3_range_proto_upbdefinit,
     &xds_type_matcher_v3_range_proto_upb_file_layout,
     "xds/type/matcher/v3/range.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_type_matcher_v3_range_proto_upbdefinit,
+                        sizeof(descriptor_xds_type_matcher_v3_range_proto_upbdefinit)),
 };

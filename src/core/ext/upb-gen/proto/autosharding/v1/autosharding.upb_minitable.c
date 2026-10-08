@@ -35,10 +35,16 @@ static const google__cloud__autosharding__v1__WatchShardingAssignmentRequest_msg
 
 const upb_MiniTable google__cloud__autosharding__v1__WatchShardingAssignmentRequest_msg_init = {
   &google_cloud_autosharding_v1_WatchShardingAssignmentRequest__fields.fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.cloud.autosharding.v1.WatchShardingAssignmentRequest",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000000207001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -59,10 +65,16 @@ static const google__cloud__autosharding__v1__WatchShardingAssignmentResponse_ms
 
 const upb_MiniTable google__cloud__autosharding__v1__WatchShardingAssignmentResponse_msg_init = {
   &google_cloud_autosharding_v1_WatchShardingAssignmentResponse__fields.fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.cloud.autosharding.v1.WatchShardingAssignmentResponse",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000000207001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -82,7 +94,7 @@ const upb_MiniTable google__cloud__autosharding__v1__InitialClientConfig_msg_ini
   "google.cloud.autosharding.v1.InitialClientConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x002800003f000018, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
@@ -107,15 +119,19 @@ static const google__cloud__autosharding__v1__LoadReportingConfig_msg_init_Field
 
 const upb_MiniTable google__cloud__autosharding__v1__LoadReportingConfig_msg_init = {
   &google_cloud_autosharding_v1_LoadReportingConfig__fields.fields[0],
-  UPB_SIZE(32, 40), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 40), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.cloud.autosharding.v1.LoadReportingConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
     {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001800000006001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0020000001070022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -137,10 +153,16 @@ static const google__cloud__autosharding__v1__LoadReport_msg_init_Fields google_
 
 const upb_MiniTable google__cloud__autosharding__v1__LoadReport_msg_init = {
   &google_cloud_autosharding_v1_LoadReport__fields.fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.cloud.autosharding.v1.LoadReport",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0018000000060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000000107001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -158,14 +180,10 @@ static const google__cloud__autosharding__v1__LoadReport__MetricLoadsEntry_msg_i
 
 const upb_MiniTable google__cloud__autosharding__v1__LoadReport__MetricLoadsEntry_msg_init = {
   &google_cloud_autosharding_v1_LoadReport_MetricLoadsEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.cloud.autosharding.v1.LoadReport.MetricLoadsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-  })
 };
 
 typedef struct {
@@ -182,10 +200,14 @@ static const google__cloud__autosharding__v1__Load_msg_init_Fields google_cloud_
 
 const upb_MiniTable google__cloud__autosharding__v1__Load_msg_init = {
   &google_cloud_autosharding_v1_Load__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.cloud.autosharding.v1.Load",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -204,10 +226,10 @@ const upb_MiniTable google__cloud__autosharding__v1__RangeLoad_msg_init = {
   "google.cloud.autosharding.v1.RangeLoad",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
     {0x001800003f000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -228,7 +250,7 @@ const upb_MiniTable google__cloud__autosharding__v1__AssignmentAck_msg_init = {
   "google.cloud.autosharding.v1.AssignmentAck",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x002000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x000800003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x001000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
@@ -250,7 +272,7 @@ const upb_MiniTable google__cloud__autosharding__v1__AssignmentMetadata_msg_init
   "google.cloud.autosharding.v1.AssignmentMetadata",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
   })
 };
@@ -271,10 +293,16 @@ static const google__cloud__autosharding__v1__AssignmentChunk_msg_init_Fields go
 
 const upb_MiniTable google__cloud__autosharding__v1__AssignmentChunk_msg_init = {
   &google_cloud_autosharding_v1_AssignmentChunk__fields.fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.cloud.autosharding.v1.AssignmentChunk",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x001000003f040012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -292,7 +320,7 @@ const upb_MiniTable google__cloud__autosharding__v1__EndpointState_msg_init = {
   "google.cloud.autosharding.v1.EndpointState",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
@@ -313,10 +341,16 @@ static const google__cloud__autosharding__v1__SliceAssignment_msg_init_Fields go
 
 const upb_MiniTable google__cloud__autosharding__v1__SliceAssignment_msg_init = {
   &google_cloud_autosharding_v1_SliceAssignment__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.cloud.autosharding.v1.SliceAssignment",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x001800003f040012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -335,10 +369,10 @@ const upb_MiniTable google__cloud__autosharding__v1__Slice_msg_init = {
   "google.cloud.autosharding.v1.Slice",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
     {0x0020000000000012, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -357,12 +391,12 @@ const upb_MiniTable google__cloud__autosharding__v1__PerSliceEndpointState_msg_i
   "google.cloud.autosharding.v1.PerSliceEndpointState",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[15] = {
+static const upb_MiniTable *messages_layout_proto_autosharding_v1_autosharding_proto_upb_file_layout[15] = {
   &google__cloud__autosharding__v1__WatchShardingAssignmentRequest_msg_init,
   &google__cloud__autosharding__v1__WatchShardingAssignmentResponse_msg_init,
   &google__cloud__autosharding__v1__InitialClientConfig_msg_init,
@@ -381,7 +415,7 @@ static const upb_MiniTable *messages_layout[15] = {
 };
 
 const upb_MiniTableFile proto_autosharding_v1_autosharding_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_proto_autosharding_v1_autosharding_proto_upb_file_layout,
   NULL,
   NULL,
   15,

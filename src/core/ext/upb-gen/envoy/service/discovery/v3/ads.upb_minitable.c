@@ -25,12 +25,12 @@ const upb_MiniTable envoy__service__discovery__v3__AdsDummy_msg_init = {
 #endif
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_service_discovery_v3_ads_proto_upb_file_layout[1] = {
   &envoy__service__discovery__v3__AdsDummy_msg_init,
 };
 
 const upb_MiniTableFile envoy_service_discovery_v3_ads_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_service_discovery_v3_ads_proto_upb_file_layout,
   NULL,
   NULL,
   1,

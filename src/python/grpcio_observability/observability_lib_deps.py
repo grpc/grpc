@@ -256,7 +256,6 @@ CC_FILES=[
     'third_party/protobuf/upb/hash/common.c',
     'third_party/protobuf/upb/lex/atoi.c',
     'third_party/protobuf/upb/lex/round_trip.c',
-    'third_party/protobuf/upb/lex/strtod.c',
     'third_party/protobuf/upb/lex/unicode.c',
     'third_party/protobuf/upb/mem/alloc.c',
     'third_party/protobuf/upb/mem/arena.c',
@@ -271,6 +270,7 @@ CC_FILES=[
     'third_party/protobuf/upb/message/map_sorter.c',
     'third_party/protobuf/upb/message/merge.c',
     'third_party/protobuf/upb/message/message.c',
+    'third_party/protobuf/upb/message/unknown_fields.c',
     'third_party/protobuf/upb/mini_descriptor/build_enum.c',
     'third_party/protobuf/upb/mini_descriptor/decode.c',
     'third_party/protobuf/upb/mini_descriptor/internal/base92.c',
@@ -280,6 +280,7 @@ CC_FILES=[
     'third_party/protobuf/upb/mini_table/generated_registry.c',
     'third_party/protobuf/upb/mini_table/internal/message.c',
     'third_party/protobuf/upb/mini_table/message.c',
+    'third_party/protobuf/upb/port/port.c',
     'third_party/protobuf/upb/reflection/def_pool.c',
     'third_party/protobuf/upb/reflection/def_type.c',
     'third_party/protobuf/upb/reflection/desc_state.c',
@@ -304,7 +305,9 @@ CC_FILES=[
     'third_party/protobuf/upb/wire/decode_fast/select.c',
     'third_party/protobuf/upb/wire/encode.c',
     'third_party/protobuf/upb/wire/eps_copy_input_stream.c',
+    'third_party/protobuf/upb/wire/internal/back_alloc.c',
     'third_party/protobuf/upb/wire/internal/decoder.c',
+    'third_party/protobuf/upb/wire/internal/encoder.c',
     'third_party/protobuf/upb/wire/reader.c'
 ]
 CC_FILES_WINDOWS_ONLY=[

@@ -19,7 +19,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[2227] = {
+static const char descriptor_envoy_config_metrics_v3_stats_proto_upbdefinit[2227] = {
     '\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'm', 'e', 't', 'r', 'i', 'c', 's', '/', 'v',
     '3', '/', 's', 't', 'a', 't', 's', '.', 'p', 'r', 'o', 't',
@@ -208,7 +208,7 @@ static const char descriptor[2227] = {
     '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[8] = {
+static _upb_DefPool_Init* deps_envoy_config_metrics_v3_stats_proto_upbdefinit[8] = {
     &envoy_config_core_v3_address_proto_upbdefinit,
     &envoy_type_matcher_v3_string_proto_upbdefinit,
     &google_protobuf_any_proto_upbdefinit,
@@ -220,8 +220,9 @@ static _upb_DefPool_Init *deps[8] = {
 };
 
 _upb_DefPool_Init envoy_config_metrics_v3_stats_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_metrics_v3_stats_proto_upbdefinit,
     &envoy_config_metrics_v3_stats_proto_upb_file_layout,
     "envoy/config/metrics/v3/stats.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_metrics_v3_stats_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_metrics_v3_stats_proto_upbdefinit)),
 };

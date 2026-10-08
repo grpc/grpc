@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[330] = {
+static const char descriptor_envoy_type_matcher_v3_status_code_input_proto_upbdefinit[330] = {
     '\n', '-', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/',
     's', 't', 'a', 't', 'u', 's', '_', 'c', 'o', 'd', 'e', '_',
@@ -44,14 +44,15 @@ static const char descriptor[330] = {
     'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_envoy_type_matcher_v3_status_code_input_proto_upbdefinit[2] = {
     &udpa_annotations_status_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_type_matcher_v3_status_code_input_proto_upbdefinit = {
-    deps,
+    deps_envoy_type_matcher_v3_status_code_input_proto_upbdefinit,
     &envoy_type_matcher_v3_status_code_input_proto_upb_file_layout,
     "envoy/type/matcher/v3/status_code_input.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_type_matcher_v3_status_code_input_proto_upbdefinit,
+                        sizeof(descriptor_envoy_type_matcher_v3_status_code_input_proto_upbdefinit)),
 };

@@ -19,7 +19,7 @@ extern _upb_DefPool_Init envoy_extensions_filters_network_http_connection_manage
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[3079] = {
+static const char descriptor_envoy_extensions_upstreams_http_v3_http_protocol_options_proto_upbdefinit[3079] = {
     '\n', '>', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e',
     'n', 's', 'i', 'o', 'n', 's', '/', 'u', 'p', 's', 't', 'r',
     'e', 'a', 'm', 's', '/', 'h', 't', 't', 'p', '/', 'v', '3',
@@ -279,7 +279,7 @@ static const char descriptor[3079] = {
     '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[8] = {
+static _upb_DefPool_Init* deps_envoy_extensions_upstreams_http_v3_http_protocol_options_proto_upbdefinit[8] = {
     &envoy_config_common_matcher_v3_matcher_proto_upbdefinit,
     &envoy_config_core_v3_extension_proto_upbdefinit,
     &envoy_config_core_v3_protocol_proto_upbdefinit,
@@ -291,8 +291,9 @@ static _upb_DefPool_Init *deps[8] = {
 };
 
 _upb_DefPool_Init envoy_extensions_upstreams_http_v3_http_protocol_options_proto_upbdefinit = {
-    deps,
+    deps_envoy_extensions_upstreams_http_v3_http_protocol_options_proto_upbdefinit,
     &envoy_extensions_upstreams_http_v3_http_protocol_options_proto_upb_file_layout,
     "envoy/extensions/upstreams/http/v3/http_protocol_options.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_extensions_upstreams_http_v3_http_protocol_options_proto_upbdefinit,
+                        sizeof(descriptor_envoy_extensions_upstreams_http_v3_http_protocol_options_proto_upbdefinit)),
 };

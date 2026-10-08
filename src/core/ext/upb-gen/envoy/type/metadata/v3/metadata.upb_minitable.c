@@ -32,13 +32,15 @@ static const envoy__type__metadata__v3__MetadataKey_msg_init_Fields envoy_type_m
 
 const upb_MiniTable envoy__type__metadata__v3__MetadataKey_msg_init = {
   &envoy_type_metadata_v3_MetadataKey__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.metadata.v3.MetadataKey",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x001800003f030012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -57,7 +59,7 @@ const upb_MiniTable envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init
   "envoy.type.metadata.v3.MetadataKey.PathSegment",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000080100000a, &upb_DecodeFast_String_Oneof_Tag1Byte},
   })
 };
@@ -82,10 +84,20 @@ static const envoy__type__metadata__v3__MetadataKind_msg_init_Fields envoy_type_
 
 const upb_MiniTable envoy__type__metadata__v3__MetadataKind_msg_init = {
   &envoy_type_metadata_v3_MetadataKind__fields.fields[0],
-  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.metadata.v3.MetadataKind",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080106000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000802070012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080308001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000804090022, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 const upb_MiniTable envoy__type__metadata__v3__MetadataKind__Request_msg_init = {
@@ -120,7 +132,7 @@ const upb_MiniTable envoy__type__metadata__v3__MetadataKind__Host_msg_init = {
 #endif
 };
 
-static const upb_MiniTable *messages_layout[7] = {
+static const upb_MiniTable *messages_layout_envoy_type_metadata_v3_metadata_proto_upb_file_layout[7] = {
   &envoy__type__metadata__v3__MetadataKey_msg_init,
   &envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init,
   &envoy__type__metadata__v3__MetadataKind_msg_init,
@@ -131,7 +143,7 @@ static const upb_MiniTable *messages_layout[7] = {
 };
 
 const upb_MiniTableFile envoy_type_metadata_v3_metadata_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_metadata_v3_metadata_proto_upb_file_layout,
   NULL,
   NULL,
   7,

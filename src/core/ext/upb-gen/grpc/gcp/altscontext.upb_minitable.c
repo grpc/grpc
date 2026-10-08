@@ -47,7 +47,7 @@ const upb_MiniTable grpc__gcp__AltsContext_msg_init = {
     {0x000c00003f000018, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x003000003f000022, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x004000003f00002a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00500000000b0032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
@@ -63,25 +63,19 @@ static const grpc__gcp__AltsContext__PeerAttributesEntry_msg_init_Fields grpc_gc
 
 const upb_MiniTable grpc__gcp__AltsContext__PeerAttributesEntry_msg_init = {
   &grpc_gcp_AltsContext_PeerAttributesEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.gcp.AltsContext.PeerAttributesEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_grpc_gcp_altscontext_proto_upb_file_layout[2] = {
   &grpc__gcp__AltsContext_msg_init,
   &grpc__gcp__AltsContext__PeerAttributesEntry_msg_init,
 };
 
 const upb_MiniTableFile grpc_gcp_altscontext_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_grpc_gcp_altscontext_proto_upb_file_layout,
   NULL,
   NULL,
   2,

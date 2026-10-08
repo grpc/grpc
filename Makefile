@@ -976,6 +976,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
@@ -1791,7 +1792,6 @@ LIBGRPC_SRC = \
     third_party/upb/upb/json/encode.c \
     third_party/upb/upb/lex/atoi.c \
     third_party/upb/upb/lex/round_trip.c \
-    third_party/upb/upb/lex/strtod.c \
     third_party/upb/upb/lex/unicode.c \
     third_party/upb/upb/mem/alloc.c \
     third_party/upb/upb/mem/arena.c \
@@ -1806,6 +1806,7 @@ LIBGRPC_SRC = \
     third_party/upb/upb/message/map_sorter.c \
     third_party/upb/upb/message/merge.c \
     third_party/upb/upb/message/message.c \
+    third_party/upb/upb/message/unknown_fields.c \
     third_party/upb/upb/mini_descriptor/build_enum.c \
     third_party/upb/upb/mini_descriptor/decode.c \
     third_party/upb/upb/mini_descriptor/internal/base92.c \
@@ -1815,6 +1816,7 @@ LIBGRPC_SRC = \
     third_party/upb/upb/mini_table/generated_registry.c \
     third_party/upb/upb/mini_table/internal/message.c \
     third_party/upb/upb/mini_table/message.c \
+    third_party/upb/upb/port/port.c \
     third_party/upb/upb/reflection/def_pool.c \
     third_party/upb/upb/reflection/def_type.c \
     third_party/upb/upb/reflection/desc_state.c \
@@ -1838,7 +1840,9 @@ LIBGRPC_SRC = \
     third_party/upb/upb/wire/decode_fast/select.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/internal/back_alloc.c \
     third_party/upb/upb/wire/internal/decoder.c \
+    third_party/upb/upb/wire/internal/encoder.c \
     third_party/upb/upb/wire/reader.c \
     third_party/utf8_range/utf8_range.c \
 

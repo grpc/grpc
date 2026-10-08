@@ -14,7 +14,7 @@
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[685] = {
+static const char descriptor_envoy_type_http_v3_path_transformation_proto_upbdefinit[685] = {
     '\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'h', 't', 't', 'p', '/', 'v', '3', '/', 'p', 'a', 't',
     'h', '_', 't', 'r', 'a', 'n', 's', 'f', 'o', 'r', 'm', 'a',
@@ -75,15 +75,16 @@ static const char descriptor[685] = {
     '3',
 };
 
-static _upb_DefPool_Init *deps[3] = {
+static _upb_DefPool_Init* deps_envoy_type_http_v3_path_transformation_proto_upbdefinit[3] = {
     &udpa_annotations_status_proto_upbdefinit,
     &validate_validate_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_type_http_v3_path_transformation_proto_upbdefinit = {
-    deps,
+    deps_envoy_type_http_v3_path_transformation_proto_upbdefinit,
     &envoy_type_http_v3_path_transformation_proto_upb_file_layout,
     "envoy/type/http/v3/path_transformation.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_type_http_v3_path_transformation_proto_upbdefinit,
+                        sizeof(descriptor_envoy_type_http_v3_path_transformation_proto_upbdefinit)),
 };

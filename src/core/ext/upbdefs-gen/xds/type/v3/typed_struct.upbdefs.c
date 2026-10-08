@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
 
-static const char descriptor[254] = {
+static const char descriptor_xds_type_v3_typed_struct_proto_upbdefinit[254] = {
     '\n', '\036', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'v',
     '3', '/', 't', 'y', 'p', 'e', 'd', '_', 's', 't', 'r', 'u',
     'c', 't', '.', 'p', 'r', 'o', 't', 'o', '\022', '\013', 'x', 'd',
@@ -38,14 +38,15 @@ static const char descriptor[254] = {
     'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_xds_type_v3_typed_struct_proto_upbdefinit[2] = {
     &google_protobuf_struct_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init xds_type_v3_typed_struct_proto_upbdefinit = {
-    deps,
+    deps_xds_type_v3_typed_struct_proto_upbdefinit,
     &xds_type_v3_typed_struct_proto_upb_file_layout,
     "xds/type/v3/typed_struct.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_type_v3_typed_struct_proto_upbdefinit,
+                        sizeof(descriptor_xds_type_v3_typed_struct_proto_upbdefinit)),
 };

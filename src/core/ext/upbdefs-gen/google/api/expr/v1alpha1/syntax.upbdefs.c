@@ -15,7 +15,7 @@ extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
 
-static const char descriptor[3637] = {
+static const char descriptor_google_api_expr_v1alpha1_syntax_proto_upbdefinit[3637] = {
     '\n', '%', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'a', 'p', 'i',
     '/', 'e', 'x', 'p', 'r', '/', 'v', '1', 'a', 'l', 'p', 'h',
     'a', '1', '/', 's', 'y', 'n', 't', 'a', 'x', '.', 'p', 'r',
@@ -322,7 +322,7 @@ static const char descriptor[3637] = {
     '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_google_api_expr_v1alpha1_syntax_proto_upbdefinit[4] = {
     &google_protobuf_duration_proto_upbdefinit,
     &google_protobuf_struct_proto_upbdefinit,
     &google_protobuf_timestamp_proto_upbdefinit,
@@ -330,8 +330,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init google_api_expr_v1alpha1_syntax_proto_upbdefinit = {
-    deps,
+    deps_google_api_expr_v1alpha1_syntax_proto_upbdefinit,
     &google_api_expr_v1alpha1_syntax_proto_upb_file_layout,
     "google/api/expr/v1alpha1/syntax.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_api_expr_v1alpha1_syntax_proto_upbdefinit,
+                        sizeof(descriptor_google_api_expr_v1alpha1_syntax_proto_upbdefinit)),
 };

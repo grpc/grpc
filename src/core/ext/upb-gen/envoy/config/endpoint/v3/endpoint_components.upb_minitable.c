@@ -43,15 +43,19 @@ static const envoy__config__endpoint__v3__Endpoint_msg_init_Fields envoy_config_
 
 const upb_MiniTable envoy__config__endpoint__v3__Endpoint_msg_init = {
   &envoy_config_endpoint_v3_Endpoint__fields.fields[0],
-  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.Endpoint",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000006000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0028000001070012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x003000003f080022, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -77,14 +81,14 @@ const upb_MiniTable envoy__config__endpoint__v3__Endpoint__HealthCheckConfig_msg
   "envoy.config.endpoint.v3.Endpoint.HealthCheckConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000000006001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -102,10 +106,14 @@ static const envoy__config__endpoint__v3__Endpoint__AdditionalAddress_msg_init_F
 
 const upb_MiniTable envoy__config__endpoint__v3__Endpoint__AdditionalAddress_msg_init = {
   &envoy_config_endpoint_v3_Endpoint_AdditionalAddress__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.Endpoint.AdditionalAddress",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000002000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -133,14 +141,14 @@ const upb_MiniTable envoy__config__endpoint__v3__LbEndpoint_msg_init = {
   "envoy.config.endpoint.v3.LbEndpoint",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001800100108000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002800000009001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00300000010a0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001800100500002a, &upb_DecodeFast_String_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -158,10 +166,14 @@ static const envoy__config__endpoint__v3__LbEndpointCollection_msg_init_Fields e
 
 const upb_MiniTable envoy__config__endpoint__v3__LbEndpointCollection_msg_init = {
   &envoy_config_endpoint_v3_LbEndpointCollection__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.LbEndpointCollection",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000002000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -184,10 +196,10 @@ const upb_MiniTable envoy__config__endpoint__v3__LedsClusterLocalityConfig_msg_i
   "envoy.config.endpoint.v3.LedsClusterLocalityConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -218,19 +230,27 @@ static const envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init_Fields en
 
 const upb_MiniTable envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init = {
   &envoy_config_endpoint_v3_LocalityLbEndpoints__fields.fields[0],
-  UPB_SIZE(48, 72), 8, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(48, 72), 8, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.LocalityLbEndpoints",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x00180000000c000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000003f0d0012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x00280000010e001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000c00003f000028, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00300000020f0032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x004000100710003a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0040001008110042, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x003800000312004a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -248,13 +268,17 @@ static const envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpointList_ms
 
 const upb_MiniTable envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpointList_msg_init = {
   &envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.LocalityLbEndpoints.LbEndpointList",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
-static const upb_MiniTable *messages_layout[8] = {
+static const upb_MiniTable *messages_layout_envoy_config_endpoint_v3_endpoint_components_proto_upb_file_layout[8] = {
   &envoy__config__endpoint__v3__Endpoint_msg_init,
   &envoy__config__endpoint__v3__Endpoint__HealthCheckConfig_msg_init,
   &envoy__config__endpoint__v3__Endpoint__AdditionalAddress_msg_init,
@@ -266,7 +290,7 @@ static const upb_MiniTable *messages_layout[8] = {
 };
 
 const upb_MiniTableFile envoy_config_endpoint_v3_endpoint_components_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_endpoint_v3_endpoint_components_proto_upb_file_layout,
   NULL,
   NULL,
   8,

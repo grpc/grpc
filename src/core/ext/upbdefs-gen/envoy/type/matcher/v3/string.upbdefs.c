@@ -17,7 +17,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[901] = {
+static const char descriptor_envoy_type_matcher_v3_string_proto_upbdefinit[901] = {
     '\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/',
     's', 't', 'r', 'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o',
@@ -96,7 +96,7 @@ static const char descriptor[901] = {
     '3',
 };
 
-static _upb_DefPool_Init *deps[6] = {
+static _upb_DefPool_Init* deps_envoy_type_matcher_v3_string_proto_upbdefinit[6] = {
     &envoy_type_matcher_v3_regex_proto_upbdefinit,
     &xds_core_v3_extension_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
@@ -106,8 +106,9 @@ static _upb_DefPool_Init *deps[6] = {
 };
 
 _upb_DefPool_Init envoy_type_matcher_v3_string_proto_upbdefinit = {
-    deps,
+    deps_envoy_type_matcher_v3_string_proto_upbdefinit,
     &envoy_type_matcher_v3_string_proto_upb_file_layout,
     "envoy/type/matcher/v3/string.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_type_matcher_v3_string_proto_upbdefinit,
+                        sizeof(descriptor_envoy_type_matcher_v3_string_proto_upbdefinit)),
 };

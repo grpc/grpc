@@ -47,7 +47,8 @@ class TestOrcaReport extends \Google\Protobuf\Internal\Message
      *     @type array|\Google\Protobuf\Internal\MapField $utilization
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

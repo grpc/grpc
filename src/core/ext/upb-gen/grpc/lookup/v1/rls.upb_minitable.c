@@ -46,7 +46,7 @@ const upb_MiniTable grpc__lookup__v1__RouteLookupRequest_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000028, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x002000003f000032, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003800003f09003a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
   })
 };
 
@@ -61,16 +61,10 @@ static const grpc__lookup__v1__RouteLookupRequest__KeyMapEntry_msg_init_Fields g
 
 const upb_MiniTable grpc__lookup__v1__RouteLookupRequest__KeyMapEntry_msg_init = {
   &grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lookup.v1.RouteLookupRequest.KeyMapEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 typedef struct {
@@ -89,26 +83,30 @@ static const grpc__lookup__v1__RouteLookupResponse_msg_init_Fields grpc_lookup_v
 
 const upb_MiniTable grpc__lookup__v1__RouteLookupResponse_msg_init = {
   &grpc_lookup_v1_RouteLookupResponse__fields.fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lookup.v1.RouteLookupResponse",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f00001a, &upb_DecodeFast_String_Repeated_Tag1Byte},
+    {0x002000003f050022, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[3] = {
+static const upb_MiniTable *messages_layout_grpc_lookup_v1_rls_proto_upb_file_layout[3] = {
   &grpc__lookup__v1__RouteLookupRequest_msg_init,
   &grpc__lookup__v1__RouteLookupRequest__KeyMapEntry_msg_init,
   &grpc__lookup__v1__RouteLookupResponse_msg_init,
 };
 
 const upb_MiniTableFile grpc_lookup_v1_rls_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_grpc_lookup_v1_rls_proto_upb_file_layout,
   NULL,
   NULL,
   3,

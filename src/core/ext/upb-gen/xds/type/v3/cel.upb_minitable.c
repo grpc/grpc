@@ -47,14 +47,14 @@ const upb_MiniTable xds__type__v3__CelExpression_msg_init = {
   "xds.type.v3.CelExpression",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0030000c0108000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0030000c02090012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00200000000a001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00280000010b0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f00002a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -74,19 +74,25 @@ static const xds__type__v3__CelExtractString_msg_init_Fields xds_type_v3_CelExtr
 
 const upb_MiniTable xds__type__v3__CelExtractString_msg_init = {
   &xds_type_v3_CelExtractString__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.v3.CelExtractString",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_xds_type_v3_cel_proto_upb_file_layout[2] = {
   &xds__type__v3__CelExpression_msg_init,
   &xds__type__v3__CelExtractString_msg_init,
 };
 
 const upb_MiniTableFile xds_type_v3_cel_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_type_v3_cel_proto_upb_file_layout,
   NULL,
   NULL,
   2,

@@ -52,7 +52,8 @@ class LoadBalancerStatsResponse extends \Google\Protobuf\Internal\Message
      *           All the metadata of all RPCs for each peer.
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

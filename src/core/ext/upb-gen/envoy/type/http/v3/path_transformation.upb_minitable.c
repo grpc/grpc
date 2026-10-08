@@ -30,10 +30,14 @@ static const envoy__type__http__v3__PathTransformation_msg_init_Fields envoy_typ
 
 const upb_MiniTable envoy__type__http__v3__PathTransformation_msg_init = {
   &envoy_type_http_v3_PathTransformation__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.http.v3.PathTransformation",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -52,10 +56,16 @@ static const envoy__type__http__v3__PathTransformation__Operation_msg_init_Field
 
 const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation_msg_init = {
   &envoy_type_http_v3_PathTransformation_Operation__fields.fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.http.v3.PathTransformation.Operation",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0010000802030012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080304001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+  })
 };
 
 const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init = {
@@ -74,7 +84,7 @@ const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__MergeS
 #endif
 };
 
-static const upb_MiniTable *messages_layout[4] = {
+static const upb_MiniTable *messages_layout_envoy_type_http_v3_path_transformation_proto_upb_file_layout[4] = {
   &envoy__type__http__v3__PathTransformation_msg_init,
   &envoy__type__http__v3__PathTransformation__Operation_msg_init,
   &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init,
@@ -82,7 +92,7 @@ static const upb_MiniTable *messages_layout[4] = {
 };
 
 const upb_MiniTableFile envoy_type_http_v3_path_transformation_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_http_v3_path_transformation_proto_upb_file_layout,
   NULL,
   NULL,
   4,

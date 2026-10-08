@@ -46,14 +46,14 @@ const upb_MiniTable envoy__admin__v3__ServerInfo_msg_init = {
   "envoy.admin.v3.ServerInfo",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00300000000b001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00380000010c0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x002000003f00002a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00400000020d0032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00480000030e003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
@@ -114,7 +114,7 @@ const upb_MiniTable envoy__admin__v3__CommandLineOptions_msg_init = {
   "envoy.admin.v3.CommandLineOptions",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x00f000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x001800003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x003000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
@@ -126,13 +126,13 @@ const upb_MiniTable envoy__admin__v3__CommandLineOptions_msg_init = {
     {0x007000003f00004a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x008000003f000052, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x009000003f00005a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x00a000003f00006a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x00b000003f000072, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x00c000003f00007a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x00d000003f000282, &upb_DecodeFast_String_Scalar_Tag2Byte},
-    {0x002800003f000288, &upb_DecodeFast_Varint32_Scalar_Tag2Byte},
-    {0x001100003f000290, &upb_DecodeFast_Bool_Scalar_Tag2Byte},
+    {0x00f8000000380182, &upb_DecodeFast_Message_Scalar_Tag2Byte},
+    {0x010000000139018a, &upb_DecodeFast_Message_Scalar_Tag2Byte},
+    {0x01080000023a0192, &upb_DecodeFast_Message_Scalar_Tag2Byte},
     {0x002000003f000198, &upb_DecodeFast_Varint32_Scalar_Tag2Byte},
     {0x002c00003f0002a0, &upb_DecodeFast_Varint32_Scalar_Tag2Byte},
     {0x001200003f0002a8, &upb_DecodeFast_Bool_Scalar_Tag2Byte},
@@ -143,19 +143,19 @@ const upb_MiniTable envoy__admin__v3__CommandLineOptions_msg_init = {
     {0x000d00003f0001d0, &upb_DecodeFast_Bool_Scalar_Tag2Byte},
     {0x000e00003f0001d8, &upb_DecodeFast_Bool_Scalar_Tag2Byte},
     {0x011000003f0001e2, &upb_DecodeFast_String_Repeated_Tag2Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000f00003f0001f0, &upb_DecodeFast_Bool_Scalar_Tag2Byte},
     {0x001000003f0001f8, &upb_DecodeFast_Bool_Scalar_Tag2Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_admin_v3_server_info_proto_upb_file_layout[2] = {
   &envoy__admin__v3__ServerInfo_msg_init,
   &envoy__admin__v3__CommandLineOptions_msg_init,
 };
 
 const upb_MiniTableFile envoy_admin_v3_server_info_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_admin_v3_server_info_proto_upb_file_layout,
   NULL,
   NULL,
   2,

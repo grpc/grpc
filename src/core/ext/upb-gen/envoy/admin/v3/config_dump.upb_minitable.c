@@ -34,10 +34,14 @@ static const envoy__admin__v3__ConfigDump_msg_init_Fields envoy_admin_v3_ConfigD
 
 const upb_MiniTable envoy__admin__v3__ConfigDump_msg_init = {
   &envoy_admin_v3_ConfigDump__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.ConfigDump",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -56,10 +60,16 @@ static const envoy__admin__v3__BootstrapConfigDump_msg_init_Fields envoy_admin_v
 
 const upb_MiniTable envoy__admin__v3__BootstrapConfigDump_msg_init = {
   &envoy_admin_v3_BootstrapConfigDump__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.BootstrapConfigDump",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -80,10 +90,16 @@ static const envoy__admin__v3__SecretsConfigDump_msg_init_Fields envoy_admin_v3_
 
 const upb_MiniTable envoy__admin__v3__SecretsConfigDump_msg_init = {
   &envoy_admin_v3_SecretsConfigDump__fields.fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.SecretsConfigDump",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f05000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x001000003f060012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x001800003f07001a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -112,14 +128,14 @@ const upb_MiniTable envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init 
   "envoy.admin.v3.SecretsConfigDump.DynamicSecret",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003000000009001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00380000010a0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00400000020b002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000c00003f000030, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -140,17 +156,19 @@ static const envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init_Fields e
 
 const upb_MiniTable envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init = {
   &envoy_admin_v3_SecretsConfigDump_StaticSecret__fields.fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.SecretsConfigDump.StaticSecret",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000050012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002800000106001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[5] = {
+static const upb_MiniTable *messages_layout_envoy_admin_v3_config_dump_proto_upb_file_layout[5] = {
   &envoy__admin__v3__ConfigDump_msg_init,
   &envoy__admin__v3__BootstrapConfigDump_msg_init,
   &envoy__admin__v3__SecretsConfigDump_msg_init,
@@ -159,7 +177,7 @@ static const upb_MiniTable *messages_layout[5] = {
 };
 
 const upb_MiniTableFile envoy_admin_v3_config_dump_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_admin_v3_config_dump_proto_upb_file_layout,
   NULL,
   NULL,
   5,
