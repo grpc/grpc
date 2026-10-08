@@ -24,8 +24,7 @@ namespace grpc_event_engine::experimental {
 bool UseEventEngineClient() { return grpc_core::IsEventEngineClientEnabled(); }
 
 bool UsePollsetAlternative() {
-  return UseEventEngineClient() &&
-         grpc_core::IsPollsetAlternativeEnabled();
+  return UseEventEngineClient() && grpc_core::IsPollsetAlternativeEnabled();
 }
 
 }  // namespace grpc_event_engine::experimental

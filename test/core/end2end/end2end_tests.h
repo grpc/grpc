@@ -916,7 +916,7 @@ inline bool IsTestSampledInPr(const CoreTestConfiguration* config) {
                       core_end2end_test_fuzzer::Msg msg) {                     \
     if (config == nullptr) return;                                             \
     if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
-    if (!IsEventEngineClientEnabled()) {    \
+    if (!IsEventEngineClientEnabled()) {                                       \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
     SKIP_IF_DISABLED_IN_CONFIG(config, #suite, #name);                         \

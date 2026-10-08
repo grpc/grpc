@@ -619,10 +619,9 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   }
   int fd_index = 0;
   absl::StatusOr<int> port;
-  auto* listener_supports_fd =
-      grpc_event_engine::experimental::QueryExtension<
-          grpc_event_engine::experimental::ListenerSupportsFdExtension>(
-          s->ee_listener.get());
+  auto* listener_supports_fd = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::ListenerSupportsFdExtension>(
+      s->ee_listener.get());
   if (listener_supports_fd != nullptr) {
     port = listener_supports_fd->BindWithFd(
         grpc_event_engine::experimental::CreateResolvedAddress(*addr),
@@ -667,7 +666,7 @@ unsigned tcp_server_port_fd_count(grpc_tcp_server* s, unsigned port_index) {
   gpr_mu_lock(&s->mu);
   // This doesn't need to be very fast. Used in tests.
   for (auto it = s->listen_fd_to_index_map.begin();
-        it != s->listen_fd_to_index_map.end(); it++) {
+       it != s->listen_fd_to_index_map.end(); it++) {
     if (std::get<0>(it->second) == static_cast<int>(port_index)) {
       num_fds++;
     }
@@ -681,7 +680,7 @@ static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
   gpr_mu_lock(&s->mu);
   // This doesn't need to be very fast. Used in tests.
   for (auto it = s->listen_fd_to_index_map.begin();
-        it != s->listen_fd_to_index_map.end(); it++) {
+       it != s->listen_fd_to_index_map.end(); it++) {
     if (std::get<0>(it->second) == static_cast<int>(port_index) &&
         std::get<1>(it->second) == static_cast<int>(fd_index)) {
       gpr_mu_unlock(&s->mu);
@@ -736,10 +735,9 @@ static void tcp_server_unref(grpc_tcp_server* s) {
 static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   s->shutdown_listeners = true;
-  auto* listener_supports_fd =
-      grpc_event_engine::experimental::QueryExtension<
-          grpc_event_engine::experimental::ListenerSupportsFdExtension>(
-          s->ee_listener.get());
+  auto* listener_supports_fd = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::ListenerSupportsFdExtension>(
+      s->ee_listener.get());
   if (listener_supports_fd != nullptr) {
     listener_supports_fd->ShutdownListeningFds();
   }
