@@ -69,6 +69,8 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
 inline bool IsCallv3BatchValidationEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_SERVER_SHUTDOWN_BROADCAST
+inline bool IsCallv3ServerShutdownBroadcastEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
@@ -164,6 +166,8 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
 inline bool IsCallv3BatchValidationEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_SERVER_SHUTDOWN_BROADCAST
+inline bool IsCallv3ServerShutdownBroadcastEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
@@ -259,6 +263,8 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
 inline bool IsCallv3BatchValidationEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_SERVER_SHUTDOWN_BROADCAST
+inline bool IsCallv3ServerShutdownBroadcastEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
@@ -349,6 +355,7 @@ enum ExperimentIds {
   kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation,
   kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation,
   kExperimentIdCallv3BatchValidation,
+  kExperimentIdCallv3ServerShutdownBroadcast,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChaoticGoodSendSupportedFeatures,
   kExperimentIdCustomFrameCheck,
@@ -432,6 +439,10 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
 inline bool IsCallv3BatchValidationEnabled() {
   return IsExperimentEnabled<kExperimentIdCallv3BatchValidation>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_SERVER_SHUTDOWN_BROADCAST
+inline bool IsCallv3ServerShutdownBroadcastEnabled() {
+  return IsExperimentEnabled<kExperimentIdCallv3ServerShutdownBroadcast>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {

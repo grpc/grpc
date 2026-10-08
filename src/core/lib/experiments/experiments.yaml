@@ -71,6 +71,14 @@
   expiry: 2026/10/31
   owner: akshitpatel@google.com
   test_tags: [core_end2end_test]
+- name: callv3_server_shutdown_broadcast
+  description:
+    If enabled, Server::ShutdownAndNotify / CancelAllCalls / SendGoaways
+    broadcast the shutdown transport op to Call V3 server transports
+    (connections_), not just to legacy channels.
+  expiry: 2027/04/07
+  owner: ritulb@google.com
+  test_tags: []
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
   expiry: 2026/10/01

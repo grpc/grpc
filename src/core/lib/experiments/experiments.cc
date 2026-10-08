@@ -44,6 +44,12 @@ const char* const
 const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
+const char* const description_callv3_server_shutdown_broadcast =
+    "If enabled, Server::ShutdownAndNotify / CancelAllCalls / SendGoaways "
+    "broadcast the shutdown transport op to Call V3 server transports "
+    "(connections_), not just to legacy channels.";
+const char* const additional_constraints_callv3_server_shutdown_broadcast =
+    "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -295,6 +301,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"callv3_batch_validation", description_callv3_batch_validation,
      additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
+    {"callv3_server_shutdown_broadcast",
+     description_callv3_server_shutdown_broadcast,
+     additional_constraints_callv3_server_shutdown_broadcast, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -498,6 +508,12 @@ const char* const
 const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
+const char* const description_callv3_server_shutdown_broadcast =
+    "If enabled, Server::ShutdownAndNotify / CancelAllCalls / SendGoaways "
+    "broadcast the shutdown transport op to Call V3 server transports "
+    "(connections_), not just to legacy channels.";
+const char* const additional_constraints_callv3_server_shutdown_broadcast =
+    "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -749,6 +765,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"callv3_batch_validation", description_callv3_batch_validation,
      additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
+    {"callv3_server_shutdown_broadcast",
+     description_callv3_server_shutdown_broadcast,
+     additional_constraints_callv3_server_shutdown_broadcast, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -952,6 +972,12 @@ const char* const
 const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
+const char* const description_callv3_server_shutdown_broadcast =
+    "If enabled, Server::ShutdownAndNotify / CancelAllCalls / SendGoaways "
+    "broadcast the shutdown transport op to Call V3 server transports "
+    "(connections_), not just to legacy channels.";
+const char* const additional_constraints_callv3_server_shutdown_broadcast =
+    "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -1203,6 +1229,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"callv3_batch_validation", description_callv3_batch_validation,
      additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
+    {"callv3_server_shutdown_broadcast",
+     description_callv3_server_shutdown_broadcast,
+     additional_constraints_callv3_server_shutdown_broadcast, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},

@@ -22,6 +22,7 @@ EXPERIMENT_ENABLES = {
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
     "callv3_batch_validation": "callv3_batch_validation",
+    "callv3_server_shutdown_broadcast": "callv3_server_shutdown_broadcast",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "custom_frame_check": "custom_frame_check",
