@@ -16,8 +16,10 @@
 
 #include <cmath>
 #include <cstdint>
+#include <string>
 
-#include "absl/strings/escaping.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_observability {
 
@@ -37,12 +39,10 @@ uint64_t CalculateThreshold(double probability) {
 // matching OpenTelemtry SDK's implementation, where the trace ID is parsed
 // from its big endian hex representation.
 uint64_t CalculateThresholdFromBuffer(const std::string& trace_id) {
-  const std::string trace_id_bytes = absl::HexStringToBytes(trace_id);
-  if (trace_id_bytes.size() < 16U) return UINT64_MAX;
-  const uint8_t* buf = reinterpret_cast<const uint8_t*>(trace_id_bytes.c_str());
-  uint64_t res = 0;
-  for (int i = 8; i < 16; ++i) {
-    res = (res << 8) | (static_cast<uint64_t>(buf[i]));
+  if (trace_id.size() < 32U) return UINT64_MAX;
+  uint64_t res;
+  if (!absl::SimpleHexAtoi(absl::string_view(trace_id).substr(16, 16), &res)) {
+    return UINT64_MAX;
   }
   return res;
 }
