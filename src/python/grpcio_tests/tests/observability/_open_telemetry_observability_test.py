@@ -1567,6 +1567,7 @@ class SharedTracerProviderTest(unittest.TestCase):
 
     def setUp(self):
         provider = otel_trace.TracerProvider()
+        self._provider = provider
         self._span_exporter = in_memory_span_exporter.InMemorySpanExporter()
         span_processor = otel_trace_export.SimpleSpanProcessor(
             self._span_exporter
@@ -1638,6 +1639,12 @@ class SharedTracerProviderTest(unittest.TestCase):
                 f"{span.name} was exported with incorrect SpanID",
             )
 
+    def test_id_generator_restored_after_recording(self):
+        recorded_seq = 7
+        self._plugin_a._record_tracing_data(self._tracing_data(recorded_seq))
+        self.assertIs(
+            self._plugin_a._tracer.id_generator, self._provider.id_generator
+        )
 
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
