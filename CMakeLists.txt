@@ -2296,6 +2296,7 @@ add_library(grpc
   src/core/channelz/v2tov1/property_list.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
+  src/core/client_channel/channel_factory.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -3176,6 +3177,7 @@ add_library(grpc
   src/core/xds/grpc/xds_server_grpc.cc
   src/core/xds/grpc/xds_tls_context.cc
   src/core/xds/grpc/xds_tls_context_parser.cc
+  src/core/xds/grpc/xds_transport_factory_grpc.cc
   src/core/xds/grpc/xds_transport_grpc.cc
   src/core/xds/xds_client/lrs_client.cc
   src/core/xds/xds_client/xds_api.cc
@@ -3260,6 +3262,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
+  include/grpc/channel_factory.h
   include/grpc/compression.h
   include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
@@ -3306,7 +3309,6 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
-  include/grpc/transport_factory.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3501,6 +3503,7 @@ add_library(grpc_unsecure
   src/core/channelz/text_encode.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
+  src/core/client_channel/channel_factory.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -3922,6 +3925,7 @@ add_library(grpc_unsecure
   src/core/util/validation_errors.cc
   src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
+  src/core/xds/grpc/xds_transport_grpc.cc
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -3998,6 +4002,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
+  include/grpc/channel_factory.h
   include/grpc/compression.h
   include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
@@ -4044,7 +4049,6 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
-  include/grpc/transport_factory.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -6466,6 +6470,7 @@ target_link_libraries(grpc_authorization_provider
 foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
+  include/grpc/channel_factory.h
   include/grpc/compression.h
   include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
@@ -6512,7 +6517,6 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
-  include/grpc/transport_factory.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)

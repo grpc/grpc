@@ -880,6 +880,7 @@ include/grpc++/support/time.h \
 include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
+include/grpc/channel_factory.h \
 include/grpc/compression.h \
 include/grpc/context_types.h \
 include/grpc/create_channel_from_endpoint.h \
@@ -959,7 +960,6 @@ include/grpc/support/sync_windows.h \
 include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
-include/grpc/transport_factory.h \
 include/grpcpp/alarm.h \
 include/grpcpp/call_context_types.h \
 include/grpcpp/channel.h \
