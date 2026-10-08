@@ -775,7 +775,6 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     GRPC_LOG_IF_ERROR("listener_handle_external_connection",
                       listener_supports_fd->HandleExternalConnection(
                           listener_fd, fd, &pending_data));
-    return;
   }
 
  private:
