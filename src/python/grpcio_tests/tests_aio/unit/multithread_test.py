@@ -121,7 +121,7 @@ class MultithreadTest(AioTestBase):
     @unittest.skipUnless(
         os.path.isdir("/proc/self/fd"), "Needs /proc/self/fd dir"
     )
-    async def test_temporary_event_loops_do_not_lead_fds(self):
+    async def test_temporary_event_loops_do_not_leak_fds(self):
         port, server = await self._start_server()
         client = lambda: self.run_client(port)
         keeper = aio.insecure_channel(f"localhost:{port}")
@@ -158,7 +158,7 @@ class MultithreadTest(AioTestBase):
             await keeper.close()
             await server.stop(None)
 
-    async def test_concurrent_event_loops_do_no_hang(self):
+    async def test_concurrent_event_loops_do_not_hang(self):
         async def serve_and_call():
             port, server = await self._start_server()
             try:
