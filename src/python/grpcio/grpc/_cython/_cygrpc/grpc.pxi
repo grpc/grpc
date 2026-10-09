@@ -97,8 +97,9 @@ cdef extern from "grpc/support/alloc.h":
 cdef extern from "grpc/byte_buffer_reader.h":
 
   struct grpc_byte_buffer_reader:
-    # We don't care about the internals
-    pass
+    # The buffer the reader iterates, which grpc_byte_buffer_reader_readall
+    # sizes its result from; the remaining internals are not needed.
+    grpc_byte_buffer *buffer_out
 
 
 cdef extern from "grpc/impl/codegen/grpc_types.h":

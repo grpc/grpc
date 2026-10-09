@@ -12,6 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from cpython.bytes cimport PyBytes_AS_STRING, PyBytes_FromStringAndSize
+from libc.string cimport memcpy
+
+
+# Received messages at least this large are copied out of their slices without
+# the GIL. Below it the copy costs less than a GIL hand-off, and this is also
+# the size from which CPython's bytes.join releases the GIL, so the receive
+# path releases it exactly where it did when the message was built with
+# b"".join().
+cdef size_t _NOGIL_COPY_MIN_BYTES = 1024 * 1024
+
+
+cdef size_t _copy_slices(grpc_byte_buffer_reader *reader, char *destination,
+                         size_t capacity) noexcept nogil:
+  # Copies the reader's remaining slices into destination, back to back, and
+  # returns their total length. Slices beyond capacity are counted but not
+  # written, so a result greater than capacity means the buffer did not fit.
+  cdef grpc_slice message_slice
+  cdef size_t message_slice_length
+  cdef size_t offset = 0
+  while grpc_byte_buffer_reader_next(reader, &message_slice):
+    message_slice_length = grpc_slice_length(message_slice)
+    if message_slice_length > 0 and offset + message_slice_length <= capacity:
+      memcpy(destination + offset, grpc_slice_start_ptr(message_slice),
+             message_slice_length)
+    offset += message_slice_length
+    grpc_slice_unref(message_slice)
+  return offset
+
 
 cdef class Operation:
 
@@ -158,28 +187,45 @@ cdef class ReceiveMessageOperation(Operation):
 
   cdef void un_c(self) except *:
     cdef grpc_byte_buffer_reader message_reader
-    cdef bint message_reader_status
-    cdef grpc_slice message_slice
-    cdef size_t message_slice_length
-    cdef list chunks = []
+    cdef size_t message_length
+    cdef size_t copied_length = 0
+    cdef bytes message
+    cdef char *destination
 
-    if self._c_message_byte_buffer != NULL:
-      message_reader_status = grpc_byte_buffer_reader_init(
-          &message_reader, self._c_message_byte_buffer)
-      if message_reader_status:
-        while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
-          message_slice_length = grpc_slice_length(message_slice)
-          if message_slice_length > 0:
-            chunks.append((<char *>grpc_slice_start_ptr(message_slice))[:message_slice_length])
-          grpc_slice_unref(message_slice)
-
+    self._message = None
+    if self._c_message_byte_buffer == NULL:
+      return
+    try:
+      if not grpc_byte_buffer_reader_init(
+          &message_reader, self._c_message_byte_buffer):
+        return
+      try:
+        # Allocate the result once and copy every slice straight into it
+        # instead of materializing a bytes object per slice and joining them
+        # afterwards. The reader iterates buffer_out, so size the result from
+        # that buffer, as grpc_byte_buffer_reader_readall does.
+        message_length = grpc_byte_buffer_length(message_reader.buffer_out)
+        message = PyBytes_FromStringAndSize(NULL, message_length)
+        destination = PyBytes_AS_STRING(message)
+        if message_length >= _NOGIL_COPY_MIN_BYTES:
+          # The copy only touches C state and a bytes object that no other
+          # thread can see yet, so it does not need the GIL.
+          with nogil:
+            copied_length = _copy_slices(
+                &message_reader, destination, message_length)
+        else:
+          copied_length = _copy_slices(
+              &message_reader, destination, message_length)
+      finally:
         grpc_byte_buffer_reader_destroy(&message_reader)
-        self._message = b"".join(chunks)
+      if copied_length == message_length:
+        self._message = message
       else:
-        self._message = None
+        _LOGGER.error(
+            "Received message of %d bytes does not match its byte buffer "
+            "length of %d bytes; dropping it.", copied_length, message_length)
+    finally:
       grpc_byte_buffer_destroy(self._c_message_byte_buffer)
-    else:
-      self._message = None
 
   def message(self):
     return self._message

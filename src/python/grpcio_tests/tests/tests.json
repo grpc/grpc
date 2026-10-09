@@ -74,6 +74,8 @@
   "tests.unit._invocation_defects_test.InvocationDefectsTest",
   "tests.unit._local_credentials_test.LocalCredentialsTest",
   "tests.unit._logging_test.LoggingTest",
+  "tests.unit._message_reassembly_test.CompressedMessageReassemblyTest",
+  "tests.unit._message_reassembly_test.MessageReassemblyTest",
   "tests.unit._metadata_code_details_test.InspectContextTest",
   "tests.unit._metadata_code_details_test.MetadataCodeDetailsTest",
   "tests.unit._metadata_flags_test.MetadataFlagsTest",
