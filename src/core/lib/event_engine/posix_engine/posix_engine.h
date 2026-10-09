@@ -104,6 +104,9 @@ class AsyncConnect {
 class PosixEventEngine final : public PosixEventEngineWithFdSupport {
  public:
   struct Options {
+    // Upper bound on reserve_threads. MakePosixEventEngine reduces larger
+    // values to it.
+    static constexpr unsigned kMaxReserveThreads = 16;
     // Number of connection shards to use.
     int connection_shards;
     // Number of threads to reserve for the thread pool.
@@ -112,7 +115,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
     // configure the thread pool, poller etc.
     Options()
         : connection_shards(std::max(2 * gpr_cpu_num_cores(), 1u)),
-          reserve_threads(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u)) {}
+          reserve_threads(
+              grpc_core::Clamp(gpr_cpu_num_cores(), 4u, kMaxReserveThreads)) {}
   };
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:

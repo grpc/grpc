@@ -14,7 +14,6 @@
 
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 
-#include <dirent.h>
 #include <grpc/event_engine/event_engine.h>
 
 #include <cstddef>
@@ -23,6 +22,7 @@
 
 #include "src/core/config/config_vars.h"
 #include "src/core/util/no_destruct.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 
@@ -36,20 +36,6 @@ constexpr int kMaxDefaultReserveThreads = 16;
 // Two reserve thread counts inside the default range.
 constexpr int kFewerReserveThreads = 6;
 constexpr int kMoreReserveThreads = 10;
-
-// Returns the number of threads in this process.
-size_t ProcessThreadCount() {
-  DIR* dir = opendir("/proc/self/task");
-  EXPECT_NE(dir, nullptr);
-  if (dir == nullptr) return 0;
-  size_t count = 0;
-  // Each entry other than "." and ".." is one thread.
-  while (dirent* entry = readdir(dir)) {
-    if (entry->d_name[0] != '.') ++count;
-  }
-  closedir(dir);
-  return count;
-}
 
 class DefaultEventEngineFactoryTest : public testing::Test {
  protected:

@@ -17,6 +17,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #include <functional>
 #include <map>
@@ -229,6 +231,11 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
 // we need to do a bunch of evil to make sure both timer systems are ticking
 // each step.
 bool IsSaneTimerEnvironment();
+
+#ifdef GPR_LINUX
+// Returns the number of threads in this process.
+size_t ProcessThreadCount();
+#endif  // GPR_LINUX
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

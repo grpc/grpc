@@ -123,6 +123,7 @@ grpc_cc_test(
     deps = [
         "//:config_vars",
         "//:event_engine_base_hdrs",
+        "event_engine_test_utils",
         "//src/core:default_event_engine_factory",
         "//src/core:no_destruct",
         "//test/core/test_util:grpc_test_util_unsecure",
