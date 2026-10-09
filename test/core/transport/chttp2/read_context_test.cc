@@ -227,9 +227,24 @@ TEST(GetPeerStringTest, GetPeerString) {
             Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
 }
 
+TEST(GetLocalAddressStringTest, GetLocalAddressString) {
+  util::testing::MockPromiseEndpoint mock_endpoint(1234, 5678);
+  ReadContext readContext(/*max_new_streams_per_read_cycle=*/32u,
+                          mock_endpoint.promise_endpoint,
+                          /*is_client=*/true, GrpcErrors::kMaxSecurityFrameSize,
+                          /*ping_on_rst_stream_percent=*/0u);
+  EXPECT_EQ(readContext.local_address_string(),
+            Slice::FromCopiedString("ipv4:127.0.0.1:5678"));
+}
+
 TEST_P(ReadContextTest, PeerString) {
   EXPECT_EQ(readContext->peer_string(),
             Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
+}
+
+TEST_P(ReadContextTest, LocalAddressString) {
+  EXPECT_EQ(readContext->local_address_string(),
+            Slice::FromCopiedString("ipv4:127.0.0.1:6148"));
 }
 
 TEST(ShouldSendPingOnRstStreamTest, AdequateRangeAndRandomness) {
