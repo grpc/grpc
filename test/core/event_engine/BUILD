@@ -111,6 +111,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "default_event_engine_factory_test",
+    srcs = ["default_event_engine_factory_test.cc"],
+    external_deps = ["gtest"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:config_vars",
+        "//:event_engine_base_hdrs",
+        "//src/core:default_event_engine_factory",
+        "//test/core/test_util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
     external_deps = [
