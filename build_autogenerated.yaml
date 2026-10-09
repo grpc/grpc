@@ -9152,6 +9152,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: chttp2_security_frame_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/chttp2_security_frame_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: chttp2_server_listener_test
   gtest: true
   build: test
