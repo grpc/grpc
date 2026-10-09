@@ -177,6 +177,29 @@ class HijackingInterceptorFactory
   }
 };
 
+class SerializationFailureInterceptor : public experimental::Interceptor {
+ public:
+  SerializationFailureInterceptor() = default;
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
+      // This call is expected to fail serialization and return nullptr
+      auto* buf = methods->GetSerializedSendMessage();
+      EXPECT_EQ(buf, nullptr);
+    }
+    methods->Proceed();
+  }
+};
+
+class SerializationFailureInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+ public:
+  experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* /*info*/) override {
+    return new SerializationFailureInterceptor();
+  }
+};
+
 class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
  public:
   explicit HijackingInterceptorMakesAnotherCall(
@@ -904,6 +927,24 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLogThenHijackTest) {
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
+}
+
+TEST_F(ClientInterceptorsEnd2endTest, SerializationFailureInInterceptor) {
+  ChannelArguments args;
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(
+      std::make_unique<SerializationFailureInterceptorFactory>());
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  ClientContext context;
+  EchoRequest request;
+  EchoResponse response;
+  // Too big to be serialized (exceeds 2GB total)
+  request.set_message(string(static_cast<size_t>(INT_MAX), 'a'));
+  Status s = stub->Echo(&context, request, &response);
+  EXPECT_EQ(s.error_code(), StatusCode::INTERNAL);
 }
 
 TEST_F(ClientInterceptorsEnd2endTest,
