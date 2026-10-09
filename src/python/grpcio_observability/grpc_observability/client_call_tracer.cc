@@ -90,16 +90,22 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, method_);
+    context_.Labels().emplace_back(kClientTarget, target_);
     RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1,
                     context_.Labels(), identifier_, registered_method_,
                     /*include_exchange_labels=*/true);  // exclude first attempt
     RecordIntMetric(kRpcClientTransparentRetriesPerCallMeasureName,
                     transparent_retries_, context_.Labels(), identifier_,
                     registered_method_, /*include_exchange_labels=*/true);
-    RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName,
-                       ToDoubleSeconds(retry_delay_), context_.Labels(),
-                       identifier_, registered_method_,
-                       /*include_exchange_labels=*/true);
+    // Unlike the retry counters, a retry delay of 0 is meaningful: it means
+    // the call was retried without waiting, for example when attempts
+    // overlap. Report it whenever there was a retry.
+    if (retries_ > 1) {
+      RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName,
+                         ToDoubleSeconds(retry_delay_), context_.Labels(),
+                         identifier_, registered_method_,
+                         /*include_exchange_labels=*/true);
+    }
   }
 
   if (tracing_enabled_) {
@@ -123,7 +129,10 @@ PythonOpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   {
     grpc_core::MutexLock lock(&mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
-      if (PythonCensusStatsEnabled() && num_active_rpcs_ == 0) {
+      // Transparent retries are not counted towards retry delay, matching the
+      // C++ OpenTelemetry plugin.
+      if (PythonCensusStatsEnabled() && num_active_rpcs_ == 0 &&
+          !is_transparent_retry) {
         retry_delay_ += absl::Now() - time_at_last_attempt_end_;
       }
     }
