@@ -15,13 +15,16 @@
 FROM debian:12
 
 {% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps_pep668.include" %}
+{% include "../../run_tests_python_deps_venv.include" %}
 {% include "../../cxx_test_deps.include" %}
 {% include "../../cxx_deps.include" %}
 {% include "../../cmake.include" %}
 {% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
 
+
+# Used by generate_projects.sh
+RUN pip install mako
 
 #=================
 # Setup git to access working directory across docker boundary
