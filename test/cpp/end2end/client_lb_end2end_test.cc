@@ -1749,7 +1749,6 @@ TEST_F(RoundRobinTest, ManyUpdates) {
 }
 
 TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start 3 servers.
   StartServers(3);
   // Create channel.
@@ -1946,7 +1945,6 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   // Start connection injector.
   ConnectionAttemptInjector injector;
   // Start server.
@@ -2007,7 +2005,6 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
 
 TEST_F(RoundRobinTest, SingleReconnect) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug (flake)");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   const int kNumServers = 3;
   StartServers(kNumServers);
   const auto ports = GetServersPorts();
@@ -2064,7 +2061,6 @@ TEST_F(RoundRobinTest, SingleReconnect) {
 // is not running on the server, the channel should be treated as healthy.
 TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P2] Fix bug");
   StartServers(1);  // Single server
   ChannelArguments args;
   args.SetServiceConfigJSON(
@@ -3761,7 +3757,6 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
 
 TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -4213,8 +4208,6 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
-  // Flake rate is less than once in 3 days.
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix flake");
   ConnectionAttemptInjector injector;
   const int port = grpc_pick_unused_port_or_die();
   std::string target = grpc_core::LocalIpAndPort(port);
@@ -4239,7 +4232,6 @@ TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
 
 TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   ConnectionAttemptInjector injector;
   const int port1 = grpc_pick_unused_port_or_die();
   const int port2 = grpc_pick_unused_port_or_die();
@@ -4318,7 +4310,6 @@ TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
 
 TEST_F(ClientLbSubchannelMetricsTest, DisconnectionOnSubchannelShutdown) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port1 = servers_[0]->port_;
   const int port2 = grpc_pick_unused_port_or_die();
