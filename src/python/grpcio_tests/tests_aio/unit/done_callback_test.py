@@ -14,8 +14,10 @@
 """Testing the done callbacks mechanism."""
 
 import asyncio
+import gc
 import logging
 import unittest
+import weakref
 
 import grpc
 from grpc.experimental import aio
@@ -82,6 +84,47 @@ class TestClientSideDoneCallback(AioTestBase):
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
         await validation
+
+    async def test_abandoned_call_garbage_collected(self):
+        async def read_one_and_drop():
+            request = messages_pb2.StreamingOutputCallRequest()
+            for _ in range(_NUM_STREAM_RESPONSES):
+                request.response_parameters.append(
+                    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+                )
+            call = self._stub.StreamingOutputCall(request)
+            call_ref = weakref.ref(call)
+            async for _ in call:
+                return call_ref
+
+        call_ref = await read_one_and_drop()
+        for _ in range(50):
+            gc.collect()
+            await asyncio.sleep(0.01)
+            if call_ref() is None:
+                break
+        self.assertIsNone(call_ref())
+
+    async def test_abandoned_call_with_callback_garbage_collected(self):
+        async def read_one_and_drop():
+            request = messages_pb2.StreamingOutputCallRequest()
+            for _ in range(_NUM_STREAM_RESPONSES):
+                request.response_parameters.append(
+                    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+                )
+            call = self._stub.StreamingOutputCall(request)
+            call.add_done_callback(lambda _: None)
+            call_ref = weakref.ref(call)
+            async for _ in call:
+                return call_ref
+
+        call_ref = await read_one_and_drop()
+        for _ in range(50):
+            gc.collect()
+            await asyncio.sleep(0.01)
+            if call_ref() is None:
+                break
+        self.assertIsNone(call_ref())
 
     async def test_stream_unary(self):
         payload = messages_pb2.Payload(body=b"\0" * _REQUEST_PAYLOAD_SIZE)
