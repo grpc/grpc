@@ -14,4 +14,4 @@
 
 # AUTO-GENERATED FROM
 # `$REPO_ROOT/templates/src/python/grpcio_status/grpc_status/_grpcio_metadata.py.inja`!!!
-__version__ = """${settings.python_version.pep440()}"""
+__version__ = """1.86.0.dev0"""
