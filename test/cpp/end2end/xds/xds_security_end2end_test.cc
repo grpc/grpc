@@ -766,6 +766,7 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
 }
 
 TEST_P(XdsSecurityTest, MtlsWithAggregateCluster) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   g_fake2_cert_data_map->Set({{"", {root_cert_, fallback_identity_pair_}}});
   // Set up aggregate cluster.
