@@ -78,13 +78,13 @@
   test_tags: []
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
-  expiry: 2026/10/01
+  expiry: 2027/02/01
   owner: pragunsaxena@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: chaotic_good_send_supported_features
   description: Send supported features in chaotic good settings frames.
-  expiry: 2026/10/01
+  expiry: 2027/02/01
   owner: pragunsaxena@google.com
   test_tags: []
 - name: custom_frame_check
@@ -168,6 +168,11 @@
   test_tags: []
 - name: internal_fix
   description: Gate for the internal fix.
+  expiry: 2026/10/31
+  owner: bpawan@google.com
+  test_tags: []
+- name: internal_fix1
+  description: Gate for the internal fix1.
   expiry: 2026/10/31
   owner: bpawan@google.com
   test_tags: []
@@ -350,7 +355,7 @@
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
   description: Return errors that exist before the start of the call in RunHandler.
-  expiry: 2027/01/16
+  expiry: 2027/02/01
   owner: pragunsaxena@google.com
   test_tags: []
 - name: ring_hash_update_cleanup
