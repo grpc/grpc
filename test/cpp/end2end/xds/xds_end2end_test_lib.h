@@ -455,7 +455,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       std::shared_ptr<ServerCredentials> balancer_credentials = nullptr);
 
   static void SetUpTestSuite() {
-    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P1][Client] Fix bug");
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P2][Client] Fix bug");
   }
 
   void SetUp() override { InitClient(); }

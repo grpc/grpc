@@ -1159,7 +1159,7 @@ TEST_P(XdsSniSecurityTest, SanValidationFailure) {
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   static void SetUpTestSuite() {
-    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P1][Client] Fix bug");
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P2][Client] Fix bug");
     SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   }
 
