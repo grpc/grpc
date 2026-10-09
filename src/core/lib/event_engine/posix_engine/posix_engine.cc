@@ -442,8 +442,9 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
     GRPC_TRACE_LOG(event_engine, INFO)
         << "PosixEventEngine:" << engine << " executing callback:" << handle;
     {
-      grpc_core::MutexLock lock(engine->mu_);
-      engine->known_handles_.erase(handle);
+      auto& shard = engine->TimerShardForHandle(handle);
+      grpc_core::MutexLock lock(shard.mu);
+      shard.known_handles.erase(handle);
     }
     cb();
     delete this;
@@ -451,33 +452,34 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
 };
 
 void PosixEventEngine::CancelAllPendingTimers() {
-  {
-    grpc_core::MutexLock lock(mu_);
-    auto pending_handles = known_handles_;
+  for (auto& shard : timer_shards_) {
+    grpc_core::MutexLock lock(shard.mu);
+    auto pending_handles = shard.known_handles;
     for (auto handle : pending_handles) {
-      CancelInternal(handle);
+      CancelInternal(handle, shard);
     }
-    GRPC_CHECK(known_handles_.empty());
-    // Prevent new timers from being scheduled on this EventEngine.
-    disallow_new_timers_ = true;
+    GRPC_CHECK(shard.known_handles.empty());
+    // Close each shard before releasing its lock, so concurrent registration
+    // cannot repopulate a shard that has already been drained.
+    shard.disallow_new_timers = true;
   }
 }
 
 PosixEventEngine::~PosixEventEngine() {
-  {
-    grpc_core::MutexLock lock(mu_);
-    auto pending_handles = known_handles_;
+  for (auto& shard : timer_shards_) {
+    grpc_core::MutexLock lock(shard.mu);
+    auto pending_handles = shard.known_handles;
     for (auto handle : pending_handles) {
       if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
         LOG(ERROR) << "(event_engine) PosixEventEngine:" << this
                    << " uncleared TaskHandle at shutdown:"
                    << HandleToString(handle);
       }
-      CancelInternal(handle);
+      CancelInternal(handle, shard);
     }
     // Prevent new timers from being scheduled on this EventEngine.
-    disallow_new_timers_ = true;
-    GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
+    shard.disallow_new_timers = true;
+    GRPC_CHECK(GPR_LIKELY(shard.known_handles.empty()));
   }
 #if defined(GRPC_POSIX_SOCKET_TCP)
   polling_cycle_.reset();
@@ -487,15 +489,17 @@ PosixEventEngine::~PosixEventEngine() {
 }
 
 bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
-  grpc_core::MutexLock lock(mu_);
-  return CancelInternal(handle);
+  auto& shard = TimerShardForHandle(handle);
+  grpc_core::MutexLock lock(shard.mu);
+  return CancelInternal(handle, shard);
 }
 
-bool PosixEventEngine::CancelInternal(EventEngine::TaskHandle handle) {
-  if (!known_handles_.contains(handle)) return false;
+bool PosixEventEngine::CancelInternal(EventEngine::TaskHandle handle,
+                                      TimerShard& shard) {
+  if (!shard.known_handles.contains(handle)) return false;
   auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
   bool r = timer_manager_->TimerCancel(&cd->timer);
-  known_handles_.erase(handle);
+  shard.known_handles.erase(handle);
   if (r) delete cd;
   return r;
 }
@@ -530,14 +534,15 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
-  grpc_core::MutexLock lock(mu_);
-  if (disallow_new_timers_) {
+  auto& shard = TimerShardForHandle(handle);
+  grpc_core::MutexLock lock(shard.mu);
+  if (shard.disallow_new_timers) {
     delete cd;
     // Return handle and don't schedule the callback. The caller will see a
     // valid handle but it cannot be cancelled since it was not scheduled.
     return handle;
   }
-  known_handles_.insert(handle);
+  shard.known_handles.insert(handle);
   cd->handle = handle;
   GRPC_TRACE_LOG(event_engine, INFO)
       << "PosixEventEngine:" << this << " scheduling callback:" << handle;
