@@ -37,13 +37,12 @@
 
 static int ncpus = 0;
 
+static bool has_working_sched_getcpu = false;
+
 static void init_num_cpus() {
 #ifndef GPR_MUSL_LIBC_COMPAT
-  if (sched_getcpu() < 0) {
-    LOG(ERROR) << "Error determining current CPU: "
-               << grpc_core::StrError(errno) << "\n";
-    ncpus = 1;
-    return;
+  if (sched_getcpu() >= 0) {
+    has_working_sched_getcpu = true;
   }
 #endif
   // This must be signed. sysconf returns -1 when the number cannot be
@@ -66,7 +65,7 @@ unsigned gpr_cpu_current_cpu(void) {
   // sched_getcpu() is undefined on musl
   return 0;
 #else
-  if (gpr_cpu_num_cores() == 1) {
+  if (gpr_cpu_num_cores() == 1 || !has_working_sched_getcpu) {
     return 0;
   }
   int cpu = sched_getcpu();
