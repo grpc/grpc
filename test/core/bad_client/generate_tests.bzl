@@ -33,6 +33,7 @@ BAD_CLIENT_TESTS = {
     "server_registered_method": test_options(),
     "simple_request": test_options(),
     "window_overflow": test_options(),
+    "window_update_overflow": test_options(),
     "unknown_frame": test_options(),
 }
 
