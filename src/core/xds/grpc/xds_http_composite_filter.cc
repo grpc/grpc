@@ -146,12 +146,12 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
       const auto* default_value =
           envoy_config_core_v3_RuntimeFractionalPercent_default_value(
               sample_percent_proto);
+      ValidationErrors::ScopedField field(errors,
+                                          ".sample_percent.default_value");
       if (default_value == nullptr) {
-        ValidationErrors::ScopedField field(errors,
-                                            ".sample_percent.default_value");
         errors->AddError("field not set");
       } else {
-        sample_per_million = ParseFractionalPercent(default_value);
+        sample_per_million = ParseFractionalPercent(default_value, errors);
       }
     }
     return std::make_unique<CompositeFilter::ExecuteFilterAction>(
