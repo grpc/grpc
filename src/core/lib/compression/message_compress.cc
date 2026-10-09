@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <optional>
 
 #include "src/core/lib/slice/slice.h"
@@ -114,6 +115,13 @@ absl::StatusOr<SliceBuffer> ZlibBody(z_stream* zs, const SliceBuffer& input,
 }
 
 void* ZallocGpr(void* /*opaque*/, unsigned int items, unsigned int size) {
+  // items and size are multiplied in 32 bits here: if the product were to
+  // wrap around we would hand zlib a buffer much smaller than it asked for.
+  // Fail the allocation instead, which zlib turns into a Z_MEM_ERROR.
+  if (size != 0 &&
+      items > std::numeric_limits<unsigned int>::max() / size) {
+    return nullptr;
+  }
   return gpr_malloc(items * size);
 }
 
