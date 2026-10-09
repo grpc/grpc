@@ -13,8 +13,6 @@ if test "$PHP_TESTS" != "no"; then
 fi
 
 if test "$PHP_GRPC" != "no"; then
-  dnl Write more examples of tests here...
-
   dnl # --with-grpc -> check with-path
   SEARCH_PATH="/usr/local /usr"     # you might want to change this
   SEARCH_FOR="include/grpc/grpc.h"  # you most likely want to change this
@@ -29,13 +27,17 @@ if test "$PHP_GRPC" != "no"; then
       fi
     done
   fi
-  if test -z "$GRPC_DIR"; then
-    AC_MSG_RESULT([not found])
-    AC_MSG_ERROR([Please reinstall the grpc distribution])
-  fi
 
-  dnl # --with-grpc -> add include path
-  PHP_ADD_INCLUDE($GRPC_DIR/include)
+  if test -z "$GRPC_DIR"; then
+    dnl # fall back to pkg-config when grpc is not found in a known directory
+    PKG_CHECK_MODULES([GRPC], [grpc])
+
+    PHP_EVAL_INCLINE($GRPC_CFLAGS)
+    PHP_EVAL_LIBLINE($GRPC_LIBS, GRPC_SHARED_LIBADD)
+  else
+    dnl # --with-grpc -> add include path
+    PHP_ADD_INCLUDE($GRPC_DIR/include)
+  fi
 
   LIBS="-lpthread $LIBS"
 
@@ -56,20 +58,23 @@ if test "$PHP_GRPC" != "no"; then
       ;;
   esac
 
-  GRPC_LIBDIR=$GRPC_DIR/${GRPC_LIB_SUBDIR-lib}
+  if test -n "$GRPC_DIR"; then
+    GRPC_LIBDIR=$GRPC_DIR/${GRPC_LIB_SUBDIR-lib}
 
-  PHP_ADD_LIBPATH($GRPC_LIBDIR)
+    PHP_ADD_LIBPATH($GRPC_LIBDIR)
 
-  PHP_CHECK_LIBRARY(grpc,grpc_channel_destroy,
-  [
-    PHP_ADD_LIBRARY(grpc,,GRPC_SHARED_LIBADD)
-    dnl PHP_ADD_LIBRARY_WITH_PATH(grpc, $GRPC_DIR/lib, GRPC_SHARED_LIBADD)
-    AC_DEFINE(HAVE_GRPCLIB,1,[ ])
-  ],[
-    AC_MSG_ERROR([wrong grpc lib version or lib not found])
-  ],[
-    -L$GRPC_LIBDIR
-  ])
+    PHP_CHECK_LIBRARY(grpc,grpc_channel_destroy,
+    [
+      PHP_ADD_LIBRARY(grpc,,GRPC_SHARED_LIBADD)
+      dnl PHP_ADD_LIBRARY_WITH_PATH(grpc, $GRPC_DIR/lib, GRPC_SHARED_LIBADD)
+    ],[
+      AC_MSG_ERROR([wrong grpc lib version or lib not found])
+    ],[
+      -L$GRPC_LIBDIR
+    ])
+  fi
+
+  AC_DEFINE(HAVE_GRPCLIB,1,[ ])
 
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
