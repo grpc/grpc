@@ -55,6 +55,14 @@ Clients should accept these arguments:
     * Universe domain to configure for the google-c2p resolver. Optional,
       defaults to the empty string in which case we should *not* explicitly
       configure a universe domain.
+* --enable_opentelemetry=BOOLEAN
+    * Whether to enable OpenTelemetry tracing for the RPCs made by the client.
+      Optional, defaults to false. Used by the `test_unary_rpc_tracing_export`
+      interop test.
+* --otel_collector_address=HOST:PORT
+    * The OTLP/gRPC endpoint of the trace collector that spans are exported to
+      when OpenTelemetry is enabled. Optional; when omitted the standard
+      `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable is used instead.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
@@ -1351,6 +1359,20 @@ Servers should accept these arguments:
 * --use_tls=BOOLEAN
 
     * Whether to use a plaintext or encrypted connection
+
+Servers that want to be used for OpenTelemetry tracing testing must accept
+these arguments:
+
+* --enable_opentelemetry=BOOLEAN
+
+    * Whether to enable OpenTelemetry tracing for the RPCs served by the
+      server. Optional, defaults to false.
+
+* --otel_collector_address=HOST:PORT
+
+    * The OTLP/gRPC endpoint of the trace collector that spans are exported to
+      when OpenTelemetry is enabled. Optional; when omitted the standard
+      `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable is used instead.
 
 Servers that want to be used for dual stack testing must accept this argument:
 
