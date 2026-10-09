@@ -115,6 +115,15 @@ Given protobuf include directories :code:`$INCLUDE`, an output directory
 
   $ python -m grpc_tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=$OUTPUT $PROTO_FILES
 
+To also generate ``*_pb2_grpc.pyi`` type stubs for the gRPC service modules,
+pass ``generate_pyi`` to :code:`--grpc_python_out`:
+
+::
+
+  $ python -m grpc_tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=generate_pyi:$OUTPUT $PROTO_FILES
+
+If you also want ``*_pb2.pyi`` message stubs, add :code:`--pyi_out=$OUTPUT`.
+
 To use as a build step in setuptools-based projects, you may use the provided
 command class in your :code:`setup.py`:
 
