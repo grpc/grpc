@@ -166,6 +166,11 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
 
   std::string DebugTag() { return absl::StrFormat("SERVER_CALL[%p]: ", this); }
 
+  enum ScheduledOp {
+    kScheduledSendInitialMetadata = 1 << 0,
+    kScheduledSendStatus = 1 << 1,
+    kScheduledRecvClose = 1 << 2,
+  };
   CallHandler call_handler_;
   CallOpInvariantsValidator call_op_invariants_validator_;
   std::atomic<bool> sent_server_initial_metadata_batch_{false};
@@ -175,6 +180,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   grpc_completion_queue* const cq_;
   ServerInterface* const server_;
   std::atomic<bool> saw_was_cancelled_{false};
+  std::atomic<uint32_t> scheduled_ops_{0};
 };
 
 grpc_call* MakeServerCall(CallHandler call_handler,
