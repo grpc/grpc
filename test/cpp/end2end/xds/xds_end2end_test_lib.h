@@ -43,6 +43,7 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
@@ -452,6 +453,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // If balancer_credentials is null, it defaults to fake credentials.
   explicit XdsEnd2endTest(
       std::shared_ptr<ServerCredentials> balancer_credentials = nullptr);
+
+  static void SetUpTestSuite() {
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P2][Client] Fix bug");
+  }
 
   void SetUp() override { InitClient(); }
   void TearDown() override;

@@ -44,6 +44,11 @@ const char* const
 const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
+const char* const description_callv3_server_shutdown_broadcast =
+    "If enabled, broadcast the shutdown transport op to Call V3 server "
+    "transports.";
+const char* const additional_constraints_callv3_server_shutdown_broadcast =
+    "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -57,10 +62,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -299,6 +300,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"callv3_batch_validation", description_callv3_batch_validation,
      additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
+    {"callv3_server_shutdown_broadcast",
+     description_callv3_server_shutdown_broadcast,
+     additional_constraints_callv3_server_shutdown_broadcast, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -310,8 +315,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -504,6 +507,11 @@ const char* const
 const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
+const char* const description_callv3_server_shutdown_broadcast =
+    "If enabled, broadcast the shutdown transport op to Call V3 server "
+    "transports.";
+const char* const additional_constraints_callv3_server_shutdown_broadcast =
+    "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -517,10 +525,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -759,6 +763,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"callv3_batch_validation", description_callv3_batch_validation,
      additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
+    {"callv3_server_shutdown_broadcast",
+     description_callv3_server_shutdown_broadcast,
+     additional_constraints_callv3_server_shutdown_broadcast, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -770,8 +778,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -964,6 +970,11 @@ const char* const
 const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
+const char* const description_callv3_server_shutdown_broadcast =
+    "If enabled, broadcast the shutdown transport op to Call V3 server "
+    "transports.";
+const char* const additional_constraints_callv3_server_shutdown_broadcast =
+    "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -977,10 +988,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -1219,6 +1226,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"callv3_batch_validation", description_callv3_batch_validation,
      additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
+    {"callv3_server_shutdown_broadcast",
+     description_callv3_server_shutdown_broadcast,
+     additional_constraints_callv3_server_shutdown_broadcast, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -1230,8 +1241,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,

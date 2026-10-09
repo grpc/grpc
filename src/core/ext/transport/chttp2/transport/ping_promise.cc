@@ -82,20 +82,18 @@ PingManager::TriggerPingArgs PingManager::NeedToPing(
                                         ping_callbacks_.CountPingInflight()),
       [this](Chttp2PingRatePolicy::SendGranted) {
         // TODO(akshitpatel) : [PH2][P1] : Update some keepalive flags.
-        GRPC_HTTP2_PING_LOG << "CLIENT" << "[" << "PH2"
-                            << "]: Ping sent"
+        GRPC_HTTP2_PING_LOG << "[PH2]: Ping sent: "
                             << ping_rate_policy_.GetDebugString();
         return TriggerPingArgs(std::nullopt, /*need_to_ping=*/true);
       },
       [this](Chttp2PingRatePolicy::TooManyRecentPings) {
-        GRPC_HTTP2_PING_LOG << "CLIENT" << "[" << "PH2"
-                            << "]: Ping delayed too many recent pings: "
+        GRPC_HTTP2_PING_LOG << "[PH2]: Ping delayed too many recent pings: "
                             << ping_rate_policy_.GetDebugString();
         return TriggerPingArgs(std::nullopt, /*need_to_ping=*/false);
       },
       [this](Chttp2PingRatePolicy::TooSoon too_soon) mutable {
         GRPC_HTTP2_PING_LOG
-            << "]: Ping delayed not enough time elapsed since last "
+            << "[PH2]: Ping delayed not enough time elapsed since last "
                "ping. Last ping:"
             << too_soon.last_ping
             << ", minimum wait:" << too_soon.next_allowed_ping_interval

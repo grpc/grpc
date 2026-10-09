@@ -22,11 +22,11 @@ EXPERIMENT_ENABLES = {
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
     "callv3_batch_validation": "callv3_batch_validation",
+    "callv3_server_shutdown_broadcast": "callv3_server_shutdown_broadcast",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "custom_frame_check": "custom_frame_check",
     "event_engine_client": "event_engine_client",
-    "event_engine_fork": "event_engine_fork",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints,event_engine_listener",
@@ -87,7 +87,6 @@ EXPERIMENT_ENABLES = {
 
 EXPERIMENT_POLLERS = [
     "event_engine_client",
-    "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
     "pipelined_read_secure_endpoint",
@@ -108,14 +107,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -136,14 +131,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -206,6 +197,9 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
+                "ph2_client",
+                "ph2_client_server",
+                "ph2_server",
                 "ring_hash_update_cleanup",
             ],
         },
@@ -214,15 +208,11 @@ EXPERIMENTS = {
                 "callv3_batch_validation",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
                 "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
