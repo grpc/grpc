@@ -131,24 +131,24 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
             if file_name.endswith(".proto"):
                 # Compile proto
                 compiled_any = True
-                if has_grpc_service(proto_package_path):
-                    return_code = protoc.main(
-                        COMPILE_BOTH + [os.path.join(root, file_name)]
-                    )
-                    add_test_import(proto_package_path, file_name, service=True)
-                else:
-                    return_code = protoc.main(
-                        COMPILE_PROTO_ONLY + [os.path.join(root, file_name)]
-                    )
-                    add_test_import(proto_package_path, file_name, service=False)
+                proto_file_path = os.path.join(root, file_name)
+                service = has_grpc_service(proto_package_path)
+                command = COMPILE_BOTH if service else COMPILE_PROTO_ONLY
+                return_code = protoc.main(command + [proto_file_path])
+                add_test_import(proto_package_path, file_name, service=service)
                 if return_code != 0:
-                    raise Exception("error: {} failed".format(COMPILE_BOTH))
+                    raise Exception(
+                        "error: {} failed with exit code {}".format(
+                            " ".join(command + [proto_file_path]),
+                            return_code,
+                        )
+                    )
     # Ensure a deterministic order.
     TEST_IMPORTS.sort()
     if not compiled_any:
         raise Exception(
             "No proto files found at {}. Did you update git submodules?".format(
-                proto_root, sub_dir
+                os.path.normpath(os.path.join(proto_root, sub_dir))
             )
         )
 
