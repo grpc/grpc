@@ -186,15 +186,24 @@ cdef class SSLSessionCacheLRU:
     grpc_shutdown()
 
 
+class TLSVersion:
+  tls1_2 = TLS1_2
+  tls1_3 = TLS1_3
+
+
 cdef class SSLChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, private_key_signer=None):
+  def __cinit__(self, pem_root_certificates, private_key, certificate_chain,
+                private_key_signer=None, minimum_tls_version=None,
+                maximum_tls_version=None):
     if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
       raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
     self._private_key_signer = private_key_signer
+    self._minimum_tls_version = minimum_tls_version
+    self._maximum_tls_version = maximum_tls_version
     # This gets passed around C++, make sure it stays
     if self._private_key_signer is not None:
       Py_INCREF(self._private_key_signer)
@@ -215,6 +224,14 @@ cdef class SSLChannelCredentials(ChannelCredentials):
     cdef Status private_key_status
 
     c_tls_credentials_options = grpc_tls_credentials_options_create()
+    if self._minimum_tls_version is not None:
+      grpc_tls_credentials_options_set_min_tls_version(
+        c_tls_credentials_options,
+        <grpc_tls_version>self._minimum_tls_version)
+    if self._maximum_tls_version is not None:
+      grpc_tls_credentials_options_set_max_tls_version(
+        c_tls_credentials_options,
+        <grpc_tls_version>self._maximum_tls_version)
     c_pem_root_certificates = self._pem_root_certificates or <const char*>NULL
     if self._private_key or self._certificate_chain or self._private_key_signer:
       c_tls_identity_pairs = grpc_tls_identity_pairs_create()
@@ -333,28 +350,56 @@ cdef grpc_ssl_pem_key_cert_pair* _create_c_ssl_pem_key_cert_pairs(pem_key_cert_p
   return c_ssl_pem_key_cert_pairs
 
 def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
-                           bint force_client_auth):
+                           bint force_client_auth,
+                           minimum_tls_version=None,
+                           maximum_tls_version=None):
   pem_root_certs = str_to_bytes(pem_root_certs)
   pem_key_cert_pairs = list(pem_key_cert_pairs)
   cdef ServerCredentials credentials = ServerCredentials()
-  credentials.references.append(pem_root_certs)
-  credentials.references.append(pem_key_cert_pairs)
-  cdef const char * c_pem_root_certs = _get_c_pem_root_certs(pem_root_certs)
-  credentials.c_ssl_pem_key_cert_pairs_count = len(pem_key_cert_pairs)
-  credentials.c_ssl_pem_key_cert_pairs = _create_c_ssl_pem_key_cert_pairs(pem_key_cert_pairs)
-  cdef grpc_ssl_server_certificate_config *c_cert_config = NULL
-  c_cert_config = grpc_ssl_server_certificate_config_create(
-    c_pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
-    credentials.c_ssl_pem_key_cert_pairs_count)
-  cdef grpc_ssl_server_credentials_options* c_options = NULL
-  # C-core assumes ownership of c_cert_config
-  c_options = grpc_ssl_server_credentials_create_options_using_config(
+  cdef const char *c_pem_root_certs = _get_c_pem_root_certs(pem_root_certs)
+  cdef grpc_tls_credentials_options* c_options
+  cdef grpc_tls_identity_pairs* c_identity_pairs
+  cdef grpc_tls_certificate_provider* c_certificate_provider
+
+  c_options = grpc_tls_credentials_options_create()
+  if minimum_tls_version is not None:
+    grpc_tls_credentials_options_set_min_tls_version(
+      c_options, <grpc_tls_version>minimum_tls_version)
+  if maximum_tls_version is not None:
+    grpc_tls_credentials_options_set_max_tls_version(
+      c_options, <grpc_tls_version>maximum_tls_version)
+  grpc_tls_credentials_options_set_cert_request_type(
+    c_options,
     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
     if force_client_auth else
-    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-    c_cert_config)
+    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE)
+
+  c_identity_pairs = grpc_tls_identity_pairs_create()
+  for pem_key_cert_pair in pem_key_cert_pairs:
+    if not isinstance(pem_key_cert_pair, SslPemKeyCertPair):
+      grpc_tls_identity_pairs_destroy(c_identity_pairs)
+      grpc_tls_credentials_options_destroy(c_options)
+      raise TypeError("expected pem_key_cert_pairs to be sequence of "
+                      "SslPemKeyCertPair")
+    grpc_tls_identity_pairs_add_pair(
+      c_identity_pairs,
+      (<SslPemKeyCertPair>pem_key_cert_pair).c_pair.private_key,
+      (<SslPemKeyCertPair>pem_key_cert_pair).c_pair.certificate_chain)
+
+  c_certificate_provider = grpc_tls_certificate_provider_in_memory_create()
+  if c_pem_root_certs != NULL:
+    grpc_tls_certificate_provider_in_memory_set_root_certificate(
+      c_certificate_provider, c_pem_root_certs)
+    grpc_tls_credentials_options_set_root_certificate_provider(
+      c_options, c_certificate_provider)
+  grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+    c_certificate_provider, c_identity_pairs)
+  grpc_tls_credentials_options_set_identity_certificate_provider(
+    c_options, c_certificate_provider)
+  grpc_tls_certificate_provider_release(c_certificate_provider)
+
   # C-core assumes ownership of c_options
-  credentials.c_credentials = grpc_ssl_server_credentials_create_with_options(c_options)
+  credentials.c_credentials = grpc_tls_server_credentials_create(c_options)
   return credentials
 
 def server_certificate_config_ssl(pem_root_certs, pem_key_cert_pairs):
