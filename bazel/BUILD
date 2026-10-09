@@ -27,6 +27,11 @@ package(
 )
 
 filegroup(
+    name = "_single_loader",
+    srcs = ["_single_loader.py"],
+)
+
+filegroup(
     name = "_single_module_tester",
     srcs = ["_single_module_tester.py"],
 )
