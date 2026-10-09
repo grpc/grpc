@@ -22,11 +22,11 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from envoy.config.core.v3 import base_pb2 as envoy_dot_config_dot_core_dot_v3_dot_base__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
-from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n9envoy/extensions/dynamic_modules/v3/dynamic_modules.proto\x12#envoy.extensions.dynamic_modules.v3\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"Y\n\x13\x44ynamicModuleConfig\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x14\n\x0c\x64o_not_close\x18\x03 \x01(\x08\x12\x15\n\rload_globally\x18\x04 \x01(\x08\x42\xb0\x01\n1io.envoyproxy.envoy.extensions.dynamic_modules.v3B\x13\x44ynamicModulesProtoP\x01Z\\github.com/envoyproxy/go-control-plane/envoy/extensions/dynamic_modules/v3;dynamic_modulesv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n9envoy/extensions/dynamic_modules/v3/dynamic_modules.proto\x12#envoy.extensions.dynamic_modules.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a\x1dudpa/annotations/status.proto\"\xbe\x01\n\x13\x44ynamicModuleConfig\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0c\x64o_not_close\x18\x03 \x01(\x08\x12\x15\n\rload_globally\x18\x04 \x01(\x08\x12\x19\n\x11metrics_namespace\x18\x05 \x01(\t\x12\x35\n\x06module\x18\x06 \x01(\x0b\x32%.envoy.config.core.v3.AsyncDataSource\x12\x1a\n\x12nack_on_cache_miss\x18\x07 \x01(\x08\x42\xb0\x01\n1io.envoyproxy.envoy.extensions.dynamic_modules.v3B\x13\x44ynamicModulesProtoP\x01Z\\github.com/envoyproxy/go-control-plane/envoy/extensions/dynamic_modules/v3;dynamic_modulesv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,8 +34,6 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.dynamic_mo
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n1io.envoyproxy.envoy.extensions.dynamic_modules.v3B\023DynamicModulesProtoP\001Z\\github.com/envoyproxy/go-control-plane/envoy/extensions/dynamic_modules/v3;dynamic_modulesv3\272\200\310\321\006\002\020\002'
-  _globals['_DYNAMICMODULECONFIG'].fields_by_name['name']._loaded_options = None
-  _globals['_DYNAMICMODULECONFIG'].fields_by_name['name']._serialized_options = b'\372B\004r\002\020\001'
-  _globals['_DYNAMICMODULECONFIG']._serialized_start=154
-  _globals['_DYNAMICMODULECONFIG']._serialized_end=243
+  _globals['_DYNAMICMODULECONFIG']._serialized_start=163
+  _globals['_DYNAMICMODULECONFIG']._serialized_end=353
 # @@protoc_insertion_point(module_scope)

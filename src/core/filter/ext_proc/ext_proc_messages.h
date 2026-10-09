@@ -142,11 +142,13 @@ absl::StatusOr<std::string> CreateExtProcServerHeadersRequest(
 //  - end_of_stream_without_message: If end_of_stream is true and this is true,
 //  indicates end of stream without a message (e.g. half-close). Ignored if
 //  end_of_stream is false.
+//  - drain_complete: If true, indicates external processor acknowledgment of
+//  request body drain.
 absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
     upb_Arena* arena, absl::string_view body,
     ::google_protobuf_Struct* attributes, bool observability_mode,
     std::optional<ExtProcProcessingMode> processing_mode, bool end_of_stream,
-    bool end_of_stream_without_message);
+    bool end_of_stream_without_message, bool drain_complete = false);
 
 // Creates a serialized envoy.service.ext_proc.v3.ProcessingRequest containing a
 // HttpBody message for a server response body payload chunk.
@@ -165,10 +167,13 @@ absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
 //  - processing_mode: If present, populates the protocol_config field in the
 //  request (sent on the first message of a stream to configure desired
 //  processing modes as per gRFC A93).
+//  - drain_complete: If true, indicates external processor acknowledgment of
+//  response body drain.
 absl::StatusOr<std::string> CreateExtProcServerBodyRequest(
     upb_Arena* arena, absl::string_view body,
     ::google_protobuf_Struct* attributes, bool observability_mode,
-    std::optional<ExtProcProcessingMode> processing_mode);
+    std::optional<ExtProcProcessingMode> processing_mode,
+    bool drain_complete = false);
 
 // Creates a serialized envoy.service.ext_proc.v3.ProcessingRequest containing a
 // HttpTrailers message for server response trailers.
@@ -259,6 +264,8 @@ struct ExtProcResponse {
     bool end_of_stream = false;
     // If true, indicates the end of the stream without a message.
     bool end_of_stream_without_message = false;
+    // If true, indicates external processor acknowledgment of body drain.
+    bool drain_complete = false;
   };
 
   struct RequestHeaders {
@@ -299,11 +306,16 @@ struct ExtProcResponse {
                    ImmediateResponse>;
 
   ResponseValue response;
-  // If true, indicates that the client request should be drained as specified
-  // in gRFC A93: the filter sends a half-close on the ext_proc stream and
-  // pauses data plane reading until the ext_proc server echoes remaining
-  // messages and terminates the stream with OK status.
-  bool request_drain = false;
+  // If true, indicates that request body messages should be drained as
+  // specified in gRFC A93: the filter stops sending request body messages to
+  // ext_proc, sends HttpBody.drain_complete = true, and waits for
+  // acknowledgment.
+  bool request_drain_requests = false;
+  // If true, indicates that response body messages should be drained as
+  // specified in gRFC A93: the filter stops sending response body messages to
+  // ext_proc, sends HttpBody.drain_complete = true, and waits for
+  // acknowledgment.
+  bool request_drain_responses = false;
 
   // Parses a serialized envoy.service.ext_proc.v3.ProcessingResponse proto.
   //
