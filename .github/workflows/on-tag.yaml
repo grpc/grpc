@@ -1,0 +1,12 @@
+# Publish new releases to Bazel Central Registry.
+name: Publish to BCR with new tag
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    uses: ./.github/workflows/publish-to-bcr
+    with:
+      tag_name: ${{ github.ref_name }}
