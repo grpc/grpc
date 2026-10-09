@@ -28,7 +28,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n.envoy/extensions/filters/http/mcp/v3/mcp.proto\x12$envoy.extensions.filters.http.mcp.v3\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xbf\x02\n\x03Mcp\x12U\n\x0ctraffic_mode\x18\x01 \x01(\x0e\x32\x35.envoy.extensions.filters.http.mcp.v3.Mcp.TrafficModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12\x19\n\x11\x63lear_route_cache\x18\x02 \x01(\x08\x12G\n\x15max_request_body_size\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\n\xfa\x42\x07*\x05\x18\x80\x80\x80\x05\x12I\n\rparser_config\x18\x04 \x01(\x0b\x32\x32.envoy.extensions.filters.http.mcp.v3.ParserConfig\"2\n\x0bTrafficMode\x12\x10\n\x0cPASS_THROUGH\x10\x00\x12\x11\n\rREJECT_NO_MCP\x10\x01\"\xa2\x02\n\x0cParserConfig\x12P\n\x07methods\x18\x01 \x03(\x0b\x32?.envoy.extensions.filters.http.mcp.v3.ParserConfig.MethodConfig\x1a\x30\n\x17\x41ttributeExtractionRule\x12\x15\n\x04path\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x1a\x8d\x01\n\x0cMethodConfig\x12\x17\n\x06method\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x64\n\x10\x65xtraction_rules\x18\x02 \x03(\x0b\x32J.envoy.extensions.filters.http.mcp.v3.ParserConfig.AttributeExtractionRule\"\xad\x01\n\x0bMcpOverride\x12U\n\x0ctraffic_mode\x18\x01 \x01(\x0e\x32\x35.envoy.extensions.filters.http.mcp.v3.Mcp.TrafficModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12G\n\x15max_request_body_size\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\n\xfa\x42\x07*\x05\x18\x80\x80\x80\x05\x42\xa3\x01\n2io.envoyproxy.envoy.extensions.filters.http.mcp.v3B\x08McpProtoP\x01ZQgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/mcp/v3;mcpv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n.envoy/extensions/filters/http/mcp/v3/mcp.proto\x12$envoy.extensions.filters.http.mcp.v3\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xff\x06\n\x03Mcp\x12U\n\x0ctraffic_mode\x18\x01 \x01(\x0e\x32\x35.envoy.extensions.filters.http.mcp.v3.Mcp.TrafficModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12\x19\n\x11\x63lear_route_cache\x18\x02 \x01(\x08\x12G\n\x15max_request_body_size\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\n\xfa\x42\x07*\x05\x18\x80\x80\x80\x05\x12I\n\rparser_config\x18\x04 \x01(\x0b\x32\x32.envoy.extensions.filters.http.mcp.v3.ParserConfig\x12\x64\n\x14request_storage_mode\x18\x05 \x01(\x0e\x32<.envoy.extensions.filters.http.mcp.v3.Mcp.RequestStorageModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12h\n\x17propagate_trace_context\x18\x06 \x01(\x0b\x32G.envoy.extensions.filters.http.mcp.v3.Mcp.TraceContextPropagationConfig\x12]\n\x11propagate_baggage\x18\x07 \x01(\x0b\x32\x42.envoy.extensions.filters.http.mcp.v3.Mcp.BaggagePropagationConfig\x12\x39\n\x15reject_duplicate_keys\x18\x08 \x01(\x0b\x32\x1a.google.protobuf.BoolValue\x1a)\n\x1dTraceContextPropagationConfig:\x08\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x1a$\n\x18\x42\x61ggagePropagationConfig:\x08\xd2\xc6\xa4\xe1\x06\x02\x08\x01\"<\n\x0bTrafficMode\x12\x10\n\x0cPASS_THROUGH\x10\x00\x12\x11\n\rREJECT_NO_MCP\x10\x01\x12\x08\n\x04NOOP\x10\x02\"y\n\x12RequestStorageMode\x12\x14\n\x10MODE_UNSPECIFIED\x10\x00\x12\x14\n\x10\x44YNAMIC_METADATA\x10\x01\x12\x10\n\x0c\x46ILTER_STATE\x10\x02\x12%\n!DYNAMIC_METADATA_AND_FILTER_STATE\x10\x03\"\xcd\x02\n\x0cParserConfig\x12P\n\x07methods\x18\x01 \x03(\x0b\x32?.envoy.extensions.filters.http.mcp.v3.ParserConfig.MethodConfig\x12\x1a\n\x12group_metadata_key\x18\x02 \x01(\t\x1a\x30\n\x17\x41ttributeExtractionRule\x12\x15\n\x04path\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x1a\x9c\x01\n\x0cMethodConfig\x12\x17\n\x06method\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\r\n\x05group\x18\x02 \x01(\t\x12\x64\n\x10\x65xtraction_rules\x18\x03 \x03(\x0b\x32J.envoy.extensions.filters.http.mcp.v3.ParserConfig.AttributeExtractionRule\"\x98\x03\n\x0bMcpOverride\x12U\n\x0ctraffic_mode\x18\x01 \x01(\x0e\x32\x35.envoy.extensions.filters.http.mcp.v3.Mcp.TrafficModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12G\n\x15max_request_body_size\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\n\xfa\x42\x07*\x05\x18\x80\x80\x80\x05\x12\x19\n\x11\x63lear_route_cache\x18\x03 \x01(\x08\x12I\n\rparser_config\x18\x04 \x01(\x0b\x32\x32.envoy.extensions.filters.http.mcp.v3.ParserConfig\x12\x64\n\x14request_storage_mode\x18\x05 \x01(\x0e\x32<.envoy.extensions.filters.http.mcp.v3.Mcp.RequestStorageModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12\x1d\n\x15reject_duplicate_keys\x18\x06 \x01(\x08\x42\xa3\x01\n2io.envoyproxy.envoy.extensions.filters.http.mcp.v3B\x08McpProtoP\x01ZQgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/mcp/v3;mcpv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,10 +36,16 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.filters.ht
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n2io.envoyproxy.envoy.extensions.filters.http.mcp.v3B\010McpProtoP\001ZQgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/mcp/v3;mcpv3\272\200\310\321\006\002\020\002\322\306\244\341\006\002\010\001'
+  _globals['_MCP_TRACECONTEXTPROPAGATIONCONFIG']._loaded_options = None
+  _globals['_MCP_TRACECONTEXTPROPAGATIONCONFIG']._serialized_options = b'\322\306\244\341\006\002\010\001'
+  _globals['_MCP_BAGGAGEPROPAGATIONCONFIG']._loaded_options = None
+  _globals['_MCP_BAGGAGEPROPAGATIONCONFIG']._serialized_options = b'\322\306\244\341\006\002\010\001'
   _globals['_MCP'].fields_by_name['traffic_mode']._loaded_options = None
   _globals['_MCP'].fields_by_name['traffic_mode']._serialized_options = b'\372B\005\202\001\002\020\001'
   _globals['_MCP'].fields_by_name['max_request_body_size']._loaded_options = None
   _globals['_MCP'].fields_by_name['max_request_body_size']._serialized_options = b'\372B\007*\005\030\200\200\200\005'
+  _globals['_MCP'].fields_by_name['request_storage_mode']._loaded_options = None
+  _globals['_MCP'].fields_by_name['request_storage_mode']._serialized_options = b'\372B\005\202\001\002\020\001'
   _globals['_PARSERCONFIG_ATTRIBUTEEXTRACTIONRULE'].fields_by_name['path']._loaded_options = None
   _globals['_PARSERCONFIG_ATTRIBUTEEXTRACTIONRULE'].fields_by_name['path']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_PARSERCONFIG_METHODCONFIG'].fields_by_name['method']._loaded_options = None
@@ -48,16 +54,24 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_MCPOVERRIDE'].fields_by_name['traffic_mode']._serialized_options = b'\372B\005\202\001\002\020\001'
   _globals['_MCPOVERRIDE'].fields_by_name['max_request_body_size']._loaded_options = None
   _globals['_MCPOVERRIDE'].fields_by_name['max_request_body_size']._serialized_options = b'\372B\007*\005\030\200\200\200\005'
+  _globals['_MCPOVERRIDE'].fields_by_name['request_storage_mode']._loaded_options = None
+  _globals['_MCPOVERRIDE'].fields_by_name['request_storage_mode']._serialized_options = b'\372B\005\202\001\002\020\001'
   _globals['_MCP']._serialized_start=210
-  _globals['_MCP']._serialized_end=529
-  _globals['_MCP_TRAFFICMODE']._serialized_start=479
-  _globals['_MCP_TRAFFICMODE']._serialized_end=529
-  _globals['_PARSERCONFIG']._serialized_start=532
-  _globals['_PARSERCONFIG']._serialized_end=822
-  _globals['_PARSERCONFIG_ATTRIBUTEEXTRACTIONRULE']._serialized_start=630
-  _globals['_PARSERCONFIG_ATTRIBUTEEXTRACTIONRULE']._serialized_end=678
-  _globals['_PARSERCONFIG_METHODCONFIG']._serialized_start=681
-  _globals['_PARSERCONFIG_METHODCONFIG']._serialized_end=822
-  _globals['_MCPOVERRIDE']._serialized_start=825
-  _globals['_MCPOVERRIDE']._serialized_end=998
+  _globals['_MCP']._serialized_end=1105
+  _globals['_MCP_TRACECONTEXTPROPAGATIONCONFIG']._serialized_start=841
+  _globals['_MCP_TRACECONTEXTPROPAGATIONCONFIG']._serialized_end=882
+  _globals['_MCP_BAGGAGEPROPAGATIONCONFIG']._serialized_start=884
+  _globals['_MCP_BAGGAGEPROPAGATIONCONFIG']._serialized_end=920
+  _globals['_MCP_TRAFFICMODE']._serialized_start=922
+  _globals['_MCP_TRAFFICMODE']._serialized_end=982
+  _globals['_MCP_REQUESTSTORAGEMODE']._serialized_start=984
+  _globals['_MCP_REQUESTSTORAGEMODE']._serialized_end=1105
+  _globals['_PARSERCONFIG']._serialized_start=1108
+  _globals['_PARSERCONFIG']._serialized_end=1441
+  _globals['_PARSERCONFIG_ATTRIBUTEEXTRACTIONRULE']._serialized_start=1234
+  _globals['_PARSERCONFIG_ATTRIBUTEEXTRACTIONRULE']._serialized_end=1282
+  _globals['_PARSERCONFIG_METHODCONFIG']._serialized_start=1285
+  _globals['_PARSERCONFIG_METHODCONFIG']._serialized_end=1441
+  _globals['_MCPOVERRIDE']._serialized_start=1444
+  _globals['_MCPOVERRIDE']._serialized_end=1852
 # @@protoc_insertion_point(module_scope)

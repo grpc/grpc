@@ -28,7 +28,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nMenvoy/extensions/load_balancing_policies/override_host/v3/override_host.proto\x12\x39\x65nvoy.extensions.load_balancing_policies.override_host.v3\x1a%envoy/config/cluster/v3/cluster.proto\x1a%envoy/type/metadata/v3/metadata.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xcf\x02\n\x0cOverrideHost\x12\x83\x01\n\x15override_host_sources\x18\x01 \x03(\x0b\x32Z.envoy.extensions.load_balancing_policies.override_host.v3.OverrideHost.OverrideHostSourceB\x08\xfa\x42\x05\x92\x01\x02\x08\x01\x12O\n\x0f\x66\x61llback_policy\x18\x03 \x01(\x0b\x32,.envoy.config.cluster.v3.LoadBalancingPolicyB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x1ah\n\x12OverrideHostSource\x12\x1b\n\x06header\x18\x01 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x02\xc8\x01\x00\x12\x35\n\x08metadata\x18\x02 \x01(\x0b\x32#.envoy.type.metadata.v3.MetadataKeyB\xd8\x01\nGio.envoyproxy.envoy.extensions.load_balancing_policies.override_host.v3B\x11OverrideHostProtoP\x01Zpgithub.com/envoyproxy/go-control-plane/envoy/extensions/load_balancing_policies/override_host/v3;override_hostv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nMenvoy/extensions/load_balancing_policies/override_host/v3/override_host.proto\x12\x39\x65nvoy.extensions.load_balancing_policies.override_host.v3\x1a%envoy/config/cluster/v3/cluster.proto\x1a%envoy/type/metadata/v3/metadata.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x8f\x03\n\x0cOverrideHost\x12\x83\x01\n\x15override_host_sources\x18\x01 \x03(\x0b\x32Z.envoy.extensions.load_balancing_policies.override_host.v3.OverrideHost.OverrideHostSourceB\x08\xfa\x42\x05\x92\x01\x02\x08\x01\x12>\n\x11selected_host_key\x18\x02 \x01(\x0b\x32#.envoy.type.metadata.v3.MetadataKey\x12O\n\x0f\x66\x61llback_policy\x18\x03 \x01(\x0b\x32,.envoy.config.cluster.v3.LoadBalancingPolicyB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x1ah\n\x12OverrideHostSource\x12\x1b\n\x06header\x18\x01 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x02\xc8\x01\x00\x12\x35\n\x08metadata\x18\x02 \x01(\x0b\x32#.envoy.type.metadata.v3.MetadataKeyB\xd8\x01\nGio.envoyproxy.envoy.extensions.load_balancing_policies.override_host.v3B\x11OverrideHostProtoP\x01Zpgithub.com/envoyproxy/go-control-plane/envoy/extensions/load_balancing_policies/override_host/v3;override_hostv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -43,7 +43,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_OVERRIDEHOST'].fields_by_name['fallback_policy']._loaded_options = None
   _globals['_OVERRIDEHOST'].fields_by_name['fallback_policy']._serialized_options = b'\372B\005\212\001\002\020\001'
   _globals['_OVERRIDEHOST']._serialized_start=275
-  _globals['_OVERRIDEHOST']._serialized_end=610
-  _globals['_OVERRIDEHOST_OVERRIDEHOSTSOURCE']._serialized_start=506
-  _globals['_OVERRIDEHOST_OVERRIDEHOSTSOURCE']._serialized_end=610
+  _globals['_OVERRIDEHOST']._serialized_end=674
+  _globals['_OVERRIDEHOST_OVERRIDEHOSTSOURCE']._serialized_start=570
+  _globals['_OVERRIDEHOST_OVERRIDEHOSTSOURCE']._serialized_end=674
 # @@protoc_insertion_point(module_scope)

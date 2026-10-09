@@ -26,7 +26,7 @@ from envoy.extensions.filters.common.set_filter_state.v3 import value_pb2 as env
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nKenvoy/extensions/filters/network/set_filter_state/v3/set_filter_state.proto\x12\x34\x65nvoy.extensions.filters.network.set_filter_state.v3\x1a?envoy/extensions/filters/common/set_filter_state/v3/value.proto\x1a\x1dudpa/annotations/status.proto\"j\n\x06\x43onfig\x12`\n\x11on_new_connection\x18\x01 \x03(\x0b\x32\x45.envoy.extensions.filters.common.set_filter_state.v3.FilterStateValueB\xd3\x01\nBio.envoyproxy.envoy.extensions.filters.network.set_filter_state.v3B\x13SetFilterStateProtoP\x01Zngithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/set_filter_state/v3;set_filter_statev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nKenvoy/extensions/filters/network/set_filter_state/v3/set_filter_state.proto\x12\x34\x65nvoy.extensions.filters.network.set_filter_state.v3\x1a?envoy/extensions/filters/common/set_filter_state/v3/value.proto\x1a\x1dudpa/annotations/status.proto\"\xb9\x02\n\x06\x43onfig\x12`\n\x11on_new_connection\x18\x01 \x03(\x0b\x32\x45.envoy.extensions.filters.common.set_filter_state.v3.FilterStateValue\x12j\n\x1bon_downstream_tls_handshake\x18\x02 \x03(\x0b\x32\x45.envoy.extensions.filters.common.set_filter_state.v3.FilterStateValue\x12\x61\n\x12on_downstream_data\x18\x03 \x03(\x0b\x32\x45.envoy.extensions.filters.common.set_filter_state.v3.FilterStateValueB\xd3\x01\nBio.envoyproxy.envoy.extensions.filters.network.set_filter_state.v3B\x13SetFilterStateProtoP\x01Zngithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/set_filter_state/v3;set_filter_statev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,6 +34,6 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.filters.ne
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\nBio.envoyproxy.envoy.extensions.filters.network.set_filter_state.v3B\023SetFilterStateProtoP\001Zngithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/set_filter_state/v3;set_filter_statev3\272\200\310\321\006\002\020\002'
-  _globals['_CONFIG']._serialized_start=229
-  _globals['_CONFIG']._serialized_end=335
+  _globals['_CONFIG']._serialized_start=230
+  _globals['_CONFIG']._serialized_end=543
 # @@protoc_insertion_point(module_scope)

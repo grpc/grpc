@@ -12,6 +12,7 @@
 #include "envoy/config/core/v3/base.upb_minitable.h"
 #include "envoy/config/core/v3/config_source.upb_minitable.h"
 #include "envoy/config/core/v3/extension.upb_minitable.h"
+#include "xds/type/matcher/v3/matcher.upb_minitable.h"
 #include "udpa/annotations/migrate.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
@@ -20,11 +21,70 @@
 #include "upb/port/def.inc"
 
 extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} envoy__extensions__filters__http__composite__v3__Composite_msg_init_Fields;
+
+static const envoy__extensions__filters__http__composite__v3__Composite_msg_init_Fields envoy_extensions_filters_http_composite_v3_Composite__fields = {{
+  {1, UPB_SIZE(12, 16), 0, 6, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 64, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__composite__v3__Composite__NamedFilterChainsEntry_msg_init},
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init},
+}};
+
 const upb_MiniTable envoy__extensions__filters__http__composite__v3__Composite_msg_init = {
-  NULL,
-  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  &envoy_extensions_filters_http_composite_v3_Composite__fields.fields[0],
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.composite.v3.Composite",
+#endif
+};
+
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[1];
+} envoy__extensions__filters__http__composite__v3__Composite__NamedFilterChainsEntry_msg_init_Fields;
+
+static const envoy__extensions__filters__http__composite__v3__Composite__NamedFilterChainsEntry_msg_init_Fields envoy_extensions_filters_http_composite_v3_Composite_NamedFilterChainsEntry__fields = {{
+  {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, 32, 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init},
+}};
+
+const upb_MiniTable envoy__extensions__filters__http__composite__v3__Composite__NamedFilterChainsEntry_msg_init = {
+  &envoy_extensions_filters_http_composite_v3_Composite_NamedFilterChainsEntry__fields.fields[0],
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.composite.v3.Composite.NamedFilterChainsEntry",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+  })
+};
+
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} envoy__extensions__filters__http__composite__v3__CompositePerRoute_msg_init_Fields;
+
+static const envoy__extensions__filters__http__composite__v3__CompositePerRoute_msg_init_Fields envoy_extensions_filters_http_composite_v3_CompositePerRoute__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init},
+}};
+
+const upb_MiniTable envoy__extensions__filters__http__composite__v3__CompositePerRoute_msg_init = {
+  &envoy_extensions_filters_http_composite_v3_CompositePerRoute__fields.fields[0],
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.composite.v3.CompositePerRoute",
 #endif
 };
 
@@ -74,15 +134,16 @@ const upb_MiniTable envoy__extensions__filters__http__composite__v3__DynamicConf
 };
 
 typedef struct {
-  upb_MiniTableField fields[4];
+  upb_MiniTableField fields[5];
   upb_MiniTableSubInternal subs[4];
 } envoy__extensions__filters__http__composite__v3__ExecuteFilterAction_msg_init_Fields;
 
 static const envoy__extensions__filters__http__composite__v3__ExecuteFilterAction_msg_init_Fields envoy_extensions_filters_http_composite_v3_ExecuteFilterAction__fields = {{
-  {1, UPB_SIZE(12, 16), 64, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 32), 66, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(24, 40), 67, UPB_SIZE(6, 9), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(12, 32), 64, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 40), 65, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 48), 66, UPB_SIZE(11, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 56), 67, UPB_SIZE(9, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
  },
   {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
@@ -93,14 +154,26 @@ static const envoy__extensions__filters__http__composite__v3__ExecuteFilterActio
 
 const upb_MiniTable envoy__extensions__filters__http__composite__v3__ExecuteFilterAction_msg_init = {
   &envoy_extensions_filters_http_composite_v3_ExecuteFilterAction__fields.fields[0],
-  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.composite.v3.ExecuteFilterAction",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000003f00002a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-static const upb_MiniTable *messages_layout[4] = {
+static const upb_MiniTable *messages_layout[6] = {
   &envoy__extensions__filters__http__composite__v3__Composite_msg_init,
+  &envoy__extensions__filters__http__composite__v3__Composite__NamedFilterChainsEntry_msg_init,
+  &envoy__extensions__filters__http__composite__v3__CompositePerRoute_msg_init,
   &envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init,
   &envoy__extensions__filters__http__composite__v3__DynamicConfig_msg_init,
   &envoy__extensions__filters__http__composite__v3__ExecuteFilterAction_msg_init,
@@ -110,7 +183,7 @@ const upb_MiniTableFile envoy_extensions_filters_http_composite_v3_composite_pro
   messages_layout,
   NULL,
   NULL,
-  4,
+  6,
   0,
   0,
 };
