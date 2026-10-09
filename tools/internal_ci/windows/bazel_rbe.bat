@@ -14,15 +14,37 @@
 
 @rem Avoid slow finalization after the script has exited.
 @rem See the script's prologue for info on the correct invocation pattern.
+
+echo "reparsepoint in orig src"
+fsutil reparsepoint query %~dp0\..\..\..\test/core/http/python_wrapper.sh
+
+echo "cat orig src"
+cat %~dp0\..\..\..\test/core/http/python_wrapper.sh
+
+git config core.symlinks
+
 setlocal EnableDelayedExpansion
-IF "%cd%"=="T:\src" (
-  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
-  echo respawn script has finished with exitcode !errorlevel!
-  exit /b !errorlevel!
-)
-endlocal
+@rem IF "%cd%"=="T:\src" (
+@rem  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+@rem   echo respawn script has finished with exitcode !errorlevel!
+@rem  exit /b !errorlevel!
+@rem )
+@rem endlocal
+
+git config core.symlinks
 
 cd github/grpc
+
+git config core.symlinks
+
+ls -l test/core/http/python_wrapper.sh
+
+echo "reparsepoint in altsrc:"
+pwd
+fsutil reparsepoint query test/core/http/python_wrapper.sh
+
+echo "cat alt src"
+cat test/core/http/python_wrapper.sh
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
