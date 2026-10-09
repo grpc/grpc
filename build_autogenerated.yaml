@@ -355,6 +355,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/ext/transport/chttp2/transport/http2_transport_stats.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
@@ -2608,6 +2609,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/ext/transport/chttp2/transport/http2_transport_stats.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
