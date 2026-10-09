@@ -46,6 +46,8 @@
   default: true
 - name: callv3_batch_validation
   default: true
+- name: callv3_server_shutdown_broadcast
+  default: true
 - name: chaotic_good_framing_layer
   default: true
 - name: chaotic_good_send_supported_features
@@ -57,8 +59,6 @@
 - name: event_engine_client
   default: true
 - name: event_engine_for_all_other_endpoints
-  default: true
-- name: event_engine_fork
   default: true
 - name: event_engine_listener
   default: true

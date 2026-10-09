@@ -14,7 +14,7 @@
 
 module(
     name = "grpc",
-    version = "1.85.0-dev",
+    version = "1.86.0-dev",
     compatibility_level = 1,
     repo_name = "com_github_grpc_grpc",
 )
@@ -134,6 +134,7 @@ PYTHON_VERSIONS = [
     "3.12",
     "3.13",
     "3.14",
+    "3.15",
 ]
 
 # TODO(weizheyuan): figure out how it interacts with protobuf 31

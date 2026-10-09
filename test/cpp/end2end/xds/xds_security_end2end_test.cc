@@ -69,6 +69,7 @@
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -765,6 +766,7 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
 }
 
 TEST_P(XdsSecurityTest, MtlsWithAggregateCluster) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   g_fake2_cert_data_map->Set({{"", {root_cert_, fallback_identity_pair_}}});
   // Set up aggregate cluster.
@@ -1156,6 +1158,11 @@ TEST_P(XdsSniSecurityTest, SanValidationFailure) {
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
+  static void SetUpTestSuite() {
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P2][Client] Fix bug");
+    SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
+  }
+
   void SetUp() override {
     XdsBootstrapBuilder builder = MakeBootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");

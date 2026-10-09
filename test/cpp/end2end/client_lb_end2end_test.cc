@@ -34,6 +34,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <random>
 #include <set>
 #include <string>
@@ -3522,7 +3523,6 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
 
 TEST_F(ConnectionScalingTest, SingleConnection) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   const int kMaxConcurrentStreams = 3;
   // Start a server with MAX_CONCURRENT_STREAMS set.
   StartServers(1, {}, nullptr,
@@ -3561,7 +3561,6 @@ TEST_F(ConnectionScalingTest, SingleConnection) {
 
 TEST_F(ConnectionScalingTest, MultipleConnections) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -3605,7 +3604,6 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
 
 TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -4150,7 +4148,6 @@ class ClientLbSubchannelMetricsTest : public ClientLbEnd2endTest {
 
 TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port = servers_[0]->port_;
   std::string target = grpc_core::LocalIpAndPort(port);
@@ -4169,6 +4166,10 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   // has actually been registered with the server before we tell the
   // server to send GOAWAYs.
   CheckRpcSendOk(DEBUG_LOCATION, stub);
+  // A PH2 server runs on the Call V3 stack. This decides which GOAWAY the
+  // server is expected to send on shutdown.
+  const bool is_ph2_server =
+      grpc_core::IsPh2ServerEnabled() || grpc_core::IsPh2ClientServerEnabled();
   EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
@@ -4181,10 +4182,31 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
         return state == GRPC_CHANNEL_IDLE;
       }));
-  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
-                  "grpc.subchannel.disconnections",
-                  {target, "", "", "GOAWAY NO_ERROR"}),
-              ::testing::Optional(1));
+  const std::optional<uint64_t> goaway_no_error =
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.disconnections",
+          {target, "", "", "GOAWAY NO_ERROR"});
+  if (is_ph2_server) {
+    // PH2 server: Server::Shutdown() with a zero deadline first requests
+    // a graceful GOAWAY (NO_ERROR) and then cancels all calls, which requests
+    // an immediate GOAWAY (INTERNAL_ERROR). Depending on timing, either one
+    // can be the first GOAWAY to reach the client. The client records the
+    // disconnection using the first GOAWAY it receives, so assert that
+    // exactly one disconnection was recorded with either label.
+    const std::optional<uint64_t> goaway_internal_error =
+        stats_plugin_->GetUInt64MetricValueByName(
+            "grpc.subchannel.disconnections",
+            {target, "", "", "GOAWAY INTERNAL_ERROR"});
+    EXPECT_EQ(goaway_no_error.value_or(0u) + goaway_internal_error.value_or(0u),
+              1u)
+        << "GOAWAY NO_ERROR count: " << goaway_no_error.value_or(0u)
+        << ", GOAWAY INTERNAL_ERROR count: "
+        << goaway_internal_error.value_or(0u);
+  } else {
+    // Non-PH2 server: the initial graceful GOAWAY (NO_ERROR) is always
+    // written before the immediate GOAWAY, so the client records NO_ERROR.
+    EXPECT_THAT(goaway_no_error, ::testing::Optional(1));
+  }
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(0));

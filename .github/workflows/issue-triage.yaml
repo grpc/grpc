@@ -17,10 +17,10 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Restore rotation index cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: tools/github_triage/last_assignee_index
           key: assignee-index-${{ github.run_id }}
@@ -28,7 +28,7 @@ jobs:
             assignee-index-
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -51,7 +51,7 @@ jobs:
           fi
 
       - name: Save rotation index cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         if: always()
         with:
           path: tools/github_triage/last_assignee_index
