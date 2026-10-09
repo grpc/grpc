@@ -159,11 +159,14 @@ grpc_cc_test(
     uses_polling = True,
     deps = [
         "//:gpr_platform",
+        "//:grpc",
         "//src/core:cf_event_engine",
+        "//test/core/event_engine/test_suite:event_engine_test_framework",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:server",
         "//test/core/event_engine/test_suite/tests:timer",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 

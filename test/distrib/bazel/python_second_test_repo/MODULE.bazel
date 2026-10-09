@@ -1,4 +1,4 @@
-# Copyright 2022 The gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,17 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-local_repository(
-    name = "com_github_grpc_grpc",
-    path = "../../../..",
-)
 
-workspace(name = "bazel_cpp_distribtests")
+module(name = "my_messages")
 
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-
-grpc_deps()
-
-load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-
-grpc_extra_deps()
+bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
