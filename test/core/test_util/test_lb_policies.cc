@@ -682,7 +682,10 @@ class QueueOnceLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
       // and return a queueing picker.
       parent()->state_to_update_ = {state, status, std::move(picker)};
       parent_helper()->UpdateState(
-          state, status, MakeRefCounted<QueuePicker>(parent()->Ref()));
+          state, status,
+          MakeRefCounted<QueuePicker>(parent()->Ref(),
+                                      LoadBalancingPolicy::kDelayTypeConnecting,
+                                      "idle policy"));
     }
   };
   struct StateToUpdate {

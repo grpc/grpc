@@ -95,6 +95,8 @@ namespace grpc_core {
 // interested_parties() hooks from the API.
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
+  static constexpr char kDelayTypeConnecting[] = "connecting";
+
   /// Interface for accessing per-call state.
   /// Implemented by the client channel and used by the SubchannelPicker.
   class CallState {
@@ -233,7 +235,18 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Pick cannot be completed until something changes on the control
     /// plane.  The client channel will queue the pick and try again the
     /// next time the picker is updated.
-    struct Queue {};
+    struct Queue {
+      /// Type of delay for metric reporting.
+      std::string delay_type;
+      /// Detailed human-readable reason.
+      std::string delay_reason;
+
+      Queue(std::string type, std::string reason)
+          : delay_type(std::move(type)), delay_reason(std::move(reason)) {
+        GRPC_DCHECK(!delay_type.empty());
+        GRPC_DCHECK(!delay_reason.empty());
+      }
+    };
 
     /// Pick failed.  If the call is wait_for_ready, the client channel
     /// will wait for the next picker and try again; otherwise, it
@@ -255,14 +268,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     };
 
     // A pick result must be one of these types.
-    // Default to Queue, just to allow default construction.
-    std::variant<Complete, Queue, Fail, Drop> result = Queue();
+    std::variant<Complete, Queue, Fail, Drop> result;
 
-    PickResult() = default;
     // NOLINTNEXTLINE(google-explicit-constructor)
     PickResult(Complete complete) : result(std::move(complete)) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
-    PickResult(Queue queue) : result(queue) {}
+    PickResult(Queue queue) : result(std::move(queue)) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
     PickResult(Fail fail) : result(std::move(fail)) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
@@ -440,8 +451,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // first pick is seen.
   class QueuePicker final : public SubchannelPicker {
    public:
-    explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
-        : parent_(std::move(parent)) {}
+    QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent,
+                std::string delay_type, std::string delay_reason)
+        : parent_(std::move(parent)),
+          queue_(std::move(delay_type), std::move(delay_reason)) {}
+
+    QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent,
+                PickResult::Queue queue)
+        : parent_(std::move(parent)), queue_(std::move(queue)) {}
 
     ~QueuePicker() override { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
 
@@ -450,6 +467,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    private:
     Mutex mu_;
     RefCountedPtr<LoadBalancingPolicy> parent_ ABSL_GUARDED_BY(&mu_);
+    const PickResult::Queue queue_;
   };
 
   // A picker that returns PickResult::Fail for all picks.

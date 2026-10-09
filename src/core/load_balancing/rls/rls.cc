@@ -175,6 +175,7 @@ const auto kMetricFailedPicks =
         .Build();
 
 const char kGrpc[] = "grpc";
+constexpr char kDelayTypeRlsLookupPending[] = "rls_lookup_pending";
 const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
 const char* kFakeTargetFieldValue = "fake_target_field_value";
 const char* kRlsHeaderKey = "x-google-rls-data";
@@ -743,7 +744,9 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
           GRPC_TRACE_FLAG_ENABLED(rls_lb) ? "ChildPolicyWrapper" : nullptr),
       lb_policy_(std::move(lb_policy)),
       target_(std::move(target)),
-      picker_(MakeRefCounted<QueuePicker>(nullptr)) {
+      picker_(MakeRefCounted<QueuePicker>(
+          nullptr, kDelayTypeConnecting,
+          "child policy has not yet returned a picker")) {
   lb_policy_->child_policy_map_.emplace(target_, this);
 }
 
@@ -1024,7 +1027,10 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   GRPC_TRACE_LOG(rls_lb, INFO)
       << "[rlslb " << lb_policy_.get() << "] picker=" << this
       << ": RLS request pending; queuing pick";
-  return PickResult::Queue();
+  return PickResult::Queue(
+      kDelayTypeRlsLookupPending,
+      absl::StrCat("rls: RLS query pending on ", config_->lookup_service(),
+                   " (request key: ", key.ToString(), ")"));
 }
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
@@ -1187,6 +1193,12 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
     telemetry_label = label->value;
   }
   auto pick_result = child_policy_wrapper->Pick(args);
+  auto* queue = std::get_if<PickResult::Queue>(&pick_result.result);
+  if (queue != nullptr) {
+    queue->delay_reason =
+        absl::StrCat("rls: child target '", child_policy_wrapper->target(),
+                     "': ", queue->delay_reason);
+  }
   lb_policy_->MaybeExportPickCount(
       kMetricTargetPicks, child_policy_wrapper->target(), lookup_service,
       pick_result, telemetry_label);
