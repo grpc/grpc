@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <condition_variable>
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <string>
 #include <utility>
@@ -56,6 +57,7 @@ extern std::condition_variable g_census_data_buffer_cv;
 
 void* CreateClientCallTracer(const char* method, const char* target,
                              const char* trace_id, const char* parent_span_id,
+                             const std::optional<bool> parent_span_sampled,
                              const char* identifier,
                              const std::vector<Label> exchange_labels,
                              bool add_csm_optional_labels,
