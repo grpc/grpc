@@ -53,3 +53,15 @@ py_test(
         requirement("protobuf"),
     ],
 )
+
+py_test(
+    name = "_reflection_version_consistency_test",
+    size = "small",
+    srcs = ["_reflection_version_consistency_test.py"],
+    imports = ["../../"],
+    main = "_reflection_version_consistency_test.py",
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio_reflection/grpc_reflection/v1alpha:grpc_reflection",
+    ],
+)
