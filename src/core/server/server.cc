@@ -147,8 +147,7 @@ void Server::ListenerState::Start() {
     auto watcher = std::make_unique<ConfigFetcherWatcher>(this);
     config_fetcher_watcher_ = watcher.get();
     server_->config_fetcher()->StartWatch(
-        grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
-        std::move(watcher));
+        listener_->listening_address().value_or(""), std::move(watcher));
   } else {
     {
       MutexLock lock(mu_);

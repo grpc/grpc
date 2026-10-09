@@ -283,9 +283,11 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager final
 class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
     L4FilterChain final : public InternallyRefCounted<L4FilterChain> {
  public:
-  L4FilterChain(RefCountedPtr<FetcherState> fetcher_state,
-                WeakRefCountedPtr<XdsConnectionManager> connection_manager,
-                const XdsListenerResource::FilterChainData& filter_chain_data);
+  L4FilterChain(
+      RefCountedPtr<FetcherState> fetcher_state,
+      WeakRefCountedPtr<XdsConnectionManager> connection_manager,
+      const XdsListenerResource::HttpConnectionManager& http_connection_manager,
+      const XdsListenerResource::DownstreamTlsContext* downstream_tls_context);
 
   void Orphan() override
       // Always called within WorkSerializer, but the compiler can't tell.
@@ -326,9 +328,10 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
   WeakRefCountedPtr<XdsConnectionManager> connection_manager_;
 
   // Reference into data owned by XdsConnectionManager.
-  const XdsListenerResource::FilterChainData& filter_chain_data_;
+  const XdsListenerResource::HttpConnectionManager& http_connection_manager_;
 
-  absl::StatusOr<RefCountedPtr<XdsCertificateProvider>> certificate_provider_;
+  absl::StatusOr<RefCountedPtr<XdsCertificateProvider>> certificate_provider_ =
+      nullptr;
 
   RouteConfigWatcher* watcher_ = nullptr;
 
@@ -562,20 +565,34 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
                 << "] Received LDS update from xds client "
                 << self->fetcher_state_->xds_client.get() << ": "
                 << (*listener)->ToString();
-            auto* tcp_listener = std::get_if<XdsListenerResource::TcpListener>(
-                &(*listener)->listener);
-            if (tcp_listener == nullptr) {
-              self->OnFatalError(absl::FailedPreconditionError(
-                  absl::StrCat("LDS resource ", self->ResourceName(),
-                               " is not a TCP listener")));
-              return;
-            }
-            if (!ListenerAddressMatches(tcp_listener->address,
-                                        self->listening_address_)) {
-              self->OnFatalError(absl::FailedPreconditionError(
-                  absl::StrCat("LDS resource ", self->ResourceName(),
-                               " address does not match listening address")));
-              return;
+            if (!self->listening_address_.empty()) {
+              // Normal server.  Expect a TCP listener.
+              auto* tcp_listener =
+                  std::get_if<XdsListenerResource::TcpListener>(
+                      &(*listener)->listener);
+              if (tcp_listener == nullptr) {
+                self->OnFatalError(absl::FailedPreconditionError(
+                    absl::StrCat("LDS resource ", self->ResourceName(),
+                                 " is not a TCP listener")));
+                return;
+              }
+              if (!ListenerAddressMatches(tcp_listener->address,
+                                          self->listening_address_)) {
+                self->OnFatalError(absl::FailedPreconditionError(
+                    absl::StrCat("LDS resource ", self->ResourceName(),
+                                 " address does not match listening address")));
+                return;
+              }
+            } else {
+              // Passive listener.  Expect an API listener.
+              if (!std::holds_alternative<
+                      XdsListenerResource::HttpConnectionManager>(
+                      (*listener)->listener)) {
+                self->OnFatalError(absl::FailedPreconditionError(
+                    absl::StrCat("LDS resource ", self->ResourceName(),
+                                 " is not an API listener")));
+                return;
+              }
             }
             if (self->connection_manager_ != nullptr &&
                 **listener == self->connection_manager_->listener_resource()) {
@@ -686,16 +703,30 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::Start() {
-  // Create L4FilterChain object for each L4 filter chain.
-  ForEachFilterChain(
-      [&](const XdsListenerResource::FilterChainData& filter_chain_data)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&FetcherState::work_serializer) {
-            auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
-                fetcher_state_.Ref(DEBUG_LOCATION, "L4FilterChain"),
-                WeakRefAsSubclass<XdsConnectionManager>(), filter_chain_data);
-            l4_filter_chains_.emplace(&filter_chain_data,
-                                      std::move(l4_filter_chain));
-          });
+  Match(
+      listener_resource_->listener,
+      [&](const XdsListenerResource::TcpListener&) {
+        // Create L4FilterChain object for each L4 filter chain.
+        ForEachFilterChain(
+            [&](const XdsListenerResource::FilterChainData& filter_chain_data)
+                ABSL_EXCLUSIVE_LOCKS_REQUIRED(&FetcherState::work_serializer) {
+                  auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
+                      fetcher_state_.Ref(DEBUG_LOCATION, "L4FilterChain"),
+                      WeakRefAsSubclass<XdsConnectionManager>(),
+                      filter_chain_data.http_connection_manager,
+                      &filter_chain_data.downstream_tls_context);
+                  l4_filter_chains_.emplace(&filter_chain_data,
+                                            std::move(l4_filter_chain));
+                });
+      },
+      [&](const XdsListenerResource::HttpConnectionManager& hcm) {
+        // API listener for passive listener.  Create an L4FilterChain
+        // with no DownstreamTlsContext, and store it with key nullptr.
+        auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
+            fetcher_state_.Ref(DEBUG_LOCATION, "L4FilterChain"),
+            WeakRefAsSubclass<XdsConnectionManager>(), hcm, nullptr);
+        l4_filter_chains_.emplace(nullptr, std::move(l4_filter_chain));
+      });
   // If all L4 filter chains had inline RouteConfigs, then promote this
   // XdsConnectionManager immediately.
   MaybeUpdateConnectionManager();
@@ -924,16 +955,20 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[XdsConnectionManager " << this
       << "]: choosing L4 filter chain for connection";
-  const auto& tcp_listener =
-      std::get<XdsListenerResource::TcpListener>(listener_resource_->listener);
-  const auto* filter_chain = FindFilterChainDataForDestinationIp(
-      tcp_listener.filter_chain_map.destination_ip_vector, tcp);
-  if (filter_chain == nullptr &&
-      tcp_listener.default_filter_chain.has_value()) {
-    filter_chain = &*tcp_listener.default_filter_chain;
-  }
-  if (filter_chain == nullptr) {
-    return absl::UnavailableError("No matching filter chain found");
+  // If it's an API listener for a passive listener, use nullptr as the key.
+  const XdsListenerResource::FilterChainData* filter_chain = nullptr;
+  if (auto* tcp_listener = std::get_if<XdsListenerResource::TcpListener>(
+          &listener_resource_->listener);
+      tcp_listener != nullptr) {
+    filter_chain = FindFilterChainDataForDestinationIp(
+        tcp_listener->filter_chain_map.destination_ip_vector, tcp);
+    if (filter_chain == nullptr &&
+        tcp_listener->default_filter_chain.has_value()) {
+      filter_chain = &*tcp_listener->default_filter_chain;
+    }
+    if (filter_chain == nullptr) {
+      return absl::UnavailableError("No matching filter chain found");
+    }
   }
   // Find the corresponding L4FilterChain.
   auto it = l4_filter_chains_.find(filter_chain);
@@ -1065,12 +1100,12 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
 
 absl::StatusOr<RefCountedPtr<XdsCertificateProvider>>
 CreateCertificateProviderForFilterChain(
-    const XdsListenerResource::FilterChainData& filter_chain,
+    const XdsListenerResource::DownstreamTlsContext& downstream_tls_context,
     CertificateProviderStore& certificate_provider_store) {
   // Configure root cert.
   auto* ca_cert_provider =
       std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
-          &filter_chain.downstream_tls_context.common_tls_context
+          &downstream_tls_context.common_tls_context
                .certificate_validation_context.ca_certs);
   absl::string_view root_provider_cert_name;
   RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
@@ -1087,10 +1122,10 @@ CreateCertificateProviderForFilterChain(
   }
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
-      filter_chain.downstream_tls_context.common_tls_context
+      downstream_tls_context.common_tls_context
           .tls_certificate_provider_instance.instance_name;
   absl::string_view identity_provider_cert_name =
-      filter_chain.downstream_tls_context.common_tls_context
+      downstream_tls_context.common_tls_context
           .tls_certificate_provider_instance.certificate_name;
   RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider;
   if (!identity_provider_instance_name.empty()) {
@@ -1106,24 +1141,28 @@ CreateCertificateProviderForFilterChain(
   return MakeRefCounted<XdsCertificateProvider>(
       std::move(root_cert_provider), root_provider_cert_name,
       std::move(identity_cert_provider), identity_provider_cert_name,
-      filter_chain.downstream_tls_context.require_client_certificate);
+      downstream_tls_context.require_client_certificate);
 }
 
 XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
-    L4FilterChain(RefCountedPtr<FetcherState> fetcher_state,
-                  WeakRefCountedPtr<XdsConnectionManager> connection_manager,
-                  const XdsListenerResource::FilterChainData& filter_chain_data)
+    L4FilterChain(
+        RefCountedPtr<FetcherState> fetcher_state,
+        WeakRefCountedPtr<XdsConnectionManager> connection_manager,
+        const XdsListenerResource::HttpConnectionManager&
+            http_connection_manager,
+        const XdsListenerResource::DownstreamTlsContext* downstream_tls_context)
     : fetcher_state_(std::move(fetcher_state)),
       connection_manager_(std::move(connection_manager)),
-      filter_chain_data_(filter_chain_data),
-      certificate_provider_(CreateCertificateProviderForFilterChain(
-          filter_chain_data,
-          fetcher_state_->xds_client->certificate_provider_store())) {
+      http_connection_manager_(http_connection_manager) {
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[L4FilterChain " << this << "]: created";
-  auto& hcm = filter_chain_data_.http_connection_manager;
+  if (downstream_tls_context != nullptr) {
+    certificate_provider_ = CreateCertificateProviderForFilterChain(
+        *downstream_tls_context,
+        fetcher_state_->xds_client->certificate_provider_store());
+  }
   Match(
-      hcm.route_config,
+      http_connection_manager_.route_config,
       [&](const std::string& rds_resource_name) {
         // Start RDS watch.
         GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
@@ -1149,8 +1188,8 @@ void XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[L4FilterChain " << this << "]: orphaned";
   if (watcher_ != nullptr) {
-    auto& hcm = filter_chain_data_.http_connection_manager;
-    auto& rds_resource_name = std::get<std::string>(hcm.route_config);
+    auto& rds_resource_name =
+        std::get<std::string>(http_connection_manager_.route_config);
     XdsRouteConfigResourceType::CancelWatch(fetcher_state_->xds_client.get(),
                                             rds_resource_name, watcher_);
     watcher_ = nullptr;
@@ -1163,12 +1202,15 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     XdsConnectionManager::L4FilterChain::UpdateChannelArgsForConnection(
         const ChannelArgs& args) const {
   if (!certificate_provider_.ok()) return certificate_provider_.status();
-  return args.SetObject(*certificate_provider_)
-      .SetObject(
-          // This is the only place where the provider is accessed from outside
-          // of the WorkSerializer, and it will always be set before this
-          // happens, so this read is safe even though the compiler can't tell.
-          ABSL_TS_UNCHECKED_READ(config_selector_provider_));
+  ChannelArgs new_args = args;
+  if (*certificate_provider_ != nullptr) {
+    new_args = new_args.SetObject(*certificate_provider_);
+  }
+  return new_args.SetObject(
+      // This is the only place where the provider is accessed from outside
+      // of the WorkSerializer, and it will always be set before this
+      // happens, so this read is safe even though the compiler can't tell.
+      ABSL_TS_UNCHECKED_READ(config_selector_provider_));
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
@@ -1181,8 +1223,8 @@ XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::L4FilterChain::
       DownCast<const GrpcXdsBootstrap&>(fetcher_state_->xds_client->bootstrap())
           .http_filter_registry(),
       *fetcher_state_->xds_client->transport_factory(),
-      filter_chain_data_.http_connection_manager.http_filters,
-      std::move(*route_config), *connection_manager_->blackboard_);
+      http_connection_manager_.http_filters, std::move(*route_config),
+      *connection_manager_->blackboard_);
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
@@ -1214,8 +1256,8 @@ void XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
       << "[L4FilterChain " << this << "]: received RDS update";
   if (connection_manager_ == nullptr) return;
   if (!route_config.ok()) {
-    auto& hcm = filter_chain_data_.http_connection_manager;
-    auto& rds_resource_name = std::get<std::string>(hcm.route_config);
+    auto& rds_resource_name =
+        std::get<std::string>(http_connection_manager_.route_config);
     route_config = absl::UnavailableError(
         absl::StrCat("RDS resource ", rds_resource_name, ": ",
                      route_config.status().message()));
@@ -1226,8 +1268,8 @@ void XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
 
 void XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
     L4FilterChain::OnAmbientError(absl::Status status) {
-  auto& hcm = filter_chain_data_.http_connection_manager;
-  auto& rds_resource_name = std::get<std::string>(hcm.route_config);
+  auto& rds_resource_name =
+      std::get<std::string>(http_connection_manager_.route_config);
   LOG(ERROR) << "XdsClient reports ambient error for RDS resource "
              << rds_resource_name << ": " << status;
 }
