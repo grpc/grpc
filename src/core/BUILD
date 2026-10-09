@@ -366,6 +366,7 @@ grpc_cc_library(
         "server/server_call_tracer_filter.h",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
     ],
@@ -381,11 +382,15 @@ grpc_cc_library(
         "experiments",
         "latent_see",
         "map",
+        "metadata_batch",
         "pipe",
+        "slice",
         "//:call_tracer",
         "//:config",
+        "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:grpc_public_hdrs",
     ],
 )
 
