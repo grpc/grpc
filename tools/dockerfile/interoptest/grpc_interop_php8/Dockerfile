@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:12
+FROM debian:13
 
 #=================
 # Basic C core dependencies
@@ -66,24 +66,27 @@ RUN git config --global protocol.file.allow always
 # run_tests.py python dependencies
 
 # Basic python dependencies to be able to run tools/run_tests python scripts
-# These dependencies are not sufficient to build gRPC Python, gRPC Python
-# deps are defined elsewhere (e.g. python_deps.include)
+# These dependencies are NOT for building gRPC Python, which are defined
+# elsewhere (requirements.txt, individual docker images, build scripts, etc).
 RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip \
-  python3-setuptools \
-  python3-yaml \
+  python3-venv \
   && apt-get clean
 
-# use pinned version of pip to avoid sudden breakages
-# Some newer distros that have already implemented PEP 668. Use of
-# --break-system-packages is to workaround that. We should look into using
-# virtualenv in Dockerfile though.
-RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
+# Use system python to bootstrap virtualenv and activate it
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
-# but since our python2 usage is deprecated, we should get rid of it.
-RUN python3 -m pip install six==1.16.0
+# Persist this to /etc/profile.d because some of our tests
+# (e.g. tools/run_tests/dockerize/build_and_run_docker.sh)
+# use `bash -l` to launch tests and override Dockerfile's
+# ENV directives.
+RUN echo "export PATH=\"$VIRTUAL_ENV/bin:\$PATH\"" > /etc/profile.d/venv.sh
+
+# Install/upgrade basic requirements inside the virtualenv
+RUN pip install --upgrade pip setuptools pyyaml
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
@@ -93,7 +96,7 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 #=================
 # PHP8 dependencies
 
-RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
+RUN apt-get update && apt-get install -y php8.4 php8.4-dev php-pear && apt-get clean
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php
