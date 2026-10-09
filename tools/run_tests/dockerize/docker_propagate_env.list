@@ -20,3 +20,8 @@ KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH
 # Propagate ccache configuration to the docker containers.
 GRPC_BUILD_ENABLE_CCACHE
 CCACHE_SECONDARY_STORAGE
+
+# Other variables configured in Kokoro. See env_vars in *.cfg files and
+# build_and_run_docker.sh
+# TODO(sergiitk): consider BAZEL_FLAGS
+UPLOAD_TEST_RESULTS
