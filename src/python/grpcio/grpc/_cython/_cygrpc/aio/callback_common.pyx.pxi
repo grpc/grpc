@@ -32,7 +32,7 @@ cdef class CallbackFailureHandler:
 
 cdef class CallbackWrapper:
 
-    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler):
+    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler, object rpc_state=None):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
         self.context.loop = <cpython.PyObject*>loop
@@ -42,6 +42,7 @@ cdef class CallbackWrapper:
         # data path. We should make it as efficient as possible.
         self._reference_of_future = future
         self._reference_of_failure_handler = failure_handler
+        self._reference_of_rpc_state = rpc_state
         # NOTE(lidiz) We need to ensure when Core invokes our callback, the
         # callback function itself is not deallocated. Otherwise, we will get
         # a segfault. We can view this as Core holding a ref.
