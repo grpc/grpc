@@ -32,7 +32,7 @@ from grpc._cython import cygrpc
 
 if TYPE_CHECKING:
     from grpc import ServicerContext
-    from grpc._server import _RPCState
+    from grpc._server import _RPCState  # pyright: ignore[reportPrivateUsage]
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
