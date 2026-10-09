@@ -141,7 +141,8 @@ class GPR_DLL ConfigVars {
   }
   // EXPERIMENTAL: Number of threads the Posix EventEngine thread pool starts up
   // front and keeps alive while idle. Zero or less uses the engine default,
-  // which scales with the number of CPU cores.
+  // which scales with the number of CPU cores. Values above 16 are reduced to
+  // 16 with a warning.
   int32_t EventEngineReserveThreads() const {
     return event_engine_reserve_threads_;
   }

@@ -102,7 +102,8 @@ ABSL_FLAG(absl::optional<int32_t>, grpc_chaotic_good_metrics_update_interval_ms,
 ABSL_FLAG(absl::optional<int32_t>, grpc_event_engine_reserve_threads, {},
           "EXPERIMENTAL: Number of threads the Posix EventEngine thread pool "
           "starts up front and keeps alive while idle. Zero or less uses the "
-          "engine default, which scales with the number of CPU cores.");
+          "engine default, which scales with the number of CPU cores. Values "
+          "above 16 are reduced to 16 with a warning.");
 
 namespace grpc_core {
 
