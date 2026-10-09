@@ -232,12 +232,21 @@ absl::Status ExperimentsCompiler::AddExperimentDefinition(
   YAML::Node results = YAML::Load(experiments_yaml_content);
   for (const auto& value : results) {
     if (value.IsMap()) {
-      auto experiment_definition = CreateExperimentDefinition(value);
+      absl::StatusOr<ExperimentDefinition> experiment_definition =
+          CreateExperimentDefinition(value);
       if (!experiment_definition.ok()) {
         return experiment_definition.status();
       }
-      experiment_definitions_.emplace(experiment_definition->name(),
-                                      experiment_definition.value());
+      // Reject duplicate names. std::map::emplace() does not overwrite, so a
+      // duplicate would otherwise be silently dropped.
+      const std::string& name = experiment_definition->name();
+      const bool inserted =
+          experiment_definitions_.emplace(name, experiment_definition.value())
+              .second;
+      if (!inserted) {
+        return absl::InvalidArgumentError(
+            absl::StrCat("Duplicate experiment name: ", name));
+      }
     }
   }
   return absl::OkStatus();
