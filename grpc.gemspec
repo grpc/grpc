@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.version       = GRPC::VERSION
   s.authors       = ['gRPC Authors']
   s.email         = 'grpc-io@googlegroups.com'
-  s.homepage      = 'https://github.com/google/grpc/tree/master/src/ruby'
+  s.homepage      = 'https://github.com/grpc/grpc/tree/master/src/ruby'
   s.summary       = 'GRPC system in Ruby'
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'

@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.version = GRPC::Tools::VERSION
   s.authors = ['grpc Authors']
   s.email = 'grpc-io@googlegroups.com'
-  s.homepage = 'https://github.com/google/grpc/tree/master/src/ruby/tools'
+  s.homepage = 'https://github.com/grpc/grpc/tree/master/src/ruby/tools'
   s.summary = 'Development tools for Ruby gRPC'
   s.description = 'protoc and the Ruby gRPC protoc plugin'
   s.license = 'Apache-2.0'
