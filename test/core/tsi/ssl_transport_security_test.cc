@@ -340,6 +340,16 @@ class SslTransportSecurityTest
       client_expects_handshake_failure_ = client_expects_handshake_failure;
     }
 
+    void SetClientExportedKeyingMaterial(std::string label, size_t length) {
+      client_ekm_label_ = std::move(label);
+      client_ekm_length_ = length;
+    }
+
+    void SetServerExportedKeyingMaterial(std::string label, size_t length) {
+      server_ekm_label_ = std::move(label);
+      server_ekm_length_ = length;
+    }
+
     void SetCollectionScope(RefCountedPtr<CollectionScope> collection_scope) {
       collection_scope_ = std::move(collection_scope);
     }
@@ -388,6 +398,12 @@ class SslTransportSecurityTest
       if (ssl_fixture->client_key_exchange_groups_.has_value()) {
         client_options.key_exchange_groups =
             ssl_fixture->client_key_exchange_groups_.value();
+      }
+      if (ssl_fixture->client_ekm_label_.has_value()) {
+        client_options.exported_keying_material_label =
+            *ssl_fixture->client_ekm_label_;
+        client_options.exported_keying_material_length =
+            ssl_fixture->client_ekm_length_;
       }
       ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                     &client_options, &ssl_fixture->client_handshaker_factory_),
@@ -441,6 +457,12 @@ class SslTransportSecurityTest
       if (ssl_fixture->server_key_exchange_groups_.has_value()) {
         server_options.key_exchange_groups =
             ssl_fixture->server_key_exchange_groups_.value();
+      }
+      if (ssl_fixture->server_ekm_label_.has_value()) {
+        server_options.exported_keying_material_label =
+            *ssl_fixture->server_ekm_label_;
+        server_options.exported_keying_material_length =
+            ssl_fixture->server_ekm_length_;
       }
       ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                     &server_options, &ssl_fixture->server_handshaker_factory_),
@@ -641,8 +663,10 @@ class SslTransportSecurityTest
                                 tls_version_prop->value.length),
                     expected_tls_version);
         }
+        if (ssl_fixture->server_ekm_label_.has_value()) {
+          expected_property_count++;
+        }
         ASSERT_EQ(peer->property_count, expected_property_count);
-
       } else {
         const tsi_peer_property* property =
             CheckBasicAuthenticatedPeerAndGetCommonName(peer);
@@ -702,6 +726,7 @@ class SslTransportSecurityTest
 #else
       bool expect_client_success = expect_server_success;
 #endif
+      std::string client_ekm;
       if (expect_client_success) {
         ASSERT_EQ(tsi_handshaker_result_extract_peer(
                       ssl_fixture->base_.client_result, &peer),
@@ -710,6 +735,13 @@ class SslTransportSecurityTest
         CheckAlpn(ssl_fixture, &peer);
         CheckSecurityLevel(&peer);
         CheckNegotiatedGroup(ssl_fixture, &peer);
+        if (ssl_fixture->client_ekm_label_.has_value()) {
+          const tsi_peer_property* prop = tsi_peer_get_property_by_name(
+              &peer, TSI_SSL_EXPORTED_KEYING_MATERIAL);
+          ASSERT_NE(prop, nullptr);
+          ASSERT_EQ(prop->value.length, ssl_fixture->client_ekm_length_);
+          client_ekm = std::string(prop->value.data, prop->value.length);
+        }
         if (ssl_fixture->verify_root_cert_subject_) {
           if (!ssl_fixture->session_reused_) {
             CheckVerifiedRootCertSubject(&peer);
@@ -737,6 +769,28 @@ class SslTransportSecurityTest
         CheckAlpn(ssl_fixture, &peer);
         CheckSecurityLevel(&peer);
         CheckNegotiatedGroup(ssl_fixture, &peer);
+        if (ssl_fixture->server_ekm_label_.has_value()) {
+          const tsi_peer_property* prop = tsi_peer_get_property_by_name(
+              &peer, TSI_SSL_EXPORTED_KEYING_MATERIAL);
+          ASSERT_NE(prop, nullptr);
+          ASSERT_EQ(prop->value.length, ssl_fixture->server_ekm_length_);
+          std::string server_ekm =
+              std::string(prop->value.data, prop->value.length);
+          if (ssl_fixture->client_ekm_label_.has_value() &&
+              expect_client_success) {
+            // If both the client and server have the same EKM label and length,
+            // they should derive the same EKM. Otherwise, the derived EKMs
+            // should be different.
+            if (*ssl_fixture->client_ekm_label_ ==
+                    *ssl_fixture->server_ekm_label_ &&
+                ssl_fixture->client_ekm_length_ ==
+                    ssl_fixture->server_ekm_length_) {
+              ASSERT_EQ(client_ekm, server_ekm);
+            } else {
+              ASSERT_NE(client_ekm, server_ekm);
+            }
+          }
+        }
         if (ssl_fixture->force_client_auth_ && !ssl_fixture->session_reused_) {
           CheckVerifiedRootCertSubject(&peer);
         } else {
@@ -784,6 +838,10 @@ class SslTransportSecurityTest
     // intent.
     bool server_expects_handshake_failure_ = false;
     bool client_expects_handshake_failure_ = false;
+    std::optional<std::string> client_ekm_label_;
+    size_t client_ekm_length_;
+    std::optional<std::string> server_ekm_label_;
+    size_t server_ekm_length_;
     RefCountedPtr<CollectionScope> collection_scope_;
   };
 
@@ -1849,6 +1907,107 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
     ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
   }
   DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialMatchingLabels) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetClientExportedKeyingMaterial("test_label", 32);
+  ssl_fixture_->SetServerExportedKeyingMaterial("test_label", 32);
+  DoHandshake();
+  // DoHandshake() calls CheckHandshakerPeers(), which will verify that both the
+  // client and server handshakes were successful, and that the client and
+  // server EKMs are equal, because the labels and lengths match.
+}
+
+TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDifferentLabels) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetClientExportedKeyingMaterial("client_label", 32);
+  ssl_fixture_->SetServerExportedKeyingMaterial("server_label", 32);
+  DoHandshake();
+  // DoHandshake() calls CheckHandshakerPeers(), which will verify that both the
+  // client and server handshakes were successful, and that the client and
+  // server EKMs are different, because the labels are different.
+}
+
+TEST_P(SslTransportSecurityTest, TestExportedKeyingMaterialDifferentLengths) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetClientExportedKeyingMaterial("client_label", 32);
+  ssl_fixture_->SetServerExportedKeyingMaterial("server_label", 30);
+  DoHandshake();
+  // DoHandshake() calls CheckHandshakerPeers(), which will verify that both the
+  // client and server handshakes were successful, and that the client and
+  // server EKMs are different, because the lengths are different.
+}
+
+TEST(SslTransportSecurityTest,
+     TestExportedKeyingMaterialZeroLengthFailsClientFactoryCreation) {
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory = nullptr;
+  tsi_ssl_client_handshaker_options options;
+  options.skip_server_certificate_verification = true;
+  options.exported_keying_material_label = "test_label";
+  options.exported_keying_material_length = 0;
+
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(client_handshaker_factory, nullptr);
+}
+
+TEST(SslTransportSecurityTest,
+     TestExportedKeyingMaterialEmptyLabelFailsClientFactoryCreation) {
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory = nullptr;
+  tsi_ssl_client_handshaker_options options;
+  options.skip_server_certificate_verification = true;
+  options.exported_keying_material_label = "";
+  options.exported_keying_material_length = 32;
+
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(client_handshaker_factory, nullptr);
+}
+
+TEST(SslTransportSecurityTest,
+     TestExportedKeyingMaterialZeroLengthFailsServerFactoryCreation) {
+  tsi_ssl_server_handshaker_factory* server_handshaker_factory = nullptr;
+  std::string cert_chain = testing::GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "server0.pem"));
+  PemKeyCertPair cert_pair(testing::GetFileContents(absl::StrCat(
+                               kSslTsiTestCredentialsDir, "server0.key")),
+                           cert_chain);
+  tsi_ssl_server_handshaker_options options;
+  options.key_cert_pairs_or_selector = PemKeyCertPairList{cert_pair};
+  options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
+  options.exported_keying_material_label = "test_label";
+  options.exported_keying_material_length = 0;
+
+  ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                &options, &server_handshaker_factory),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(server_handshaker_factory, nullptr);
+}
+
+TEST(SslTransportSecurityTest,
+     TestExportedKeyingMaterialEmptyLabelFailsServerFactoryCreation) {
+  tsi_ssl_server_handshaker_factory* server_handshaker_factory = nullptr;
+  std::string cert_chain = testing::GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "server0.pem"));
+  PemKeyCertPair cert_pair(testing::GetFileContents(absl::StrCat(
+                               kSslTsiTestCredentialsDir, "server0.key")),
+                           cert_chain);
+  tsi_ssl_server_handshaker_options options;
+  options.key_cert_pairs_or_selector = PemKeyCertPairList{cert_pair};
+  options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
+  options.exported_keying_material_label = "";
+  options.exported_keying_material_length = 32;
+
+  ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                &options, &server_handshaker_factory),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(server_handshaker_factory, nullptr);
 }
 
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10101000L
