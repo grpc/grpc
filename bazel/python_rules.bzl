@@ -34,170 +34,23 @@ _GENERATED_PROTO_FORMAT = "{}_pb2.py"
 _GENERATED_PROTO_STUB_FORMAT = "{}_pb2.pyi"
 _GENERATED_GRPC_PROTO_FORMAT = "{}_pb2_grpc.py"
 
-PyProtoInfo = provider(
-    "The Python outputs from the Protobuf compiler.",
-    fields = {
-        "py_info": "A PyInfo provider for the generated code.",
-        "generated_py_srcs": "The direct (not transitive) generated Python source files.",
-    },
-)
-
 def _merge_pyinfos(pyinfos):
     return PyInfo(
         transitive_sources = depset(transitive = [p.transitive_sources for p in pyinfos]),
         imports = depset(transitive = [p.imports for p in pyinfos]),
     )
 
-def _gen_py_aspect_impl(target, context):
-    # Early return for well-known protos.
-    if is_well_known(str(context.label)):
-        return [
-            PyProtoInfo(
-                py_info = context.attr._protobuf_library[PyInfo],
-                generated_py_srcs = [],
-            ),
-        ]
-
-    protos = []
-    for p in target[ProtoInfo].direct_sources:
-        protos.append(get_staged_proto_file(target.label, context, p))
-
-    includes = depset(direct = protos, transitive = [target[ProtoInfo].transitive_sources])
-    out_files = (declare_out_files(protos, context, _GENERATED_PROTO_FORMAT) +
-                 declare_out_files(protos, context, _GENERATED_PROTO_STUB_FORMAT))
-    generated_py_srcs = out_files
-
-    tools = [context.executable._protoc]
-
-    out_dir = get_out_dir(protos, context)
-
-    arguments = ([
-        "--python_out={}".format(out_dir.path),
-        "--pyi_out={}".format(out_dir.path),
-    ] + [
-        "--proto_path={}".format(get_include_directory(i))
-        for i in includes.to_list()
-    ] + [
-        "--proto_path={}".format(context.genfiles_dir.path),
-    ])
-
-    arguments += get_proto_arguments(protos, context.genfiles_dir.path)
-
-    context.actions.run(
-        inputs = protos + includes.to_list(),
-        tools = tools,
-        outputs = out_files,
-        executable = context.executable._protoc,
-        arguments = arguments,
-        mnemonic = "ProtocInvocation",
-    )
-
-    imports = []
-    if out_dir.import_path:
-        imports.append("{}/{}".format(context.workspace_name, out_dir.import_path))
-
-    py_info = PyInfo(transitive_sources = depset(direct = out_files), imports = depset(direct = imports))
-    return PyProtoInfo(
-        py_info = _merge_pyinfos(
-            [
-                py_info,
-                context.attr._protobuf_library[PyInfo],
-            ] + [dep[PyProtoInfo].py_info for dep in context.rule.attr.deps],
-        ),
-        generated_py_srcs = generated_py_srcs,
-    )
-
-_gen_py_aspect = aspect(
-    implementation = _gen_py_aspect_impl,
-    attr_aspects = ["deps"],
-    fragments = ["py"],
-    attrs = {
-        "_protoc": attr.label(
-            default = Label("@com_google_protobuf//:protoc"),
-            executable = True,
-            cfg = "exec",
-        ),
-        "_protobuf_library": attr.label(
-            default = Label("@com_google_protobuf//:protobuf_python"),
-            providers = [PyInfo],
-        ),
-    },
-)
-
-def _generate_py_impl(context):
-    if (len(context.attr.deps) != 1):
-        fail("Can only compile a single proto at a time.")
-
-    py_sources = []
-
-    # If the proto_library this rule *directly* depends on is in another
-    # package, then we generate .py files to import them in this package. This
-    # behavior is needed to allow rearranging of import paths to make Bazel
-    # outputs align with native python workflows.
-    #
-    # Note that this approach is vulnerable to protoc defining __all__ or other
-    # symbols with __ prefixes that need to be directly imported. Since these
-    # names are likely to be reserved for private APIs, the risk is minimal.
-    if context.label.package != context.attr.deps[0].label.package:
-        for py_src in context.attr.deps[0][PyProtoInfo].generated_py_srcs:
-            reimport_py_file = context.actions.declare_file(py_src.basename)
-            py_sources.append(reimport_py_file)
-            import_line = "from %s import *" % py_src.short_path.replace("..", "external").replace("/", ".")[:-len(".py")]
-            context.actions.write(reimport_py_file, import_line)
-
-    # Collect output PyInfo provider.
-    imports = [context.label.package + "/" + i for i in context.attr.imports]
-    py_info = PyInfo(transitive_sources = depset(direct = py_sources), imports = depset(direct = imports))
-    out_pyinfo = _merge_pyinfos([py_info, context.attr.deps[0][PyProtoInfo].py_info])
-
-    runfiles = context.runfiles(files = out_pyinfo.transitive_sources.to_list()).merge(context.attr._protobuf_library[DefaultInfo].data_runfiles)
-    return [
-        DefaultInfo(
-            files = out_pyinfo.transitive_sources,
-            runfiles = runfiles,
-        ),
-        out_pyinfo,
-    ]
-
-_py_proto_library = rule(
-    attrs = {
-        "deps": attr.label_list(
-            mandatory = True,
-            allow_empty = False,
-            providers = [ProtoInfo],
-            aspects = [_gen_py_aspect],
-        ),
-        "_protoc": attr.label(
-            default = Label("@com_google_protobuf//:protoc"),
-            executable = True,
-            cfg = "exec",
-        ),
-        "_protobuf_library": attr.label(
-            default = Label("@com_google_protobuf//:protobuf_python"),
-            providers = [PyInfo],
-        ),
-        "imports": attr.string_list(),
-    },
-    implementation = _generate_py_impl,
-)
-
-def py_proto_library(name, deps, use_protobuf = True, **kwargs):
+def py_proto_library(name, deps, **kwargs):
     """Use `py_proto_library` to generate Python libraries from `.proto` files.
 
     Args:
       name: The name of the target.
       deps: A single proto_library target.
-      use_protobuf: Whether to use protobuf implementation of py_proto_library.
       **kwargs: Additional arguments to be supplied to the invocation of
         py_library.
     """
-    if use_protobuf:
-        # Filter out 'imports' attribute.
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "imports"}
-        protobuf_py_proto_library(name = name, deps = deps, **filtered_kwargs)
-    else:
-        filtered_kwargs = kwargs
-        _py_proto_library(name = name, deps = deps, **filtered_kwargs)
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ("imports", "use_protobuf")}
+    protobuf_py_proto_library(name = name, deps = deps, **filtered_kwargs)
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
