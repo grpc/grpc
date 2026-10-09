@@ -267,7 +267,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)cancel;
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
-// Default implementation of GRPCResponeHandler
+// Default implementation of GRPCResponseHandler
 
 - (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata;
 - (void)didReceiveData:(id)data;
