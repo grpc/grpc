@@ -124,6 +124,7 @@ grpc_cc_test(
         "//:config_vars",
         "//:event_engine_base_hdrs",
         "//src/core:default_event_engine_factory",
+        "//src/core:no_destruct",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
