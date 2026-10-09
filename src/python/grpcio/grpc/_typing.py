@@ -34,8 +34,12 @@ if TYPE_CHECKING:
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
-SerializingFunction = Callable[[Any], bytes]
-DeserializingFunction = Callable[[bytes], Any]
+SerializerInputType_contra = TypeVar(
+    "SerializerInputType_contra", contravariant=True
+)
+DeserializerOutputType_co = TypeVar("DeserializerOutputType_co", covariant=True)
+SerializingFunction = Callable[[SerializerInputType_contra], bytes]
+DeserializingFunction = Callable[[bytes], DeserializerOutputType_co]
 MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
 ChannelArgumentType = Tuple[str, Any]
 DoneCallbackType = Callable[[Any], None]
@@ -59,7 +63,7 @@ IntegratedCallFactory = Callable[
     cygrpc.IntegratedCall,
 ]
 ServerTagCallbackType = Tuple[
-    Optional["_RPCState"], Sequence[NullaryCallbackType]
+    Optional["_RPCState[Any]"], Optional[Sequence[NullaryCallbackType]]
 ]
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
 ArityAgnosticMethodHandler = Union[
