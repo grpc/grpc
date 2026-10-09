@@ -37,6 +37,7 @@ class GPR_DLL ConfigVars {
     absl::optional<int32_t> client_channel_backup_poll_interval_ms;
     absl::optional<int32_t> channelz_max_orphaned_nodes;
     absl::optional<int32_t> chaotic_good_metrics_update_interval_ms;
+    absl::optional<int32_t> event_engine_reserve_threads;
     absl::optional<double> experimental_target_memory_pressure;
     absl::optional<double> experimental_memory_pressure_threshold;
     absl::optional<bool> enable_fork_support;
@@ -138,6 +139,12 @@ class GPR_DLL ConfigVars {
   int32_t ChaoticGoodMetricsUpdateIntervalMs() const {
     return chaotic_good_metrics_update_interval_ms_;
   }
+  // EXPERIMENTAL: Number of threads the Posix EventEngine thread pool starts up
+  // front and keeps alive while idle. Zero or less uses the engine default,
+  // which scales with the number of CPU cores.
+  int32_t EventEngineReserveThreads() const {
+    return event_engine_reserve_threads_;
+  }
 
  private:
   explicit ConfigVars(const Overrides& overrides);
@@ -146,6 +153,7 @@ class GPR_DLL ConfigVars {
   int32_t client_channel_backup_poll_interval_ms_;
   int32_t channelz_max_orphaned_nodes_;
   int32_t chaotic_good_metrics_update_interval_ms_;
+  int32_t event_engine_reserve_threads_;
   double experimental_target_memory_pressure_;
   double experimental_memory_pressure_threshold_;
   bool enable_fork_support_;

@@ -3316,6 +3316,7 @@ grpc_cc_library(
         },
     ],
     deps = [
+        "//:config_vars",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],

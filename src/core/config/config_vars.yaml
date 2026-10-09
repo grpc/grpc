@@ -157,3 +157,9 @@
   type: int
   default: 100
   description: "Interval in milliseconds for updating metrics in chaotic good."
+- name: event_engine_reserve_threads
+  type: int
+  default: 0
+  description: "EXPERIMENTAL: \
+    Number of threads the Posix EventEngine thread pool starts up front and keeps alive while idle. \
+    Zero or less uses the engine default, which scales with the number of CPU cores."
