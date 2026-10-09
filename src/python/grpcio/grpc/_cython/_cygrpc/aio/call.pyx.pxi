@@ -154,6 +154,8 @@ cdef class _AioCall(GrpcCallWrapper):
                 plugin.save_registered_method(method)
 
     cdef void _maybe_set_client_call_tracer_on_call(self, bytes method) except *:
+        if _observability._OBSERVABILITY_PLUGIN is None:
+            return
         # TODO(zgoda): use channel args to exclude those metrics.
         for exclude_prefix in _observability._SERVICES_TO_EXCLUDE:
             if exclude_prefix in method:
