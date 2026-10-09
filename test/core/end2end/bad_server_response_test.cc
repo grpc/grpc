@@ -302,10 +302,7 @@ static void actually_poll_server(void* arg) {
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }
-    int milliseconds = 1000;
-    if (grpc_event_engine::experimental::UseEventEngineListener()) {
-      milliseconds = 10;
-    }
+    int milliseconds = 10;
     test_tcp_server_poll(pa->server, milliseconds);
   }
   gpr_event_set(pa->signal_when_done, reinterpret_cast<void*>(1));
