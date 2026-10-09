@@ -68,6 +68,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/channelz/v2tov1/property_list.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/buffered_call.cc \
+    src/core/client_channel/channel_factory.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
@@ -990,6 +991,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_server_grpc.cc \
     src/core/xds/grpc/xds_tls_context.cc \
     src/core/xds/grpc/xds_tls_context_parser.cc \
+    src/core/xds/grpc/xds_transport_factory_grpc.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/lrs_client.cc \
     src/core/xds/xds_client/xds_api.cc \

@@ -257,8 +257,7 @@ bool ExtProcFilter::Config::Equals(const FilterConfig& other) const {
 //
 
 ExtProcFilter::ExtProcChannel::ExtProcChannel(
-    GrpcXdsServerTarget server,
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport)
+    GrpcXdsServerTarget server, RefCountedPtr<XdsTransport> transport)
     : server_(std::move(server)), transport_(std::move(transport)) {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "creating channel " << this << " for server " << server_.server_uri();
@@ -334,8 +333,7 @@ ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
 class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
  public:
   ExtProcCall(RefCountedPtr<ExtProcFilter> ext_proc_filter,
-              RefCountedPtr<XdsTransportFactory::XdsTransport> transport,
-              CallHandler handler);
+              RefCountedPtr<XdsTransport> transport, CallHandler handler);
 
   ~ExtProcCall() override;
 
@@ -593,8 +591,7 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
 
 ExtProcFilter::ExtProcCall::ExtProcCall(
     RefCountedPtr<ExtProcFilter> ext_proc_filter,
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport,
-    CallHandler handler)
+    RefCountedPtr<XdsTransport> transport, CallHandler handler)
     : request_event_state_(InitialRequestEventState(*ext_proc_filter->config_)),
       response_event_state_(
           InitialResponseEventState(*ext_proc_filter->config_)),
@@ -602,7 +599,7 @@ ExtProcFilter::ExtProcCall::ExtProcCall(
       ext_proc_filter_(std::move(ext_proc_filter)) {
   const char* method = "/envoy.service.ext_proc.v3.ExternalProcessor/Process";
   streaming_call_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
-      *transport, method, XdsTransportFactory::XdsTransport::CallOptions());
+      *transport, method, XdsTransport::CallOptions());
 }
 
 std::string ExtProcFilter::ExtProcCall::DebugTag() const {

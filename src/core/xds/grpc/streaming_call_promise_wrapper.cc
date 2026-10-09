@@ -33,7 +33,7 @@ namespace grpc_core {
 // into XdsStreamingCallPromiseWrapper. It holds a weak reference to avoid
 // reference cycles between the transport stream and the wrapper.
 class XdsStreamingCallPromiseWrapper::EventHandler final
-    : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+    : public XdsTransport::StreamingCall::EventHandler {
  public:
   explicit EventHandler(
       WeakRefCountedPtr<XdsStreamingCallPromiseWrapper> promise_wrapper)

@@ -145,6 +145,7 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
+  - include/grpc/channel_factory.h
   - include/grpc/compression.h
   - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
@@ -226,6 +227,7 @@ libs:
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/buffered_call.h
+  - src/core/client_channel/channel_factory.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
   - src/core/client_channel/client_channel_factory.h
@@ -1384,6 +1386,7 @@ libs:
   - src/core/xds/grpc/xds_server_grpc_interface.h
   - src/core/xds/grpc/xds_tls_context.h
   - src/core/xds/grpc/xds_tls_context_parser.h
+  - src/core/xds/grpc/xds_transport_factory_grpc.h
   - src/core/xds/grpc/xds_transport_grpc.h
   - src/core/xds/xds_client/lrs_client.h
   - src/core/xds/xds_client/xds_api.h
@@ -1396,6 +1399,7 @@ libs:
   - src/core/xds/xds_client/xds_resource_type.h
   - src/core/xds/xds_client/xds_resource_type_impl.h
   - src/core/xds/xds_client/xds_transport.h
+  - src/core/xds/xds_client/xds_transport_factory.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
@@ -1425,6 +1429,7 @@ libs:
   - src/core/channelz/v2tov1/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/buffered_call.cc
+  - src/core/client_channel/channel_factory.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -2306,6 +2311,7 @@ libs:
   - src/core/xds/grpc/xds_server_grpc.cc
   - src/core/xds/grpc/xds_tls_context.cc
   - src/core/xds/grpc/xds_tls_context_parser.cc
+  - src/core/xds/grpc/xds_transport_factory_grpc.cc
   - src/core/xds/grpc/xds_transport_grpc.cc
   - src/core/xds/xds_client/lrs_client.cc
   - src/core/xds/xds_client/xds_api.cc
@@ -2440,6 +2446,7 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
+  - include/grpc/channel_factory.h
   - include/grpc/compression.h
   - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
@@ -2518,6 +2525,7 @@ libs:
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/buffered_call.h
+  - src/core/client_channel/channel_factory.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
   - src/core/client_channel/client_channel_factory.h
@@ -3060,6 +3068,8 @@ libs:
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
+  - src/core/xds/grpc/xds_transport_grpc.h
+  - src/core/xds/xds_client/xds_transport.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
@@ -3086,6 +3096,7 @@ libs:
   - src/core/channelz/text_encode.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/buffered_call.cc
+  - src/core/client_channel/channel_factory.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -3507,6 +3518,7 @@ libs:
   - src/core/util/validation_errors.cc
   - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
+  - src/core/xds/grpc/xds_transport_grpc.cc
   deps:
   - upb_textformat_lib
   - z
@@ -4686,6 +4698,7 @@ libs:
   public_headers:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
+  - include/grpc/channel_factory.h
   - include/grpc/compression.h
   - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h

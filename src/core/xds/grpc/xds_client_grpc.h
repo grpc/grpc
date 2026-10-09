@@ -29,7 +29,7 @@
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/xds_client/lrs_client.h"
 #include "src/core/xds/xds_client/xds_client.h"
-#include "src/core/xds/xds_client/xds_transport.h"
+#include "src/core/xds/xds_client/xds_transport_factory.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 

@@ -50,17 +50,15 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       return GRPC_UNIQUE_TYPE_NAME_HERE("ext_proc_channel");
     }
     ExtProcChannel(GrpcXdsServerTarget server,
-                   RefCountedPtr<XdsTransportFactory::XdsTransport> transport);
+                   RefCountedPtr<XdsTransport> transport);
     ~ExtProcChannel() override;
     const GrpcXdsServerTarget& server() const { return server_; }
 
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport() const {
-      return transport_;
-    }
+    RefCountedPtr<XdsTransport> transport() const { return transport_; }
 
    private:
     GrpcXdsServerTarget server_;
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransport> transport_;
   };
 
   using ProcessingMode = ExtProcProcessingMode;
