@@ -42,6 +42,8 @@ ServerCallTracerFilter::Create(const ChannelArgs& /*args*/,
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterFilter<ServerCallTracerFilter>(
       GRPC_SERVER_CHANNEL);
+  builder->channel_init()->RegisterFilter<ServerCallTracerFilter>(
+      GRPC_SERVER_VIRTUAL_CHANNEL);
 }
 
 }  // namespace grpc_core
