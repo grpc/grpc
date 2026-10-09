@@ -301,6 +301,7 @@ grpc_cc_test(
         "//:channel_arg_names",
         "//:config_vars",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_security_base",
