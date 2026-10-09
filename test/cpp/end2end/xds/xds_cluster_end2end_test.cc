@@ -749,7 +749,8 @@ TEST_P(EdsTest, NacksInvalidResource) {
             "xDS response validation errors: ["
             "resource index 0: eds_service_name: "
             "INVALID_ARGUMENT: errors parsing EDS resource: ["
-            "field:endpoints error:priority 0 empty]]");
+            "field:endpoints[0].priority error:"
+            "priority 1 >= number of localities (1)]]");
 }
 
 // Tests that if the balancer is down, the RPCs will still be sent to the
