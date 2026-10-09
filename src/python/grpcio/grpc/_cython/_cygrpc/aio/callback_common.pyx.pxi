@@ -32,12 +32,14 @@ cdef class CallbackFailureHandler:
 
 cdef class CallbackWrapper:
 
-    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler):
+    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler, object on_complete=None):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
         self.context.loop = <cpython.PyObject*>loop
         self.context.failure_handler = <cpython.PyObject*>failure_handler
         self.context.callback_wrapper = <cpython.PyObject*>self
+        self.context.on_complete = <cpython.PyObject*>on_complete if on_complete is not None else NULL
+        self._reference_of_on_complete = on_complete
         # NOTE(lidiz) Not using a list here, because this class is critical in
         # data path. We should make it as efficient as possible.
         self._reference_of_future = future
@@ -53,6 +55,14 @@ cdef class CallbackWrapper:
             int success) noexcept:
         cdef CallbackContext *context = <CallbackContext *>functor
         cdef object waiter = <object>context.waiter
+        if context.on_complete != NULL:
+            # Runs on the event loop before the waiter's callbacks, so the batch's
+            # C resources are released even if nobody awaits the waiter anymore.
+            try:
+                (<object>context.loop).call_soon_threadsafe(<object>context.on_complete)
+            except RuntimeError:
+                # The loop is already closed; release synchronously rather than leak.
+                (<object>context.on_complete)()
         if not waiter.cancelled():
             if success == 0:
                 (<CallbackFailureHandler>context.failure_handler).handle(waiter)
@@ -74,6 +84,12 @@ class ExecuteBatchError(InternalError):
     """Raised when execute batch returns a failure from Core."""
 
 
+cdef _make_batch_releaser(_BatchOperationTag tag):
+    def release():
+        tag.release()
+    return release
+
+
 async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
                                tuple operations,
                                object loop):
@@ -85,7 +101,8 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
         loop,
-        CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
+        CallbackFailureHandler('execute_batch', operations, ExecuteBatchError),
+        _make_batch_releaser(batch_operation_tag))
     cdef grpc_call_error error = grpc_call_start_batch(
         grpc_call_wrapper.call,
         batch_operation_tag.c_ops,
