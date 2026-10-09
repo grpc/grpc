@@ -28,7 +28,6 @@ EXPERIMENT_ENABLES = {
     "custom_frame_check": "custom_frame_check",
     "event_engine_client": "event_engine_client",
     "event_engine_listener": "event_engine_listener",
-    "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints,event_engine_listener",
     "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
     "fix_v3_filter_stack_server_side_ordering": "fix_v3_filter_stack_server_side_ordering",

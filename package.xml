@@ -167,8 +167,6 @@
     <file baseinstalldir="/" name="src/core/channelz/v2tov1/property_list.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/v2tov1/property_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/ztrace_collector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/buffered_call.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/buffered_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel.cc" role="src" />

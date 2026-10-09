@@ -21,7 +21,6 @@
 #include "envoy/config/cluster/v3/outlier_detection.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
@@ -1179,11 +1178,6 @@ TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  // Make the backup poller poll very frequently in order to pick up
-  // updates from all the subchannels's FDs.
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms = 1;
-  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

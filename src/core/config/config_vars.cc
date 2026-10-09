@@ -40,14 +40,6 @@
 ABSL_FLAG(std::vector<std::string>, grpc_experiments, {},
           "A comma separated list of currently active experiments. Experiments "
           "may be prefixed with a '-' to disable them.");
-ABSL_FLAG(absl::optional<int32_t>, grpc_client_channel_backup_poll_interval_ms,
-          {},
-          "Declares the interval in ms between two backup polls on client "
-          "channels. These polls are run in the timer thread so that gRPC can "
-          "process connection failures while there is no active polling "
-          "thread. They help reconnect disconnected client channels (mostly "
-          "due to idleness), so that the next RPC on this channel won't fail. "
-          "Set to 0 to turn off the backup polls.");
 ABSL_FLAG(absl::optional<std::string>, grpc_dns_resolver, {},
           "Declares which DNS resolver to use. The default is ares if gRPC is "
           "built with c-ares support. Otherwise, the value of this environment "
@@ -103,11 +95,7 @@ ABSL_FLAG(absl::optional<int32_t>, grpc_chaotic_good_metrics_update_interval_ms,
 namespace grpc_core {
 
 ConfigVars::ConfigVars(const Overrides& overrides)
-    : client_channel_backup_poll_interval_ms_(
-          LoadConfig(FLAGS_grpc_client_channel_backup_poll_interval_ms,
-                     "GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS",
-                     overrides.client_channel_backup_poll_interval_ms, 5000)),
-      channelz_max_orphaned_nodes_(
+    : channelz_max_orphaned_nodes_(
           LoadConfig(FLAGS_grpc_channelz_max_orphaned_nodes,
                      "GRPC_CHANNELZ_MAX_ORPHANED_NODES",
                      overrides.channelz_max_orphaned_nodes, 0)),
@@ -178,10 +166,8 @@ std::string ConfigVars::DefaultSslRootsFilePath() const {
 std::string ConfigVars::ToString() const {
   return absl::StrCat(
       "experiments: ", "\"", absl::CEscape(Experiments()), "\"",
-      ", client_channel_backup_poll_interval_ms: ",
-      ClientChannelBackupPollIntervalMs(), ", dns_resolver: ", "\"",
-      absl::CEscape(DnsResolver()), "\"", ", trace: ", "\"",
-      absl::CEscape(Trace()), "\"", ", verbosity: ", "\"",
+      ", dns_resolver: ", "\"", absl::CEscape(DnsResolver()), "\"",
+      ", trace: ", "\"", absl::CEscape(Trace()), "\"", ", verbosity: ", "\"",
       absl::CEscape(Verbosity()), "\"",
       ", enable_fork_support: ", EnableForkSupport() ? "true" : "false",
       ", poll_strategy: ", "\"", absl::CEscape(PollStrategy()), "\"",
@@ -204,4 +190,5 @@ std::string ConfigVars::ToString() const {
       ", chaotic_good_metrics_update_interval_ms: ",
       ChaoticGoodMetricsUpdateIntervalMs());
 }
+
 }  // namespace grpc_core

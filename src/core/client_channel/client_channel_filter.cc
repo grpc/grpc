@@ -40,7 +40,6 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/channelz/channel_trace.h"
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/client_channel/config_selector.h"
@@ -997,8 +996,6 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   GRPC_TRACE_LOG(client_channel, INFO)
       << "chand=" << this << ": creating client_channel for channel stack "
       << owning_stack_;
-  // Start backup polling.
-  grpc_client_channel_start_backup_polling(interested_parties_);
   // Check client channel factory.
   if (client_channel_factory_ == nullptr) {
     *error = GRPC_ERROR_CREATE(
@@ -1067,7 +1064,6 @@ ClientChannelFilter::~ClientChannelFilter() {
       << "chand=" << this << ": destroying channel";
   DestroyResolverAndLbPolicyLocked();
   // Stop backup polling.
-  grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
 }
 
