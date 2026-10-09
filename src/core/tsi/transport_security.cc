@@ -291,6 +291,17 @@ tsi_result tsi_handshaker_result_get_unused_bytes(
   return self->vtable->get_unused_bytes(self, bytes, bytes_size);
 }
 
+void tsi_handshaker_result_populate_connection_context(
+    const tsi_handshaker_result* self,
+    grpc_core::ConnectionContext* connection_context) {
+  if (self == nullptr || self->vtable == nullptr ||
+      self->vtable->populate_connection_context == nullptr ||
+      connection_context == nullptr) {
+    return;
+  }
+  self->vtable->populate_connection_context(self, connection_context);
+}
+
 void tsi_handshaker_result_destroy(tsi_handshaker_result* self) {
   if (self == nullptr) return;
   self->vtable->destroy(self);

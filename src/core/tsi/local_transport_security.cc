@@ -94,7 +94,9 @@ const tsi_handshaker_result_vtable result_vtable = {
     nullptr,  // handshaker_result_create_zero_copy_grpc_protector
     nullptr,  // handshaker_result_create_frame_protector
     handshaker_result_get_unused_bytes,
-    handshaker_result_destroy};
+    handshaker_result_destroy,
+    nullptr,  // populate_connection_context
+};
 
 tsi_result create_handshaker_result(const unsigned char* received_bytes,
                                     size_t received_bytes_size,

@@ -4621,6 +4621,7 @@ grpc_cc_library(
         "tsi_base",
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
+        "//src/core:connection_context",
         "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:grpc_check",

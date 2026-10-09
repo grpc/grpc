@@ -38,7 +38,9 @@
 #include <tuple>
 #include <vector>
 
+#include "src/core/lib/surface/connection_context.h"
 #include "src/core/telemetry/instrument.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/tls_telemetry.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -348,6 +350,24 @@ class SslTransportSecurityTest
       return server_name_indication_;
     }
 
+    // Makes the server present multi-domain.pem, which (unlike server0.pem and
+    // server1.pem) has URI SANs, so that the URI-SAN branch of the local
+    // certificate properties is covered by a real handshake.  The certificate
+    // is self-signed and its names do not match, so the client must skip
+    // verification.
+    void UseMultiDomainServerCert() {
+      key_cert_lib_->server_pem_key_cert_pairs.clear();
+      key_cert_lib_->server_pem_key_cert_pairs.emplace_back(
+          testing::GetFileContents(
+              absl::StrCat(kSslTsiTestCredentialsDir, "multi-domain.key")),
+          testing::GetFileContents(
+              absl::StrCat(kSslTsiTestCredentialsDir, "multi-domain.pem")));
+      key_cert_lib_->server_num_key_cert_pairs = 1;
+      key_cert_lib_->skip_server_certificate_verification = true;
+      verify_root_cert_subject_ = false;
+      use_multi_domain_server_cert_ = true;
+    }
+
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
       SslTsiTestFixture* ssl_fixture =
@@ -600,6 +620,47 @@ class SslTransportSecurityTest
       tsi_peer_destruct(peer);
     }
 
+    // Returns true if the fixture's SNI makes the server present server1.pem
+    // rather than the default server0.pem.  Mirrors the selection that
+    // CheckHandshakerPeers() applies to the client-side peer.
+    static bool ServerPresentsServer1Cert(SslTsiTestFixture* ssl_fixture) {
+      return !ssl_fixture->server_name_indication_.empty() &&
+             ssl_fixture->server_name_indication_ != kSslTsiTestWrongSni &&
+             ssl_fixture->server_name_indication_ != kSslTsiTestInvalidSni;
+    }
+
+    // Checks the server's own certificate, which the server handshaker result
+    // records in the connection context.
+    //
+    // These assertions are deliberately exact: they must distinguish the
+    // certificate that the server actually presented on this connection
+    // (which SNI can change) from the default one, because reporting the
+    // wrong one would misreport the server's identity to an authorization
+    // service.
+    static void CheckLocalCertificate(SslTsiTestFixture* ssl_fixture) {
+      auto connection_context = ConnectionContext::Create();
+      tsi_handshaker_result_populate_connection_context(
+          ssl_fixture->base_.server_result, connection_context.get());
+      tsi::LocalCertificateInfo* local_cert =
+          connection_context->Get<tsi::LocalCertificateInfo>();
+      ASSERT_NE(local_cert, nullptr);
+      const absl::StatusOr<std::string>& principal_or = local_cert->principal();
+      ASSERT_EQ(principal_or.status(), absl::OkStatus());
+      const std::string& principal = *principal_or;
+      if (ssl_fixture->use_multi_domain_server_cert_) {
+        // multi-domain.pem has three URI SANs; the first one wins.
+        EXPECT_EQ(principal, "https://foo.test.domain.com/test");
+        return;
+      }
+      // Neither server0.pem nor server1.pem has a URI SAN.  server1.pem's
+      // first DNS SAN is *.test.google.fr; server0.pem has no SAN extension
+      // at all, so its subject is used.
+      EXPECT_EQ(principal, ServerPresentsServer1Cert(ssl_fixture)
+                               ? "*.test.google.fr"
+                               : "CN=*.test.google.com.au,O=Internet Widgits "
+                                 "Pty Ltd,ST=Some-State,C=AU");
+    }
+
     static void CheckClientPeer(SslTsiTestFixture* ssl_fixture,
                                 tsi_peer* peer) {
       ASSERT_NE(ssl_fixture, nullptr);
@@ -717,9 +778,21 @@ class SslTransportSecurityTest
             CheckVerifiedRootCertSubjectUnset(&peer);
           }
         }
-        if (ssl_fixture->server_name_indication_.empty() ||
-            ssl_fixture->server_name_indication_ == kSslTsiTestWrongSni ||
-            ssl_fixture->server_name_indication_ == kSslTsiTestInvalidSni) {
+        // The local certificate is recorded on the server side only.
+        auto client_connection_context = ConnectionContext::Create();
+        tsi_handshaker_result_populate_connection_context(
+            ssl_fixture->base_.client_result, client_connection_context.get());
+        EXPECT_EQ(client_connection_context->Get<tsi::LocalCertificateInfo>(),
+                  nullptr);
+        if (ssl_fixture->use_multi_domain_server_cert_) {
+          // Not server0.pem or server1.pem; the server-side check below is
+          // what this configuration exists for.
+          tsi_peer_destruct(&peer);
+        } else if (ssl_fixture->server_name_indication_.empty() ||
+                   ssl_fixture->server_name_indication_ ==
+                       kSslTsiTestWrongSni ||
+                   ssl_fixture->server_name_indication_ ==
+                       kSslTsiTestInvalidSni) {
           // Expect server to use default server0.pem.
           CheckServer0Peer(&peer);
         } else {
@@ -743,6 +816,7 @@ class SslTransportSecurityTest
           CheckVerifiedRootCertSubjectUnset(&peer);
         }
         CheckClientPeer(ssl_fixture, &peer);
+        CheckLocalCertificate(ssl_fixture);
       } else {
         ASSERT_EQ(ssl_fixture->base_.server_result, nullptr);
       }
@@ -758,6 +832,7 @@ class SslTransportSecurityTest
     std::unique_ptr<ssl_key_cert_lib> key_cert_lib_;
     ssl_alpn_lib* alpn_lib_;
     bool force_client_auth_;
+    bool use_multi_domain_server_cert_ = false;
     std::string server_name_indication_;
     tsi_ssl_session_cache* session_cache_ = nullptr;
     bool session_reused_;
@@ -860,6 +935,18 @@ TEST_P(SslTransportSecurityTest, DoHandshakeSmallHandshakeBuffer) {
 TEST_P(SslTransportSecurityTest, DoHandshake) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
+  DoHandshake();
+}
+
+// Covers the properties describing the server's own certificate when that
+// certificate has URI SANs: the first URI SAN and the first DNS SAN are
+// reported, and the rest are not.  These back
+// AttributeContext.destination.principal in the ext_authz filter, whose
+// precedence rule prefers the URI SAN.
+TEST_P(SslTransportSecurityTest, LocalCertificatePropertiesWithUriSan) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->UseMultiDomainServerCert();
   DoHandshake();
 }
 
