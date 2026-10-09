@@ -22,23 +22,25 @@ EXPERIMENT_ENABLES = {
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
     "callv3_batch_validation": "callv3_batch_validation",
+    "callv3_server_shutdown_broadcast": "callv3_server_shutdown_broadcast",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "custom_frame_check": "custom_frame_check",
     "event_engine_client": "event_engine_client",
-    "event_engine_dns": "event_engine_dns",
-    "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
-    "event_engine_fork": "event_engine_fork",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
-    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
+    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints,event_engine_listener",
     "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
+    "fix_v3_filter_stack_server_side_ordering": "fix_v3_filter_stack_server_side_ordering",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
     "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
+    "header_data_frame": "header_data_frame",
     "inproc_cancel_stream": "inproc_cancel_stream",
+    "internal_fix": "internal_fix",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
+    "map_host_header_to_authority": "map_host_header_to_authority",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
@@ -66,12 +68,12 @@ EXPERIMENT_ENABLES = {
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
+    "ring_hash_update_cleanup": "ring_hash_update_cleanup",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
     "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
-    "subchannel_connection_scaling": "subchannel_connection_scaling",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
@@ -85,9 +87,6 @@ EXPERIMENT_ENABLES = {
 
 EXPERIMENT_POLLERS = [
     "event_engine_client",
-    "event_engine_dns",
-    "event_engine_dns_non_client_channel",
-    "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
     "pipelined_read_secure_endpoint",
@@ -99,32 +98,22 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "fix_v3_filter_stack_server_side_ordering",
                 "pollset_alternative",
                 "use_call_event_engine_in_completion_queue",
             ],
         },
         "on": {
-            "cancel_ares_query_test": [
-                "event_engine_dns",
-            ],
             "core_end2end_test": [
                 "event_engine_client",
-                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
-            ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
             ],
         },
     },
@@ -133,32 +122,22 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "fix_v3_filter_stack_server_side_ordering",
                 "pollset_alternative",
                 "use_call_event_engine_in_completion_queue",
             ],
         },
         "on": {
-            "cancel_ares_query_test": [
-                "event_engine_dns",
-            ],
             "core_end2end_test": [
                 "event_engine_client",
-                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
-            ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
             ],
         },
     },
@@ -168,7 +147,9 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
+                "fix_v3_filter_stack_server_side_ordering",
                 "local_connector_secure",
+                "map_host_header_to_authority",
                 "otel_export_telemetry_domains",
                 "ph2_client",
                 "ph2_client_server",
@@ -181,7 +162,6 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
                 "secure_endpoint_read_coalescing",
                 "use_call_event_engine_in_completion_queue",
-                "v2_non_owning_waker_implementation",
                 "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
@@ -197,6 +177,12 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "hpack_test": [
+                "map_host_header_to_authority",
+            ],
+            "lb_unit_test": [
+                "ring_hash_update_cleanup",
+            ],
             "minimal_stack_test": [
                 "fuse_filters",
             ],
@@ -211,42 +197,31 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
-                "xds_server_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_server_filter_chain_per_route",
+                "ph2_client",
+                "ph2_client_server",
+                "ph2_server",
+                "ring_hash_update_cleanup",
             ],
         },
         "on": {
-            "cancel_ares_query_test": [
-                "event_engine_dns",
-            ],
-            "chttp2_keepalive_tests": [
-                "subchannel_connection_scaling",
-            ],
             "core_end2end_test": [
                 "callv3_batch_validation",
                 "event_engine_client",
-                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
-                "subchannel_connection_scaling",
-            ],
-            "cpp_lb_end2end_test": [
-                "subchannel_connection_scaling",
+                "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
-            ],
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
+            "xds_end2end_test": [
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
             ],
         },
     },

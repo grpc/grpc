@@ -29,7 +29,9 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
@@ -45,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -60,6 +63,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -172,14 +176,17 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   int64_t TestOnlyTransportFlowControlWindow();
-  int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
+  int64_t TestOnlyGetStreamFlowControlWindow(uint32_t stream_id);
 
-  uint32_t TestOnlyLastIncomingStreamId() const {
-    return last_incoming_stream_id_;
-  }
+  uint32_t TestOnlyLastIncomingStreamId() const { return GetLastStreamId(); }
 
   Duration TestOnlyNextAllowedPingInterval() {
     return NextAllowedPingInterval();
+  }
+
+  void TestOnlySetLocalMaxConcurrentStreams(
+      const uint32_t max_concurrent_streams) {
+    settings_->mutable_local().SetMaxConcurrentStreams(max_concurrent_streams);
   }
 
  private:
@@ -262,7 +269,8 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   template <typename T>
-  Http2Status ProcessIncomingMetadata(T&& frame);
+  Http2Status ProcessIncomingMetadata(T&& frame,
+                                      const RefCountedPtr<Stream>& stream);
 
   auto ReadAndProcessOneFrame();
 
@@ -444,15 +452,7 @@ class Http2ServerTransport final : public ServerTransport,
   // tokens are calculated based on the initial window size.
   absl::Status UpdateAllStreamsWritability();
 
-  auto FlowControlPeriodicUpdateLoop();
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  void AddPeriodicUpdatePromiseWaker() {
-    periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-  }
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
+  auto BdpLoop();
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream List Operations
@@ -473,8 +473,27 @@ class Http2ServerTransport final : public ServerTransport,
     return stream_list_.size();
   }
 
+  // Returns the last stream id seen by the transport from the client.
+  // If no streams were seen, returns 0.
+  uint32_t GetLastStreamId() const { return last_incoming_stream_id_; }
+
+  bool IsPingWithoutCallsAllowed() const {
+    return keepalive_permit_without_calls_;
+  }
+
+  bool IsTransportIdle() {
+    MutexLock lock(transport_mutex_);
+    return GetActiveStreamCountLocked() == 0;
+  }
+
   void EnqueueResetStreamFromTransportParty(RefCountedPtr<Stream> stream,
                                             uint32_t reset_stream_error_code);
+
+  // Enqueues a RST_STREAM frame directly onto the transport write context when
+  // no Stream object exists yet (e.g. when an incoming stream is rejected
+  // before stream creation).
+  void EnqueueResetStreamFromTransportParty(
+      const uint32_t stream_id, const uint32_t reset_stream_error_code);
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
@@ -483,10 +502,20 @@ class Http2ServerTransport final : public ServerTransport,
 
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
-      CallInitiator&& call_initiator, const uint32_t stream_id);
+      CallInitiator&& call_initiator, uint32_t stream_id);
+
+  // Validates the transport-level conditions for the incoming stream before
+  // creating the stream object.
+  Http2Status ValidateIncomingStream(uint32_t stream_id);
 
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
+
+  // This MUST be called from the transport party only.
+  // Recomputes the MAX_CONCURRENT_STREAMS that we advertise to the peer, based
+  // on the process wide StreamQuota.
+  // Based on CHTTP2's use of GetConnectionMaxConcurrentRequests in parsing.cc
+  void UpdateMaxConcurrentStreamsFromStreamQuota();
 
   // Call this when a stream needs to be closed and we must notify the client by
   // sending a RST_STREAM frame (e.g., due to local stream error, cancellation).
@@ -494,15 +523,24 @@ class Http2ServerTransport final : public ServerTransport,
   // reads. Writes will be closed by the write loop after the RST_STREAM frame
   // is written to the wire.
   // Prefer calling HandleError over this API.
+  // Note: Use override_tarpit with caution. This would bypass the TarpitManager
+  // and would result in immediate stream closure. Currently the use of this
+  // parameter is limited to two places:
+  // 1. Transport closure path.
+  // 2. Stream reset triggered by reclaimer.
   // Parameters:
   //   stream: The stream to close.
   //   reset_stream_error_code: The error code to use for the RST_STREAM frame.
   //   trailing_metadata_status: The failure status to propagate to the
   //                             application.
+  //   tarpit: Whether stream closure should be delayed via TarpitManager.
+  //   override_tarpit: When true, bypasses any ongoing tarpit delay or check
+  //                    and forces immediate reset frame emission and cleanup.
   //   whence: The location of the caller.
   void BeginCloseStream(RefCountedPtr<Stream> stream,
                         uint32_t reset_stream_error_code,
-                        absl::Status trailing_metadata_status,
+                        absl::Status trailing_metadata_status, bool tarpit,
+                        bool override_tarpit = false,
                         DebugLocation whence = {});
 
   // Handles stream state changes by discarding pending header parsing if reads
@@ -539,9 +577,6 @@ class Http2ServerTransport final : public ServerTransport,
   absl::Status AckPing(uint64_t opaque_data);
 
   void MaybeSpawnKeepaliveLoop();
-
-  // uint32_t GetMaxAllowedStreamId() const;
-  // void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
 
   //////////////////////////////////////////////////////////////////////////////
   // Error Path and Close Path
@@ -597,8 +632,6 @@ class Http2ServerTransport final : public ServerTransport,
                                  const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
-  bool SetOnDone(RefCountedPtr<Stream> stream);
-
   void ReadChannelArgs(const ChannelArgs& channel_args,
                        TransportChannelArgs& args);
 
@@ -621,6 +654,19 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   auto SpawnGracefulGoawayPromise(Slice&& debug_data);
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Tarpit
+
+  // Returns a promise running the tarpit drain loop which receives incoming
+  // tarpit entries and enqueues them into TarpitManager.
+  auto MakeTarpitDrainLoop();
+  // Returns a promise running the tarpit timer loop which waits for timer
+  // expiration and performs final actions on expired tarpit entries.
+  auto MakeTarpitTimerLoop();
+  // Performs final actions on expired tarpit entries (sending reset, trailing
+  // metadata, or cleaning up stream state).
+  void ActOnTarpitEntries(std::vector<TarpitEntry>&& entries);
 
   //////////////////////////////////////////////////////////////////////////////
   // Inner Classes and Structs
@@ -706,19 +752,21 @@ class Http2ServerTransport final : public ServerTransport,
       "http2_server", GRPC_CHANNEL_READY};
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
+  bool is_goaway_received_;
 
   bool should_reset_ping_clock_;
+  bool max_concurrent_streams_overload_protection_ = false;
   ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
   // transport during write cycles.
   TransportWriteContext transport_write_context_;
 
-  // Tracks the max allowed stream id. Currently this is only set on receiving a
-  // graceful GOAWAY frame.
-  GRPC_UNUSED uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
   // Tracks last stream id received by the transport.
-  uint32_t last_incoming_stream_id_ = 0;
+  uint32_t last_incoming_stream_id_;
+
+  // Tracks last stream id accepted for processing (for graceful GOAWAY).
+  uint32_t last_accepted_stream_id_;
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
@@ -731,14 +779,14 @@ class Http2ServerTransport final : public ServerTransport,
   GoawayManager goaway_manager_;
 
   MemoryOwner memory_owner_;
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+  RefCountedPtr<StreamQuota> stream_quota_;
   chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  Waker periodic_updates_waker_;
+  TarpitManager tarpit_manager_;
 };
 
 // TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two

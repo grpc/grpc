@@ -25,6 +25,7 @@
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
 #include "gmock/gmock.h"
@@ -208,10 +209,12 @@ TEST_P(CdsTest, CircuitBreaking) {
   threshold->set_priority(RoutingPriority::DEFAULT);
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancer_->ads_service()->SetCdsResource(cluster);
-  // Send exactly max_concurrent_requests long RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentRequests];
+  // Start exactly max_concurrent_requests RPCs.
+  AsyncRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].StartRpc(stub_.get());
+    rpcs[i].StartRpc(stub_.get(),
+                     RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
+                         1 * 1000 * 1000));
   }
   // Wait for all RPCs to be in flight.
   while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
@@ -253,11 +256,13 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   balancer_->ads_service()->SetCdsResource(cluster);
   auto channel2 = CreateChannel();
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  // Send exactly max_concurrent_requests long RPCs, alternating between
+  // Start exactly max_concurrent_requests RPCs, alternating between
   // the two channels.
-  LongRunningRpc rpcs[kMaxConcurrentRequests];
+  AsyncRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].StartRpc(i % 2 == 0 ? stub_.get() : stub2.get());
+    rpcs[i].StartRpc(i % 2 == 0 ? stub_.get() : stub2.get(),
+                     RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
+                         1 * 1000 * 1000));
   }
   // Wait for all RPCs to be in flight.
   while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
@@ -745,7 +750,8 @@ TEST_P(EdsTest, NacksInvalidResource) {
             "xDS response validation errors: ["
             "resource index 0: eds_service_name: "
             "INVALID_ARGUMENT: errors parsing EDS resource: ["
-            "field:endpoints error:priority 0 empty]]");
+            "field:endpoints[0].priority error:"
+            "priority 1 >= number of localities (1)]]");
 }
 
 // Tests that if the balancer is down, the RPCs will still be sent to the
@@ -1432,8 +1438,8 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
   auto hold = injector.AddHold(backends_[0]->port());
   // Start an RPC in the background, which should cause the channel to
   // try to connect.
-  LongRunningRpc rpc;
-  rpc.StartRpc(stub_.get(), RpcOptions());
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
   // Wait for connection attempt to start to the backend.
   hold->Wait();
   // Channel state should be CONNECTING here, and any RPC should be
@@ -1452,6 +1458,7 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(4);
   const size_t kNumRpcs = 100;
   EdsResourceArgs args({

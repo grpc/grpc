@@ -735,7 +735,16 @@ class TestServer(AioTestBase):
                 registered_unary_unary_handler
             ),
         }
-        self._server.add_registered_method_handlers("test", registered_handlers)
+        with self.assertLogs(level="WARNING") as cm:
+            self._server.add_registered_method_handlers(
+                "test", registered_handlers
+            )
+        self.assertTrue(
+            any(
+                "Cannot register method handlers" in output
+                for output in cm.output
+            )
+        )
 
         call = self._channel.unary_unary(
             "/test/AddedAfterServerStart",

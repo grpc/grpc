@@ -172,7 +172,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>> roots = nullptr;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     FileWatcherCertificateProvider::WatcherInfo& info =
@@ -195,20 +195,6 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       distributor_->SetKeyMaterials(cert_name, roots.ok() ? *roots : nullptr,
                                     pem_key_cert_pairs);
     }
-    grpc_error_handle root_cert_error;
-    grpc_error_handle identity_cert_error;
-    if (root_being_watched && (!roots.ok() || *roots == nullptr)) {
-      root_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
-    }
-    if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
-      identity_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
-    }
-    if (!root_cert_error.ok() || !identity_cert_error.ok()) {
-      distributor_->SetErrorForCert(cert_name, root_cert_error,
-                                    identity_cert_error);
-    }
   });
 }
 
@@ -226,7 +212,7 @@ UniqueTypeName FileWatcherCertificateProvider::type() const {
 }
 
 absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!root_cert_info_.ok()) {
     return root_cert_info_.status();
   }
@@ -268,7 +254,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     pem_key_cert_pairs = ReadIdentityKeyCertPairFromFiles(
         private_key_path_, identity_certificate_path_);
   }
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   const bool root_changed =
       HasRootCertInfoChanged(root_cert_info_, root_cert_info);
   if (root_changed) {
@@ -327,8 +313,7 @@ std::optional<std::string>
 FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     const std::string& root_cert_full_path) {
   // Read the root file.
-  auto root_slice =
-      LoadFile(root_cert_full_path, /*add_null_terminator=*/false);
+  auto root_slice = LoadFile(root_cert_full_path);
   if (!root_slice.ok()) {
     LOG(ERROR) << "Reading file " << root_cert_full_path
                << " failed: " << root_slice.status();
@@ -372,14 +357,13 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
       continue;
     }
     // Read the identity files.
-    auto key_slice = LoadFile(private_key_path, /*add_null_terminator=*/false);
+    auto key_slice = LoadFile(private_key_path);
     if (!key_slice.ok()) {
       LOG(ERROR) << "Reading file " << private_key_path
                  << " failed: " << key_slice.status() << ". Start retrying...";
       continue;
     }
-    auto cert_slice =
-        LoadFile(identity_certificate_path, /*add_null_terminator=*/false);
+    auto cert_slice = LoadFile(identity_certificate_path);
     if (!cert_slice.ok()) {
       LOG(ERROR) << "Reading file " << identity_certificate_path
                  << " failed: " << cert_slice.status() << ". Start retrying...";
@@ -422,7 +406,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     std::shared_ptr<tsi::RootCertInfo> roots;
     std::optional<KeyCertPairsOrSelector> key_cert_pairs_or_selector;
     WatcherInfo& info = watcher_info_[cert_name];
@@ -443,27 +427,13 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
       distributor_->SetKeyMaterials(cert_name, roots,
                                     key_cert_pairs_or_selector);
     }
-    grpc_error_handle root_cert_error;
-    grpc_error_handle identity_cert_error;
-    if (root_being_watched && roots == nullptr) {
-      root_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
-    }
-    if (identity_being_watched && !key_cert_pairs_or_selector.has_value()) {
-      identity_cert_error =
-          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
-    }
-    if (!root_cert_error.ok() || !identity_cert_error.ok()) {
-      distributor_->SetErrorForCert(cert_name, root_cert_error,
-                                    identity_cert_error);
-    }
   });
 }
 
 absl::Status InMemoryCertificateProvider::Update(
     std::optional<std::shared_ptr<tsi::RootCertInfo>> root_cert_info,
     std::optional<const KeyCertPairsOrSelector> key_cert_pairs_or_selector) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   const bool root_changed =
       root_cert_info.has_value() &&
       HasRootCertInfoChanged(root_certificates_, *root_cert_info);
@@ -518,7 +488,7 @@ absl::Status InMemoryCertificateProvider::Update(
 }
 
 absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!root_certificates_.ok()) {
     return root_certificates_.status();
   }

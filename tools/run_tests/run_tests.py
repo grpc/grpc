@@ -558,22 +558,12 @@ class CLanguage:
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10":
-            return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10.2":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10.2_openssl102":
+            return ("debian12", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc11":
+            return ("gcc_11", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc14.2_openssl111":
             return (
-                "debian11_openssl102",
-                [
-                    "-DgRPC_SSL_PROVIDER=package",
-                    "-DCMAKE_CXX_STANDARD=17",
-                ],
-            )
-        elif compiler == "gcc10.2_openssl111":
-            return (
-                "debian11_openssl111",
+                "debian13_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
                     "-DCMAKE_CXX_STANDARD=17",
@@ -757,7 +747,7 @@ class PythonLanguage:
         if self.args.compiler == "python_alpine":
             return "alpine"
         else:
-            return "debian11_default"
+            return "debian13_default"
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -866,7 +856,7 @@ class PythonLanguage:
                 # tested.
                 return (python310_config,)
             elif platform.machine() == "aarch64":
-                # Currently the python_debian11_default_arm64 docker image
+                # Currently the python_debian13_default_arm64 docker image
                 # only has python3.10 installed (and that seems sufficient
                 # for arm64 testing)
                 return (python310_config,)
@@ -1033,7 +1023,7 @@ class RubyLanguage:
         return [["tools/run_tests/helper_scripts/post_tests_ruby.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/ruby_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/ruby_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
@@ -1284,7 +1274,7 @@ class Sanity:
             return [
                 self.config.job_spec(
                     cmd["script"].split() + self.args.script_args,
-                    timeout_seconds=80 * 60,
+                    timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
                 )
@@ -1728,12 +1718,9 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        # The gcc:10 docker image which is 10.5 as of May 2026.
-        "gcc10",
-        # Uses debian11 docker image which comes with gcc 10.2
-        "gcc10.2",
-        "gcc10.2_openssl102",
-        "gcc10.2_openssl111",
+        # Gcc from ubuntu:22.04 LTS
+        "gcc11",
+        "gcc14.2_openssl111",
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",

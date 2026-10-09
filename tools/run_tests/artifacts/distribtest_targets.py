@@ -425,31 +425,31 @@ def targets():
         # C++
         # The "dummy" C++ distribtest so that the set of tasks to run isn't empty
         # when grpc_distribtest_standalone runs on PRs.
-        CppDistribTest("linux", "x64", "debian11", "dummy", presubmit=True),
-        CppDistribTest("linux", "x64", "debian11", "cmake", presubmit=False),
+        CppDistribTest("linux", "x64", "debian12", "dummy", presubmit=True),
+        CppDistribTest("linux", "x64", "debian12", "cmake", presubmit=False),
         CppDistribTest(
-            "linux", "x64", "debian11", "cmake_as_submodule", presubmit=False
+            "linux", "x64", "debian12", "cmake_as_submodule", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
-            "debian11",
+            "debian12",
             "cmake_as_externalproject",
             presubmit=False,
         ),
         CppDistribTest(
-            "linux", "x64", "debian11", "cmake_fetchcontent", presubmit=False
+            "linux", "x64", "debian12", "cmake_fetchcontent", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian11", "cmake_module_install", presubmit=False
+            "linux", "x64", "debian12", "cmake_module_install", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian11", "cmake_pkgconfig", presubmit=False
+            "linux", "x64", "debian12", "cmake_pkgconfig", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
-            "debian11_aarch64_cross",
+            "debian13_aarch64_cross",
             "cmake_aarch64_cross",
             presubmit=False,
         ),
@@ -484,24 +484,24 @@ def targets():
         CSharpDistribTest("windows", "x86", presubmit=True),
         CSharpDistribTest("windows", "x64", presubmit=True),
         # Python
-        PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
-        PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
+        PythonDistribTest("linux", "x64", "bookworm", presubmit=True),
+        PythonDistribTest("linux", "x86", "bookworm", presubmit=True),
         PythonDistribTest("linux", "x64", "fedora40"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2404"),
         PythonDistribTest(
-            "linux", "aarch64", "python310_bullseye", presubmit=True
+            "linux", "aarch64", "python310_bookworm", presubmit=True
         ),
         PythonDistribTest("linux", "aarch64", "alpine", presubmit=True),
         PythonDistribTest(
             "linux", "x64", "alpine3.18", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x64", "bullseye", source=True, presubmit=True
+            "linux", "x64", "bookworm", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x86", "bullseye", source=True, presubmit=True
+            "linux", "x86", "bookworm", source=True, presubmit=True
         ),
         PythonDistribTest("linux", "x64", "fedora40", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
@@ -510,39 +510,39 @@ def targets():
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_2",
             source=True,
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_2",
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_3",
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_3",
             protobuf_version="3.25",
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_3_4",
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
-            "debian11",
+            "debian12",
             ruby_version="ruby_4_0",
             presubmit=True,
         ),

@@ -253,10 +253,7 @@ task 'gem:native', [:plat, :build_type] do |t, args|
   unix_platforms.each do |plat|
     unless unix_platforms_without_debug_symbols.include?(plat)
       `bash src/ruby/nativedebug/build_package.sh #{plat}`
-      # Native debug gems uploaded to GCS, are copied to ruby-native-debug-symbols for grpc_publish_packages to recognize
-      target = 'pkg/ruby-native-debug-symbols'
-      FileUtils.mkdir_p(target)
-      FileUtils.cp(Dir.glob('src/ruby/nativedebug/pkg/*.gem'), target)
+      `cp src/ruby/nativedebug/pkg/*.gem pkg/`
     end
   end
 end
@@ -290,7 +287,7 @@ task 'publish:native_debug', [:gem_dir] do |_t, args|
 
   gems_by_version = gem_files.group_by do |path|
     full_version = Gem::Package.new(path).spec.version.to_s
-    match = full_version.match(/^(\d+\.\d+\.\d+)/)
+    match = full_version.match(/^(\d+\.\d+\.\d+(?:\.pre\d+)?)/)
     fail "Unexpected version format: #{full_version}" unless match
     match[1]
   rescue StandardError => e

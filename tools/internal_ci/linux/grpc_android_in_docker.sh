@@ -30,6 +30,10 @@ popd
 PROTOC=${REPO_ROOT}/cmake/build/third_party/protobuf/protoc
 PLUGIN=${REPO_ROOT}/cmake/build/grpc_cpp_plugin
 
+# Increase heap size so daemon doesn't crash when building native
+# cmake projects.
+export GRADLE_OPTS="-Dorg.gradle.jvmargs='-Xmx3g'"
+
 # Build and run interop instrumentation tests on Firebase Test Lab
 cd "${REPO_ROOT}/src/android/test/interop/"
 ./gradlew assembleDebug --parallel \

@@ -90,7 +90,7 @@ void SubchannelStreamClient::Orphan() {
               << ": SubchannelStreamClient shutting down";
   }
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     event_handler_.reset();
     call_state_.reset();
     if (retry_timer_handle_.has_value()) {
@@ -102,7 +102,7 @@ void SubchannelStreamClient::Orphan() {
 }
 
 void SubchannelStreamClient::StartCall() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   StartCallLocked();
 }
 
@@ -150,7 +150,7 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
 }
 
 void SubchannelStreamClient::OnRetryTimer() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (event_handler_ != nullptr && retry_timer_handle_.has_value() &&
       call_state_ == nullptr) {
     if (GPR_UNLIKELY(tracer_ != nullptr)) {
@@ -353,7 +353,7 @@ void SubchannelStreamClient::CallState::RecvMessageReady() {
   }
   // Report payload.
   {
-    MutexLock lock(&subchannel_stream_client_->mu_);
+    MutexLock lock(subchannel_stream_client_->mu_);
     if (subchannel_stream_client_->event_handler_ != nullptr) {
       absl::Status status =
           subchannel_stream_client_->event_handler_->RecvMessageReadyLocked(
@@ -418,7 +418,7 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
   // that it lives long enough for us to release the mutex, since the
   // call to CallEndedLocked() may release the last ref.
   auto subchannel_stream_client = self->subchannel_stream_client_->Ref();
-  MutexLock lock(&self->subchannel_stream_client_->mu_);
+  MutexLock lock(self->subchannel_stream_client_->mu_);
   if (self->subchannel_stream_client_->event_handler_ != nullptr) {
     self->subchannel_stream_client_->event_handler_
         ->RecvTrailingMetadataReadyLocked(self->subchannel_stream_client_.get(),

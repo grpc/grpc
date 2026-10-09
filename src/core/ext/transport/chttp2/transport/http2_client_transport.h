@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -410,15 +411,7 @@ class Http2ClientTransport final : public ClientTransport,
   // tokens are calculated based on the initial window size.
   absl::Status UpdateAllStreamsWritability();
 
-  auto FlowControlPeriodicUpdateLoop();
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  void AddPeriodicUpdatePromiseWaker() {
-    periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-  }
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
+  auto BdpLoop();
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream List Operations
@@ -540,7 +533,7 @@ class Http2ClientTransport final : public ClientTransport,
   auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
   Duration NextAllowedPingInterval() {
-    MutexLock lock(&transport_mutex_);
+    MutexLock lock(transport_mutex_);
     return (!keepalive_permit_without_calls_ &&
             GetActiveStreamCountLocked() == 0)
                ? Duration::Hours(2)
@@ -727,9 +720,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  Waker periodic_updates_waker_;
 };
 
 }  // namespace http2

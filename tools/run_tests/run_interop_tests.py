@@ -1842,10 +1842,6 @@ try:
                     docker_image=docker_images.get(str(language)),
                     transport_security=args.transport_security,
                     manual_cmd_log=client_manual_cmd_log,
-                    add_env={
-                        "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING": "true",
-                        "GRPC_EXPERIMENTS": "subchannel_connection_scaling",
-                    },
                 )
                 jobs.append(test_job)
 

@@ -164,7 +164,7 @@ void CompositeFilter::InterceptCall(
             handler.PullClientInitialMetadata(),
             [handler, self](ClientMetadataHandle metadata) {
               if (self->config_->matcher == nullptr) {
-                GRPC_TRACE_LOG(channel, INFO)
+                GRPC_TRACE_LOG(composite_filter, INFO)
                     << "[composite " << self.get()
                     << "]: no matcher configured, starting child call";
                 CallInitiator initiator = self->MakeChildCall(
@@ -189,7 +189,7 @@ void CompositeFilter::InterceptCall(
               // call to the next filter without sending it
               // through any child filter chain.
               if (action->type() == SkipFilterAction::Type()) {
-                GRPC_TRACE_LOG(channel, INFO)
+                GRPC_TRACE_LOG(composite_filter, INFO)
                     << "[composite " << self.get()
                     << "]: found SkipFilter, starting child call";
                 CallInitiator initiator = self->MakeChildCall(
@@ -213,7 +213,7 @@ void CompositeFilter::InterceptCall(
                 bool sampled =
                     random_value < execute_filter_action.sample_per_million();
                 if (!sampled) {
-                  GRPC_TRACE_LOG(channel, INFO)
+                  GRPC_TRACE_LOG(composite_filter, INFO)
                       << "[composite " << self.get()
                       << "]: not sampled, starting child call";
                   CallInitiator initiator = self->MakeChildCall(
@@ -227,7 +227,7 @@ void CompositeFilter::InterceptCall(
               if (it == self->filter_chain_map_.end()) {
                 return absl::InternalError("no filter chain found for action");
               }
-              GRPC_TRACE_LOG(channel, INFO)
+              GRPC_TRACE_LOG(composite_filter, INFO)
                   << "[composite " << self.get()
                   << "]: starting call on filter chain";
               auto& unstarted_destination = it->second;

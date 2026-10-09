@@ -43,6 +43,7 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
@@ -253,7 +254,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     void Start();
     void Shutdown();
 
-    std::string target() const { return absl::StrCat("localhost:", port_); }
+    std::string target() const { return grpc_core::LocalIpAndPort(port_); }
 
     int port() const { return port_; }
 
@@ -314,7 +315,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
         CountedService<
             TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
         {
-          grpc_core::MutexLock lock(&mu_);
+          grpc_core::MutexLock lock(mu_);
           clients_.insert(context->peer());
           last_peer_identity_.clear();
           for (const auto& entry : peer_identity) {
@@ -365,12 +366,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       void Shutdown() {}
 
       std::set<std::string> clients() {
-        grpc_core::MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(mu_);
         return clients_;
       }
 
       const std::vector<std::string>& last_peer_identity() {
-        grpc_core::MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(mu_);
         return last_peer_identity_;
       }
 
@@ -452,6 +453,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // If balancer_credentials is null, it defaults to fake credentials.
   explicit XdsEnd2endTest(
       std::shared_ptr<ServerCredentials> balancer_credentials = nullptr);
+
+  static void SetUpTestSuite() {
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P2][Client] Fix bug");
+  }
 
   void SetUp() override { InitClient(); }
   void TearDown() override;
@@ -648,6 +653,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     bool server_notify_client_when_started = false;
     bool echo_host_from_authority_header = false;
     bool echo_metadata_initially = false;
+    bool echo_metadata = false;
 
     RpcOptions() {}
 
@@ -729,6 +735,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       return *this;
     }
 
+    RpcOptions& set_echo_metadata(bool value) {
+      echo_metadata = value;
+      return *this;
+    }
+
+    // Populates context.
+    void SetupContext(ClientContext* context) const;
+    // Populates request.
+    void SetupRequest(EchoRequest* request) const;
     // Populates context and request.
     void SetupRpc(ClientContext* context, EchoRequest* request) const;
   };
@@ -796,20 +811,25 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       StatusCode expected_status, absl::string_view expected_message_prefix,
       const RpcOptions& rpc_options = RpcOptions());
 
-  // A class for running a long-running RPC using the callback API.
-  class LongRunningRpc {
+  // A class for running an RPC asynchronously using the callback API.
+  class AsyncRpc {
    public:
     // Starts the RPC.
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
-                  const RpcOptions& rpc_options =
-                      RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
-                          1 * 1000 * 1000));
+                  const RpcOptions& rpc_options = RpcOptions());
 
     // Cancels the RPC.
     void CancelRpc();
 
     // Gets the RPC's status.  Blocks if the RPC is not yet complete.
     Status GetStatus();
+
+    std::multimap<std::string, std::string> GetServerInitialMetadata();
+    std::multimap<std::string, std::string> GetServerTrailingMetadata();
+
+    // Not safe to call until after GetStatus() returns.
+    grpc_core::Duration elapsed_time() const { return elapsed_time_; }
+    const EchoResponse& response() const { return response_; }
 
    private:
     EchoRequest request_;
@@ -818,20 +838,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     grpc_core::Mutex mu_;
     grpc_core::CondVar cv_;
     std::optional<Status> status_ ABSL_GUARDED_BY(&mu_);
+    grpc_core::Timestamp start_time_;
+    grpc_core::Duration elapsed_time_;
   };
-
-  // Starts a set of concurrent RPCs.
-  // TODO(roth): Change this to use LongRunningRpc.
-  struct ConcurrentRpc {
-    ClientContext context;
-    Status status;
-    grpc_core::Duration elapsed_time;
-    EchoResponse response;
-  };
-  std::vector<std::unique_ptr<ConcurrentRpc>> SendConcurrentRpcs(
-      const grpc_core::DebugLocation& debug_location,
-      grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
-      const RpcOptions& rpc_options);
 
   //
   // Waiting for individual backends to be seen by the client

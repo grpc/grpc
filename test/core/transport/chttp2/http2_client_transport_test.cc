@@ -230,7 +230,6 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
                                                      /*stream_id=*/1,
                                                      /*end_stream=*/true)});
 
-  step->ThenExpectWrite([](SliceBuffer& buffer) {});
   step->ThenPerformRead({helper_.SerializedHeaderFrame(
       std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
       /*stream_id=*/1,
@@ -400,7 +399,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
 TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   ExecCtx ctx;
   // 1. Initialize the transport and exchange settings.
-  InitTransport(GetChannelArgs());
+  // 2. Disable BDP because it alters the order of the writes.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   // 1. Client starts a new stream and sends Initial Metadata and half-closes
@@ -1392,7 +1392,8 @@ TEST_F(Http2ClientTransportTest, TestDestructionWithStalledStreamInQueue) {
 TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
   ExecCtx ctx;
   // 1. Initialize the transport and exchange settings.
-  InitTransport(GetChannelArgs());
+  // 2. Disable BDP because it alters the order of the writes.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   SpawnTransportLoopsAndExchangeSettings();
 
   StrictMock<MockFunction<void()>> on_done;
@@ -1527,7 +1528,7 @@ TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
 }  // namespace http2
 }  // namespace grpc_core
 
-// TODO(tjagtap) : [PH2][P1] BURNING : Write a test for Settings, and Settings
+// TODO(tjagtap) : [PH2][P2] : Write a test for Settings, and Settings
 // Acks, Incoming and Outgoing
 
 int main(int argc, char** argv) {

@@ -19,11 +19,11 @@ for example, a lot of information will initially be missing.
 
 ## Download Location
 
-**Version 1.79.0 and above**: Download from GCS (exceeds RubyGems 500MB limit)
+**Version 1.84.0.pre1 and above**: Download from GCS (exceeds RubyGems 500MB limit)
 
 ```bash
-VERSION=1.79.0  # your grpc version
-PLATFORM=x86_64-linux  # or x86-linux
+VERSION=1.84.0.pre1  # your grpc version
+PLATFORM=x86_64-linux-gnu  # or x86-linux-gnu
 
 # Download gem
 wget https://storage.googleapis.com/packages.grpc.io/grpc-ruby-native-debug-symbols/v${VERSION}/grpc-native-debug-${VERSION}-${PLATFORM}.gem

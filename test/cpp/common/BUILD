@@ -28,12 +28,15 @@ grpc_cc_test(
     name = "alarm_test",
     srcs = ["alarm_test.cc"],
     external_deps = [
+        "absl/functional:any_invocable",
         "gtest",
     ],
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows RBE
     deps = [
         "//:grpc++_unsecure",
+        "//src/core:default_event_engine",
         "//src/core:notification",
+        "//test/core/event_engine:mock_event_engine",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],

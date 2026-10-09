@@ -141,7 +141,7 @@ void OrcaService::Reactor::SendResponse() {
 }
 
 bool OrcaService::Reactor::MaybeScheduleTimer() {
-  grpc::internal::MutexLock lock(&timer_mu_);
+  grpc::internal::MutexLock lock(timer_mu_);
   if (cancelled_) return false;
   timer_handle_ = engine_->RunAfter(
       report_interval_,
@@ -150,7 +150,7 @@ bool OrcaService::Reactor::MaybeScheduleTimer() {
 }
 
 bool OrcaService::Reactor::MaybeCancelTimer() {
-  grpc::internal::MutexLock lock(&timer_mu_);
+  grpc::internal::MutexLock lock(timer_mu_);
   cancelled_ = true;
   if (timer_handle_.has_value() && engine_->Cancel(*timer_handle_)) {
     timer_handle_.reset();
@@ -161,7 +161,7 @@ bool OrcaService::Reactor::MaybeCancelTimer() {
 
 void OrcaService::Reactor::OnTimer() {
   grpc_core::ExecCtx exec_ctx;
-  grpc::internal::MutexLock lock(&timer_mu_);
+  grpc::internal::MutexLock lock(timer_mu_);
   timer_handle_.reset();
   SendResponse();
 }
@@ -187,7 +187,7 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
 }
 
 Slice OrcaService::GetOrCreateSerializedResponse() {
-  grpc::internal::MutexLock lock(&mu_);
+  grpc::internal::MutexLock lock(mu_);
   std::shared_ptr<const ServerMetricRecorder::BackendMetricDataState> result =
       server_metric_recorder_->GetMetricsIfChanged();
   if (!response_slice_seq_.has_value() ||

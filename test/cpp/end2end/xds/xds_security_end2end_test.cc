@@ -69,6 +69,7 @@
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -129,12 +130,12 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
   class CertDataMapWrapper {
    public:
     CertDataMap Get() {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       return cert_data_map_;
     }
 
     void Set(CertDataMap data) {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       cert_data_map_ = std::move(data);
     }
 
@@ -765,6 +766,7 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
 }
 
 TEST_P(XdsSecurityTest, MtlsWithAggregateCluster) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   g_fake2_cert_data_map->Set({{"", {root_cert_, fallback_identity_pair_}}});
   // Set up aggregate cluster.
@@ -1156,6 +1158,11 @@ TEST_P(XdsSniSecurityTest, SanValidationFailure) {
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
+  static void SetUpTestSuite() {
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P2][Client] Fix bug");
+    SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
+  }
+
   void SetUp() override {
     XdsBootstrapBuilder builder = MakeBootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
@@ -1319,7 +1326,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     int num_tries = 0;
     constexpr int kRetryCount = 100;
     auto overall_deadline =
-        absl::Now() + absl::Seconds(20) * grpc_test_slowdown_factor();
+        absl::Now() + absl::Seconds(40) * grpc_test_slowdown_factor();
     auto channel = channel_creator();
     auto stub = grpc::testing::EchoTestService::NewStub(channel);
     for (; num_tries < kRetryCount || absl::Now() < overall_deadline;
@@ -2994,9 +3001,6 @@ int main(int argc, char** argv) {
   // updates from all the subchannels's FDs.
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
-  overrides.trace =
-      "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
-      "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_1;
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;

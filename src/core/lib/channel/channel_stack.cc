@@ -307,6 +307,9 @@ void grpc_channel_next_get_info(grpc_channel_element* elem,
 
 void grpc_channel_next_op(grpc_channel_element* elem, grpc_transport_op* op) {
   grpc_channel_element* next_elem = elem + 1;
+  GRPC_TRACE_LOG(channel, INFO)
+      << "TRANSPORT OP[" << elem->filter->name << ":" << elem
+      << "]: " << grpc_transport_op_string(op);
   next_elem->filter->start_transport_op(next_elem, op);
 }
 

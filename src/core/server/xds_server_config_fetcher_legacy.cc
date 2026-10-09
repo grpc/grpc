@@ -161,6 +161,8 @@ class XdsServerConfigFetcher::ListenerWatcher final
 
   const std::string& listening_address() const { return listening_address_; }
 
+  std::string ResourceName() const;
+
  private:
   class FilterChainMatchManager;
 
@@ -172,7 +174,7 @@ class XdsServerConfigFetcher::ListenerWatcher final
   // filter_chain_match_manager_ in use.
   void PendingFilterChainMatchManagerReady(
       FilterChainMatchManager* filter_chain_match_manager) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     PendingFilterChainMatchManagerReadyLocked(filter_chain_match_manager);
   }
   void PendingFilterChainMatchManagerReadyLocked(
@@ -521,17 +523,6 @@ XdsServerConfigFetcher::XdsServerConfigFetcher(
   GRPC_CHECK(xds_client_ != nullptr);
 }
 
-std::string ListenerResourceName(absl::string_view resource_name_template,
-                                 absl::string_view listening_address) {
-  std::string tmp;
-  if (absl::StartsWith(resource_name_template, "xdstp:")) {
-    tmp = URI::PercentEncodePath(listening_address);
-    listening_address = tmp;
-  }
-  return absl::StrReplaceAll(resource_name_template,
-                             {{"%s", listening_address}});
-}
-
 void XdsServerConfigFetcher::StartWatch(
     std::string listening_address,
     std::unique_ptr<ServerConfigFetcher::WatcherInterface> watcher) {
@@ -540,30 +531,22 @@ void XdsServerConfigFetcher::StartWatch(
       xds_client_.Ref(DEBUG_LOCATION, "ListenerWatcher"), std::move(watcher),
       serving_status_notifier_, listening_address);
   auto* listener_watcher_ptr = listener_watcher.get();
-  XdsListenerResourceType::StartWatch(
-      xds_client_.get(),
-      ListenerResourceName(
-          DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-              .server_listener_resource_name_template(),
-          listening_address),
-      std::move(listener_watcher));
-  MutexLock lock(&mu_);
+  XdsListenerResourceType::StartWatch(xds_client_.get(),
+                                      listener_watcher_ptr->ResourceName(),
+                                      std::move(listener_watcher));
+  MutexLock lock(mu_);
   listener_watchers_.emplace(watcher_ptr, listener_watcher_ptr);
 }
 
 void XdsServerConfigFetcher::CancelWatch(
     ServerConfigFetcher::WatcherInterface* watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = listener_watchers_.find(watcher);
   if (it != listener_watchers_.end()) {
     // Cancel the watch on the listener before erasing
-    XdsListenerResourceType::CancelWatch(
-        xds_client_.get(),
-        ListenerResourceName(
-            DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-                .server_listener_resource_name_template(),
-            it->second->listening_address()),
-        it->second, false /* delay_unsubscription */);
+    XdsListenerResourceType::CancelWatch(xds_client_.get(),
+                                         it->second->ResourceName(), it->second,
+                                         false /* delay_unsubscription */);
     listener_watchers_.erase(it);
   }
 }
@@ -587,10 +570,9 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     absl::StatusOr<std::shared_ptr<const XdsListenerResource>> listener,
     RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
   if (!listener.ok()) {
-    MutexLock lock(&mu_);
-    OnFatalError(absl::Status(
-        listener.status().code(),
-        absl::StrCat("LDS resource: ", listener.status().message())));
+    MutexLock lock(mu_);
+    OnFatalError(AddMessagePrefix(absl::StrCat("LDS resource ", ResourceName()),
+                                  listener.status()));
     return;
   }
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
@@ -599,21 +581,22 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
   auto* tcp_listener =
       std::get_if<XdsListenerResource::TcpListener>(&(*listener)->listener);
   if (tcp_listener == nullptr) {
-    MutexLock lock(&mu_);
-    OnFatalError(
-        absl::FailedPreconditionError("LDS resource is not a TCP listener"));
+    MutexLock lock(mu_);
+    OnFatalError(absl::FailedPreconditionError(absl::StrCat(
+        "LDS resource ", ResourceName(), " is not a TCP listener")));
     return;
   }
   if (tcp_listener->address != listening_address_) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     OnFatalError(absl::FailedPreconditionError(
-        "Address in LDS update does not match listening address"));
+        absl::StrCat("LDS resource ", ResourceName(),
+                     " address does not match listening address")));
     return;
   }
   auto new_filter_chain_match_manager = MakeRefCounted<FilterChainMatchManager>(
       xds_client_.Ref(DEBUG_LOCATION, "FilterChainMatchManager"),
       tcp_listener->filter_chain_map, tcp_listener->default_filter_chain);
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (filter_chain_match_manager_ == nullptr ||
       !(new_filter_chain_match_manager->filter_chain_map() ==
             filter_chain_match_manager_->filter_chain_map() &&
@@ -652,6 +635,20 @@ void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(
     LOG(ERROR) << "ListenerWatcher:" << this << " Encountered fatal error "
                << status << "; not serving on " << listening_address_;
   }
+}
+
+std::string XdsServerConfigFetcher::ListenerWatcher::ResourceName() const {
+  absl::string_view resource_name_template =
+      DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
+          .server_listener_resource_name_template();
+  absl::string_view listening_address = listening_address_;
+  std::string tmp;
+  if (absl::StartsWith(resource_name_template, "xdstp:")) {
+    tmp = URI::PercentEncodePath(listening_address);
+    listening_address = tmp;
+  }
+  return absl::StrReplaceAll(resource_name_template,
+                             {{"%s", listening_address}});
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::
@@ -747,7 +744,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   std::vector<WatcherToStart> watchers_to_start;
   watchers_to_start.reserve(resource_names.size());
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     for (const auto& resource_name : resource_names) {
       ++rds_resources_yet_to_fetch_;
       auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(
@@ -776,7 +773,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     Orphaned() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   // Cancel the RDS watches to clear up the weak refs
   for (const auto& entry : rds_map_) {
     XdsRouteConfigResourceType::CancelWatch(xds_client_.get(), entry.first,
@@ -791,7 +788,7 @@ absl::StatusOr<RefCountedPtr<XdsCertificateProvider>>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     CreateOrGetXdsCertificateProviderFromFilterChainData(
         const XdsListenerResource::FilterChainData* filter_chain) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = certificate_providers_map_.find(filter_chain);
   if (it != certificate_providers_map_.end()) return it->second;
   // Configure root cert.
@@ -845,7 +842,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             route_config) {
   RefCountedPtr<ListenerWatcher> listener_watcher;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     auto& state = rds_map_[resource_name];
     if (!state.rds_update.has_value()) {
       if (--rds_resources_yet_to_fetch_ == 0) {
@@ -1077,7 +1074,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
         absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
             initial_resource;
         {
-          MutexLock lock(&mu_);
+          MutexLock lock(mu_);
           initial_resource = rds_map_[rds_name].rds_update.value();
         }
         server_config_selector_provider =
@@ -1251,7 +1248,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         std::shared_ptr<ServerConfigSelectorWatcher> watcher) {
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     resource = resource_;
@@ -1268,7 +1265,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::CancelWatch(
         std::shared_ptr<ServerConfigSelectorWatcher> watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   GRPC_CHECK(watcher == watcher_);
   watcher_.reset();
 }
@@ -1277,7 +1274,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::OnRouteConfigChanged(
         absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
             rds_update) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!rds_update.ok()) {
     rds_update = absl::UnavailableError(absl::StrCat(
         "RDS resource ", resource_name_, ": ", rds_update.status().message()));

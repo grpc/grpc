@@ -138,7 +138,9 @@ class Fuzzer {
     }
     // When the LB policy is reporting TF state, we should always be trying
     // to connect to at least one subchannel, if there are any not in state
-    // TF.  In order to evaluate this, we need to know that the LB
+    // TF.  Connection attempts not requested by the LB policy (e.g., ones
+    // triggered by another channel sharing the subchannel) also count.
+    // In order to evaluate this, we need to know that the LB
     // policy has seen the result of any subchannel connectivity state
     // updates, which means that we need to tick the FuzzingEventEngine.
     // However, we do want the fuzzer to also be able to control the
@@ -175,7 +177,11 @@ class Fuzzer {
     // in the WorkSerializer queue.
     event_engine_->TickUntilIdle();
     // If LB policy is IDLE, trigger it to start connecting.
-    if (state_ == GRPC_CHANNEL_IDLE) lb_policy_->ExitIdleLocked();
+    if (state_ == GRPC_CHANNEL_IDLE) {
+      lb_policy_->ExitIdleLocked();
+      // Flush initial subchannel connectivity state notifications.
+      event_engine_->TickUntilIdle();
+    }
     // Find the first entry in the subchannel pool that actually has a
     // subchannel.
     SubchannelState* subchannel = nullptr;
@@ -299,7 +305,10 @@ class Fuzzer {
             --state_->fuzzer_->num_subchannels_transient_failure_;
           } else if (!current_state_.has_value() &&
                      new_state == GRPC_CHANNEL_CONNECTING) {
-            state_->ConnectionRequested();
+            // The subchannel was already CONNECTING before any
+            // SubchannelInterface existed for it, so SetConnectivityState()
+            // did not count the attempt.
+            state_->ConnectionAttemptStarted();
           }
           current_state_ = new_state;
           watcher_->OnConnectivityStateChange(new_state, status);
@@ -334,7 +343,7 @@ class Fuzzer {
         watcher_map_.erase(it);
       }
 
-      void RequestConnection() override { state_->ConnectionRequested(); }
+      void RequestConnection() override { state_->ConnectionAttemptStarted(); }
 
       void AddDataWatcher(
           std::unique_ptr<DataWatcherInterface> watcher) override {
@@ -415,6 +424,13 @@ class Fuzzer {
       if (state_tracker_.state() == GRPC_CHANNEL_CONNECTING) {
         ConnectionAttemptComplete();
       }
+      // If the subchannel is in use by the LB policy and is starting a
+      // connection attempt, count it as connecting, even if the LB policy
+      // did not request the connection (e.g., the attempt may have been
+      // triggered by a different channel sharing the subchannel).
+      if (state == GRPC_CHANNEL_CONNECTING && num_subchannels_ > 0) {
+        ConnectionAttemptStarted();
+      }
       // Updating the state in the state tracker will enqueue
       // notifications to watchers on the WorkSerializer.
       ExecCtx exec_ctx;
@@ -439,15 +455,15 @@ class Fuzzer {
       }
     }
 
-    void ConnectionRequested() {
-      if (connection_requested_) return;
-      connection_requested_ = true;
+    void ConnectionAttemptStarted() {
+      if (connection_attempt_in_progress_) return;
+      connection_attempt_in_progress_ = true;
       ++fuzzer_->num_subchannels_connecting_;
     }
 
     void ConnectionAttemptComplete() {
-      if (!connection_requested_) return;
-      connection_requested_ = false;
+      if (!connection_attempt_in_progress_) return;
+      connection_attempt_in_progress_ = false;
       --fuzzer_->num_subchannels_connecting_;
     }
 
@@ -455,7 +471,7 @@ class Fuzzer {
     Fuzzer* const fuzzer_;
     ConnectivityStateTracker state_tracker_;
     uint64_t num_subchannels_ = 0;
-    bool connection_requested_ = false;
+    bool connection_attempt_in_progress_ = false;
   };
 
   // A fake helper to be passed to the LB policy.
@@ -1033,6 +1049,90 @@ TEST(PickFirstFuzzer,
     }
     actions {
       update { endpoint_list { endpoints { addresses { localhost_port: 1 } } } }
+    }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, SubchannelAlreadyReadyWhenPolicyExitsIdle) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      update { endpoint_list { endpoints { addresses { localhost_port: 0 } } } }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: READY
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: IDLE
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: READY
+      }
+    }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer,
+     SubchannelConnectingWithoutRequestWhenPolicyReportsTransientFailure) {
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy {} }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions {
+      update {
+        endpoint_list {
+          endpoints { addresses { localhost_port: 1 } }
+          endpoints { addresses { localhost_port: 0 } }
+        }
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: IDLE
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 1 }
+        state: CONNECTING
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 1 }
+        state: TRANSIENT_FAILURE
+      }
     }
   )pb"));
 }

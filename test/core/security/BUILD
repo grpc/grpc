@@ -38,20 +38,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "evaluate_args_test",
-    srcs = ["evaluate_args_test.cc"],
-    external_deps = ["gtest"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:sockaddr_utils",
-        "//src/core:grpc_authorization_base",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
     name = "rbac_translator_test",
     srcs = ["rbac_translator_test.cc"],
     external_deps = [
@@ -77,6 +63,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:evaluate_args",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_rbac_engine",
         "//test/core/test_util:grpc_test_util",

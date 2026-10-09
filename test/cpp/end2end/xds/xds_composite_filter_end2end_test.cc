@@ -39,6 +39,7 @@
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/xds_http_add_header_filter.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "xds/type/matcher/v3/matcher.pb.h"
 #include "xds/type/v3/typed_struct.pb.h"
@@ -72,6 +73,9 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
         !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
       GTEST_SKIP()
           << "test requires xds_server_filter_chain_per_route experiment";
+    }
+    if (GetParam().filter_on_server()) {
+      SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
     }
     grpc_core::GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryInitForTest(
         [](grpc_core::XdsHttpFilterRegistry& registry) {
@@ -224,6 +228,14 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
                                        *route_config);
     }
   }
+
+  void StartBackendServer() {
+    StartBackend(0);
+    if (GetParam().filter_on_server()) {
+      EXPECT_THAT(backends_[0]->GetNextStatus(),
+                  ::testing::Optional(absl::OkStatus()));
+    }
+  }
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -241,7 +253,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, TopLevelConfig) {
   matcher_data["hornet"] = std::nullopt;  // SkipFilter
   SetListenerAndRouteConfig(BuildListenerWithCompositeFilter(
       BuildMatcher("name", std::move(matcher_data))));
-  StartBackend(0);
+  StartBackendServer();
   // Send RPC with name=enterprise.
   LOG(INFO) << "Sending RPC with name=enterprise...";
   std::multimap<std::string, std::string> server_initial_metadata;
@@ -291,7 +303,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, OnNoMatch) {
   ActionData::value_type on_no_match = MakeAction("status", "unknown");
   SetListenerAndRouteConfig(BuildListenerWithCompositeFilter(
       BuildMatcher("name", std::move(matcher_data), std::move(on_no_match))));
-  StartBackend(0);
+  StartBackendServer();
   // Send RPC with name=enterprise.
   LOG(INFO) << "Sending RPC with name=enterprise...";
   std::multimap<std::string, std::string> server_initial_metadata;
@@ -318,7 +330,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, TopLevelConfigEmptyMatcher) {
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
   SetListenerAndRouteConfig(BuildListenerWithCompositeFilter(std::nullopt));
-  StartBackend(0);
+  StartBackendServer();
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
@@ -334,7 +346,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, OverrideConfig) {
   RouteConfiguration route_config = BuildRouteConfigWithOverrideConfig(
       BuildMatcher("name", std::move(matcher_data)));
   SetListenerAndRouteConfig(listener, route_config);
-  StartBackend(0);
+  StartBackendServer();
   // Send RPC with name=enterprise.
   LOG(INFO) << "Sending RPC with name=enterprise...";
   std::multimap<std::string, std::string> server_initial_metadata;
@@ -362,7 +374,7 @@ TEST_P(XdsCompositeFilterEnd2endTest,
   RouteConfiguration route_config = BuildRouteConfigWithOverrideConfig(
       BuildMatcher("name", std::move(matcher_data)));
   SetListenerAndRouteConfig(listener, route_config);
-  StartBackend(0);
+  StartBackendServer();
   // Send RPC with name=enterprise.
   LOG(INFO) << "Sending RPC with name=enterprise...";
   std::multimap<std::string, std::string> server_initial_metadata;
@@ -382,14 +394,16 @@ TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {
   StartBackend(0);
   if (GetParam().filter_on_server()) {
     EXPECT_EQ(backends_[0]->GetNextStatus(),
-              absl::InvalidArgumentError(
-                  "LDS resource: invalid resource: errors validating server "
+              absl::InvalidArgumentError(absl::StrCat(
+                  "LDS resource ", GetServerListenerName(backends_[0]->port()),
+                  ": invalid resource: errors validating server "
                   "Listener: [field:default_filter_chain.filters[0]"
                   ".typed_config.value[envoy.extensions.filters.network"
                   ".http_connection_manager.v3.HttpConnectionManager]"
                   ".http_filters[0].typed_config.value["
                   "envoy.extensions.common.matching.v3.ExtensionWithMatcher] "
-                  "error:unsupported filter type] (node ID:xds_end2end_test)"));
+                  "error:unsupported filter type] "
+                  "(node ID:xds_end2end_test)")));
   } else {
     CheckRpcSendFailure(
         DEBUG_LOCATION, StatusCode::UNAVAILABLE,

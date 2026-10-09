@@ -538,6 +538,11 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
     LOG(ERROR) << "Could not create rsa key.";
     goto end;
   }
+#else
+  if (bld == nullptr) {
+    LOG(ERROR) << "Could not create OSSL_PARAM_BLD.";
+    goto end;
+  }
 #endif
   it = json.object().find("n");
   if (it == json.object().end()) {
@@ -562,7 +567,16 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   tmp_n = nullptr;
   tmp_e = nullptr;
   result = EVP_PKEY_new();
-  EVP_PKEY_set1_RSA(result, rsa);  // uprefs rsa.
+  if (result == nullptr) {
+    LOG(ERROR) << "Could not create EVP_PKEY.";
+    goto end;
+  }
+  if (EVP_PKEY_set1_RSA(result, rsa) == 0) {
+    LOG(ERROR) << "Cannot set RSA key from inputs.";
+    EVP_PKEY_free(result);
+    result = nullptr;
+    goto end;
+  }
 #else
 
   if (!OSSL_PARAM_BLD_push_BN(bld, "n", tmp_n) ||

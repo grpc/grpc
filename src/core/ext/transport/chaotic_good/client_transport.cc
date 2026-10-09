@@ -62,7 +62,7 @@ ChaoticGoodClientTransport::StreamDispatch::StreamDispatch(
 
 RefCountedPtr<ChaoticGoodClientTransport::Stream>
 ChaoticGoodClientTransport::StreamDispatch::LookupStream(uint32_t stream_id) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) {
     return nullptr;
@@ -203,7 +203,7 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
 
 uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
     CallHandler call_handler) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (next_stream_id_ == kClosedTransportStreamId) return 0;
   const uint32_t stream_id = next_stream_id_++;
   const bool on_done_added = call_handler.OnDone(
@@ -215,7 +215,7 @@ uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
           self->outgoing_frames_.UnbufferedImmediateSend(
               UntracedOutgoingFrame(CancelFrame{stream_id}), 1);
         }
-        MutexLock lock(&self->mu_);
+        MutexLock lock(self->mu_);
         self->stream_map_.erase(stream_id);
       });
   if (!on_done_added) return 0;
@@ -227,19 +227,19 @@ uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
 void ChaoticGoodClientTransport::StreamDispatch::StartConnectivityWatch(
     grpc_connectivity_state state,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   state_tracker_.AddWatcher(state, std::move(watcher));
 }
 
 void ChaoticGoodClientTransport::StreamDispatch::StopConnectivityWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   state_tracker_.RemoveWatcher(watcher);
 }
 
 void ChaoticGoodClientTransport::StreamDispatch::StartWatch(
     RefCountedPtr<StateWatcher> watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   GRPC_CHECK(watcher_ == nullptr);
   watcher_ = std::move(watcher);
   // TODO(ctiller): Report MAX_CONCURRENT_STREAMS to watcher here, and
@@ -248,7 +248,7 @@ void ChaoticGoodClientTransport::StreamDispatch::StartWatch(
 
 void ChaoticGoodClientTransport::StreamDispatch::StopWatch(
     RefCountedPtr<StateWatcher> watcher) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (watcher_ == watcher) watcher_.reset();
 }
 
