@@ -53,7 +53,7 @@ using tsi::FirstDnsSanFromX509;
 using tsi::FirstUriSanFromX509;
 using tsi::HasCrlSignBit;
 using tsi::IssuerFromCert;
-using tsi::LocalCertificate;
+using tsi::LocalCertificateInfo;
 using tsi::ParseDnsString;
 using tsi::ParsePemCertificateChain;
 using tsi::ParsePemPrivateKey;
@@ -1359,33 +1359,47 @@ TEST(FirstDnsSanFromX509, SkipsIpAddressSanAndExtractsValidDns) {
   X509_free(cert);
 }
 
-TEST(LocalCertificate, MultiDomainCertIdentity) {
+TEST(LocalCertificateInfo, PrincipalPrefersUriSan) {
+  // multi-domain.pem has URI SANs, DNS SANs and a subject.
   X509* cert = LoadTestCertificate("multi-domain.pem");
   ASSERT_NE(cert, nullptr);
-  LocalCertificate local_cert(cert);
-  const LocalCertificate::Identity& identity = local_cert.identity();
-  EXPECT_EQ(identity.uri_san, "https://foo.test.domain.com/test");
-  EXPECT_EQ(identity.dns_san, "foo.test.domain.com");
-  EXPECT_EQ(identity.subject, "CN=xpigors,OU=Google,L=SF,ST=CA,C=US");
+  LocalCertificateInfo local_cert(cert);
+  X509_free(cert);  // local_cert holds its own reference.
+  const absl::StatusOr<std::string>& principal = local_cert.principal();
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "https://foo.test.domain.com/test");
 }
 
-TEST(LocalCertificate, CertWithoutSansHasEmptySans) {
+TEST(LocalCertificateInfo, PrincipalFallsBackToDnsSan) {
+  // server1.pem has DNS SANs but no URI SAN.
+  X509* cert = LoadTestCertificate("server1.pem");
+  ASSERT_NE(cert, nullptr);
+  LocalCertificateInfo local_cert(cert);
+  X509_free(cert);  // local_cert holds its own reference.
+  const absl::StatusOr<std::string>& principal = local_cert.principal();
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "*.test.google.fr");
+}
+
+TEST(LocalCertificateInfo, PrincipalFallsBackToSubject) {
+  // server0.pem has no SAN extension.
   X509* cert = LoadTestCertificate("server0.pem");
   ASSERT_NE(cert, nullptr);
-  LocalCertificate local_cert(cert);
-  const LocalCertificate::Identity& identity = local_cert.identity();
-  EXPECT_EQ(identity.uri_san, "");
-  EXPECT_EQ(identity.dns_san, "");
+  LocalCertificateInfo local_cert(cert);
+  X509_free(cert);  // local_cert holds its own reference.
+  const absl::StatusOr<std::string>& principal = local_cert.principal();
+  ASSERT_EQ(principal.status(), absl::OkStatus());
   EXPECT_EQ(
-      identity.subject,
+      *principal,
       "CN=*.test.google.com.au,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
 }
 
-TEST(LocalCertificate, IdentityIsComputedOnce) {
+TEST(LocalCertificateInfo, PrincipalIsComputedOnce) {
   X509* cert = LoadTestCertificate("server1.pem");
   ASSERT_NE(cert, nullptr);
-  LocalCertificate local_cert(cert);
-  EXPECT_EQ(&local_cert.identity(), &local_cert.identity());
+  LocalCertificateInfo local_cert(cert);
+  X509_free(cert);  // local_cert holds its own reference.
+  EXPECT_EQ(&local_cert.principal(), &local_cert.principal());
 }
 
 TEST(DefaultRepoRoots, RootsAreValid) {

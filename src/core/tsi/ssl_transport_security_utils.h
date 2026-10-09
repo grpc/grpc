@@ -205,36 +205,37 @@ absl::StatusOr<std::string> FirstUriSanFromX509(X509* cert);
 // skipped.  Returns NotFound if the certificate has no usable DNS SAN.
 absl::StatusOr<std::string> FirstDnsSanFromX509(X509* cert);
 
-// The certificate that *this* endpoint presented on a connection.  The SSL
-// handshaker stores one in the connection's ConnectionContext on the server
-// side, holding just a reference to the certificate; its identity is only
-// computed if and when a component asks for it, and at most once per
-// connection.
-class LocalCertificate {
+// Information about the certificate that *this* endpoint presented on a
+// connection.  The SSL handshaker stores one in the connection's
+// ConnectionContext on the server side; its principal is only computed if and
+// when a component asks for it, and at most once per connection.
+//
+// This holds its own reference to the X509, because the ConnectionContext
+// (owned by the ref-counted grpc_auth_context) can outlive the SSL object
+// that the certificate was obtained from.
+class LocalCertificateInfo {
  public:
-  // Identity of the certificate.  A field is empty if the certificate has no
-  // usable value for it.
-  struct Identity {
-    std::string uri_san;
-    std::string dns_san;
-    std::string subject;
-  };
+  // Takes a new reference to \a cert, which must be non-null.  The caller
+  // keeps its own reference.
+  explicit LocalCertificateInfo(X509* cert);
+  ~LocalCertificateInfo();
 
-  // Takes ownership of one reference to \a cert, which must be non-null.
-  explicit LocalCertificate(X509* cert);
-  ~LocalCertificate();
+  LocalCertificateInfo(const LocalCertificateInfo&) = delete;
+  LocalCertificateInfo& operator=(const LocalCertificateInfo&) = delete;
 
-  LocalCertificate(const LocalCertificate&) = delete;
-  LocalCertificate& operator=(const LocalCertificate&) = delete;
-
-  // Computes the identity on the first call and returns the cached value on
-  // later calls.  Thread-safe.
-  const Identity& identity();
+  // Returns the principal of the certificate: its first URI SAN, else its
+  // first DNS SAN, else its subject in RFC 2253 form (the same preference
+  // order Envoy's ext_authz uses for AttributeContext.Peer.principal).
+  // Returns an error if the subject is needed but cannot be extracted.  A
+  // well-formed but empty subject yields an empty string.
+  //
+  // Computed on the first call and cached for later calls.  Thread-safe.
+  const absl::StatusOr<std::string>& principal();
 
  private:
   X509* const cert_;
   grpc_core::Mutex mu_;
-  std::optional<Identity> identity_ ABSL_GUARDED_BY(mu_);
+  std::optional<absl::StatusOr<std::string>> principal_ ABSL_GUARDED_BY(mu_);
 };
 
 // Map grpc_tls_key_exchange_group to string.

@@ -446,12 +446,17 @@ absl::StatusOr<std::string> Asn1StringToUtf8(ASN1_STRING* value) {
   }
   unsigned char* name = nullptr;
   const int name_size = ASN1_STRING_to_UTF8(&name, value);
-  // On failure ASN1_STRING_to_UTF8 does not allocate `name`; on success it
-  // always does, even for an empty string.
-  if (name_size < 0) {
+  // Don't rely on version-specific guarantees about whether `name` is
+  // allocated on failure or for an empty string: free it on every path
+  // (OPENSSL_free is a no-op on nullptr) and never read from a null buffer.
+  if (name_size < 0 || (name_size > 0 && name == nullptr)) {
+    OPENSSL_free(name);
     return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
   }
-  std::string ret(reinterpret_cast<char const*>(name), name_size);
+  std::string ret;
+  if (name_size > 0) {
+    ret.assign(reinterpret_cast<char const*>(name), name_size);
+  }
   OPENSSL_free(name);
   return ret;
 }
@@ -557,26 +562,38 @@ absl::StatusOr<std::string> FirstDnsSanFromX509(X509* cert) {
   return FirstSanOfType(cert, GEN_DNS);
 }
 
-LocalCertificate::LocalCertificate(X509* cert) : cert_(cert) {
+LocalCertificateInfo::LocalCertificateInfo(X509* cert) : cert_(cert) {
   GRPC_DCHECK_NE(cert_, nullptr);
+  // Released in the destructor.  X509 reference counts are atomic, so this is
+  // independent of the SSL object's (and SSL_CTX's) own references.
+  X509_up_ref(cert_);
 }
 
-LocalCertificate::~LocalCertificate() { X509_free(cert_); }
+LocalCertificateInfo::~LocalCertificateInfo() { X509_free(cert_); }
 
-const LocalCertificate::Identity& LocalCertificate::identity() {
-  grpc_core::MutexLock lock(&mu_);
-  if (!identity_.has_value()) {
-    Identity identity;
-    absl::StatusOr<std::string> uri_san = FirstUriSanFromX509(cert_);
-    if (uri_san.ok()) identity.uri_san = std::move(*uri_san);
-    absl::StatusOr<std::string> dns_san = FirstDnsSanFromX509(cert_);
-    if (dns_san.ok()) identity.dns_san = std::move(*dns_san);
-    absl::StatusOr<std::string> subject = X509SubjectRfc2253(cert_);
-    if (subject.ok()) identity.subject = std::move(*subject);
-    identity_ = std::move(identity);
-  }
+namespace {
+
+// Returns the first URI SAN, else the first DNS SAN, else the subject of
+// \a cert; later values are only computed if the earlier ones are absent.
+absl::StatusOr<std::string> ComputePrincipal(X509* cert) {
+  // NotFound means the certificate has no usable SAN of that type, so fall
+  // through to the next one; any other result (success or a real error) is
+  // returned as is.  SANs that fail to decode are logged and skipped by the
+  // helpers.
+  absl::StatusOr<std::string> uri_san = FirstUriSanFromX509(cert);
+  if (!absl::IsNotFound(uri_san.status())) return uri_san;
+  absl::StatusOr<std::string> dns_san = FirstDnsSanFromX509(cert);
+  if (!absl::IsNotFound(dns_san.status())) return dns_san;
+  return X509SubjectRfc2253(cert);
+}
+
+}  // namespace
+
+const absl::StatusOr<std::string>& LocalCertificateInfo::principal() {
+  grpc_core::MutexLock lock(mu_);
+  if (!principal_.has_value()) principal_ = ComputePrincipal(cert_);
   // Safe to return after unlocking: the value is never modified once set.
-  return *identity_;
+  return *principal_;
 }
 
 absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(

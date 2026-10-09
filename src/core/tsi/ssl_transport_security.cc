@@ -2454,13 +2454,13 @@ static void ssl_handshaker_result_populate_connection_context(
   // populated only for incoming calls.
   if (!SSL_is_server(impl->ssl)) return;
   // Returns the leaf actually configured for this connection, taking SNI and
-  // certificate selection into account.  It is owned by the SSL object, so
-  // take our own reference.  Its identity is only computed if a component asks
-  // for it (see tsi::LocalCertificate::identity()).
+  // certificate selection into account.  It is owned by the SSL object;
+  // LocalCertificateInfo takes its own reference.  Its principal is only
+  // computed if a component asks for it (see
+  // tsi::LocalCertificateInfo::principal()).
   X509* local_cert = SSL_get_certificate(impl->ssl);
   if (local_cert == nullptr) return;
-  X509_up_ref(local_cert);
-  connection_context->Update<tsi::LocalCertificate>(local_cert);
+  connection_context->Update<tsi::LocalCertificateInfo>(local_cert);
 }
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {

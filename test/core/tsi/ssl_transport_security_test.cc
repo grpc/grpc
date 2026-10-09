@@ -641,29 +641,24 @@ class SslTransportSecurityTest
       auto connection_context = ConnectionContext::Create();
       tsi_handshaker_result_populate_connection_context(
           ssl_fixture->base_.server_result, connection_context.get());
-      tsi::LocalCertificate* local_cert =
-          connection_context->Get<tsi::LocalCertificate>();
+      tsi::LocalCertificateInfo* local_cert =
+          connection_context->Get<tsi::LocalCertificateInfo>();
       ASSERT_NE(local_cert, nullptr);
-      const tsi::LocalCertificate::Identity& identity = local_cert->identity();
+      const absl::StatusOr<std::string>& principal_or = local_cert->principal();
+      ASSERT_EQ(principal_or.status(), absl::OkStatus());
+      const std::string& principal = *principal_or;
       if (ssl_fixture->use_multi_domain_server_cert_) {
-        // multi-domain.pem has three URI SANs and two DNS SANs; only the first
-        // of each is reported.
-        EXPECT_EQ(identity.uri_san, "https://foo.test.domain.com/test");
-        EXPECT_EQ(identity.dns_san, "foo.test.domain.com");
-        EXPECT_EQ(identity.subject, "CN=xpigors,OU=Google,L=SF,ST=CA,C=US");
+        // multi-domain.pem has three URI SANs; the first one wins.
+        EXPECT_EQ(principal, "https://foo.test.domain.com/test");
         return;
       }
-      const bool is_server1 = ServerPresentsServer1Cert(ssl_fixture);
-      // Neither server0.pem nor server1.pem has a URI SAN.
-      EXPECT_EQ(identity.uri_san, "");
-      // server0.pem has no SAN extension at all; server1.pem's first DNS SAN
-      // is *.test.google.fr.
-      EXPECT_EQ(identity.dns_san, is_server1 ? "*.test.google.fr" : "");
-      EXPECT_EQ(identity.subject,
-                is_server1 ? "CN=*.test.google.com,O=Example\\, "
-                             "Co.,L=Chicago,ST=Illinois,C=US"
-                           : "CN=*.test.google.com.au,O=Internet Widgits Pty "
-                             "Ltd,ST=Some-State,C=AU");
+      // Neither server0.pem nor server1.pem has a URI SAN.  server1.pem's
+      // first DNS SAN is *.test.google.fr; server0.pem has no SAN extension
+      // at all, so its subject is used.
+      EXPECT_EQ(principal, ServerPresentsServer1Cert(ssl_fixture)
+                               ? "*.test.google.fr"
+                               : "CN=*.test.google.com.au,O=Internet Widgits "
+                                 "Pty Ltd,ST=Some-State,C=AU");
     }
 
     static void CheckClientPeer(SslTsiTestFixture* ssl_fixture,
@@ -787,7 +782,7 @@ class SslTransportSecurityTest
         auto client_connection_context = ConnectionContext::Create();
         tsi_handshaker_result_populate_connection_context(
             ssl_fixture->base_.client_result, client_connection_context.get());
-        EXPECT_EQ(client_connection_context->Get<tsi::LocalCertificate>(),
+        EXPECT_EQ(client_connection_context->Get<tsi::LocalCertificateInfo>(),
                   nullptr);
         if (ssl_fixture->use_multi_domain_server_cert_) {
           // Not server0.pem or server1.pem; the server-side check below is
