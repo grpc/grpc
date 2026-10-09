@@ -62,11 +62,6 @@ class MockTransportFilter {
 
     grpc_metadata_batch* recv_trailing_metadata = nullptr;
     grpc_closure* recv_trailing_metadata_ready = nullptr;
-
-    // If true, the on_complete closure of send_message batches is not run but
-    // stashed in `pending_send_message_on_complete` for the test to run later.
-    bool should_hold_send_message_on_complete = false;
-    grpc_closure* pending_send_message_on_complete = nullptr;
   };
 
   static const grpc_channel_filter kFilter;

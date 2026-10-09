@@ -42,9 +42,7 @@ void MockTransportFilter::StartBatch(grpc_call_element* elem,
     state->recv_trailing_metadata_ready =
         op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
   }
-  if (op->send_message && state->should_hold_send_message_on_complete) {
-    state->pending_send_message_on_complete = op->on_complete;
-  } else if (op->on_complete != nullptr) {
+  if (op->on_complete != nullptr) {
     // The mock has no async sends, so complete the batch immediately.
     GRPC_CALL_COMBINER_START(state->call_combiner, op->on_complete,
                              absl::OkStatus(), "mock_on_complete");
