@@ -16,8 +16,9 @@
 //
 // ExtProcFilter runs in a v3 interception chain built by FilterTest. The test
 // plays all three remote parties:
-// - the client, via the implicit initiator (PushClient*/PullServer*);
-// - the backend, via the implicit handler (PullClient*/PushServer*);
+// - the client, via the call started by StartRpc() (PushClient*/PullServer*);
+// - the backend, via the child call collected by WaitForHandler()
+//   (PullClient*/PushServer*);
 // - the ext_proc server, via a FakeXdsTransportFactory standing in for the
 //   side-channel transport (the *SideStream* helpers below).
 //
@@ -41,6 +42,8 @@
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/service/ext_proc/v3/external_processor.pb.h"
 #include "google/protobuf/struct.pb.h"
+#include "src/core/call/call_spine.h"
+#include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/filter/ext_proc/ext_proc_messages.h"
@@ -339,8 +342,58 @@ class ExtProcFilterTest : public FilterTest {
   void StartRpc(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           client_initial_metadata = {}) {
-    StartCallWithDeferredHandler(
-        NewClientMetadata(client_initial_metadata, kPath));
+    ASSERT_FALSE(client_.has_value()) << "StartRpc() called twice";
+    client_ = StartCall(NewClientMetadata(client_initial_metadata, kPath));
+  }
+
+  // Collects the filter's child call, which the rest of the backend-side
+  // helpers act on. Returns false if the filter doesn't create one.
+  bool WaitForHandler() {
+    if (backend_.has_value()) {
+      ADD_FAILURE() << "WaitForHandler() called twice";
+      return false;
+    }
+    backend_ = GetNextHandler();
+    return backend_.has_value();
+  }
+
+  //
+  // The call operations, acting on the call started by StartRpc() (client
+  // side) and the child call collected by WaitForHandler() (backend side).
+  //
+
+  void PushClientMessage(MessageHandle message) {
+    FilterTest::PushClientMessage(*client_, std::move(message));
+  }
+  void PushClientHalfClose() { FilterTest::PushClientHalfClose(*client_); }
+  ValueOrFailure<std::optional<ServerMetadataHandle>>
+  PullServerInitialMetadata() {
+    return FilterTest::PullServerInitialMetadata(*client_);
+  }
+  ServerToClientNextMessage PullServerMessage() {
+    return FilterTest::PullServerMessage(*client_);
+  }
+  ValueOrFailure<ServerMetadataHandle> PullServerTrailingMetadata() {
+    return FilterTest::PullServerTrailingMetadata(*client_);
+  }
+  absl::Status PullServerTrailingStatus() {
+    return FilterTest::PullServerTrailingStatus(*client_);
+  }
+
+  ValueOrFailure<ClientMetadataHandle> PullClientInitialMetadata() {
+    return FilterTest::PullClientInitialMetadata(*backend_);
+  }
+  ClientToServerNextMessage PullClientMessage() {
+    return FilterTest::PullClientMessage(*backend_);
+  }
+  void PushServerInitialMetadata(ServerMetadataHandle md) {
+    FilterTest::PushServerInitialMetadata(*backend_, std::move(md));
+  }
+  void PushServerMessage(MessageHandle message) {
+    FilterTest::PushServerMessage(*backend_, std::move(message));
+  }
+  void PushServerTrailingMetadata(ServerMetadataHandle md) {
+    FilterTest::PushServerTrailingMetadata(*backend_, std::move(md));
   }
 
   //
@@ -439,11 +492,16 @@ class ExtProcFilterTest : public FilterTest {
   }
 
   // Drops everything holding a ref to event_engine() before YodelTest waits
-  // for it to have a single owner. Runs after FilterTest has cancelled the
-  // call under test.
+  // for it to have a single owner. Runs after FilterTest has torn down the
+  // stack under test.
   void Cleanup() override {
     {
       ExecCtx exec_ctx;
+      // Cancel the call under test so its parties tear down before the event
+      // engine goes away, rather than relying on ref drops alone.
+      if (client_.has_value()) client_->SpawnCancel();
+      client_.reset();
+      backend_.reset();
       // A real ext_proc server would see the side stream cancelled and finish
       // it; the fake never does so on its own. Finish it here so the filter
       // drops the side call, which holds references to the fake transport
@@ -507,6 +565,9 @@ class ExtProcFilterTest : public FilterTest {
                                     /*call_creds_configs=*/{}};
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> side_stream_;
+  // Set by StartRpc() and WaitForHandler() respectively.
+  std::optional<CallInitiator> client_;
+  std::optional<CallHandler> backend_;
   // Set by InitWithStatsPlugin(). Held for the whole test, as a channel holds
   // it via its args: the filter's metrics are only visible to the stats plugin
   // while the group's collection scope is alive.
