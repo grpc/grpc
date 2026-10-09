@@ -36,6 +36,7 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
@@ -49,6 +50,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -814,7 +816,7 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
                 buffer.Length(), ctx->reader, std::move(tracers),
                 ctx->ztrace_collector));
           }
-          return Map(
+          auto write_promise = Map(
               AddGeneratedErrorPrefix(
                   [ctx]() {
                     return absl::StrCat(
@@ -841,6 +843,20 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
                 ctx->reader->FinishEndpointWrite();
                 return status;
               });
+
+          Duration actual_delay = Duration::Zero();
+          if (ctx->delay_percent > 0 &&
+              ctx->delay_duration > Duration::Zero()) {
+            if (absl::Uniform(SharedBitGen(), 0, 100) < ctx->delay_percent) {
+              actual_delay = ctx->delay_duration;
+            }
+          }
+
+          return Seq(Sleep(actual_delay),
+                     [write_promise = std::move(write_promise)](
+                         absl::Status status) mutable {
+                       return std::move(write_promise);
+                     });
         },
         [id = ctx->id, reader = ctx->reader]() -> LoopCtl<absl::Status> {
           GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -966,6 +982,12 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
   ep_ctx->arena = SimpleArenaAllocator(0)->MakeArena();
   ep_ctx->arena->SetContext(ctx->event_engine.get());
   ep_ctx->clock = clock;
+  ep_ctx->delay_duration = Duration::Milliseconds(
+      ctx->args.GetInt("grpc.experimental.chaotic_good.endpoint_delay_ms")
+          .value_or(0));
+  ep_ctx->delay_percent =
+      ctx->args.GetInt("grpc.experimental.chaotic_good.endpoint_delay_percent")
+          .value_or(0);
   ep_ctx->transport_ctx = std::move(ctx);
   ep_ctx->reader = ep_ctx->output_buffers->MakeReader(ep_ctx->id);
   party_ = Party::Make(ep_ctx->arena);
