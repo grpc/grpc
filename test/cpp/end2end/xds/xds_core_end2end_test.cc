@@ -26,6 +26,7 @@
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "gmock/gmock.h"
@@ -1071,6 +1072,7 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
 // Setting server_listener_resource_name_template to start with "xdstp:" and
 // look up xds server under an authority map.
 TEST_P(XdsFederationTest, FederationServer) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
@@ -1278,6 +1280,7 @@ TEST_P(XdsMetricsTest, MetricDefinitionResources) {
 }
 
 TEST_P(XdsMetricsTest, MetricValues) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   const auto kMetricResourceUpdatesValid =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
           FindUInt64CounterHandleByName(
@@ -1484,6 +1487,7 @@ INSTANTIATE_TEST_SUITE_P(
 // Sending traffic to both default balancer and authority balancer and checking
 // load reporting with each one.
 TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =

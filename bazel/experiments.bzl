@@ -197,6 +197,9 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
+                "ph2_client",
+                "ph2_client_server",
+                "ph2_server",
                 "ring_hash_update_cleanup",
             ],
         },
