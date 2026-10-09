@@ -398,8 +398,7 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
 
 std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine(
     Options options) {
-  if (options.reserve_threads >
-      static_cast<int>(Options::kMaxReserveThreads)) {
+  if (options.reserve_threads > static_cast<int>(Options::kMaxReserveThreads)) {
     LOG(WARNING) << "PosixEventEngine reserve_threads ("
                  << options.reserve_threads << ") is above the maximum of "
                  << Options::kMaxReserveThreads << ". Using "
