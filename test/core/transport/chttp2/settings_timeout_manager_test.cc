@@ -30,6 +30,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/party.h"
@@ -61,7 +62,7 @@ class SettingsPromiseManagerTest : public ::testing::TestWithParam<bool> {
  public:
   SettingsPromiseManagerTest()
       : transport_write_context_(/*is_client=*/GetParam()) {
-    transport_write_context_.StartWriteCycle();
+    transport_write_context_.StartWriteCycle(http2_transport_stats_);
     // Discard the connection preface
     MaybeFlushWriteBuffer();
   }
@@ -101,6 +102,7 @@ class SettingsPromiseManagerTest : public ::testing::TestWithParam<bool> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
   http2::TransportWriteContext transport_write_context_;
+  Http2TransportStats http2_transport_stats_{ChannelArgs()};
 };
 
 constexpr uint32_t kSettingsShortTimeout = 500;

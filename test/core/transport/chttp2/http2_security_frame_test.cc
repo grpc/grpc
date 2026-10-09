@@ -29,6 +29,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_security.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -170,7 +171,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
     event_engine_ =
         std::make_shared<ExtensionInjectingEventEngine>(&mock_extension_);
     EXPECT_TRUE(security_frame_handler_->Initialize(event_engine_).is_set);
-    transport_write_context_.StartWriteCycle();
+    transport_write_context_.StartWriteCycle(http2_transport_stats_);
     // Discard the connection preface
     MaybeFlushWriteBuffer();
   }
@@ -235,6 +236,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   std::shared_ptr<EventEngine> event_engine_;
   Waker waker_;
   TransportWriteContext transport_write_context_;
+  Http2TransportStats http2_transport_stats_{ChannelArgs()};
 };
 
 }  // namespace testing

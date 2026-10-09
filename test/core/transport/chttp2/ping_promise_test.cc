@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
@@ -150,7 +151,7 @@ class PingManagerTest : public YodelTest {
   void InitCoreConfiguration() override {}
   void InitTest() override {
     InitParty();
-    transport_write_context_.StartWriteCycle();
+    transport_write_context_.StartWriteCycle(http2_transport_stats_);
   }
   void Shutdown() override {
     party_.reset();
@@ -159,6 +160,7 @@ class PingManagerTest : public YodelTest {
 
   RefCountedPtr<Party> party_;
   http2::TransportWriteContext transport_write_context_{/*is_client=*/true};
+  http2::Http2TransportStats http2_transport_stats_{ChannelArgs()};
 };
 }  // namespace
 

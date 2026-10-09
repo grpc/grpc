@@ -39,6 +39,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
@@ -52,12 +53,14 @@
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 #include "gtest/gtest.h"
 #include "absl/functional/function_ref.h"
@@ -616,6 +619,7 @@ TEST(Http2CommonTransportTest,
   chttp2::TransportFlowControl flow_control(
       /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
+  Http2TransportStats http2_transport_stats((ChannelArgs()));
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
 
   Http2WindowUpdateFrame frame;
@@ -624,13 +628,15 @@ TEST(Http2CommonTransportTest,
   // If stream_id != 0 and stream is null, no change in flow control window.
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow);
 
   // If stream_id == 0, transport flow control window should increase.
   frame.stream_id = 0;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
 
   // If increment is 0, no change in flow control window.
@@ -639,18 +645,21 @@ TEST(Http2CommonTransportTest,
   frame.increment = 0;
   frame.stream_id = 0;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(), chttp2::kDefaultWindow + 1000);
 
   // Large increment
   frame.increment = 10000;
   frame.stream_id = 0;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control,
-                                              /*stream=*/nullptr);
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
   EXPECT_EQ(flow_control.remote_window(),
             chttp2::kDefaultWindow + 1000 + 10000);
 }
@@ -658,6 +667,7 @@ TEST(Http2CommonTransportTest,
 TEST_P(TestsNeedingStreamObjects,
        ProcessIncomingWindowUpdateFrameFlowControlWithStream) {
   RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  Http2TransportStats http2_transport_stats((ChannelArgs()));
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 0);
 
@@ -667,15 +677,15 @@ TEST_P(TestsNeedingStreamObjects,
   // If stream_id != 0 and stream is not null, stream flow control window
   // should increase.
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
 
   // If stream_id == 0, transport flow control window should increase.
   frame.stream_id = 0;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
@@ -685,14 +695,14 @@ TEST_P(TestsNeedingStreamObjects,
   // layer, we should be graceful with it at this layer.
   frame.increment = 0;
   frame.stream_id = 0;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
@@ -700,11 +710,91 @@ TEST_P(TestsNeedingStreamObjects,
   // Large increment
   frame.increment = 10000;
   frame.stream_id = 1;
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream.get());
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000 + 10000);
+}
+
+TEST_P(TestsNeedingStreamObjects,
+       ProcessIncomingWindowUpdateFrameFlowControlRecordsStats) {
+  // Purpose: Verify that ProcessIncomingWindowUpdateFrameFlowControl records
+  // stream and transport remote window update sizes and periods via
+  // Http2TransportStats.
+  // Assertions:
+  // - Stream WINDOW_UPDATE with nullptr stream is ignored and records no stats.
+  // - First stream/transport WINDOW_UPDATE records remote window update size,
+  //   but does not record period (since initial timestamp is InfPast).
+  // - Second stream/transport WINDOW_UPDATE records both remote window update
+  //   size and window update period.
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1u);
+  Http2TransportStats http2_transport_stats((ChannelArgs()));
+  const Http2GlobalStatsTestHelper stats_helper;
+
+  Http2WindowUpdateFrame frame;
+
+  // Step 1: Stream WINDOW_UPDATE with nullptr stream (closed/unknown stream)
+  // should be ignored and record no stats.
+  frame.stream_id = 1u;
+  frame.increment = 500u;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              /*stream=*/nullptr,
+                                              http2_transport_stats);
+
+  stats_helper.ExpectHistogramTotalCountDiff(
+      Http2GlobalStats::Histogram::kHttp2StreamRemoteWindowUpdate, 0.0);
+  stats_helper.ExpectHistogramTotalCountDiff(
+      Http2GlobalStats::Histogram::kHttp2StreamWindowUpdatePeriod, 0.0);
+
+  // Step 2: First stream WINDOW_UPDATE (stream_id = 1, increment = 1000).
+  // Should record remote window update size, but NOT period.
+  frame.stream_id = 1u;
+  frame.increment = 1000u;
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
+
+  stats_helper.ExpectHistogramBucketCountDiff(
+      Http2GlobalStats::Histogram::kHttp2StreamRemoteWindowUpdate, 1000, 1u);
+  stats_helper.ExpectHistogramTotalCountDiff(
+      Http2GlobalStats::Histogram::kHttp2StreamWindowUpdatePeriod, 0.0);
+
+  // Step 3: Second stream WINDOW_UPDATE (stream_id = 1, increment = 10000).
+  // Should record both remote window update size and period.
+  frame.stream_id = 1u;
+  frame.increment = 10000u;
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
+
+  stats_helper.ExpectHistogramBucketCountDiff(
+      Http2GlobalStats::Histogram::kHttp2StreamRemoteWindowUpdate, 10000, 1u);
+  stats_helper.ExpectHistogramTotalCountDiff(
+      Http2GlobalStats::Histogram::kHttp2StreamWindowUpdatePeriod, 1.0);
+
+  // Step 4: First transport WINDOW_UPDATE (stream_id = 0, increment = 1000).
+  // Should record remote window update size, but NOT period.
+  frame.stream_id = 0u;
+  frame.increment = 1000u;
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
+
+  stats_helper.ExpectHistogramBucketCountDiff(
+      Http2GlobalStats::Histogram::kHttp2TransportRemoteWindowUpdate, 1000, 1u);
+  stats_helper.ExpectHistogramTotalCountDiff(
+      Http2GlobalStats::Histogram::kHttp2TransportWindowUpdatePeriod, 0.0);
+
+  // Step 5: Second transport WINDOW_UPDATE (stream_id = 0, increment = 10000).
+  // Should record both remote window update size and period.
+  frame.stream_id = 0u;
+  frame.increment = 10000u;
+  ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, transport_flow_control_, stream.get(), http2_transport_stats);
+
+  stats_helper.ExpectHistogramBucketCountDiff(
+      Http2GlobalStats::Histogram::kHttp2TransportRemoteWindowUpdate, 10000,
+      1u);
+  stats_helper.ExpectHistogramTotalCountDiff(
+      Http2GlobalStats::Histogram::kHttp2TransportWindowUpdatePeriod, 1.0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -820,10 +910,10 @@ TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
   // correctly. Assertions: GetCurrentFrameHeader returns the exact frame header
   // that was set.
   util::testing::MockPromiseEndpoint mock_endpoint(1234);
-  ReadContext context(/*max_new_streams_per_read_cycle=*/32u,
-                      mock_endpoint.promise_endpoint, true,
-                      GrpcErrors::kMaxSecurityFrameSize,
-                      /*ping_on_rst_stream_percent=*/1u);
+  ReadContext context(
+      /*max_new_streams_per_read_cycle=*/32u, mock_endpoint.promise_endpoint,
+      true, GrpcErrors::kMaxSecurityFrameSize,
+      /*ping_on_rst_stream_percent=*/1u, Http2TransportStats(ChannelArgs()));
   Http2FrameHeader header;
   header.length = 100u;
   header.type = 1u;
@@ -856,7 +946,8 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
         ReadContext read_context(/*max_new_streams_per_read_cycle=*/32u,
                                  mock_endpoint.promise_endpoint, true,
                                  GrpcErrors::kMaxSecurityFrameSize,
-                                 /*ping_on_rst_stream_percent=*/1u);
+                                 /*ping_on_rst_stream_percent=*/1u,
+                                 Http2TransportStats(ChannelArgs()));
         const Http2FrameHeader header = {
             0u,  // length
             0u,  // type

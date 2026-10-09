@@ -19,17 +19,21 @@
 
 #include <climits>
 #include <cstdint>
-#include <memory>
 #include <tuple>
 
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "gtest/gtest.h"
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
@@ -321,6 +325,104 @@ TEST_F(FlowControlTest, OnStreamClosedDecreasesAnnouncedDeltaFromTransport) {
   sfc2.OnStreamClosed();
   EXPECT_EQ(tfc.test_only_announced_stream_total_over_incoming_window(), 0);
   EXPECT_EQ(sfc2.test_only_announced_window_delta(), 0);
+}
+
+// Tests that StreamFlowControl::ReportIfStalled accurately records stream and
+// transport flow control stalls via Http2TransportStats across all window
+// states.
+// Assertions:
+// - When both transport and stream remote windows are > 0, no stalls are
+//   recorded.
+// - When transport remote window is > 0 and stream remote window is <= 0
+//   (both == 0 and < 0), only http2_stream_stalls is incremented.
+// - When both transport remote window and stream remote window are <= 0,
+//   transport stall takes precedence and only http2_transport_stalls is
+//   incremented (no double counting).
+// - When transport remote window is <= 0 and stream remote window is > 0,
+//   only http2_transport_stalls is incremented.
+TEST_F(FlowControlTest, ReportIfStalledRecordsStats) {
+  TransportFlowControl tfc(/*peer_name=*/"test",
+                           /*enable_bdp_probe=*/true, &memory_owner_);
+  StreamFlowControl sfc(&tfc);
+  Http2Settings peer_settings;
+  http2::Http2TransportStats http2_transport_stats((ChannelArgs()));
+  const http2::testing::Http2GlobalStatsTestHelper stats_helper;
+
+  // Step 1: Both transport_remote_window (65535) and stream_remote_window
+  // (0 + 65535 = 65535) are > 0. No stalls should be recorded.
+  sfc.ReportIfStalled(/*is_client=*/true, /*stream_id=*/1u, peer_settings,
+                      http2_transport_stats);
+  stats_helper.ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2StreamStalls,
+                                 0u);
+  stats_helper.ExpectCounterDiff(
+      Http2GlobalStats::Counter::kHttp2TransportStalls, 0u);
+
+  // Step 2: Set peer initial_window_size to 0 so stream_remote_window is 0
+  // (0 + 0 = 0), while transport_remote_window remains 65535 (> 0).
+  // Only http2_stream_stalls should increment to 1.
+  peer_settings.SetInitialWindowSize(0u);
+  sfc.ReportIfStalled(/*is_client=*/true, /*stream_id=*/1u, peer_settings,
+                      http2_transport_stats);
+  stats_helper.ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2StreamStalls,
+                                 1u);
+  stats_helper.ExpectCounterDiff(
+      Http2GlobalStats::Counter::kHttp2TransportStalls, 0u);
+
+  // Step 3: Send 1000 bytes (remote_window_delta = -1000,
+  // transport_remote_window = 64535) and set peer initial_window_size to 500,
+  // making stream_remote_window negative (-1000 + 500 = -500 < 0) while
+  // transport_remote_window is 64535 (> 0).
+  // Only http2_stream_stalls should increment to 2.
+  {
+    StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
+    sfc_upd.SentData(1000u);
+  }
+  peer_settings.SetInitialWindowSize(500u);
+  EXPECT_EQ(sfc.remote_window_delta() + peer_settings.initial_window_size(),
+            -500);
+  EXPECT_EQ(tfc.remote_window(), 64535);
+  sfc.ReportIfStalled(/*is_client=*/false, /*stream_id=*/1u, peer_settings,
+                      http2_transport_stats);
+  stats_helper.ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2StreamStalls,
+                                 2u);
+  stats_helper.ExpectCounterDiff(
+      Http2GlobalStats::Counter::kHttp2TransportStalls, 0u);
+
+  // Step 4: Send the remaining 64535 bytes and restore peer initial_window_size
+  // to 65535, so BOTH transport_remote_window (0) and stream_remote_window
+  // (-65535 + 65535 = 0) are <= 0 simultaneously.
+  // Transport stall takes precedence: http2_transport_stalls increments to 1,
+  // and http2_stream_stalls remains 2 (no double counting).
+  {
+    StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
+    sfc_upd.SentData(64535u);
+  }
+  peer_settings.SetInitialWindowSize(65535u);
+  EXPECT_EQ(sfc.remote_window_delta() + peer_settings.initial_window_size(), 0);
+  EXPECT_EQ(tfc.remote_window(), 0);
+  sfc.ReportIfStalled(/*is_client=*/true, /*stream_id=*/1u, peer_settings,
+                      http2_transport_stats);
+  stats_helper.ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2StreamStalls,
+                                 2u);
+  stats_helper.ExpectCounterDiff(
+      Http2GlobalStats::Counter::kHttp2TransportStalls, 1u);
+
+  // Step 5: Receive a stream-level WINDOW_UPDATE of 65535 so
+  // stream_remote_window is 65535 (> 0) while transport_remote_window is still
+  // 0. Only http2_transport_stalls should increment to 2.
+  {
+    StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
+    sfc_upd.RecvUpdate(65535u);
+  }
+  EXPECT_EQ(sfc.remote_window_delta() + peer_settings.initial_window_size(),
+            65535);
+  EXPECT_EQ(tfc.remote_window(), 0);
+  sfc.ReportIfStalled(/*is_client=*/false, /*stream_id=*/1u, peer_settings,
+                      http2_transport_stats);
+  stats_helper.ExpectCounterDiff(Http2GlobalStats::Counter::kHttp2StreamStalls,
+                                 2u);
+  stats_helper.ExpectCounterDiff(
+      Http2GlobalStats::Counter::kHttp2TransportStalls, 2u);
 }
 
 }  // namespace chttp2

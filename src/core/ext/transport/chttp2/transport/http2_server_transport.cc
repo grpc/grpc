@@ -289,6 +289,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
       << ", payload length=" << frame.payload.Length() << "}";
 
   ping_manager_->ReceivedDataFrame();
+  http2_transport_stats_.RecordReadDataFrameSize(frame.payload.Length());
 
   const RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
 
@@ -649,7 +650,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
   }
 
   const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
-      frame, flow_control_, stream.get());
+      frame, flow_control_, stream.get(), http2_transport_stats_);
 
   if (should_trigger_write) {
     return ToHttpOkOrConnError(TriggerWriteCycle());
@@ -950,13 +951,16 @@ absl::Status Http2ServerTransport::DequeueStreamFrames(
       static_cast<uint32_t>(GetStreamFlowControlTokens(
           stream->GetStreamFlowControl(), settings_->peer()));
   stream->GetStreamFlowControl().ReportIfStalled(
-      /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer());
+      /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer(),
+      http2_transport_stats_);
+
   StreamDataQueue<ServerMetadataHandle>::DequeueResult result =
       stream->DequeueFrames(tokens, stream_flow_control_tokens,
                             settings_->peer().max_frame_size(), encoder_,
                             frame_sender);
   ProcessOutgoingDataFrameFlowControl(stream->GetStreamFlowControl(),
                                       result.flow_control_tokens_consumed);
+
   if (result.is_writable) {
     // Stream is still writable. Enqueue it back to the writable
     // stream list.
@@ -1020,7 +1024,7 @@ auto Http2ServerTransport::MultiplexerLoop() {
               if (GPR_UNLIKELY(!status.ok())) {
                 return status.status();
               }
-              transport_write_context_.StartWriteCycle();
+              transport_write_context_.StartWriteCycle(http2_transport_stats_);
               GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::MultiplexerLoop "
                                         "Start Iteration: "
                                      << transport_write_context_.DebugString();
@@ -1288,6 +1292,7 @@ absl::Status Http2ServerTransport::MaybeAddStreamToWritableStreamList(
 auto Http2ServerTransport::HandleMetadataAndMessages(
     RefCountedPtr<Stream> stream) {
   auto send_message = [this, stream](MessageHandle&& message) mutable {
+    http2_transport_stats_.RecordSendMessageSize(message->payload()->Length());
     return TrySeq(HandleStreamErrorOnFailure(
                       stream->EnqueueMessage(std::move(message)), stream),
                   [this, stream](const StreamWritabilityUpdate result) mutable {
@@ -2126,9 +2131,11 @@ Http2ServerTransport::Http2ServerTransport(
       is_goaway_received_(false),
       should_reset_ping_clock_(false),
       max_concurrent_streams_overload_protection_(false),
+      http2_transport_stats_(channel_args),
       read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient,
                     GetMaxSecurityFrameSize(channel_args),
-                    GetPingOnRstStreamPercent(channel_args, kIsClient)),
+                    GetPingOnRstStreamPercent(channel_args, kIsClient),
+                    http2_transport_stats_),
       transport_write_context_(kIsClient),
       last_incoming_stream_id_(0u),
       last_accepted_stream_id_(0u),

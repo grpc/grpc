@@ -22,12 +22,15 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/telemetry/histogram_view.h"
+#include "src/core/telemetry/stats_data.h"
 #include "test/core/test_util/postmortem.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/transport_test.h"
@@ -234,6 +237,84 @@ inline ::testing::Matcher<const Http2Frame&> IsPingFrame(
       ::testing::Field("ack", &Http2PingFrame::ack, ack),
       ::testing::Field("opaque", &Http2PingFrame::opaque, opaque)));
 }
+
+// Helper class to capture snapshots of Http2GlobalStats, calculate diffs, and
+// validate counter and histogram bucket/total counts across tests.
+class Http2GlobalStatsTestHelper {
+ public:
+  Http2GlobalStatsTestHelper() : before_(http2_global_stats().Collect()) {}
+
+  Http2GlobalStatsTestHelper(const Http2GlobalStatsTestHelper&) = delete;
+  Http2GlobalStatsTestHelper& operator=(const Http2GlobalStatsTestHelper&) =
+      delete;
+  Http2GlobalStatsTestHelper(Http2GlobalStatsTestHelper&&) = delete;
+  Http2GlobalStatsTestHelper& operator=(Http2GlobalStatsTestHelper&&) = delete;
+
+  // Resets the baseline snapshot to the current global stats state.
+  void ResetBaseline() { before_ = http2_global_stats().Collect(); }
+
+  // Returns the diff between the current global stats and the baseline
+  // snapshot.
+  std::unique_ptr<Http2GlobalStats> GetDiff() const {
+    return http2_global_stats().Collect()->Diff(*before_);
+  }
+
+  // Returns the diff value for a specific counter since the baseline snapshot.
+  uint64_t GetCounterDiff(const Http2GlobalStats::Counter counter) const {
+    const std::unique_ptr<Http2GlobalStats> diff = GetDiff();
+    return diff->counters[static_cast<int>(counter)];
+  }
+
+  // Returns the diff count in the bucket corresponding to `value` for a
+  // specific histogram since the baseline snapshot.
+  uint64_t GetHistogramBucketCountDiff(
+      const Http2GlobalStats::Histogram histogram, const int value) const {
+    const std::unique_ptr<Http2GlobalStats> diff = GetDiff();
+    const HistogramView view = diff->histogram(histogram);
+    const int bucket_index = view.bucket_for(value);
+    return view.buckets[bucket_index];
+  }
+
+  // Returns the total sample count diff across all buckets for a specific
+  // histogram since the baseline snapshot.
+  double GetHistogramTotalCountDiff(
+      const Http2GlobalStats::Histogram histogram) const {
+    const std::unique_ptr<Http2GlobalStats> diff = GetDiff();
+    return diff->histogram(histogram).Count();
+  }
+
+  // Validates that a counter's diff since the baseline equals expected count.
+  void ExpectCounterDiff(const Http2GlobalStats::Counter counter,
+                         const uint64_t expected_count) const {
+    EXPECT_EQ(GetCounterDiff(counter), expected_count)
+        << "Counter mismatch for "
+        << Http2GlobalStats::counter_name[static_cast<int>(counter)];
+  }
+
+  // Validates that the bucket for `value` in `histogram` has a diff count
+  // equal to `expected_count`.
+  void ExpectHistogramBucketCountDiff(
+      const Http2GlobalStats::Histogram histogram, const int value,
+      const uint64_t expected_count) const {
+    EXPECT_EQ(GetHistogramBucketCountDiff(histogram, value), expected_count)
+        << "Histogram bucket count mismatch for "
+        << Http2GlobalStats::histogram_name[static_cast<int>(histogram)]
+        << " at value=" << value;
+  }
+
+  // Validates that the total count across all buckets in `histogram` has a diff
+  // equal to `expected_count`.
+  void ExpectHistogramTotalCountDiff(
+      const Http2GlobalStats::Histogram histogram,
+      const double expected_count) const {
+    EXPECT_EQ(GetHistogramTotalCountDiff(histogram), expected_count)
+        << "Histogram total count mismatch for "
+        << Http2GlobalStats::histogram_name[static_cast<int>(histogram)];
+  }
+
+ private:
+  std::unique_ptr<Http2GlobalStats> before_;
+};
 
 class Http2TransportTest : public util::testing::TransportTest {
  public:

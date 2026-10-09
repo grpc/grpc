@@ -42,6 +42,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -529,6 +530,10 @@ class Stream : public RefCounted<Stream> {
     return flow_control_;
   }
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Timestamp& GetLastWindowUpdateTime() {
+    return last_window_update_time_;
+  }
+
   bool is_client() const { return std::holds_alternative<CallHandler>(call_); }
   bool is_server() const {
     return std::holds_alternative<CallInitiator>(call_);
@@ -563,6 +568,7 @@ class Stream : public RefCounted<Stream> {
   bool did_receive_trailing_metadata_ = false;
   bool did_push_server_trailing_metadata_ = false;
   bool did_cancel_ = false;
+  Timestamp last_window_update_time_ = Timestamp::InfPast();
   std::atomic<TarpitState> tarpit_state_{TarpitState::kNone};
   // Change this if ClientMetadataHandle and ServerMetadataHandle are changed
   // to different types.

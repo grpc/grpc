@@ -33,6 +33,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
@@ -307,7 +308,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
   void InitCoreConfiguration() override {}
   void InitTest() override {
     InitParty();
-    transport_write_context_.StartWriteCycle();
+    transport_write_context_.StartWriteCycle(http2_transport_stats_);
     bool unused;
     // Discard the connection preface
     SliceBuffer discard =
@@ -325,6 +326,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
   RefCountedPtr<Party> party2_;
   HPackCompressor encoder_;
   http2::TransportWriteContext transport_write_context_{/*is_client=*/true};
+  http2::Http2TransportStats http2_transport_stats_{ChannelArgs()};
 };
 
 // TODO(akshitpatel) : [PH2][P3] : Add a test for server side.
