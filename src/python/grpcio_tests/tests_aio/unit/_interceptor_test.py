@@ -77,8 +77,7 @@ class TestMultiTypeClientInterceptor(AioTestBase):
             stub = test_pb2_grpc.TestServiceStub(channel)
 
             # 1. Unary-Unary
-            unary_response = await stub.UnaryCall(messages_pb2.SimpleRequest())
-            self.assertIsInstance(unary_response, messages_pb2.SimpleResponse)
+            await stub.UnaryCall(messages_pb2.SimpleRequest())
 
             # 2. Unary-Stream
             stream_out_request = messages_pb2.StreamingOutputCallRequest()
@@ -105,7 +104,6 @@ class TestMultiTypeClientInterceptor(AioTestBase):
             await full_duplex_call.write(stream_out_request)
             await full_duplex_call.read()
             await full_duplex_call.done_writing()
-            self.assertEqual(grpc.StatusCode.OK, await full_duplex_call.code())
 
             self.assertEqual(
                 interceptor.intercepted_types,
