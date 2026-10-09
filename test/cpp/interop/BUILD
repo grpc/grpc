@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//third_party/bazel_rules/rules_shell/shell:sh_test.bzl", "sh_test")
 
 licenses(["notice"])
 
