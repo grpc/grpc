@@ -29,6 +29,9 @@ class LowContentionDomain : public InstrumentDomain<LowContentionDomain> {
   GRPC_EMPTY_INSTRUMENT_DOMAIN_LABELS();
   static inline const auto kCounter =
       RegisterCounter("low_contention", "Desc", "unit");
+  static inline const auto kHistogram =
+      RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+          "low_contention_histogram", "Desc", "unit", 1024, 20);
 };
 
 class HighContentionDomain : public InstrumentDomain<HighContentionDomain> {
@@ -38,6 +41,9 @@ class HighContentionDomain : public InstrumentDomain<HighContentionDomain> {
   GRPC_EMPTY_INSTRUMENT_DOMAIN_LABELS();
   static inline const auto kCounter =
       RegisterCounter("high_contention", "Desc", "unit");
+  static inline const auto kHistogram =
+      RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+          "high_contention_histogram", "Desc", "unit", 1024, 20);
 };
 
 void BM_IncrementLowContentionInstrument(benchmark::State& state) {
@@ -56,6 +62,23 @@ void BM_IncrementHighContentionInstrument(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_IncrementHighContentionInstrument)->ThreadRange(1, 64);
+
+void BM_IncrementLowContentionHistogram(benchmark::State& state) {
+  auto storage = LowContentionDomain::GetStorage(CreateCollectionScope({}, {}));
+  for (auto _ : state) {
+    storage->Increment(LowContentionDomain::kHistogram, 100);
+  }
+}
+BENCHMARK(BM_IncrementLowContentionHistogram)->ThreadRange(1, 64);
+
+void BM_IncrementHighContentionHistogram(benchmark::State& state) {
+  auto storage =
+      HighContentionDomain::GetStorage(CreateCollectionScope({}, {}));
+  for (auto _ : state) {
+    storage->Increment(HighContentionDomain::kHistogram, 100);
+  }
+}
+BENCHMARK(BM_IncrementHighContentionHistogram)->ThreadRange(1, 64);
 
 }  // namespace
 }  // namespace grpc_core
