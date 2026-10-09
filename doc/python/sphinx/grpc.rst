@@ -54,6 +54,12 @@ Local Connection Type
 .. autoclass:: LocalConnectionType
 
 
+TLS Version
+^^^^^^^^^^^
+
+.. autoclass:: TLSVersion
+
+
 RPC Method Handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
