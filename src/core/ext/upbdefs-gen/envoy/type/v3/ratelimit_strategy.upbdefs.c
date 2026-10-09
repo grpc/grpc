@@ -17,7 +17,7 @@ extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[853] = {
+static const char descriptor_envoy_type_v3_ratelimit_strategy_proto_upbdefinit[853] = {
     '\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'v', '3', '/', 'r', 'a', 't', 'e', 'l', 'i', 'm', 'i',
     't', '_', 's', 't', 'r', 'a', 't', 'e', 'g', 'y', '.', 'p',
@@ -92,7 +92,7 @@ static const char descriptor[853] = {
     '3',
 };
 
-static _upb_DefPool_Init *deps[6] = {
+static _upb_DefPool_Init* deps_envoy_type_v3_ratelimit_strategy_proto_upbdefinit[6] = {
     &envoy_type_v3_ratelimit_unit_proto_upbdefinit,
     &envoy_type_v3_token_bucket_proto_upbdefinit,
     &xds_annotations_v3_status_proto_upbdefinit,
@@ -102,8 +102,9 @@ static _upb_DefPool_Init *deps[6] = {
 };
 
 _upb_DefPool_Init envoy_type_v3_ratelimit_strategy_proto_upbdefinit = {
-    deps,
+    deps_envoy_type_v3_ratelimit_strategy_proto_upbdefinit,
     &envoy_type_v3_ratelimit_strategy_proto_upb_file_layout,
     "envoy/type/v3/ratelimit_strategy.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_type_v3_ratelimit_strategy_proto_upbdefinit,
+                        sizeof(descriptor_envoy_type_v3_ratelimit_strategy_proto_upbdefinit)),
 };

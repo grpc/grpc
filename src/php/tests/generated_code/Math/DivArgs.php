@@ -33,7 +33,8 @@ class DivArgs extends \Google\Protobuf\Internal\Message
      *     @type int|string $divisor
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Math::initOnce();
         parent::__construct($data);
     }

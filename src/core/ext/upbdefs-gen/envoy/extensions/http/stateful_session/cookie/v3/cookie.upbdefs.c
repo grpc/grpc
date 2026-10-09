@@ -15,7 +15,7 @@ extern _upb_DefPool_Init envoy_type_http_v3_cookie_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[487] = {
+static const char descriptor_envoy_extensions_http_stateful_session_cookie_v3_cookie_proto_upbdefinit[487] = {
     '\n', '=', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e',
     'n', 's', 'i', 'o', 'n', 's', '/', 'h', 't', 't', 'p', '/',
     's', 't', 'a', 't', 'e', 'f', 'u', 'l', '_', 's', 'e', 's',
@@ -59,7 +59,7 @@ static const char descriptor[487] = {
     '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_envoy_extensions_http_stateful_session_cookie_v3_cookie_proto_upbdefinit[4] = {
     &envoy_type_http_v3_cookie_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
     &validate_validate_proto_upbdefinit,
@@ -67,8 +67,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init envoy_extensions_http_stateful_session_cookie_v3_cookie_proto_upbdefinit = {
-    deps,
+    deps_envoy_extensions_http_stateful_session_cookie_v3_cookie_proto_upbdefinit,
     &envoy_extensions_http_stateful_session_cookie_v3_cookie_proto_upb_file_layout,
     "envoy/extensions/http/stateful_session/cookie/v3/cookie.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_extensions_http_stateful_session_cookie_v3_cookie_proto_upbdefinit,
+                        sizeof(descriptor_envoy_extensions_http_stateful_session_cookie_v3_cookie_proto_upbdefinit)),
 };

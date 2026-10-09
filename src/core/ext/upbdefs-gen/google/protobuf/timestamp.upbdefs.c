@@ -11,7 +11,7 @@
 #include "google/protobuf/timestamp.upbdefs.h"
 #include "google/protobuf/timestamp.upb_minitable.h"
 
-static const char descriptor[255] = {
+static const char descriptor_google_protobuf_timestamp_proto_upbdefinit[255] = {
     '\n', '\037', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o',
     't', 'o', 'b', 'u', 'f', '/', 't', 'i', 'm', 'e', 's', 't',
     'a', 'm', 'p', '.', 'p', 'r', 'o', 't', 'o', '\022', '\017', 'g',
@@ -36,13 +36,14 @@ static const char descriptor[255] = {
     't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[1] = {
+static _upb_DefPool_Init* deps_google_protobuf_timestamp_proto_upbdefinit[1] = {
     NULL,
 };
 
 _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit = {
-    deps,
+    deps_google_protobuf_timestamp_proto_upbdefinit,
     &google_protobuf_timestamp_proto_upb_file_layout,
     "google/protobuf/timestamp.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_protobuf_timestamp_proto_upbdefinit,
+                        sizeof(descriptor_google_protobuf_timestamp_proto_upbdefinit)),
 };

@@ -11,7 +11,7 @@
 #include "xds/type/v3/range.upbdefs.h"
 #include "xds/type/v3/range.upb_minitable.h"
 
-static const char descriptor[285] = {
+static const char descriptor_xds_type_v3_range_proto_upbdefinit[285] = {
     '\n', '\027', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'v',
     '3', '/', 'r', 'a', 'n', 'g', 'e', '.', 'p', 'r', 'o', 't',
     'o', '\022', '\013', 'x', 'd', 's', '.', 't', 'y', 'p', 'e', '.',
@@ -38,13 +38,14 @@ static const char descriptor[285] = {
     '3', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[1] = {
+static _upb_DefPool_Init* deps_xds_type_v3_range_proto_upbdefinit[1] = {
     NULL,
 };
 
 _upb_DefPool_Init xds_type_v3_range_proto_upbdefinit = {
-    deps,
+    deps_xds_type_v3_range_proto_upbdefinit,
     &xds_type_v3_range_proto_upb_file_layout,
     "xds/type/v3/range.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_type_v3_range_proto_upbdefinit,
+                        sizeof(descriptor_xds_type_v3_range_proto_upbdefinit)),
 };

@@ -14,7 +14,7 @@
 extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[443] = {
+static const char descriptor_envoy_config_core_v3_socket_cmsg_headers_proto_upbdefinit[443] = {
     '\n', '.', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 's',
     'o', 'c', 'k', 'e', 't', '_', 'c', 'm', 's', 'g', '_', 'h',
@@ -54,15 +54,16 @@ static const char descriptor[443] = {
     '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[3] = {
+static _upb_DefPool_Init* deps_envoy_config_core_v3_socket_cmsg_headers_proto_upbdefinit[3] = {
     &google_protobuf_wrappers_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_config_core_v3_socket_cmsg_headers_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_core_v3_socket_cmsg_headers_proto_upbdefinit,
     &envoy_config_core_v3_socket_cmsg_headers_proto_upb_file_layout,
     "envoy/config/core/v3/socket_cmsg_headers.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_core_v3_socket_cmsg_headers_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_core_v3_socket_cmsg_headers_proto_upbdefinit)),
 };

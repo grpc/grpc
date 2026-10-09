@@ -31,10 +31,14 @@ static const envoy__admin__v3__Certificates_msg_init_Fields envoy_admin_v3_Certi
 
 const upb_MiniTable envoy__admin__v3__Certificates_msg_init = {
   &envoy_admin_v3_Certificates__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.Certificates",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -53,10 +57,16 @@ static const envoy__admin__v3__Certificate_msg_init_Fields envoy_admin_v3_Certif
 
 const upb_MiniTable envoy__admin__v3__Certificate_msg_init = {
   &envoy_admin_v3_Certificate__fields.fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.Certificate",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x001000003f040012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -87,14 +97,14 @@ const upb_MiniTable envoy__admin__v3__CertificateDetails_msg_init = {
   "envoy.admin.v3.CertificateDetails",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003000003f0b001a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x003800003f000020, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00400000000c002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00480000010d0032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00500000020e003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
@@ -114,10 +124,16 @@ static const envoy__admin__v3__CertificateDetails__OcspDetails_msg_init_Fields e
 
 const upb_MiniTable envoy__admin__v3__CertificateDetails__OcspDetails_msg_init = {
   &envoy_admin_v3_CertificateDetails_OcspDetails__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.CertificateDetails.OcspDetails",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -137,14 +153,14 @@ const upb_MiniTable envoy__admin__v3__SubjectAlternateName_msg_init = {
   "envoy.admin.v3.SubjectAlternateName",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000080100000a, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x0010000802000012, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x001000080300001a, &upb_DecodeFast_String_Oneof_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[5] = {
+static const upb_MiniTable *messages_layout_envoy_admin_v3_certs_proto_upb_file_layout[5] = {
   &envoy__admin__v3__Certificates_msg_init,
   &envoy__admin__v3__Certificate_msg_init,
   &envoy__admin__v3__CertificateDetails_msg_init,
@@ -153,7 +169,7 @@ static const upb_MiniTable *messages_layout[5] = {
 };
 
 const upb_MiniTableFile envoy_admin_v3_certs_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_admin_v3_certs_proto_upb_file_layout,
   NULL,
   NULL,
   5,

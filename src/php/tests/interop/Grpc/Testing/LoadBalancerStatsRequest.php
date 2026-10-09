@@ -51,7 +51,8 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      *           * (asterisk) is a special value that will return all metadata entries
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

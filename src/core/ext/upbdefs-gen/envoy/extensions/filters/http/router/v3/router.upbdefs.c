@@ -20,7 +20,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[1722] = {
+static const char descriptor_envoy_extensions_filters_http_router_v3_router_proto_upbdefinit[1722] = {
     '\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e',
     'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e',
     'r', 's', '/', 'h', 't', 't', 'p', '/', 'r', 'o', 'u', 't',
@@ -167,7 +167,7 @@ static const char descriptor[1722] = {
     'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[9] = {
+static _upb_DefPool_Init* deps_envoy_extensions_filters_http_router_v3_router_proto_upbdefinit[9] = {
     &envoy_config_accesslog_v3_accesslog_proto_upbdefinit,
     &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit,
     &google_protobuf_duration_proto_upbdefinit,
@@ -180,8 +180,9 @@ static _upb_DefPool_Init *deps[9] = {
 };
 
 _upb_DefPool_Init envoy_extensions_filters_http_router_v3_router_proto_upbdefinit = {
-    deps,
+    deps_envoy_extensions_filters_http_router_v3_router_proto_upbdefinit,
     &envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout,
     "envoy/extensions/filters/http/router/v3/router.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_extensions_filters_http_router_v3_router_proto_upbdefinit,
+                        sizeof(descriptor_envoy_extensions_filters_http_router_v3_router_proto_upbdefinit)),
 };

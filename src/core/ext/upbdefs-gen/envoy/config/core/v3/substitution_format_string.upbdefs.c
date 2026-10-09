@@ -18,7 +18,7 @@ extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[1003] = {
+static const char descriptor_envoy_config_core_v3_substitution_format_string_proto_upbdefinit[1003] = {
     '\n', '5', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 's',
     'u', 'b', 's', 't', 'i', 't', 'u', 't', 'i', 'o', 'n', '_',
@@ -105,7 +105,7 @@ static const char descriptor[1003] = {
     '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[7] = {
+static _upb_DefPool_Init* deps_envoy_config_core_v3_substitution_format_string_proto_upbdefinit[7] = {
     &envoy_config_core_v3_base_proto_upbdefinit,
     &envoy_config_core_v3_extension_proto_upbdefinit,
     &google_protobuf_struct_proto_upbdefinit,
@@ -116,8 +116,9 @@ static _upb_DefPool_Init *deps[7] = {
 };
 
 _upb_DefPool_Init envoy_config_core_v3_substitution_format_string_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_core_v3_substitution_format_string_proto_upbdefinit,
     &envoy_config_core_v3_substitution_format_string_proto_upb_file_layout,
     "envoy/config/core/v3/substitution_format_string.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_core_v3_substitution_format_string_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_core_v3_substitution_format_string_proto_upbdefinit)),
 };

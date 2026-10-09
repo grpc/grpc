@@ -47,8 +47,8 @@ const upb_MiniTable cel__expr__CheckedExpr_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00300000000a0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00380000010b002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f000032, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
@@ -69,14 +69,10 @@ static const cel__expr__CheckedExpr__ReferenceMapEntry_msg_init_Fields cel_expr_
 
 const upb_MiniTable cel__expr__CheckedExpr__ReferenceMapEntry_msg_init = {
   &cel_expr_CheckedExpr_ReferenceMapEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.CheckedExpr.ReferenceMapEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-  })
 };
 
 typedef struct {
@@ -94,14 +90,10 @@ static const cel__expr__CheckedExpr__TypeMapEntry_msg_init_Fields cel_expr_Check
 
 const upb_MiniTable cel__expr__CheckedExpr__TypeMapEntry_msg_init = {
   &cel_expr_CheckedExpr_TypeMapEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.CheckedExpr.TypeMapEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
-  })
 };
 
 typedef struct {
@@ -141,22 +133,22 @@ const upb_MiniTable cel__expr__Type_msg_init = {
   "cel.expr.Type",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080114000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x0010000802000010, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
     {0x0010000803000018, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
     {0x0010000804000020, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
     {0x0010000805000028, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000806150032, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080716003a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000808170042, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x001000080900004a, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x001000080a000052, &upb_DecodeFast_String_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000080b18005a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080c190062, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080e1a0072, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -174,10 +166,14 @@ static const cel__expr__Type__ListType_msg_init_Fields cel_expr_Type_ListType__f
 
 const upb_MiniTable cel__expr__Type__ListType_msg_init = {
   &cel_expr_Type_ListType__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.ListType",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000002000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -196,10 +192,16 @@ static const cel__expr__Type__MapType_msg_init_Fields cel_expr_Type_MapType__fie
 
 const upb_MiniTable cel__expr__Type__MapType_msg_init = {
   &cel_expr_Type_MapType__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.MapType",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -218,10 +220,16 @@ static const cel__expr__Type__FunctionType_msg_init_Fields cel_expr_Type_Functio
 
 const upb_MiniTable cel__expr__Type__FunctionType_msg_init = {
   &cel_expr_Type_FunctionType__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.FunctionType",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x001800003f040012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -239,13 +247,15 @@ static const cel__expr__Type__AbstractType_msg_init_Fields cel_expr_Type_Abstrac
 
 const upb_MiniTable cel__expr__Type__AbstractType_msg_init = {
   &cel_expr_Type_AbstractType__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.AbstractType",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x001800003f030012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -266,13 +276,15 @@ static const cel__expr__Decl_msg_init_Fields cel_expr_Decl__fields = {{
 
 const upb_MiniTable cel__expr__Decl_msg_init = {
   &cel_expr_Decl__fields.fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Decl",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000802050012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x002000080306001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
   })
 };
 
@@ -298,9 +310,9 @@ const upb_MiniTable cel__expr__Decl__IdentDecl_msg_init = {
   "cel.expr.Decl.IdentDecl",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0028000001060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
@@ -325,10 +337,10 @@ const upb_MiniTable cel__expr__Decl__FunctionDecl_msg_init = {
   "cel.expr.Decl.FunctionDecl",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001800003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x000800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -357,14 +369,14 @@ const upb_MiniTable cel__expr__Decl__FunctionDecl__Overload_msg_init = {
   "cel.expr.Decl.FunctionDecl.Overload",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003000003f090012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x003800003f00001a, &upb_DecodeFast_String_Repeated_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00400000000a0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000028, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x002000003f000032, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -384,19 +396,23 @@ static const cel__expr__Reference_msg_init_Fields cel_expr_Reference__fields = {
 
 const upb_MiniTable cel__expr__Reference_msg_init = {
   &cel_expr_Reference__fields.fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Reference",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x002000003f00001a, &upb_DecodeFast_String_Repeated_Tag1Byte},
+    {0x0028000000050022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[13] = {
+static const upb_MiniTable *messages_layout_cel_expr_checked_proto_upb_file_layout[13] = {
   &cel__expr__CheckedExpr_msg_init,
   &cel__expr__CheckedExpr__ReferenceMapEntry_msg_init,
   &cel__expr__CheckedExpr__TypeMapEntry_msg_init,
@@ -413,7 +429,7 @@ static const upb_MiniTable *messages_layout[13] = {
 };
 
 const upb_MiniTableFile cel_expr_checked_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_cel_expr_checked_proto_upb_file_layout,
   NULL,
   NULL,
   13,

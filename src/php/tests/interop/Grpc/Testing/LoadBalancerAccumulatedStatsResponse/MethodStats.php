@@ -41,7 +41,8 @@ class MethodStats extends \Google\Protobuf\Internal\Message
      *           key is the integral value of a google.rpc.Code; the value is the count.
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

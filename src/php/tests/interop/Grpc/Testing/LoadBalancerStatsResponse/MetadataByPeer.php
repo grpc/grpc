@@ -31,7 +31,8 @@ class MetadataByPeer extends \Google\Protobuf\Internal\Message
      *           List of RpcMetadata in for each RPC with a given peer
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

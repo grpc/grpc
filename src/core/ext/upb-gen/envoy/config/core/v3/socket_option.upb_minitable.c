@@ -42,14 +42,14 @@ const upb_MiniTable envoy__config__core__v3__SocketOption_msg_init = {
   "envoy.config.core.v3.SocketOption",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x003800003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x004000003f000018, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
     {0x0028001004000020, &upb_DecodeFast_Varint64_Oneof_Tag1Byte},
     {0x002800100500002a, &upb_DecodeFast_Bytes_Oneof_Tag1Byte},
     {0x000c00003f000030, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00480000000b003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
@@ -69,10 +69,16 @@ static const envoy__config__core__v3__SocketOption__SocketType_msg_init_Fields e
 
 const upb_MiniTable envoy__config__core__v3__SocketOption__SocketType_msg_init = {
   &envoy_config_core_v3_SocketOption_SocketType__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.SocketOption.SocketType",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 const upb_MiniTable envoy__config__core__v3__SocketOption__SocketType__Stream_msg_init = {
@@ -105,13 +111,17 @@ static const envoy__config__core__v3__SocketOptionsOverride_msg_init_Fields envo
 
 const upb_MiniTable envoy__config__core__v3__SocketOptionsOverride_msg_init = {
   &envoy_config_core_v3_SocketOptionsOverride__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.SocketOptionsOverride",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
-static const upb_MiniTable *messages_layout[5] = {
+static const upb_MiniTable *messages_layout_envoy_config_core_v3_socket_option_proto_upb_file_layout[5] = {
   &envoy__config__core__v3__SocketOption_msg_init,
   &envoy__config__core__v3__SocketOption__SocketType_msg_init,
   &envoy__config__core__v3__SocketOption__SocketType__Stream_msg_init,
@@ -120,7 +130,7 @@ static const upb_MiniTable *messages_layout[5] = {
 };
 
 const upb_MiniTableFile envoy_config_core_v3_socket_option_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_core_v3_socket_option_proto_upb_file_layout,
   NULL,
   NULL,
   5,

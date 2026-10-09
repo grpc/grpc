@@ -862,6 +862,9 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
         bazel_rule["hdrs"].append(
             ":src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb.h"
         )
+        bazel_rule["hdrs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.h"
+        )
 
 
 def _generate_build_metadata(

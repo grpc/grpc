@@ -12,6 +12,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
@@ -29,6 +30,12 @@ bool upb_EnumDef_CheckNumber(const upb_EnumDef* e, int32_t num);
 const upb_MessageDef* upb_EnumDef_ContainingType(const upb_EnumDef* e);
 int32_t upb_EnumDef_Default(const upb_EnumDef* e);
 UPB_API const upb_FileDef* upb_EnumDef_File(const upb_EnumDef* e);
+UPB_API const upb_EnumValueDef* upb_EnumDef_FindByJsonNameWithSize(
+    const upb_EnumDef* e, const char* name, size_t size);
+UPB_INLINE const upb_EnumValueDef* upb_EnumDef_FindByJsonName(
+    const upb_EnumDef* e, const char* name) {
+  return upb_EnumDef_FindByJsonNameWithSize(e, name, strlen(name));
+}
 const upb_EnumValueDef* upb_EnumDef_FindValueByName(const upb_EnumDef* e,
                                                     const char* name);
 UPB_API const upb_EnumValueDef* upb_EnumDef_FindValueByNameWithSize(
@@ -40,8 +47,9 @@ bool upb_EnumDef_HasOptions(const upb_EnumDef* e);
 bool upb_EnumDef_IsClosed(const upb_EnumDef* e);
 
 // Creates a mini descriptor string for an enum, returns true on success.
-bool upb_EnumDef_MiniDescriptorEncode(const upb_EnumDef* e, upb_Arena* a,
-                                      upb_StringView* out);
+UPB_NODISCARD bool upb_EnumDef_MiniDescriptorEncode(const upb_EnumDef* e,
+                                                    upb_Arena* a,
+                                                    upb_StringView* out);
 
 const char* upb_EnumDef_Name(const upb_EnumDef* e);
 const google_protobuf_EnumOptions* upb_EnumDef_Options(const upb_EnumDef* e);

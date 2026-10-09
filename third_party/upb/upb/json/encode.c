@@ -7,16 +7,25 @@
 
 #include "upb/json/encode.h"
 
-#include <ctype.h>
 #include <float.h>
 #include <inttypes.h>
 #include <math.h>
+#include <setjmp.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 
+#include "upb/base/descriptor_constants.h"
+#include "upb/base/status.h"
+#include "upb/base/string_view.h"
 #include "upb/lex/round_trip.h"
+#include "upb/mem/arena.h"
+#include "upb/message/array.h"
 #include "upb/message/map.h"
+#include "upb/message/message.h"
+#include "upb/mini_table/message.h"
 #include "upb/port/vsnprintf_compat.h"
+#include "upb/reflection/def.h"
 #include "upb/reflection/message.h"
 #include "upb/wire/decode.h"
 
@@ -44,6 +53,7 @@ static void jsonenc_msgfields(jsonenc* e, const upb_Message* msg,
                               const upb_MessageDef* m, bool first);
 static void jsonenc_value(jsonenc* e, const upb_Message* msg,
                           const upb_MessageDef* m);
+static void jsonenc_string(jsonenc* e, upb_StringView str);
 
 UPB_NORETURN static void jsonenc_err(jsonenc* e, const char* msg) {
   upb_Status_SetErrorMessage(e->status, msg);
@@ -205,7 +215,8 @@ static void jsonenc_enum(int32_t val, const upb_FieldDef* f, jsonenc* e) {
             : upb_EnumDef_FindValueByNumber(e_def, val);
 
     if (ev) {
-      jsonenc_printf(e, "\"%s\"", upb_EnumValueDef_Name(ev));
+      const char* name = upb_EnumValueDef_JsonName(ev);
+      jsonenc_string(e, upb_StringView_FromString(name));
     } else {
       jsonenc_printf(e, "%" PRId32, val);
     }
@@ -416,10 +427,17 @@ static void jsonenc_fieldpath(jsonenc* e, upb_StringView path) {
     char ch = *ptr;
 
     if (ch >= 'A' && ch <= 'Z') {
-      jsonenc_err(e, "Field mask element may not have upper-case letter.");
+      jsonenc_err(e,
+                  "Field mask path containing an uppercase letter cannot be "
+                  "successfully round tripped through JSON format. See "
+                  "https://github.com/protocolbuffers/protobuf/issues/25786");
     } else if (ch == '_') {
       if (ptr == end - 1 || *(ptr + 1) < 'a' || *(ptr + 1) > 'z') {
-        jsonenc_err(e, "Underscore must be followed by a lowercase letter.");
+        jsonenc_err(e,
+                    "Underscore in FieldMask path must be followed by a "
+                    "lowercase letter to successfully round trip through JSON "
+                    "format. See "
+                    "https://github.com/protocolbuffers/protobuf/issues/25786");
       }
       ch = *++ptr - 32;
     }

@@ -46,10 +46,20 @@ static const envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg
 
 const upb_MiniTable envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init = {
   &envoy_config_common_mutation_rules_v3_HeaderMutationRules__fields.fields[0],
-  UPB_SIZE(40, 72), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(40, 72), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.mutation_rules.v3.HeaderMutationRules",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x00100000000b000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00180000010c0012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00200000020d001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00280000030e0022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00300000040f002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0038000005100032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x004000000611003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -69,13 +79,15 @@ static const envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init
 
 const upb_MiniTable envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init = {
   &envoy_config_common_mutation_rules_v3_HeaderMutation__fields.fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.mutation_rules.v3.HeaderMutation",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000080100000a, &upb_DecodeFast_String_Oneof_Tag1Byte},
+    {0x0010000802050012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080306001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
   })
 };
 
@@ -93,20 +105,24 @@ static const envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveO
 
 const upb_MiniTable envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init = {
   &envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.mutation_rules.v3.HeaderMutation.RemoveOnMatch",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000002000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
-static const upb_MiniTable *messages_layout[3] = {
+static const upb_MiniTable *messages_layout_envoy_config_common_mutation_rules_v3_mutation_rules_proto_upb_file_layout[3] = {
   &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init,
   &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init,
   &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_common_mutation_rules_v3_mutation_rules_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_common_mutation_rules_v3_mutation_rules_proto_upb_file_layout,
   NULL,
   NULL,
   3,

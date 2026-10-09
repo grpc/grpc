@@ -35,10 +35,16 @@ static const envoy__service__load_0stats__v3__LoadStatsRequest_msg_init_Fields e
 
 const upb_MiniTable envoy__service__load_0stats__v3__LoadStatsRequest_msg_init = {
   &envoy_service_load_stats_v3_LoadStatsRequest__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.load_stats.v3.LoadStatsRequest",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x001800003f040012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -63,24 +69,24 @@ const upb_MiniTable envoy__service__load_0stats__v3__LoadStatsResponse_msg_init 
   "envoy.service.load_stats.v3.LoadStatsResponse",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Repeated_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0018000000060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000018, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000a00003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_service_load_stats_v3_lrs_proto_upb_file_layout[2] = {
   &envoy__service__load_0stats__v3__LoadStatsRequest_msg_init,
   &envoy__service__load_0stats__v3__LoadStatsResponse_msg_init,
 };
 
 const upb_MiniTableFile envoy_service_load_stats_v3_lrs_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_service_load_stats_v3_lrs_proto_upb_file_layout,
   NULL,
   NULL,
   2,

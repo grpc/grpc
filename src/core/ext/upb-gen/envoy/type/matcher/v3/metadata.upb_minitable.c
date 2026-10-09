@@ -41,14 +41,14 @@ const upb_MiniTable envoy__type__matcher__v3__MetadataMatcher_msg_init = {
   "envoy.type.matcher.v3.MetadataMatcher",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f060012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x002800000007001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -67,18 +67,18 @@ const upb_MiniTable envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_i
   "envoy.type.matcher.v3.MetadataMatcher.PathSegment",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000080100000a, &upb_DecodeFast_String_Oneof_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout_envoy_type_matcher_v3_metadata_proto_upb_file_layout[2] = {
   &envoy__type__matcher__v3__MetadataMatcher_msg_init,
   &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init,
 };
 
 const upb_MiniTableFile envoy_type_matcher_v3_metadata_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_matcher_v3_metadata_proto_upb_file_layout,
   NULL,
   NULL,
   2,

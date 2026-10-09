@@ -37,10 +37,10 @@ const upb_MiniTable envoy__config__core__v3__Pipe_msg_init = {
   "envoy.config.core.v3.Pipe",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x000800003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -60,10 +60,10 @@ const upb_MiniTable envoy__config__core__v3__EnvoyInternalAddress_msg_init = {
   "envoy.config.core.v3.EnvoyInternalAddress",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x002000080100000a, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -88,7 +88,7 @@ const upb_MiniTable envoy__config__core__v3__SocketAddress_msg_init = {
   "envoy.config.core.v3.SocketAddress",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0048001003000018, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
@@ -117,10 +117,16 @@ static const envoy__config__core__v3__TcpKeepalive_msg_init_Fields envoy_config_
 
 const upb_MiniTable envoy__config__core__v3__TcpKeepalive_msg_init = {
   &envoy_config_core_v3_TcpKeepalive__fields.fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.TcpKeepalive",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000000207001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -139,10 +145,16 @@ static const envoy__config__core__v3__ExtraSourceAddress_msg_init_Fields envoy_c
 
 const upb_MiniTable envoy__config__core__v3__ExtraSourceAddress_msg_init = {
   &envoy_config_core_v3_ExtraSourceAddress__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.ExtraSourceAddress",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -169,10 +181,20 @@ static const envoy__config__core__v3__BindConfig_msg_init_Fields envoy_config_co
 
 const upb_MiniTable envoy__config__core__v3__BindConfig_msg_init = {
   &envoy_config_core_v3_BindConfig__fields.fields[0],
-  UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.BindConfig",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000009000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00180000010a0012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x002000003f0b001a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x002800003f0c0022, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x003000003f0d002a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x00380000020e0032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -193,10 +215,16 @@ static const envoy__config__core__v3__Address_msg_init_Fields envoy_config_core_
 
 const upb_MiniTable envoy__config__core__v3__Address_msg_init = {
   &envoy_config_core_v3_Address__fields.fields[0],
-  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.Address",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080105000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000802060012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080307001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -214,17 +242,19 @@ static const envoy__config__core__v3__CidrRange_msg_init_Fields envoy_config_cor
 
 const upb_MiniTable envoy__config__core__v3__CidrRange_msg_init = {
   &envoy_config_core_v3_CidrRange__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.CidrRange",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[8] = {
+static const upb_MiniTable *messages_layout_envoy_config_core_v3_address_proto_upb_file_layout[8] = {
   &envoy__config__core__v3__Pipe_msg_init,
   &envoy__config__core__v3__EnvoyInternalAddress_msg_init,
   &envoy__config__core__v3__SocketAddress_msg_init,
@@ -236,7 +266,7 @@ static const upb_MiniTable *messages_layout[8] = {
 };
 
 const upb_MiniTableFile envoy_config_core_v3_address_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_core_v3_address_proto_upb_file_layout,
   NULL,
   NULL,
   8,

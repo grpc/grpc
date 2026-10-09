@@ -33,22 +33,24 @@ static const envoy__admin__v3__TapRequest_msg_init_Fields envoy_admin_v3_TapRequ
 
 const upb_MiniTable envoy__admin__v3__TapRequest_msg_init = {
   &envoy_admin_v3_TapRequest__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.TapRequest",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_admin_v3_tap_proto_upb_file_layout[1] = {
   &envoy__admin__v3__TapRequest_msg_init,
 };
 
 const upb_MiniTableFile envoy_admin_v3_tap_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_admin_v3_tap_proto_upb_file_layout,
   NULL,
   NULL,
   1,

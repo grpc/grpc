@@ -16,7 +16,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[534] = {
+static const char descriptor_envoy_config_core_v3_backoff_proto_upbdefinit[534] = {
     '\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b',
     'a', 'c', 'k', 'o', 'f', 'f', '.', 'p', 'r', 'o', 't', 'o',
@@ -64,7 +64,7 @@ static const char descriptor[534] = {
     'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[5] = {
+static _upb_DefPool_Init* deps_envoy_config_core_v3_backoff_proto_upbdefinit[5] = {
     &google_protobuf_duration_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
     &udpa_annotations_versioning_proto_upbdefinit,
@@ -73,8 +73,9 @@ static _upb_DefPool_Init *deps[5] = {
 };
 
 _upb_DefPool_Init envoy_config_core_v3_backoff_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_core_v3_backoff_proto_upbdefinit,
     &envoy_config_core_v3_backoff_proto_upb_file_layout,
     "envoy/config/core/v3/backoff.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_core_v3_backoff_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_core_v3_backoff_proto_upbdefinit)),
 };

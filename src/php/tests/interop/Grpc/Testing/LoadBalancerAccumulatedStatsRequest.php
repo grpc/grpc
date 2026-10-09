@@ -25,7 +25,8 @@ class LoadBalancerAccumulatedStatsRequest extends \Google\Protobuf\Internal\Mess
      *
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

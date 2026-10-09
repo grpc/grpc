@@ -592,13 +592,29 @@ class ArtifactGen {
   }
 
   void PatchDescriptorUpbProtoLibrary() {
-    auto it = rules_.find("@com_google_protobuf//upb:descriptor_upb_proto");
-    if (it == rules_.end()) return;
-    auto& bazel_rule = it->second;
-    bazel_rule.srcs.push_back(
-        ":src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c");
-    bazel_rule.hdrs.push_back(
-        ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h");
+    if (auto it = rules_.find("@com_google_protobuf//upb:descriptor_upb_proto");
+        it != rules_.end()) {
+      auto& bazel_rule = it->second;
+      bazel_rule.srcs.push_back(
+          ":src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c");
+      bazel_rule.hdrs.push_back(
+          ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h");
+    }
+    // The upb reflection runtime depends on json_enumvalue_options.proto, whose
+    // upb sources are pre-generated rather than referenced by the bazel rule.
+    if (auto it = rules_.find("@com_google_protobuf//upb/"
+                              "reflection:json_enumvalue_options_upb_proto");
+        it != rules_.end()) {
+      auto& bazel_rule = it->second;
+      bazel_rule.srcs.push_back(
+          ":src/core/ext/upb-gen/google/protobuf/"
+          "json_enumvalue_options.upb_minitable.c");
+      bazel_rule.hdrs.push_back(
+          ":src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb.h");
+      bazel_rule.hdrs.push_back(
+          ":src/core/ext/upb-gen/google/protobuf/"
+          "json_enumvalue_options.upb_minitable.h");
+    }
   }
 
   void PopulateCcTests() {

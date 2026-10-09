@@ -34,10 +34,10 @@ const upb_MiniTable google__api__Http_msg_init = {
   "google.api.Http",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x000800003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -70,7 +70,7 @@ const upb_MiniTable google__api__HttpRule_msg_init = {
   "google.api.HttpRule",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0040000802000012, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x004000080300001a, &upb_DecodeFast_String_Oneof_Tag1Byte},
@@ -78,14 +78,14 @@ const upb_MiniTable google__api__HttpRule_msg_init = {
     {0x004000080500002a, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x0040000806000032, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x002000003f00003a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00400008080f0042, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x005000003f10005a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
     {0x003000003f000062, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -105,21 +105,21 @@ const upb_MiniTable google__api__CustomHttpPattern_msg_init = {
   "google.api.CustomHttpPattern",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[3] = {
+static const upb_MiniTable *messages_layout_google_api_http_proto_upb_file_layout[3] = {
   &google__api__Http_msg_init,
   &google__api__HttpRule_msg_init,
   &google__api__CustomHttpPattern_msg_init,
 };
 
 const upb_MiniTableFile google_api_http_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_google_api_http_proto_upb_file_layout,
   NULL,
   NULL,
   3,

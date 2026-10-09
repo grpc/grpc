@@ -3672,6 +3672,7 @@ libs:
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
   - third_party/upb/upb/base/status.c
+  - third_party/upb/upb/port/port.c
   deps: []
 - name: upb_descriptor_lib
   build: all
@@ -3700,6 +3701,17 @@ libs:
   deps:
   - upb_base_lib
   - upb_mem_lib
+- name: upb_json_enumvalue_options_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb.h
+  - src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.h
+  - third_party/upb/upb/reflection/json_enumvalue_options_bootstrap.h
+  src:
+  - src/core/ext/upb-gen/google/protobuf/json_enumvalue_options.upb_minitable.c
+  deps: []
 - name: upb_json_lib
   build: all
   language: c
@@ -3720,7 +3732,6 @@ libs:
   headers:
   - third_party/upb/upb/lex/atoi.h
   - third_party/upb/upb/lex/round_trip.h
-  - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
@@ -3730,8 +3741,8 @@ libs:
   src:
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
-  - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
+  - third_party/upb/upb/port/port.c
   deps: []
 - name: upb_mem_lib
   build: all
@@ -3750,6 +3761,7 @@ libs:
   src:
   - third_party/upb/upb/mem/alloc.c
   - third_party/upb/upb/mem/arena.c
+  - third_party/upb/upb/port/port.c
   deps: []
 - name: upb_message_lib
   build: all
@@ -3768,7 +3780,13 @@ libs:
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
   - third_party/upb/upb/message/message.h
+  - third_party/upb/upb/message/unknown_fields.h
   - third_party/upb/upb/message/value.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/message/array.c
@@ -3778,6 +3796,9 @@ libs:
   - third_party/upb/upb/message/map.c
   - third_party/upb/upb/message/map_sorter.c
   - third_party/upb/upb/message/message.c
+  - third_party/upb/upb/message/unknown_fields.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - upb_mini_table_lib
 - name: upb_mini_descriptor_lib
@@ -3813,7 +3834,6 @@ libs:
   - third_party/upb/upb/wire/reader.c
   deps:
   - upb_mini_table_lib
-  - absl/strings:strings
 - name: upb_mini_table_lib
   build: all
   language: c
@@ -3908,6 +3928,7 @@ libs:
   deps:
   - upb_mini_descriptor_lib
   - upb_descriptor_lib
+  - upb_json_enumvalue_options_lib
   - upb_wire_lib
 - name: upb_textformat_lib
   build: all
@@ -3931,21 +3952,18 @@ libs:
   - third_party/upb/upb/message/internal/iterator.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/back_alloc.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decoder.h
-  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
-  - third_party/upb/upb/wire/internal/reader.h
-  - third_party/upb/upb/wire/reader.h
-  - third_party/upb/upb/wire/types.h
+  - third_party/upb/upb/wire/internal/encoder.h
   - third_party/upb/upb/wire/writer.h
   src:
   - third_party/upb/upb/message/internal/iterator.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/back_alloc.c
   - third_party/upb/upb/wire/internal/decoder.c
-  - third_party/upb/upb/wire/reader.c
+  - third_party/upb/upb/wire/internal/encoder.c
   deps:
   - utf8_range_lib
   - upb_message_lib
@@ -4302,6 +4320,7 @@ libs:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - grpc
@@ -4675,6 +4694,7 @@ libs:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - grpc_unsecure
@@ -5514,9 +5534,11 @@ libs:
   - absl/hash:hash
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/log:log
   - absl/memory:memory
   - absl/meta:type_traits
   - absl/numeric:bits
+  - absl/numeric:int128
   - absl/status:status
   - absl/status:statusor
   - absl/strings:charset
@@ -24469,6 +24491,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf
@@ -28903,6 +28926,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf
@@ -29203,6 +29227,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf
@@ -30457,6 +30482,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/numeric:int128
   - absl/strings:charset
   - absl/strings:internal
   - protobuf

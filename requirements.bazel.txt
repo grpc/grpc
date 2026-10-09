@@ -53,8 +53,8 @@ opentelemetry-exporter-prometheus
 opentelemetry-resourcedetector-gcp
 opentelemetry-sdk
 
-# Use the same version as third_party/protobuf v35.0
-protobuf~=7.35.1
+# Use the same version as third_party/protobuf v36.2
+protobuf~=7.36.2
 
 # TODO(sreenithi): enable it for Python 3.15 after pyyaml releases supported wheels
 pyyaml; python_version < "3.15"  # for DNS test

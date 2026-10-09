@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
 
-static const char descriptor[298] = {
+static const char descriptor_google_api_httpbody_proto_upbdefinit[298] = {
     '\n', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'a', 'p', 'i',
     '/', 'h', 't', 't', 'p', 'b', 'o', 'd', 'y', '.', 'p', 'r',
     'o', 't', 'o', '\022', '\n', 'g', 'o', 'o', 'g', 'l', 'e', '.',
@@ -41,14 +41,15 @@ static const char descriptor[298] = {
     'P', 'I', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_google_api_httpbody_proto_upbdefinit[2] = {
     &google_protobuf_any_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init google_api_httpbody_proto_upbdefinit = {
-    deps,
+    deps_google_api_httpbody_proto_upbdefinit,
     &google_api_httpbody_proto_upb_file_layout,
     "google/api/httpbody.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_google_api_httpbody_proto_upbdefinit,
+                        sizeof(descriptor_google_api_httpbody_proto_upbdefinit)),
 };

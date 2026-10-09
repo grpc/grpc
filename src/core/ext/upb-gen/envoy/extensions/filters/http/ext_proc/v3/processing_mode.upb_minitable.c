@@ -36,23 +36,23 @@ const upb_MiniTable envoy__extensions__filters__http__ext_0proc__v3__ProcessingM
   "envoy.extensions.filters.http.ext_proc.v3.ProcessingMode",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001000003f000018, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001400003f000020, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001800003f000028, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001c00003f000030, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_filters_http_ext_proc_v3_processing_mode_proto_upb_file_layout[1] = {
   &envoy__extensions__filters__http__ext_0proc__v3__ProcessingMode_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_filters_http_ext_proc_v3_processing_mode_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_filters_http_ext_proc_v3_processing_mode_proto_upb_file_layout,
   NULL,
   NULL,
   1,

@@ -11,7 +11,7 @@
 #include "xds/type/matcher/v3/http_inputs.upbdefs.h"
 #include "xds/type/matcher/v3/http_inputs.upb_minitable.h"
 
-static const char descriptor[196] = {
+static const char descriptor_xds_type_matcher_v3_http_inputs_proto_upbdefinit[196] = {
     '\n', '%', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'm',
     'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'h', 't',
     't', 'p', '_', 'i', 'n', 'p', 'u', 't', 's', '.', 'p', 'r',
@@ -31,13 +31,14 @@ static const char descriptor[196] = {
     'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[1] = {
+static _upb_DefPool_Init* deps_xds_type_matcher_v3_http_inputs_proto_upbdefinit[1] = {
     NULL,
 };
 
 _upb_DefPool_Init xds_type_matcher_v3_http_inputs_proto_upbdefinit = {
-    deps,
+    deps_xds_type_matcher_v3_http_inputs_proto_upbdefinit,
     &xds_type_matcher_v3_http_inputs_proto_upb_file_layout,
     "xds/type/matcher/v3/http_inputs.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_type_matcher_v3_http_inputs_proto_upbdefinit,
+                        sizeof(descriptor_xds_type_matcher_v3_http_inputs_proto_upbdefinit)),
 };

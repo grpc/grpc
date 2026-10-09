@@ -48,23 +48,23 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__ring_0hash__v3
   "envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00100000000b0012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00180000010c001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000900003f000020, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00200000020d002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00280000030e0032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00300000040f003a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_load_balancing_policies_ring_hash_v3_ring_hash_proto_upb_file_layout[1] = {
   &envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_load_balancing_policies_ring_hash_v3_ring_hash_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_load_balancing_policies_ring_hash_v3_ring_hash_proto_upb_file_layout,
   NULL,
   NULL,
   1,

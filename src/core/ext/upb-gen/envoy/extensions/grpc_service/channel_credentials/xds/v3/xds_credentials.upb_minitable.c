@@ -30,18 +30,22 @@ static const envoy__extensions__grpc_0service__channel_0credentials__xds__v3__Xd
 
 const upb_MiniTable envoy__extensions__grpc_0service__channel_0credentials__xds__v3__XdsCredentials_msg_init = {
   &envoy_extensions_grpc_service_channel_credentials_xds_v3_XdsCredentials__fields.fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.grpc_service.channel_credentials.xds.v3.XdsCredentials",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000002000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_grpc_service_channel_credentials_xds_v3_xds_credentials_proto_upb_file_layout[1] = {
   &envoy__extensions__grpc_0service__channel_0credentials__xds__v3__XdsCredentials_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_grpc_service_channel_credentials_xds_v3_xds_credentials_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_grpc_service_channel_credentials_xds_v3_xds_credentials_proto_upb_file_layout,
   NULL,
   NULL,
   1,

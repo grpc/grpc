@@ -68,7 +68,8 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      *           'EMPTY_CALL' or 'UNARY_CALL'
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

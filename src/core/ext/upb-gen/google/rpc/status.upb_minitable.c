@@ -36,19 +36,19 @@ const upb_MiniTable google__rpc__Status_msg_init = {
   "google.rpc.Status",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f05001a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_google_rpc_status_proto_upb_file_layout[1] = {
   &google__rpc__Status_msg_init,
 };
 
 const upb_MiniTableFile google_rpc_status_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_google_rpc_status_proto_upb_file_layout,
   NULL,
   NULL,
   1,

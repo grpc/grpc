@@ -337,5 +337,129 @@ TEST(ReflectionTest, FindEnumValueByName) {
       enum_value_def);
 }
 
+TEST(ReflectionTest, NegativePublicDependencyIndex) {
+  // Verify that a negative public_dependency index is rejected rather than
+  // causing an out-of-bounds read when the index is later used to access the
+  // deps array.
+  absl::Status status =
+      LoadDescriptorProto(
+          R"pb(
+            name: "test.proto"
+            public_dependency: -1
+          )pb")
+          .status();
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(std::string(status.message()), HasSubstr("out of range"));
+}
+
+TEST(ReflectionTest, NegativeWeakDependencyIndex) {
+  absl::Status status =
+      LoadDescriptorProto(
+          R"pb(
+            name: "test.proto"
+            weak_dependency: -1
+          )pb")
+          .status();
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(std::string(status.message()), HasSubstr("out of range"));
+}
+
+TEST(ReflectionTest, ZeroPublicDependencyIndexWithNoDeps) {
+  // Index 0 is out of range when there are no dependencies (dep_count=0).
+  absl::Status status =
+      LoadDescriptorProto(
+          R"pb(
+            name: "test.proto"
+            public_dependency: 0
+          )pb")
+          .status();
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(std::string(status.message()), HasSubstr("out of range"));
+}
+
+TEST(ReflectionTest, ZeroWeakDependencyIndexWithNoDeps) {
+  absl::Status status =
+      LoadDescriptorProto(
+          R"pb(
+            name: "test.proto"
+            weak_dependency: 0
+          )pb")
+          .status();
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(std::string(status.message()), HasSubstr("out of range"));
+}
+
+// Sets (pb.enumvalue.json).string option (extension field 998) on
+// EnumValueOptions.
+static void SetCustomJsonOption(google::protobuf::EnumValueOptions* options,
+                                absl::string_view json_name) {
+  // Wire format for JsonEnumValueOptions { string string = 1 }:
+  // Field 1 (string, length-delimited): tag = (1 << 3) | 2 = 0x0a.
+  std::string payload;
+  payload.push_back('\x0a');
+  payload.push_back(static_cast<char>(json_name.size()));
+  payload.append(json_name);
+  // Field 998 is extension (pb.enumvalue.json) on EnumValueOptions.
+  options->mutable_unknown_fields()->AddLengthDelimited(998, payload);
+}
+
+struct TestEnumValueSpec {
+  std::string name;
+  int number;
+  std::string json_name;
+};
+
+static absl::StatusOr<upb::DefPool> LoadEnumDescriptorWithValues(
+    absl::Span<const TestEnumValueSpec> values) {
+  google::protobuf::FileDescriptorProto file_proto;
+  file_proto.set_name("test.proto");
+  file_proto.set_syntax("editions");
+  file_proto.set_edition(google::protobuf::EDITION_2026);
+
+  google::protobuf::EnumDescriptorProto* enum_proto = file_proto.add_enum_type();
+  enum_proto->set_name("TestEnum");
+
+  for (const TestEnumValueSpec& v : values) {
+    google::protobuf::EnumValueDescriptorProto* val_proto = enum_proto->add_value();
+    val_proto->set_name(v.name);
+    val_proto->set_number(v.number);
+    if (!v.json_name.empty()) {
+      SetCustomJsonOption(val_proto->mutable_options(), v.json_name);
+    }
+  }
+
+  google::protobuf::FileDescriptorSet set;
+  *set.add_file() = file_proto;
+  return LoadDescriptorSetFromProto(set);
+}
+
+TEST(ReflectionTest, EnumCustomJsonNameConflictDifferentNumberFails) {
+  // Two enum values with DIFFERENT numbers (1 and 2) sharing the same custom
+  // JSON name must fail descriptor validation.
+  absl::Status status =
+      LoadEnumDescriptorWithValues({
+                                       {"VAL_ZERO", 0, ""},
+                                       {"VAL_A", 1, "custom_name"},
+                                       {"VAL_B", 2, "custom_name"},
+                                   })
+          .status();
+  EXPECT_FALSE(status.ok());
+  EXPECT_THAT(std::string(status.message()),
+              HasSubstr("duplicate custom json_name (custom_name) in enum"));
+}
+
+TEST(ReflectionTest, EnumCustomJsonNameAliasedSameNumberSucceeds) {
+  // Two aliased enum values with the SAME number (1 and 1) sharing the same
+  // custom JSON name must succeed descriptor validation.
+  absl::Status status =
+      LoadEnumDescriptorWithValues({
+                                       {"VAL_ZERO", 0, ""},
+                                       {"VAL_A", 1, "custom_name"},
+                                       {"VAL_B", 1, "custom_name"},
+                                   })
+          .status();
+  EXPECT_TRUE(status.ok()) << status.message();
+}
+
 }  // namespace
 }  // namespace upb_test

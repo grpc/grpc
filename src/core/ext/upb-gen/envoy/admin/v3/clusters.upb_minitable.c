@@ -36,10 +36,14 @@ static const envoy__admin__v3__Clusters_msg_init_Fields envoy_admin_v3_Clusters_
 
 const upb_MiniTable envoy__admin__v3__Clusters_msg_init = {
   &envoy_admin_v3_Clusters__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.Clusters",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -71,22 +75,22 @@ const upb_MiniTable envoy__admin__v3__ClusterStatus_msg_init = {
   "envoy.admin.v3.ClusterStatus",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x000900003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00400000000c001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x004800003f0d0022, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x00500000010e002a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x00580000020f0032, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x002000003f00003a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x003000003f000042, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -117,19 +121,27 @@ static const envoy__admin__v3__HostStatus_msg_init_Fields envoy_admin_v3_HostSta
 
 const upb_MiniTable envoy__admin__v3__HostStatus_msg_init = {
   &envoy_admin_v3_HostStatus__fields.fields[0],
-  UPB_SIZE(56, 88), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(56, 88), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.HostStatus",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x00280000000e000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x003000003f0f0012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x003800000110001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0040000002110022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x000c00003f000028, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x001800003f000032, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001000003f000038, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0048000003120042, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x005000000413004a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -155,7 +167,7 @@ const upb_MiniTable envoy__admin__v3__HostHealthStatus_msg_init = {
   "envoy.admin.v3.HostHealthStatus",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000900003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x001000003f000018, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
@@ -164,17 +176,17 @@ const upb_MiniTable envoy__admin__v3__HostHealthStatus_msg_init = {
     {0x000c00003f000030, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000d00003f000038, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000e00003f000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[4] = {
+static const upb_MiniTable *messages_layout_envoy_admin_v3_clusters_proto_upb_file_layout[4] = {
   &envoy__admin__v3__Clusters_msg_init,
   &envoy__admin__v3__ClusterStatus_msg_init,
   &envoy__admin__v3__HostStatus_msg_init,
@@ -182,7 +194,7 @@ static const upb_MiniTable *messages_layout[4] = {
 };
 
 const upb_MiniTableFile envoy_admin_v3_clusters_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_admin_v3_clusters_proto_upb_file_layout,
   NULL,
   NULL,
   4,

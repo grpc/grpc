@@ -15,7 +15,7 @@ extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
 extern _upb_DefPool_Init xds_core_v3_context_params_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[772] = {
+static const char descriptor_xds_core_v3_resource_locator_proto_upbdefinit[772] = {
     '\n', '\"', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v',
     '3', '/', 'r', 'e', 's', 'o', 'u', 'r', 'c', 'e', '_', 'l',
     'o', 'c', 'a', 't', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o',
@@ -83,7 +83,7 @@ static const char descriptor[772] = {
     'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_xds_core_v3_resource_locator_proto_upbdefinit[4] = {
     &xds_annotations_v3_status_proto_upbdefinit,
     &xds_core_v3_context_params_proto_upbdefinit,
     &validate_validate_proto_upbdefinit,
@@ -91,8 +91,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init xds_core_v3_resource_locator_proto_upbdefinit = {
-    deps,
+    deps_xds_core_v3_resource_locator_proto_upbdefinit,
     &xds_core_v3_resource_locator_proto_upb_file_layout,
     "xds/core/v3/resource_locator.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_xds_core_v3_resource_locator_proto_upbdefinit,
+                        sizeof(descriptor_xds_core_v3_resource_locator_proto_upbdefinit)),
 };

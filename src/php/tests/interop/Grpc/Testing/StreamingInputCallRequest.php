@@ -47,7 +47,8 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      *           the request's compression status.
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

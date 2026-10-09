@@ -31,22 +31,24 @@ static const xds__core__v3__TypedExtensionConfig_msg_init_Fields xds_core_v3_Typ
 
 const upb_MiniTable xds__core__v3__TypedExtensionConfig_msg_init = {
   &xds_core_v3_TypedExtensionConfig__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.core.v3.TypedExtensionConfig",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_xds_core_v3_extension_proto_upb_file_layout[1] = {
   &xds__core__v3__TypedExtensionConfig_msg_init,
 };
 
 const upb_MiniTableFile xds_core_v3_extension_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_core_v3_extension_proto_upb_file_layout,
   NULL,
   NULL,
   1,

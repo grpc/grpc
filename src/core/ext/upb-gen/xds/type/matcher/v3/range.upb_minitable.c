@@ -31,10 +31,14 @@ static const xds__type__matcher__v3__Int64RangeMatcher_msg_init_Fields xds_type_
 
 const upb_MiniTable xds__type__matcher__v3__Int64RangeMatcher_msg_init = {
   &xds_type_matcher_v3_Int64RangeMatcher__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Int64RangeMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -53,10 +57,16 @@ static const xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init_Fi
 
 const upb_MiniTable xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init = {
   &xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Int64RangeMatcher.RangeMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0018000000040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -73,10 +83,14 @@ static const xds__type__matcher__v3__Int32RangeMatcher_msg_init_Fields xds_type_
 
 const upb_MiniTable xds__type__matcher__v3__Int32RangeMatcher_msg_init = {
   &xds_type_matcher_v3_Int32RangeMatcher__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Int32RangeMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -95,10 +109,16 @@ static const xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init_Fi
 
 const upb_MiniTable xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init = {
   &xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Int32RangeMatcher.RangeMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0018000000040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -115,10 +135,14 @@ static const xds__type__matcher__v3__DoubleRangeMatcher_msg_init_Fields xds_type
 
 const upb_MiniTable xds__type__matcher__v3__DoubleRangeMatcher_msg_init = {
   &xds_type_matcher_v3_DoubleRangeMatcher__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.DoubleRangeMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -137,13 +161,19 @@ static const xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init_F
 
 const upb_MiniTable xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init = {
   &xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.DoubleRangeMatcher.RangeMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000003f03000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0018000000040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
-static const upb_MiniTable *messages_layout[6] = {
+static const upb_MiniTable *messages_layout_xds_type_matcher_v3_range_proto_upb_file_layout[6] = {
   &xds__type__matcher__v3__Int64RangeMatcher_msg_init,
   &xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init,
   &xds__type__matcher__v3__Int32RangeMatcher_msg_init,
@@ -153,7 +183,7 @@ static const upb_MiniTable *messages_layout[6] = {
 };
 
 const upb_MiniTableFile xds_type_matcher_v3_range_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_type_matcher_v3_range_proto_upb_file_layout,
   NULL,
   NULL,
   6,

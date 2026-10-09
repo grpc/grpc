@@ -40,13 +40,19 @@ static const envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init_Fields 
 
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment__fields.fields[0],
-  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.ClusterLoadAssignment",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x002000003f060012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0028000000070022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
@@ -74,14 +80,14 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_m
   "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000003f060012, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+    {0x001800000007001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0020000001080022, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000900003f000030, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -100,13 +106,15 @@ static const envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOve
 
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy.DropOverload",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0020000000030012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -125,17 +133,13 @@ static const envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsE
 
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.ClusterLoadAssignment.NamedEndpointsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-  })
 };
 
-static const upb_MiniTable *messages_layout[4] = {
+static const upb_MiniTable *messages_layout_envoy_config_endpoint_v3_endpoint_proto_upb_file_layout[4] = {
   &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init,
   &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init,
   &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init,
@@ -143,7 +147,7 @@ static const upb_MiniTable *messages_layout[4] = {
 };
 
 const upb_MiniTableFile envoy_config_endpoint_v3_endpoint_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_config_endpoint_v3_endpoint_proto_upb_file_layout,
   NULL,
   NULL,
   4,

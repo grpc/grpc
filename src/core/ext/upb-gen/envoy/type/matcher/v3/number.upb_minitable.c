@@ -38,19 +38,19 @@ const upb_MiniTable envoy__type__matcher__v3__DoubleMatcher_msg_init = {
   "envoy.type.matcher.v3.DoubleMatcher",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080103000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x0010000802000011, &upb_DecodeFast_Fixed64_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_type_matcher_v3_number_proto_upb_file_layout[1] = {
   &envoy__type__matcher__v3__DoubleMatcher_msg_init,
 };
 
 const upb_MiniTableFile envoy_type_matcher_v3_number_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_matcher_v3_number_proto_upb_file_layout,
   NULL,
   NULL,
   1,

@@ -18,7 +18,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[1540] = {
+static const char descriptor_envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit[1540] = {
     '\n', '-', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v',
     '3', '/', 'c', 'i', 'r', 'c', 'u', 'i', 't', '_', 'b', 'r',
@@ -150,7 +150,7 @@ static const char descriptor[1540] = {
     'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[7] = {
+static _upb_DefPool_Init* deps_envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit[7] = {
     &envoy_config_core_v3_base_proto_upbdefinit,
     &envoy_type_v3_percent_proto_upbdefinit,
     &google_protobuf_wrappers_proto_upbdefinit,
@@ -161,8 +161,9 @@ static _upb_DefPool_Init *deps[7] = {
 };
 
 _upb_DefPool_Init envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit,
     &envoy_config_cluster_v3_circuit_breaker_proto_upb_file_layout,
     "envoy/config/cluster/v3/circuit_breaker.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit)),
 };

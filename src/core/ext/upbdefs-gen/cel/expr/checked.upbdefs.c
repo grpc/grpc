@@ -15,7 +15,7 @@ extern _upb_DefPool_Init cel_expr_syntax_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_empty_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
 
-static const char descriptor[2579] = {
+static const char descriptor_cel_expr_checked_proto_upbdefinit[2579] = {
     '\n', '\026', 'c', 'e', 'l', '/', 'e', 'x', 'p', 'r', '/', 'c',
     'h', 'e', 'c', 'k', 'e', 'd', '.', 'p', 'r', 'o', 't', 'o',
     '\022', '\010', 'c', 'e', 'l', '.', 'e', 'x', 'p', 'r', '\032', '\025',
@@ -233,7 +233,7 @@ static const char descriptor[2579] = {
     '\370', '\001', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_cel_expr_checked_proto_upbdefinit[4] = {
     &cel_expr_syntax_proto_upbdefinit,
     &google_protobuf_empty_proto_upbdefinit,
     &google_protobuf_struct_proto_upbdefinit,
@@ -241,8 +241,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init cel_expr_checked_proto_upbdefinit = {
-    deps,
+    deps_cel_expr_checked_proto_upbdefinit,
     &cel_expr_checked_proto_upb_file_layout,
     "cel/expr/checked.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_cel_expr_checked_proto_upbdefinit,
+                        sizeof(descriptor_cel_expr_checked_proto_upbdefinit)),
 };

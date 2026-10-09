@@ -32,10 +32,10 @@ const upb_MiniTable udpa__annotations__FieldSecurityAnnotation_msg_init = {
   "udpa.annotations.FieldSecurityAnnotation",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000900003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -47,17 +47,17 @@ static const upb_MiniTableExtension udpa_annotations_security_ext_obj = {
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension* udpa_annotations_security_ext = &udpa_annotations_security_ext_obj;
-  static const upb_MiniTable *messages_layout[1] = {
+  static const upb_MiniTable *messages_layout_udpa_annotations_security_proto_upb_file_layout[1] = {
   &udpa__annotations__FieldSecurityAnnotation_msg_init,
 };
 
 
-static const upb_MiniTableExtension *extensions_layout[1] = {
+static const upb_MiniTableExtension *extensions_layout_udpa_annotations_security_proto_upb_file_layout[1] = {
   &udpa_annotations_security_ext_obj,
 };
 
 UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension*);
-UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, udpa_annotations_security_proto_ext_constructor) {
+UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, udpa_annotations_security_proto_ext_constructor, {
   static bool finished = false;
   if (finished) return;
   finished = true;
@@ -69,11 +69,11 @@ UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, udpa_annotations_security_pro
   UPB_ASSERT(entry.next == NULL);
   entry.next = UPB_PRIVATE(upb_generated_extension_list);
   UPB_PRIVATE(upb_generated_extension_list) = &entry;
-}
+})
 const upb_MiniTableFile udpa_annotations_security_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_udpa_annotations_security_proto_upb_file_layout,
   NULL,
-  extensions_layout,
+  extensions_layout_udpa_annotations_security_proto_upb_file_layout,
   1,
   0,
   1,

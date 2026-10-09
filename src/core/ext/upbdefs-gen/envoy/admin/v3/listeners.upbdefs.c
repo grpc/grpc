@@ -15,7 +15,7 @@ extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 
-static const char descriptor[650] = {
+static const char descriptor_envoy_admin_v3_listeners_proto_upbdefinit[650] = {
     '\n', '\036', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i',
     'n', '/', 'v', '3', '/', 'l', 'i', 's', 't', 'e', 'n', 'e',
     'r', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\016', 'e', 'n',
@@ -73,7 +73,7 @@ static const char descriptor[650] = {
     'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_envoy_admin_v3_listeners_proto_upbdefinit[4] = {
     &envoy_config_core_v3_address_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
     &udpa_annotations_versioning_proto_upbdefinit,
@@ -81,8 +81,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init envoy_admin_v3_listeners_proto_upbdefinit = {
-    deps,
+    deps_envoy_admin_v3_listeners_proto_upbdefinit,
     &envoy_admin_v3_listeners_proto_upb_file_layout,
     "envoy/admin/v3/listeners.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_admin_v3_listeners_proto_upbdefinit,
+                        sizeof(descriptor_envoy_admin_v3_listeners_proto_upbdefinit)),
 };

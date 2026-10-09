@@ -71,7 +71,8 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      *           If set the server should update this metrics report data at the OOB server.
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

@@ -51,7 +51,8 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      *           client will use the default from the command-line.
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

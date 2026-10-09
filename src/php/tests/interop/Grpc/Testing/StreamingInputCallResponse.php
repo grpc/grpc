@@ -33,7 +33,8 @@ class StreamingInputCallResponse extends \Google\Protobuf\Internal\Message
      *           Aggregated size of payloads received from the client.
      * }
      */
-    public function __construct($data = NULL) {
+    public function __construct($data = null)
+    {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
         parent::__construct($data);
     }

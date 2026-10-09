@@ -30,10 +30,16 @@ static const grpc__gcp__RpcProtocolVersions_msg_init_Fields grpc_gcp_RpcProtocol
 
 const upb_MiniTable grpc__gcp__RpcProtocolVersions_msg_init = {
   &grpc_gcp_RpcProtocolVersions__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.gcp.RpcProtocolVersions",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -52,10 +58,10 @@ const upb_MiniTable grpc__gcp__RpcProtocolVersions__Version_msg_init = {
   "grpc.gcp.RpcProtocolVersions.Version",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
     {0x000c00003f000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -74,7 +80,7 @@ const upb_MiniTable grpc__gcp__TransportProtocolPreferences_msg_init = {
   "grpc.gcp.TransportProtocolPreferences",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Repeated_Tag1Byte},
   })
 };
@@ -94,12 +100,12 @@ const upb_MiniTable grpc__gcp__NegotiatedTransportProtocol_msg_init = {
   "grpc.gcp.NegotiatedTransportProtocol",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[4] = {
+static const upb_MiniTable *messages_layout_grpc_gcp_transport_security_common_proto_upb_file_layout[4] = {
   &grpc__gcp__RpcProtocolVersions_msg_init,
   &grpc__gcp__RpcProtocolVersions__Version_msg_init,
   &grpc__gcp__TransportProtocolPreferences_msg_init,
@@ -107,7 +113,7 @@ static const upb_MiniTable *messages_layout[4] = {
 };
 
 const upb_MiniTableFile grpc_gcp_transport_security_common_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_grpc_gcp_transport_security_common_proto_upb_file_layout,
   NULL,
   NULL,
   4,

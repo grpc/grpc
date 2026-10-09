@@ -22,12 +22,12 @@ const upb_MiniTable google__protobuf__Empty_msg_init = {
 #endif
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_google_protobuf_empty_proto_upb_file_layout[1] = {
   &google__protobuf__Empty_msg_init,
 };
 
 const upb_MiniTableFile google_protobuf_empty_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_google_protobuf_empty_proto_upb_file_layout,
   NULL,
   NULL,
   1,

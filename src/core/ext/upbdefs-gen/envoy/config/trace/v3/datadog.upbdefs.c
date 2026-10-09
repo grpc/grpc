@@ -17,7 +17,7 @@ extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[786] = {
+static const char descriptor_envoy_config_trace_v3_datadog_proto_upbdefinit[786] = {
     '\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', '/',
     'd', 'a', 't', 'a', 'd', 'o', 'g', '.', 'p', 'r', 'o', 't',
@@ -86,7 +86,7 @@ static const char descriptor[786] = {
     'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[6] = {
+static _upb_DefPool_Init* deps_envoy_config_trace_v3_datadog_proto_upbdefinit[6] = {
     &google_protobuf_duration_proto_upbdefinit,
     &udpa_annotations_migrate_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
@@ -96,8 +96,9 @@ static _upb_DefPool_Init *deps[6] = {
 };
 
 _upb_DefPool_Init envoy_config_trace_v3_datadog_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_trace_v3_datadog_proto_upbdefinit,
     &envoy_config_trace_v3_datadog_proto_upb_file_layout,
     "envoy/config/trace/v3/datadog.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_trace_v3_datadog_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_trace_v3_datadog_proto_upbdefinit)),
 };

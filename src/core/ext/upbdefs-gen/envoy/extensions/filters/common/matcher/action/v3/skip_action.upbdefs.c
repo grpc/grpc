@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[367] = {
+static const char descriptor_envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upbdefinit[367] = {
     '\n', 'C', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e',
     'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e',
     'r', 's', '/', 'c', 'o', 'm', 'm', 'o', 'n', '/', 'm', 'a',
@@ -47,14 +47,15 @@ static const char descriptor[367] = {
     '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[2] = {
+static _upb_DefPool_Init* deps_envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upbdefinit[2] = {
     &udpa_annotations_status_proto_upbdefinit,
     NULL,
 };
 
 _upb_DefPool_Init envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upbdefinit = {
-    deps,
+    deps_envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upbdefinit,
     &envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upb_file_layout,
     "envoy/extensions/filters/common/matcher/action/v3/skip_action.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upbdefinit,
+                        sizeof(descriptor_envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upbdefinit)),
 };

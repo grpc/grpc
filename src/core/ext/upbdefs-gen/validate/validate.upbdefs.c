@@ -15,7 +15,7 @@ extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
 extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
 
-static const char descriptor[6319] = {
+static const char descriptor_validate_validate_proto_upbdefinit[6319] = {
     '\n', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v',
     'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't',
     'o', '\022', '\010', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '\032',
@@ -545,7 +545,7 @@ static const char descriptor[6319] = {
     'a', 'l', 'i', 'd', 'a', 't', 'e',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_validate_validate_proto_upbdefinit[4] = {
     &google_protobuf_descriptor_proto_upbdefinit,
     &google_protobuf_duration_proto_upbdefinit,
     &google_protobuf_timestamp_proto_upbdefinit,
@@ -553,8 +553,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init validate_validate_proto_upbdefinit = {
-    deps,
+    deps_validate_validate_proto_upbdefinit,
     &validate_validate_proto_upb_file_layout,
     "validate/validate.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_validate_validate_proto_upbdefinit,
+                        sizeof(descriptor_validate_validate_proto_upbdefinit)),
 };

@@ -48,7 +48,7 @@ const upb_MiniTableExtension* envoy_annotations_disallowed_by_default_enum_ext =
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension* envoy_annotations_deprecated_at_minor_version_enum_ext = &envoy_annotations_deprecated_at_minor_version_enum_ext_obj;
   
-static const upb_MiniTableExtension *extensions_layout[4] = {
+static const upb_MiniTableExtension *extensions_layout_envoy_annotations_deprecation_proto_upb_file_layout[4] = {
   &envoy_annotations_disallowed_by_default_ext_obj,
   &envoy_annotations_deprecated_at_minor_version_ext_obj,
   &envoy_annotations_disallowed_by_default_enum_ext_obj,
@@ -56,7 +56,7 @@ static const upb_MiniTableExtension *extensions_layout[4] = {
 };
 
 UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension*);
-UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, envoy_annotations_deprecation_proto_ext_constructor) {
+UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, envoy_annotations_deprecation_proto_ext_constructor, {
   static bool finished = false;
   if (finished) return;
   finished = true;
@@ -68,11 +68,11 @@ UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, envoy_annotations_deprecation
   UPB_ASSERT(entry.next == NULL);
   entry.next = UPB_PRIVATE(upb_generated_extension_list);
   UPB_PRIVATE(upb_generated_extension_list) = &entry;
-}
+})
 const upb_MiniTableFile envoy_annotations_deprecation_proto_upb_file_layout = {
   NULL,
   NULL,
-  extensions_layout,
+  extensions_layout_envoy_annotations_deprecation_proto_upb_file_layout,
   0,
   0,
   4,

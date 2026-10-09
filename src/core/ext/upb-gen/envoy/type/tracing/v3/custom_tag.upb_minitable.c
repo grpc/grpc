@@ -45,14 +45,14 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag_msg_init = {
   "envoy.type.tracing.v3.CustomTag",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0020000802090012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00200008030a001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00200008040b0022, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00200008050c002a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x0020000806000032, &upb_DecodeFast_String_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -71,7 +71,7 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Literal_msg_init = {
   "envoy.type.tracing.v3.CustomTag.Literal",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
@@ -92,10 +92,10 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Environment_msg_init = 
   "envoy.type.tracing.v3.CustomTag.Environment",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -115,10 +115,10 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Header_msg_init = {
   "envoy.type.tracing.v3.CustomTag.Header",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -144,14 +144,14 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Metadata_msg_init = {
   "envoy.type.tracing.v3.CustomTag.Metadata",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x002000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0028000001060012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
     {0x001000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-static const upb_MiniTable *messages_layout[5] = {
+static const upb_MiniTable *messages_layout_envoy_type_tracing_v3_custom_tag_proto_upb_file_layout[5] = {
   &envoy__type__tracing__v3__CustomTag_msg_init,
   &envoy__type__tracing__v3__CustomTag__Literal_msg_init,
   &envoy__type__tracing__v3__CustomTag__Environment_msg_init,
@@ -160,7 +160,7 @@ static const upb_MiniTable *messages_layout[5] = {
 };
 
 const upb_MiniTableFile envoy_type_tracing_v3_custom_tag_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_type_tracing_v3_custom_tag_proto_upb_file_layout,
   NULL,
   NULL,
   5,

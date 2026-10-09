@@ -15,7 +15,7 @@ extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 
-static const char descriptor[436] = {
+static const char descriptor_envoy_config_listener_v3_api_listener_proto_upbdefinit[436] = {
     '\n', '+', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f',
     'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/',
     'v', '3', '/', 'a', 'p', 'i', '_', 'l', 'i', 's', 't', 'e',
@@ -55,7 +55,7 @@ static const char descriptor[436] = {
     'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_envoy_config_listener_v3_api_listener_proto_upbdefinit[4] = {
     &google_protobuf_any_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
     &udpa_annotations_versioning_proto_upbdefinit,
@@ -63,8 +63,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init envoy_config_listener_v3_api_listener_proto_upbdefinit = {
-    deps,
+    deps_envoy_config_listener_v3_api_listener_proto_upbdefinit,
     &envoy_config_listener_v3_api_listener_proto_upb_file_layout,
     "envoy/config/listener/v3/api_listener.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_config_listener_v3_api_listener_proto_upbdefinit,
+                        sizeof(descriptor_envoy_config_listener_v3_api_listener_proto_upbdefinit)),
 };

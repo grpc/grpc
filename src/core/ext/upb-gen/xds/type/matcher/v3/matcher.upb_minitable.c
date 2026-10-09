@@ -35,10 +35,16 @@ static const xds__type__matcher__v3__Matcher_msg_init_Fields xds_type_matcher_v3
 
 const upb_MiniTable xds__type__matcher__v3__Matcher_msg_init = {
   &xds_type_matcher_v3_Matcher__fields.fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0018000c0105000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0018000c02060012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000000007001a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -63,9 +69,9 @@ const upb_MiniTable xds__type__matcher__v3__Matcher__OnMatch_msg_init = {
   "xds.type.matcher.v3.Matcher.OnMatch",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0010000c0105000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000c02060012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
     {0x000800003f000018, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
 };
@@ -84,10 +90,14 @@ static const xds__type__matcher__v3__Matcher__MatcherList_msg_init_Fields xds_ty
 
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherList_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherList__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherList",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -110,10 +120,20 @@ static const xds__type__matcher__v3__Matcher__MatcherList__Predicate_msg_init_Fi
 
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherList__Predicate_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherList_Predicate__fields.fields[0],
-  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherList.Predicate",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000080106000a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000802070012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x001000080308001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0010000804090022, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -134,10 +154,16 @@ static const xds__type__matcher__v3__Matcher__MatcherList__Predicate__SinglePred
 
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate__fields.fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherList.Predicate.SinglePredicate",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000005000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000c02060012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0018000c0307001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -154,10 +180,14 @@ static const xds__type__matcher__v3__Matcher__MatcherList__Predicate__PredicateL
 
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherList.Predicate.PredicateList",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
 typedef struct {
@@ -176,10 +206,16 @@ static const xds__type__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init
 
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherList__FieldMatcher_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher__fields.fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherList.FieldMatcher",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000003000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000001040012, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -202,10 +238,20 @@ static const xds__type__matcher__v3__Matcher__MatcherTree_msg_init_Fields xds_ty
 
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherTree_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherTree__fields.fields[0],
-  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherTree",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x001000000006000a, &upb_DecodeFast_Message_Scalar_Tag1Byte},
+    {0x0018000c02070012, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0018000c0308001a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0018000c04090022, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+  })
 };
 
 typedef struct {
@@ -243,17 +289,13 @@ static const xds__type__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_ms
 
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherTree.MatchMap.MapEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-  })
 };
 
-static const upb_MiniTable *messages_layout[10] = {
+static const upb_MiniTable *messages_layout_xds_type_matcher_v3_matcher_proto_upb_file_layout[10] = {
   &xds__type__matcher__v3__Matcher_msg_init,
   &xds__type__matcher__v3__Matcher__OnMatch_msg_init,
   &xds__type__matcher__v3__Matcher__MatcherList_msg_init,
@@ -267,7 +309,7 @@ static const upb_MiniTable *messages_layout[10] = {
 };
 
 const upb_MiniTableFile xds_type_matcher_v3_matcher_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_xds_type_matcher_v3_matcher_proto_upb_file_layout,
   NULL,
   NULL,
   10,

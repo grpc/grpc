@@ -49,14 +49,10 @@ static const google__protobuf__Struct__FieldsEntry_msg_init_Fields google_protob
 
 const upb_MiniTable google__protobuf__Struct__FieldsEntry_msg_init = {
   &google_protobuf_Struct_FieldsEntry__fields.fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.protobuf.Struct.FieldsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
-  })
 };
 
 typedef struct {
@@ -84,14 +80,14 @@ const upb_MiniTable google__protobuf__Value_msg_init = {
   "google.protobuf.Value",
 #endif
   UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
     {0x0010000801000008, &upb_DecodeFast_Varint32_Oneof_Tag1Byte},
     {0x0010000802000011, &upb_DecodeFast_Fixed64_Oneof_Tag1Byte},
     {0x001000080300001a, &upb_DecodeFast_String_Oneof_Tag1Byte},
     {0x0010000804000020, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000080509002a, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x00100008060a0032, &upb_DecodeFast_Message_Oneof_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
   })
 };
 
@@ -109,13 +105,17 @@ static const google__protobuf__ListValue_msg_init_Fields google_protobuf_ListVal
 
 const upb_MiniTable google__protobuf__ListValue_msg_init = {
   &google_protobuf_ListValue__fields.fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.protobuf.ListValue",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeUnknown},
+    {0x000800003f02000a, &upb_DecodeFast_Message_Repeated_Tag1Byte},
+  })
 };
 
-static const upb_MiniTable *messages_layout[4] = {
+static const upb_MiniTable *messages_layout_google_protobuf_struct_proto_upb_file_layout[4] = {
   &google__protobuf__Struct_msg_init,
   &google__protobuf__Struct__FieldsEntry_msg_init,
   &google__protobuf__Value_msg_init,
@@ -123,7 +123,7 @@ static const upb_MiniTable *messages_layout[4] = {
 };
 
 const upb_MiniTableFile google_protobuf_struct_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_google_protobuf_struct_proto_upb_file_layout,
   NULL,
   NULL,
   4,

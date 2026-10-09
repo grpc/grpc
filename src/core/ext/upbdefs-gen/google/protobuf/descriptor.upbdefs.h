@@ -162,6 +162,11 @@ UPB_INLINE const upb_MessageDef *google_protobuf_FeatureSet_VisibilityFeature_ge
   return upb_DefPool_FindMessageByName(s, "google.protobuf.FeatureSet.VisibilityFeature");
 }
 
+UPB_INLINE const upb_MessageDef *google_protobuf_FeatureSet_ProtoLimitsFeature_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_protobuf_descriptor_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.protobuf.FeatureSet.ProtoLimitsFeature");
+}
+
 UPB_INLINE const upb_MessageDef *google_protobuf_FeatureSetDefaults_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &google_protobuf_descriptor_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "google.protobuf.FeatureSetDefaults");

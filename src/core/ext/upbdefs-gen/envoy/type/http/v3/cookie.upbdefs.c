@@ -15,7 +15,7 @@ extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 
-static const char descriptor[555] = {
+static const char descriptor_envoy_type_http_v3_cookie_proto_upbdefinit[555] = {
     '\n', '\037', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e',
     '/', 'h', 't', 't', 'p', '/', 'v', '3', '/', 'c', 'o', 'o',
     'k', 'i', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\022', 'e',
@@ -65,7 +65,7 @@ static const char descriptor[555] = {
     't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[4] = {
+static _upb_DefPool_Init* deps_envoy_type_http_v3_cookie_proto_upbdefinit[4] = {
     &google_protobuf_duration_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
     &validate_validate_proto_upbdefinit,
@@ -73,8 +73,9 @@ static _upb_DefPool_Init *deps[4] = {
 };
 
 _upb_DefPool_Init envoy_type_http_v3_cookie_proto_upbdefinit = {
-    deps,
+    deps_envoy_type_http_v3_cookie_proto_upbdefinit,
     &envoy_type_http_v3_cookie_proto_upb_file_layout,
     "envoy/type/http/v3/cookie.proto",
-    UPB_STRINGVIEW_INIT(descriptor, sizeof(descriptor)),
+    UPB_STRINGVIEW_INIT(descriptor_envoy_type_http_v3_cookie_proto_upbdefinit,
+                        sizeof(descriptor_envoy_type_http_v3_cookie_proto_upbdefinit)),
 };

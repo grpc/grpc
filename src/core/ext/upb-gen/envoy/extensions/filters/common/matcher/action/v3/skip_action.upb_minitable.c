@@ -23,12 +23,12 @@ const upb_MiniTable envoy__extensions__filters__common__matcher__action__v3__Ski
 #endif
 };
 
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTable *messages_layout_envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upb_file_layout[1] = {
   &envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upb_file_layout = {
-  messages_layout,
+  messages_layout_envoy_extensions_filters_common_matcher_action_v3_skip_action_proto_upb_file_layout,
   NULL,
   NULL,
   1,
