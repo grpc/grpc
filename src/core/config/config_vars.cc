@@ -99,6 +99,11 @@ ABSL_FLAG(absl::optional<double>, grpc_experimental_memory_pressure_threshold,
           "greater than the target pressure.");
 ABSL_FLAG(absl::optional<int32_t>, grpc_chaotic_good_metrics_update_interval_ms,
           {}, "Interval in milliseconds for updating metrics in chaotic good.");
+ABSL_FLAG(absl::optional<int32_t>, grpc_event_engine_reserve_threads, {},
+          "EXPERIMENTAL: Number of threads the Posix EventEngine thread pool "
+          "starts up front and keeps alive while idle. Zero or less uses the "
+          "engine default, which scales with the number of CPU cores. Values "
+          "above 16 are reduced to 16 with a warning.");
 
 namespace grpc_core {
 
@@ -115,6 +120,10 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           LoadConfig(FLAGS_grpc_chaotic_good_metrics_update_interval_ms,
                      "GRPC_CHAOTIC_GOOD_METRICS_UPDATE_INTERVAL_MS",
                      overrides.chaotic_good_metrics_update_interval_ms, 100)),
+      event_engine_reserve_threads_(
+          LoadConfig(FLAGS_grpc_event_engine_reserve_threads,
+                     "GRPC_EVENT_ENGINE_RESERVE_THREADS",
+                     overrides.event_engine_reserve_threads, 0)),
       experimental_target_memory_pressure_(
           LoadConfig(FLAGS_grpc_experimental_target_memory_pressure,
                      "GRPC_EXPERIMENTAL_TARGET_MEMORY_PRESSURE",
@@ -202,6 +211,7 @@ std::string ConfigVars::ToString() const {
       ", experimental_memory_pressure_threshold: ",
       ExperimentalMemoryPressureThreshold(),
       ", chaotic_good_metrics_update_interval_ms: ",
-      ChaoticGoodMetricsUpdateIntervalMs());
+      ChaoticGoodMetricsUpdateIntervalMs(),
+      ", event_engine_reserve_threads: ", EventEngineReserveThreads());
 }
 }  // namespace grpc_core

@@ -248,6 +248,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "posix_event_engine_reserve_threads_test",
+    srcs = ["posix_event_engine_reserve_threads_test.cc"],
+    external_deps = ["gtest"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:posix_event_engine",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/test_util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
     external_deps = [
