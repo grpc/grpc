@@ -29,6 +29,11 @@ module(
 # finding switfc.exe on Windows with bazel 7.
 bazel_dep(name = "rules_swift", version = "2.5.0")
 
+########## Version bumps for bazel 9 compatibility
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5", dev_dependency = True)
+bazel_dep(name = "aspect_rules_esbuild", version = "0.26.0", dev_dependency = True)
+########## End of version bumps for bazel 9 compatibility
+
 # -- Abseil library.
 # Pinning version to be consistent with third_party/abseil-cpp
 bazel_dep(name = "abseil-cpp", version = "20260526.0", repo_name = "com_google_absl")
@@ -44,6 +49,14 @@ bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_a
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20260616.0")
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
+single_version_override(
+    module_name = "c-ares",
+    patch_strip = 1,
+    patches = [
+        "//bazel:c-ares/bazel_9_support.patch",
+    ],
+    version = "1.19.1",
+)
 
 # -- CEL (Common Expression Language) C implementation.
 # Pinning version to be consistent with third_party/cel-c.
@@ -62,9 +75,17 @@ bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
-bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
+bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.3", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
+single_version_override(
+    module_name = "opentelemetry-cpp",
+    patch_strip = 1,
+    patches = [
+        "//bazel:opentelemetry-cpp/bazel_9_support.patch",
+    ],
+    version = "1.19.0",
+)
 
 # --- Protobuf related packages.
 bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
@@ -75,7 +96,7 @@ bazel_dep(name = "rules_shell", version = "0.4.0")
 
 # Golang rules.
 #
-# Patch to fix a windows rbe related issue on bazel 8.7.0
+# Patch to fix a windows rbe related issue on bazel 9.2.0
 # See also https://github.com/grpc/grpc/issues/42607.
 bazel_dep(name = "rules_go", version = "0.59.0", repo_name = "io_bazel_rules_go")
 single_version_override(
@@ -108,6 +129,7 @@ archive_override(
     patches = [
         "//bazel/zlib:add_module_dot_bazel.patch",
         "//bazel/zlib:add_custom_build_file.patch",
+        "//bazel/zlib:bazel_9_support.patch",
     ],
     strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
     urls = [
@@ -193,6 +215,7 @@ archive_override(
     patch_strip = 1,
     patches = [
         "//bazel:re2.patch",
+        "//bazel:re2/bazel_9_support.patch",
     ],
     strip_prefix = "re2-2022-04-01",
     urls = [
