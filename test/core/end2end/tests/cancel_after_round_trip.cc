@@ -80,6 +80,9 @@ CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterRoundTrip) {
 
 CORE_END2END_TEST(CoreClientChannelTests,
                   DeadlineAfterRoundTripWithServiceConfig) {
+  grpc_tracer_set_enabled("promise_primitives", false);
+  grpc_tracer_set_enabled("client_channel_call", true);
+  grpc_tracer_set_enabled("call", true);
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -96,6 +99,8 @@ CORE_END2END_TEST(CoreClientChannelTests,
           "}")));
   CancelAfterRoundTrip(*this, std::make_unique<DeadlineCancellationMode>(),
                        Duration::Infinity());
+  grpc_tracer_set_enabled("client_channel_call", false);
+  grpc_tracer_set_enabled("call", false);
 }
 
 }  // namespace
