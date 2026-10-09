@@ -383,6 +383,7 @@ grpc_cc_test(
         "//src/core:slice_buffer",
         "//src/core:status_helper",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:mock_transport_filter",
     ],
 )
 
