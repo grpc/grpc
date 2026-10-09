@@ -252,20 +252,15 @@ TEST_F(V3BridgeTest, ForceDestroyPromiseCancelsV3Call) {
   });
 }
 
-// Records what the v3 interceptor sees on the client-to-server path.
-struct HalfCloseRecorder {
-  std::vector<std::string> events;
-};
-
 // A v3 interceptor run through V3InterceptorToV2Bridge. It forwards the call
 // to the next v2 filter and records each client-to-server message and the
-// client half-close.
+// client half-close into `events`.
 class HalfCloseRecordingInterceptor final
     : public V3InterceptorToV2Bridge<HalfCloseRecordingInterceptor> {
  public:
-  explicit HalfCloseRecordingInterceptor(HalfCloseRecorder* recorder)
+  explicit HalfCloseRecordingInterceptor(std::vector<std::string>* events)
       : V3InterceptorToV2Bridge<HalfCloseRecordingInterceptor>(ChannelArgs()),
-        recorder_(recorder) {}
+        events_(events) {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     CallHandler handler = Consume(std::move(unstarted_call_handler));
@@ -288,21 +283,21 @@ class HalfCloseRecordingInterceptor final
 
  private:
   void ForwardAndRecord(CallHandler handler, CallInitiator initiator) {
-    HalfCloseRecorder* recorder = recorder_;
+    std::vector<std::string>* events = events_;
     handler.SpawnInfallible(
-        "record_client_to_server", [handler, initiator, recorder]() mutable {
+        "record_client_to_server", [handler, initiator, events]() mutable {
           return Seq(ForEach(MessagesFrom(handler),
-                             [initiator, recorder](MessageHandle msg) mutable {
-                               recorder->events.push_back(absl::StrCat(
+                             [initiator, events](MessageHandle msg) mutable {
+                               events->push_back(absl::StrCat(
                                    "msg:", msg->payload()->JoinIntoString()));
                                initiator.SpawnPushMessage(std::move(msg));
                                return Success{};
                              }),
-                     [initiator, recorder](StatusFlag status) mutable {
+                     [initiator, events](StatusFlag status) mutable {
                        // A clean end of the message stream is the client
                        // half-close.
                        if (status.ok()) {
-                         recorder->events.push_back("half_close");
+                         events->push_back("half_close");
                        }
                        initiator.SpawnFinishSends();
                        return Empty{};
@@ -318,7 +313,7 @@ class HalfCloseRecordingInterceptor final
         });
   }
 
-  HalfCloseRecorder* recorder_;
+  std::vector<std::string>* events_;
 };
 
 // An activity that records whether it has been woken, so a test can poll a
@@ -425,11 +420,6 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
     });
   }
 
-  // Client half-close from the previous v2 filter.
-  void HalfClose() {
-    RunInActivity([this]() { pipes_->client_to_server.sender.Close(); });
-  }
-
   // Polls the v2 side and ticks the event engine until neither has work left.
   void Drain() {
     for (int i = 0; i < 1000; ++i) {
@@ -468,10 +458,10 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
               grpc_event_engine::experimental::FuzzingEventEngine::Options(),
               fuzzing_event_engine::Actions());
   ExecCtx exec_ctx_;
-  HalfCloseRecorder recorder_;
+  std::vector<std::string> events_;
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   RefCountedPtr<HalfCloseRecordingInterceptor> interceptor_ =
-      MakeRefCounted<HalfCloseRecordingInterceptor>(&recorder_);
+      MakeRefCounted<HalfCloseRecordingInterceptor>(&events_);
   WakeTrackingActivity activity_;
   bool hold_message_ack_ = false;
   std::optional<Pipes> pipes_;
@@ -482,29 +472,27 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
 TEST_F(ClientHalfClosePropagationTest,
        HalfCloseRightAfterMessagePropagatesAfterMessage) {
   SendMessage("hello");
-  HalfClose();
+  RunInActivity([this]() { pipes_->client_to_server.sender.Close(); });
   Drain();
-  EXPECT_THAT(recorder_.events,
-              ::testing::ElementsAre("msg:hello", "half_close"));
+  EXPECT_THAT(events_, ::testing::ElementsAre("msg:hello", "half_close"));
 }
 
 TEST_F(ClientHalfClosePropagationTest, HalfCloseAfterMessagePropagates) {
   SendMessage("msg1");
   Drain();
   // No half-close was sent yet, so v3 must not see one.
-  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("msg:msg1"));
-  HalfClose();
+  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1"));
+  RunInActivity([this]() { pipes_->client_to_server.sender.Close(); });
   Drain();
-  EXPECT_THAT(recorder_.events,
-              ::testing::ElementsAre("msg:msg1", "half_close"));
+  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1", "half_close"));
 }
 
 TEST_F(ClientHalfClosePropagationTest, HalfCloseWithoutAnyMessagePropagates) {
   Drain();
-  EXPECT_THAT(recorder_.events, ::testing::IsEmpty());
-  HalfClose();
+  EXPECT_THAT(events_, ::testing::IsEmpty());
+  RunInActivity([this]() { pipes_->client_to_server.sender.Close(); });
   Drain();
-  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("half_close"));
+  EXPECT_THAT(events_, ::testing::ElementsAre("half_close"));
 }
 
 TEST_F(ClientHalfClosePropagationTest,
@@ -512,17 +500,16 @@ TEST_F(ClientHalfClosePropagationTest,
   hold_message_ack_ = true;
   SendMessage("msg1");
   Drain();
-  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("msg:msg1"));
+  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1"));
   // Half-close while the next filter still holds the ack for msg1. The v3
   // interceptor must not observe the half-close yet.
-  HalfClose();
+  RunInActivity([this]() { pipes_->client_to_server.sender.Close(); });
   Drain();
-  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("msg:msg1"));
+  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1"));
   // Now ack msg1.
   hold_message_ack_ = false;
   Drain();
-  EXPECT_THAT(recorder_.events,
-              ::testing::ElementsAre("msg:msg1", "half_close"));
+  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1", "half_close"));
 }
 
 }  // namespace
