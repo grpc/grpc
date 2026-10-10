@@ -462,6 +462,8 @@ def server_credentials_local(grpc_local_connect_type local_connect_type):
   return credentials
 
 def xds_server_credentials(ServerCredentials fallback_credentials):
+  if fallback_credentials is None or fallback_credentials.c_credentials == NULL:
+    raise ValueError("Fallback credentials may not be None.")
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.c_credentials = grpc_xds_server_credentials_create(fallback_credentials.c_credentials)
   # NOTE: We do not need to call grpc_server_credentials_release on the
@@ -509,6 +511,8 @@ cdef class ComputeEngineChannelCredentials(ChannelCredentials):
   cdef grpc_call_credentials* _call_creds
 
   def __cinit__(self, CallCredentials call_creds):
+    if call_creds is None:
+      raise ValueError("Call credentials may not be None.")
     self._c_creds = NULL
     self._call_creds = call_creds.c()
     if self._call_creds == NULL:
