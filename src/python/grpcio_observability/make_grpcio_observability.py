@@ -130,14 +130,6 @@ GRPC_PYTHON_OBSERVABILITY_LIB_DEPS = os.path.join(
     "observability_lib_deps.py",
 )
 
-# the script to run for getting dependencies
-BAZEL_DEPS = os.path.join(
-    GRPC_ROOT, "tools", "distrib", "python", "bazel_deps.sh"
-)
-
-# Run bazel directly on Windows instead of using the shell wrapper.
-BAZEL_QUERY_FALLBACK_CMD = ["bazel", "query"]
-
 # the bazel target to scrape to get list of sources for the build
 BAZEL_DEPS_QUERIES = [
     "//src/core:experiments",
@@ -164,13 +156,14 @@ def _bazel_query(query):
     effective_query = _source_file_query(query)
     print('Running "bazel query %s"' % effective_query)
     if sys.platform == "win32":
-        # On Windows, invoking a .sh wrapper through bash can fail when bash is
-        # provided by WSL and receives a Windows path. Use bazel directly.
-        output = subprocess.check_output(
-            BAZEL_QUERY_FALLBACK_CMD + [effective_query]
+        bazel = (
+            shutil.which("bazel") or shutil.which("bazelisk") or "bazel"
         )
     else:
-        output = subprocess.check_output([BAZEL_DEPS, effective_query])
+        bazel = os.path.join(GRPC_ROOT, "tools", "bazel")
+    output = subprocess.check_output(
+        [bazel, "query", effective_query], cwd=GRPC_ROOT
+    )
     return output.decode("ascii").splitlines()
 
 
