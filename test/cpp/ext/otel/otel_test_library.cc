@@ -116,6 +116,15 @@ struct PointTypeVisitor {
       const opentelemetry::sdk::metrics::DropPointData& /*point*/) {
     return "<DropPointData>";
   }
+
+#if OPENTELEMETRY_VERSION_MAJOR > 1 || \
+    (OPENTELEMETRY_VERSION_MAJOR == 1 && OPENTELEMETRY_VERSION_MINOR >= 21)
+  std::string operator()(
+      const opentelemetry::sdk::metrics::Base2ExponentialHistogramPointData&
+      /*point*/) {
+    return "<Base2ExponentialHistogramPointData>";
+  }
+#endif
 };
 
 std::string ToString(const opentelemetry::sdk::metrics::PointType& point_type) {
