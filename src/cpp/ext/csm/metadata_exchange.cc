@@ -29,19 +29,20 @@
 #include <unordered_map>
 #include <variant>
 
-#include "opentelemetry/sdk/resource/semantic_conventions.h"
+#include "opentelemetry/semconv/incubating/cloud_attributes.h"
+#include "opentelemetry/semconv/incubating/k8s_attributes.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
-#include "upb/base/string_view.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "upb/base/string_view.h"
 
 namespace grpc {
 namespace internal {
@@ -261,24 +262,22 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   auto* metadata = google_protobuf_Struct_new(arena.ptr());
   // Assume kubernetes for now
   absl::string_view type_value = GetStringValueFromAttributeMap(
-      map, opentelemetry::sdk::resource::SemanticConventions::kCloudPlatform);
+      map, opentelemetry::semconv::cloud::kCloudPlatform);
   std::string workload_name_value =
       grpc_core::GetEnv("CSM_WORKLOAD_NAME").value_or("unknown");
   absl::string_view namespace_value = GetStringValueFromAttributeMap(
-      map,
-      opentelemetry::sdk::resource::SemanticConventions::kK8sNamespaceName);
+      map, opentelemetry::semconv::k8s::kK8sNamespaceName);
   absl::string_view cluster_name_value = GetStringValueFromAttributeMap(
-      map, opentelemetry::sdk::resource::SemanticConventions::kK8sClusterName);
+      map, opentelemetry::semconv::k8s::kK8sClusterName);
   absl::string_view location_value = GetStringValueFromAttributeMap(
-      map, opentelemetry::sdk::resource::SemanticConventions::
-               kCloudAvailabilityZone);  // if zonal
+      map,
+      opentelemetry::semconv::cloud::kCloudAvailabilityZone);  // if zonal
   if (location_value == "unknown") {
     location_value = GetStringValueFromAttributeMap(
-        map, opentelemetry::sdk::resource::SemanticConventions::
-                 kCloudRegion);  // if regional
+        map, opentelemetry::semconv::cloud::kCloudRegion);  // if regional
   }
   absl::string_view project_id_value = GetStringValueFromAttributeMap(
-      map, opentelemetry::sdk::resource::SemanticConventions::kCloudAccountId);
+      map, opentelemetry::semconv::cloud::kCloudAccountId);
   std::string canonical_service_value =
       grpc_core::GetEnv("CSM_CANONICAL_SERVICE_NAME").value_or("unknown");
   // Create metadata to be sent over wire.

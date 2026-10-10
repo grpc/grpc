@@ -99,7 +99,9 @@ EXTERNAL_DEPS = {
     "absl/utility/utility.h": "absl/utility",
     "benchmark/benchmark.h": "benchmark",
     "address_sorting/address_sorting.h": "address_sorting",
-    "google/cloud/opentelemetry/resource_detector.h": "google_cloud_cpp:opentelemetry",
+    "google/cloud/opentelemetry/resource_detector.h": (
+        "google_cloud_cpp:opentelemetry"
+    ),
     "opentelemetry/common/attribute_value.h": "otel/api",
     "opentelemetry/common/key_value_iterable.h": "otel/api",
     "opentelemetry/nostd/function_ref.h": "otel/api",
@@ -115,7 +117,8 @@ EXTERNAL_DEPS = {
     "opentelemetry/sdk/common/attribute_utils.h": "otel/sdk:headers",
     "opentelemetry/sdk/resource/resource.h": "otel/sdk:headers",
     "opentelemetry/sdk/resource/resource_detector.h": "otel/sdk:headers",
-    "opentelemetry/sdk/resource/semantic_conventions.h": "otel/sdk:headers",
+    "opentelemetry/semconv/incubating/cloud_attributes.h": "otel/api",
+    "opentelemetry/semconv/incubating/k8s_attributes.h": "otel/api",
     "ares.h": "cares",
     "fuzztest/fuzztest.h": ["fuzztest", "fuzztest_main"],
     "google/api/monitored_resource.pb.h": (
