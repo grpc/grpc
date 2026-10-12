@@ -4049,6 +4049,194 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
+// While draining, the ext_proc server needs flow control window to echo
+// messages back, but the filter has stopped reading from the data plane, so
+// there is nothing to piggyback a window update on. The filter must keep
+// sending standalone window updates even when both directions are draining.
+TEST_P(XdsExtProcEnd2endTest,
+       ExtProcFlowControlWindowReturnedWhileBothDirectionsDraining) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetRequestBodyMode(true)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseBodyMode(true)
+                             .SetResponseTrailerMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  // The message exceeds the window update threshold, so returning its window
+  // triggers a standalone update.
+  const std::string large_message(kExtProcWindowUpdateThreshold + 1000, 'x');
+  EchoRequest request;
+  request.set_message(large_message);
+  stream.StartWrite(request);
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto body_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(body_req,
+              ::testing::Optional(MatchesRequestBody(
+                  EchoRequestMessageIs(large_message), !kEndOfStream)));
+  const int64_t large_body_size =
+      static_cast<int64_t>(body_req->request_body().body().size());
+  // Start draining both directions before echoing the message back.
+  ext_proc_stream->SendResponse(SetRequestDrains(ProcessingResponse(),
+                                                 /*drain_requests=*/true,
+                                                 /*drain_responses=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  // Echo the message back. Once it has been pushed upstream, the filter must
+  // return its window in a standalone update.
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      body_req->request_body().body(), !kEndOfStream));
+  auto update_req = ext_proc_stream->GetNextRequest();
+  ASSERT_TRUE(update_req.has_value());
+  EXPECT_FALSE(update_req->has_request_body());
+  ASSERT_TRUE(update_req->has_client_window_update());
+  EXPECT_EQ(update_req->client_window_update()
+                .window_increment_sidestream_to_upstream(),
+            large_body_size);
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(large_message)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+// Per gRFC A93, the ext_proc server echoes back only the messages it receives
+// before drain_complete. A client message that is blocked on flow control when
+// a request drain starts must therefore not be sent to the ext_proc server
+// after drain_complete; instead, it is forwarded upstream once the drain
+// completes.
+TEST_P(XdsExtProcEnd2endTest,
+       DrainRequestsWhileClientMessageBlockedOnFlowControl) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(false)
+                             .SetRequestBodyMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  // Exhaust the downstream_to_sidestream window with a message larger than
+  // the initial window.
+  const std::string large_message(kExtProcInitialWindowSize + 1000, 'x');
+  EchoRequest request;
+  request.set_message(large_message);
+  stream.StartWrite(request);
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto body_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(body_req,
+              ::testing::Optional(MatchesRequestBody(
+                  EchoRequestMessageIs(large_message), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+      body_req->request_body().body(), !kEndOfStream));
+  // The echoed message exceeds the update threshold, so the filter returns
+  // the window for it in a standalone update.
+  auto update_req = ext_proc_stream->GetNextRequest();
+  ASSERT_TRUE(update_req.has_value());
+  ASSERT_TRUE(update_req->has_client_window_update());
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(large_message)));
+  // The window is now negative, so the next message is blocked.
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_FALSE(ext_proc_stream->GetNextRequest(absl::Seconds(1)).has_value());
+  // Start a request drain. The filter sends drain_complete, and the blocked
+  // message must not follow it.
+  ext_proc_stream->SendResponse(SetRequestDrains(ProcessingResponse(),
+                                                 /*drain_requests=*/true,
+                                                 /*drain_responses=*/false));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  EXPECT_FALSE(ext_proc_stream->GetNextRequest(absl::Seconds(1)).has_value());
+  // Once the drain completes, the blocked message proceeds upstream.
+  ext_proc_stream->SendResponse(MakeRequestBodyDrainCompleteResponse());
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
+// Same as above, but for a server message blocked on flow control when a
+// response drain starts.
+TEST_P(XdsExtProcEnd2endTest,
+       DrainResponsesWhileServerMessageBlockedOnFlowControl) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  // Exhaust the upstream_to_sidestream window with a message larger than the
+  // initial window.
+  const std::string large_message(kExtProcInitialWindowSize + 1000, 'x');
+  EchoRequest request;
+  request.set_message(large_message);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  // Server messages are pulled from the transport only once the client
+  // application posts a read.
+  stream.StartReadMessage();
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto body_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(body_req,
+              ::testing::Optional(MatchesResponseBody(
+                  EchoResponseMessageIs(large_message), !kEndOfStream)));
+  ext_proc_stream->SendResponse(
+      MakeResponseBodyMutationResponse(body_req->response_body().body()));
+  // The echoed message exceeds the update threshold, so the filter returns
+  // the window for it in a standalone update.
+  auto update_req = ext_proc_stream->GetNextRequest();
+  ASSERT_TRUE(update_req.has_value());
+  ASSERT_TRUE(update_req->has_client_window_update());
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(large_message)));
+  // The window is now negative, so the next server message is blocked.
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  EXPECT_FALSE(ext_proc_stream->GetNextRequest(absl::Seconds(1)).has_value());
+  // Start a response drain. The filter sends drain_complete, and the blocked
+  // message must not follow it.
+  ext_proc_stream->SendResponse(SetRequestDrains(ProcessingResponse(),
+                                                 /*drain_requests=*/false,
+                                                 /*drain_responses=*/true));
+  auto drain_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
+  EXPECT_FALSE(ext_proc_stream->GetNextRequest(absl::Seconds(1)).has_value());
+  // Once the drain completes, the blocked message proceeds downstream.
+  ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  // Trailers are not sent to the ext_proc server after a response drain.
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
 // Per gRFC A93, the filter must not return flow control window to the
 // ext_proc server for a client message received on the side-stream until that
 // message has passed flow control upstream.
