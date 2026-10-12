@@ -5984,8 +5984,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/event_engine/mock_event_engine.h
+  headers: []
   src:
   - test/cpp/common/alarm_test.cc
   deps:
