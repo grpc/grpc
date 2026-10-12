@@ -891,9 +891,10 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
     // won't have flow control feedback here in a pure v3 stack, so we need to
     // fix it before we finish the v3 migration.
     // Per gRFC A93, the window for this message is returned to the ext_proc
-    // server only once the message has passed flow control upstream. The push
-    // completes on initiator_'s party, so hop back to handler_'s party to
-    // update the window state.
+    // server only once the message has passed flow control upstream. The
+    // on_done callback runs on initiator_'s party, but the window state is
+    // synchronized by handler_'s party, so we must hop back to handler_'s
+    // party before touching it.
     initiator_.SpawnPushMessage(
         std::move(new_msg),
         [self = WeakRef(), handler = handler_, message_size](bool ok) mutable {
@@ -901,7 +902,9 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
           handler.SpawnInfallible(
               "ext_proc_return_sidestream_to_upstream_window",
               [self = std::move(self), message_size]() {
-                self->pending_increment_sidestream_to_upstream_ += message_size;
+                self->pending_increment_sidestream_to_upstream_ = SaturatingAdd(
+                    self->pending_increment_sidestream_to_upstream_,
+                    message_size);
                 self->MaybeSendStandaloneWindowUpdate();
               });
         });
@@ -1042,7 +1045,8 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
   handler_.SpawnPushMessage(
       std::move(new_msg), [self = WeakRef(), message_size](bool ok) {
         if (!ok) return;
-        self->pending_increment_sidestream_to_downstream_ += message_size;
+        self->pending_increment_sidestream_to_downstream_ = SaturatingAdd(
+            self->pending_increment_sidestream_to_downstream_, message_size);
         self->MaybeSendStandaloneWindowUpdate();
       });
   return Success{};
@@ -1242,8 +1246,6 @@ bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
     return true;
   }
   side_stream_closed_latch_.Set();
-  ext_proc_send_state_ = SideStreamSendState::kSendFailed;
-  ext_proc_send_waiter_.Wake();
   downstream_to_sidestream_waker_.Wakeup();
   upstream_to_sidestream_waker_.Wakeup();
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -1486,7 +1488,8 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
                       GetContext<Activity>()->MakeNonOwningWaker();
                   return Pending{};
                 }
-                self->downstream_to_sidestream_window_ -= message_size;
+                self->downstream_to_sidestream_window_ = SaturatingAdd(
+                    self->downstream_to_sidestream_window_, -message_size);
                 if (self->downstream_to_sidestream_window_ <= 0) {
                   self->MaybeSendStandaloneWindowUpdate();
                 }
@@ -1860,7 +1863,8 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
                       GetContext<Activity>()->MakeNonOwningWaker();
                   return Pending{};
                 }
-                self->upstream_to_sidestream_window_ -= message_size;
+                self->upstream_to_sidestream_window_ = SaturatingAdd(
+                    self->upstream_to_sidestream_window_, -message_size);
                 if (self->upstream_to_sidestream_window_ <= 0) {
                   self->MaybeSendStandaloneWindowUpdate();
                 }
