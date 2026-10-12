@@ -184,8 +184,9 @@ EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
-        # MSVC defaults to an older C++ standard, so request C++17 explicitly.
+        # MSVC defaults to older C and C++ standards, so request both explicitly.
         EXTRA_ENV_COMPILE_ARGS += " /std:c++17"
+        EXTRA_ENV_COMPILE_ARGS += " /std:c11"
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
