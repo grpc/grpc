@@ -34,7 +34,6 @@ namespace grpc_core {
 class GPR_DLL ConfigVars {
  public:
   struct Overrides {
-    absl::optional<int32_t> client_channel_backup_poll_interval_ms;
     absl::optional<int32_t> channelz_max_orphaned_nodes;
     absl::optional<int32_t> chaotic_good_metrics_update_interval_ms;
     absl::optional<double> experimental_target_memory_pressure;
@@ -70,14 +69,6 @@ class GPR_DLL ConfigVars {
   // A comma separated list of currently active experiments. Experiments may be
   // prefixed with a '-' to disable them.
   absl::string_view Experiments() const { return experiments_; }
-  // Declares the interval in ms between two backup polls on client channels.
-  // These polls are run in the timer thread so that gRPC can process connection
-  // failures while there is no active polling thread. They help reconnect
-  // disconnected client channels (mostly due to idleness), so that the next RPC
-  // on this channel won't fail. Set to 0 to turn off the backup polls.
-  int32_t ClientChannelBackupPollIntervalMs() const {
-    return client_channel_backup_poll_interval_ms_;
-  }
   // Declares which DNS resolver to use. The default is ares if gRPC is built
   // with c-ares support. Otherwise, the value of this environment variable is
   // ignored.
@@ -143,7 +134,6 @@ class GPR_DLL ConfigVars {
   explicit ConfigVars(const Overrides& overrides);
   static const ConfigVars& Load();
   static std::atomic<ConfigVars*> config_vars_;
-  int32_t client_channel_backup_poll_interval_ms_;
   int32_t channelz_max_orphaned_nodes_;
   int32_t chaotic_good_metrics_update_interval_ms_;
   double experimental_target_memory_pressure_;

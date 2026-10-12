@@ -41,7 +41,6 @@
 #include <string>
 #include <thread>
 
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -2398,11 +2397,6 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                               bool test_callback_server) {
   std::vector<TestScenario> scenarios;
   std::vector<std::string> credentials_types;
-
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms =
-      kClientChannelBackupPollIntervalMs;
-  grpc_core::ConfigVars::SetOverrides(overrides);
 
   if (test_secure) {
     credentials_types =

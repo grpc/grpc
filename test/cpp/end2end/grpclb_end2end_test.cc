@@ -33,7 +33,6 @@
 #include <string>
 #include <thread>
 
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -504,14 +503,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     bool running_ = false;
   };
 
-  static void SetUpTestSuite() {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    grpc_core::ConfigVars::Overrides overrides;
-    overrides.client_channel_backup_poll_interval_ms = 1;
-    grpc_core::ConfigVars::SetOverrides(overrides);
-    grpc_init();
-  }
+  static void SetUpTestSuite() { grpc_init(); }
 
   static void TearDownTestSuite() { grpc_shutdown(); }
 

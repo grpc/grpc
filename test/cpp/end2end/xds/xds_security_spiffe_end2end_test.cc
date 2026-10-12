@@ -446,7 +446,6 @@ int main(int argc, char** argv) {
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
   grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms = 1;
   overrides.trace =
       "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
       "handshaker";

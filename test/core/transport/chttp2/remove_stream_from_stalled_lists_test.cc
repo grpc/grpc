@@ -356,7 +356,6 @@ int main(int argc, char** argv) {
   // are capable of sending settings frames with window updates etc., even in
   // the case that we don't have an active RPC operation on the fd.
   grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =
       new TransportTargetWindowEstimatesMocker();

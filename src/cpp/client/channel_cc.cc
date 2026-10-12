@@ -61,12 +61,7 @@ Channel::~Channel() {
   grpc_channel_destroy(c_channel_);
   CompletionQueue* callback_cq = callback_cq_.load(std::memory_order_relaxed);
   if (callback_cq != nullptr) {
-    if (grpc_iomgr_run_in_background()) {
-      // gRPC-core provides the backing needed for the preferred CQ type
-      callback_cq->Shutdown();
-    } else {
-      CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
-    }
+    callback_cq->Shutdown();
   }
 }
 
@@ -279,20 +274,15 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   grpc::internal::MutexLock l(mu_);
   callback_cq = callback_cq_.load(std::memory_order_relaxed);
   if (callback_cq == nullptr) {
-    if (grpc_iomgr_run_in_background()) {
-      // gRPC-core provides the backing needed for the preferred CQ type
+    // gRPC-core provides the backing needed for the preferred CQ type
 
-      auto* shutdown_callback = new ShutdownCallback;
-      callback_cq = new grpc::CompletionQueue(grpc_completion_queue_attributes{
-          GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
-          shutdown_callback});
+    auto* shutdown_callback = new ShutdownCallback;
+    callback_cq = new grpc::CompletionQueue(grpc_completion_queue_attributes{
+        GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
+        shutdown_callback});
 
-      // Transfer ownership of the new cq to its own shutdown callback
-      shutdown_callback->TakeCQ(callback_cq);
-    } else {
-      // Otherwise we need to use the alternative CQ variant
-      callback_cq = CompletionQueue::CallbackAlternativeCQ();
-    }
+    // Transfer ownership of the new cq to its own shutdown callback
+    shutdown_callback->TakeCQ(callback_cq);
     callback_cq_.store(callback_cq, std::memory_order_release);
   }
   return callback_cq;

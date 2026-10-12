@@ -1008,11 +1008,6 @@ bool InteropClient::DoOrcaOob() {
   static constexpr auto kTimeout = absl::Seconds(10);
   LOG(INFO) << "testing orca oob";
   load_report_tracker_.ResetCollectedLoadReports();
-  // Make the backup poller poll very frequently in order to pick up
-  // updates from all the subchannels's FDs.
-  grpc_core::ConfigVars::Overrides overrides;
-  overrides.client_channel_backup_poll_interval_ms = 250;
-  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
       RegisterBackendMetricsLbPolicy);
   ClientContext context;

@@ -4151,32 +4151,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "client_channel_backup_poller",
-    srcs = [
-        "client_channel/backup_poller.cc",
-    ],
-    hdrs = [
-        "client_channel/backup_poller.h",
-    ],
-    external_deps = [
-        "absl/log",
-        "absl/status",
-    ],
-    deps = [
-        "closure",
-        "error",
-        "iomgr_fwd",
-        "pollset_set",
-        "time",
-        "//:config_vars",
-        "//:gpr",
-        "//:gpr_platform",
-        "//:iomgr",
-        "//:iomgr_timer",
-    ],
-)
-
-grpc_cc_library(
     name = "service_config_channel_arg_filter",
     srcs = [
         "service_config/service_config_channel_arg_filter.cc",

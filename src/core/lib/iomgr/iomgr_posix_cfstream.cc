@@ -179,23 +179,4 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
 }
 
-bool grpc_iomgr_run_in_background() {
-  if (grpc_core::IsEventEngineCallbackCqEnabled()) {
-    return true;
-  }
-  char* enable_cfstream_str = getenv(grpc_cfstream_env_var);
-  bool enable_cfstream =
-      enable_cfstream_str == nullptr || enable_cfstream_str[0] != '0';
-  char* enable_cfstream_run_loop_str = getenv(grpc_cfstream_run_loop_env_var);
-  // CFStream run-loop is disabled by default. The user has to enable it
-  // explicitly with environment variable.
-  bool enable_cfstream_run_loop = enable_cfstream_run_loop_str != nullptr &&
-                                  enable_cfstream_run_loop_str[0] == '1';
-  if (enable_cfstream && enable_cfstream_run_loop) {
-    return false;
-  } else {
-    return grpc_event_engine_run_in_background();
-  }
-}
-
 #endif  // GRPC_CFSTREAM_IOMGR

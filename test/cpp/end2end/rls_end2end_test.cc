@@ -37,7 +37,6 @@
 #include <optional>
 #include <thread>
 
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -170,9 +169,6 @@ class FakeResolverResponseGeneratorWrapper {
 class RlsEnd2endTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    grpc_core::ConfigVars::Overrides overrides;
-    overrides.client_channel_backup_poll_interval_ms = 1;
-    grpc_core::ConfigVars::SetOverrides(overrides);
     grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         grpc_core::RegisterFixedAddressLoadBalancingPolicy);
     grpc_init();

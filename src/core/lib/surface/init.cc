@@ -27,7 +27,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/filter/auth/auth_filters.h"
@@ -102,7 +101,6 @@ static void do_basic_init(void) {
   grpc_core::Fork::GlobalInit();
   grpc_fork_handlers_auto_register();
   grpc_tracer_init();
-  grpc_client_channel_global_init_backup_polling();
   // Pre-warm Abseil random entropy pool while file descriptors are available,
   // preventing late-runtime SeedGenException crashes under FD exhaustion.
   (void)absl::InsecureBitGen()();

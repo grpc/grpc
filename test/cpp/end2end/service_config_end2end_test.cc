@@ -37,7 +37,6 @@
 #include <string>
 #include <thread>
 
-#include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -119,14 +118,6 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       : server_host_("localhost"),
         kRequestMessage_("Live long and prosper."),
         creds_(std::make_shared<FakeTransportSecurityChannelCredentials>()) {}
-
-  static void SetUpTestSuite() {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    grpc_core::ConfigVars::Overrides overrides;
-    overrides.client_channel_backup_poll_interval_ms = 1;
-    grpc_core::ConfigVars::SetOverrides(overrides);
-  }
 
   void SetUp() override {
     grpc_init();
