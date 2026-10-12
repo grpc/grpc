@@ -716,7 +716,6 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
 
 std::optional<ExtProcClientWindowUpdate>
 ExtProcFilter::ExtProcCall::MaybeGetClientWindowUpdate() {
-  if (config().observability_mode) return std::nullopt;
   if (pending_increment_sidestream_to_upstream_ == 0 &&
       pending_increment_sidestream_to_downstream_ == 0) {
     return std::nullopt;
@@ -730,35 +729,26 @@ ExtProcFilter::ExtProcCall::MaybeGetClientWindowUpdate() {
 }
 
 void ExtProcFilter::ExtProcCall::MaybeSendStandaloneWindowUpdate() {
-  if (config().observability_mode || side_stream_closed_latch_.is_set() ||
-      (request_body_drain_state_ != BodyDrainState::kNotDraining &&
-       response_body_drain_state_ != BodyDrainState::kNotDraining) ||
-      ext_proc_send_state_ == SideStreamSendState::kSendFailed) {
+  if (request_body_drain_state_ != BodyDrainState::kNotDraining &&
+      response_body_drain_state_ != BodyDrainState::kNotDraining) {
     return;
   }
-  const bool threshold_reached = pending_increment_sidestream_to_upstream_ >=
-                                     kExtProcWindowUpdateThreshold ||
-                                 pending_increment_sidestream_to_downstream_ >=
-                                     kExtProcWindowUpdateThreshold;
-  const bool window_negative_with_pending =
-      (pending_increment_sidestream_to_upstream_ > 0 ||
-       pending_increment_sidestream_to_downstream_ > 0) &&
-      (downstream_to_sidestream_window_ <= 0 ||
-       upstream_to_sidestream_window_ <= 0);
-  if (!threshold_reached && !window_negative_with_pending) {
+  // Send a standalone update only if a pending increment has reached the
+  // threshold, or if either window is non-positive, since then there may be no
+  // upcoming payload to piggyback the update on.
+  if (pending_increment_sidestream_to_upstream_ <
+          kExtProcWindowUpdateThreshold &&
+      pending_increment_sidestream_to_downstream_ <
+          kExtProcWindowUpdateThreshold &&
+      downstream_to_sidestream_window_ > 0 &&
+      upstream_to_sidestream_window_ > 0) {
     return;
   }
-  ExtProcClientWindowUpdate update;
-  update.window_increment_sidestream_to_upstream =
-      std::exchange(pending_increment_sidestream_to_upstream_, 0);
-  update.window_increment_sidestream_to_downstream =
-      std::exchange(pending_increment_sidestream_to_downstream_, 0);
-  if (update.window_increment_sidestream_to_upstream == 0 &&
-      update.window_increment_sidestream_to_downstream == 0) {
-    return;
-  }
+  std::optional<ExtProcClientWindowUpdate> update =
+      MaybeGetClientWindowUpdate();
+  if (!update.has_value()) return;
   upb::Arena arena;
-  auto payload = CreateExtProcClientWindowUpdateRequest(arena.ptr(), update);
+  auto payload = CreateExtProcClientWindowUpdateRequest(arena.ptr(), *update);
   if (!payload.ok()) {
     HandleSideStreamStatus(payload.status());
     return;
@@ -766,9 +756,9 @@ void ExtProcFilter::ExtProcCall::MaybeSendStandaloneWindowUpdate() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << DebugTag()
       << "Sending standalone ClientWindowUpdate: sidestream_to_upstream="
-      << update.window_increment_sidestream_to_upstream
+      << update->window_increment_sidestream_to_upstream
       << ", sidestream_to_downstream="
-      << update.window_increment_sidestream_to_downstream;
+      << update->window_increment_sidestream_to_downstream;
   handler_.SpawnGuarded("send_client_window_update",
                         [self = WeakRef(), payload = std::move(*payload)]() {
                           return self->SendMessageToSideStream(payload);
