@@ -31,10 +31,11 @@ from typing import (
 )
 
 from grpc._cython import cygrpc as _cygrpc
-from grpc._typing import ChannelArgumentType
+from grpc._typing import ChannelArgumentType, ResponseType
 
 if TYPE_CHECKING:
-    from grpc._channel import _RPCState
+    import grpc
+    from grpc._channel import _RPCState  # pyright: ignore[reportPrivateUsage]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ ClientCallTracerCapsule = TypeVar("ClientCallTracerCapsule")
 ServerCallTracerFactoryCapsule = TypeVar("ServerCallTracerFactoryCapsule")
 
 _plugin_lock: threading.RLock = threading.RLock()
-_OBSERVABILITY_PLUGIN: Optional["ObservabilityPlugin"] = None
+_OBSERVABILITY_PLUGIN: Optional[ObservabilityPlugin[Any, Any]] = None
 _SERVICES_TO_EXCLUDE: List[bytes] = [
     b"google.monitoring.v3.MetricService",
     b"google.devtools.cloudtrace.v2.TraceService",
@@ -56,10 +57,10 @@ class ServerCallTracerFactory:
     grpc.experimental.server_call_tracer_factory option
     """
 
-    def __init__(self, address):
+    def __init__(self, address: int):
         self._address = address
 
-    def __int__(self):
+    def __int__(self) -> int:
         return self._address
 
 
@@ -159,7 +160,11 @@ class ObservabilityPlugin(
 
     @abc.abstractmethod
     def record_rpc_latency(
-        self, method: str, target: str, rpc_latency: float, status_code: Any
+        self,
+        method: str,
+        target: str,
+        rpc_latency: float,
+        status_code: Optional[grpc.StatusCode],
     ) -> None:
         """Record the latency of the RPC.
 
@@ -217,7 +222,7 @@ class ObservabilityPlugin(
 
 
 @contextlib.contextmanager
-def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
+def get_plugin() -> Generator[Optional[ObservabilityPlugin[Any, Any]], None, None]:
     """Get the ObservabilityPlugin in _observability module.
 
     Returns:
@@ -228,7 +233,9 @@ def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
         yield _OBSERVABILITY_PLUGIN
 
 
-def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
+def set_plugin(
+    observability_plugin: Optional[ObservabilityPlugin[Any, Any]],
+) -> None:
     """Save ObservabilityPlugin to _observability module.
 
     Args:
@@ -246,7 +253,9 @@ def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
         _OBSERVABILITY_PLUGIN = observability_plugin
 
 
-def observability_init(observability_plugin: ObservabilityPlugin) -> None:
+def observability_init(
+    observability_plugin: ObservabilityPlugin[Any, Any],
+) -> None:
     """Initialize observability with provided ObservabilityPlugin.
 
     This method have to be called at the start of a program, before any
@@ -273,7 +282,7 @@ def observability_deinit() -> None:
     _cygrpc.clear_server_call_tracer_factory()
 
 
-def maybe_record_rpc_latency(state: "_RPCState") -> None:
+def maybe_record_rpc_latency(state: _RPCState[ResponseType]) -> None:
     """Record the latency of the RPC, if the plugin is registered and stats is enabled.
 
     This method will be called at the end of each RPC.
@@ -282,6 +291,13 @@ def maybe_record_rpc_latency(state: "_RPCState") -> None:
       state: a grpc._channel._RPCState object which contains the stats related to the
     RPC.
     """
+    if (
+        state.method is None
+        or state.target is None
+        or state.rpc_start_time is None
+        or state.rpc_end_time is None
+    ):
+        return
     # TODO(xuanwn): use channel args to exclude those metrics.
     for exclude_prefix in _SERVICES_TO_EXCLUDE:
         if exclude_prefix in state.method.encode("utf8"):
