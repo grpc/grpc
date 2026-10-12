@@ -1581,8 +1581,11 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(stream.WaitForWrite());
   EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  // Start the read before letting the RPC finish, so the pending read keeps
+  // the call alive.
+  stream.StartReadMessage();
   stream.StartWritesDone();
-  EXPECT_FALSE(stream.ReadMessage().has_value());
+  EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
@@ -1631,8 +1634,11 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
       common_response->mutable_body_mutation()->mutable_streamed_response();
   streamed_response->set_end_of_stream(true);
   streamed_response->set_end_of_stream_without_message(true);
+  // Start the read before letting the RPC finish, so the pending read keeps
+  // the call alive.
+  stream.StartReadMessage();
   ext_proc_stream->SendResponse(proc_response);
-  EXPECT_FALSE(stream.ReadMessage().has_value());
+  EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
