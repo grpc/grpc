@@ -105,7 +105,7 @@ _TRACING_ATTRIBUTE_CONVERTERS = {
 
 def _convert_tracing_attributes(
     attributes: Mapping[str, Union[str, bytes]],
-) -> Dict[str, Union[str, int, bool]]:
+) -> Dict[str, Union[str, int, bool, bytes]]:
     return {
         key: (
             _TRACING_ATTRIBUTE_CONVERTERS[key](value)
