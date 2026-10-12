@@ -70,6 +70,7 @@ where = ["src/python/grpcio"]
 ]
 
 [tool.pyright]
+stubPath = "private_stubs"
 
 typeCheckingMode = "strict"
 
@@ -81,6 +82,8 @@ reportIncompleteStub = "none"
 reportUnusedClass = "none"
 
 include = [
+    "src/python/grpcio/grpc/_server.py",
+    "src/python/grpcio/grpc/_common.py",
     "src/python/grpcio/grpc/aio"
 ]
 
