@@ -112,6 +112,8 @@
   default: true
 - name: promise_filter_send_cancel_metadata
   default: true
+- name: recv_message_filter_bypass_fix
+  default: true
 - name: return_preexisting_errors
   default: true
 - name: schedule_cancellation_over_write
