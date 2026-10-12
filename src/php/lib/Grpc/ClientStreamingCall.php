@@ -42,9 +42,14 @@ class ClientStreamingCall extends AbstractCall
      * Write a single message to the server. This cannot be called after
      * wait is called.
      *
-     * @param ByteBuffer $data    The data to write
-     * @param array      $options An array of options, possible keys:
-     *                            'flags' => a number (optional)
+     * @param object $data    The message object, whose serializeToString()
+     *                        method returns the serialized message string
+     * @param array  $options An array of options, possible keys:
+     *                        'flags' => an integer (optional)
+     *
+     * @phpstan-param array{flags?: int} $options
+     *
+     * @return void
      */
     public function write($data, array $options = [])
     {
@@ -61,6 +66,14 @@ class ClientStreamingCall extends AbstractCall
      * Wait for the server to respond with data and a status.
      *
      * @return array [response data, status]
+     * @phpstan-return array{
+     *     0: object|null,
+     *     1: \stdClass&object{
+     *         code: int,
+     *         details: string,
+     *         metadata: array<array-key, list<string>>
+     *     }
+     * }
      */
     public function wait()
     {
