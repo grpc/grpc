@@ -26,7 +26,9 @@ grpc_cc_library(
     testonly = True,
     srcs = ["cf_engine_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/status",
+        "absl/strings:str_format",
+        "absl/time",
         "gtest",
     ],
     tags = [
@@ -38,8 +40,15 @@ grpc_cc_library(
         "//test:__subpackages__",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:grpc",
         "//src/core:cf_event_engine",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
         "//test/core/test_util:grpc_test_util",
     ],
     alwayslink = 1,
@@ -50,7 +59,8 @@ grpc_cc_test(
     timeout = "short",
     srcs = ["cf_engine_test.cc"],
     external_deps = [
-        "absl/log:check",
+        "absl/status",
+        "absl/strings:str_format",
         "absl/time",
         "gtest",
     ],
@@ -59,8 +69,15 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:grpc",
         "//src/core:cf_event_engine",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
         "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -37,7 +37,6 @@ common --config=bzlmod
 
 # Bazel 8 needs this
 common --incompatible_disallow_empty_glob=false
-common --incompatible_disallow_struct_provider_syntax=false
 
 # for platform-appropriate cxxopts
 common --enable_platform_specific_config
