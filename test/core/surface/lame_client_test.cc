@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -36,8 +37,11 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/orphanable.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
 class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
@@ -156,6 +160,60 @@ TEST(LameClientTest, MainTest) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_slice_unref(details);
 
+  grpc_shutdown();
+}
+
+// Regression test for https://github.com/grpc/grpc/issues/43598.
+// A connectivity watch whose deadline has already passed must hand a
+// non-positive delay to EventEngine::RunAfter so it takes the immediate fast
+// path instead of becoming a ~1ms timer.
+TEST(LameClientTest, ExpiredWatchDeadlineUsesEventEngineFastPath) {
+  using ::grpc_event_engine::experimental::EventEngine;
+  using ::grpc_event_engine::experimental::MockEventEngine;
+  using ::testing::_;
+  using ::testing::Matcher;
+  using ::testing::NiceMock;
+
+  grpc_init();
+  {
+    auto owned_engine = std::make_shared<NiceMock<MockEventEngine>>();
+    auto* mock_event_engine = owned_engine.get();
+    // The scope must hold the only test-side ref: its destructor waits until
+    // it is the sole owner of the engine.
+    grpc_event_engine::experimental::DefaultEventEngineScope scope(
+        std::move(owned_engine));
+    EventEngine::Duration timer_delay = EventEngine::Duration::max();
+    absl::AnyInvocable<void()> timer_callback;
+    EXPECT_CALL(*mock_event_engine,
+                RunAfter(_, Matcher<absl::AnyInvocable<void()>>(_)))
+        .WillOnce([&](EventEngine::Duration delay,
+                      absl::AnyInvocable<void()> closure) {
+          timer_delay = delay;
+          timer_callback = std::move(closure);
+          return EventEngine::TaskHandle::kInvalid;
+        });
+
+    grpc_channel* chan = grpc_lame_client_channel_create(
+        "lampoon:national", GRPC_STATUS_ABORTED, "lame");
+    ASSERT_TRUE(chan);
+    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel_watch_connectivity_state(
+        chan, GRPC_CHANNEL_TRANSIENT_FAILURE, gpr_now(GPR_CLOCK_REALTIME), cq,
+        grpc_core::CqVerifier::tag(1));
+    EXPECT_NE(timer_callback, nullptr);
+    EXPECT_LE(timer_delay, EventEngine::Duration::zero());
+    if (timer_callback != nullptr) {
+      timer_callback();
+      timer_callback = nullptr;
+      grpc_core::CqVerifier cqv(cq);
+      cqv.Expect(grpc_core::CqVerifier::tag(1), false);
+      cqv.Verify();
+    }
+
+    grpc_channel_destroy(chan);
+    grpc_completion_queue_shutdown(cq);
+    grpc_completion_queue_destroy(cq);
+  }
   grpc_shutdown();
 }
 

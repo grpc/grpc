@@ -160,6 +160,7 @@ grpc_cc_test(
     name = "lame_client_test",
     srcs = ["lame_client_test.cc"],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "gtest",
     ],
@@ -174,9 +175,11 @@ grpc_cc_test(
         "//src/core:channel_fwd",
         "//src/core:closure",
         "//src/core:connectivity_state",
+        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:experiments",
         "//test/core/end2end:cq_verifier",
+        "//test/core/event_engine:mock_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
 )

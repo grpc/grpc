@@ -217,8 +217,15 @@ void grpc_channel_watch_connectivity_state(
       << ", tv_nsec: " << deadline.tv_nsec
       << ", clock_type: " << (int)deadline.clock_type << " }, cq=" << cq
       << ", tag=" << tag << ")";
+  // Check the unrounded deadline: rounding up first would turn an expired
+  // deadline into a ~1ms future timer and miss the EventEngine fast path.
+  const bool already_due =
+      gpr_time_cmp(gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
+                   gpr_now(GPR_CLOCK_MONOTONIC)) <= 0;
   return grpc_core::Channel::FromC(channel)->WatchConnectivityState(
-      last_observed_state, grpc_core::Timestamp::FromTimespecRoundUp(deadline),
+      last_observed_state,
+      already_due ? grpc_core::Timestamp::Now()
+                  : grpc_core::Timestamp::FromTimespecRoundUp(deadline),
       cq, tag);
 }
 
