@@ -93,6 +93,9 @@ struct ExtProcServerWindowUpdate {
 // Default initial window size and update threshold in bytes for ext_proc flow
 // control.
 // TODO(rishesh): It's better if we can make this configurable.
+// TODO(rishesh): Per gRFC A93, consider using ResourceQuota to dynamically
+// size the flow control windows (and the window updates returned to the
+// ext_proc server) based on memory pressure, instead of fixed values.
 inline constexpr int64_t kExtProcInitialWindowSize = 65536;
 inline constexpr int64_t kExtProcWindowUpdateThreshold =
     kExtProcInitialWindowSize / 2;
