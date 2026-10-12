@@ -625,6 +625,11 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   int64_t upstream_to_sidestream_window_ = kExtProcInitialWindowSize;
   int64_t pending_increment_sidestream_to_upstream_ = 0;
   int64_t pending_increment_sidestream_to_downstream_ = 0;
+  // Flow control windows granted to the ext_proc server for sending messages
+  // back to the filter, in bytes, as seen by the filter. Used to detect an
+  // ext_proc server that does not respect flow control.
+  int64_t sidestream_to_upstream_window_ = kExtProcInitialWindowSize;
+  int64_t sidestream_to_downstream_window_ = kExtProcInitialWindowSize;
   Waker downstream_to_sidestream_waker_;
   Waker upstream_to_sidestream_waker_;
 
@@ -782,6 +787,12 @@ ExtProcFilter::ExtProcCall::MaybeGetClientWindowUpdate() {
       std::exchange(pending_increment_sidestream_to_upstream_, 0);
   update.window_increment_sidestream_to_downstream =
       std::exchange(pending_increment_sidestream_to_downstream_, 0);
+  sidestream_to_upstream_window_ =
+      SaturatingAdd(sidestream_to_upstream_window_,
+                    update.window_increment_sidestream_to_upstream);
+  sidestream_to_downstream_window_ =
+      SaturatingAdd(sidestream_to_downstream_window_,
+                    update.window_increment_sidestream_to_downstream);
   return update;
 }
 
@@ -937,6 +948,16 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
       !response.mutation.end_of_stream_without_message) {
     const int64_t message_size =
         static_cast<int64_t>(response.mutation.body.size());
+    // Per gRFC A93, the ext_proc server may send a message only while its
+    // flow control window is positive.
+    if (sidestream_to_upstream_window_ <= 0) {
+      CancelCallWithError(absl::InternalError(
+          "External processor exceeded flow control window for client "
+          "messages"));
+      return Failure{};
+    }
+    sidestream_to_upstream_window_ =
+        SaturatingAdd(sidestream_to_upstream_window_, -message_size);
     auto slice = Slice::FromCopiedString(response.mutation.body);
     auto new_msg = initiator_.arena()->MakePooled<Message>(
         SliceBuffer(std::move(slice)), /*flags=*/0);
@@ -1086,6 +1107,16 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
       static_cast<int64_t>(response.mutation.body.size());
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << DebugTag() << "Processing external processor response for server body";
+  // Per gRFC A93, the ext_proc server may send a message only while its flow
+  // control window is positive.
+  if (sidestream_to_downstream_window_ <= 0) {
+    CancelCallWithError(absl::InternalError(
+        "External processor exceeded flow control window for server "
+        "messages"));
+    return Failure{};
+  }
+  sidestream_to_downstream_window_ =
+      SaturatingAdd(sidestream_to_downstream_window_, -message_size);
   auto slice = Slice::FromCopiedString(response.mutation.body);
   auto new_msg = handler_.arena()->MakePooled<Message>(
       SliceBuffer(std::move(slice)), /*flags=*/0);
