@@ -52,8 +52,6 @@
   default: true
 - name: chaotic_good_send_supported_features
   default: true
-- name: custom_frame_check
-  default: true
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client
@@ -70,8 +68,6 @@
   default: false
 - name : header_data_frame
   default : true
-- name: inproc_cancel_stream
-  default: true
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
@@ -88,10 +84,6 @@
   default: false
 - name: monitoring_experiment
   default: true
-- name: optimization_01
-  default: true
-- name: optimization_02
-  default: true
 - name: optimization_03
   default: true
 - name: optimization_04
@@ -100,8 +92,6 @@
   default: false
 - name: ph2_client_server
   default: false
-- name: ph2_perf_01
-  default: true
 - name: ph2_server
   default: false
 - name: pollset_alternative
@@ -109,8 +99,6 @@
 - name: prioritize_finished_requests
   default: false
 - name: promise_batch_cleanup_on_cancel
-  default: true
-- name: promise_filter_send_cancel_metadata
   default: true
 - name: return_preexisting_errors
   default: true
