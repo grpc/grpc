@@ -1191,6 +1191,7 @@ libs:
   - src/core/load_balancing/oob_backend_metric.h
   - src/core/load_balancing/oob_backend_metric_internal.h
   - src/core/load_balancing/outlier_detection/outlier_detection.h
+  - src/core/load_balancing/outlier_detection/outlier_detection_metrics.h
   - src/core/load_balancing/pick_first/pick_first.h
   - src/core/load_balancing/ring_hash/ring_hash.h
   - src/core/load_balancing/rls/rls.h
@@ -2150,6 +2151,7 @@ libs:
   - src/core/load_balancing/lb_policy_registry.cc
   - src/core/load_balancing/oob_backend_metric.cc
   - src/core/load_balancing/outlier_detection/outlier_detection.cc
+  - src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc
   - src/core/load_balancing/pick_first/pick_first.cc
   - src/core/load_balancing/priority/priority.cc
   - src/core/load_balancing/ring_hash/ring_hash.cc
@@ -2951,6 +2953,7 @@ libs:
   - src/core/load_balancing/oob_backend_metric.h
   - src/core/load_balancing/oob_backend_metric_internal.h
   - src/core/load_balancing/outlier_detection/outlier_detection.h
+  - src/core/load_balancing/outlier_detection/outlier_detection_metrics.h
   - src/core/load_balancing/pick_first/pick_first.h
   - src/core/load_balancing/ring_hash/ring_hash.h
   - src/core/load_balancing/rls/rls.h
@@ -3436,6 +3439,7 @@ libs:
   - src/core/load_balancing/lb_policy_registry.cc
   - src/core/load_balancing/oob_backend_metric.cc
   - src/core/load_balancing/outlier_detection/outlier_detection.cc
+  - src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc
   - src/core/load_balancing/pick_first/pick_first.cc
   - src/core/load_balancing/priority/priority.cc
   - src/core/load_balancing/ring_hash/ring_hash.cc
@@ -5986,8 +5990,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/event_engine/mock_event_engine.h
+  headers: []
   src:
   - test/cpp/common/alarm_test.cc
   deps:
@@ -20147,11 +20150,13 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
+  - test/core/test_util/fake_stats_plugin.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/load_balancing/outlier_detection_test.cc
+  - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
   - protobuf
@@ -28932,6 +28937,7 @@ targets:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -29237,6 +29243,7 @@ targets:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -29739,6 +29746,7 @@ targets:
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/xds_http_add_header_filter.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -29900,6 +29908,7 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -30084,6 +30093,7 @@ targets:
   headers:
   - src/cpp/server/csds/csds.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -30261,6 +30271,7 @@ targets:
   headers:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -30508,6 +30519,7 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -30669,6 +30681,7 @@ targets:
   headers:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -30823,6 +30836,7 @@ targets:
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -30978,6 +30992,7 @@ targets:
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -31134,6 +31149,7 @@ targets:
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -32025,7 +32041,9 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/test_util/fake_stats_plugin.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -32162,6 +32180,7 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - test/core/test_util/fake_stats_plugin.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_outlier_detection_end2end_test.cc
@@ -32182,6 +32201,7 @@ targets:
   headers:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -32368,6 +32388,7 @@ targets:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -32527,6 +32548,7 @@ targets:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -32683,6 +32705,7 @@ targets:
   headers:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/rls_server.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -32964,6 +32987,7 @@ targets:
   headers:
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -33142,6 +33166,7 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -33306,6 +33331,7 @@ targets:
   - test/core/test_util/audit_logging_utils.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
@@ -33637,6 +33663,7 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h

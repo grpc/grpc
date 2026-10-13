@@ -1683,10 +1683,8 @@ TEST_F(Http2ServerTransportTest, ServerTrailingMetadataTarpitTest) {
 
 // RST_STREAM received from the client must close the stream immediately, so
 // that the stream no longer counts towards MAX_CONCURRENT_STREAMS.
-// TODO(akshitpatel) [PH2][P1] : Enable this test once the test infra supports
-// it.
 TEST_F(Http2ServerTransportTest,
-       DISABLED_ClientRstStreamWithTarpitEnabledFreesConcurrentStreamCount) {
+       ClientRstStreamWithTarpitEnabledFreesConcurrentStreamCount) {
   ExecCtx ctx;
 
   // Step 1: Initialize the transport with MAX_CONCURRENT_STREAMS = 1 and
