@@ -452,6 +452,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_status.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_transport.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_transport.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/http2_transport_stats.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.h )
