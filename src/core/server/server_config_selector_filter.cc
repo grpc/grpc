@@ -222,6 +222,16 @@ ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
       server_config_selector_provider_(
           std::move(server_config_selector_provider)),
       config_selector_(nullptr) {
+  // In a v3 stack, wrapped_destination() is not set until Init() is
+  // called, so the watch must not be started until then.
+  if (!args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) StartWatch();
+}
+
+void ServerConfigSelectorInterceptor::Init(const ChannelArgs& /*args*/) {
+  StartWatch();
+}
+
+void ServerConfigSelectorInterceptor::StartWatch() {
   // Start watch for ServerConfigSelector.
   watcher_ = std::make_shared<Watcher>(
       WeakRef().TakeAsSubclass<ServerConfigSelectorInterceptor>());

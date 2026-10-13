@@ -1166,7 +1166,11 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
 Server::MakeCallDestination(const ChannelArgs& args,
                             grpc_channel_stack_type channel_stack_type) {
-  InterceptionChainBuilder builder(args);
+  // As in LegacyChannel::Create(), pick up the stats plugins for each new
+  // connection, so that plugins registered after the server was created are
+  // visible to the filters.
+  InterceptionChainBuilder builder(args.SetObject(
+      GlobalStatsPluginRegistry::GetStatsPluginsForServer(args)));
   // TODO(ctiller): find a way to avoid adding a server ref per call
   builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
     self->SetRegisteredMethodOnMetadata(md);
