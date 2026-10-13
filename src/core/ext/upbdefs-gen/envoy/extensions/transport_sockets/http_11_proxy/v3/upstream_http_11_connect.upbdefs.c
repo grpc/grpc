@@ -11,10 +11,11 @@
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.h"
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.h"
 
+extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
 extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 
-static const char descriptor[539] = {
+static const char descriptor[659] = {
     '\n', 'R', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e',
     'n', 's', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's',
     'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's',
@@ -26,22 +27,32 @@ static const char descriptor[539] = {
     'n', 's', 'i', 'o', 'n', 's', '.', 't', 'r', 'a', 'n', 's',
     'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's',
     '.', 'h', 't', 't', 'p', '_', '1', '1', '_', 'p', 'r', 'o',
-    'x', 'y', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y',
+    'x', 'y', '.', 'v', '3', '\032', '\"', 'e', 'n', 'v', 'o', 'y',
+    '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e',
+    '/', 'v', '3', '/', 'a', 'd', 'd', 'r', 'e', 's', 's', '.',
+    'p', 'r', 'o', 't', 'o', '\032', '\037', 'e', 'n', 'v', 'o', 'y',
     '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e',
     '/', 'v', '3', '/', 'b', 'a', 's', 'e', '.', 'p', 'r', 'o',
     't', 'o', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n',
     'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a',
-    't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\"', 'p', '\n',
-    '\034', 'H', 't', 't', 'p', '1', '1', 'P', 'r', 'o', 'x', 'y',
-    'U', 'p', 's', 't', 'r', 'e', 'a', 'm', 'T', 'r', 'a', 'n',
-    's', 'p', 'o', 'r', 't', '\022', 'P', '\n', '\020', 't', 'r', 'a',
-    'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e',
-    't', '\030', '\001', ' ', '\001', '(', '\013', '2', '%', '.', 'e', 'n',
-    'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c',
-    'o', 'r', 'e', '.', 'v', '3', '.', 'T', 'r', 'a', 'n', 's',
-    'p', 'o', 'r', 't', 'S', 'o', 'c', 'k', 'e', 't', 'R', '\017',
-    't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', 'S', 'o', 'c',
-    'k', 'e', 't', 'B', '\325', '\001', '\n', 'A', 'i', 'o', '.', 'e',
+    't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\"', '\303', '\001',
+    '\n', '\034', 'H', 't', 't', 'p', '1', '1', 'P', 'r', 'o', 'x',
+    'y', 'U', 'p', 's', 't', 'r', 'e', 'a', 'm', 'T', 'r', 'a',
+    'n', 's', 'p', 'o', 'r', 't', '\022', 'P', '\n', '\020', 't', 'r',
+    'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k',
+    'e', 't', '\030', '\001', ' ', '\001', '(', '\013', '2', '%', '.', 'e',
+    'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.',
+    'c', 'o', 'r', 'e', '.', 'v', '3', '.', 'T', 'r', 'a', 'n',
+    's', 'p', 'o', 'r', 't', 'S', 'o', 'c', 'k', 'e', 't', 'R',
+    '\017', 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', 'S', 'o',
+    'c', 'k', 'e', 't', '\022', 'Q', '\n', '\025', 'd', 'e', 'f', 'a',
+    'u', 'l', 't', '_', 'p', 'r', 'o', 'x', 'y', '_', 'a', 'd',
+    'd', 'r', 'e', 's', 's', '\030', '\002', ' ', '\001', '(', '\013', '2',
+    '\035', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f',
+    'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '.', 'A',
+    'd', 'd', 'r', 'e', 's', 's', 'R', '\023', 'd', 'e', 'f', 'a',
+    'u', 'l', 't', 'P', 'r', 'o', 'x', 'y', 'A', 'd', 'd', 'r',
+    'e', 's', 's', 'B', '\325', '\001', '\n', 'A', 'i', 'o', '.', 'e',
     'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n',
     'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o',
     'n', 's', '.', 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't',
@@ -62,7 +73,8 @@ static const char descriptor[539] = {
     '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
-static _upb_DefPool_Init *deps[3] = {
+static _upb_DefPool_Init *deps[4] = {
+    &envoy_config_core_v3_address_proto_upbdefinit,
     &envoy_config_core_v3_base_proto_upbdefinit,
     &udpa_annotations_status_proto_upbdefinit,
     NULL,

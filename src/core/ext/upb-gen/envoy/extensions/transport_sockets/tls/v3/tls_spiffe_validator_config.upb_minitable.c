@@ -40,13 +40,14 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SPIFFECertVa
 };
 
 typedef struct {
-  upb_MiniTableField fields[2];
+  upb_MiniTableField fields[3];
   upb_MiniTableSubInternal subs[1];
 } envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init_Fields;
 
 static const envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init_Fields envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain__fields = {{
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 32), 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 48), 64, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(24, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
  },
   {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
@@ -54,13 +55,15 @@ static const envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidator
 
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init = {
   &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain__fields.fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.transport_sockets.tls.v3.SPIFFECertValidatorConfig.TrustDomain",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
