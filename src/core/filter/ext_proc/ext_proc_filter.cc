@@ -1384,37 +1384,43 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
                               });
               },
               Immediate(StatusFlag(Success{}))),
-          Map(TryJoin<ValueOrFailure>(
-                  // Forward client message to backend if not waiting for
-                  // side-stream or running in observability mode.
-                  If(
-                      !send_to_sidestream || config().observability_mode,
-                      [self = WeakRef(),
-                       message = std::move(message)]() mutable {
-                        // TODO(rishesh, roth): Spawning this push into the
-                        // activity means that we won't have flow control
-                        // feedback here in a pure v3 stack, so we need to fix
-                        // it before we finish the v3 migration.
-                        self->initiator_.SpawnPushMessage(std::move(message));
-                        return Immediate(StatusFlag(Success{}));
-                      },
-                      Immediate(StatusFlag(Success{}))),
-                  // Send client message payload to the side-stream.
-                  If(
-                      send_to_sidestream,
-                      [self = WeakRef(),
-                       payload = std::move(payload)]() mutable {
-                        self->first_body_message_sent_ = true;
-                        if (self->config().observability_mode) {
-                          GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                              << self->DebugTag()
-                              << "Client message observability mode";
-                        }
-                        return self->SendMessageToSideStream(
-                            std::move(*payload));
-                      },
-                      Immediate(StatusFlag(Success{})))),
-              [](auto x) { return x.status(); })));
+          // This is a promise factory rather than a promise, so that the
+          // message is not forwarded until the drain wait above completes
+          // (If<bool> invokes its branch factory eagerly on construction).
+          [self = WeakRef(), send_to_sidestream, message = std::move(message),
+           payload = std::move(payload)]() mutable {
+            return Map(
+                TryJoin<ValueOrFailure>(
+                    // Forward client message to backend if not waiting for
+                    // side-stream or running in observability mode.
+                    If(
+                        !send_to_sidestream ||
+                            self->config().observability_mode,
+                        [self, message = std::move(message)]() mutable {
+                          // TODO(rishesh, roth): Spawning this push into the
+                          // activity means that we won't have flow control
+                          // feedback here in a pure v3 stack, so we need to
+                          // fix it before we finish the v3 migration.
+                          self->initiator_.SpawnPushMessage(std::move(message));
+                          return Immediate(StatusFlag(Success{}));
+                        },
+                        Immediate(StatusFlag(Success{}))),
+                    // Send client message payload to the side-stream.
+                    If(
+                        send_to_sidestream,
+                        [self, payload = std::move(payload)]() mutable {
+                          self->first_body_message_sent_ = true;
+                          if (self->config().observability_mode) {
+                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                                << self->DebugTag()
+                                << "Client message observability mode";
+                          }
+                          return self->SendMessageToSideStream(
+                              std::move(*payload));
+                        },
+                        Immediate(StatusFlag(Success{})))),
+                [](auto x) { return x.status(); });
+          }));
 }
 
 auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
@@ -1447,40 +1453,44 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
       !payload.ok() && !HandleSideStreamStatus(payload.status());
   const bool send_to_sidestream =
       send_request_body && payload.ok() && !side_stream_closed_latch_.is_set();
-  return If(call_cancelled, Immediate(StatusFlag(Failure{})),
-            TrySeq(
-                // Wait for request body drain to complete if in flight.
-                If(
-                    request_body_drain_state_ == BodyDrainState::kDrainInFlight,
-                    [self = WeakRef()]() {
-                      return TrySeq(
-                          self->request_body_drain_complete_latch_.Wait(),
-                          [self]() -> StatusFlag {
-                            if (self->request_body_drain_state_ !=
-                                BodyDrainState::kDrained) {
-                              return Failure{};
-                            }
-                            return Success{};
-                          });
-                    },
-                    Immediate(StatusFlag(Success{}))),
-                // Forward half-close to backend if not waiting for side-stream
-                // or running in observability mode.
-                If(
-                    !send_to_sidestream || config().observability_mode,
-                    [self = WeakRef()]() {
-                      self->initiator_.SpawnFinishSends();
-                      return Immediate(StatusFlag(Success{}));
-                    },
-                    Immediate(StatusFlag(Success{}))),
-                // Send client half-close payload to the side-stream.
-                If(
-                    send_to_sidestream,
-                    [self = WeakRef(), payload = std::move(payload)]() mutable {
-                      self->first_body_message_sent_ = true;
-                      return self->SendMessageToSideStream(std::move(*payload));
-                    },
-                    Immediate(StatusFlag(Success{})))));
+  return If(
+      call_cancelled, Immediate(StatusFlag(Failure{})),
+      TrySeq(
+          // Wait for request body drain to complete if in flight.
+          If(
+              request_body_drain_state_ == BodyDrainState::kDrainInFlight,
+              [self = WeakRef()]() {
+                return TrySeq(self->request_body_drain_complete_latch_.Wait(),
+                              [self]() -> StatusFlag {
+                                if (self->request_body_drain_state_ !=
+                                    BodyDrainState::kDrained) {
+                                  return Failure{};
+                                }
+                                return Success{};
+                              });
+              },
+              Immediate(StatusFlag(Success{}))),
+          // Forward half-close to backend if not waiting for side-stream
+          // or running in observability mode. This is a promise factory
+          // so that the half-close is not forwarded until the drain wait
+          // above completes.
+          [self = WeakRef(), send_to_sidestream]() {
+            if (!send_to_sidestream || self->config().observability_mode) {
+              self->initiator_.SpawnFinishSends();
+            }
+            return Immediate(StatusFlag(Success{}));
+          },
+          // Send client half-close payload to the side-stream.
+          [self = WeakRef(), send_to_sidestream,
+           payload = std::move(payload)]() mutable {
+            return If(
+                send_to_sidestream,
+                [self, payload = std::move(payload)]() mutable {
+                  self->first_body_message_sent_ = true;
+                  return self->SendMessageToSideStream(std::move(*payload));
+                },
+                Immediate(StatusFlag(Success{})));
+          }));
 }
 
 //
@@ -1719,32 +1729,39 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
                               });
               },
               Immediate(StatusFlag(Success{}))),
-          Map(TryJoin<ValueOrFailure>(
-                  // Forward server message downstream to client if not waiting
-                  // for side-stream or running in observability mode.
-                  If(
-                      !send_to_sidestream || config().observability_mode,
-                      [self = WeakRef(),
-                       message = std::move(message)]() mutable {
-                        return self->handler_.PushMessage(std::move(message));
-                      },
-                      Immediate(StatusFlag(Success{}))),
-                  // Send server message payload to the side-stream.
-                  If(
-                      send_to_sidestream,
-                      [self = WeakRef(),
-                       payload = std::move(payload)]() mutable {
-                        self->first_body_message_sent_ = true;
-                        if (self->config().observability_mode) {
-                          GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                              << self->DebugTag()
-                              << "Server message observability mode";
-                        }
-                        return self->SendMessageToSideStream(
-                            std::move(*payload));
-                      },
-                      Immediate(StatusFlag(Success{})))),
-              [](auto x) { return x.status(); })));
+          // This is a promise factory rather than a promise, so that the
+          // message is not forwarded until the drain wait above completes
+          // (If<bool> invokes its branch factory eagerly on construction).
+          [self = WeakRef(), send_to_sidestream, message = std::move(message),
+           payload = std::move(payload)]() mutable {
+            return Map(
+                TryJoin<ValueOrFailure>(
+                    // Forward server message downstream to client if not
+                    // waiting for side-stream or running in observability
+                    // mode.
+                    If(
+                        !send_to_sidestream ||
+                            self->config().observability_mode,
+                        [self, message = std::move(message)]() mutable {
+                          return self->handler_.PushMessage(std::move(message));
+                        },
+                        Immediate(StatusFlag(Success{}))),
+                    // Send server message payload to the side-stream.
+                    If(
+                        send_to_sidestream,
+                        [self, payload = std::move(payload)]() mutable {
+                          self->first_body_message_sent_ = true;
+                          if (self->config().observability_mode) {
+                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                                << self->DebugTag()
+                                << "Server message observability mode";
+                          }
+                          return self->SendMessageToSideStream(
+                              std::move(*payload));
+                        },
+                        Immediate(StatusFlag(Success{})))),
+                [](auto x) { return x.status(); });
+          }));
 }
 
 // Handle the read-from-client loop on handler_.

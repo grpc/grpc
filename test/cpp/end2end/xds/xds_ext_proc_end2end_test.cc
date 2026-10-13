@@ -2983,8 +2983,10 @@ TEST_P(XdsExtProcEnd2endTest,
               ::testing::Optional(MatchesEchoResponse(kMessage1)));
   request.set_message(kMessage2);
   stream.StartWrite(request);
+  // Don't half-close here: in the v2 bridge, the client half-close is not
+  // gated by the filter, so it may reach the backend and complete the call
+  // with OK before the filter processes the side-stream status.
   ext_proc_stream->SendStatus(absl::OkStatus());
-  stream.StartWritesDone();
   EXPECT_THAT(
       stream.WaitForStatus(),
       ::testing::Optional(GrpcStatusIs(StatusCode::INTERNAL,
