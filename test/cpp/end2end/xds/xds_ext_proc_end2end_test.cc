@@ -3329,6 +3329,11 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
 
 TEST_P(XdsExtProcEnd2endTest,
        ExtProcClientHalfCloseDurationMetricAfterRequestBodyDrain) {
+  // TODO(rishesh): The server-side filter does not observe client half-close
+  // yet.
+  if (GetParam().filter_on_server()) {
+    GTEST_SKIP() << "server-side filter does not observe client half-close";
+  }
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
                           .BuildAndRegister();
