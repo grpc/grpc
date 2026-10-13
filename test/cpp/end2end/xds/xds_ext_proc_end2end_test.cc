@@ -36,6 +36,7 @@
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -615,7 +616,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   // Helper for handling the client half-close event, which races with the
   // events on the response path and can therefore show up at any point once
-  // the request body has been processed.
+  // the request body has been processed.  On the client side, the test fails
+  // if the half-close is not seen by the time this object is destroyed.
   class ClientHalfCloseHandler {
    public:
     // In observability mode the filter does not expect a response from the
@@ -624,6 +626,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                                     bool send_response = true)
         : stream_(stream), send_response_(send_response) {}
 
+    ~ClientHalfCloseHandler();
     void Handle(const ProcessingRequest& request);
 
     // Wrapper for GetNextRequest() that handles the client half-close event
@@ -812,6 +815,18 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void SetUp() override {
+    if (GetParam().filter_on_server() &&
+        !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+      GTEST_SKIP()
+          << "test requires xds_server_filter_chain_per_route experiment";
+    }
+    if (GetParam().filter_on_server()) {
+      SKIP_TEST_FOR_PH2_SERVER(
+          "TODO(rishesh): [PH2] Server-side ext_proc crashes with PH2 server");
+    }
+    env_var_.emplace(GetParam().filter_on_server()
+                         ? "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER"
+                         : "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
     InitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
                /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
@@ -825,18 +840,41 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void TearDown() override {
-    ext_proc_server_->Shutdown();
+    if (ext_proc_server_ != nullptr) ext_proc_server_->Shutdown();
     XdsEnd2endTest::TearDown();
   }
 
-  Listener BuildListenerWithExtProcFilter(const ExternalProcessor& ext_proc) {
-    Listener listener = default_listener_;
-    HttpConnectionManager hcm = ClientHcmAccessor().Unpack(listener);
+  void CreateAndStartBackends(
+      size_t num_backends = 1,
+      std::shared_ptr<ServerCredentials> credentials = nullptr) {
+    XdsEnd2endTest::CreateAndStartBackends(
+        num_backends, /*xds_enabled=*/GetParam().filter_on_server(),
+        std::move(credentials));
+    if (GetParam().filter_on_server()) {
+      for (auto& backend : backends_) {
+        EXPECT_THAT(backend->GetNextStatus(),
+                    ::testing::Optional(absl::OkStatus()));
+      }
+    }
+  }
+
+  Listener BuildListenerWithExtProcFilter(
+      const ExternalProcessor& ext_proc) const {
+    Listener listener;
+    std::unique_ptr<HcmAccessor> hcm_accessor;
+    if (GetParam().filter_on_server()) {
+      listener = default_server_listener_;
+      hcm_accessor = std::make_unique<ServerHcmAccessor>();
+    } else {
+      listener = default_listener_;
+      hcm_accessor = std::make_unique<ClientHcmAccessor>();
+    }
+    HttpConnectionManager hcm = hcm_accessor->Unpack(listener);
     HttpFilter* filter0 = hcm.mutable_http_filters(0);
     *hcm.add_http_filters() = *filter0;
     filter0->set_name(kFilterInstanceName);
     filter0->mutable_typed_config()->PackFrom(ext_proc);
-    ClientHcmAccessor().Pack(hcm, &listener);
+    hcm_accessor->Pack(hcm, &listener);
     return listener;
   }
 
@@ -856,12 +894,26 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     *overrides->mutable_response_attributes() = ext_proc.response_attributes();
     google::protobuf::Any filter_config;
     filter_config.PackFrom(per_route);
-    RouteConfiguration new_route_config = default_route_config_;
+    RouteConfiguration new_route_config = GetParam().filter_on_server()
+                                              ? default_server_route_config_
+                                              : default_route_config_;
     auto* config_map = new_route_config.mutable_virtual_hosts(0)
                            ->mutable_routes(0)
                            ->mutable_typed_per_filter_config();
     (*config_map)[std::string(kFilterInstanceName)] = std::move(filter_config);
     return new_route_config;
+  }
+
+  void SetListenerAndRouteConfiguration(
+      BalancerServerThread* balancer, const Listener& listener,
+      const RouteConfiguration& route_config) {
+    if (GetParam().filter_on_server()) {
+      SetServerListenerNameAndRouteConfiguration(
+          balancer, listener, backends_[0]->port(), route_config);
+    } else {
+      XdsEnd2endTest::SetListenerAndRouteConfiguration(balancer, listener,
+                                                       route_config);
+    }
   }
 
   void SetFilterConfig(const ExternalProcessor& ext_proc) {
@@ -883,7 +935,9 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInListener: {
         Listener listener = BuildListenerWithExtProcFilter(ext_proc);
         SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                         default_route_config_);
+                                         GetParam().filter_on_server()
+                                             ? default_server_route_config_
+                                             : default_route_config_);
         break;
       }
     }
@@ -898,16 +952,19 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     return *ext_proc_server_->ext_proc_service();
   }
 
-  grpc_core::testing::ScopedExperimentalEnvVar env_var_{
-      "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT"};
+  std::optional<grpc_core::testing::ScopedExperimentalEnvVar> env_var_;
   std::unique_ptr<ExtProcServerThread> ext_proc_server_;
 };
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsExtProcEnd2endTest,
-    ::testing::Values(XdsTestType(),
-                      XdsTestType().set_filter_config_setup(
-                          XdsTestType::kHttpFilterConfigInRoute)),
+    ::testing::Values(
+        XdsTestType(),
+        XdsTestType().set_filter_config_setup(
+            XdsTestType::kHttpFilterConfigInRoute),
+        XdsTestType().set_filter_on_server(),
+        XdsTestType().set_filter_on_server().set_filter_config_setup(
+            XdsTestType::kHttpFilterConfigInRoute)),
     &XdsTestType::Name);
 
 MATCHER(IsStatusOk, "") {
@@ -1073,6 +1130,14 @@ MATCHER_P(MatchesEchoResponse, message_matcher,
 // they use matchers defined above.
 //
 
+// TODO(rishesh): The server-side filter does not reliably observe client
+// half-close yet, so we only verify it on the client side.
+XdsExtProcEnd2endTest::ClientHalfCloseHandler::~ClientHalfCloseHandler() {
+  if (!GetParam().filter_on_server()) {
+    EXPECT_TRUE(seen_) << "client half-close not seen";
+  }
+}
+
 void XdsExtProcEnd2endTest::ClientHalfCloseHandler::Handle(
     const ProcessingRequest& request) {
   EXPECT_FALSE(seen_) << "duplicate client half-close event";
@@ -1093,6 +1158,9 @@ XdsExtProcEnd2endTest::ClientHalfCloseHandler::MaybeHandle(
 }
 
 void XdsExtProcEnd2endTest::ClientHalfCloseHandler::HandleIfNotYetSeen() {
+  // TODO(rishesh): The server-side filter does not observe client half-close
+  // yet, so don't wait for it.
+  if (GetParam().filter_on_server()) return;
   if (seen_) return;
   auto request = stream_->GetNextRequest();
   ASSERT_TRUE(request.has_value()) << "timed out waiting for client half-close";
@@ -1385,7 +1453,14 @@ TEST_P(XdsExtProcEnd2endTest,
   }
   // For trailers-only response in observability mode, ext_proc server sees no
   // further requests.
-  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+  auto next_req = ext_proc_stream->GetNextRequest();
+  // TODO(rishesh): On the server, the client half-close races with the
+  // trailers-only response, so it may show up here. Remove once the
+  // server-side filter reliably observes client half-close.
+  if (GetParam().filter_on_server()) {
+    next_req = half_close_handler.MaybeHandle(std::move(next_req));
+  }
+  EXPECT_EQ(next_req, std::nullopt);
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, GrpcStatusIs(StatusCode::FAILED_PRECONDITION, ""));
 }
@@ -1496,11 +1571,15 @@ TEST_P(XdsExtProcEnd2endTest,
   ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
       req->request_body().body(), req->request_body().end_of_stream()));
   // ext_proc server sees client half-close and sends it back.
-  req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(
-      req, ::testing::Optional(MatchesRequestBody(kEmptyBody, kEndOfStream)));
-  ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
-      /*body=*/"", kEndOfStream));
+  // TODO(rishesh): The server-side filter does not observe client half-close
+  // yet.
+  if (!GetParam().filter_on_server()) {
+    req = ext_proc_stream->GetNextRequest();
+    ASSERT_THAT(
+        req, ::testing::Optional(MatchesRequestBody(kEmptyBody, kEndOfStream)));
+    ext_proc_stream->SendResponse(MakeRequestBodyMutationResponse(
+        /*body=*/"", kEndOfStream));
+  }
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
 }
@@ -1621,8 +1700,11 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(stream.WaitForWrite());
   EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  // Start the read before letting the RPC finish, so the pending read keeps
+  // the call alive.
+  stream.StartReadMessage();
   stream.StartWritesDone();
-  EXPECT_FALSE(stream.ReadMessage().has_value());
+  EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
@@ -1671,8 +1753,11 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
       common_response->mutable_body_mutation()->mutable_streamed_response();
   streamed_response->set_end_of_stream(true);
   streamed_response->set_end_of_stream_without_message(true);
+  // Start the read before letting the RPC finish, so the pending read keeps
+  // the call alive.
+  stream.StartReadMessage();
   ext_proc_stream->SendResponse(proc_response);
-  EXPECT_FALSE(stream.ReadMessage().has_value());
+  EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
@@ -2598,6 +2683,10 @@ TEST_P(XdsExtProcEnd2endTest,
   request.set_message(kMessage1);
   stream.StartWrite(request);
   EXPECT_TRUE(stream.WaitForWrite());
+  // Keep a read pending. The server may send the echoed message before the
+  // call is cancelled, and the client does not surface the status until that
+  // message is read.
+  stream.StartReadMessage();
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto resp_hdr_req = ext_proc_stream->GetNextRequest();
@@ -3180,14 +3269,24 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
+  const absl::string_view metric_name =
+      GetParam().filter_on_server()
+          ? "grpc.server_ext_proc.client_headers_duration"
+          : "grpc.client_ext_proc.client_headers_duration";
+  std::vector<absl::string_view> labels;
+  if (!GetParam().filter_on_server()) {
+    labels.emplace_back(expected_target);
+  }
   EXPECT_TRUE(
-      stats_plugin
-          ->GetHistogramValueByName(
-              "grpc.client_ext_proc.client_headers_duration", {expected_target})
-          .has_value());
+      stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
 }
 
 TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
+  // TODO(rishesh): The server-side filter does not observe client half-close
+  // yet.
+  if (GetParam().filter_on_server()) {
+    GTEST_SKIP() << "server-side filter does not observe client half-close";
+  }
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
                           .UseDisabledByDefaultMetrics(true)
                           .BuildAndRegister();
@@ -3216,11 +3315,16 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  EXPECT_TRUE(stats_plugin
-                  ->GetHistogramValueByName(
-                      "grpc.client_ext_proc.client_half_close_duration",
-                      {expected_target})
-                  .has_value());
+  const absl::string_view metric_name =
+      GetParam().filter_on_server()
+          ? "grpc.server_ext_proc.client_half_close_duration"
+          : "grpc.client_ext_proc.client_half_close_duration";
+  std::vector<absl::string_view> labels;
+  if (!GetParam().filter_on_server()) {
+    labels.emplace_back(expected_target);
+  }
+  EXPECT_TRUE(
+      stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
 }
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -3293,11 +3397,16 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
+  const absl::string_view metric_name =
+      GetParam().filter_on_server()
+          ? "grpc.server_ext_proc.server_headers_duration"
+          : "grpc.client_ext_proc.server_headers_duration";
+  std::vector<absl::string_view> labels;
+  if (!GetParam().filter_on_server()) {
+    labels.emplace_back(expected_target);
+  }
   EXPECT_TRUE(
-      stats_plugin
-          ->GetHistogramValueByName(
-              "grpc.client_ext_proc.server_headers_duration", {expected_target})
-          .has_value());
+      stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
 }
 
 TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
@@ -3322,11 +3431,16 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
-  EXPECT_TRUE(stats_plugin
-                  ->GetHistogramValueByName(
-                      "grpc.client_ext_proc.server_trailers_duration",
-                      {expected_target})
-                  .has_value());
+  const absl::string_view metric_name =
+      GetParam().filter_on_server()
+          ? "grpc.server_ext_proc.server_trailers_duration"
+          : "grpc.client_ext_proc.server_trailers_duration";
+  std::vector<absl::string_view> labels;
+  if (!GetParam().filter_on_server()) {
+    labels.emplace_back(expected_target);
+  }
+  EXPECT_TRUE(
+      stats_plugin->GetHistogramValueByName(metric_name, labels).has_value());
 }
 
 }  // namespace
