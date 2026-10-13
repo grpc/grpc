@@ -126,7 +126,7 @@ TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
   // makes every other caller wait below until this one publishes or rolls
   // back in phase 3.
   {
-    grpc_core::MutexLock lock(&factory_cache_mu_);
+    grpc_core::MutexLock lock(factory_cache_mu_);
     while (true) {
       if (CacheMatchesLocked(root_cert_info, identity_certs,
                              ssl_session_cache)) {
@@ -159,7 +159,7 @@ TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
       options_->key_exchange_groups(), &new_factory);
 
   // Phase 3: publish or roll back.
-  grpc_core::MutexLock lock(&factory_cache_mu_);
+  grpc_core::MutexLock lock(factory_cache_mu_);
   factory_creation_in_progress_ = false;
   // On failure leave the cache unchanged. SignalAll wakes the next creator
   // exactly once because the while-loop above re-checks
@@ -183,7 +183,7 @@ TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
 }
 
 bool TlsCredentials::HasCachedClientHandshakerFactoryForTesting() {
-  grpc_core::MutexLock lock(&factory_cache_mu_);
+  grpc_core::MutexLock lock(factory_cache_mu_);
   return cached_factory_ != nullptr;
 }
 
