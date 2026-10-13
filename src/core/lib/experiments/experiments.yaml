@@ -208,7 +208,7 @@
   test_tags: []
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
-  expiry: 2026/11/10
+  expiry: 2027/01/20
   owner: leonzz@google.com
   test_tags: []
 - name: monitoring_experiment
