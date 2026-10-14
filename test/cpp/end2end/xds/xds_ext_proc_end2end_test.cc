@@ -819,7 +819,12 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/nullptr);
-    CreateAndStartBackends(1);
+    // For server-side tests, the backend is not started until
+    // SetFilterConfig() is called. Otherwise, the server could accept a
+    // connection using the default listener (without the ext_proc filter)
+    // before it receives the updated listener with the ext_proc filter.
+    CreateBackends(1, /*xds_enabled=*/GetParam().filter_on_server());
+    if (!GetParam().filter_on_server()) StartAllBackends();
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     })));
@@ -830,20 +835,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   void TearDown() override {
     if (ext_proc_server_ != nullptr) ext_proc_server_->Shutdown();
     XdsEnd2endTest::TearDown();
-  }
-
-  void CreateAndStartBackends(
-      size_t num_backends = 1,
-      std::shared_ptr<ServerCredentials> credentials = nullptr) {
-    XdsEnd2endTest::CreateAndStartBackends(
-        num_backends, /*xds_enabled=*/GetParam().filter_on_server(),
-        std::move(credentials));
-    if (GetParam().filter_on_server()) {
-      for (auto& backend : backends_) {
-        EXPECT_THAT(backend->GetNextStatus(),
-                    ::testing::Optional(absl::OkStatus()));
-      }
-    }
   }
 
   Listener BuildListenerWithExtProcFilter(
@@ -928,6 +919,13 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                                              : default_route_config_);
         break;
       }
+    }
+    // Start the server only after the ext_proc filter config is in place,
+    // so that it never serves RPCs with the default listener.
+    if (GetParam().filter_on_server()) {
+      StartBackend(0);
+      EXPECT_THAT(backends_[0]->GetNextStatus(),
+                  ::testing::Optional(absl::OkStatus()));
     }
   }
 
