@@ -668,6 +668,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "time_averaged_stats_test",
+    srcs = ["time_averaged_stats_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:time_averaged_stats",
+    ],
+)
+
+grpc_cc_test(
     name = "random_early_detection_test",
     srcs = ["random_early_detection_test.cc"],
     external_deps = [
