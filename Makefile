@@ -966,6 +966,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c \
     src/core/ext/upb-gen/google/api/annotations.upb_minitable.c \
@@ -1142,6 +1143,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c \
     src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.c \
@@ -1418,6 +1420,7 @@ LIBGRPC_SRC = \
     src/core/load_balancing/lb_policy_registry.cc \
     src/core/load_balancing/oob_backend_metric.cc \
     src/core/load_balancing/outlier_detection/outlier_detection.cc \
+    src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc \
     src/core/load_balancing/pick_first/pick_first.cc \
     src/core/load_balancing/priority/priority.cc \
     src/core/load_balancing/ring_hash/ring_hash.cc \

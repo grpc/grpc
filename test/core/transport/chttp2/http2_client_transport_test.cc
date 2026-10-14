@@ -1503,7 +1503,7 @@ TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
   step3->Wait();
 }
 
-// TODO(tjagtap) : [PH2][P3] Write tests similar to
+// TODO(tjagtap) : [PH2][P4] Write tests similar to
 // TestHeaderDataHeaderFrameOrder for Continuation frame read.
 
 // TODO(tjagtap) : [PH2][P4] Write tests
@@ -1528,7 +1528,7 @@ TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
 }  // namespace http2
 }  // namespace grpc_core
 
-// TODO(tjagtap) : [PH2][P2] : Write a test for Settings, and Settings
+// TODO(tjagtap) : [PH2][P4] : Write a test for Settings, and Settings
 // Acks, Incoming and Outgoing
 
 int main(int argc, char** argv) {

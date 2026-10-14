@@ -185,36 +185,33 @@ void OutputBuffers::DestroyReader(uint32_t id) {
 
 void OutputBuffers::WakeupScheduler(bool async) {
   GRPC_LATENT_SEE_SCOPE("OutputBuffers::WakeupScheduler");
-  auto state = scheduling_state_.load(std::memory_order_acquire);
-  // CAS's here-in need to be acq-rel, so that we get an acquire on failure (at
-  // which point we may be loading a Waker pointer).
-  while (true) {
-    switch (state) {
-      case kSchedulingProcessing:
-        if (!scheduling_state_.compare_exchange_weak(
-                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
-          continue;
-        }
-        return;
-      case kSchedulingWorkAvailable:
-        return;
-      default: {
-        // Idle: value is a pointer to a waker.
-        Waker* waker = reinterpret_cast<Waker*>(state);
-        if (!scheduling_state_.compare_exchange_weak(
-                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
-          continue;
-        }
-        if (async) {
-          waker->WakeupAsync();
-        } else {
-          waker->Wakeup();
-        }
-        delete waker;
-        return;
+  // Every state transitions to kSchedulingWorkAvailable, so a single
+  // unconditional exchange suffices. It must be an acq_rel RMW, never a plain
+  // load:
+  // - release: publishes our frames_queue_ Push to the scheduler.
+  // - RMW: totally orders us against the scheduler's WorkAvailable->Processing
+  //   transition. With a plain load (store-buffering) we may observe
+  //   WorkAvailable while the scheduler's Peek misses our Push, and the
+  //   scheduler goes idle with a frame queued.
+  // - acquire: synchronizes with the scheduler publishing a Waker pointer.
+  const uintptr_t prev_state = scheduling_state_.exchange(
+      kSchedulingWorkAvailable, std::memory_order_acq_rel);
+  switch (prev_state) {
+    case kSchedulingProcessing:
+    case kSchedulingWorkAvailable:
+      return;
+    default: {
+      // Idle: value is a pointer to a waker. The exchange made us its sole
+      // owner.
+      Waker* waker = reinterpret_cast<Waker*>(prev_state);
+      if (async) {
+        waker->WakeupAsync();
+      } else {
+        waker->Wakeup();
       }
+      delete waker;
+      return;
     }
-    LOG(FATAL) << "Unreachable state: " << state;
   }
 }
 
@@ -236,9 +233,12 @@ Poll<Empty> OutputBuffers::SchedulerPollForWork() {
         return Pending{};
       }
       case kSchedulingWorkAvailable: {
-        // No pointer exchange here, no need for barriers.
-        scheduling_state_.store(kSchedulingProcessing,
-                                std::memory_order_relaxed);
+        // Must be an acq_rel RMW (pairs with the RMW in WakeupScheduler): a
+        // relaxed store here can be reordered after the Peek in Schedule().
+        if (!scheduling_state_.compare_exchange_weak(
+                state, kSchedulingProcessing, std::memory_order_acq_rel)) {
+          continue;
+        }
         return Empty{};
       }
       default:
