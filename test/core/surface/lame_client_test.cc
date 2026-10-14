@@ -25,7 +25,6 @@
 
 #include <memory>
 
-#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -33,7 +32,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/orphanable.h"
@@ -68,14 +66,7 @@ void test_transport_op(grpc_channel* channel) {
   elem->filter->start_transport_op(elem, op);
 }
 
-class LameClientTest : public ::testing::TestWithParam<bool> {};
-
-// Run tests for both v1 and v3.
-INSTANTIATE_TEST_SUITE_P(LameClientTest, LameClientTest, ::testing::Bool());
-
-TEST_P(LameClientTest, MainTest) {
-  const bool is_v3 = GetParam();
-
+TEST(LameClientTest, MainTest) {
   grpc_channel* chan;
   grpc_call* call;
   grpc_completion_queue* cq;
@@ -95,24 +86,11 @@ TEST_P(LameClientTest, MainTest) {
 
   const char* error_message = "Rpc sent on a lame channel.";
   grpc_status_code error_code = GRPC_STATUS_ABORTED;
-
-  if (is_v3) {
-    absl::Status status(static_cast<absl::StatusCode>(error_code),
-                        error_message);
-    grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .Set(GRPC_ARG_USE_V3_STACK, 1);
-    chan = grpc_core::CreateLameChannel("lampoon:national", args, status)
-               .release()
-               ->c_ptr();
-  } else {
-    chan = grpc_lame_client_channel_create("lampoon:national", error_code,
-                                           error_message);
-  }
+  chan = grpc_lame_client_channel_create("lampoon:national", error_code,
+                                         error_message);
   ASSERT_TRUE(chan);
 
-  if (!is_v3) test_transport_op(chan);
+  if (!grpc_core::IsLameChannelV3Enabled()) test_transport_op(chan);
 
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE,
             grpc_channel_check_connectivity_state(chan, 0));
@@ -144,7 +122,8 @@ TEST_P(LameClientTest, MainTest) {
   ASSERT_EQ(GRPC_CALL_OK, error);
 
   // TODO(ac-patel): Why does this batch succeed in v3?
-  cqv.Expect(grpc_core::CqVerifier::tag(1), is_v3);
+  cqv.Expect(grpc_core::CqVerifier::tag(1),
+             grpc_core::IsLameChannelV3Enabled());
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -170,7 +149,8 @@ TEST_P(LameClientTest, MainTest) {
   // "unknown" instead.
   // TODO(ac-patel): Is this the behavior we want, or should we find a
   // way to fix this in v3?
-  ASSERT_STREQ(peer, is_v3 ? "unknown" : "lampoon:national");
+  ASSERT_STREQ(peer, grpc_core::IsLameChannelV3Enabled() ? "unknown"
+                                                         : "lampoon:national");
   gpr_free(peer);
 
   ASSERT_EQ(status, error_code);
