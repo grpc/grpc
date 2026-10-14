@@ -1699,6 +1699,10 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
         stream.ReadMessage(),
         ::testing::Optional(MatchesEchoResponse(absl::StrCat("message", i))));
   }
+  // Start the read before half-closing, so the pending read keeps the call
+  // alive. Once the client half-closes, the RPC may finish at any time, and
+  // starting a new read after that point is not safe.
+  stream.StartReadMessage();
   stream.StartWritesDone();
   auto eos_req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(eos_req, ::testing::Optional(
@@ -1711,9 +1715,6 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
       common_response->mutable_body_mutation()->mutable_streamed_response();
   streamed_response->set_end_of_stream(true);
   streamed_response->set_end_of_stream_without_message(true);
-  // Start the read before letting the RPC finish, so the pending read keeps
-  // the call alive.
-  stream.StartReadMessage();
   ext_proc_stream->SendResponse(proc_response);
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
