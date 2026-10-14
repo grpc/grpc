@@ -113,7 +113,16 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
     ],
+)
+
+# The private headers of grpc_objc_client. They're in a separate target so that
+# grpc_objc_client doesn't export them to its dependents as textual headers.
+grpc_objc_library(
+    name = "grpc_objc_client_private",
+    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
+    visibility = ["//visibility:private"],
 )
 
 grpc_objc_library(
@@ -133,10 +142,11 @@ grpc_objc_library(
     ],
     data = [":gRPCCertificates"],
     includes = ["."],
-    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
     deps = [
+        ":grpc_objc_client_private",
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
         ":rx_library",
         ":rx_library_headers",
         "//:gpr",
@@ -198,9 +208,12 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_client_core",
+        ":grpc_objc_interface",
+        ":grpc_objc_interface_legacy",
         ":proto_objc_rpc_legacy_header",
         ":proto_objc_rpc_v2",
         ":rx_library",
+        ":rx_library_headers",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )
@@ -238,7 +251,11 @@ grpc_objc_library(
     deps = [
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
+        "//:grpc_core_credentials_header",
         "//:grpc_objc",
     ],
 )
@@ -257,9 +274,14 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_client_core_internal_testing",
+        ":grpc_objc_interface",
+        ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
         ":proto_objc_rpc_legacy_header",
         ":proto_objc_rpc_v2",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )

@@ -18,7 +18,7 @@
 
 #ifdef GRPC_TEST_OBJC
 
-#import "GRPCCall+InternalTests.h"
+#import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
 #import "../private/GRPCCore/GRPCOpBatchLog.h"
 

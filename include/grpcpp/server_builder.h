@@ -248,6 +248,8 @@ class ServerBuilder {
     return SetOption(grpc::MakeChannelArgumentOption(arg, value));
   }
 
+  ServerBuilder& SetChildChannelArgs(const ChannelArguments& args);
+
   /// For internal use only: Register a ServerBuilderPlugin factory function.
   static void InternalAddPluginFactory(
       std::unique_ptr<grpc::ServerBuilderPlugin> (*CreatePlugin)());
@@ -374,11 +376,6 @@ class ServerBuilder {
   }
 
   /// Experimental API, subject to change.
-  void set_fetcher(grpc_server_config_fetcher* server_config_fetcher) {
-    server_config_fetcher_ = server_config_fetcher;
-  }
-
-  /// Experimental API, subject to change.
   virtual ChannelArguments BuildChannelArgs();
 
  private:
@@ -449,7 +446,6 @@ class ServerBuilder {
       interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
-  grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
   std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
       authorization_provider_;
   experimental::ServerMetricRecorder* server_metric_recorder_ = nullptr;

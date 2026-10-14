@@ -34,8 +34,8 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
-#include "src/core/util/useful.h"
-#include "test/core/filters/filter_test.h"
+#include "test/core/filters/filter_matchers.h"
+#include "test/core/filters/filter_test_v2.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
@@ -50,7 +50,7 @@
 namespace grpc_core {
 namespace {
 
-class ClientAuthFilterTest : public FilterTest<ClientAuthFilter> {
+class ClientAuthFilterTest : public FilterTestV2<ClientAuthFilter> {
  protected:
   class FailCallCreds : public grpc_call_credentials {
    public:

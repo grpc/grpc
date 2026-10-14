@@ -32,12 +32,12 @@ import uuid
 from google.protobuf import json_format
 import googleapiclient.discovery
 import grpc
+from grpc_health.v1 import health_pb2
+from grpc_health.v1 import health_pb2_grpc
 from oauth2client.client import GoogleCredentials
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
-from src.proto.grpc.health.v1 import health_pb2
-from src.proto.grpc.health.v1 import health_pb2_grpc
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc

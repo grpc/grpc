@@ -12,238 +12,533 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Tests for the v3 FilterTest harness itself, using synthetic filters and
+// interceptors defined right here, so every assertion is about harness plumbing
+// rather than any particular filter's behavior. (The v2 harness lives in
+// filter_test_v2.{h,cc}, tested by filter_test_v2_test.cc.)
+
 #include "test/core/filters/filter_test.h"
 
 #include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/status.h>
 
+#include <chrono>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
+#include "src/core/call/call_spine.h"
+#include "src/core/call/interception_chain.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/property_list.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/useful.h"
+#include "test/core/filters/filter_matchers.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-using ::testing::_;
-
 namespace grpc_core {
+
+////////////////////////////////////////////////////////////////////////////////
+// FilterTest (v3 filter API)
+
 namespace {
 
-class NoOpFilter final : public ChannelFilter {
+// A filter that intercepts nothing: every event passes through untouched. It
+// exists solely to place a real filter in the call path so the harness
+// exercises the genuine CallFilters executor.
+class PassThroughFilter : public ImplementChannelFilter<PassThroughFilter> {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs args, NextPromiseFactory next) override {
-    return next(std::move(args));
-  }
+  static absl::string_view TypeName() { return "pass_through"; }
 
-  static absl::StatusOr<std::unique_ptr<NoOpFilter>> Create(
+  static absl::StatusOr<std::unique_ptr<PassThroughFilter>> Create(
       const ChannelArgs&, ChannelFilter::Args) {
-    return std::make_unique<NoOpFilter>();
+    return std::make_unique<PassThroughFilter>();
   }
+
+  class Call {
+   public:
+    static inline const NoInterceptor OnClientInitialMetadata;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() { return {}; }
+  };
 };
-using NoOpFilterTest = FilterTest<NoOpFilter>;
 
-class DelayStartFilter final : public ChannelFilter {
+// A promise that is Pending{} on its first poll and resolves on the next one,
+// arranging its own wakeup through the event engine. Used to make every hook of
+// AsyncFilter genuinely asynchronous, so the harness has to suspend and resume
+// each of them.
+template <typename T>
+class ResolveAfterOnePending {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs args, NextPromiseFactory next) override {
-    return Seq(
-        [args = std::move(args), i = 10]() mutable -> Poll<CallArgs> {
-          --i;
-          if (i == 0) return std::move(args);
-          GetContext<Activity>()->ForceImmediateRepoll();
-          return Pending{};
-        },
-        std::move(next));
+  explicit ResolveAfterOnePending(T value) : value_(std::move(value)) {}
+
+  Poll<T> operator()() {
+    if (polled_) return std::move(value_);
+    polled_ = true;
+    GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
+        [waker = GetContext<Activity>()->MakeOwningWaker()]() mutable {
+          waker.Wakeup();
+        });
+    return Pending{};
   }
 
-  static absl::StatusOr<std::unique_ptr<DelayStartFilter>> Create(
+ private:
+  T value_;
+  bool polled_ = false;
+};
+
+ResolveAfterOnePending<absl::Status> PendOnce() {
+  return ResolveAfterOnePending<absl::Status>(absl::OkStatus());
+}
+
+// A filter that does asynchronous work at each of its interception points that
+// can do any: every hook below returns a promise that yields Pending{} the
+// first time it is polled.
+//
+// OnClientToServerHalfClose and OnServerTrailingMetadata are deliberately
+// synchronous: the v3 filter API has no promise-returning form for those two
+// hooks (see AddHalfClose/AddServerTrailingMetadata in call_filters.h), so
+// there is nothing to exercise there.
+//
+// Note this is a plain filter rather than an ImplementChannelFilter: the v2
+// bridge that ImplementChannelFilter provides does not support
+// promise-returning hooks.
+class AsyncFilter {
+ public:
+  static absl::StatusOr<std::unique_ptr<AsyncFilter>> Create(
+      const ChannelArgs&, const FilterArgs&) {
+    return std::make_unique<AsyncFilter>();
+  }
+
+  using PendingStatus = ResolveAfterOnePending<absl::Status>;
+
+  class Call {
+   public:
+    PendingStatus OnClientInitialMetadata(ClientMetadata&) {
+      return PendOnce();
+    }
+    PendingStatus OnServerInitialMetadata(ServerMetadata&) {
+      return PendOnce();
+    }
+    PendingStatus OnClientToServerMessage(Message&) { return PendOnce(); }
+    PendingStatus OnServerToClientMessage(Message&) { return PendOnce(); }
+    void OnClientToServerHalfClose() {}
+    void OnServerTrailingMetadata(ServerMetadata&) {}
+    static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() { return {}; }
+  };
+};
+
+// A filter that rejects every call at initial metadata.
+class RejectingFilter : public ImplementChannelFilter<RejectingFilter> {
+ public:
+  static absl::string_view TypeName() { return "rejecting"; }
+
+  static absl::StatusOr<std::unique_ptr<RejectingFilter>> Create(
       const ChannelArgs&, ChannelFilter::Args) {
-    return std::make_unique<DelayStartFilter>();
+    return std::make_unique<RejectingFilter>();
   }
-};
-using DelayStartFilterTest = FilterTest<DelayStartFilter>;
 
-class AddClientInitialMetadataFilter final : public ChannelFilter {
+  class Call {
+   public:
+    ServerMetadataHandle OnClientInitialMetadata(ClientMetadata&) {
+      return ServerMetadataFromStatus(GRPC_STATUS_PERMISSION_DENIED,
+                                      "rejected by filter");
+    }
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() { return {}; }
+  };
+};
+
+// An interceptor that passes every call down the chain unchanged: exactly one
+// child call per intercepted call.
+class PassThroughInterceptor final : public Interceptor {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs args, NextPromiseFactory next) override {
-    args.client_initial_metadata->Set(HttpPathMetadata(),
-                                      Slice::FromCopiedString("foo.bar"));
-    return next(std::move(args));
+  static absl::StatusOr<RefCountedPtr<PassThroughInterceptor>> Create(
+      const ChannelArgs&, const FilterArgs&) {
+    return MakeRefCounted<PassThroughInterceptor>();
   }
 
-  static absl::StatusOr<std::unique_ptr<AddClientInitialMetadataFilter>> Create(
-      const ChannelArgs&, ChannelFilter::Args) {
-    return absl::make_unique<AddClientInitialMetadataFilter>();
+  void Orphaned() override {}
+
+ protected:
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    PassThrough(std::move(unstarted_call_handler));
   }
 };
-using AddClientInitialMetadataFilterTest =
-    FilterTest<AddClientInitialMetadataFilter>;
 
-class AddServerTrailingMetadataFilter final : public ChannelFilter {
+// An interceptor that answers every call itself and never passes it on: zero
+// child calls, so no handler is ever produced for the test to collect.
+class ConsumingInterceptor final : public Interceptor {
  public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs args, NextPromiseFactory next) override {
-    return Map(next(std::move(args)), [](ServerMetadataHandle handle) {
-      handle->Set(HttpStatusMetadata(), 420);
-      return handle;
-    });
+  static absl::StatusOr<RefCountedPtr<ConsumingInterceptor>> Create(
+      const ChannelArgs&, const FilterArgs&) {
+    return MakeRefCounted<ConsumingInterceptor>();
   }
 
-  static absl::StatusOr<std::unique_ptr<AddServerTrailingMetadataFilter>>
-  Create(const ChannelArgs&, ChannelFilter::Args) {
-    return absl::make_unique<AddServerTrailingMetadataFilter>();
-  }
-};
-using AddServerTrailingMetadataFilterTest =
-    FilterTest<AddServerTrailingMetadataFilter>;
+  void Orphaned() override {}
 
-class AddServerInitialMetadataFilter final : public ChannelFilter {
- public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs args, NextPromiseFactory next) override {
-    args.server_initial_metadata->InterceptAndMap([](ServerMetadataHandle md) {
-      md->Set(GrpcEncodingMetadata(), GRPC_COMPRESS_GZIP);
-      return md;
-    });
-    return next(std::move(args));
-  }
-  static absl::StatusOr<std::unique_ptr<AddServerInitialMetadataFilter>> Create(
-      const ChannelArgs&, ChannelFilter::Args) {
-    return absl::make_unique<AddServerInitialMetadataFilter>();
+ protected:
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    Consume(std::move(unstarted_call_handler))
+        .PushServerTrailingMetadata(ServerMetadataFromStatus(
+            GRPC_STATUS_UNIMPLEMENTED, "consumed by interceptor"));
   }
 };
-using AddServerInitialMetadataFilterTest =
-    FilterTest<AddServerInitialMetadataFilter>;
-
-TEST_F(NoOpFilterTest, NoOp) {}
-
-TEST_F(NoOpFilterTest, MakeCall) {
-  Call call(MakeChannel(ChannelArgs()).value());
-}
-
-TEST_F(NoOpFilterTest, MakeClientMetadata) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  auto md = call.NewClientMetadata({{":path", "foo.bar"}});
-  EXPECT_EQ(md->get_pointer(HttpPathMetadata())->as_string_view(), "foo.bar");
-}
-
-TEST_F(NoOpFilterTest, MakeServerMetadata) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  auto md = call.NewServerMetadata({{":status", "200"}});
-  EXPECT_EQ(md->get(HttpStatusMetadata()), HttpStatusMetadata::ValueType(200));
-}
-
-TEST_F(NoOpFilterTest, CanStart) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, _));
-  call.Start(call.NewClientMetadata());
-  Step();
-}
-
-TEST_F(DelayStartFilterTest, CanStartWithDelay) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, _));
-  call.Start(call.NewClientMetadata());
-  Step();
-}
-
-TEST_F(NoOpFilterTest, CanCancel) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, _));
-  call.Start(call.NewClientMetadata());
-  call.Cancel();
-}
-
-TEST_F(DelayStartFilterTest, CanCancelWithDelay) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  call.Start(call.NewClientMetadata());
-  call.Cancel();
-}
-
-TEST_F(AddClientInitialMetadataFilterTest, CanSetClientInitialMetadata) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, HasMetadataKeyValue(":path", "foo.bar")));
-  call.Start(call.NewClientMetadata());
-  Step();
-}
-
-TEST_F(NoOpFilterTest, CanFinish) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, _));
-  call.Start(call.NewClientMetadata());
-  call.FinishNextFilter(call.NewServerMetadata());
-  EXPECT_EVENT(Finished(&call, _));
-  Step();
-}
-
-TEST_F(AddServerTrailingMetadataFilterTest, CanSetServerTrailingMetadata) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, _));
-  call.Start(call.NewClientMetadata());
-  call.FinishNextFilter(call.NewServerMetadata());
-  EXPECT_EVENT(Finished(&call, HasMetadataKeyValue(":status", "420")));
-  Step();
-}
-
-TEST_F(NoOpFilterTest, CanProcessServerInitialMetadata) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, _));
-  call.Start(call.NewClientMetadata());
-  call.ForwardServerInitialMetadata(call.NewServerMetadata());
-  EXPECT_EVENT(ForwardedServerInitialMetadata(&call, _));
-  Step();
-}
-
-TEST_F(AddServerInitialMetadataFilterTest, CanSetServerInitialMetadata) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, _));
-  call.Start(call.NewClientMetadata());
-  call.ForwardServerInitialMetadata(call.NewServerMetadata());
-  EXPECT_EVENT(ForwardedServerInitialMetadata(
-      &call, HasMetadataKeyValue("grpc-encoding", "gzip")));
-  Step();
-}
-
-TEST_F(NoOpFilterTest, CanProcessClientToServerMessage) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, _));
-  call.Start(call.NewClientMetadata());
-  call.ForwardMessageClientToServer(call.NewMessage("abc"));
-  EXPECT_CALL(events,
-              ForwardedMessageClientToServer(&call, HasMessagePayload("abc")));
-  Step();
-}
-
-TEST_F(NoOpFilterTest, CanProcessServerToClientMessage) {
-  Call call(MakeChannel(ChannelArgs()).value());
-  EXPECT_EVENT(Started(&call, _));
-  call.Start(call.NewClientMetadata());
-  call.ForwardServerInitialMetadata(call.NewServerMetadata());
-  call.ForwardMessageServerToClient(call.NewMessage("abc"));
-  EXPECT_EVENT(ForwardedServerInitialMetadata(&call, _));
-  EXPECT_CALL(events,
-              ForwardedMessageServerToClient(&call, HasMessagePayload("abc")));
-  Step();
-}
 
 }  // namespace
-}  // namespace grpc_core
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+// Drives all six call operations through a transparent filter. The pushes and
+// pulls are interleaved rather than issued as two blocks, because a push does
+// not complete until the far end pulls: pushing server trailing metadata while
+// a message push is still outstanding would race the message.
+FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughFilter) {
+  ASSERT_TRUE(CreateFilterChain<PassThroughFilter>().ok());
+  StartCallForFilter(NewClientMetadata({{"echo-test", "on"}}));
+
+  // Client sends the request.
+  PushClientMessage(NewMessage("hello"));
+  PushClientHalfClose();
+
+  // Server receives it.
+  ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
+      PullClientInitialMetadata();
+  ASSERT_TRUE(client_initial_metadata.ok());
+  EXPECT_THAT(**client_initial_metadata,
+              HasMetadataKeyValue("echo-test", "on"));
+  ClientToServerNextMessage request = PullClientMessage();
+  ASSERT_TRUE(request.ok());
+  ASSERT_TRUE(request.has_value());
+  EXPECT_THAT(request.value(), HasMessagePayload("hello"));
+
+  // Server responds.
+  PushServerInitialMetadata(NewServerMetadata({{"server-hdr", "yes"}}));
+  PushServerMessage(NewMessage("hello"));
+
+  // Client receives the response.
+  ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_metadata =
+      PullServerInitialMetadata();
+  ASSERT_TRUE(server_initial_metadata.ok());
+  EXPECT_THAT(*server_initial_metadata,
+              ::testing::Optional(::testing::Pointee(
+                  HasMetadataKeyValue("server-hdr", "yes"))));
+  ServerToClientNextMessage response = PullServerMessage();
+  ASSERT_TRUE(response.ok());
+  ASSERT_TRUE(response.has_value());
+  EXPECT_THAT(response.value(), HasMessagePayload("hello"));
+
+  // Server finishes, client observes the status.
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_metadata.ok());
+  EXPECT_THAT(**server_trailing_metadata, HasMetadataResult(absl::OkStatus()));
+
+  WaitForAllPendingWork();
 }
+
+// The same unary RPC, but every hook of the filter under test suspends once
+// before completing. Nothing about the test changes: the harness resumes each
+// hook and all six operations still arrive.
+FILTER_TEST(FilterTest, UnaryEchoThroughAsyncFilter) {
+  ASSERT_TRUE(CreateFilterChain<AsyncFilter>().ok());
+  StartCallForFilter(NewClientMetadata({{"echo-test", "on"}}));
+
+  PushClientMessage(NewMessage("hello"));
+  PushClientHalfClose();
+
+  ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
+      PullClientInitialMetadata();
+  ASSERT_TRUE(client_initial_metadata.ok());
+  EXPECT_THAT(**client_initial_metadata,
+              HasMetadataKeyValue("echo-test", "on"));
+  ClientToServerNextMessage request = PullClientMessage();
+  ASSERT_TRUE(request.ok());
+  ASSERT_TRUE(request.has_value());
+  EXPECT_THAT(request.value(), HasMessagePayload("hello"));
+
+  PushServerInitialMetadata(NewServerMetadata({{"server-hdr", "yes"}}));
+  PushServerMessage(NewMessage("hello"));
+
+  ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_metadata =
+      PullServerInitialMetadata();
+  ASSERT_TRUE(server_initial_metadata.ok());
+  EXPECT_THAT(*server_initial_metadata,
+              ::testing::Optional(::testing::Pointee(
+                  HasMetadataKeyValue("server-hdr", "yes"))));
+  ServerToClientNextMessage response = PullServerMessage();
+  ASSERT_TRUE(response.ok());
+  ASSERT_TRUE(response.has_value());
+  EXPECT_THAT(response.value(), HasMessagePayload("hello"));
+
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_metadata.ok());
+  EXPECT_THAT(**server_trailing_metadata, HasMetadataResult(absl::OkStatus()));
+
+  WaitForAllPendingWork();
+}
+
+// Failure path: a filter that aborts a call at its very first interception
+// point. Returning a ServerMetadataHandle from OnClientInitialMetadata
+// terminates the call before it reaches the server, so the client observes the
+// filter's status directly.
+FILTER_TEST(FilterTest, FilterRejectsAtInitialMetadata) {
+  ASSERT_TRUE(CreateFilterChain<RejectingFilter>().ok());
+  StartCallForFilter(NewClientMetadata());
+
+  // Filters only execute as the server pulls: driving the pull fires the
+  // filter, and because the filter aborts, the pull resolves to failure.
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
+
+  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_metadata.ok());
+  EXPECT_THAT(
+      **server_trailing_metadata,
+      HasMetadataResult(absl::PermissionDeniedError("rejected by filter")));
+
+  WaitForAllPendingWork();
+}
+
+// An interceptor in the stack works just like a filter does, because it starts
+// exactly one child call.
+FILTER_TEST(FilterTest, UnaryEchoThroughPassThroughInterceptor) {
+  ASSERT_TRUE(CreateFilterChain<PassThroughInterceptor>().ok());
+  StartCallForFilter(NewClientMetadata({{"echo-test", "on"}}));
+
+  PushClientMessage(NewMessage("hello"));
+  PushClientHalfClose();
+
+  ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
+      PullClientInitialMetadata();
+  ASSERT_TRUE(client_initial_metadata.ok());
+  EXPECT_THAT(**client_initial_metadata,
+              HasMetadataKeyValue("echo-test", "on"));
+  ClientToServerNextMessage request = PullClientMessage();
+  ASSERT_TRUE(request.ok());
+  ASSERT_TRUE(request.has_value());
+  EXPECT_THAT(request.value(), HasMessagePayload("hello"));
+
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_metadata =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_metadata.ok());
+  EXPECT_THAT(**server_trailing_metadata, HasMetadataResult(absl::OkStatus()));
+
+  WaitForAllPendingWork();
+}
+
+// An interceptor that consumes the call creates *no* child call, so there is no
+// handler to collect: this is why StartCall() hands back only the initiator.
+FILTER_TEST(FilterTest, ConsumingInterceptorCreatesNoChildCall) {
+  ASSERT_TRUE(CreateFilterChain<ConsumingInterceptor>().ok());
+  CallInitiator initiator = StartCall(NewClientMetadata());
+
+  EXPECT_EQ(PullServerTrailingStatus(initiator),
+            absl::UnimplementedError("consumed by interceptor"));
+
+  WaitForAllPendingWork();
+}
+
+// For a filter that creates its child call right away, the deferred form
+// behaves just like StartCallForFilter(): the handler is there immediately.
+FILTER_TEST(FilterTest, DeferredHandlerWithFilterThatDoesNotDefer) {
+  ASSERT_TRUE(CreateFilterChain<PassThroughFilter>().ok());
+  StartCallWithDeferredHandler(NewClientMetadata({{"echo-test", "on"}}));
+  ASSERT_TRUE(WaitForHandler());
+  ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
+      PullClientInitialMetadata();
+  ASSERT_TRUE(client_initial_metadata.ok());
+  EXPECT_THAT(**client_initial_metadata,
+              HasMetadataKeyValue("echo-test", "on"));
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(), absl::OkStatus());
+  WaitForAllPendingWork();
+}
+
+namespace {
+
+// A one-shot signal the test opens by hand, standing in for an external
+// service (e.g. an ExtProc server) whose response a filter must wait for before
+// it can create its child call. Handed to GatedInterceptor via channel args.
+class Gate final : public RefCounted<Gate> {
+ public:
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.test.filter_test_gate";
+  }
+  static int ChannelArgsCompare(const Gate* a, const Gate* b) {
+    return QsortCompare(a, b);
+  }
+
+  void Open() {
+    open_ = true;
+    waker_.Wakeup();
+  }
+
+  // A promise that resolves once Open() has been called.
+  auto Wait() {
+    return [self = Ref()]() -> Poll<Empty> {
+      if (self->open_) return Empty{};
+      self->waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      return Pending{};
+    };
+  }
+
+ private:
+  bool open_ = false;
+  Waker waker_;
+};
+
+// An interceptor that reads the client's initial metadata, then holds the call
+// until its Gate opens before creating exactly one child call: the shape of a
+// filter that defers creating its child call.
+class GatedInterceptor final : public Interceptor {
+ public:
+  static absl::StatusOr<RefCountedPtr<GatedInterceptor>> Create(
+      const ChannelArgs& args, const FilterArgs&) {
+    RefCountedPtr<Gate> gate = args.GetObjectRef<Gate>();
+    if (gate == nullptr) return absl::InvalidArgumentError("no gate");
+    return MakeRefCounted<GatedInterceptor>(std::move(gate));
+  }
+
+  explicit GatedInterceptor(RefCountedPtr<Gate> gate)
+      : gate_(std::move(gate)) {}
+
+  void Orphaned() override {}
+
+ protected:
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    unstarted_call_handler.SpawnGuarded(
+        "gated-hijack", [this, unstarted_call_handler]() mutable {
+          return TrySeq(
+              Hijack(std::move(unstarted_call_handler)),
+              [gate = gate_](HijackedCall hijacked_call) {
+                CallHandler call_handler =
+                    hijacked_call.original_call_handler();
+                // While held, this promise keeps the hijacked call -- and so
+                // the party it runs on -- alive. Stop waiting once the call is
+                // done so that cycle is broken even if the gate never opens.
+                return Seq(Race(Map(call_handler.WasCancelled(),
+                                    [](bool) { return false; }),
+                                Map(gate->Wait(), [](Empty) { return true; })),
+                           [hijacked_call =
+                                std::move(hijacked_call)](bool opened) mutable {
+                             if (opened) {
+                               ForwardCall(
+                                   hijacked_call.original_call_handler(),
+                                   hijacked_call.MakeLastCall());
+                             }
+                             return StatusFlag(true);
+                           });
+              });
+        });
+  }
+
+ private:
+  RefCountedPtr<Gate> gate_;
+};
+
+// A suite whose stack is a GatedInterceptor, with the gate held by the test.
+class DeferredHandlerFilterTest : public FilterTest {
+ protected:
+  using FilterTest::FilterTest;
+
+  absl::Status Init() {
+    return CreateFilterChain<GatedInterceptor>(ChannelArgs().SetObject(gate_));
+  }
+
+  // The gate may hold a waker into the call under test, so drop it only once
+  // FilterTest has cancelled that call.
+  void Cleanup() override { gate_.reset(); }
+
+  RefCountedPtr<Gate> gate_ = MakeRefCounted<Gate>();
+};
+
+}  // namespace
+
+// The filter holds the call until the gate opens: until then WaitForHandler()
+// times out without setting the implicit handler (so it may be retried), and
+// once the gate opens the handler arrives and the call runs end to end. The
+// client's message is pushed while the call is held, as a client would while a
+// filter waits on an external service.
+FILTER_TEST(DeferredHandlerFilterTest, HandlerArrivesOnlyOnceFilterCreatesIt) {
+  ASSERT_TRUE(Init().ok());
+  StartCallWithDeferredHandler(NewClientMetadata({{"echo-test", "on"}}));
+  PushClientMessage(NewMessage("hello"));
+  PushClientHalfClose();
+  EXPECT_FALSE(WaitForHandler(std::chrono::seconds(5)));
+  gate_->Open();
+  ASSERT_TRUE(WaitForHandler());
+  ValueOrFailure<ClientMetadataHandle> client_initial_metadata =
+      PullClientInitialMetadata();
+  ASSERT_TRUE(client_initial_metadata.ok());
+  EXPECT_THAT(**client_initial_metadata,
+              HasMetadataKeyValue("echo-test", "on"));
+  ClientToServerNextMessage request = PullClientMessage();
+  ASSERT_TRUE(request.ok());
+  ASSERT_TRUE(request.has_value());
+  EXPECT_THAT(request.value(), HasMessagePayload("hello"));
+  PushServerInitialMetadata(NewServerMetadata({{"server-hdr", "yes"}}));
+  PushServerMessage(NewMessage("world"));
+  ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_metadata =
+      PullServerInitialMetadata();
+  ASSERT_TRUE(server_initial_metadata.ok());
+  EXPECT_THAT(*server_initial_metadata,
+              ::testing::Optional(::testing::Pointee(
+                  HasMetadataKeyValue("server-hdr", "yes"))));
+  ServerToClientNextMessage response = PullServerMessage();
+  ASSERT_TRUE(response.ok());
+  ASSERT_TRUE(response.has_value());
+  EXPECT_THAT(response.value(), HasMessagePayload("world"));
+  PushServerTrailingMetadata(ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(), absl::OkStatus());
+  WaitForAllPendingWork();
+}
+
+// A filter that never creates its child call: WaitForHandler() reports that,
+// and the held call is cancelled by FilterTest at teardown, before the suite's
+// Cleanup() drops the gate.
+FILTER_TEST(DeferredHandlerFilterTest, NoHandlerIfFilterNeverCreatesIt) {
+  ASSERT_TRUE(Init().ok());
+  StartCallWithDeferredHandler(NewClientMetadata());
+  EXPECT_FALSE(WaitForHandler(std::chrono::seconds(5)));
+  WaitForAllPendingWork();
+}
+
+}  // namespace grpc_core

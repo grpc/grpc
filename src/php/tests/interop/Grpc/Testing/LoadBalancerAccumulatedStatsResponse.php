@@ -83,7 +83,7 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      */
     public function getNumRpcsStartedByMethod()
     {
-        if ($this->num_rpcs_started_by_method->count() !== 0) {
+        if (count($this->num_rpcs_started_by_method) !== 0) {
             @trigger_error('num_rpcs_started_by_method is deprecated.', E_USER_DEPRECATED);
         }
         return $this->num_rpcs_started_by_method;
@@ -98,10 +98,10 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * @return $this
      * @deprecated
      */
-    public function setNumRpcsStartedByMethod($var)
+    public function setNumRpcsStartedByMethod(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::INT32);
-        if ($arr->count() !== 0) {
+        if (count($arr) !== 0) {
             @trigger_error('num_rpcs_started_by_method is deprecated.', E_USER_DEPRECATED);
         }
         $this->num_rpcs_started_by_method = $arr;
@@ -119,7 +119,7 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      */
     public function getNumRpcsSucceededByMethod()
     {
-        if ($this->num_rpcs_succeeded_by_method->count() !== 0) {
+        if (count($this->num_rpcs_succeeded_by_method) !== 0) {
             @trigger_error('num_rpcs_succeeded_by_method is deprecated.', E_USER_DEPRECATED);
         }
         return $this->num_rpcs_succeeded_by_method;
@@ -134,10 +134,10 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * @return $this
      * @deprecated
      */
-    public function setNumRpcsSucceededByMethod($var)
+    public function setNumRpcsSucceededByMethod(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::INT32);
-        if ($arr->count() !== 0) {
+        if (count($arr) !== 0) {
             @trigger_error('num_rpcs_succeeded_by_method is deprecated.', E_USER_DEPRECATED);
         }
         $this->num_rpcs_succeeded_by_method = $arr;
@@ -155,7 +155,7 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      */
     public function getNumRpcsFailedByMethod()
     {
-        if ($this->num_rpcs_failed_by_method->count() !== 0) {
+        if (count($this->num_rpcs_failed_by_method) !== 0) {
             @trigger_error('num_rpcs_failed_by_method is deprecated.', E_USER_DEPRECATED);
         }
         return $this->num_rpcs_failed_by_method;
@@ -170,10 +170,10 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * @return $this
      * @deprecated
      */
-    public function setNumRpcsFailedByMethod($var)
+    public function setNumRpcsFailedByMethod(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::INT32);
-        if ($arr->count() !== 0) {
+        if (count($arr) !== 0) {
             @trigger_error('num_rpcs_failed_by_method is deprecated.', E_USER_DEPRECATED);
         }
         $this->num_rpcs_failed_by_method = $arr;
@@ -201,7 +201,7 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
      */
-    public function setStatsPerMethod($var)
+    public function setStatsPerMethod(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\LoadBalancerAccumulatedStatsResponse\MethodStats::class);
         $this->stats_per_method = $arr;

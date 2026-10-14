@@ -53,7 +53,10 @@
 // *   **Counter:** A metric that only increases. Uses `RegisterCounter` and
 //     `Storage::Increment`.
 // *   **Histogram:** Tracks the distribution of values. Uses
-//     `RegisterHistogram` and `Storage::Increment`.
+//     *   `DoubleHistogram`: for double values.
+//     *   `Int64Histogram`: for int64_t values.
+//     Uses `RegisterInt64Histogram`, `RegisterDoubleHistogram` and
+//     `Storage::Increment`.
 // *   **Gauges:** Metrics that can go up or down, representing a current value.
 //     *   `DoubleGauge`: for double values.
 //     *   `IntGauge`: for int64_t values.
@@ -393,9 +396,11 @@ class InstrumentMetadata {
   struct DoubleGaugeShape {};
   struct IntGaugeShape {};
   struct UintGaugeShape {};
-  using HistogramShape = HistogramBuckets;
+  using Int64HistogramShape = Int64HistogramBuckets;
+  using DoubleHistogramShape = DoubleHistogramBuckets;
 
-  using Shape = std::variant<CounterShape, UpDownCounterShape, HistogramShape,
+  using Shape = std::variant<CounterShape, UpDownCounterShape,
+                             Int64HistogramShape, DoubleHistogramShape,
                              DoubleGaugeShape, IntGaugeShape, UintGaugeShape>;
 
   // A description of a metric.
@@ -428,10 +433,13 @@ class MetricsSink;
 // to be called when histogram data is collected.
 // This comes with a relatively sever performance penalty. We'd like to be able
 // to remove this in the future.
-using HistogramCollectionHook = absl::AnyInvocable<void(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, int64_t value)>;
-void RegisterHistogramCollectionHook(HistogramCollectionHook hook);
+template <typename T>
+using InstrumentCollectionHook =
+    absl::AnyInvocable<void(const InstrumentMetadata::Description* instrument,
+                            absl::Span<const std::string> labels, T value)>;
+
+template <typename T>
+void RegisterInstrumentCollectionHook(InstrumentCollectionHook<T> hook);
 
 // Defines a scope for collecting metrics, identified by a set of labels of
 // interest. Metric collection via GetStorage+Increment will be filtered
@@ -491,9 +499,10 @@ class CollectionScope : public RefCounted<CollectionScope> {
 
 namespace instrument_detail {
 
-void CallHistogramCollectionHooks(
+template <typename T>
+void CallInstrumentCollectionHooks(
     const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, int64_t value);
+    absl::Span<const std::string> labels, T value);
 
 class GaugeStorage {
  public:
@@ -652,9 +661,12 @@ class QueryableDomain {
   const InstrumentMetadata::Description* AllocateUpDownCounter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit);
-  const InstrumentMetadata::Description* AllocateHistogram(
+  const InstrumentMetadata::Description* AllocateInt64Histogram(
       absl::string_view name, absl::string_view description,
-      absl::string_view unit, HistogramBuckets bounds);
+      absl::string_view unit, Int64HistogramBuckets bounds);
+  const InstrumentMetadata::Description* AllocateDoubleHistogram(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit, DoubleHistogramBuckets bounds);
   const InstrumentMetadata::Description* AllocateDoubleGauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit);
@@ -742,27 +754,31 @@ struct Counter {
 
 // An InstrumentHandle is a handle to a single metric in an
 // instrument domain. It has a Shape (how the metric behaves).
-template <typename Shape, typename Domain>
+template <typename Shape, typename DomainTag>
 class InstrumentHandle {
  public:
+  constexpr InstrumentHandle() = default;
+
+  constexpr InstrumentHandle(
+      instrument_detail::QueryableDomain* instrument_domain,
+      const InstrumentMetadata::Description* description, Shape shape)
+      : instrument_domain_(instrument_domain),
+        offset_(description ? description->offset : 0),
+        shape_(std::move(shape)),
+        description_(description) {}
+
   absl::string_view name() const { return description_->name; }
   absl::string_view description() const { return description_->description; }
   absl::string_view unit() const { return description_->unit; }
   uint64_t offset() const { return offset_; }
 
  private:
-  friend Domain;
+  friend class instrument_detail::QueryableDomain;
+  template <typename B, size_t N, typename T>
+  friend class instrument_detail::InstrumentDomainImpl;
 
-  InstrumentHandle(Domain* instrument_domain,
-                   const InstrumentMetadata::Description* description,
-                   Shape shape)
-      : instrument_domain_(instrument_domain),
-        offset_(description->offset),
-        shape_(std::move(shape)),
-        description_(description) {}
-
-  Domain* instrument_domain_;
-  uint64_t offset_;
+  instrument_detail::QueryableDomain* instrument_domain_ = nullptr;
+  uint64_t offset_ = 0;
   GPR_NO_UNIQUE_ADDRESS Shape shape_;
   const InstrumentMetadata::Description* description_ = nullptr;
 };
@@ -832,10 +848,16 @@ class MetricsSink {
   virtual void UpDownCounter(InstrumentLabelList label_keys,
                              absl::Span<const std::string> label_values,
                              absl::string_view name, uint64_t value) = 0;
-  virtual void Histogram(InstrumentLabelList label_keys,
-                         absl::Span<const std::string> label_values,
-                         absl::string_view name, HistogramBuckets bounds,
-                         absl::Span<const uint64_t> counts) = 0;
+  virtual void Int64Histogram(InstrumentLabelList label_keys,
+                              absl::Span<const std::string> label_values,
+                              absl::string_view name,
+                              Int64HistogramBuckets bounds,
+                              absl::Span<const uint64_t> counts) = 0;
+  virtual void DoubleHistogram(InstrumentLabelList label_keys,
+                               absl::Span<const std::string> label_values,
+                               absl::string_view name,
+                               DoubleHistogramBuckets bounds,
+                               absl::Span<const uint64_t> counts) = 0;
   virtual void DoubleGauge(InstrumentLabelList label_keys,
                            absl::Span<const std::string> label_values,
                            absl::string_view name, double value) = 0;
@@ -896,7 +918,8 @@ template <typename Shape, typename... Args>
 Shape* GetMemoizedShape(Args&&... args) {
   // Many histograms are created with the same shape, so we try to deduplicate
   // them.
-  using ShapeCache = absl::node_hash_map<std::tuple<Args...>, Shape*>;
+  using ShapeCache =
+      absl::node_hash_map<std::tuple<std::decay_t<Args>...>, Shape*>;
   static ShapeCache* shape_cache = new ShapeCache();
   auto it =
       shape_cache->find(std::forward_as_tuple(std::forward<Args>(args)...));
@@ -905,8 +928,8 @@ Shape* GetMemoizedShape(Args&&... args) {
     shape = it->second;
   } else {
     shape = new Shape(std::forward<Args>(args)...);
-    shape_cache->emplace(std::forward_as_tuple(std::forward<Args>(args)...),
-                         shape);
+    shape_cache->emplace(
+        std::tuple<std::decay_t<Args>...>(std::forward<Args>(args)...), shape);
   }
   return shape;
 }
@@ -917,34 +940,27 @@ template <typename Backend, size_t N, typename Tag>
 class InstrumentDomainImpl final : public QueryableDomain {
  public:
   using Self = InstrumentDomainImpl<Backend, N, Tag>;
-  using CounterHandle = InstrumentHandle<Counter, Self>;
+  using CounterHandle = InstrumentHandle<Counter, Tag>;
   using UpDownCounterHandle =
-      InstrumentHandle<InstrumentMetadata::UpDownCounterShape, Self>;
+      InstrumentHandle<InstrumentMetadata::UpDownCounterShape, Tag>;
   using DoubleGaugeHandle =
-      InstrumentHandle<InstrumentMetadata::DoubleGaugeShape, Self>;
+      InstrumentHandle<InstrumentMetadata::DoubleGaugeShape, Tag>;
   using IntGaugeHandle =
-      InstrumentHandle<InstrumentMetadata::IntGaugeShape, Self>;
+      InstrumentHandle<InstrumentMetadata::IntGaugeShape, Tag>;
   using UintGaugeHandle =
-      InstrumentHandle<InstrumentMetadata::UintGaugeShape, Self>;
+      InstrumentHandle<InstrumentMetadata::UintGaugeShape, Tag>;
   template <typename Shape>
-  using HistogramHandle = InstrumentHandle<const Shape*, Self>;
+  using HistogramHandle = InstrumentHandle<const Shape*, Tag>;
 
   class GaugeSink {
    public:
     explicit GaugeSink(GaugeStorage& storage) : storage_(storage) {}
 
-    void Set(InstrumentHandle<InstrumentMetadata::DoubleGaugeShape, Self> g,
-             double x) {
+    void Set(DoubleGaugeHandle g, double x) {
       storage_.SetDouble(g.offset_, x);
     }
-    void Set(InstrumentHandle<InstrumentMetadata::IntGaugeShape, Self> g,
-             int64_t x) {
-      storage_.SetInt(g.offset_, x);
-    }
-    void Set(InstrumentHandle<InstrumentMetadata::UintGaugeShape, Self> g,
-             uint64_t x) {
-      storage_.SetUint(g.offset_, x);
-    }
+    void Set(IntGaugeHandle g, int64_t x) { storage_.SetInt(g.offset_, x); }
+    void Set(UintGaugeHandle g, uint64_t x) { storage_.SetUint(g.offset_, x); }
 
    private:
     GaugeStorage& storage_;
@@ -1010,17 +1026,24 @@ class InstrumentDomainImpl final : public QueryableDomain {
       }
     }
 
-    template <typename Shape>
-    void Increment(const HistogramHandle<Shape>& handle, int64_t value) {
+    template <typename Shape, typename T>
+    void Increment(const HistogramHandle<Shape>& handle, T value) {
       GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
-      CallHistogramCollectionHooks(handle.description_, label(), value);
+      if constexpr (std::is_same_v<Shape, LinearDoubleHistogramShape> ||
+                    std::is_same_v<Shape, ExponentialDoubleHistogramShape>) {
+        CallInstrumentCollectionHooks<double>(handle.description_, label(),
+                                              static_cast<double>(value));
+      } else {
+        CallInstrumentCollectionHooks<int64_t>(handle.description_, label(),
+                                               static_cast<int64_t>(value));
+      }
       backend_.Add(handle.offset_ + handle.shape_->BucketFor(value), 1);
     }
 
     uint64_t SumCounter(size_t offset) override { return backend_.Sum(offset); }
     void FillGaugeStorage(GaugeStorage& storage) override {
       GaugeSink sink(storage);
-      MutexLock lock(&gauge_providers_mu_);
+      MutexLock lock(gauge_providers_mu_);
       for (auto* provider : gauge_providers_) {
         provider->PopulateGaugeData(sink);
       }
@@ -1036,12 +1059,12 @@ class InstrumentDomainImpl final : public QueryableDomain {
           backend_(instrument_domain->allocated_counter_slots()) {}
 
     void RegisterGaugeProvider(GaugeProvider* provider) {
-      MutexLock lock(&gauge_providers_mu_);
+      MutexLock lock(gauge_providers_mu_);
       gauge_providers_.push_back(provider);
     }
 
     void UnregisterGaugeProvider(GaugeProvider* provider) {
-      MutexLock lock(&gauge_providers_mu_);
+      MutexLock lock(gauge_providers_mu_);
       gauge_providers_.erase(std::remove(gauge_providers_.begin(),
                                          gauge_providers_.end(), provider),
                              gauge_providers_.end());
@@ -1081,13 +1104,24 @@ class InstrumentDomainImpl final : public QueryableDomain {
   }
 
   template <typename Shape, typename... Args>
-  HistogramHandle<Shape> RegisterHistogram(absl::string_view name,
-                                           absl::string_view description,
-                                           absl::string_view unit,
-                                           Args&&... args) {
+  HistogramHandle<Shape> RegisterInt64Histogram(absl::string_view name,
+                                                absl::string_view description,
+                                                absl::string_view unit,
+                                                Args&&... args) {
     auto* shape = GetMemoizedShape<Shape>(std::forward<Args>(args)...);
     const auto* desc =
-        AllocateHistogram(name, description, unit, shape->bounds());
+        AllocateInt64Histogram(name, description, unit, shape->bounds());
+    return HistogramHandle<Shape>{this, desc, shape};
+  }
+
+  template <typename Shape, typename... Args>
+  HistogramHandle<Shape> RegisterDoubleHistogram(absl::string_view name,
+                                                 absl::string_view description,
+                                                 absl::string_view unit,
+                                                 Args&&... args) {
+    auto* shape = GetMemoizedShape<Shape>(std::forward<Args>(args)...);
+    const auto* desc =
+        AllocateDoubleHistogram(name, description, unit, shape->bounds());
     return HistogramHandle<Shape>{this, desc, shape};
   }
 
@@ -1139,6 +1173,26 @@ class InstrumentDomainImpl final : public QueryableDomain {
 template <class Derived>
 class InstrumentDomain {
  public:
+  using CounterHandle =
+      instrument_detail::InstrumentHandle<instrument_detail::Counter, Derived>;
+  using UpDownCounterHandle = instrument_detail::InstrumentHandle<
+      InstrumentMetadata::UpDownCounterShape, Derived>;
+  using DoubleGaugeHandle =
+      instrument_detail::InstrumentHandle<InstrumentMetadata::DoubleGaugeShape,
+                                          Derived>;
+  using IntGaugeHandle =
+      instrument_detail::InstrumentHandle<InstrumentMetadata::IntGaugeShape,
+                                          Derived>;
+  using UintGaugeHandle =
+      instrument_detail::InstrumentHandle<InstrumentMetadata::UintGaugeShape,
+                                          Derived>;
+  template <typename Shape>
+  using HistogramHandle =
+      instrument_detail::InstrumentHandle<const Shape*, Derived>;
+  template <typename Shape>
+  using DoubleHistogramHandle =
+      instrument_detail::InstrumentHandle<const Shape*, Derived>;
+
   static auto* Domain() {
     static const auto labels = Derived::Labels();
     static auto* domain =
@@ -1198,10 +1252,18 @@ class InstrumentDomain {
   }
 
   template <typename Shape, typename... Args>
-  static auto RegisterHistogram(absl::string_view name,
-                                absl::string_view description,
-                                absl::string_view unit, Args&&... args) {
-    return Domain()->template RegisterHistogram<Shape>(
+  static auto RegisterInt64Histogram(absl::string_view name,
+                                     absl::string_view description,
+                                     absl::string_view unit, Args&&... args) {
+    return Domain()->template RegisterInt64Histogram<Shape>(
+        name, description, unit, std::forward<Args>(args)...);
+  }
+
+  template <typename Shape, typename... Args>
+  static auto RegisterDoubleHistogram(absl::string_view name,
+                                      absl::string_view description,
+                                      absl::string_view unit, Args&&... args) {
+    return Domain()->template RegisterDoubleHistogram<Shape>(
         name, description, unit, std::forward<Args>(args)...);
   }
 

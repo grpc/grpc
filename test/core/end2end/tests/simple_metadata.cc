@@ -18,10 +18,11 @@
 
 #include <grpc/status.h>
 
-#include <memory>
+#include <string>
 
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace grpc_core {
@@ -58,7 +59,7 @@ CORE_END2END_TEST(CoreEnd2endTests, SimpleMetadata) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
+  EXPECT_EQ(server_status.message(), "");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(server_message.payload(), "hello you");

@@ -139,7 +139,7 @@ class ConfigQuery {
       exclude_features_ |= FEATURE_MASK_DO_NOT_GTEST;
     }
     exclude_experiments_except_for_configs_.insert(
-        {ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport,
+        {ExperimentIds::kExperimentIdPh2Client,
          {GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FAKE_SECURITY,
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_INSECURE_CREDENTIALS,
@@ -157,6 +157,12 @@ class ConfigQuery {
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK,
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_STATIC_PROVIDER_ASYNC_VERIFIER_TLS13,
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY}});
+    exclude_experiments_except_for_configs_.insert(
+        {ExperimentIds::kExperimentIdPh2Server,
+         {GRPC_HTTP2_CHTTP2_CLIENT_PH2_SERVER_CONFIG}});
+    exclude_experiments_except_for_configs_.insert(
+        {ExperimentIds::kExperimentIdPh2ClientServer,
+         {GRPC_HTTP2_PH2_CLIENT_PH2_SERVER_CONFIG}});
   }
   ConfigQuery(const ConfigQuery&) = delete;
   ConfigQuery& operator=(const ConfigQuery&) = delete;

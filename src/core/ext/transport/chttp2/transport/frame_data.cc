@@ -48,6 +48,7 @@ absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
   } else {
     s->received_last_frame = false;
   }
+  ++s->num_frames;
 
   return absl::OkStatus();
 }
@@ -123,6 +124,23 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
                   (static_cast<uint32_t>(header[3]) << 8) |
                   static_cast<uint32_t>(header[4]);
 
+  if (grpc_core::IsMessageSizeRefactoringEnabled()) {
+    if (s->max_recv_message_length.has_value() &&
+        length > *(s->max_recv_message_length)) {
+      error = GRPC_ERROR_CREATE(
+          absl::StrFormat("%s: Received message larger than max (%d vs. %u)",
+                          s->t->is_client ? "CLIENT" : "SERVER", length,
+                          *(s->max_recv_message_length)));
+      error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kStreamId,
+                                 static_cast<intptr_t>(s->id));
+      // Attach the explicit gRPC status code to fail the RPC correctly
+      error = grpc_core::ReplaceStatusCode(
+          error, absl::StatusCode::kResourceExhausted);
+      s->message_size_limit_exceeded = true;
+      return error;
+    }
+  }
+
   if (slices->length < length + GRPC_HEADER_SIZE_IN_BYTES) {
     if (min_progress_size != nullptr) {
       *min_progress_size = length + GRPC_HEADER_SIZE_IN_BYTES - slices->length;
@@ -138,6 +156,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_slice_buffer_move_first_into_buffer(slices, GRPC_HEADER_SIZE_IN_BYTES,
                                              header);
     grpc_slice_buffer_move_first(slices, length, stream_out->c_slice_buffer());
+    s->num_frames = 0;
   }
 
   return absl::OkStatus();
@@ -148,8 +167,20 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
                                                 grpc_chttp2_stream* s,
                                                 const grpc_slice& slice,
                                                 int is_last) {
-  grpc_core::CSliceRef(slice);
-  grpc_slice_buffer_add(&s->frame_storage, slice);
+  const size_t slice_len = GRPC_SLICE_LENGTH(slice);
+  bool is_small_frame = 0 < slice_len && slice_len < GRPC_SLICE_INLINED_SIZE;
+  bool multiple_small_frames =
+      (s->num_frames >= 64) &&
+      ((s->frame_storage.length / s->num_frames) < GRPC_SLICE_INLINED_SIZE);
+  if (GPR_UNLIKELY(multiple_small_frames && is_small_frame &&
+                   grpc_core::IsHeaderDataFrameEnabled())) {
+    uint8_t* append_ptr =
+        grpc_slice_buffer_tiny_add(&s->frame_storage, slice_len);
+    memcpy(append_ptr, GRPC_SLICE_START_PTR(slice), slice_len);
+  } else {
+    grpc_core::CSliceRef(slice);
+    grpc_slice_buffer_add(&s->frame_storage, slice);
+  }
   grpc_chttp2_maybe_complete_recv_message(t, s);
 
   if (is_last) {

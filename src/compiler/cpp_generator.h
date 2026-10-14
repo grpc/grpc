@@ -38,7 +38,7 @@ namespace grpc {
 
 // Using grpc::string and grpc::to_string is discouraged in favor of
 // std::string and std::to_string. This is only for legacy code using
-// them explictly.
+// them explicitly.
 using std::string;     // deprecated
 using std::to_string;  // deprecated
 

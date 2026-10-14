@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init;
-extern const upb_MiniTable* envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init_ptr;
 extern const upb_MiniTable envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init;
-extern const upb_MiniTable* envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_extensions_common_matching_v3_extension_matcher_proto_upb_file_layout;
 

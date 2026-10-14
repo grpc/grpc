@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__admin__v3__Listeners_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__Listeners_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__ListenerStatus_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__ListenerStatus_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_admin_v3_listeners_proto_upb_file_layout;
 

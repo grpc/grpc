@@ -34,6 +34,7 @@
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -51,7 +52,6 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
@@ -81,19 +81,12 @@ namespace {
 
 constexpr absl::string_view kRingHash = "ring_hash_experimental";
 
-bool XdsRingHashSetRequestHashKeyEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 class RingHashJsonArgs final : public JsonArgs {
  public:
   bool IsEnabled(absl::string_view key) const override {
     if (key == "request_hash_header") {
-      return XdsRingHashSetRequestHashKeyEnabled();
+      return IsExperimentEnvVarEnabled(
+          "GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY");
     }
     return true;
   }
@@ -112,7 +105,9 @@ class RingHashLbConfig final : public LoadBalancingPolicy::Config {
   absl::string_view name() const override { return kRingHash; }
   size_t min_ring_size() const { return min_ring_size_; }
   size_t max_ring_size() const { return max_ring_size_; }
-  absl::string_view request_hash_header() const { return request_hash_header_; }
+  const RefCountedStringValue& request_hash_header() const {
+    return request_hash_header_;
+  }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
@@ -149,7 +144,7 @@ class RingHashLbConfig final : public LoadBalancingPolicy::Config {
  private:
   uint64_t min_ring_size_ = 1024;
   uint64_t max_ring_size_ = 4096;
-  std::string request_hash_header_;
+  RefCountedStringValue request_hash_header_;
 };
 
 //
@@ -260,34 +255,8 @@ class RingHash final : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    // A fire-and-forget class that schedules endpoint connection attempts
-    // on the control plane WorkSerializer.
-    class EndpointConnectionAttempter final {
-     public:
-      EndpointConnectionAttempter(RefCountedPtr<RingHash> ring_hash,
-                                  RefCountedPtr<RingHashEndpoint> endpoint)
-          : ring_hash_(std::move(ring_hash)), endpoint_(std::move(endpoint)) {
-        // Hop into ExecCtx, so that we're not holding the data plane mutex
-        // while we run control-plane code.
-        GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-        ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
-      }
-
-     private:
-      static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
-        auto* self = static_cast<EndpointConnectionAttempter*>(arg);
-        self->ring_hash_->work_serializer()->Run([self]() {
-          if (!self->ring_hash_->shutdown_) {
-            self->endpoint_->RequestConnectionLocked();
-          }
-          delete self;
-        });
-      }
-
-      RefCountedPtr<RingHash> ring_hash_;
-      RefCountedPtr<RingHashEndpoint> endpoint_;
-      grpc_closure closure_;
-    };
+    void RequestConnectionForEndpoint(
+        const RefCountedPtr<RingHashEndpoint>& endpoint);
 
     RefCountedPtr<RingHash> ring_hash_;
     RefCountedPtr<Ring> ring_;
@@ -300,6 +269,8 @@ class RingHash final : public LoadBalancingPolicy {
   ~RingHash() override;
 
   void ShutdownLocked() override;
+
+  absl::Status LegacyUpdateLocked(UpdateArgs args);
 
   // Updates the aggregate policy's connectivity state based on the
   // number of endpoints in each state, creating a new picker.
@@ -392,9 +363,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         case GRPC_CHANNEL_READY:
           return endpoint_info.picker->Pick(args);
         case GRPC_CHANNEL_IDLE:
-          new EndpointConnectionAttempter(
-              ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
-              endpoint_info.endpoint);
+          RequestConnectionForEndpoint(endpoint_info.endpoint);
           [[fallthrough]];
         case GRPC_CHANNEL_CONNECTING:
           return PickResult::Queue();
@@ -413,9 +382,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         return endpoint_info.picker->Pick(args);
       }
       if (!requested_connection && endpoint_info.state == GRPC_CHANNEL_IDLE) {
-        new EndpointConnectionAttempter(
-            ring_hash_.Ref(DEBUG_LOCATION, "EndpointConnectionAttempter"),
-            endpoint_info.endpoint);
+        RequestConnectionForEndpoint(endpoint_info.endpoint);
         requested_connection = true;
       }
     }
@@ -428,6 +395,15 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     absl::StrAppend(&message, " (", resolution_note_, ")");
   }
   return PickResult::Fail(absl::UnavailableError(message));
+}
+
+void RingHash::Picker::RequestConnectionForEndpoint(
+    const RefCountedPtr<RingHashEndpoint>& endpoint) {
+  ring_hash_->work_serializer()->Run([ring_hash = ring_hash_, endpoint]() {
+    if (!ring_hash->shutdown_) {
+      endpoint->RequestConnectionLocked();
+    }
+  });
 }
 
 //
@@ -691,6 +667,95 @@ void RingHash::ResetBackoffLocked() {
 }
 
 absl::Status RingHash::UpdateLocked(UpdateArgs args) {
+  if (!IsRingHashUpdateCleanupEnabled()) {
+    return LegacyUpdateLocked(std::move(args));
+  }
+  // Save channel args.
+  args_ = std::move(args.args);
+  // Save config.
+  auto* config = DownCast<RingHashLbConfig*>(args.config.get());
+  request_hash_header_ = RefCountedStringValue(config->request_hash_header());
+  // Update resolution note.
+  resolution_note_ = std::move(args.resolution_note);
+  // Update endpoint list.
+  absl::Status status;
+  if (!args.addresses.ok()) {
+    GRPC_TRACE_LOG(ring_hash_lb, INFO)
+        << "[RH " << this << "] received update with addresses error: "
+        << args.addresses.status();
+    status = args.addresses.status();
+    // If we already have an endpoint list, then we keep using it.
+  } else {
+    GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] received update";
+    // De-dup endpoints, taking weight into account.
+    endpoints_.clear();
+    std::map<EndpointAddressSet, OrphanablePtr<RingHashEndpoint>> endpoint_map;
+    std::vector<std::string> errors;
+    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
+      const EndpointAddressSet key(endpoint.addresses());
+      auto& rh_endpoint = endpoint_map[key];
+      // If we've already seen this key, combine weights and skip the dup.
+      // Note: We will already have created or updated the RingHashEndpoint
+      // object when we saw the first endpoint with this key.  However,
+      // nothing inside of RingHashEndpoint uses the weight, so that's okay.
+      if (rh_endpoint != nullptr) {
+        EndpointAddresses& prev_endpoint = endpoints_[rh_endpoint->index()];
+        int weight_arg =
+            endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        int prev_weight_arg =
+            prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+        GRPC_TRACE_LOG(ring_hash_lb, INFO)
+            << "[RH " << this << "] merging duplicate endpoint for "
+            << key.ToString() << ", combined weight "
+            << weight_arg + prev_weight_arg;
+        prev_endpoint = EndpointAddresses(
+            prev_endpoint.addresses(),
+            prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,
+                                     weight_arg + prev_weight_arg));
+        return;
+      }
+      // Have not yet seen this key, so add a new endpoint.
+      const size_t index = endpoints_.size();
+      endpoints_.push_back(endpoint);
+      // If present in old map, retain it; otherwise, create a new one.
+      auto it = endpoint_map_.find(key);
+      if (it != endpoint_map_.end()) {
+        absl::Status status = it->second->UpdateLocked(index);
+        if (!status.ok()) {
+          errors.emplace_back(absl::StrCat("endpoint ", key.ToString(), ": ",
+                                           status.ToString()));
+        }
+        rh_endpoint = std::move(it->second);
+      } else {
+        rh_endpoint =
+            MakeOrphanable<RingHashEndpoint>(RefAsSubclass<RingHash>(), index);
+      }
+    });
+    endpoint_map_ = std::move(endpoint_map);
+    if (!errors.empty()) {
+      status = absl::UnavailableError(absl::StrCat(
+          "errors from children: [", absl::StrJoin(errors, "; "), "]"));
+    }
+  }
+  // If the address list is empty, report TRANSIENT_FAILURE.
+  if (endpoints_.empty()) {
+    if (status.ok()) {
+      status = absl::UnavailableError(
+          absl::StrCat("empty address list: ", resolution_note_));
+    }
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        MakeRefCounted<TransientFailurePicker>(status));
+  } else {
+    // Build new ring.
+    ring_ = MakeRefCounted<Ring>(this, config);
+    // Return a new picker.
+    UpdateAggregatedConnectivityStateLocked(absl::OkStatus());
+  }
+  return status;
+}
+
+absl::Status RingHash::LegacyUpdateLocked(UpdateArgs args) {
   // Check address list.
   if (args.addresses.ok()) {
     GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] received update";
@@ -731,7 +796,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   args_ = std::move(args.args);
   // Save config.
   auto* config = DownCast<RingHashLbConfig*>(args.config.get());
-  request_hash_header_ = RefCountedStringValue(config->request_hash_header());
+  request_hash_header_ = config->request_hash_header();
   // Build new ring.
   ring_ = MakeRefCounted<Ring>(this, config);
   // Update endpoint map.

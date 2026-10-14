@@ -37,30 +37,14 @@ namespace grpc_core {
 // JwtTokenFetcherCallCredentials
 //
 
-OrphanablePtr<TokenFetcherCredentials::FetchRequest>
-JwtTokenFetcherCallCredentials::FetchToken(
-    Timestamp deadline,
-    absl::AnyInvocable<
-        void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-        on_done) {
-  return MakeOrphanable<HttpTokenFetcherCredentials::HttpFetchRequest>(
-      this, deadline,
-      [on_done = std::move(on_done)](
-          absl::StatusOr<grpc_http_response> response) mutable {
-        if (!response.ok()) {
-          on_done(response.status());
-          return;
-        }
-        absl::string_view body(response->body, response->body_length);
-        auto expiration_time = GetJwtExpirationTime(body);
-        if (!expiration_time.ok()) {
-          on_done(expiration_time.status());
-          return;
-        }
-        on_done(MakeRefCounted<Token>(
-            Slice::FromCopiedString(absl::StrCat("Bearer ", body)),
-            *expiration_time));
-      });
+absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>
+JwtTokenFetcherCallCredentials::ExtractToken(
+    const grpc_http_response& response) {
+  absl::string_view body(response.body, response.body_length);
+  auto expiration_time = GetJwtExpirationTime(body);
+  if (!expiration_time.ok()) return expiration_time.status();
+  return MakeRefCounted<Token>(
+      Slice::FromCopiedString(absl::StrCat("Bearer ", body)), *expiration_time);
 }
 
 //

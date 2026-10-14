@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/frame_security.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -73,16 +74,16 @@ class MockTransportFramingEndpointExtension
     : public TransportFramingEndpointExtension {
  public:
   void SetSendFrameCallback(
-      absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback) override {
+      absl::AnyInvocable<void(SliceBuffer)> send_frame_callback) override {
     LOG(INFO) << "MockTransportFramingEndpointExtension::SetSendFrameCallback";
     send_frame_callback_ = std::move(send_frame_callback);
   }
 
-  void TriggerSendFrameCallback(SliceBuffer* data) {
+  void TriggerSendFrameCallback(SliceBuffer data) {
     LOG(INFO)
         << "MockTransportFramingEndpointExtension::TriggerSendFrameCallback";
     GRPC_CHECK(send_frame_callback_ != nullptr);
-    send_frame_callback_(data);
+    send_frame_callback_(std::move(data));
   }
 
   void ReceiveFrame(SliceBuffer payload) override {
@@ -91,7 +92,7 @@ class MockTransportFramingEndpointExtension
     last_received_payload_.Swap(&payload);
   }
 
-  absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback_ = nullptr;
+  absl::AnyInvocable<void(SliceBuffer)> send_frame_callback_ = nullptr;
   SliceBuffer last_received_payload_;
 };
 
@@ -277,7 +278,7 @@ TEST_P(SecurityFrameHandlerTest, SendFrameCallbackFactoryTest) {
   payload.Append(Slice::FromCopiedString("test_data"));
 
   // Run the callback
-  callback(&payload);
+  callback(std::move(payload));
 
   n.WaitForNotification();
   // Verify payload is received
@@ -316,7 +317,7 @@ TEST_P(SecurityFrameHandlerTest, OnTransportClosedPreventsSending) {
   transport->OnTransportClosed();
   SliceBuffer payload;
   payload.Append(Slice::FromCopiedString("hello"));
-  transport->mock_extension_.TriggerSendFrameCallback(&payload);
+  transport->mock_extension_.TriggerSendFrameCallback(std::move(payload));
   // Give event engine time to run
   absl::SleepFor(absl::Seconds(1));
   EXPECT_THAT(transport->security_frame_handler_->TestOnlyDebugString(),
@@ -431,7 +432,7 @@ TEST_P(SecurityFrameHandlerTest, MaybeAppendSecurityFrameWithPayload) {
   // Send a frame to trigger payload.
   SliceBuffer payload;
   payload.Append(Slice::FromCopiedString("Hello"));
-  transport->mock_extension_.TriggerSendFrameCallback(&payload);
+  transport->mock_extension_.TriggerSendFrameCallback(std::move(payload));
 
   n.WaitForNotification();
 }
@@ -521,7 +522,8 @@ TEST_P(SecurityFrameHandlerTest, SimulatorTest) {
               SliceBuffer payload;
               payload.Append(Slice::FromCopiedString("Hello"));
               LOG(INFO) << "OtherParty: TriggerSendFrameCallback with 'Hello'";
-              self->mock_extension_.TriggerSendFrameCallback(&payload);
+              self->mock_extension_.TriggerSendFrameCallback(
+                  std::move(payload));
               return Empty{};
             },
             [&write_to_endpoint_key]() {
@@ -532,7 +534,8 @@ TEST_P(SecurityFrameHandlerTest, SimulatorTest) {
               SliceBuffer payload;
               payload.Append(Slice::FromCopiedString("world"));
               LOG(INFO) << "OtherParty: TriggerSendFrameCallback with 'world'";
-              self->mock_extension_.TriggerSendFrameCallback(&payload);
+              self->mock_extension_.TriggerSendFrameCallback(
+                  std::move(payload));
               return Empty{};
             });
       },
@@ -543,6 +546,29 @@ TEST_P(SecurityFrameHandlerTest, SimulatorTest) {
 }
 
 INSTANTIATE_TEST_SUITE_P(IsClient, SecurityFrameHandlerTest, ::testing::Bool());
+
+TEST(SecurityFrameParserTest, Chttp2SecurityFrame16KBLimits) {
+  // Purpose: Verify that CHTTP2 security frame parser accepts frames up to
+  // exactly 16KB and rejects frames exceeding 16KB.
+
+  // Step 1: Verify exactly 16KB (16384 bytes) frame is accepted.
+  grpc_chttp2_security_frame_parser parser_valid;
+  const absl::Status status_valid =
+      grpc_chttp2_security_frame_parser_begin_frame(&parser_valid, 16384u,
+                                                    16384u);
+  EXPECT_TRUE(status_valid.ok());
+
+  // Step 2: Verify 16KB + 1 byte (16385 bytes) frame is rejected.
+  grpc_chttp2_security_frame_parser parser_invalid;
+  const absl::Status status_invalid =
+      grpc_chttp2_security_frame_parser_begin_frame(&parser_invalid, 16385u,
+                                                    16384u);
+  EXPECT_FALSE(status_invalid.ok());
+  EXPECT_THAT(status_invalid.message(),
+              ::testing::HasSubstr(
+                  "Security frame is larger than the maximum allowed size : "
+                  "16384, Received size : 16385"));
+}
 
 }  // namespace http2
 }  // namespace grpc_core

@@ -82,20 +82,23 @@ class ServerRpcInfo {
 
  private:
   static_assert(Type::UNARY ==
-                    static_cast<Type>(internal::RpcMethod::NORMAL_RPC),
+                    static_cast<Type>(grpc::internal::RpcMethod::NORMAL_RPC),
                 "violated expectation about Type enum");
-  static_assert(Type::CLIENT_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::CLIENT_STREAMING),
-                "violated expectation about Type enum");
-  static_assert(Type::SERVER_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::SERVER_STREAMING),
-                "violated expectation about Type enum");
-  static_assert(Type::BIDI_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
-                "violated expectation about Type enum");
+  static_assert(
+      Type::CLIENT_STREAMING ==
+          static_cast<Type>(grpc::internal::RpcMethod::CLIENT_STREAMING),
+      "violated expectation about Type enum");
+  static_assert(
+      Type::SERVER_STREAMING ==
+          static_cast<Type>(grpc::internal::RpcMethod::SERVER_STREAMING),
+      "violated expectation about Type enum");
+  static_assert(
+      Type::BIDI_STREAMING ==
+          static_cast<Type>(grpc::internal::RpcMethod::BIDI_STREAMING),
+      "violated expectation about Type enum");
 
   ServerRpcInfo(ServerContextBase* ctx, const char* method,
-                internal::RpcMethod::RpcType type)
+                grpc::internal::RpcMethod::RpcType type)
       : ctx_(ctx), method_(method), type_(static_cast<Type>(type)) {}
 
   // Runs interceptor at pos \a pos.
@@ -131,7 +134,7 @@ class ServerRpcInfo {
   std::atomic<intptr_t> ref_{1};
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
 
-  friend class internal::InterceptorBatchMethodsImpl;
+  friend class grpc::internal::InterceptorBatchMethodsImpl;
   friend class grpc::ServerContextBase;
 };
 

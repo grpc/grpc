@@ -10,9 +10,7 @@
 #define ENVOY_EXTENSIONS_GRPC_SERVICE_CALL_CREDENTIALS_ACCESS_TOKEN_V3_ACCESS_TOKEN_CREDENTIALS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
-
 #include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.h"
-
 #include "udpa/annotations/status.upb_minitable.h"
 
 // Must be last.
@@ -21,43 +19,47 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef struct envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials {
+  upb_Message UPB_PRIVATE(base);
+} envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials;
 
-typedef struct envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials { upb_Message UPB_PRIVATE(base); } envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials;
 
 
 
 /* envoy.extensions.grpc_service.call_credentials.access_token.v3.AccessTokenCredentials */
-
 UPB_INLINE envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_new(upb_Arena* arena) {
   return (envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials*)_upb_Message_New(&envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init, arena);
 }
-UPB_INLINE envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* ret = envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* ret = envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_serialize(const envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* ret = envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_serialize(const envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_serialize_ex(const envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_serialize_ex(const envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -75,15 +77,15 @@ UPB_INLINE upb_StringView envoy_extensions_grpc_service_call_credentials_access_
   return ret;
 }
 
-UPB_INLINE void envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_set_token(envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials *msg, upb_StringView value) {
+UPB_INLINE void envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_set_token(envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 
 #ifdef __cplusplus
-}  /* extern "C" */
+              } /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_GRPC_SERVICE_CALL_CREDENTIALS_ACCESS_TOKEN_V3_ACCESS_TOKEN_CREDENTIALS_PROTO_UPB_H__UPB_H_ */
+#endif /* ENVOY_EXTENSIONS_GRPC_SERVICE_CALL_CREDENTIALS_ACCESS_TOKEN_V3_ACCESS_TOKEN_CREDENTIALS_PROTO_UPB_H__UPB_H_ */

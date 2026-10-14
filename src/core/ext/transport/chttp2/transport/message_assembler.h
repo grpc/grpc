@@ -39,7 +39,7 @@ namespace http2 {
 
 #define GRPC_MESSAGE_ASSEMBLER_DEBUG VLOG(2)
 
-// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
+// TODO(akshitpatel): [PH2][P4] : Write micro benchmarks for
 // assembler and disassembler code
 
 constexpr uint32_t kOneGb = (1024u * 1024u * 1024u);
@@ -81,7 +81,6 @@ class GrpcMessageAssembler {
   ValueOrHttp2Status<MessageHandle> ExtractMessage() {
     const size_t current_len = message_buffer_.Length();
     if (current_len < kGrpcHeaderSizeInBytes) {
-      // TODO(tjagtap) : [PH2][P3] : Write a test for this.
       return ReturnNullOrError();
     }
     ValueOrHttp2Status<GrpcMessageHeader> header =

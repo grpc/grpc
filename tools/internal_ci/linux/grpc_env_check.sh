@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # For linux we use secure_getenv to read env variable
-# this return null if linux capabilites are added on the executable
+# this return null if linux capabilities are added on the executable
 # For customer using linux capability , they need to define "--define GRPC_FORCE_UNSECURE_GETENV=1"
 # to read env variables.
 

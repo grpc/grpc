@@ -224,6 +224,8 @@ grpc_cc_test(
         "//:tsi_fake_credentials",
         "//src/core:channel_args",
         "//src/core:default_event_engine",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
         "//src/core:resource_quota",

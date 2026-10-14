@@ -75,6 +75,7 @@ UPBDEFS_GRPC_GENERATED_INCLUDE = (
 )
 UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)
+CEL_C_INCLUDE = (os.path.join("third_party", "cel-c"),)
 ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
 README = os.path.join(PYTHON_STEM, "README.rst")
 
@@ -300,11 +301,20 @@ if EXTRA_ENV_LINK_ARGS is None:
             EXTRA_ENV_LINK_ARGS += " -latomic"
     if "linux" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
+        _version_script = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "src",
+            "python",
+            "grpcio",
+            "cygrpc_exports.lds",
+        )
+        EXTRA_ENV_LINK_ARGS += f' -Wl,--version-script="{_version_script}"'
 
 # Explicitly link Core Foundation framework for MacOS to ensure no symbol is
 # missing when compiled using package managers like Conda.
 if "darwin" in sys.platform:
     EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
+    EXTRA_ENV_LINK_ARGS += " -Wl,-exported_symbol,_PyInit_cygrpc"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -331,15 +341,18 @@ _PRIVATE_KEY_SIGNING_FILES = (
 
 GRPCIO_CC_SRCS += _PRIVATE_KEY_SIGNING_FILES
 
-CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
+CORE_C_FILES = list(grpc_core_dependencies.CORE_SOURCE_FILES)
 if "win32" in sys.platform:
     CORE_C_FILES = filter(lambda x: "third_party/cares" not in x, CORE_C_FILES)
+    CORE_C_FILES = list(CORE_C_FILES) + list(
+        grpc_core_dependencies.WINDOWS_SOURCE_FILES
+    )
+CORE_C_FILES = tuple(CORE_C_FILES)
 
 if BUILD_WITH_SYSTEM_OPENSSL:
     CORE_C_FILES = filter(
         lambda x: "third_party/boringssl" not in x, CORE_C_FILES
     )
-    CORE_C_FILES = filter(lambda x: "src/boringssl" not in x, CORE_C_FILES)
     SSL_INCLUDE = (os.path.join("/usr", "include", "openssl"),)
 
 if BUILD_WITH_SYSTEM_ZLIB:
@@ -373,6 +386,7 @@ EXTENSION_INCLUDE_DIRECTORIES = (
     + UPBDEFS_GRPC_GENERATED_INCLUDE
     + UTF8_RANGE_INCLUDE
     + XXHASH_INCLUDE
+    + CEL_C_INCLUDE
     + ZLIB_INCLUDE
 )
 
@@ -476,10 +490,6 @@ else:
         ("GRPC_ENABLE_FORK_SUPPORT", 1),
     )
 
-# Fix for multiprocessing support on Apple devices.
-# TODO(vigneshbabu): Remove this once the poll poller gets fork support.
-DEFINE_MACROS += (("GRPC_PYTHON_BUILD", 1),)
-
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.
 # <inttypes.h> was included in core/telemetry/call_tracer.h.
@@ -582,7 +592,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython==3.1.1",)
+        SETUP_REQUIRES += ("Cython~=3.2",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,

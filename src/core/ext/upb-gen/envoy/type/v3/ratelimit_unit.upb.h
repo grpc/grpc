@@ -10,9 +10,7 @@
 #define ENVOY_TYPE_V3_RATELIMIT_UNIT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
-
 #include "envoy/type/v3/ratelimit_unit.upb_minitable.h"
-
 #include "udpa/annotations/status.upb_minitable.h"
 
 // Must be last.
@@ -21,7 +19,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 typedef enum {
   envoy_type_v3_UNKNOWN = 0,
   envoy_type_v3_SECOND = 1,
@@ -35,9 +32,9 @@ typedef enum {
 
 
 #ifdef __cplusplus
-}  /* extern "C" */
+              } /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_RATELIMIT_UNIT_PROTO_UPB_H__UPB_H_ */
+#endif /* ENVOY_TYPE_V3_RATELIMIT_UNIT_PROTO_UPB_H__UPB_H_ */

@@ -69,7 +69,7 @@ def cc_grpc_library(
     if len(srcs) > 1:
         fail("Only one srcs value supported", "srcs")
     if grpc_only and proto_only:
-        fail("A mutualy exclusive configuration is specified: grpc_only = True and proto_only = True")
+        fail("A mutually exclusive configuration is specified: grpc_only = True and proto_only = True")
 
     extra_deps = []
     proto_targets = []

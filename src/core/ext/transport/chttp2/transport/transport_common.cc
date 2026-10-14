@@ -28,6 +28,9 @@ namespace grpc_core {
 
 Duration TarpitDuration(const int min_tarpit_duration_ms,
                         const int max_tarpit_duration_ms) {
+  if (min_tarpit_duration_ms > max_tarpit_duration_ms) {
+    return Duration::Milliseconds(min_tarpit_duration_ms);
+  }
   return Duration::Milliseconds(absl::LogUniform<int>(
       SharedBitGen(), min_tarpit_duration_ms, max_tarpit_duration_ms));
 }

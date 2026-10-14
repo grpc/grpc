@@ -18,12 +18,15 @@
 #include <grpc/support/port_platform.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #include <openssl/hmac.h>
+#endif
 #include <openssl/sha.h>
 
 #include <utility>
 #include <vector>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
@@ -41,6 +44,7 @@ namespace {
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 const char kSha256[] = "SHA256";
+const char kHmacName[] = "HMAC";
 #endif
 const char kAlgorithm[] = "AWS4-HMAC-SHA256";
 const char kDateFormat[] = "%a, %d %b %E4Y %H:%M:%S %Z";
@@ -67,12 +71,24 @@ std::string SHA256Hex(const std::string& str) {
 }
 
 std::string HMAC(const std::string& key, const std::string& msg) {
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   unsigned int len;
   unsigned char digest[EVP_MAX_MD_SIZE];
   HMAC(EVP_sha256(), key.c_str(), key.length(),
        reinterpret_cast<const unsigned char*>(msg.c_str()), msg.length(),
        digest, &len);
   return std::string(digest, digest + len);
+#else
+  size_t len = 0;
+  unsigned char digest[EVP_MAX_MD_SIZE];
+  GRPC_CHECK_NE(EVP_Q_mac(nullptr, kHmacName, nullptr, kSha256, nullptr,
+                          reinterpret_cast<const unsigned char*>(key.c_str()),
+                          key.length(),
+                          reinterpret_cast<const unsigned char*>(msg.c_str()),
+                          msg.length(), digest, sizeof(digest), &len),
+                nullptr);
+  return std::string(digest, digest + len);
+#endif
 }
 
 }  // namespace

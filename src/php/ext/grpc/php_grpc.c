@@ -538,6 +538,7 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
     zend_hash_destroy(&grpc_target_upper_bound_map);
     grpc_shutdown_timeval(TSRMLS_C);
     grpc_php_shutdown_completion_queue(TSRMLS_C);
+    grpc_shutdown_channel_credentials(TSRMLS_C);
     grpc_shutdown();
     GRPC_G(initialized) = 0;
   }

@@ -10,6 +10,7 @@ third_party/benchmark
 third_party/boringssl
 third_party/bloaty
 third_party/boringssl-with-bazel
+third_party/cel-c
 third_party/envoy-api
 third_party/googleapis
 third_party/googletest

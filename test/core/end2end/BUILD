@@ -382,7 +382,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
-        "//:grpc_resolver_dns_ares",
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:default_event_engine",
@@ -597,6 +596,25 @@ grpc_core_end2end_test_suite(
         "//src/core:metrics",
         "//src/core:slice_buffer",
         "//src/core:sync",
+    ],
+)
+
+grpc_core_end2end_test_suite(
+    name = "end2end_vrpc",
+    config_src = "end2end_vrpc_config.cc",
+    tags = [
+        "grpc:no-internal-poller",
+    ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:context",
+        "//src/core:metrics",
+        "//src/core:resource_quota",
+        "//src/core:session_endpoint",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
+        "//src/core:virtual_channel",
     ],
 )
 

@@ -25,6 +25,7 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
@@ -69,6 +70,8 @@ enum class HpackParseStatus : uint8_t {
   kMetadataParseError,
   // Parse failed due to a base64 decode error
   kUnbase64Failed,
+  // Error triggered by the mitigation engine (stream error)
+  kMitigationEngineStreamError,
 
   ///////////////////////////////////////////////////////////////////
   // Connection Errors - result in the tcp connection closing
@@ -102,6 +105,8 @@ enum class HpackParseStatus : uint8_t {
   kMaliciousVarintEncoding,
   // Illegal hpack op code
   kIllegalHpackOpCode,
+  // Error triggered by the mitigation engine
+  kMitigationEngineConnectionError,
 };
 
 inline bool IsStreamError(HpackParseStatus status) {
@@ -260,6 +265,18 @@ class HpackParseResult {
     return p;
   }
 
+  static HpackParseResult MitigationEngineError(
+      absl::string_view key, MitigationEngine::Action action) {
+    HpackParseStatus status =
+        action == MitigationEngine::Action::kCloseConnection
+            ? HpackParseStatus::kMitigationEngineConnectionError
+            : HpackParseStatus::kMitigationEngineStreamError;
+    HpackParseResult p{status};
+    p.state_->key = std::string(key);
+    p.state_->action = action;
+    return p;
+  }
+
   // Compute the absl::Status that goes along with this HpackParseResult.
   // (may be cached, so this is not thread safe)
   absl::Status Materialize() const;
@@ -335,6 +352,9 @@ class HpackParseResult {
       MetadataLimitExceededByAtom metadata_limit_exceeded_by_atom;
       // Set if status == kIllegalTableSizeChange
       IllegalTableSizeChange illegal_table_size_change;
+      // Set if status == kMitigationEngineConnectionError or
+      // kMitigationEngineStreamError
+      MitigationEngine::Action action;
     };
     std::string key;
     mutable std::optional<absl::Status> materialized_status;

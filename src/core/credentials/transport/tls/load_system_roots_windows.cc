@@ -23,15 +23,12 @@
 #pragma comment(lib, "crypt32")
 
 #include <esent.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
 #include <wincrypt.h>
 
 #include <vector>
 
 #include "src/core/credentials/transport/tls/load_system_roots.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -50,13 +47,13 @@ std::string Utf8Encode(const std::wstring& wstr) {
 
 }  // namespace
 
-grpc_slice LoadSystemRootCerts() {
+Slice LoadSystemRootCerts() {
   std::string bundle_string;
 
   // Open root certificate store.
   HANDLE root_cert_store = CertOpenSystemStoreW(NULL, L"ROOT");
   if (!root_cert_store) {
-    return grpc_empty_slice();
+    return Slice();
   }
 
   // Load all root certificates from certificate store.
@@ -74,10 +71,10 @@ grpc_slice LoadSystemRootCerts() {
 
   CertCloseStore(root_cert_store, 0);
   if (bundle_string.size() == 0) {
-    return grpc_empty_slice();
+    return Slice();
   }
 
-  return grpc_slice_from_cpp_string(std::move(bundle_string));
+  return Slice::FromCopiedString(std::move(bundle_string));
 }
 
 }  // namespace grpc_core

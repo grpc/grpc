@@ -133,6 +133,9 @@ class CommonStressTestSyncServer : public BaseClass {
  public:
   void SetUp() override {
     ServerBuilder builder;
+    ResourceQuota quota;
+    quota.SetMaxThreads(500);
+    builder.SetResourceQuota(quota);
     this->SetUpStart(&builder, &service_);
     this->SetUpEnd(&builder);
   }
@@ -185,7 +188,7 @@ class CommonStressTestAsyncServer : public BaseClass {
   }
   void TearDown() override {
     {
-      grpc::internal::MutexLock l(&mu_);
+      grpc::internal::MutexLock l(mu_);
       this->TearDownStart();
       shutting_down_ = true;
       cq_->Shutdown();
@@ -226,7 +229,7 @@ class CommonStressTestAsyncServer : public BaseClass {
     }
   }
   void RefreshContext(int i) {
-    grpc::internal::MutexLock l(&mu_);
+    grpc::internal::MutexLock l(mu_);
     if (!shutting_down_) {
       contexts_[i].state = Context::READY;
       contexts_[i].srv_ctx.reset(new ServerContext);
@@ -333,7 +336,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   }
 
   void Wait() {
-    grpc::internal::MutexLock l(&mu_);
+    grpc::internal::MutexLock l(mu_);
     while (rpcs_outstanding_ != 0) {
       cv_.Wait(&mu_);
     }
@@ -357,7 +360,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
           common_.GetStub()->AsyncEcho(&call->context, request, &cq_);
       call->response_reader->Finish(&call->response, &call->status, call);
 
-      grpc::internal::MutexLock l(&mu_);
+      grpc::internal::MutexLock l(mu_);
       rpcs_outstanding_++;
     }
   }
@@ -375,7 +378,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
 
       bool notify;
       {
-        grpc::internal::MutexLock l(&mu_);
+        grpc::internal::MutexLock l(mu_);
         rpcs_outstanding_--;
         notify = (rpcs_outstanding_ == 0);
       }

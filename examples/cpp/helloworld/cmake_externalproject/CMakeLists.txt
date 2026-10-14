@@ -20,7 +20,7 @@
 # including the "helloworld" project itself.
 # See https://blog.kitware.com/cmake-superbuilds-git-submodules/
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 # Project
 project(HelloWorld-SuperBuild C CXX)

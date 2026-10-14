@@ -380,7 +380,8 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
                grpc_core::HPackParser::Boundary::None,
                grpc_core::HPackParser::Priority::None,
                grpc_core::HPackParser::LogInfo{
-                   1, grpc_core::HPackParser::LogInfo::kHeaders, false});
+                   1, grpc_core::HPackParser::LogInfo::kHeaders, false},
+               nullptr);
   auto parse_vec = [&p, bitgen = absl::BitGen()](
                        const std::vector<grpc_slice>& slices) mutable {
     for (size_t i = 0; i < slices.size(); ++i) {

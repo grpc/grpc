@@ -170,7 +170,8 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           "ChaoticGoodFullStack",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT,
           nullptr,
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
@@ -181,7 +182,8 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
               FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3,
+              FEATURE_MASK_IS_CALL_V3 |
+              FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT,
           nullptr,
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
@@ -192,7 +194,8 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
               FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST |
+              FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT,
           nullptr,
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
@@ -203,7 +206,8 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_1BYTE_AT_A_TIME |
               FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
               FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST |
+              FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT,
           nullptr,
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
@@ -217,7 +221,8 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
             "ChaoticGoodSecureFullStack",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
+                FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT,
             "foo.test.google.fr",
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -228,7 +233,8 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                FEATURE_MASK_IS_CALL_V3,
+                FEATURE_MASK_IS_CALL_V3 |
+                FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT,
             "foo.test.google.fr",
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -239,7 +245,8 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
+                FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST |
+                FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT,
             "foo.test.google.fr",
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {

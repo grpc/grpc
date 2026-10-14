@@ -47,7 +47,7 @@ class MemorySize extends \Google\Protobuf\Internal\Message
      * @param int|string $var
      * @return $this
      */
-    public function setRss($var)
+    public function setRss(int|string $var)
     {
         GPBUtil::checkInt64($var);
         $this->rss = $var;

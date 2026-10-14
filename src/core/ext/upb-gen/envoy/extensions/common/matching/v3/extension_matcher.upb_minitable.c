@@ -19,47 +19,51 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_extensions_common_matching_v3_ExtensionWithMatcher__submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__common__matcher__v3__Matcher_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[3];
+} envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init_Fields;
 
-static const upb_MiniTableField envoy_extensions_common_matching_v3_ExtensionWithMatcher__fields[3] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init_Fields envoy_extensions_common_matching_v3_ExtensionWithMatcher__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 32), 66, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__common__matcher__v3__Matcher_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init},
+}};
 
 const upb_MiniTable envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init = {
-  &envoy_extensions_common_matching_v3_ExtensionWithMatcher__submsgs[0],
-  &envoy_extensions_common_matching_v3_ExtensionWithMatcher__fields[0],
+  &envoy_extensions_common_matching_v3_ExtensionWithMatcher__fields.fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.common.matching.v3.ExtensionWithMatcher",
 #endif
 };
 
-const upb_MiniTable* envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init_ptr = &envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init;
-static const upb_MiniTableSubInternal envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init_Fields;
 
-static const upb_MiniTableField envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute__fields[1] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init_Fields envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init},
+}};
 
 const upb_MiniTable envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init = {
-  &envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute__submsgs[0],
-  &envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute__fields[0],
+  &envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute",
 #endif
 };
 
-const upb_MiniTable* envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init_ptr = &envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__extensions__common__matching__v3__ExtensionWithMatcher_msg_init,
   &envoy__extensions__common__matching__v3__ExtensionWithMatcherPerRoute_msg_init,

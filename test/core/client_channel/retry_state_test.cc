@@ -179,25 +179,24 @@ auto AnySuccessfulMetadata() {
 auto SomeServerThrottleData() {
   return fuzztest::Map(
       [](uintptr_t max_milli_tokens, uintptr_t milli_token_ratio) {
-        return MakeRefCounted<internal::RetryThrottler>(
+        return MakeRefCounted<RetryThrottler>(
             max_milli_tokens, milli_token_ratio, max_milli_tokens);
       },
       Arbitrary<uintptr_t>(), Arbitrary<uintptr_t>());
 }
 
 auto AnyServerThrottleData() {
-  return OneOf(Just(RefCountedPtr<internal::RetryThrottler>()),
-               SomeServerThrottleData());
+  return OneOf(Just(RefCountedPtr<RetryThrottler>()), SomeServerThrottleData());
 }
 
 // Helper to get the debug tag passed to ShouldRetry correct
 std::string FuzzerDebugTag() { return "fuzzer"; }
 
 // Construct a policy from json text
-internal::RetryMethodConfig MakePolicy(absl::string_view json) {
+RetryMethodConfig MakePolicy(absl::string_view json) {
   auto json_obj = JsonParse(json);
   CHECK_OK(json_obj) << json;
-  auto obj = LoadFromJson<internal::RetryMethodConfig>(*json_obj);
+  auto obj = LoadFromJson<RetryMethodConfig>(*json_obj);
   CHECK_OK(obj) << json;
   return std::move(*obj);
 }
@@ -275,8 +274,8 @@ auto RetryMethodConfigWithRetryableStatusCodes(
       InRange(1e-12, 10.0));
 }
 
-void Printable(std::optional<internal::RetryMethodConfig> policy,
-               RefCountedPtr<internal::RetryThrottler> throttle_data) {
+void Printable(std::optional<RetryMethodConfig> policy,
+               RefCountedPtr<RetryThrottler> throttle_data) {
   RetryState retry_state(policy.has_value() ? &*policy : nullptr,
                          throttle_data);
   std::ignore = absl::StrCat(retry_state);
@@ -297,9 +296,9 @@ void NoPolicyNeverRetries(std::vector<ServerMetadataHandle> md,
 FUZZ_TEST(MyTestSuite, NoPolicyNeverRetries)
     .WithDomains(VectorOf(AnyServerMetadata()), Arbitrary<bool>());
 
-void SuccessfulRequestsNeverRetry(
-    internal::RetryMethodConfig policy, ServerMetadataHandle md, bool committed,
-    RefCountedPtr<internal::RetryThrottler> throttle_data) {
+void SuccessfulRequestsNeverRetry(RetryMethodConfig policy,
+                                  ServerMetadataHandle md, bool committed,
+                                  RefCountedPtr<RetryThrottler> throttle_data) {
   RetryState retry_state(&policy, throttle_data);
   EXPECT_EQ(retry_state.ShouldRetry(*md, committed, FuzzerDebugTag),
             std::nullopt);
@@ -308,9 +307,9 @@ FUZZ_TEST(MyTestSuite, SuccessfulRequestsNeverRetry)
     .WithDomains(AnyRetryMethodConfig(), AnySuccessfulMetadata(),
                  Arbitrary<bool>(), AnyServerThrottleData());
 
-void CommittedRequestsNeverRetry(
-    internal::RetryMethodConfig policy, ServerMetadataHandle md,
-    RefCountedPtr<internal::RetryThrottler> throttle_data) {
+void CommittedRequestsNeverRetry(RetryMethodConfig policy,
+                                 ServerMetadataHandle md,
+                                 RefCountedPtr<RetryThrottler> throttle_data) {
   RetryState retry_state(&policy, throttle_data);
   EXPECT_EQ(retry_state.ShouldRetry(*md, true, FuzzerDebugTag), std::nullopt);
 }
@@ -319,8 +318,8 @@ FUZZ_TEST(MyTestSuite, CommittedRequestsNeverRetry)
                  AnyServerThrottleData());
 
 void NonRetryableRequestsNeverRetry(
-    internal::RetryMethodConfig policy, ServerMetadataHandle md, bool committed,
-    RefCountedPtr<internal::RetryThrottler> throttle_data) {
+    RetryMethodConfig policy, ServerMetadataHandle md, bool committed,
+    RefCountedPtr<RetryThrottler> throttle_data) {
   RetryState retry_state(&policy, throttle_data);
   EXPECT_EQ(retry_state.ShouldRetry(*md, committed, FuzzerDebugTag),
             std::nullopt);
@@ -331,10 +330,10 @@ FUZZ_TEST(MyTestSuite, NonRetryableRequestsNeverRetry)
         ServerMetadataWithStatus(AnyStatusExcept(GRPC_STATUS_ABORTED)),
         Arbitrary<bool>(), AnyServerThrottleData());
 
-void NeverExceedMaxAttempts(
-    internal::RetryMethodConfig policy, std::vector<ServerMetadataHandle> md,
-    bool committed_at_end,
-    RefCountedPtr<internal::RetryThrottler> throttle_data) {
+void NeverExceedMaxAttempts(RetryMethodConfig policy,
+                            std::vector<ServerMetadataHandle> md,
+                            bool committed_at_end,
+                            RefCountedPtr<RetryThrottler> throttle_data) {
   RetryState retry_state(&policy, nullptr);
   int attempts_completed = 0;
   for (auto it = md.begin(); it != md.end(); ++it) {
@@ -351,9 +350,9 @@ FUZZ_TEST(MyTestSuite, NeverExceedMaxAttempts)
                  VectorOf(AnyServerMetadata()).WithMaxSize(7),
                  Arbitrary<bool>(), AnyServerThrottleData());
 
-void NeverRetryNegativePushback(
-    internal::RetryMethodConfig policy, ServerMetadataHandle md, bool committed,
-    RefCountedPtr<internal::RetryThrottler> throttle_data) {
+void NeverRetryNegativePushback(RetryMethodConfig policy,
+                                ServerMetadataHandle md, bool committed,
+                                RefCountedPtr<RetryThrottler> throttle_data) {
   RetryState retry_state(&policy, nullptr);
   EXPECT_EQ(retry_state.ShouldRetry(*md, committed, FuzzerDebugTag),
             std::nullopt);
@@ -363,9 +362,9 @@ FUZZ_TEST(MyTestSuite, NeverRetryNegativePushback)
                  ServerMetadataWithPushback(NegativeDuration()),
                  Arbitrary<bool>(), AnyServerThrottleData());
 
-void NeverExceedMaxBackoff(
-    internal::RetryMethodConfig policy, std::vector<ServerMetadataHandle> mds,
-    RefCountedPtr<internal::RetryThrottler> throttle_data) {
+void NeverExceedMaxBackoff(RetryMethodConfig policy,
+                           std::vector<ServerMetadataHandle> mds,
+                           RefCountedPtr<RetryThrottler> throttle_data) {
   RetryState retry_state(&policy, nullptr);
   for (const auto& md : mds) {
     auto delay = retry_state.ShouldRetry(*md, false, FuzzerDebugTag);

@@ -60,7 +60,7 @@ int64_t ConnectionAttemptInjector::TcpConnect(
     grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
-  grpc_core::MutexLock lock(g_mu);
+  grpc_core::MutexLock lock(*g_mu);
   // If there's no injector, use the original vtable.
   if (g_injector == nullptr) {
     g_original_vtable->connect(closure, ep, interested_parties, config, addr,
@@ -91,26 +91,26 @@ ConnectionAttemptInjector::ConnectionAttemptInjector() {
   // Fail if ConnectionAttemptInjector::Init() was not called after
   // grpc_init() to inject the vtable.
   GRPC_CHECK(grpc_tcp_client_impl == &kDelayedConnectVTable);
-  grpc_core::MutexLock lock(g_mu);
+  grpc_core::MutexLock lock(*g_mu);
   GRPC_CHECK_EQ(g_injector, nullptr);
   g_injector = this;
 }
 
 ConnectionAttemptInjector::~ConnectionAttemptInjector() {
-  grpc_core::MutexLock lock(g_mu);
+  grpc_core::MutexLock lock(*g_mu);
   g_injector = nullptr;
 }
 
 std::unique_ptr<ConnectionAttemptInjector::Hold>
 ConnectionAttemptInjector::AddHold(int port, bool intercept_completion) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   auto hold = std::make_unique<Hold>(this, port, intercept_completion);
   holds_.push_back(hold.get());
   return hold;
 }
 
 void ConnectionAttemptInjector::SetDelay(grpc_core::Duration delay) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
   delay_ = delay;
 }
 
@@ -121,7 +121,7 @@ void ConnectionAttemptInjector::HandleConnection(
   const int port = grpc_sockaddr_get_port(addr);
   LOG(INFO) << "==> HandleConnection(): port=" << port;
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     // First, check if there's a hold request for this port.
     for (auto it = holds_.begin(); it != holds_.end(); ++it) {
       Hold* hold = *it;
@@ -220,7 +220,7 @@ ConnectionAttemptInjector::Hold::Hold(ConnectionAttemptInjector* injector,
 
 void ConnectionAttemptInjector::Hold::Wait() {
   LOG(INFO) << "=== WAITING FOR CONNECTION ATTEMPT ON PORT " << port_ << " ===";
-  grpc_core::MutexLock lock(&injector_->mu_);
+  grpc_core::MutexLock lock(injector_->mu_);
   while (queued_attempt_ == nullptr) {
     start_cv_.Wait(&injector_->mu_);
   }
@@ -232,7 +232,7 @@ void ConnectionAttemptInjector::Hold::Resume() {
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<QueuedAttempt> attempt;
   {
-    grpc_core::MutexLock lock(&injector_->mu_);
+    grpc_core::MutexLock lock(injector_->mu_);
     attempt = std::move(queued_attempt_);
   }
   attempt->Resume();
@@ -243,7 +243,7 @@ void ConnectionAttemptInjector::Hold::Fail(grpc_error_handle error) {
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<QueuedAttempt> attempt;
   {
-    grpc_core::MutexLock lock(&injector_->mu_);
+    grpc_core::MutexLock lock(injector_->mu_);
     attempt = std::move(queued_attempt_);
   }
   attempt->Fail(error);
@@ -252,7 +252,7 @@ void ConnectionAttemptInjector::Hold::Fail(grpc_error_handle error) {
 void ConnectionAttemptInjector::Hold::WaitForCompletion() {
   LOG(INFO) << "=== WAITING FOR CONNECTION COMPLETION ON PORT " << port_
             << " ===";
-  grpc_core::MutexLock lock(&injector_->mu_);
+  grpc_core::MutexLock lock(injector_->mu_);
   while (original_on_complete_ != nullptr) {
     complete_cv_.Wait(&injector_->mu_);
   }
@@ -260,7 +260,7 @@ void ConnectionAttemptInjector::Hold::WaitForCompletion() {
 }
 
 bool ConnectionAttemptInjector::Hold::IsStarted() {
-  grpc_core::MutexLock lock(&injector_->mu_);
+  grpc_core::MutexLock lock(injector_->mu_);
   return !start_cv_.WaitWithDeadline(&injector_->mu_, absl::Now());
 }
 
@@ -269,7 +269,7 @@ void ConnectionAttemptInjector::Hold::OnComplete(void* arg,
   auto* self = static_cast<Hold*>(arg);
   grpc_closure* on_complete;
   {
-    grpc_core::MutexLock lock(&self->injector_->mu_);
+    grpc_core::MutexLock lock(self->injector_->mu_);
     on_complete = self->original_on_complete_;
     self->original_on_complete_ = nullptr;
     self->complete_cv_.Signal();

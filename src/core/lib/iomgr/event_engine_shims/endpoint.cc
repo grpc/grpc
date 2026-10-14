@@ -75,7 +75,7 @@ class EventEngineEndpointWrapper {
   }
 
   int Fd() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     return fd_;
   }
 
@@ -212,7 +212,7 @@ class EventEngineEndpointWrapper {
         kShutdownBit + 1) {
       auto* supports_fd =
           QueryExtension<EndpointSupportsFdExtension>(endpoint_.get());
-      if (supports_fd != nullptr && fd_ > 0 && on_release_fd_) {
+      if (supports_fd != nullptr && fd_ >= 0 && on_release_fd_) {
         supports_fd->Shutdown(std::move(on_release_fd_));
       }
       OnShutdownInternal();
@@ -241,7 +241,7 @@ class EventEngineEndpointWrapper {
         Ref();
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
             kShutdownBit + 1) {
-          if (supports_fd != nullptr && fd_ > 0 && on_release_fd_) {
+          if (supports_fd != nullptr && fd_ >= 0 && on_release_fd_) {
             supports_fd->Shutdown(std::move(on_release_fd_));
           }
           OnShutdownInternal();
@@ -264,7 +264,7 @@ class EventEngineEndpointWrapper {
  private:
   void OnShutdownInternal() {
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       fd_ = -1;
     }
     endpoint_.reset();
@@ -464,8 +464,7 @@ void grpc_event_engine_endpoint_destroy_and_release_fd(
           if (release_fd.ok()) {
             *fd = *release_fd;
           }
-          RunEventEngineClosure(on_release_fd,
-                                absl_status_to_grpc_error(release_fd.status()));
+          RunEventEngineClosure(on_release_fd, release_fd.status());
         });
   }
   eeep->wrapper->Unref();

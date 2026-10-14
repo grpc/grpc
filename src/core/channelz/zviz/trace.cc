@@ -28,7 +28,14 @@ void Format(Environment& env, const grpc::channelz::v2::TraceEvent& trace_event,
   }
   if (trace_event.data_size() > 0) {
     for (const auto& data : trace_event.data()) {
-      Format(env, data, event);
+      grpc::channelz::v2::TraceEvent nested_trace;
+      if (data.value().UnpackTo(&nested_trace)) {
+        // If there's a nested trace, recursively call this function to format
+        // it.
+        Format(env, nested_trace, trace_table);
+      } else {
+        Format(env, data, event);
+      }
     }
   }
 }

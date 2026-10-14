@@ -60,7 +60,6 @@ grpc_cc_test(
         "//:grpc_base",
         "//:grpc_core_credentials_header",
         "//:grpc_resolver",
-        "//:grpc_resolver_dns_ares",
         "//:grpc_security_base",
         "//:iomgr",
         "//:orphanable",

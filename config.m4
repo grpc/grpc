@@ -16,11 +16,13 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/utf8_range)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/xxhash)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cel-c)
 
   LIBS="-lpthread $LIBS"
 
-  CFLAGS="-std=c11 -g -O2"
-  CXXFLAGS="-std=c++17 -fno-exceptions -fno-rtti -g -O2"
+  dnl -Wno-error=attributes needed by UPB https://github.com/grpc/grpc/issues/42192
+  CFLAGS="-std=c11 -g -O2 -Wno-error=attributes"
+  CXXFLAGS="-std=c++17 -fno-exceptions -fno-rtti -g -O2 -Wno-error=attributes"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
@@ -45,6 +47,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/call/call_spine.cc \
     src/core/call/call_state.cc \
     src/core/call/client_call.cc \
+    src/core/call/evaluate_args.cc \
     src/core/call/interception_chain.cc \
     src/core/call/message.cc \
     src/core/call/metadata.cc \
@@ -82,12 +85,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
     src/core/client_channel/subchannel.cc \
+    src/core/client_channel/subchannel_metrics.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
     src/core/client_channel/subchannel_stream_limiter.cc \
     src/core/config/config_vars.cc \
     src/core/config/config_vars_non_generated.cc \
     src/core/config/core_configuration.cc \
+    src/core/config/experiment_env_var.cc \
     src/core/config/load_config.cc \
     src/core/credentials/call/call_creds_registry_init.cc \
     src/core/credentials/call/call_creds_util.cc \
@@ -98,6 +103,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/call/external/file_external_account_credentials.cc \
     src/core/credentials/call/external/url_external_account_credentials.cc \
     src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
+    src/core/credentials/call/gdch_service_account/gdch_service_account_credentials.cc \
     src/core/credentials/call/iam/iam_credentials.cc \
     src/core/credentials/call/json_util.cc \
     src/core/credentials/call/jwt/json_token.cc \
@@ -107,6 +113,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/call/jwt_util.cc \
     src/core/credentials/call/oauth2/oauth2_credentials.cc \
     src/core/credentials/call/plugin/plugin_credentials.cc \
+    src/core/credentials/call/regional_access_boundary_fetcher.cc \
     src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
     src/core/credentials/transport/alts/alts_credentials.cc \
     src/core/credentials/transport/alts/alts_security_connector.cc \
@@ -134,6 +141,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc \
     src/core/credentials/transport/tls/grpc_tls_certificate_match.cc \
     src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_selector.cc \
     src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc \
     src/core/credentials/transport/tls/grpc_tls_credentials_options.cc \
     src/core/credentials/transport/tls/grpc_tls_crl_provider.cc \
@@ -152,9 +160,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
-    src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
     src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
-    src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
@@ -164,12 +170,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
-    src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/chttp2_plugin.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
-    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
@@ -190,6 +194,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_client_transport.cc \
+    src/core/ext/transport/chttp2/transport/http2_server_transport.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/http2_settings_manager.cc \
     src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
@@ -201,6 +206,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/ping_callbacks.cc \
     src/core/ext/transport/chttp2/transport/ping_promise.cc \
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
+    src/core/ext/transport/chttp2/transport/reclaimer.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
     src/core/ext/transport/chttp2/transport/transport_common.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
@@ -283,6 +289,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c \
@@ -307,6 +315,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/service/ext_proc/v3/external_processor.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c \
@@ -332,6 +341,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c \
     src/core/ext/upb-gen/google/api/annotations.upb_minitable.c \
@@ -347,18 +357,18 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/channelz/v1/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c \
+    src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c \
-    src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c \
@@ -465,6 +475,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3/processing_mode.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c \
@@ -506,6 +518,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c \
     src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.c \
@@ -521,12 +534,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
-    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c \
+    src/core/ext/upbdefs-gen/grpc/channelz/v1/channelz.upbdefs.c \
+    src/core/ext/upbdefs-gen/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c \
-    src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/sensitive.upbdefs.c \
@@ -559,8 +572,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
     src/core/filter/auth/client_auth_filter.cc \
     src/core/filter/auth/server_auth_filter.cc \
-    src/core/filter/blackboard.cc \
     src/core/filter/composite/composite_filter.cc \
+    src/core/filter/ext_proc/ext_proc_filter.cc \
+    src/core/filter/ext_proc/ext_proc_messages.cc \
     src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
@@ -677,9 +691,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/pollset_set.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
     src/core/lib/iomgr/pollset_windows.cc \
-    src/core/lib/iomgr/resolve_address.cc \
-    src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_windows.cc \
     src/core/lib/iomgr/sockaddr_utils_posix.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
@@ -724,11 +735,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/stream_quota.cc \
+    src/core/lib/resource_quota/telemetry.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
-    src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/grpc_authorization_engine.cc \
     src/core/lib/security/authorization/grpc_server_authz_filter.cc \
     src/core/lib/security/authorization/matchers.cc \
@@ -770,6 +781,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/autosharding/autosharding.cc \
     src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
@@ -783,6 +795,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/load_balancing/lb_policy_registry.cc \
     src/core/load_balancing/oob_backend_metric.cc \
     src/core/load_balancing/outlier_detection/outlier_detection.cc \
+    src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc \
     src/core/load_balancing/pick_first/pick_first.cc \
     src/core/load_balancing/priority/priority.cc \
     src/core/load_balancing/ring_hash/ring_hash.cc \
@@ -799,16 +812,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/net/socket_mutator.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
-    src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
-    src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
-    src/core/resolver/dns/dns_resolver_plugin.cc \
-    src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
-    src/core/resolver/dns/event_engine/service_config_helper.cc \
-    src/core/resolver/dns/native/dns_resolver.cc \
+    src/core/resolver/dns/dns_resolver.cc \
+    src/core/resolver/dns/service_config_helper.cc \
     src/core/resolver/endpoint_addresses.cc \
     src/core/resolver/fake/fake_resolver.cc \
     src/core/resolver/google_c2p/google_c2p_resolver.cc \
@@ -825,6 +830,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/server/server_config_selector_filter.cc \
     src/core/server/xds_channel_stack_modifier.cc \
     src/core/server/xds_server_config_fetcher.cc \
+    src/core/server/xds_server_config_fetcher_legacy.cc \
     src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
@@ -839,6 +845,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/telemetry/tcp_tracer.cc \
     src/core/transport/auth_context.cc \
     src/core/transport/endpoint_transport_client_channel_factory.cc \
+    src/core/transport/message_size_service_config.cc \
+    src/core/transport/session_endpoint.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -864,10 +872,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
+    src/core/tsi/ssl_telemetry_utils.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/ssl_transport_security_utils.cc \
+    src/core/tsi/tls_telemetry.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/util/address_sorting_init.cc \
     src/core/util/alloc.cc \
     src/core/util/backoff.cc \
     src/core/util/crash.cc \
@@ -892,7 +903,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/iphone/cpu.cc \
     src/core/util/json/json_object_loader.cc \
     src/core/util/json/json_reader.cc \
-    src/core/util/json/json_util.cc \
     src/core/util/json/json_writer.cc \
     src/core/util/latent_see.cc \
     src/core/util/linux/cpu.cc \
@@ -941,10 +951,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/windows/time.cc \
     src/core/util/windows/tmpfile.cc \
     src/core/util/work_serializer.cc \
+    src/core/xds/grpc/blackboard.cc \
     src/core/xds/grpc/certificate_provider_store.cc \
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
+    src/core/xds/grpc/streaming_call_promise_wrapper.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \
     src/core/xds/grpc/xds_bootstrap_grpc.cc \
+    src/core/xds/grpc/xds_bootstrap_grpc_builder.cc \
     src/core/xds/grpc/xds_certificate_provider.cc \
     src/core/xds/grpc/xds_client_grpc.cc \
     src/core/xds/grpc/xds_cluster.cc \
@@ -954,8 +967,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_common_types_parser.cc \
     src/core/xds/grpc/xds_endpoint.cc \
     src/core/xds/grpc/xds_endpoint_parser.cc \
+    src/core/xds/grpc/xds_grpc_service_parser.cc \
     src/core/xds/grpc/xds_health_status.cc \
     src/core/xds/grpc/xds_http_composite_filter.cc \
+    src/core/xds/grpc/xds_http_ext_proc_filter.cc \
     src/core/xds/grpc/xds_http_fault_filter.cc \
     src/core/xds/grpc/xds_http_filter.cc \
     src/core/xds/grpc/xds_http_filter_registry.cc \
@@ -976,6 +991,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_route_config_parser.cc \
     src/core/xds/grpc/xds_routing.cc \
     src/core/xds/grpc/xds_server_grpc.cc \
+    src/core/xds/grpc/xds_tls_context.cc \
+    src/core/xds/grpc/xds_tls_context_parser.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/lrs_client.cc \
     src/core/xds/xds_client/xds_api.cc \
@@ -992,6 +1009,7 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
+    third_party/abseil-cpp/absl/base/casts.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
     third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
@@ -1000,10 +1018,10 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/base/internal/strerror.cc \
     third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
     third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
-    third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
     third_party/abseil-cpp/absl/base/internal/tracing.cc \
     third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
     third_party/abseil-cpp/absl/base/log_severity.cc \
+    third_party/abseil-cpp/absl/base/throw_delegate.cc \
     third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc \
     third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc \
     third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc \
@@ -1036,7 +1054,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/flags/usage_config.cc \
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
-    third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
     third_party/abseil-cpp/absl/log/globals.cc \
     third_party/abseil-cpp/absl/log/internal/check_op.cc \
     third_party/abseil-cpp/absl/log/internal/conditions.cc \
@@ -1049,6 +1066,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/log/internal/proto.cc \
     third_party/abseil-cpp/absl/log/internal/structured_proto.cc \
     third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
+    third_party/abseil-cpp/absl/log/log_entry.cc \
     third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
@@ -1100,7 +1118,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/str_cat.cc \
     third_party/abseil-cpp/absl/strings/str_replace.cc \
     third_party/abseil-cpp/absl/strings/str_split.cc \
-    third_party/abseil-cpp/absl/strings/string_view.cc \
     third_party/abseil-cpp/absl/strings/substitute.cc \
     third_party/abseil-cpp/absl/synchronization/barrier.cc \
     third_party/abseil-cpp/absl/synchronization/blocking_counter.cc \
@@ -1131,6 +1148,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
     third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
     third_party/abseil-cpp/absl/time/time.cc \
+    third_party/abseil-cpp/absl/types/source_location.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
@@ -1177,7 +1195,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/crypto/blake2/blake2.cc \
     third_party/boringssl-with-bazel/crypto/bn/bn_asn1.cc \
     third_party/boringssl-with-bazel/crypto/bn/convert.cc \
+    third_party/boringssl-with-bazel/crypto/bn/div.cc \
     third_party/boringssl-with-bazel/crypto/bn/exponentiation.cc \
+    third_party/boringssl-with-bazel/crypto/bn/sqrt.cc \
     third_party/boringssl-with-bazel/crypto/buf/buf.cc \
     third_party/boringssl-with-bazel/crypto/bytestring/asn1_compat.cc \
     third_party/boringssl-with-bazel/crypto/bytestring/ber.cc \
@@ -1223,23 +1243,23 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/crypto/ec/hash_to_curve.cc \
     third_party/boringssl-with-bazel/crypto/ecdh/ecdh.cc \
     third_party/boringssl-with-bazel/crypto/ecdsa/ecdsa_asn1.cc \
+    third_party/boringssl-with-bazel/crypto/ecdsa/ecdsa_p1363.cc \
     third_party/boringssl-with-bazel/crypto/engine/engine.cc \
     third_party/boringssl-with-bazel/crypto/err/err.cc \
     third_party/boringssl-with-bazel/crypto/evp/evp.cc \
     third_party/boringssl-with-bazel/crypto/evp/evp_asn1.cc \
     third_party/boringssl-with-bazel/crypto/evp/evp_ctx.cc \
+    third_party/boringssl-with-bazel/crypto/evp/evp_kem.cc \
     third_party/boringssl-with-bazel/crypto/evp/p_dh.cc \
-    third_party/boringssl-with-bazel/crypto/evp/p_dh_asn1.cc \
-    third_party/boringssl-with-bazel/crypto/evp/p_dsa_asn1.cc \
+    third_party/boringssl-with-bazel/crypto/evp/p_dsa.cc \
     third_party/boringssl-with-bazel/crypto/evp/p_ec.cc \
-    third_party/boringssl-with-bazel/crypto/evp/p_ec_asn1.cc \
     third_party/boringssl-with-bazel/crypto/evp/p_ed25519.cc \
-    third_party/boringssl-with-bazel/crypto/evp/p_ed25519_asn1.cc \
     third_party/boringssl-with-bazel/crypto/evp/p_hkdf.cc \
+    third_party/boringssl-with-bazel/crypto/evp/p_mldsa.cc \
+    third_party/boringssl-with-bazel/crypto/evp/p_mlkem.cc \
     third_party/boringssl-with-bazel/crypto/evp/p_rsa.cc \
-    third_party/boringssl-with-bazel/crypto/evp/p_rsa_asn1.cc \
     third_party/boringssl-with-bazel/crypto/evp/p_x25519.cc \
-    third_party/boringssl-with-bazel/crypto/evp/p_x25519_asn1.cc \
+    third_party/boringssl-with-bazel/crypto/evp/p_xwing.cc \
     third_party/boringssl-with-bazel/crypto/evp/pbkdf.cc \
     third_party/boringssl-with-bazel/crypto/evp/print.cc \
     third_party/boringssl-with-bazel/crypto/evp/scrypt.cc \
@@ -1281,7 +1301,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/crypto/rand/forkunsafe.cc \
     third_party/boringssl-with-bazel/crypto/rand/getentropy.cc \
     third_party/boringssl-with-bazel/crypto/rand/ios.cc \
-    third_party/boringssl-with-bazel/crypto/rand/passive.cc \
     third_party/boringssl-with-bazel/crypto/rand/rand.cc \
     third_party/boringssl-with-bazel/crypto/rand/trusty.cc \
     third_party/boringssl-with-bazel/crypto/rand/urandom.cc \
@@ -1373,9 +1392,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/crypto/x509/x_req.cc \
     third_party/boringssl-with-bazel/crypto/x509/x_sig.cc \
     third_party/boringssl-with-bazel/crypto/x509/x_spki.cc \
-    third_party/boringssl-with-bazel/crypto/x509/x_val.cc \
     third_party/boringssl-with-bazel/crypto/x509/x_x509.cc \
     third_party/boringssl-with-bazel/crypto/x509/x_x509a.cc \
+    third_party/boringssl-with-bazel/crypto/xwing/xwing.cc \
     third_party/boringssl-with-bazel/gen/crypto/err_data.cc \
     third_party/boringssl-with-bazel/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/ssl/d1_both.cc \
@@ -1464,6 +1483,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mini_descriptor/internal/encode.c \
     third_party/upb/upb/mini_descriptor/link.c \
     third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/generated_registry.c \
     third_party/upb/upb/mini_table/internal/message.c \
     third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/reflection/def_pool.c \
@@ -1497,7 +1517,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.81.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.86.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)
@@ -1507,6 +1527,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/composite)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/external)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/gcp_service_account_identity)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/gdch_service_account)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/iam)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/jwt)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/jwt_token_file)
@@ -1564,6 +1585,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/ext_proc/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3)
@@ -1583,6 +1605,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/discovery/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/ext_proc/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/load_stats/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/status/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/type/http/v3)
@@ -1594,12 +1617,12 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/api/expr/v1alpha1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/rpc)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/channelz)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/channelz/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/gcp)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/health/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/lb/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/grpc/lookup/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/channelz/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/gcp)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/health/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/lb/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/lookup/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/xds/annotations/v3)
@@ -1631,6 +1654,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/ext_proc/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3)
@@ -1653,9 +1677,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/api/expr/v1alpha1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/rpc)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/channelz)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/grpc/channelz/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/grpc/lookup/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/annotations/v3)
@@ -1665,6 +1689,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter/auth)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter/composite)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter/ext_proc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/endpoint_info)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/http_connect)
@@ -1692,6 +1717,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/autosharding)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/outlier_detection)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/pick_first)
@@ -1706,9 +1732,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/c_ares)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/event_engine)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/google_c2p)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/sockaddr)
@@ -1760,6 +1783,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/synchronization/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time/internal/cctz/src)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/types)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/aes)
@@ -1810,6 +1834,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/stack)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/trust_token)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/x509)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/xwing)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/gen/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
