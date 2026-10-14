@@ -1129,7 +1129,7 @@ TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithCredentials) {
                                 ".access_token.v3.AccessTokenCredentials",
                                 "{token=\"bar\"}")));
   // Unset fields have default values.
-  EXPECT_EQ(xds_grpc_service->timeout(), Duration::Zero());
+  EXPECT_EQ(xds_grpc_service->timeout(), Duration::Infinity());
   EXPECT_THAT(xds_grpc_service->initial_metadata(), ::testing::ElementsAre());
 }
 

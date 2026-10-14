@@ -164,6 +164,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//src/core:channelz_property_list",
+        "//src/core:experiments",
         "//src/core:json_reader",
         "//src/core:notification",
         "//src/core:ztrace_collector",

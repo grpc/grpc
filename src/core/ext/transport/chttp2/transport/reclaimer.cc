@@ -16,6 +16,17 @@
 //
 //
 
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
+
+#include <memory>
+#include <optional>
+#include <utility>
+
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/sync.h"
+
 namespace grpc_core {
 namespace http2 {}  // namespace http2
 }  // namespace grpc_core

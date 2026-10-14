@@ -81,7 +81,7 @@ class LegacyServerConfigSelectorFilter final
   };
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return config_selector_.value();
   }
 
@@ -94,7 +94,7 @@ class LegacyServerConfigSelectorFilter final
         : filter_(filter) {}
     void OnServerConfigSelectorUpdate(
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-      MutexLock lock(&filter_->mu_);
+      MutexLock lock(filter_->mu_);
       filter_->config_selector_ = std::move(update);
     }
 
@@ -128,7 +128,7 @@ LegacyServerConfigSelectorFilter::LegacyServerConfigSelectorFilter(
   GRPC_CHECK(server_config_selector_provider_ != nullptr);
   watcher_ = std::make_shared<ServerConfigSelectorWatcher>(Ref());
   auto config_selector = server_config_selector_provider_->Watch(watcher_);
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   // It's possible for the watcher to have already updated config_selector_
   if (!config_selector_.has_value()) {
     config_selector_ = std::move(config_selector);

@@ -153,13 +153,13 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     std::deque<CredentialInfo> GetCredentialQueue() {
       // We move the data member value so the data member will be re-initiated
       // with size 0, and ready for the next check.
-      MutexLock lock(&mu);
+      MutexLock lock(mu);
       return std::move(cert_update_queue);
     }
     std::deque<ErrorInfo> GetErrorQueue() {
       // We move the data member value so the data member will be re-initiated
       // with size 0, and ready for the next check.
-      MutexLock lock(&mu);
+      MutexLock lock(mu);
       return std::move(error_queue);
     }
   };
@@ -193,14 +193,14 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
               // Not supposed to happen in this test.
             });
       }
-      MutexLock lock(&state_->mu);
+      MutexLock lock(state_->mu);
       state_->cert_update_queue.emplace_back(updated_root,
                                              std::move(key_cert_pairs));
     }
 
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override {
-      MutexLock lock(&state_->mu);
+      MutexLock lock(state_->mu);
       GRPC_CHECK(!root_cert_error.ok() || !identity_cert_error.ok());
       std::string root_error_str;
       if (!root_cert_error.ok()) {
@@ -237,7 +237,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
       RefCountedPtr<grpc_tls_certificate_distributor> distributor,
       std::optional<std::string> root_cert_name,
       std::optional<std::string> identity_cert_name) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     distributor_ = std::move(distributor);
     watchers_.emplace_back();
     // TlsCertificatesTestWatcher ctor takes a pointer to the WatcherState.
@@ -253,7 +253,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   }
 
   void CancelWatch(WatcherState* state) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     distributor_->CancelTlsCertificatesWatch(state->watcher);
     EXPECT_EQ(state->watcher, nullptr);
   }

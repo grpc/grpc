@@ -173,7 +173,7 @@ ChaoticGoodServerListener::CreateListener(bool must_be_posix) {
                 grpc_slice_buffer_swap(&pending_buf->data.raw.slice_buffer,
                                        pending_data->c_slice_buffer());
               }
-              MutexLock lock(&self->mu_);
+              MutexLock lock(self->mu_);
               if (self->shutdown_) return;
               self->connection_list_.emplace(MakeOrphanable<ActiveConnection>(
                   self, std::move(ep), is_external, listener_fd, pending_buf));
@@ -194,7 +194,7 @@ ChaoticGoodServerListener::CreateListener(bool must_be_posix) {
             absl::StrCat("Accepting connection: ",
                          ResolvedAddressToString(ep->GetPeerAddress())
                              .value_or("<<unknown peer address>>")));
-        MutexLock lock(&self->mu_);
+        MutexLock lock(self->mu_);
         if (self->shutdown_) return;
         self->connection_list_.emplace(MakeOrphanable<ActiveConnection>(
             self, std::move(ep), false, 0, nullptr));
@@ -315,7 +315,7 @@ void ChaoticGoodServerListener::ActiveConnection::Orphan() {
   }
   ActivityPtr activity;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     orphaned_ = true;
     activity = std::move(receive_settings_activity_);
   }
@@ -334,7 +334,7 @@ ChaoticGoodServerListener::DataConnectionListener::DataConnectionListener(
 PendingConnection
 ChaoticGoodServerListener::DataConnectionListener::RequestDataConnection(
     const ChannelArgs& handshake_result_args) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   std::string connection_id;
   while (true) {
     connection_id = connection_id_generator_();
@@ -364,7 +364,7 @@ std::optional<
     ChaoticGoodServerListener::DataConnectionListener::PendingConnectionInfo>
 ChaoticGoodServerListener::DataConnectionListener::Extract(
     absl::string_view id) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   auto ex = pending_connections_.extract(id);
   if (ex.empty()) {
     return std::nullopt;
@@ -420,7 +420,7 @@ void ChaoticGoodServerListener::DataConnectionListener::FinishDataConnection(
 void ChaoticGoodServerListener::DataConnectionListener::Orphaned() {
   absl::flat_hash_map<std::string, PendingConnectionInfo> pending_connections;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_CHECK(!shutdown_);
     pending_connections = std::move(pending_connections_);
     pending_connections_.clear();
@@ -438,7 +438,7 @@ void ChaoticGoodServerListener::ActiveConnection::Done() {
   listener_->event_engine_->Run([self = Ref()]() {
     ExecCtx exec_ctx;
     OrphanablePtr<ActiveConnection> con;
-    MutexLock lock(&self->listener_->mu_);
+    MutexLock lock(self->listener_->mu_);
     auto v = self->listener_->connection_list_.extract(self.get());
     if (!v.empty()) con = std::move(v.value());
   });
@@ -677,7 +677,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         self->connection_->Done();
       },
       connection_->arena_.get());
-  MutexLock lock(&connection_->mu_);
+  MutexLock lock(connection_->mu_);
   if (connection_->orphaned_) return;
   connection_->receive_settings_activity_ = std::move(activity);
 }
@@ -686,7 +686,7 @@ void ChaoticGoodServerListener::Orphan() {
   GRPC_TRACE_LOG(chaotic_good, INFO) << "ChaoticGoodServerListener::Orphan()";
   {
     absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     connection_list = std::move(connection_list_);
     connection_list_.clear();
     shutdown_ = true;
