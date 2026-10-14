@@ -179,6 +179,7 @@ class Server : public ServerInterface,
     // invoked.
     // 3) Invoke RemoveLogicalConnection() when the connection is closed. Do not
     // invoke if the connection was never added.
+// FIXME: remove this TODO
     // TODO(yashykt): In the case where there is no config fetcher, we remove
     // the connection from our map and instead use `ChannelData` to keep track
     // of the connections. This is much cheaper (8 bytes per connection) as
@@ -249,6 +250,10 @@ class Server : public ServerInterface,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
 
+// FIXME: merge OnHandshakeDone() and SetupTransport(), and maybe add
+// LogicalConnection accessor to get underlying transport.  use that to
+// plumb LogicalConnection into a call context element (will need
+// different plumbing in v1 and v3)
     void OnHandshakeDone(ListenerInterface::LogicalConnection* connection);
 
     // Removes the logical connection from being tracked. This could happen for
