@@ -85,6 +85,8 @@ tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
       LOG(ERROR)
           << "Peer tried to renegotiate SSL connection. This is unsupported.";
       return TSI_UNIMPLEMENTED;
+    } else if (ssl_write_result == SSL_ERROR_WANT_WRITE) {
+      return TSI_DRAIN_BUFFER;
     } else {
       LOG(ERROR) << "SSL_write failed with error "
                  << SslErrorString(ssl_write_result);
@@ -162,9 +164,11 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   }
 
   // If we can, prepare the buffer, send it to SSL_write and read.
-  memcpy(buffer + buffer_offset, unprotected_bytes, available);
+  if (available > 0) {
+    memcpy(buffer + buffer_offset, unprotected_bytes, available);
+  }
   result = DoSslWrite(ssl, buffer, buffer_size);
-  if (result != TSI_OK) return result;
+  if (result != TSI_OK && result != TSI_DRAIN_BUFFER) return result;
 
   GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
@@ -175,7 +179,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   *unprotected_bytes_size = available;
-  buffer_offset = 0;
+  buffer_offset = (result == TSI_DRAIN_BUFFER) ? buffer_size : 0;
   return TSI_OK;
 }
 
@@ -191,13 +195,16 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
 
   if (buffer_offset != 0) {
     result = DoSslWrite(ssl, buffer, buffer_offset);
-    if (result != TSI_OK) return result;
-    buffer_offset = 0;
+    if (result == TSI_OK) {
+      buffer_offset = 0;
+    } else if (result != TSI_DRAIN_BUFFER) {
+      return result;
+    }
   }
 
   pending = static_cast<int>(BIO_pending(network_io));
   GRPC_CHECK_GE(pending, 0);
-  *still_pending_size = static_cast<size_t>(pending);
+  *still_pending_size = static_cast<size_t>(pending) + buffer_offset;
   if (*still_pending_size == 0) return TSI_OK;
 
   GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
@@ -210,7 +217,7 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   pending = static_cast<int>(BIO_pending(network_io));
   GRPC_CHECK_GE(pending, 0);
-  *still_pending_size = static_cast<size_t>(pending);
+  *still_pending_size = static_cast<size_t>(pending) + buffer_offset;
   return TSI_OK;
 }
 

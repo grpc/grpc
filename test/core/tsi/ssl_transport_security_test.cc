@@ -1978,6 +1978,48 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMldsa87) {
   DoHandshake();
 }
 
+// In TLS 1.3 mTLS, BoringSSL generates two NewSessionTicket messages on the
+// server that each embed the client's certificate chain, and defers flushing
+// them until the server's first SSL_write call (in the TSI frame protector).
+// With a 2-certificate ML-DSA-87 client chain (~15 KB), the two queued session
+// tickets (~30 KB) exceed the default 17 KB BIO pair buffer size, causing
+// SSL_write to return SSL_ERROR_WANT_WRITE. This test verifies that
+// DoSslWrite, SslProtectorProtect, and SslProtectorProtectFlush handle
+// SSL_ERROR_WANT_WRITE (TSI_DRAIN_BUFFER) by draining the BIO across multiple
+// flushes rather than failing the connection.
+TEST_P(SslTransportSecurityTest, SuccessfulRoundTripMldsa87Chain) {
+  auto tls_version = std::get<0>(GetParam());
+  if (tls_version == TSI_TLS1_2) return;
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa87.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.key")),
+      absl::StrCat(GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "server_mldsa87.pem")),
+                   "\n", key_cert_lib->root_cert));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa87.key")),
+      absl::StrCat(GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "client_mldsa87.pem")),
+                   "\n", key_cert_lib->root_cert));
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->OverrideClientSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87});
+  ssl_fixture_->OverrideServerSignatureAlgorithms(
+      {GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87});
+  DoRoundTrip();
+}
+
 TEST_P(SslTransportSecurityTest, MldsaSignatureAlgorithmMismatch) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,

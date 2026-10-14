@@ -435,6 +435,53 @@ TEST_F(TlsCredentialsTest, Mldsa87MutualTlsHandshakeAndRpc) {
   DoRpc(server_addr_, tls_options);
 }
 
+// In TLS 1.3 mTLS, BoringSSL generates two NewSessionTicket messages on the
+// server that each embed the client's certificate chain, and defers flushing
+// them until the server's first SSL_write call (in the TSI frame protector).
+// With a 2-certificate ML-DSA-87 client chain (~15 KB), the two queued session
+// tickets (~30 KB) exceed the default 17 KB BIO pair buffer size, causing
+// SSL_write to return SSL_ERROR_WANT_WRITE. This test verifies that
+// DoSslWrite, SslProtectorProtect, and SslProtectorProtectFlush handle
+// SSL_ERROR_WANT_WRITE (TSI_DRAIN_BUFFER) by draining the BIO across multiple
+// flushes rather than failing the connection.
+TEST_F(TlsCredentialsTest, Mldsa87ChainMutualTlsHandshakeAndRpc) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  const std::vector<grpc_tls_signature_algorithm> signature_algorithms = {
+      GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87};
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr,
+              kCaMldsa87CertPath, kServerMldsa87CertPath, kServerMldsa87KeyPath,
+              GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+              &signature_algorithms);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert =
+      grpc_core::testing::GetFileContents(kCaMldsa87CertPath);
+  std::string client_key =
+      grpc_core::testing::GetFileContents(kClientMldsa87KeyPath);
+  std::string client_cert_chain = absl::StrCat(
+      grpc_core::testing::GetFileContents(kClientMldsa87CertPath), "\n",
+      root_cert);
+  std::vector<grpc::experimental::IdentityKeyCertPair> identity_pairs = {
+      {client_key, client_cert_chain}};
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+          root_cert, identity_pairs);
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_identity_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  tls_options.set_signature_algorithms(signature_algorithms);
+  DoRpc(server_addr_, tls_options);
+}
+
 TEST_F(TlsCredentialsTest, Mldsa65SignatureAlgorithmMismatchFails) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
