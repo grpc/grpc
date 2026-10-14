@@ -925,8 +925,6 @@ TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       default_route_config_ /* inappropriate route config for servers */);
   StartBackend(0);
-  // FIXME: Not sure if this is the behavior we really want -- need to
-  // think about this more.
   // If using RDS, the server will be serving, but RPCs will fail.
   if (GetParam().enable_rds_testing()) {
     EXPECT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
