@@ -130,7 +130,7 @@
   allow_in_fuzzing_config: false
 - name: fix_v3_filter_stack_server_side_ordering
   description: If set, reverse the server side ordering for v3 filter stack.
-  expiry: 2026/10/15
+  expiry: 2027/01/16
   owner: weizheyuan@google.com
   test_tags: ["core_end2end_test"]
   platforms: ["all"]
