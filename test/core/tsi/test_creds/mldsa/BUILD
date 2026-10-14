@@ -20,15 +20,21 @@ package(features = [
 licenses(["notice"])
 
 exports_files([
+    "ca_mldsa44.key",
+    "ca_mldsa44.pem",
     "ca_mldsa65.key",
     "ca_mldsa65.pem",
     "ca_mldsa87.key",
     "ca_mldsa87.pem",
+    "client_mldsa44.key",
+    "client_mldsa44.pem",
     "client_mldsa65.key",
     "client_mldsa65.pem",
     "client_mldsa87.key",
     "client_mldsa87.pem",
     "generate_mldsa_creds.sh",
+    "server_mldsa44.key",
+    "server_mldsa44.pem",
     "server_mldsa65.key",
     "server_mldsa65.pem",
     "server_mldsa87.key",

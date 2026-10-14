@@ -1,20 +1,20 @@
 # ML-DSA Test Credentials
 
-This directory contains ML-DSA-65 and ML-DSA-87 post-quantum test certificates and keys used for TLS 1.3 handshake and RPC tests.
+This directory contains ML-DSA-44, ML-DSA-65, and ML-DSA-87 post-quantum test certificates and keys used for TLS 1.3 handshake and RPC tests.
 
 ## Credentials
 
-1. **`ca_mldsa65.key` / `ca_mldsa65.pem`** and **`ca_mldsa87.key` / `ca_mldsa87.pem`**:
-   * Self-signed ML-DSA-65 and ML-DSA-87 root CA private keys and certificates.
+1. **`ca_mldsa44.key` / `ca_mldsa44.pem`**, **`ca_mldsa65.key` / `ca_mldsa65.pem`**, and **`ca_mldsa87.key` / `ca_mldsa87.pem`**:
+   * Self-signed ML-DSA-44, ML-DSA-65, and ML-DSA-87 root CA private keys and certificates.
    * Subject: `C=AU, ST=Some-State, O=Internet Widgits Pty Ltd, CN=testca`.
 
-2. **`server_mldsa65.key` / `server_mldsa65.pem`** and **`server_mldsa87.key` / `server_mldsa87.pem`**:
-   * ML-DSA-65 and ML-DSA-87 server private keys and certificates signed by the corresponding ML-DSA root CA (`ca_mldsa65.pem` / `ca_mldsa87.pem`).
+2. **`server_mldsa44.key` / `server_mldsa44.pem`**, **`server_mldsa65.key` / `server_mldsa65.pem`**, and **`server_mldsa87.key` / `server_mldsa87.pem`**:
+   * ML-DSA-44, ML-DSA-65, and ML-DSA-87 server private keys and certificates signed by the corresponding ML-DSA root CA (`ca_mldsa44.pem` / `ca_mldsa65.pem` / `ca_mldsa87.pem`).
    * Subject Common Name: `*.test.google.com`.
    * Subject Alternative Names: `*.test.google.fr`, `waterzooi.test.google.be`, `*.test.youtube.com`, `192.168.1.3` (matching `src/core/tsi/test_creds/server1.pem`).
 
-3. **`client_mldsa65.key` / `client_mldsa65.pem`** and **`client_mldsa87.key` / `client_mldsa87.pem`**:
-   * ML-DSA-65 and ML-DSA-87 client private keys and certificates signed by the corresponding ML-DSA root CA (`ca_mldsa65.pem` / `ca_mldsa87.pem`).
+3. **`client_mldsa44.key` / `client_mldsa44.pem`**, **`client_mldsa65.key` / `client_mldsa65.pem`**, and **`client_mldsa87.key` / `client_mldsa87.pem`**:
+   * ML-DSA-44, ML-DSA-65, and ML-DSA-87 client private keys and certificates signed by the corresponding ML-DSA root CA (`ca_mldsa44.pem` / `ca_mldsa65.pem` / `ca_mldsa87.pem`).
    * Subject Common Name: `testclient`.
 
 ## RFC 9881 `seed` Private Key Representation

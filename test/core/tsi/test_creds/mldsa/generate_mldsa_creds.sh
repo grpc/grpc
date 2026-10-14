@@ -15,6 +15,12 @@
 
 # This script generates the following ML-DSA test credentials (using the
 # RFC 9881 32-byte seed-only private key representation required by BoringSSL):
+# ca_mldsa44.key
+# ca_mldsa44.pem
+# client_mldsa44.key
+# client_mldsa44.pem
+# server_mldsa44.key
+# server_mldsa44.pem
 # ca_mldsa65.key
 # ca_mldsa65.pem
 # client_mldsa65.key
@@ -72,6 +78,7 @@ generate_mldsa_set() {
     -out "server_${suffix}.pem" -days 3650
 }
 
+generate_mldsa_set "ML-DSA-44" "mldsa44"
 generate_mldsa_set "ML-DSA-65" "mldsa65"
 generate_mldsa_set "ML-DSA-87" "mldsa87"
 

@@ -631,6 +631,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, SetSignatureAlgorithms) {
   std::vector<grpc_tls_signature_algorithm> algorithms = {
       grpc_tls_signature_algorithm::GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
       grpc_tls_signature_algorithm::GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65,
+      grpc_tls_signature_algorithm::GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44,
       grpc_tls_signature_algorithm::
           GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
       grpc_tls_signature_algorithm::

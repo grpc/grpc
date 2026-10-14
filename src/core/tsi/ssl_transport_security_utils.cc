@@ -506,6 +506,14 @@ absl::StatusOr<absl::string_view> ConvertSignatureAlgorithmToString(
       return "rsa_pss_rsae_sha384";
     case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA512:
       return "rsa_pss_rsae_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "mldsa44";
+#else
+      return absl::InvalidArgumentError(
+          "ML_DSA_44 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_sigalgs_list.");
+#endif
     case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65:
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
       return "mldsa65";

@@ -564,12 +564,20 @@ TEST(ConvertSignatureAlgorithmToStringTest, ValidCases) {
             "rsa_pss_rsae_sha512");
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
   EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44),
+            "mldsa44");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
                 GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65),
             "mldsa65");
   EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
                 GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87),
             "mldsa87");
 #else
+  EXPECT_EQ(tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(tsi::ConvertSignatureAlgorithmToString(
                 GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65)
                 .status()
