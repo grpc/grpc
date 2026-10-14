@@ -433,6 +433,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_status.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_transport_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
@@ -851,6 +852,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/scope.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h" role="src" />
@@ -1262,6 +1266,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c" role="src" />
@@ -1863,6 +1869,8 @@
     <file baseinstalldir="/" name="src/core/load_balancing/oob_backend_metric_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/outlier_detection/outlier_detection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/outlier_detection/outlier_detection.h" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/outlier_detection/outlier_detection_metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/pick_first/pick_first.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/pick_first/pick_first.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/priority/priority.cc" role="src" />

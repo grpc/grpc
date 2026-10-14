@@ -290,7 +290,7 @@ Last checked on 24-September-2026
 ## PH2 Client Party Slots Usage
 
 <!--
-TODO(tjagtap) [PH2][P2][Client] Validate this before roll out begins.
+TODO(tjagtap) [PH2][P3][Client] Validate this before roll out begins.
 Last checked on 24-September-2026
 -->
 
