@@ -485,4 +485,48 @@ absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
   }
 }
 
+absl::StatusOr<absl::string_view> ConvertSignatureAlgorithmToString(
+    grpc_tls_signature_algorithm algorithm) {
+  switch (algorithm) {
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA256:
+      return "rsa_pkcs1_sha256";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA384:
+      return "rsa_pkcs1_sha384";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA512:
+      return "rsa_pkcs1_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256:
+      return "ecdsa_secp256r1_sha256";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP384R1_SHA384:
+      return "ecdsa_secp384r1_sha384";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP521R1_SHA512:
+      return "ecdsa_secp521r1_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256:
+      return "rsa_pss_rsae_sha256";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA384:
+      return "rsa_pss_rsae_sha384";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA512:
+      return "rsa_pss_rsae_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "mldsa65";
+#else
+      return absl::InvalidArgumentError(
+          "ML_DSA_65 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_sigalgs_list.");
+#endif
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "mldsa87";
+#else
+      return absl::InvalidArgumentError(
+          "ML_DSA_87 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_sigalgs_list.");
+#endif
+    case GRPC_TLS_SIGNATURE_ALGORITHM_UNSPECIFIED:
+      return absl::InvalidArgumentError("Unspecified signature algorithm.");
+    default:
+      return absl::InvalidArgumentError("Unknown signature algorithm.");
+  }
+}
+
 }  // namespace tsi

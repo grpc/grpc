@@ -626,6 +626,35 @@ TEST_F(GrpcTlsCredentialsOptionsTest, SetKeyExchangeGroups) {
   EXPECT_EQ(options->key_exchange_groups(), groups);
 }
 
+TEST_F(GrpcTlsCredentialsOptionsTest, SetSignatureAlgorithms) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  std::vector<grpc_tls_signature_algorithm> algorithms = {
+      grpc_tls_signature_algorithm::GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87,
+      grpc_tls_signature_algorithm::GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65,
+      grpc_tls_signature_algorithm::
+          GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256,
+      grpc_tls_signature_algorithm::
+          GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP384R1_SHA384,
+      grpc_tls_signature_algorithm::
+          GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP521R1_SHA512,
+      grpc_tls_signature_algorithm::
+          GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256,
+      grpc_tls_signature_algorithm::
+          GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA384,
+      grpc_tls_signature_algorithm::
+          GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA512,
+      grpc_tls_signature_algorithm::
+          GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA256,
+      grpc_tls_signature_algorithm::
+          GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA384,
+      grpc_tls_signature_algorithm::
+          GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA512,
+  };
+  grpc_tls_credentials_options_set_signature_algorithms(
+      options.get(), algorithms.data(), algorithms.size());
+  EXPECT_EQ(options->signature_algorithms(), algorithms);
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core

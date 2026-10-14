@@ -192,6 +192,16 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentKeyExchangeGroups) {
   delete options_1;
   delete options_2;
 }
+TEST(TlsCredentialsOptionsComparatorTest, DifferentSignatureAlgorithms) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_signature_algorithms({grpc_tls_signature_algorithm::GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256});
+  options_2->set_signature_algorithms({grpc_tls_signature_algorithm::GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65});
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
 
 } // namespace
 } // namespace grpc_core

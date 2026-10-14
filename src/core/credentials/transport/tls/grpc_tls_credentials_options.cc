@@ -172,3 +172,11 @@ void grpc_tls_credentials_options_set_key_exchange_groups(
   options->set_key_exchange_groups(
       std::vector<grpc_tls_key_exchange_group>(groups, groups + num_groups));
 }
+
+void grpc_tls_credentials_options_set_signature_algorithms(
+    grpc_tls_credentials_options* options,
+    const grpc_tls_signature_algorithm* algorithms, size_t num_algorithms) {
+  GRPC_CHECK_NE(options, nullptr);
+  options->set_signature_algorithms(std::vector<grpc_tls_signature_algorithm>(
+      algorithms, algorithms + num_algorithms));
+}

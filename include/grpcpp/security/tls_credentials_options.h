@@ -141,6 +141,12 @@ class TlsCredentialsOptions {
   void set_key_exchange_groups(
       const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups);
 
+  // Sets the list of signature algorithms that will be negotiated during the
+  // TLS handshake, in order of preference. If not set, a default list will be
+  // used.
+  void set_signature_algorithms(
+      const std::vector<grpc_tls_signature_algorithm>& signature_algorithms);
+
   // ----- Getters for member fields ----
   // Returns a deep copy of the internal c options. The caller takes ownership
   // of the returned pointer. This function shall be used only internally.
