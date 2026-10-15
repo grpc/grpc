@@ -77,6 +77,7 @@ Ignore Resource Deletion | [A53](https://github.com/grpc/proposal/blob/master/A5
 [Custom Load Balancer Configuration](https://github.com/envoyproxy/envoy/blob/57be3189ffa3372b34e9480d1f02b2d165e49077/api/envoy/config/cluster/v3/cluster.proto#L1208) | [A52](https://github.com/grpc/proposal/blob/master/A52-xds-custom-lb-policies.md) | v1.55.0 | v1.47.0 | v1.56.0 | v1.10.0 |
 [xDS Federation](https://github.com/cncf/xds/blob/main/proposals/TP1-xds-transport-next.md) | [A47](https://github.com/grpc/proposal/blob/master/A47-xds-federation.md) | v1.55.0 | v1.55.0 | v1.55.0 | |
 [Client-Side Weighted Round Robin LB Policy](https://github.com/envoyproxy/envoy/blob/a6d46b6ac4750720eec9a49abe701f0df9bf8e0a/api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto#L36) | [A58](https://github.com/grpc/proposal/blob/master/A58-client-side-weighted-round-robin-lb-policy.md) | v1.55.0 | v1.54.0 | v1.56.0 | |
+WRR Support for Custom Backend Metrics | [A114](https://github.com/grpc/proposal/blob/master/A114-wrr-metric-names-for-computing-utilization.md) | v1.84.0 | | | |
 Pick First | [A62](https://github.com/grpc/proposal/blob/master/A62-pick-first.md) | v1.58.0 | v1.58.1 | v1.56.0 | |
 [StringMatcher for Header Matching](https://github.com/envoyproxy/envoy/blob/3fe4b8d335fa339ef6f17325c8d31f87ade7bb1a/api/envoy/config/route/v3/route_components.proto#L2280) | [A63](https://github.com/grpc/proposal/blob/master/A63-xds-string-matcher-in-header-matching.md) | v1.56.0 | v1.53.0 | v1.56.0 | v1.9.0 |
 LRS Custom Metrics Support | [A64](https://github.com/grpc/proposal/blob/master/A64-lrs-custom-metrics.md) | v1.54.0 | v1.57.0 | v1.63.0 | |
@@ -87,7 +88,6 @@ OpenTelemetry XdsClient metrics, and xDS Locality label for per-call metrics | [
 Backend Service Metric Label | [A89](https://github.com/grpc/proposal/blob/master/A89-backend-service-metric-label.md) | v1.76.0 (C++) | v1.73.0 | v1.78.0 | |
 xDS Fallback | [A71](https://github.com/grpc/proposal/blob/master/A71-xds-fallback.md) | v1.67.0 | v1.71.0 | v1.70.0 | |
 Dualstack Backend Support | [A61](https://github.com/grpc/proposal/blob/master/A61-IPv4-IPv6-dualstack-backends.md) | v1.66.1 | | v1.71.0 | v1.12.0 |
-WRR Support for Custom Backend Metrics | [A114](https://github.com/grpc/proposal/blob/master/A114-wrr-metric-names-for-computing-utilization.md) | v1.84.0 | | | |
 xDS Authority Rewriting | [A81](https://github.com/grpc/proposal/blob/master/A81-xds-authority-rewriting.md) | v1.73.0 | v1.78.0 | v1.79.0 | |
 xDS System Root Certificates | [A82](https://github.com/grpc/proposal/blob/master/A82-xds-system-root-certs.md) | v1.73.0 | v1.78.0 | v1.71.0 | |
 GCP Authentication Filter | [A83](https://github.com/grpc/proposal/blob/master/A83-xds-gcp-authn-filter.md) | v1.73.0 | v1.78.0 | v1.86.0 | |
