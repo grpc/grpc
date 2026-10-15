@@ -2522,13 +2522,17 @@ TEST_P(XdsExtProcEnd2endTest, DrainIgnoredAfterHalfClose) {
   EXPECT_TRUE(stream.WaitForWrite());
   EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  // Start the read before half-closing, so the pending read keeps the call
+  // alive. Once the client half-closes, the RPC may finish at any time, and
+  // starting a new read after that point is not safe.
+  stream.StartReadMessage();
   stream.StartWritesDone();
   auto req2 = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req2, ::testing::Optional(MatchesRequestBody("", kEndOfStream)));
   ext_proc_stream->SendResponse(SetRequestDrains(
       MakeRequestBodyMutationResponse("", /*end_of_stream=*/true),
       /*drain_requests=*/true, /*drain_responses=*/false));
-  EXPECT_FALSE(stream.ReadMessage().has_value());
+  EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
