@@ -256,9 +256,8 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(RecordDelayTest) {
           return std::move(result);
         });
     picker().Set(mock_picker);
-    TickUntilTrue([&picked]() {
-      return picked.load(std::memory_order_relaxed);
-    });
+    TickUntilTrue(
+        [&picked]() { return picked.load(std::memory_order_relaxed); });
   };
   do_pick(LoadBalancingPolicy::PickResult::Queue("0:connecting", "reason1"));
   do_pick(LoadBalancingPolicy::PickResult::Queue("0:connecting", "reason1"));
@@ -267,8 +266,7 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(RecordDelayTest) {
   do_pick(LoadBalancingPolicy::PickResult::Queue("0:connecting", "reason1"));
   do_pick(LoadBalancingPolicy::PickResult::Fail(
       absl::UnavailableError("all backends down")));
-  do_pick(
-      LoadBalancingPolicy::PickResult::Complete{disconnected_subchannel()});
+  do_pick(LoadBalancingPolicy::PickResult::Complete{disconnected_subchannel()});
   {
     auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
     EXPECT_CALL(*mock_picker, Pick)

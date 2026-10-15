@@ -975,18 +975,18 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
                     // Not an error.  Make sure we actually have a result.
                     got_result = *config_selector != nullptr;
                   }
+                  auto* tracer = MaybeGetContext<ClientCallTracer>();
                   if (!got_result) {
-                    delay_tracker.RecordDelay(
-                        MaybeGetContext<ClientCallTracer>(),
+                    delay_tracker.RecordDelay(tracer,
                         kDelayTypeResolving, [&config_selector]() {
                           return config_selector.ok()
                                      ? std::string(
-                                           "waiting for initial resolver result")
+                                           "waiting for initial resolver "
+                                           "result")
                                      : config_selector.status().ToString();
                         });
                   } else if (config_selector.ok()) {
-                    delay_tracker.MaybeRecordDelayEnd(
-                        MaybeGetContext<ClientCallTracer>());
+                    delay_tracker.MaybeRecordDelayEnd(tracer);
                   }
                   return got_result;
                 })),
