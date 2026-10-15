@@ -44,7 +44,7 @@ grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   GRPC_CHECK(sink.WriteU24BE(8));
   GRPC_CHECK(sink.WriteU8(GRPC_CHTTP2_FRAME_PING));
   GRPC_CHECK(sink.WriteU8(ack ? 1 : 0));
-  GRPC_CHECK(sink.Skip(4));  // stream id = 0
+  GRPC_CHECK(sink.WriteU32BE(0));  // stream id
   GRPC_CHECK(sink.WriteU64BE(opaque_8bytes));
   GRPC_CHECK(sink.empty());
   return slice;
