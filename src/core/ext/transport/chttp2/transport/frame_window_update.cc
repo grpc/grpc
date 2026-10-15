@@ -85,7 +85,7 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
   }
 
   if (s != nullptr) {
-    uint64_t framing_bytes = 4u - src.remaining();
+    uint64_t framing_bytes = src.remaining();
     s->call_tracer_wrapper.RecordIncomingBytes({framing_bytes, 0, 0});
   }
 
