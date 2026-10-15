@@ -149,7 +149,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           }
           return absl::OkStatus();
         }
-        parser->id = static_cast<uint16_t>(*v) << 8;
+        parser->id = static_cast<uint16_t>((static_cast<uint16_t>(*v)) << 8);
         [[fallthrough]];
       }
       case GRPC_CHTTP2_SPS_ID1: {
