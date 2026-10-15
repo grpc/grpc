@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_SLICE_BYTE_SOURCE_H
-#define GRPC_SRC_CORE_LIB_SLICE_BYTE_SOURCE_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_BYTE_CURSOR_H
+#define GRPC_SRC_CORE_LIB_SLICE_BYTE_CURSOR_H
 
 #include <grpc/slice.h>
 #include <string.h>
@@ -236,4 +236,4 @@ class ByteSink final {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SLICE_BYTE_SOURCE_H
+#endif  // GRPC_SRC_CORE_LIB_SLICE_BYTE_CURSOR_H
