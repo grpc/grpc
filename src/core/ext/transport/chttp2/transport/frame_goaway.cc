@@ -153,10 +153,10 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(
             static_cast<size_t>(p->debug_length) - buffered);
 
         if (debug_remaining > 0) {
-          auto sp = src.ReadSpan(debug_remaining).value();
-          p->debug_slice_buffer.AppendIndexed(
-              grpc_core::Slice::FromCopiedBuffer(sp.data(), sp.size()));
-        }
+        auto sp = src.ReadSpan(debug_remaining);
+        GRPC_CHECK(sp.has_value());
+        memcpy(p->debug_data + p->debug_pos, sp->data(), sp->size());
+}
 
         p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
 
