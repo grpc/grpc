@@ -136,7 +136,11 @@ class CallDelayTracker {
   template <typename Tracer>
   void MaybeRecordDelayEnd(Tracer* tracer) {
     if (!current_delay_type_.empty()) {
-      tracer->RecordDelayEnd();
+      if (tracer != nullptr) {
+        tracer->RecordDelayEnd();
+      }
+      current_delay_type_.clear();
+      current_delay_reason_.clear();
     }
   }
 
