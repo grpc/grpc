@@ -67,7 +67,9 @@ class GrpcXdsClient final : public XdsClient {
       RefCountedPtr<XdsTransportFactory> transport_factory,
       RefCountedPtr<CertificateProviderStore> certificate_provider_store,
       std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-          stats_plugin_group);
+          stats_plugin_group,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
 
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
