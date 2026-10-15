@@ -977,8 +977,8 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
                   }
                   auto* tracer = MaybeGetContext<ClientCallTracer>();
                   if (!got_result) {
-                    delay_tracker.RecordDelay(tracer,
-                        kDelayTypeResolving, [&config_selector]() {
+                    delay_tracker.RecordDelay(
+                        tracer, kDelayTypeResolving, [&config_selector]() {
                           return config_selector.ok()
                                      ? std::string(
                                            "waiting for initial resolver "

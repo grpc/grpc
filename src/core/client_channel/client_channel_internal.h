@@ -136,7 +136,7 @@ class CallDelayTracker {
       }
       current_delay_type_ = std::string(delay_type);
       current_delay_reason_ = make_delay_reason();
-      tracer->RecordDelayStart(current_delay_type_, current_delay_reason);
+      tracer->RecordDelayStart(current_delay_type_, current_delay_reason_);
     } else {
       std::string delay_reason = make_delay_reason();
       if (current_delay_reason_ != delay_reason) {
