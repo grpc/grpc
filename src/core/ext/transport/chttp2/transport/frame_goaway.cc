@@ -23,7 +23,7 @@
 #include <string.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/slice/byte_source.h"
+#include "src/core/lib/slice/byte_cursor.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
