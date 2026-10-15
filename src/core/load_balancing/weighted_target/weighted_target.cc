@@ -503,7 +503,7 @@ WeightedTargetLb::WeightedChild::WeightedChild(
       name_(name),
       picker_(MakeRefCounted<QueuePicker>(
           nullptr, kDelayTypeConnecting,
-          absl::StrCat("weighted_target: child '", name_,
+          absl::StrCat("weighted_target: child '", name,
                        "' waiting for initial picker"))) {
   GRPC_TRACE_LOG(weighted_target_lb, INFO)
       << "[weighted_target_lb " << weighted_target_policy_.get()
