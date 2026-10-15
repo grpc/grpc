@@ -285,11 +285,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gimbal"  # @unused
+g_stands_for = "googol"  # @unused
 
-core_version = "57.0.0"  # @unused
+core_version = "58.0.0"  # @unused
 
-version = "1.85.0-dev"  # @unused
+version = "1.86.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -5261,7 +5261,7 @@ grpc_cc_library(
 
 grpc_upb_proto_library(
     name = "alts_handshaker_upb_proto",
-    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+    deps = ["@grpc_proto//:alts_handshaker_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5621,7 +5621,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "alts_upb",
-    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+    deps = ["@grpc_proto//:alts_handshaker_proto"],
 )
 
 grpc_upb_proto_library(

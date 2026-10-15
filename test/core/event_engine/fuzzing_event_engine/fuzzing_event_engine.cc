@@ -133,14 +133,14 @@ FuzzingEventEngine::FuzzingEventEngine(
 
   previous_pick_port_functions_ = grpc_set_pick_port_functions(
       grpc_pick_port_functions{+[]() -> int {
-                                 grpc_core::MutexLock lock(&*mu_);
+                                 grpc_core::MutexLock lock(*mu_);
                                  return g_fuzzing_event_engine->AllocatePort();
                                },
                                +[](int) {}});
 }
 
 void FuzzingEventEngine::FuzzingDone() {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   while (!task_delays_.empty()) task_delays_.pop();
 }
 
@@ -159,8 +159,8 @@ void FuzzingEventEngine::Tick(Duration max_time) {
     Duration incr = max_time;
     GRPC_DCHECK_GT(incr.count(), Duration::zero().count());
     {
-      grpc_core::MutexLock lock(&*mu_);
-      grpc_core::MutexLock now_lock(&*now_mu_);
+      grpc_core::MutexLock lock(*mu_);
+      grpc_core::MutexLock now_lock(*now_mu_);
       if (!tasks_by_time_.empty()) {
         incr = std::min(incr, tasks_by_time_.begin()->first - now_);
       } else {
@@ -205,8 +205,8 @@ void FuzzingEventEngine::Tick(Duration max_time) {
       std::vector<absl::AnyInvocable<void()>> to_run;
       Duration incr = Duration::zero();
       {
-        grpc_core::MutexLock lock(&*mu_);
-        grpc_core::MutexLock now_lock(&*now_mu_);
+        grpc_core::MutexLock lock(*mu_);
+        grpc_core::MutexLock now_lock(*now_mu_);
         if (!incremented_time) {
           incr = max_time;
           // TODO(ctiller): look at tasks_by_time_ and jump forward (once iomgr
@@ -251,7 +251,7 @@ void FuzzingEventEngine::Tick(Duration max_time) {
 void FuzzingEventEngine::TickUntilIdle() {
   while (true) {
     {
-      grpc_core::MutexLock lock(&*mu_);
+      grpc_core::MutexLock lock(*mu_);
       LOG_EVERY_N_SEC(INFO, 5)
           << "TickUntilIdle: "
           << GRPC_DUMP_ARGS(tasks_by_id_.size(), outstanding_reads_.load(),
@@ -263,7 +263,7 @@ void FuzzingEventEngine::TickUntilIdle() {
 }
 
 bool FuzzingEventEngine::IsIdle() {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   return IsIdleLocked();
 }
 
@@ -285,12 +285,12 @@ void FuzzingEventEngine::TickForDuration(Duration d) { TickUntil(Now() + d); }
 
 void FuzzingEventEngine::SetRunAfterDurationCallback(
     absl::AnyInvocable<void(Duration)> callback) {
-  grpc_core::MutexLock lock(&run_after_duration_callback_mu_);
+  grpc_core::MutexLock lock(run_after_duration_callback_mu_);
   run_after_duration_callback_ = std::move(callback);
 }
 
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
-  grpc_core::MutexLock lock(&*now_mu_);
+  grpc_core::MutexLock lock(*now_mu_);
   return now_;
 }
 
@@ -316,7 +316,7 @@ FuzzingEventEngine::CreateListener(
     Listener::AcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown, const EndpointConfig&,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   // Create a listener and register it into the set of listener info in the
   // event engine.
   return absl::make_unique<FuzzingListener>(
@@ -328,7 +328,7 @@ FuzzingEventEngine::CreateListener(
 }
 
 FuzzingEventEngine::FuzzingListener::~FuzzingListener() {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   g_fuzzing_event_engine->listeners_.erase(info_);
 }
 
@@ -347,7 +347,7 @@ absl::StatusOr<int> FuzzingEventEngine::FuzzingListener::Bind(
     const ResolvedAddress& addr) {
   // Extract the port from the address (or fail if non-localhost).
   auto port = ResolvedAddressGetPort(addr);
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   // Check that the listener hasn't already been started.
   if (info_->started) return absl::InternalError("Already started");
   if (port != 0) {
@@ -368,7 +368,7 @@ absl::StatusOr<int> FuzzingEventEngine::FuzzingListener::Bind(
 
 absl::Status FuzzingEventEngine::FuzzingListener::Start() {
   // Start the listener or fail if it's already started.
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   if (info_->started) return absl::InternalError("Already started");
   info_->started = true;
   return absl::OkStatus();
@@ -429,7 +429,7 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     WriteArgs args) {
   grpc_core::global_stats().IncrementSyscallWrite();
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   const int write_id = g_fuzzing_event_engine->next_write_id_;
   ++g_fuzzing_event_engine->next_write_id_;
   IoToken write_token({"WRITE", middle_.get(), my_index(),
@@ -449,7 +449,7 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
             [middle = middle_, index = my_index(), r, write_event_callback]() {
               std::vector<WriteMetric> metrics;
               {
-                grpc_core::MutexLock lock(&*mu_);
+                grpc_core::MutexLock lock(*mu_);
                 if (middle->closed[index]) {
                   return;
                 }
@@ -474,7 +474,7 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
 }
 
 absl::Time FuzzingEventEngine::NowAsAbslTime() {
-  grpc_core::MutexLock lock(&*now_mu_);
+  grpc_core::MutexLock lock(*now_mu_);
   return g_fuzzing_event_engine->epoch_ +
          absl::Nanoseconds(
              g_fuzzing_event_engine->now_.time_since_epoch().count());
@@ -556,7 +556,7 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
       RunType::kWrite,
       [write_token = std::move(write_token), middle = std::move(middle), index,
        data, on_writable = std::move(on_writable)]() mutable {
-        grpc_core::ReleasableMutexLock lock(&*mu_);
+        grpc_core::ReleasableMutexLock lock(*mu_);
         GRPC_CHECK(middle->writing[index]);
         if (middle->closed[index]) {
           GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
@@ -589,7 +589,7 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
 }
 
 FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
       << "CLOSE[" << middle_.get() << ":" << my_index() << "]: "
       << GRPC_DUMP_ARGS(
@@ -624,7 +624,7 @@ bool FuzzingEventEngine::FuzzingEndpoint::Read(
     absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
     ReadArgs) {
   buffer->Clear();
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   IoToken read_token({"READ", middle_.get(), my_index(),
                       &g_fuzzing_event_engine->outstanding_reads_});
   GRPC_CHECK(!middle_->closed[my_index()]);
@@ -670,13 +670,13 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
   // TODO(ctiller): do something with the timeout
   // Schedule a timer to run (with some fuzzer selected delay) the on_connect
   // callback.
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   auto task_handle = RunAfterLocked(
       RunType::kRunAfter, Duration(0),
       [this, addr, on_connect = std::move(on_connect)]() mutable {
         // Check for a legal address and extract the target port number.
         auto port = ResolvedAddressGetPort(addr);
-        grpc_core::MutexLock lock(&*mu_);
+        grpc_core::MutexLock lock(*mu_);
         // Find the listener that is listening on the target port.
         for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
           const auto& listener = *it;
@@ -717,7 +717,7 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
 std::pair<std::unique_ptr<EventEngine::Endpoint>,
           std::unique_ptr<EventEngine::Endpoint>>
 FuzzingEventEngine::CreateEndpointPair() {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   auto middle =
       std::make_shared<EndpointMiddle>(g_fuzzing_event_engine->AllocatePort(),
                                        g_fuzzing_event_engine->AllocatePort());
@@ -809,13 +809,13 @@ FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
 }
 
 void FuzzingEventEngine::Run(Closure* closure) {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   RunAfterLocked(RunType::kRunAfter, Duration::zero(),
                  [closure]() { closure->Run(); });
 }
 
 void FuzzingEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   RunAfterLocked(RunType::kRunAfter, Duration::zero(), std::move(closure));
 }
 
@@ -827,12 +827,12 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {
   {
-    grpc_core::MutexLock lock(&run_after_duration_callback_mu_);
+    grpc_core::MutexLock lock(run_after_duration_callback_mu_);
     if (run_after_duration_callback_ != nullptr) {
       run_after_duration_callback_(when);
     }
   }
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   // (b/258949216): Cap it to one year to avoid integer overflow errors.
   return RunAfterLocked(RunType::kRunAfter, std::min(when, kOneYear),
                         std::move(closure));
@@ -840,7 +840,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfterExactly(
     Duration when, absl::AnyInvocable<void()> closure) {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   return RunAfterExactlyLocked(when, std::move(closure));
 }
 
@@ -875,7 +875,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
   Time final_time;
   Time now;
   {
-    grpc_core::MutexLock lock(&*now_mu_);
+    grpc_core::MutexLock lock(*now_mu_);
     final_time = now_ + when;
     now = now_;
     tasks_by_time_.emplace(final_time, std::move(task));
@@ -890,7 +890,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
 }
 
 bool FuzzingEventEngine::Cancel(TaskHandle handle) {
-  grpc_core::MutexLock lock(&*mu_);
+  grpc_core::MutexLock lock(*mu_);
   GRPC_CHECK(handle.keys[1] == kTaskHandleSalt);
   const intptr_t id = handle.keys[0];
   auto it = tasks_by_id_.find(id);
@@ -910,7 +910,7 @@ gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
     return gpr_inf_future(clock_type);
   }
   GRPC_CHECK_NE(g_fuzzing_event_engine, nullptr);
-  grpc_core::MutexLock lock(&*now_mu_);
+  grpc_core::MutexLock lock(*now_mu_);
   return g_fuzzing_event_engine->NowAsTimespec(clock_type);
 }
 

@@ -79,7 +79,7 @@ NoDestruct<absl::AnyInvocable<void(XdsHttpFilterRegistry&)>>
 
 void GrpcXdsBootstrapBuilder::SetXdsHttpFilterFactoryInitForTest(
     absl::AnyInvocable<void(XdsHttpFilterRegistry&)> init) {
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   *g_http_filter_factory_test_init = std::move(init);
 }
 
@@ -97,10 +97,11 @@ XdsHttpFilterRegistry GrpcXdsBootstrapBuilder::CreateXdsHttpFilterRegistry(
       registry.RegisterFilter(
           std::make_unique<XdsHttpCompositeFilterFactory>());
     }
-    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT")) {
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT") ||
+        IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER")) {
       registry.RegisterFilter(std::make_unique<XdsHttpExtProcFilterFactory>());
     }
-    MutexLock lock(g_mu);
+    MutexLock lock(*g_mu);
     if (*g_http_filter_factory_test_init != nullptr) {
       (*g_http_filter_factory_test_init)(registry);
     }

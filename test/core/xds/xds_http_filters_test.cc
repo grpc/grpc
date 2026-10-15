@@ -2221,7 +2221,7 @@ TEST_F(XdsExtProcFilterTest, Accessors) {
   EXPECT_EQ(factory_->OverrideConfigProtoName(),
             "envoy.extensions.filters.http.ext_proc.v3.ExtProcPerRoute");
   EXPECT_TRUE(factory_->IsSupportedOnClients());
-  EXPECT_FALSE(factory_->IsSupportedOnServers());
+  EXPECT_TRUE(factory_->IsSupportedOnServers());
   EXPECT_FALSE(factory_->IsTerminalFilter());
 }
 
@@ -2243,13 +2243,14 @@ TEST_F(XdsExtProcFilterTest, ParseMinimumConfig) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
-  EXPECT_EQ(config->ToString(),
-            "{grpc_service={server_uri=localhost:1234, "
-            "channel_creds={type=google_default, config={}}}, "
-            "processing_mode={send_request_headers=true, "
-            "send_response_headers=true, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      config->ToString(),
+      "{grpc_service={server_uri=localhost:1234, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "processing_mode={send_request_headers=true, "
+      "send_response_headers=true, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, ParseFullConfig) {
@@ -2280,18 +2281,19 @@ TEST_F(XdsExtProcFilterTest, ParseFullConfig) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
-  EXPECT_EQ(config->ToString(),
-            "{grpc_service={server_uri=localhost:1234, "
-            "channel_creds={type=google_default, config={}}}, "
-            "failure_mode_allow=true, "
-            "processing_mode={send_request_headers=false, "
-            "send_response_headers=true, send_response_trailers=true, "
-            "send_request_body=true, send_response_body=false}, "
-            "request_attributes=[req_attr], "
-            "response_attributes=[resp_attr], "
-            "mutation_rules={disallow_all=true}, "
-            "forwarding_allowed_headers=[StringMatcher{exact=allowed}], "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      config->ToString(),
+      "{grpc_service={server_uri=localhost:1234, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "failure_mode_allow=true, "
+      "processing_mode={send_request_headers=false, "
+      "send_response_headers=true, send_response_trailers=true, "
+      "send_request_body=true, send_response_body=false}, "
+      "request_attributes=[req_attr], "
+      "response_attributes=[resp_attr], "
+      "mutation_rules={disallow_all=true}, "
+      "forwarding_allowed_headers=[StringMatcher{exact=allowed}], "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidTimeout) {
@@ -2569,6 +2571,29 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigEmptyProcessingMode) {
   // Leave all fields unset, which means DEFAULT for the header and trailer
   // modes and NONE for the body modes.
   proto.mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto config =
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
+  const auto& processing_mode =
+      DownCast<const ExtProcFilter::Config&>(*config).processing_mode;
+  ASSERT_TRUE(processing_mode.has_value());
+  EXPECT_TRUE(processing_mode->send_request_headers);
+  EXPECT_TRUE(processing_mode->send_response_headers);
+  EXPECT_FALSE(processing_mode->send_response_trailers);
+  EXPECT_FALSE(processing_mode->send_request_body);
+  EXPECT_FALSE(processing_mode->send_response_body);
+}
+
+TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigNoProcessingMode) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  // Leave the processing_mode field unset, which is equivalent to setting it
+  // to an empty message.
   XdsExtension extension = MakeXdsExtension(proto);
   auto config =
       factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
@@ -2977,15 +3002,16 @@ TEST_F(XdsExtProcFilterTest, ParseOverrideConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
-  EXPECT_EQ(config->ToString(),
-            "{grpc_service={server_uri=localhost:5678, "
-            "channel_creds={type=google_default, config={}}}, "
-            "failure_mode_allow=true, "
-            "processing_mode={send_request_headers=false, "
-            "send_response_headers=true, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "request_attributes=[override_req_attr], "
-            "response_attributes=[override_resp_attr]}");
+  EXPECT_EQ(
+      config->ToString(),
+      "{grpc_service={server_uri=localhost:5678, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "failure_mode_allow=true, "
+      "processing_mode={send_request_headers=false, "
+      "send_response_headers=true, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "request_attributes=[override_req_attr], "
+      "response_attributes=[override_resp_attr]}");
 }
 
 TEST_F(XdsExtProcFilterTest, ParseOverrideConfigEmpty) {
@@ -3040,13 +3066,14 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsNoOverride) {
                              *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged_config, nullptr);
   ASSERT_EQ(merged_config->type(), ExtProcFilter::Config::Type());
-  EXPECT_EQ(merged_config->ToString(),
-            "{ext_proc_channel={server_uri=localhost:1234, "
-            "channel_creds={type=google_default, config={}}}, "
-            "processing_mode={send_request_headers=true, "
-            "send_response_headers=true, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      merged_config->ToString(),
+      "{ext_proc_channel={server_uri=localhost:1234, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "processing_mode={send_request_headers=true, "
+      "send_response_headers=true, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, MergeConfigsWithVirtualHostOverride) {
@@ -3083,13 +3110,14 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithVirtualHostOverride) {
       factory_->MergeConfigs(top_level_config, vhost_config, nullptr, nullptr,
                              *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged, nullptr);
-  EXPECT_EQ(merged->ToString(),
-            "{ext_proc_channel={server_uri=localhost:1234, "
-            "channel_creds={type=google_default, config={}}}, "
-            "processing_mode={send_request_headers=false, "
-            "send_response_headers=true, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      merged->ToString(),
+      "{ext_proc_channel={server_uri=localhost:1234, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "processing_mode={send_request_headers=false, "
+      "send_response_headers=true, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, MergeConfigsWithRouteOverride) {
@@ -3143,13 +3171,14 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithRouteOverride) {
       top_level_config, vhost_config, route_config, nullptr,
       *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged, nullptr);
-  EXPECT_EQ(merged->ToString(),
-            "{ext_proc_channel={server_uri=localhost:5678, "
-            "channel_creds={type=google_default, config={}}}, "
-            "processing_mode={send_request_headers=true, "
-            "send_response_headers=true, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      merged->ToString(),
+      "{ext_proc_channel={server_uri=localhost:5678, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "processing_mode={send_request_headers=true, "
+      "send_response_headers=true, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, MergeConfigsWithClusterWeightOverride) {
@@ -3218,13 +3247,14 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithClusterWeightOverride) {
       top_level_config, vhost_config, route_config, cluster_weight_config,
       *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged, nullptr);
-  EXPECT_EQ(merged->ToString(),
-            "{ext_proc_channel={server_uri=localhost:1234, "
-            "channel_creds={type=google_default, config={}}}, "
-            "processing_mode={send_request_headers=false, "
-            "send_response_headers=false, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      merged->ToString(),
+      "{ext_proc_channel={server_uri=localhost:1234, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "processing_mode={send_request_headers=false, "
+      "send_response_headers=false, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideGrpcService) {
@@ -3261,15 +3291,16 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideGrpcService) {
       top_level_config, nullptr, override_config, nullptr,
       *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged, nullptr);
-  EXPECT_EQ(merged->ToString(),
-            "{ext_proc_channel={server_uri=localhost:5678, "
-            "channel_creds={type=google_default, config={}}}, "
-            "processing_mode={send_request_headers=true, "
-            "send_response_headers=true, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "request_attributes=[req_attr1], "
-            "response_attributes=[resp_attr1], "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      merged->ToString(),
+      "{ext_proc_channel={server_uri=localhost:5678, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "processing_mode={send_request_headers=true, "
+      "send_response_headers=true, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "request_attributes=[req_attr1], "
+      "response_attributes=[resp_attr1], "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideFailureModeAllow) {
@@ -3304,16 +3335,17 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideFailureModeAllow) {
       top_level_config, nullptr, override_config, nullptr,
       *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged, nullptr);
-  EXPECT_EQ(merged->ToString(),
-            "{ext_proc_channel={server_uri=localhost:1234, "
-            "channel_creds={type=google_default, config={}}}, "
-            "failure_mode_allow=true, "
-            "processing_mode={send_request_headers=true, "
-            "send_response_headers=true, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "request_attributes=[req_attr1], "
-            "response_attributes=[resp_attr1], "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      merged->ToString(),
+      "{ext_proc_channel={server_uri=localhost:1234, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "failure_mode_allow=true, "
+      "processing_mode={send_request_headers=true, "
+      "send_response_headers=true, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "request_attributes=[req_attr1], "
+      "response_attributes=[resp_attr1], "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideRequestAttributes) {
@@ -3347,15 +3379,16 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideRequestAttributes) {
       top_level_config, nullptr, override_config, nullptr,
       *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged, nullptr);
-  EXPECT_EQ(merged->ToString(),
-            "{ext_proc_channel={server_uri=localhost:1234, "
-            "channel_creds={type=google_default, config={}}}, "
-            "processing_mode={send_request_headers=true, "
-            "send_response_headers=true, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "request_attributes=[req_attr2], "
-            "response_attributes=[resp_attr1], "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      merged->ToString(),
+      "{ext_proc_channel={server_uri=localhost:1234, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "processing_mode={send_request_headers=true, "
+      "send_response_headers=true, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "request_attributes=[req_attr2], "
+      "response_attributes=[resp_attr1], "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideResponseAttributes) {
@@ -3389,15 +3422,16 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideResponseAttributes) {
       top_level_config, nullptr, override_config, nullptr,
       *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged, nullptr);
-  EXPECT_EQ(merged->ToString(),
-            "{ext_proc_channel={server_uri=localhost:1234, "
-            "channel_creds={type=google_default, config={}}}, "
-            "processing_mode={send_request_headers=true, "
-            "send_response_headers=true, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "request_attributes=[req_attr1], "
-            "response_attributes=[resp_attr2], "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      merged->ToString(),
+      "{ext_proc_channel={server_uri=localhost:1234, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "processing_mode={send_request_headers=true, "
+      "send_response_headers=true, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "request_attributes=[req_attr1], "
+      "response_attributes=[resp_attr2], "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideProcessingMode) {
@@ -3438,15 +3472,16 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideProcessingMode) {
       top_level_config, nullptr, override_config, nullptr,
       *xds_client_->transport_factory(), *blackboard);
   ASSERT_NE(merged, nullptr);
-  EXPECT_EQ(merged->ToString(),
-            "{ext_proc_channel={server_uri=localhost:1234, "
-            "channel_creds={type=google_default, config={}}}, "
-            "processing_mode={send_request_headers=false, "
-            "send_response_headers=false, send_response_trailers=false, "
-            "send_request_body=false, send_response_body=false}, "
-            "request_attributes=[req_attr1], "
-            "response_attributes=[resp_attr1], "
-            "deferred_close_timeout=5000ms}");
+  EXPECT_EQ(
+      merged->ToString(),
+      "{ext_proc_channel={server_uri=localhost:1234, "
+      "channel_creds={type=google_default, config={}}, timeout=\xE2\x88\x9E}, "
+      "processing_mode={send_request_headers=false, "
+      "send_response_headers=false, send_response_trailers=false, "
+      "send_request_body=false, send_response_body=false}, "
+      "request_attributes=[req_attr1], "
+      "response_attributes=[resp_attr1], "
+      "deferred_close_timeout=5000ms}");
 }
 
 TEST_F(XdsExtProcFilterTest, MergeConfigsSharesChannel) {
