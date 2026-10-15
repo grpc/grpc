@@ -1,3 +1,4 @@
+```cpp
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,10 +50,8 @@ grpc_slice grpc_chttp2_settings_ack_create(void) {
   return output;
 }
 
-grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
-                                                    grpc_chttp2_transport* t,
-                                                    const grpc_slice& slice,
-                                                    int is_last) {
+grpc_error_handle grpc_chttp2_settings_parser_parse(
+    void* p, grpc_chttp2_transport* t, const grpc_slice& slice, int is_last) {
   grpc_chttp2_settings_parser* parser =
       static_cast<grpc_chttp2_settings_parser*>(p);
 
@@ -71,18 +70,20 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         if (!v.has_value()) {
           parser->state = GRPC_CHTTP2_SPS_ID0;
           if (is_last) {
-            grpc_core::Http2Settings* target_settings =
-                &t->peer_settings;
+            grpc_core::Http2Settings* target_settings = &t->peer_settings;
             target_settings->set_initial_window_size(
                 grpc_core::Http2Settings::kDefaultInitialWindowSize);
             t->http2_ztrace_collector.Append(
-                grpc_core::H2SettingsTrace<true>{false, target_settings->ToMap()});
+                grpc_core::H2SettingsTrace<true>{
+                    false, target_settings->ToMap()});
           }
           return absl::OkStatus();
         }
-        parser->id = static_cast<uint16_t>((static_cast<uint16_t>(*v)) << 8);
+        parser->id = static_cast<uint16_t>(
+            static_cast<uint16_t>(*v) << 8);
         [[fallthrough]];
       }
+
       case GRPC_CHTTP2_SPS_ID1: {
         auto v = src.ReadU8();
         if (!v.has_value()) {
@@ -92,6 +93,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         parser->id |= static_cast<uint16_t>(*v);
         [[fallthrough]];
       }
+
       case GRPC_CHTTP2_SPS_VAL0: {
         auto v = src.ReadU8();
         if (!v.has_value()) {
@@ -101,6 +103,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         parser->value = static_cast<uint32_t>(*v) << 24;
         [[fallthrough]];
       }
+
       case GRPC_CHTTP2_SPS_VAL1: {
         auto v = src.ReadU8();
         if (!v.has_value()) {
@@ -110,6 +113,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         parser->value |= static_cast<uint32_t>(*v) << 16;
         [[fallthrough]];
       }
+
       case GRPC_CHTTP2_SPS_VAL2: {
         auto v = src.ReadU8();
         if (!v.has_value()) {
@@ -119,6 +123,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         parser->value |= static_cast<uint32_t>(*v) << 8;
         [[fallthrough]];
       }
+
       case GRPC_CHTTP2_SPS_VAL3: {
         auto v = src.ReadU8();
         if (!v.has_value()) {
@@ -127,13 +132,16 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         }
         parser->value |= static_cast<uint32_t>(*v);
 
-        if (parser->id == grpc_core::Http2Settings::kInitialWindowSizeWireId) {
+        if (parser->id ==
+            grpc_core::Http2Settings::kInitialWindowSizeWireId) {
           t->initial_window_update +=
               static_cast<int64_t>(static_cast<int32_t>(parser->value)) -
-              static_cast<int64_t>(t->peer_settings.initial_window_size());
+              static_cast<int64_t>(
+                  t->peer_settings.initial_window_size());
         }
 
-        if (parser->id == grpc_core::Http2Settings::kInitialWindowSizeWireId) {
+        if (parser->id ==
+            grpc_core::Http2Settings::kInitialWindowSizeWireId) {
           // Defer updating peer settings window to the frame completion so we
           // don't affect flow control calculations while parsing a single
           // SETTINGS frame.
@@ -141,10 +149,12 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         }
 
         t->http2_ztrace_collector.Append(
-            grpc_core::H2SettingsTrace<false>{false, {{parser->id, parser->value}}});
+            grpc_core::H2SettingsTrace<false>{
+                false, {{parser->id, parser->value}}});
 
         parser->state = GRPC_CHTTP2_SPS_ID0;
       } break;
     }
   }
 }
+```
