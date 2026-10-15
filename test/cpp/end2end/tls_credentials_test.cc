@@ -273,6 +273,14 @@ constexpr char kClientMldsa87CertPath[] =
     "test/core/tsi/test_creds/mldsa/client_mldsa87.pem";
 constexpr char kClientMldsa87KeyPath[] =
     "test/core/tsi/test_creds/mldsa/client_mldsa87.key";
+constexpr char kServerChainMldsa87CertPath[] =
+    "test/core/tsi/test_creds/mldsa/server_chain_mldsa87.pem";
+constexpr char kServerChainMldsa87KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/server_chain_mldsa87.key";
+constexpr char kClientChainMldsa87CertPath[] =
+    "test/core/tsi/test_creds/mldsa/client_chain_mldsa87.pem";
+constexpr char kClientChainMldsa87KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/client_chain_mldsa87.key";
 
 TEST_F(TlsCredentialsTest, KeyExchangeGroupMlkem) {
   server_addr_ = absl::StrCat("localhost:",
@@ -452,7 +460,8 @@ TEST_F(TlsCredentialsTest, Mldsa87ChainMutualTlsHandshakeAndRpc) {
       GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87};
   server_thread_ = new std::thread([&]() {
     RunServer(&notification, /*key_exchange_groups=*/nullptr,
-              kCaMldsa87CertPath, kServerMldsa87CertPath, kServerMldsa87KeyPath,
+              kCaMldsa87CertPath, kServerChainMldsa87CertPath,
+              kServerChainMldsa87KeyPath,
               GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
               &signature_algorithms);
   });
@@ -461,10 +470,9 @@ TEST_F(TlsCredentialsTest, Mldsa87ChainMutualTlsHandshakeAndRpc) {
   std::string root_cert =
       grpc_core::testing::GetFileContents(kCaMldsa87CertPath);
   std::string client_key =
-      grpc_core::testing::GetFileContents(kClientMldsa87KeyPath);
-  std::string client_cert_chain = absl::StrCat(
-      grpc_core::testing::GetFileContents(kClientMldsa87CertPath), "\n",
-      root_cert);
+      grpc_core::testing::GetFileContents(kClientChainMldsa87KeyPath);
+  std::string client_cert_chain =
+      grpc_core::testing::GetFileContents(kClientChainMldsa87CertPath);
   std::vector<grpc::experimental::IdentityKeyCertPair> identity_pairs = {
       {client_key, client_cert_chain}};
   auto client_certificate_provider =

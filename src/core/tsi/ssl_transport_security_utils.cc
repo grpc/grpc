@@ -86,6 +86,11 @@ tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
           << "Peer tried to renegotiate SSL connection. This is unsupported.";
       return TSI_UNIMPLEMENTED;
     } else if (ssl_write_result == SSL_ERROR_WANT_WRITE) {
+      // The underlying BIO write buffer is full (for example, when TLS 1.3
+      // flushes deferred post-handshake NewSessionTicket messages containing a
+      // large post-quantum client certificate chain that exceeds the 17 KB
+      // default BIO ring buffer). Signal the caller to drain network_io and
+      // retry SSL_write.
       return TSI_DRAIN_BUFFER;
     } else {
       LOG(ERROR) << "SSL_write failed with error "
@@ -164,6 +169,9 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   }
 
   // If we can, prepare the buffer, send it to SSL_write and read.
+  // When retrying after a previous TSI_DRAIN_BUFFER, buffer_offset ==
+  // buffer_size (so available == 0) and buffer already holds the frame to be
+  // written.
   if (available > 0) {
     memcpy(buffer + buffer_offset, unprotected_bytes, available);
   }
@@ -179,6 +187,9 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   *unprotected_bytes_size = available;
+  // If DoSslWrite returned TSI_DRAIN_BUFFER, keep buffer_offset at buffer_size
+  // so subsequent Protect/ProtectFlush calls retry DoSslWrite after draining
+  // network_io.
   buffer_offset = (result == TSI_DRAIN_BUFFER) ? buffer_size : 0;
   return TSI_OK;
 }
@@ -200,10 +211,15 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
     } else if (result != TSI_DRAIN_BUFFER) {
       return result;
     }
+    // On TSI_DRAIN_BUFFER, retain buffer_offset so we retry DoSslWrite on the
+    // next flush iteration after draining network_io below.
   }
 
   pending = static_cast<int>(BIO_pending(network_io));
   GRPC_CHECK_GE(pending, 0);
+  // Include any unwritten bytes remaining in buffer_offset in
+  // still_pending_size so the caller continues flushing until both the BIO and
+  // the internal buffer are completely drained.
   *still_pending_size = static_cast<size_t>(pending) + buffer_offset;
   if (*still_pending_size == 0) return TSI_OK;
 

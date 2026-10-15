@@ -33,6 +33,10 @@
 # client_mldsa87.pem
 # server_mldsa87.key
 # server_mldsa87.pem
+# client_chain_mldsa87.key
+# client_chain_mldsa87.pem
+# server_chain_mldsa87.key
+# server_chain_mldsa87.pem
 
 set -e
 
@@ -78,9 +82,63 @@ generate_mldsa_set() {
     -out "server_${suffix}.pem" -days 3650
 }
 
+generate_mldsa_chain_set() {
+  local alg="$1"
+  local suffix="$2"
+
+  # 1. Generate Intermediate CA key and cert signed by the ML-DSA Root CA
+  openssl genpkey -algorithm "${alg}" \
+    -provparam ml-dsa.output_formats=seed-only \
+    -out "intermediate_ca_${suffix}.key"
+  openssl req -new -key "intermediate_ca_${suffix}.key" \
+    -out "intermediate_ca_${suffix}.csr" \
+    -config "${CA_DIR}/ca-openssl.cnf" \
+    -subj "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testintermediateca"
+  openssl x509 -req -in "intermediate_ca_${suffix}.csr" \
+    -CA "ca_${suffix}.pem" -CAkey "ca_${suffix}.key" -CAcreateserial \
+    -extfile "${CA_DIR}/ca-openssl.cnf" -extensions v3_req \
+    -out "intermediate_ca_${suffix}.pem" -days 3650
+
+  # 2. Generate client key and leaf cert signed by the Intermediate CA, bundled
+  # with the Intermediate CA into a 2-cert chain.
+  openssl genpkey -algorithm "${alg}" \
+    -provparam ml-dsa.output_formats=seed-only \
+    -out "client_chain_${suffix}.key"
+  openssl req -new -key "client_chain_${suffix}.key" \
+    -out "client_chain_${suffix}.csr" \
+    -subj "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testclient"
+  openssl x509 -req -in "client_chain_${suffix}.csr" \
+    -CA "intermediate_ca_${suffix}.pem" \
+    -CAkey "intermediate_ca_${suffix}.key" -CAcreateserial \
+    -out "client_leaf_${suffix}.pem" -days 3650
+  cat "client_leaf_${suffix}.pem" "intermediate_ca_${suffix}.pem" \
+    > "client_chain_${suffix}.pem"
+
+  # 3. Generate server key and leaf cert signed by the Intermediate CA, bundled
+  # with the Intermediate CA into a 2-cert chain.
+  openssl genpkey -algorithm "${alg}" \
+    -provparam ml-dsa.output_formats=seed-only \
+    -out "server_chain_${suffix}.key"
+  openssl req -new -key "server_chain_${suffix}.key" \
+    -out "server_chain_${suffix}.csr" \
+    -config "${CA_DIR}/server1-openssl.cnf" \
+    -subj "/C=US/ST=Illinois/L=Chicago/O=Example, Co./CN=*.test.google.com"
+  openssl x509 -req -in "server_chain_${suffix}.csr" \
+    -CA "intermediate_ca_${suffix}.pem" \
+    -CAkey "intermediate_ca_${suffix}.key" -CAcreateserial \
+    -extfile "${CA_DIR}/server1-openssl.cnf" -extensions v3_req \
+    -out "server_leaf_${suffix}.pem" -days 3650
+  cat "server_leaf_${suffix}.pem" "intermediate_ca_${suffix}.pem" \
+    > "server_chain_${suffix}.pem"
+
+  rm -f "intermediate_ca_${suffix}.key" "intermediate_ca_${suffix}.pem" \
+    "client_leaf_${suffix}.pem" "server_leaf_${suffix}.pem"
+}
+
 generate_mldsa_set "ML-DSA-44" "mldsa44"
 generate_mldsa_set "ML-DSA-65" "mldsa65"
 generate_mldsa_set "ML-DSA-87" "mldsa87"
+generate_mldsa_chain_set "ML-DSA-87" "mldsa87"
 
 chmod 644 ./*.key ./*.pem
 rm -f ./*.csr ./*.srl

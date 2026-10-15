@@ -17,6 +17,9 @@ This directory contains ML-DSA-44, ML-DSA-65, and ML-DSA-87 post-quantum test ce
    * ML-DSA-44, ML-DSA-65, and ML-DSA-87 client private keys and certificates signed by the corresponding ML-DSA root CA (`ca_mldsa44.pem` / `ca_mldsa65.pem` / `ca_mldsa87.pem`).
    * Subject Common Name: `testclient`.
 
+4. **`server_chain_mldsa87.key` / `server_chain_mldsa87.pem`** and **`client_chain_mldsa87.key` / `client_chain_mldsa87.pem`**:
+   * 2-certificate ML-DSA-87 server and client certificate chains (`leaf + intermediate`), where the leaf certificates are signed by an ML-DSA-87 intermediate CA (`CN=testintermediateca`) that in turn chains up to `ca_mldsa87.pem`.
+
 ## RFC 9881 `seed` Private Key Representation
 
 Under FIPS 204 (ML-DSA) and RFC 9881, an ML-DSA private key in PKCS#8 can be encoded as `seed` (32 bytes, tag `[0]`), `expandedKey` (tag `[1]`), or `both` (tag `[2]`). BoringSSL strictly requires the 32-byte `seed` representation and rejects `expandedKey` or `both` with `EVP_R_PRIVATE_KEY_WAS_NOT_SEED`.
