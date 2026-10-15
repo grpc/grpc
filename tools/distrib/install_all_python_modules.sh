@@ -33,7 +33,7 @@ function maybe_run_command () {
 }
 
 
-python3 -m pip install --upgrade "cython==3.1.1" "nox==2024.10.9";
+python3 -m pip install --upgrade "cython==3.2.8" "nox==2024.10.9";
 python3 -m pip install .;
 
 # Build and install grpcio_tools

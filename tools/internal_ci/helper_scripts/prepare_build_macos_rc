@@ -99,9 +99,23 @@ brew_install_with_retry() {
 brew config
 
 if $is_sonoma; then
+  export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
+
+  # Pin Homebrew to version 5.0.5 and homebrew/core to the matching Sonoma snapshot
+  HOMEBREW_REPO="$(brew --repository)"
+  git -C "${HOMEBREW_REPO}" fetch --depth 1 https://github.com/Homebrew/brew.git tag 5.0.5
+  git -C "${HOMEBREW_REPO}" checkout -f 5.0.5
+
+  HOMEBREW_CORE_DIR="${HOMEBREW_REPO}/Library/Taps/homebrew/homebrew-core"
+  mkdir -p "${HOMEBREW_CORE_DIR}"
+  git -C "${HOMEBREW_CORE_DIR}" init
+  git -C "${HOMEBREW_CORE_DIR}" fetch --depth 1 https://github.com/Homebrew/homebrew-core.git 3aa5cf1d47f4fda4decbfc999ea919cd499a204e
+  git -C "${HOMEBREW_CORE_DIR}" checkout -f FETCH_HEAD
+
+  brew config
   brew_install_with_retry cmake
   brew_install_with_retry ccache
-  export PATH="/opt/homebrew/bin::${PATH}"
+  export PATH="${HOME}/.pyenv/shims:/opt/homebrew/bin::${PATH}"
   cmake --version
 fi
 

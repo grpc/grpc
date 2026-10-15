@@ -906,7 +906,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           EXPECT_EQ(status, expected_status)
               << location.file() << ":" << location.line();
         },
-        location);
+        {}, {}, location);
   }
 
   // Waits for the LB policy to fail a connection attempt.  There can be
@@ -932,7 +932,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               << ConnectivityStateName(update.state) << " at "
               << location.file() << ":" << location.line();
           check_status(update.status);
-          ExpectPickFail(update.picker.get(), check_status, location);
+          ExpectPickFail(update.picker.get(), check_status, {}, {}, location);
           retval = update.state == GRPC_CHANNEL_TRANSIENT_FAILURE;
           return false;  // Stop.
         },
@@ -1319,12 +1319,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     LOG(INFO) << "Done with endpoint address change";
   }
 
-  // Requests a picker on picker and expects a Fail result.
+  // Requests a pick on picker and expects a Fail result.
   // The failing status is passed to check_status.
   void ExpectPickFail(LoadBalancingPolicy::SubchannelPicker* picker,
                       std::function<void(const absl::Status&)> check_status,
+                      const CallAttributes& call_attributes = {},
+                      const std::map<std::string, std::string>& metadata = {},
                       SourceLocation location = SourceLocation()) {
-    auto pick_result = DoPick(picker);
+    auto pick_result = DoPick(picker, call_attributes, metadata);
     auto* fail =
         std::get_if<LoadBalancingPolicy::PickResult::Fail>(&pick_result.result);
     ASSERT_NE(fail, nullptr) << PickResultString(pick_result) << " at "

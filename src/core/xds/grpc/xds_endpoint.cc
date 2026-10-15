@@ -68,7 +68,7 @@ bool XdsEndpointResource::DropConfig::ShouldDrop(
   for (const auto& drop_category : drop_category_list_) {
     // Generate a random number in [0, 1000000).
     const uint32_t random = [&]() {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       return absl::Uniform<uint32_t>(bit_gen_, 0, 1000000);
     }();
     if (random < drop_category.parts_per_million) {

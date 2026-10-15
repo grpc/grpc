@@ -59,6 +59,10 @@
       lib = lib_maps.get(dep, None)
       if lib:
         files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
+        files.extend(
+          lib.get('headers_windows', []) +
+          lib.get('src_windows', [])
+        )
     files = sorted(set(files))
   %>
     % for file in files:
