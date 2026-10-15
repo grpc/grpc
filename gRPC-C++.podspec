@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.85.0-dev'
+  version = '1.86.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -449,6 +449,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
                       'src/core/ext/transport/chttp2/transport/http2_transport.h',
+                      'src/core/ext/transport/chttp2/transport/http2_transport_stats.h',
                       'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
@@ -725,6 +726,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h',
                       'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/type/v3/scope.upb.h',
+                      'src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h',
                       'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb.h',
@@ -960,6 +963,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.h',
@@ -1285,6 +1289,7 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/oob_backend_metric.h',
                       'src/core/load_balancing/oob_backend_metric_internal.h',
                       'src/core/load_balancing/outlier_detection/outlier_detection.h',
+                      'src/core/load_balancing/outlier_detection/outlier_detection_metrics.h',
                       'src/core/load_balancing/pick_first/pick_first.h',
                       'src/core/load_balancing/ring_hash/ring_hash.h',
                       'src/core/load_balancing/rls/rls.h',
@@ -1904,6 +1909,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_transport.h',
+                              'src/core/ext/transport/chttp2/transport/http2_transport_stats.h',
                               'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
@@ -2180,6 +2186,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h',
                               'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/type/v3/scope.upb.h',
+                              'src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h',
                               'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb.h',
@@ -2415,6 +2423,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.h',
@@ -2740,6 +2749,7 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/oob_backend_metric.h',
                               'src/core/load_balancing/oob_backend_metric_internal.h',
                               'src/core/load_balancing/outlier_detection/outlier_detection.h',
+                              'src/core/load_balancing/outlier_detection/outlier_detection_metrics.h',
                               'src/core/load_balancing/pick_first/pick_first.h',
                               'src/core/load_balancing/ring_hash/ring_hash.h',
                               'src/core/load_balancing/rls/rls.h',

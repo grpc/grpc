@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/slice/slice.h"
@@ -209,7 +210,8 @@ class ReadContext {
   explicit ReadContext(const uint32_t max_new_streams_per_read_cycle,
                        const PromiseEndpoint& endpoint, const bool is_client,
                        const uint32_t max_security_frame_size,
-                       const uint8_t ping_on_rst_stream_percent)
+                       const uint8_t ping_on_rst_stream_percent,
+                       const Http2TransportStats& http2_transport_stats)
       : max_new_streams_per_read_cycle_(max_new_streams_per_read_cycle),
         peer_string_(GetPeerString(endpoint)),
         is_client_(is_client),
@@ -218,6 +220,8 @@ class ReadContext {
         header_assembler_(is_client) {
     GRPC_DCHECK(max_new_streams_per_read_cycle > 0u)
         << "0 is invalid, because we will never be able to create a stream.";
+    parser_.hpack_table()->SetHttp2StatsCollector(
+        http2_transport_stats.GetStatsCollector());
   }
   ~ReadContext() = default;
 
