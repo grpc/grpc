@@ -614,7 +614,9 @@ class Php8Language:
     def configure(self, config, args):
         self.config = config
         self.args = args
-        _check_compiler(self.args.compiler, ["default"])
+        _check_compiler(
+            self.args.compiler, ["default", "php8.2", "php8.4", "php8.5"]
+        )
 
     def test_specs(self):
         return [
@@ -638,6 +640,14 @@ class Php8Language:
         return [["tools/run_tests/helper_scripts/post_tests_php.sh"]]
 
     def dockerfile_dir(self):
+        if self.args.compiler == "php8.2":
+            return "tools/dockerfile/test/php8_debian12_%s" % _docker_arch_suffix(
+                self.args.arch
+            )
+        elif self.args.compiler == "php8.5":
+            return "tools/dockerfile/test/php85_debian13_%s" % _docker_arch_suffix(
+                self.args.arch
+            )
         return "tools/dockerfile/test/php8_debian13_%s" % _docker_arch_suffix(
             self.args.arch
         )
