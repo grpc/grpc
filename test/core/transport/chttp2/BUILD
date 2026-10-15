@@ -290,6 +290,44 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "chttp2_security_frame_test",
+    srcs = ["chttp2_security_frame_test.cc"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time",
+        "gtest",
+    ],
+    uses_polling = False,
+    deps = [
+        "//:channel_arg_names",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_transport_chttp2",
+        "//:iomgr",
+        "//:orphanable",
+        "//src/core:channel_args",
+        "//src/core:closure",
+        "//src/core:default_event_engine",
+        "//src/core:error",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:resource_quota",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:status_helper",
+        "//src/core:sync",
+        "//src/core:transport_framing_endpoint_extension",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
     name = "ping_configuration_test",
     srcs = ["ping_configuration_test.cc"],
     external_deps = ["gtest"],
