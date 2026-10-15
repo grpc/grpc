@@ -55,14 +55,10 @@ static void fill_header(grpc_core::ByteSink& sink, uint32_t length,
 
 grpc_slice grpc_chttp2_settings_ack_create(void) {
   grpc_slice output = GRPC_SLICE_MALLOC(9);
-
   grpc_core::ByteSink sink(GRPC_SLICE_START_PTR(output),
                            GRPC_SLICE_LENGTH(output));
-
   fill_header(sink, 0, GRPC_CHTTP2_FLAG_ACK);
-
   GRPC_CHECK(sink.empty());
-
   return output;
 }
 
