@@ -25,13 +25,15 @@ cd "$BASEDIR";
 function maybe_run_command () {
   local dir="$1"
   local cmd="$2"
-  # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  if python3 "${dir}/setup.py" --help-commands | grep "${cmd}" &>/dev/null; then
-    python3 "${dir}/setup.py" "${cmd}";
+  if [ -f "${dir}/noxfile.py" ]; then
+    if python3 -m nox -f "${dir}/noxfile.py" -l 2>/dev/null | grep -E "^\* ${cmd}(:|\s|$)" &>/dev/null; then
+      python3 -m nox -f "${dir}/noxfile.py" -s "${cmd}"
+    fi
   fi
 }
 
-python3 -m pip install --upgrade "cython==3.1.1";
+
+python3 -m pip install --upgrade "cython==3.1.1" "nox==2024.10.9";
 python3 -m pip install .;
 
 # Build and install grpcio_tools

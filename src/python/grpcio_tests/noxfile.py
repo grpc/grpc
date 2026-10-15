@@ -32,6 +32,13 @@ PROTO_STEM = os.path.join(ROOT_DIR, "src", "proto")
 PYTHON_PROTO_TOP_LEVEL = os.path.join(ROOT_DIR, "src")
 
 
+
+def _prepend_root_to_sys_path():
+    while ROOT_DIR in sys.path:
+        sys.path.remove(ROOT_DIR)
+    sys.path.insert(0, ROOT_DIR)
+
+
 @nox.session(python=False)
 def preprocess(session: nox.Session):
     """
@@ -47,7 +54,7 @@ def preprocess(session: nox.Session):
         pathlib.Path(root, "__init__.py").touch(exist_ok=True)
 
 
-@nox.session(venv_params=["--system-site-packages"])
+@nox.session(python=False)
 def build_package_protos(session: nox.Session):
     """
     Session to generate project *_pb2.py modules from proto files.
@@ -59,7 +66,7 @@ def build_package_protos(session: nox.Session):
     command.build_package_protos(ROOT_DIR)
 
 
-@nox.session(venv_params=["--system-site-packages"])
+@nox.session(python=False)
 def test_lite(session: nox.Session):
     """
     Session to run tests without fetching or building anything.
@@ -67,8 +74,7 @@ def test_lite(session: nox.Session):
     session.log("Running test_lite for grpcio_tests")
 
     session.cd(GRPC_ROOT_ABS_PATH)
-    if ROOT_DIR not in sys.path:
-        sys.path.insert(0, ROOT_DIR)
+    _prepend_root_to_sys_path()
 
     import tests
 
@@ -80,28 +86,7 @@ def test_lite(session: nox.Session):
         session.error("Test failure")
 
 
-@nox.session(venv_params=["--system-site-packages"])
-def test_py3_only(session: nox.Session):
-    """
-    Session to run tests for Python 3+ features.
-    """
-    session.log("Running test_py3_only for grpcio_tests")
-
-    session.cd(GRPC_ROOT_ABS_PATH)
-    if ROOT_DIR not in sys.path:
-        sys.path.insert(0, ROOT_DIR)
-
-    import tests
-
-    loader = tests.Loader()
-    loader.loadTestsFromNames(["tests_py3_only"])
-    runner = tests.Runner()
-    result = runner.run(loader.suite)
-    if not result.wasSuccessful():
-        session.error("Test failure")
-
-
-@nox.session(venv_params=["--system-site-packages"])
+@nox.session(python=False)
 def test_aio(session: nox.Session):
     """
     Session to run aio tests without fetching or building anything.
@@ -109,8 +94,7 @@ def test_aio(session: nox.Session):
     session.log("Running test_aio for grpcio_tests")
 
     session.cd(GRPC_ROOT_ABS_PATH)
-    if ROOT_DIR not in sys.path:
-        sys.path.insert(0, ROOT_DIR)
+    _prepend_root_to_sys_path()
 
     import tests
 
@@ -122,7 +106,7 @@ def test_aio(session: nox.Session):
         session.error("Test failure")
 
 
-@nox.session(venv_params=["--system-site-packages"])
+@nox.session(python=False)
 def run_interop(session: nox.Session):
     """
     Session to run interop test client/server
@@ -156,10 +140,11 @@ def run_interop(session: nox.Session):
 
     if parsed_args.client and parsed_args.server:
         session.error("you may only specify one of client or server")
+    elif not parsed_args.client and not parsed_args.server:
+        session.error("no client and no server given")
 
     session.cd(GRPC_ROOT_ABS_PATH)
-    if ROOT_DIR not in sys.path:
-        sys.path.insert(0, ROOT_DIR)
+    _prepend_root_to_sys_path()
 
     if parsed_args.client:
         if parsed_args.use_asyncio:
@@ -192,30 +177,3 @@ def run_interop(session: nox.Session):
 
             sys.argv[1:] = parsed_args.args.split()
             server.serve(server.parse_interop_server_arguments(sys.argv))
-
-
-@nox.session(venv_params=["--system-site-packages"])
-def run_fork(session: nox.Session):
-    """
-    Session to run fork test client
-    """
-    session.log("Running run_fork for grpcio_tests")
-
-    parser = argparse.ArgumentParser(description="run fork test client")
-    parser.add_argument(
-        "-a",
-        "--args",
-        default="",
-        help="pass-thru arguments for the client/server",
-    )
-
-    parsed_args = parser.parse_args(session.posargs)
-
-    session.cd(GRPC_ROOT_ABS_PATH)
-    if ROOT_DIR not in sys.path:
-        sys.path.insert(0, ROOT_DIR)
-
-    from tests.fork import client
-
-    sys.argv[1:] = parsed_args.args.split()
-    client.test_fork()

@@ -62,6 +62,7 @@ async def test_interoperability():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    # force=True overrides any existing root logger handlers (like Nox's)
+    logging.basicConfig(level=logging.DEBUG, force=True)
     asyncio.get_event_loop().set_debug(True)
     asyncio.get_event_loop().run_until_complete(test_interoperability())
