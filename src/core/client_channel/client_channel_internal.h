@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
 #include <utility>
 
 #include "src/core/call/call_destination.h"
@@ -30,6 +31,8 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
+#include "absl/strings/string_view.h"
 
 //
 // This file contains internal interfaces used to allow various plugins
@@ -96,6 +99,67 @@ class SubchannelInterfaceWithCallDestination : public SubchannelInterface {
   using SubchannelInterface::SubchannelInterface;
   // Obtain the call destination for this subchannel.
   virtual RefCountedPtr<UnstartedCallDestination> call_destination() = 0;
+};
+
+constexpr absl::string_view kDelayTypeResolving = "resolving";
+constexpr absl::string_view kDelayTypePickerFailingWithWaitForReady =
+    "picker_failing_with_wait_for_ready";
+constexpr absl::string_view kDelayTypeSubchannelStateMismatch =
+    "subchannel_state_mismatch";
+
+class CallDelayTracker {
+ public:
+  template <typename Tracer>
+  void RecordDelay(Tracer* tracer, std::string delay_type,
+                   std::string delay_reason) {
+    if (tracer == nullptr) return;
+    if (current_delay_type_ != delay_type) {
+      if (!current_delay_type_.empty()) {
+        tracer->RecordDelayEnd();
+      }
+      current_delay_type_ = std::move(delay_type);
+      current_delay_reason_ = std::move(delay_reason);
+      tracer->RecordDelayStart(current_delay_type_, current_delay_reason_);
+    } else if (current_delay_reason_ != delay_reason) {
+      current_delay_reason_ = std::move(delay_reason);
+      tracer->RecordDelayReasonChanged(current_delay_reason_);
+    }
+  }
+
+  template <typename Tracer>
+  void RecordDelay(Tracer* tracer, absl::string_view delay_type,
+                   absl::FunctionRef<std::string()> make_delay_reason) {
+    if (tracer == nullptr) return;
+    if (current_delay_type_ != delay_type) {
+      if (!current_delay_type_.empty()) {
+        tracer->RecordDelayEnd();
+      }
+      current_delay_type_ = std::string(delay_type);
+      current_delay_reason_ = make_delay_reason();
+      tracer->RecordDelayStart(current_delay_type_, current_delay_reason);
+    } else {
+      std::string delay_reason = make_delay_reason();
+      if (current_delay_reason_ != delay_reason) {
+        current_delay_reason_ = std::move(delay_reason);
+        tracer->RecordDelayReasonChanged(current_delay_reason_);
+      }
+    }
+  }
+
+  template <typename Tracer>
+  void MaybeRecordDelayEnd(Tracer* tracer) {
+    if (!current_delay_type_.empty()) {
+      if (tracer != nullptr) {
+        tracer->RecordDelayEnd();
+      }
+      current_delay_type_.clear();
+      current_delay_reason_.clear();
+    }
+  }
+
+ private:
+  std::string current_delay_type_;
+  std::string current_delay_reason_;
 };
 
 }  // namespace grpc_core

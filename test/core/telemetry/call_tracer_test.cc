@@ -95,6 +95,66 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
   attempt_tracer->RecordEnd();
 }
 
+TEST_F(CallTracerTest, RecordDelayTest) {
+  FakeClientCallTracer client_call_tracer(&annotation_logger_);
+  SetClientCallTracer(arena_.get(), {&client_call_tracer});
+  auto* call_tracer = arena_->GetContext<ClientCallTracer>();
+  call_tracer->RecordDelayStart("resolving", "initial dns lookup");
+  call_tracer->RecordDelayReasonChanged("dns retry");
+  call_tracer->RecordDelayEnd();
+  auto* attempt_tracer_impl =
+      call_tracer->StartNewAttempt(true /* is_transparent_retry */);
+  CallAttemptTracer attempt_tracer(attempt_tracer_impl);
+  attempt_tracer.RecordDelayStart("connecting", "subchannel 1");
+  attempt_tracer.RecordDelayReasonChanged("subchannel 2");
+  attempt_tracer.RecordDelayEnd();
+  attempt_tracer.RecordEnd();
+  EXPECT_EQ(
+      annotation_logger_,
+      std::vector<std::string>(
+          {"RecordDelayStart: type=resolving reason=initial dns lookup",
+           "RecordDelayReasonChanged: type=resolving reason=dns retry",
+           "RecordDelayEnd: type=resolving reason=dns retry",
+           "RecordDelayStart: type=connecting reason=subchannel 1",
+           "RecordDelayReasonChanged: type=connecting reason=subchannel 2",
+           "RecordDelayEnd: type=connecting reason=subchannel 2"}));
+}
+
+TEST_F(CallTracerTest, RecordDelayOnMultipleTracersTest) {
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
+  FakeClientCallTracer client_call_tracer1(&annotation_logger_);
+  FakeClientCallTracer client_call_tracer2(&annotation_logger_);
+  SetClientCallTracer(arena_.get(),
+                      std::vector<ClientCallTracerInterface*>{
+                          &client_call_tracer1, &client_call_tracer2});
+  auto* call_tracer = arena_->GetContext<ClientCallTracer>();
+  call_tracer->RecordDelayStart("resolving", "initial dns lookup");
+  call_tracer->RecordDelayReasonChanged("dns retry");
+  call_tracer->RecordDelayEnd();
+  auto* attempt_tracer_impl =
+      call_tracer->StartNewAttempt(true /* is_transparent_retry */);
+  CallAttemptTracer attempt_tracer(attempt_tracer_impl);
+  attempt_tracer.RecordDelayStart("connecting", "subchannel 1");
+  attempt_tracer.RecordDelayReasonChanged("subchannel 2");
+  attempt_tracer.RecordDelayEnd();
+  attempt_tracer.RecordEnd();
+  EXPECT_EQ(
+      annotation_logger_,
+      std::vector<std::string>(
+          {"RecordDelayStart: type=resolving reason=initial dns lookup",
+           "RecordDelayStart: type=resolving reason=initial dns lookup",
+           "RecordDelayReasonChanged: type=resolving reason=dns retry",
+           "RecordDelayReasonChanged: type=resolving reason=dns retry",
+           "RecordDelayEnd: type=resolving reason=dns retry",
+           "RecordDelayEnd: type=resolving reason=dns retry",
+           "RecordDelayStart: type=connecting reason=subchannel 1",
+           "RecordDelayStart: type=connecting reason=subchannel 1",
+           "RecordDelayReasonChanged: type=connecting reason=subchannel 2",
+           "RecordDelayReasonChanged: type=connecting reason=subchannel 2",
+           "RecordDelayEnd: type=connecting reason=subchannel 2",
+           "RecordDelayEnd: type=connecting reason=subchannel 2"}));
+}
+
 TEST_F(CallTracerTest, BasicServerCallTracerTest) {
   FakeServerCallTracer server_call_tracer(&annotation_logger_);
   SetServerCallTracer(arena_.get(), {&server_call_tracer});
