@@ -57,10 +57,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -310,8 +306,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -517,10 +511,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -770,8 +760,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -977,10 +965,6 @@ const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -1230,8 +1214,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,

@@ -12,9 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=linux/386 python:3.10-bullseye
+FROM --platform=linux/386 python:3.10-bookworm
 
-RUN apt-get update && apt-get install -y python3 python3-pip
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    build-essential \
+    python3-dev
 
 RUN python3 -m pip install virtualenv
 

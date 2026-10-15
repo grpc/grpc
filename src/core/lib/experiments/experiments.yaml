@@ -58,12 +58,12 @@
   allow_in_fuzzing_config: false
 - name: call_tracer_send_initial_metadata_is_an_annotation
   description: Use the new annotation-based CallTracer API.
-  expiry: 2026/10/01
+  expiry: 2026/02/01
   owner: aadik@google.com
   test_tags: []
 - name: call_tracer_send_trailing_metadata_is_an_annotation
   description: Use the new annotation-based CallTracer API.
-  expiry: 2026/10/01
+  expiry: 2026/02/01
   owner: aadik@google.com
   test_tags: []
 - name: callv3_batch_validation
@@ -114,14 +114,6 @@
       "event_engine_client",
       "event_engine_listener",
     ]
-  platforms: ["all"]
-- name: event_engine_fork
-  description: Enables event engine fork handling, including onfork events and file descriptor generations
-  expiry: 2026/10/30
-  owner: mlumish@google.com
-  test_tags: ["core_end2end_test", "event_engine_fork_test"]
-  uses_polling: true
-  allow_in_fuzzing_config: false
   platforms: ["all"]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
@@ -257,7 +249,7 @@
   test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
-  expiry: 2026/10/01
+  expiry: 2026/02/01
   owner: aadik@google.com
   test_tags: [core_end2end_test]
 - name: ph2_client

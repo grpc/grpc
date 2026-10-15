@@ -1528,7 +1528,7 @@ TEST_F(Http2ClientTransportTest, TestActiveStreamAllowedToDrainAfterGoaway) {
 }  // namespace http2
 }  // namespace grpc_core
 
-// TODO(tjagtap) : [PH2][P1] BURNING : Write a test for Settings, and Settings
+// TODO(tjagtap) : [PH2][P2] : Write a test for Settings, and Settings
 // Acks, Incoming and Outgoing
 
 int main(int argc, char** argv) {

@@ -42,4 +42,4 @@ python -VV
 pip install isort==6.0.1
 pip list
 
-isort $ACTION --settings-path=grpc-style-config.toml "${DIRS[@]}"
+isort $ACTION "${DIRS[@]}"
