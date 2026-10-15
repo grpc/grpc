@@ -6899,6 +6899,7 @@ grpc_cc_library(
         "envoy_extensions_filters_network_http_connection_manager_upbdefs",
         "envoy_extensions_transport_sockets_tls_upb",
         "grpc_check",
+        "grpc_xds_client",
         "match",
         "protobuf_any_upb",
         "protobuf_duration_upb",
