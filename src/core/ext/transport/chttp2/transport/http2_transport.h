@@ -153,6 +153,8 @@ struct TransportChannelArgs {
   bool keepalive_permit_without_calls;
   // This is used to test peer behaviour when we never send a ping ack.
   bool test_only_ack_pings;
+  // This is only applicable to servers.
+  bool max_concurrent_streams_overload_protection;
   uint32_t max_header_list_size_soft_limit;
   int max_usable_hpack_table_size;
   int initial_sequence_number;
@@ -272,8 +274,6 @@ class TransportShutdownTracker {
 // duration elapses:
 // - OutgoingResetPayload: sends a delayed RST_STREAM.
 // - OutgoingTrailingMetadataPayload: sends delayed server trailing metadata.
-// - IncomingResetPayload: Stream closure triggered by Client sending an
-//   RST_STREAM.
 // The functions in this class are not thread-safe.
 class TarpitEntry {
  public:
@@ -284,10 +284,6 @@ class TarpitEntry {
 
   struct OutgoingTrailingMetadataPayload {
     ServerMetadataHandle metadata;
-  };
-
-  struct IncomingResetPayload {
-    absl::Status status;
   };
 
   TarpitEntry(TarpitEntry&&) = default;
@@ -313,12 +309,6 @@ class TarpitEntry {
                        OutgoingTrailingMetadataPayload{std::move(metadata)},
                        expire_time);
   }
-  static TarpitEntry CreateIncomingReset(const uint32_t stream_id,
-                                         absl::Status status,
-                                         const Timestamp expire_time) {
-    return TarpitEntry(stream_id, IncomingResetPayload{std::move(status)},
-                       expire_time);
-  }
 
   Timestamp GetExpireTime() const { return expire_time_; }
   uint32_t GetStreamId() const { return stream_id_; }
@@ -328,9 +318,6 @@ class TarpitEntry {
   }
   bool IsOutgoingTrailingMetadata() const {
     return std::holds_alternative<OutgoingTrailingMetadataPayload>(payload_);
-  }
-  bool IsIncomingReset() const {
-    return std::holds_alternative<IncomingResetPayload>(payload_);
   }
 
   // Consumes and extracts the payload when executing the post-tarpit action.
@@ -352,14 +339,6 @@ class TarpitEntry {
     }
     return std::nullopt;
   }
-  std::optional<IncomingResetPayload> TakeIncomingResetPayload() {
-    IncomingResetPayload* const p =
-        std::get_if<IncomingResetPayload>(&payload_);
-    if (p != nullptr) {
-      return std::move(*p);
-    }
-    return std::nullopt;
-  }
 
   std::string DebugString() const;
 
@@ -369,8 +348,7 @@ class TarpitEntry {
 
  private:
   using Payload =
-      std::variant<OutgoingResetPayload, OutgoingTrailingMetadataPayload,
-                   IncomingResetPayload>;
+      std::variant<OutgoingResetPayload, OutgoingTrailingMetadataPayload>;
 
   TarpitEntry(const uint32_t stream_id, Payload payload,
               const Timestamp expire_time)
@@ -451,10 +429,6 @@ class TarpitManager {
   // Sends delayed server trailing metadata.
   StatusFlag StartTarpitTrailers(uint32_t stream_id,
                                  ServerMetadataHandle metadata);
-
-  // Performs delayed stream closure following an incoming RST_STREAM.
-  StatusFlag RequestTarpitIncomingReset(uint32_t stream_id,
-                                        absl::Status status);
 
   //----------------------------------------------------------------------------
   // Transport-Party Confined Methods (Must be run on TransportParty)

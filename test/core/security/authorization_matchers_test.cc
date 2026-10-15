@@ -17,7 +17,7 @@
 
 #include <list>
 
-#include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/call/evaluate_args.h"
 #include "src/core/lib/security/authorization/matchers.h"
 #include "test/core/test_util/evaluate_args_test_util.h"
 #include "gmock/gmock.h"

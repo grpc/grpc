@@ -125,7 +125,7 @@ void OutputBuffers::Reader::SetNetworkMetrics(
 }
 
 channelz::PropertyList OutputBuffers::Reader::ChannelzProperties() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   return channelz::PropertyList()
       .Set("reading", reading_)
       .Merge(send_rate_.ChannelzProperties())
@@ -159,7 +159,7 @@ void OutputBuffers::AddData(channelz::DataSink sink) {
 }
 
 RefCountedPtr<OutputBuffers::Reader> OutputBuffers::MakeReader(uint32_t id) {
-  MutexLock lock(&mu_reader_data_);
+  MutexLock lock(mu_reader_data_);
   if (readers_.size() <= id) {
     readers_.resize(id + 1);
   }
@@ -185,36 +185,33 @@ void OutputBuffers::DestroyReader(uint32_t id) {
 
 void OutputBuffers::WakeupScheduler(bool async) {
   GRPC_LATENT_SEE_SCOPE("OutputBuffers::WakeupScheduler");
-  auto state = scheduling_state_.load(std::memory_order_acquire);
-  // CAS's here-in need to be acq-rel, so that we get an acquire on failure (at
-  // which point we may be loading a Waker pointer).
-  while (true) {
-    switch (state) {
-      case kSchedulingProcessing:
-        if (!scheduling_state_.compare_exchange_weak(
-                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
-          continue;
-        }
-        return;
-      case kSchedulingWorkAvailable:
-        return;
-      default: {
-        // Idle: value is a pointer to a waker.
-        Waker* waker = reinterpret_cast<Waker*>(state);
-        if (!scheduling_state_.compare_exchange_weak(
-                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
-          continue;
-        }
-        if (async) {
-          waker->WakeupAsync();
-        } else {
-          waker->Wakeup();
-        }
-        delete waker;
-        return;
+  // Every state transitions to kSchedulingWorkAvailable, so a single
+  // unconditional exchange suffices. It must be an acq_rel RMW, never a plain
+  // load:
+  // - release: publishes our frames_queue_ Push to the scheduler.
+  // - RMW: totally orders us against the scheduler's WorkAvailable->Processing
+  //   transition. With a plain load (store-buffering) we may observe
+  //   WorkAvailable while the scheduler's Peek misses our Push, and the
+  //   scheduler goes idle with a frame queued.
+  // - acquire: synchronizes with the scheduler publishing a Waker pointer.
+  const uintptr_t prev_state = scheduling_state_.exchange(
+      kSchedulingWorkAvailable, std::memory_order_acq_rel);
+  switch (prev_state) {
+    case kSchedulingProcessing:
+    case kSchedulingWorkAvailable:
+      return;
+    default: {
+      // Idle: value is a pointer to a waker. The exchange made us its sole
+      // owner.
+      Waker* waker = reinterpret_cast<Waker*>(prev_state);
+      if (async) {
+        waker->WakeupAsync();
+      } else {
+        waker->Wakeup();
       }
+      delete waker;
+      return;
     }
-    LOG(FATAL) << "Unreachable state: " << state;
   }
 }
 
@@ -236,9 +233,12 @@ Poll<Empty> OutputBuffers::SchedulerPollForWork() {
         return Pending{};
       }
       case kSchedulingWorkAvailable: {
-        // No pointer exchange here, no need for barriers.
-        scheduling_state_.store(kSchedulingProcessing,
-                                std::memory_order_relaxed);
+        // Must be an acq_rel RMW (pairs with the RMW in WakeupScheduler): a
+        // relaxed store here can be reordered after the Peek in Schedule().
+        if (!scheduling_state_.compare_exchange_weak(
+                state, kSchedulingProcessing, std::memory_order_acq_rel)) {
+          continue;
+        }
         return Empty{};
       }
       default:
@@ -256,7 +256,7 @@ void OutputBuffers::Schedule() {
   uint64_t queued_tokens = 0;
   {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::CollectData1");
-    MutexLock lock(&mu_reader_data_);
+    MutexLock lock(mu_reader_data_);
     scheduling_data.reserve(readers_.size());
     for (const auto& reader : readers_) {
       scheduling_data.emplace_back(reader);
@@ -385,7 +385,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
 // InputQueues
 
 InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!closed_error_.ok()) {
     return ReadTicket(MakeRefCounted<Completion>(payload_tag, closed_error_),
                       nullptr);
@@ -453,7 +453,7 @@ void InputQueue::Cancel(Completion* completion) {
 }
 
 void InputQueue::AddData(channelz::DataSink sink) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   sink.AddData("input_queue",
                channelz::PropertyList()
                    .Set("read_requested", absl::StrCat(read_requested_))
@@ -1028,8 +1028,8 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                   GetTransportFramingEndpointExtension(*endpoint);
               if (transport_framing_endpoint_extension != nullptr) {
                 transport_framing_endpoint_extension->SetSendFrameCallback(
-                    [ep_ctx](SliceBuffer* data) {
-                      ep_ctx->secure_frame_queue->Write(std::move(*data));
+                    [ep_ctx](SliceBuffer data) {
+                      ep_ctx->secure_frame_queue->Write(std::move(data));
                     });
               }
               auto read_party = Party::Make(ep_ctx->arena);
@@ -1089,7 +1089,7 @@ void DataEndpoints::AddData(channelz::DataSink sink) {
     int remaining ABSL_GUARDED_BY(mu) = 0;
     Json::Array endpoints ABSL_GUARDED_BY(mu);
   };
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   for (size_t i = 0; i < endpoints_.size(); ++i) {
     endpoints_[i]->AddData(sink);
   }

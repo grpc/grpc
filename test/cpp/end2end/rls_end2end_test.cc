@@ -22,6 +22,8 @@
 // - find some deterministic way to exercise adaptive throttler code
 
 #include <grpc/credentials.h>
+#include <grpc/lookup/v1/rls.grpc.pb.h>
+#include <grpc/lookup/v1/rls.pb.h>
 #include <grpcpp/call_context_types.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
@@ -51,8 +53,6 @@
 #include "src/core/util/uri.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
-#include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/fake_stats_plugin.h"
@@ -113,7 +113,7 @@ class MyTestServiceImpl : public BackendService {
     auto client_metadata = context->client_metadata();
     auto [start, end] = client_metadata.equal_range("x-google-rls-data");
     {
-      grpc::internal::MutexLock lock(&mu_);
+      grpc::internal::MutexLock lock(mu_);
       for (auto it = start; it != end; ++it) {
         auto& [_, value] = *it;
         rls_header_data_.emplace(value.begin(), value.length());
@@ -124,7 +124,7 @@ class MyTestServiceImpl : public BackendService {
   }
 
   std::set<std::string> rls_data() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc::internal::MutexLock lock(mu_);
     return std::move(rls_header_data_);
   }
 
@@ -437,7 +437,7 @@ class RlsEnd2endTest : public ::testing::Test {
       grpc::internal::Mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
       // by ServerThread::Serve from firing before the wait below is hit.
-      grpc::internal::MutexLock lock(&mu);
+      grpc::internal::MutexLock lock(mu);
       grpc::internal::CondVar cond;
       thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, &mu, &cond));
@@ -448,7 +448,7 @@ class RlsEnd2endTest : public ::testing::Test {
     void Serve(grpc::internal::Mutex* mu, grpc::internal::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
-      grpc::internal::MutexLock lock(mu);
+      grpc::internal::MutexLock lock(*mu);
       ServerBuilder builder;
       auto creds = std::make_shared<SecureServerCredentials>(
           grpc_fake_transport_security_server_credentials_create());

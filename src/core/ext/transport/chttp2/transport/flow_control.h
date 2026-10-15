@@ -58,10 +58,6 @@ static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
 static constexpr const int kDefaultPreferredRxCryptoFrameSize = INT_MAX;
 
-// TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the BDP code is
-// done. This needs to be dynamic.
-constexpr Duration kFlowControlPeriodicUpdateTimer = Duration::Seconds(8);
-
 class TransportFlowControl;
 class StreamFlowControl;
 
@@ -320,7 +316,6 @@ class TransportFlowControl final {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let the transport change its parameters.
-  // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
   int64_t test_only_target_window() const { return target_window(); }

@@ -34,6 +34,33 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
   // Represents a transport for xDS communication (e.g., a gRPC channel).
   class XdsTransport : public DualRefCounted<XdsTransport> {
    public:
+    // Options for creating a streaming call.
+    struct CallOptions {
+      // If true, the send_initial_metadata op is not started when the call
+      // is created; instead, it is started by the first call to
+      // SendMessage().  This allows a unary call to send initial metadata,
+      // the request message, and the half-close in a single batch:
+      //   auto call = transport->CreateStreamingCall(
+      //       method, std::move(handler),
+      //       CallOptions().set_start_upon_send_message(true));
+      //   call->SendMessage(payload, /*send_half_close=*/true);
+      bool start_upon_send_message = false;
+
+      // If true, the call will be queued until the transport is connected
+      // instead of failing fast when the transport is not connected.
+      bool wait_for_ready = false;
+
+      CallOptions& set_start_upon_send_message(bool value) {
+        start_upon_send_message = value;
+        return *this;
+      }
+
+      CallOptions& set_wait_for_ready(bool value) {
+        wait_for_ready = value;
+        return *this;
+      }
+    };
+
     // Represents a bidi streaming RPC call.
     class StreamingCall : public InternallyRefCounted<StreamingCall> {
      public:
@@ -54,7 +81,14 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
       // the EventHandler::OnRequestSent() method will be called.
       // Only one message will be in flight at a time; subsequent
       // messages will not be sent until this one is done.
-      virtual void SendMessage(std::string payload) = 0;
+      //
+      // If send_half_close is true, the client-side half-close is sent in
+      // the same batch as the message, in which case SendHalfClose() must
+      // not be called afterwards.
+      void SendMessage(std::string payload) {
+        SendMessage(std::move(payload), /*send_half_close=*/false);
+      }
+      virtual void SendMessage(std::string payload, bool send_half_close) = 0;
 
       // Starts a recv_message operation on the stream.
       virtual void StartRecvMessage() = 0;
@@ -82,11 +116,23 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     virtual void StopConnectivityFailureWatch(
         const RefCountedPtr<ConnectivityFailureWatcher>& watcher) = 0;
 
-    // Create a streaming call on this transport for the specified method.
+    // Create a streaming call on this transport for the specified method
+    // using default CallOptions.
+    // Events on the stream will be reported to event_handler.
+    OrphanablePtr<StreamingCall> CreateStreamingCall(
+        const char* method,
+        std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+      return CreateStreamingCall(method, std::move(event_handler),
+                                 CallOptions());
+    }
+
+    // Create a streaming call on this transport for the specified method
+    // with custom options.
     // Events on the stream will be reported to event_handler.
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler) = 0;
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        CallOptions options) = 0;
 
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;

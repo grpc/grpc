@@ -1,4 +1,4 @@
-//
+```cpp
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,8 @@
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 
 #include <grpc/support/port_platform.h>
+
+#include <cstdint>
 #include <stddef.h>
 
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -42,6 +44,7 @@ grpc_slice grpc_chttp2_window_update_create(
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   GRPC_CHECK(window_delta);
+  GRPC_CHECK_LE(window_delta, 0x7fffffffu);
 
   *p++ = 0;
   *p++ = 0;
@@ -92,7 +95,7 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
   }
 
   if (p->byte == 4) {
-    // top bit is reserved and must be ignored.
+    // The top bit is reserved and must be ignored.
     uint32_t received_update = p->amount & 0x7fffffffu;
     if (received_update == 0) {
       return GRPC_ERROR_CREATE(
@@ -114,7 +117,8 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
         grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext(
             &s->flow_control)
             .RecvUpdate(received_update);
-        t->http2_stats->IncrementHttp2StreamRemoteWindowUpdate(received_update);
+        t->http2_stats->IncrementHttp2StreamRemoteWindowUpdate(
+            received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_mark_stream_writable(t, s);
           grpc_chttp2_initiate_write(
@@ -142,3 +146,4 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
 
   return absl::OkStatus();
 }
+```

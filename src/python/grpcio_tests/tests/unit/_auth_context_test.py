@@ -140,6 +140,10 @@ class AuthContextTest(unittest.TestCase):
                 "security_level": [b"TSI_PRIVACY_AND_INTEGRITY"],
                 "transport_security_type": [b"ssl"],
                 "ssl_session_reused": [b"false"],
+                "ssl_requested_server_name": [
+                    _SERVER_HOST_OVERRIDE.encode("ascii")
+                ],
+                "ssl_tls_version": [b"TLSv1.3"],
             },
             auth_ctx,
         )

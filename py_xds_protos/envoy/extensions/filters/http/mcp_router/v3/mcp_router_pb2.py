@@ -22,13 +22,14 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from envoy.type.metadata.v3 import metadata_pb2 as envoy_dot_type_dot_metadata_dot_v3_dot_metadata__pb2
 from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 from xds.annotations.v3 import status_pb2 as xds_dot_annotations_dot_v3_dot_status__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n<envoy/extensions/filters/http/mcp_router/v3/mcp_router.proto\x12+envoy.extensions.filters.http.mcp_router.v3\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xd3\x02\n\tMcpRouter\x12R\n\x07servers\x18\x01 \x03(\x0b\x32\x41.envoy.extensions.filters.http.mcp_router.v3.McpRouter.McpBackend\x1ar\n\nMcpBackend\x12\x0c\n\x04name\x18\x01 \x01(\t\x12V\n\x0bmcp_cluster\x18\x02 \x01(\x0b\x32\x41.envoy.extensions.filters.http.mcp_router.v3.McpRouter.McpCluster\x1a~\n\nMcpCluster\x12\x18\n\x07\x63luster\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x0c\n\x04path\x18\x02 \x01(\t\x12*\n\x07timeout\x18\x03 \x01(\x0b\x32\x19.google.protobuf.Duration\x12\x1c\n\x14host_rewrite_literal\x18\x04 \x01(\tB\xbe\x01\n9io.envoyproxy.envoy.extensions.filters.http.mcp_router.v3B\x0eMcpRouterProtoP\x01Z_github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/mcp_router/v3;mcp_routerv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n<envoy/extensions/filters/http/mcp_router/v3/mcp_router.proto\x12+envoy.extensions.filters.http.mcp_router.v3\x1a%envoy/type/metadata/v3/metadata.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"(\n\x0cHeaderSource\x12\x18\n\x04name\x18\x01 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\xc0\x01\x01\"S\n\x15\x44ynamicMetadataSource\x12:\n\x03key\x18\x01 \x01(\x0b\x32#.envoy.type.metadata.v3.MetadataKeyB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\"\xbc\x01\n\x11IdentityExtractor\x12I\n\x06header\x18\x01 \x01(\x0b\x32\x39.envoy.extensions.filters.http.mcp_router.v3.HeaderSource\x12\\\n\x10\x64ynamic_metadata\x18\x02 \x01(\x0b\x32\x42.envoy.extensions.filters.http.mcp_router.v3.DynamicMetadataSource\"\xa7\x01\n\x10ValidationPolicy\x12Z\n\x04mode\x18\x01 \x01(\x0e\x32\x42.envoy.extensions.filters.http.mcp_router.v3.ValidationPolicy.ModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\"7\n\x04Mode\x12\x14\n\x10MODE_UNSPECIFIED\x10\x00\x12\x0c\n\x08\x44ISABLED\x10\x01\x12\x0b\n\x07\x45NFORCE\x10\x02\"\xc0\x01\n\x0fSessionIdentity\x12Z\n\x08identity\x18\x01 \x01(\x0b\x32>.envoy.extensions.filters.http.mcp_router.v3.IdentityExtractorB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12Q\n\nvalidation\x18\x02 \x01(\x0b\x32=.envoy.extensions.filters.http.mcp_router.v3.ValidationPolicy\"\xc8\x03\n\tMcpRouter\x12R\n\x07servers\x18\x01 \x03(\x0b\x32\x41.envoy.extensions.filters.http.mcp_router.v3.McpRouter.McpBackend\x12V\n\x10session_identity\x18\x02 \x01(\x0b\x32<.envoy.extensions.filters.http.mcp_router.v3.SessionIdentity\x12\x1b\n\x13lazy_initialization\x18\x03 \x01(\x08\x1ar\n\nMcpBackend\x12\x0c\n\x04name\x18\x01 \x01(\t\x12V\n\x0bmcp_cluster\x18\x02 \x01(\x0b\x32\x41.envoy.extensions.filters.http.mcp_router.v3.McpRouter.McpCluster\x1a~\n\nMcpCluster\x12\x18\n\x07\x63luster\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x0c\n\x04path\x18\x02 \x01(\t\x12*\n\x07timeout\x18\x03 \x01(\x0b\x32\x19.google.protobuf.Duration\x12\x1c\n\x14host_rewrite_literal\x18\x04 \x01(\tB\xbe\x01\n9io.envoyproxy.envoy.extensions.filters.http.mcp_router.v3B\x0eMcpRouterProtoP\x01Z_github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/mcp_router/v3;mcp_routerv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,12 +37,32 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.filters.ht
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n9io.envoyproxy.envoy.extensions.filters.http.mcp_router.v3B\016McpRouterProtoP\001Z_github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/mcp_router/v3;mcp_routerv3\272\200\310\321\006\002\020\002\322\306\244\341\006\002\010\001'
+  _globals['_HEADERSOURCE'].fields_by_name['name']._loaded_options = None
+  _globals['_HEADERSOURCE'].fields_by_name['name']._serialized_options = b'\372B\007r\005\020\001\300\001\001'
+  _globals['_DYNAMICMETADATASOURCE'].fields_by_name['key']._loaded_options = None
+  _globals['_DYNAMICMETADATASOURCE'].fields_by_name['key']._serialized_options = b'\372B\005\212\001\002\020\001'
+  _globals['_VALIDATIONPOLICY'].fields_by_name['mode']._loaded_options = None
+  _globals['_VALIDATIONPOLICY'].fields_by_name['mode']._serialized_options = b'\372B\005\202\001\002\020\001'
+  _globals['_SESSIONIDENTITY'].fields_by_name['identity']._loaded_options = None
+  _globals['_SESSIONIDENTITY'].fields_by_name['identity']._serialized_options = b'\372B\005\212\001\002\020\001'
   _globals['_MCPROUTER_MCPCLUSTER'].fields_by_name['cluster']._loaded_options = None
   _globals['_MCPROUTER_MCPCLUSTER'].fields_by_name['cluster']._serialized_options = b'\372B\004r\002\020\001'
-  _globals['_MCPROUTER']._serialized_start=231
-  _globals['_MCPROUTER']._serialized_end=570
-  _globals['_MCPROUTER_MCPBACKEND']._serialized_start=328
-  _globals['_MCPROUTER_MCPBACKEND']._serialized_end=442
-  _globals['_MCPROUTER_MCPCLUSTER']._serialized_start=444
-  _globals['_MCPROUTER_MCPCLUSTER']._serialized_end=570
+  _globals['_HEADERSOURCE']._serialized_start=269
+  _globals['_HEADERSOURCE']._serialized_end=309
+  _globals['_DYNAMICMETADATASOURCE']._serialized_start=311
+  _globals['_DYNAMICMETADATASOURCE']._serialized_end=394
+  _globals['_IDENTITYEXTRACTOR']._serialized_start=397
+  _globals['_IDENTITYEXTRACTOR']._serialized_end=585
+  _globals['_VALIDATIONPOLICY']._serialized_start=588
+  _globals['_VALIDATIONPOLICY']._serialized_end=755
+  _globals['_VALIDATIONPOLICY_MODE']._serialized_start=700
+  _globals['_VALIDATIONPOLICY_MODE']._serialized_end=755
+  _globals['_SESSIONIDENTITY']._serialized_start=758
+  _globals['_SESSIONIDENTITY']._serialized_end=950
+  _globals['_MCPROUTER']._serialized_start=953
+  _globals['_MCPROUTER']._serialized_end=1409
+  _globals['_MCPROUTER_MCPBACKEND']._serialized_start=1167
+  _globals['_MCPROUTER_MCPBACKEND']._serialized_end=1281
+  _globals['_MCPROUTER_MCPCLUSTER']._serialized_start=1283
+  _globals['_MCPROUTER_MCPCLUSTER']._serialized_end=1409
 # @@protoc_insertion_point(module_scope)

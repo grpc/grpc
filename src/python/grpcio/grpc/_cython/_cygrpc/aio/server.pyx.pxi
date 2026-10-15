@@ -306,7 +306,7 @@ cdef class _SyncServicerContext:
             self._context.abort(code, details, trailing_metadata),
             self._loop)
         # Abort should raise an AbortError
-        future.exception()
+        future.result()
 
     def send_initial_metadata(self, object metadata):
         future = asyncio.run_coroutine_threadsafe(

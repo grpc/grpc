@@ -612,6 +612,35 @@ class SslTransportSecurityTest
                 peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) != nullptr) {
           expected_property_count++;
         }
+        const tsi_peer_property* server_name_prop =
+            tsi_peer_get_property_by_name(
+                peer, TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY);
+        if (server_name_prop != nullptr) {
+          expected_property_count++;
+          if (!ssl_fixture->server_name_indication_.empty() &&
+              ssl_fixture->server_name_indication_ != kSslTsiTestInvalidSni) {
+            EXPECT_EQ(std::string(server_name_prop->value.data,
+                                  server_name_prop->value.length),
+                      ssl_fixture->server_name_indication_);
+          }
+        }
+        const tsi_peer_property* tls_version_prop =
+            tsi_peer_get_property_by_name(peer,
+                                          TSI_SSL_TLS_VERSION_PEER_PROPERTY);
+        if (tls_version_prop != nullptr) {
+          expected_property_count++;
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+          // OpenSSL versions < 1.1.1 do not support TLS 1.3, so TLS 1.2 is
+          // negotiated.
+          std::string expected_tls_version = "TLSv1.2";
+#else
+          std::string expected_tls_version =
+              ssl_fixture->tls_version_ == TSI_TLS1_2 ? "TLSv1.2" : "TLSv1.3";
+#endif
+          EXPECT_EQ(std::string(tls_version_prop->value.data,
+                                tls_version_prop->value.length),
+                    expected_tls_version);
+        }
         ASSERT_EQ(peer->property_count, expected_property_count);
 
       } else {
@@ -1707,7 +1736,7 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupSuccess) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
 // The client default protocols set by the handshaker factory are [toto, baz].
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
   ssl_fixture_->OverrideClientKeyExchangeGroups(
       {GRPC_TLS_GROUP_X25519_MLKEM768, GRPC_TLS_GROUP_X25519});
   ssl_fixture_->OverrideServerKeyExchangeGroups(
@@ -1737,7 +1766,7 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   DoHandshake();
 }
 
-#if defined(OPENSSL_IS_BORINGSSL)
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
 TEST_P(SslTransportSecurityTest,
        SuccessfulHandshakeServerSpecifiesX25519Mlkem768) {
   auto tls_version = std::get<0>(GetParam());
@@ -1763,7 +1792,20 @@ TEST_P(SslTransportSecurityTest,
   }
   DoHandshake();
 }
-#endif  // OPENSSL_IS_BORINGSSL
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMlkem1024) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_MLKEM1024});
+    ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_MLKEM1024});
+    ssl_fixture_->SetExpectedNegotiatedGroup("id-alg-ml-kem-1024");
+  }
+  DoHandshake();
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
+        // 0x30500000L
 
 TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesX25519) {
   auto tls_version = std::get<0>(GetParam());

@@ -306,7 +306,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 4. This function is thread safe.
   absl::StatusOr<StreamWritabilityUpdate> EnqueueInitialMetadata(
       MetadataHandle&& metadata) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_DCHECK(!is_initial_metadata_queued_);
     GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
     GRPC_DCHECK(metadata != nullptr);
@@ -338,7 +338,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 3. This function is thread safe.
   absl::StatusOr<StreamWritabilityUpdate> EnqueueTrailingMetadata(
       MetadataHandle&& metadata) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_DCHECK(metadata != nullptr);
     GRPC_DCHECK(!is_client_);
     GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
@@ -379,7 +379,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         message->payload()->Length() + kGrpcHeaderSizeInBytes;
     return [self = this->Ref(), entry = QueueEntry{std::move(message)},
             tokens]() mutable -> Poll<absl::StatusOr<StreamWritabilityUpdate>> {
-      MutexLock lock(&self->mu_);
+      MutexLock lock(self->mu_);
       // State validation under the lock:
       // Either metadata was enqueued, or the stream enqueue was already
       // closed/reset.
@@ -413,7 +413,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 2. MUST be called only for a client.
   // 3. This function is thread safe.
   absl::StatusOr<StreamWritabilityUpdate> EnqueueHalfClosed() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_DCHECK(is_initial_metadata_queued_);
     GRPC_DCHECK(is_client_);
 
@@ -449,7 +449,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   //    ignored.
   absl::StatusOr<StreamWritabilityUpdate> EnqueueResetStream(
       const uint32_t error_code) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
 
     // This can happen when the transport tries to close the stream and the
     // stream is cancelled from the call stack.
@@ -523,7 +523,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
                               HPackCompressor& encoder,
                               FrameSender& frame_sender,
                               const bool can_send_reset_stream) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Dequeueing frames. Max fc tokens: " << max_fc_tokens
         << " Max frame length: " << max_frame_length
@@ -578,7 +578,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // intial_window_size.
   StreamWritabilityUpdate ReceivedFlowControlWindowUpdate(
       const uint32_t stream_fc_tokens) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Received flow control window update. stream_fc_tokens: "
         << stream_fc_tokens;
@@ -591,7 +591,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   // Returns true if the queue is empty. This function is thread safe.
   bool TestOnlyIsEmpty() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return queue_.IsEmpty();
   }
 
