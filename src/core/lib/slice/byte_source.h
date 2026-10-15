@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_LIB_SLICE_BYTE_SOURCE_H
 
 #include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
