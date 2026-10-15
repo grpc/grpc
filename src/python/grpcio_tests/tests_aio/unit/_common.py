@@ -13,7 +13,10 @@
 # limitations under the License.
 
 import asyncio
+import concurrent.futures
 import logging
+import threading
+import time
 from typing import AsyncIterable, Union
 
 import grpc
@@ -134,3 +137,86 @@ class AdhocGenericHandler(grpc.GenericRpcHandler):
             return self._handler
         else:
             return None
+
+
+class DaemonThreadExecutor(concurrent.futures.Executor):
+    """Runs every submitted callable in its own daemon thread.
+
+    Meant for tests that must notice a leaked worker (e.g. as the server's
+    `migration_thread_pool`).
+    """
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._threads = []
+
+    def submit(self, fn, *args, **kwargs):
+        future = concurrent.futures.Future()
+
+        def run():
+            if not future.set_running_or_notify_cancel():
+                return
+            try:
+                result = fn(*args, **kwargs)
+            except BaseException as exc:  # pylint: disable=broad-except
+                future.set_exception(exc)
+            else:
+                future.set_result(result)
+
+        thread = threading.Thread(
+            target=run, daemon=True, name="daemon-executor-worker"
+        )
+        with self._lock:
+            self._threads.append(thread)
+        thread.start()
+        return future
+
+    def workers_finished(self, timeout):
+        """Returns `True` if every worker thread returned within `timeout`."""
+        deadline = time.monotonic() + timeout
+        with self._lock:
+            threads = list(self._threads)
+        for thread in threads:
+            thread.join(max(0.0, deadline - time.monotonic()))
+            if thread.is_alive():
+                return False
+        return True
+
+
+class LoopInThread:
+    """An event loop running `run_forever()` in a daemon thread.
+
+    Used for driving a server (or a cygrpc helper) on a loop other than the test
+    main thread. In that case a deadlocked or closed loop can be observed from
+    the outside instead of hanging the test.
+    """
+
+    def __init__(self, debug=False):
+        self.loop = asyncio.new_event_loop()
+        self.loop.set_debug(debug)
+        self._thread = threading.Thread(
+            target=self.loop.run_forever, daemon=True, name="loop-in-thread"
+        )
+        self._thread.start()
+        # Returns once the loop is actually running.
+        self.run(asyncio.sleep(0))
+
+    def run(self, coro, timeout=test_constants.TIME_ALLOWANCE):
+        """Runs `coro` on the loop and blocks for its result."""
+        return asyncio.run_coroutine_threadsafe(coro, self.loop).result(
+            timeout=timeout
+        )
+
+    def stop(self):
+        """Stops and closes the loop.
+
+        Returns `True` whether the loop's owning thread returned correctly;
+        `False` otherwise (e.g. loop deadlocked).
+        """
+        if self._thread.is_alive():
+            self.loop.call_soon_threadsafe(self.loop.stop)
+            self._thread.join(timeout=test_constants.SHORT_TIMEOUT)
+        exited = not self._thread.is_alive()
+        if exited:
+            self.loop.close()
+        return exited
