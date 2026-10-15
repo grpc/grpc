@@ -17,12 +17,8 @@
 //
 
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
-
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
-
 #include <cstdint>
-
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
