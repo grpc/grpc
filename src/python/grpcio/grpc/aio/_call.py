@@ -588,7 +588,6 @@ class UnaryUnaryCall(
             self._request, self._request_serializer
         )
 
-        
         try:
             serialized_response = await self._cython_call.unary_unary(
                 serialized_request, self._metadata, self._context
