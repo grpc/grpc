@@ -396,10 +396,10 @@ TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {
     EXPECT_EQ(backends_[0]->GetNextStatus(),
               absl::InvalidArgumentError(absl::StrCat(
                   "LDS resource ", GetServerListenerName(backends_[0]->port()),
-                  ": invalid resource: errors validating server "
-                  "Listener: [field:default_filter_chain.filters[0]"
-                  ".typed_config.value[envoy.extensions.filters.network"
-                  ".http_connection_manager.v3.HttpConnectionManager]"
+                  ": invalid resource: errors validating Listener resource: "
+                  "[field:default_filter_chain.filters[0].typed_config.value["
+                  "envoy.extensions.filters.network.http_connection_manager"
+                  ".v3.HttpConnectionManager]"
                   ".http_filters[0].typed_config.value["
                   "envoy.extensions.common.matching.v3.ExtensionWithMatcher] "
                   "error:unsupported filter type] "
@@ -408,7 +408,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {
     CheckRpcSendFailure(
         DEBUG_LOCATION, StatusCode::UNAVAILABLE,
         "empty address list \\(LDS resource server.example.com: "
-        "invalid resource: errors validating ApiListener: "
+        "invalid resource: errors validating Listener resource: "
         "\\[field:api_listener.api_listener.value\\["
         "envoy.extensions.filters.network.http_connection_manager.v3"
         ".HttpConnectionManager\\].http_filters\\[0\\].typed_config.value\\["
