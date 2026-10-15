@@ -37,7 +37,7 @@
 
 namespace grpc_core {
 
-class ByteSource {
+class ByteSource final {
  public:
   ByteSource() = default;
   explicit ByteSource(absl::Span<const uint8_t> span) : span_(span) {}
@@ -151,7 +151,7 @@ class ByteSource {
   absl::Span<const uint8_t> span_;
 };
 
-class ByteSink {
+class ByteSink final {
  public:
   ByteSink() = default;
   explicit ByteSink(absl::Span<uint8_t> span) : span_(span), start_size_(span.size()) {}
