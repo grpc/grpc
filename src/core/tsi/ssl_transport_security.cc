@@ -27,7 +27,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -215,8 +214,7 @@ struct HandshakerNextArgs {
   tsi_handshaker_result* handshaker_result = nullptr;
 };
 
-struct tsi_ssl_handshaker_result {
-  tsi_handshaker_result base;
+struct tsi_ssl_handshaker_result : public tsi_handshaker_result {
   SSL* ssl = nullptr;
   BIO* network_io = nullptr;
   unsigned char* unused_bytes = nullptr;
@@ -224,9 +222,6 @@ struct tsi_ssl_handshaker_result {
   std::string exported_keying_material_label;
   size_t exported_keying_material_length = 0;
 };
-// Required for reinterpret_cast between tsi_handshaker_result* and
-// tsi_ssl_handshaker_result*.
-static_assert(std::is_standard_layout_v<tsi_ssl_handshaker_result>);
 
 struct SslHandshakeResult {
   tsi_result tsi_handshake_result;
@@ -341,7 +336,7 @@ void tsi_ssl_handshaker::MaybeRecordTelemetry(
   SSL* active_ssl = ssl;
   if (active_ssl == nullptr && handshaker_next_args.has_value() &&
       handshaker_next_args->handshaker_result != nullptr) {
-    auto* res = reinterpret_cast<tsi_ssl_handshaker_result*>(
+    auto* res = static_cast<tsi_ssl_handshaker_result*>(
         handshaker_next_args->handshaker_result);
     active_ssl = res->ssl;
   }
@@ -2289,7 +2284,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   const unsigned char* alpn_selected = nullptr;
   unsigned int alpn_selected_len;
   const tsi_ssl_handshaker_result* impl =
-      reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+      static_cast<const tsi_ssl_handshaker_result*>(self);
   X509* peer_cert = SSL_get_peer_certificate(impl->ssl);
   if (peer_cert != nullptr) {
     result = peer_from_x509(peer_cert, 1, peer);
@@ -2435,9 +2430,8 @@ static tsi_result ssl_handshaker_result_create_frame_protector(
     tsi_frame_protector** protector) {
   size_t actual_max_output_protected_frame_size =
       TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND;
-  tsi_ssl_handshaker_result* impl =
-      reinterpret_cast<tsi_ssl_handshaker_result*>(
-          const_cast<tsi_handshaker_result*>(self));
+  tsi_ssl_handshaker_result* impl = static_cast<tsi_ssl_handshaker_result*>(
+      const_cast<tsi_handshaker_result*>(self));
   tsi_ssl_frame_protector* protector_impl =
       static_cast<tsi_ssl_frame_protector*>(
           gpr_zalloc(sizeof(*protector_impl)));
@@ -2479,7 +2473,7 @@ static tsi_result ssl_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
     size_t* bytes_size) {
   const tsi_ssl_handshaker_result* impl =
-      reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+      static_cast<const tsi_ssl_handshaker_result*>(self);
   *bytes_size = impl->unused_bytes_size;
   *bytes = impl->unused_bytes;
   return TSI_OK;
@@ -2487,7 +2481,7 @@ static tsi_result ssl_handshaker_result_get_unused_bytes(
 
 static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
   tsi_ssl_handshaker_result* impl =
-      reinterpret_cast<tsi_ssl_handshaker_result*>(self);
+      static_cast<tsi_ssl_handshaker_result*>(self);
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->unused_bytes);
@@ -2513,7 +2507,7 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
     return TSI_INVALID_ARGUMENT;
   }
   auto* result = new tsi_ssl_handshaker_result();
-  result->base.vtable = &handshaker_result_vtable;
+  result->vtable = &handshaker_result_vtable;
   result->exported_keying_material_label =
       handshaker->exported_keying_material_label;
   result->exported_keying_material_length =
@@ -2527,7 +2521,7 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
   // Transfer ownership of |unused_bytes| to the handshaker result.
   result->unused_bytes = unused_bytes;
   result->unused_bytes_size = unused_bytes_size;
-  handshaker->handshaker_next_args->handshaker_result = &result->base;
+  handshaker->handshaker_next_args->handshaker_result = result;
   return TSI_OK;
 }
 
@@ -2806,7 +2800,7 @@ static SslHandshakeResult ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
       // Output Cipher information
       if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
         tsi_ssl_handshaker_result* result =
-            reinterpret_cast<tsi_ssl_handshaker_result*>(
+            static_cast<tsi_ssl_handshaker_result*>(
                 self->handshaker_next_args->handshaker_result);
         auto cipher = SSL_get_current_cipher(result->ssl);
         if (cipher != nullptr) {
