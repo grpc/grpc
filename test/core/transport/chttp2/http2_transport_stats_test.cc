@@ -16,6 +16,18 @@
 //
 //
 
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
+
+#include <cstddef>
+#include <variant>
+
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/time.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "gtest/gtest.h"
 
 int main(int argc, char** argv) {
