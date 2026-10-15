@@ -223,12 +223,6 @@ class ByteSink final {
     return true;
   }
 
-  bool Skip(size_t n) {
-    if (n > span_.size()) return false;
-    span_ = span_.subspan(n);
-    return true;
-  }
-
  private:
   absl::Span<uint8_t> span_;
   size_t start_size_ = 0;
