@@ -2272,38 +2272,30 @@ TEST_P(XdsExtProcEnd2endTest, DrainResponsesStartedInResponseHeadersResponse) {
                              .Build();
   SetFilterConfig(ext_proc_config);
   AsyncBidiStream stream;
-  stream.Start(stub_.get());
+  // Have the server send its initial metadata immediately, rather than along
+  // with the first message, so that the drain is started before any response
+  // message is sent to the ext_proc server.
+  stream.Start(stub_.get(),
+               RpcOptions().set_metadata(
+                   {{kServerSendResponseHeadersImmediately, "true"}}));
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
-  EchoRequest request;
-  request.set_message(kMessage1);
-  stream.StartWrite(request);
-  EXPECT_TRUE(stream.WaitForWrite());
-  stream.StartReadMessage();
   auto req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req, ::testing::Optional(MatchesResponseHeaders(::testing::_)));
   ext_proc_stream->SendResponse(
       SetRequestDrains(MakeResponseHeadersMutationResponse({}),
                        /*drain_requests=*/false, /*drain_responses=*/true));
-  // The server sends its initial metadata together with the first message,
-  // so the filter may have already sent that message to the ext_proc server
-  // before it received the drain request.  If so, the ext_proc server must
-  // respond to it before acknowledging the drain.
   auto drain_req = ext_proc_stream->GetNextRequest();
-  ASSERT_TRUE(drain_req.has_value());
-  if (drain_req->has_response_body() &&
-      !drain_req->response_body().drain_complete()) {
-    EXPECT_THAT(
-        *drain_req,
-        MatchesResponseBody(EchoResponseMessageIs(kMessage1), !kEndOfStream));
-    ext_proc_stream->SendResponse(
-        MakeResponseBodyMutationResponse(drain_req->response_body().body()));
-    drain_req = ext_proc_stream->GetNextRequest();
-  }
   ASSERT_THAT(drain_req,
               ::testing::Optional(MatchesResponseBodyDrainComplete()));
   ext_proc_stream->SendResponse(MakeResponseBodyDrainCompleteResponse());
-  EXPECT_THAT(stream.WaitForRead(),
+  EXPECT_TRUE(stream.WaitForInitialMetadata());
+  // Response messages and trailers are not sent to the ext_proc server.
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1)));
   // Subsequent response messages and trailers are not sent to the ext_proc
   // server.
