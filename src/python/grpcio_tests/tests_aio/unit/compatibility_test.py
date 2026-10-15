@@ -547,9 +547,7 @@ class TestSyncHandlerInvokedOffLoop(unittest.TestCase):
         self.assertEqual(
             grpc.StatusCode.INTERNAL, exception_context.exception.code()
         )
-        self.assertEqual(
-            "Test", exception_context.exception.details()
-        )
+        self.assertEqual("Test", exception_context.exception.details())
         self.assertTrue(
             self._thread_pool.workers_finished(test_constants.TIME_ALLOWANCE),
             "thread pool worker leaked",

@@ -27,7 +27,6 @@ from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
 
 
-
 class TestScheduleCoroThreadsafe(unittest.TestCase):
     def setUp(self):
         self._loop_thread = _common.LoopInThread(debug=False)
@@ -125,9 +124,7 @@ class TestGeneratorToAsyncGenerator(_GeneratorTestBase):
         def items():
             yield from (b"a", b"b", b"c")
 
-        agen = cygrpc.generator_to_async_generator(
-            items(), self.loop, executor
-        )
+        agen = cygrpc.generator_to_async_generator(items(), self.loop, executor)
         self.assertEqual([b"a", b"b", b"c"], [item async for item in agen])
         self.assertTrue(
             await self._in_thread(
