@@ -20,7 +20,10 @@
 #include <memory>
 #include <queue>
 
+#include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
@@ -70,6 +73,10 @@ class LoadBalancedCallDestinationTest : public YodelTest {
   ClientChannel::PickerObservable& picker() { return picker_; }
 
   RefCountedPtr<SubchannelInterface> subchannel() { return subchannel_; }
+
+  RefCountedPtr<SubchannelInterface> disconnected_subchannel() {
+    return MakeRefCounted<TestSubchannel>(nullptr);
+  }
 
  private:
   class TestCallDestination final : public UnstartedCallDestination {
@@ -225,6 +232,74 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
   // should trigger Unavailable to be seen by the client side part of the call.
   picker().Set(MakeRefCounted<LoadBalancingPolicy::DropPicker>(
       absl::UnavailableError("Channel destroyed")));
+  WaitForAllPendingWork();
+}
+
+LOAD_BALANCED_CALL_DESTINATION_TEST(RecordDelayTest) {
+  auto md = MakeClientInitialMetadata();
+  md->GetOrCreatePointer(WaitForReady())->value = true;
+  auto call = MakeCall(std::move(md));
+  std::vector<std::string> annotation_logger;
+  FakeClientCallTracer call_tracer(&annotation_logger);
+  SetClientCallTracer(call.handler.arena(), {&call_tracer});
+  SpawnTestSeq(call.initiator, "initiator",
+               [this, handler = std::move(call.handler)]() {
+                 destination_under_test().StartCall(handler);
+               });
+  auto do_pick = [this](LoadBalancingPolicy::PickResult result) {
+    auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
+    std::atomic<bool> picked{false};
+    EXPECT_CALL(*mock_picker, Pick)
+        .WillOnce([&picked, result = std::move(result)](
+                      LoadBalancingPolicy::PickArgs) mutable {
+          picked.store(true, std::memory_order_relaxed);
+          return std::move(result);
+        });
+    picker().Set(mock_picker);
+    TickUntilTrue([&picked]() {
+      return picked.load(std::memory_order_relaxed);
+    });
+  };
+  do_pick(LoadBalancingPolicy::PickResult::Queue("0:connecting", "reason1"));
+  do_pick(LoadBalancingPolicy::PickResult::Queue("0:connecting", "reason1"));
+  do_pick(LoadBalancingPolicy::PickResult::Queue("0:connecting", "reason2"));
+  do_pick(LoadBalancingPolicy::PickResult::Queue("1:connecting", "failover"));
+  do_pick(LoadBalancingPolicy::PickResult::Queue("0:connecting", "reason1"));
+  do_pick(LoadBalancingPolicy::PickResult::Fail(
+      absl::UnavailableError("all backends down")));
+  do_pick(
+      LoadBalancingPolicy::PickResult::Complete{disconnected_subchannel()});
+  {
+    auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
+    EXPECT_CALL(*mock_picker, Pick)
+        .WillOnce([this](LoadBalancingPolicy::PickArgs) {
+          return LoadBalancingPolicy::PickResult::Complete{subchannel()};
+        });
+    picker().Set(mock_picker);
+  }
+  auto handler = TickUntilCallStarted();
+  EXPECT_THAT(
+      annotation_logger,
+      ::testing::ElementsAre(
+          "RecordDelayStart: type=0:connecting reason=reason1",
+          "RecordDelayReasonChanged: type=0:connecting reason=reason2",
+          "RecordDelayEnd: type=0:connecting reason=reason2",
+          "RecordDelayStart: type=1:connecting reason=failover",
+          "RecordDelayEnd: type=1:connecting reason=failover",
+          "RecordDelayStart: type=0:connecting reason=reason1",
+          "RecordDelayEnd: type=0:connecting reason=reason1",
+          "RecordDelayStart: type=picker_failing_with_wait_for_ready "
+          "reason=UNAVAILABLE: all backends down",
+          "RecordDelayEnd: type=picker_failing_with_wait_for_ready "
+          "reason=UNAVAILABLE: all backends down",
+          "RecordDelayStart: type=subchannel_state_mismatch reason=picked "
+          "subchannel left READY before it could be used",
+          "RecordDelayEnd: type=subchannel_state_mismatch reason=picked "
+          "subchannel left READY before it could be used",
+          "Delayed LB pick complete."));
+  SpawnTestSeq(
+      call.initiator, "cancel",
+      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
   WaitForAllPendingWork();
 }
 

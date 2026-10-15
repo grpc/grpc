@@ -470,6 +470,8 @@ class ClientChannelFilter::LoadBalancedCall final
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
 
   BufferedCall buffered_call_;
+
+  CallDelayTracker delay_tracker_;
 };
 
 }  // namespace grpc_core

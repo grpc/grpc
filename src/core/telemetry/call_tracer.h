@@ -230,6 +230,11 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
     // the attempt.
     virtual void SetOptionalLabel(OptionalLabelKey key,
                                   RefCountedStringValue value) = 0;
+
+    virtual void RecordDelayStart(absl::string_view /*delay_type*/,
+                                  absl::string_view /*delay_reason*/) {}
+    virtual void RecordDelayReasonChanged(absl::string_view /*delay_reason*/) {}
+    virtual void RecordDelayEnd() {}
   };
 
   ~ClientCallTracerInterface() override {}
@@ -242,6 +247,11 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
   // RecordEnd() serves as an indication that the call stack is done with all
   // API calls, and the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
+
+  virtual void RecordDelayStart(absl::string_view /*delay_type*/,
+                                absl::string_view /*delay_reason*/) {}
+  virtual void RecordDelayReasonChanged(absl::string_view /*delay_reason*/) {}
+  virtual void RecordDelayEnd() {}
 };
 
 // Interface for a tracer that records activities on a server call.
@@ -377,6 +387,14 @@ class ClientCallTracer final : public CallSpan {
       bool is_transparent_retry) {
     return interface_->StartNewAttempt(is_transparent_retry);
   }
+  void RecordDelayStart(absl::string_view delay_type,
+                        absl::string_view delay_reason) {
+    interface_->RecordDelayStart(delay_type, delay_reason);
+  }
+  void RecordDelayReasonChanged(absl::string_view delay_reason) {
+    interface_->RecordDelayReasonChanged(delay_reason);
+  }
+  void RecordDelayEnd() { interface_->RecordDelayEnd(); }
 
  private:
   ClientCallTracerInterface* interface_;
@@ -402,6 +420,14 @@ class CallAttemptTracer final : public CallTracer {
       RefCountedStringValue value) {
     interface_->SetOptionalLabel(key, value);
   }
+  void RecordDelayStart(absl::string_view delay_type,
+                        absl::string_view delay_reason) {
+    interface_->RecordDelayStart(delay_type, delay_reason);
+  }
+  void RecordDelayReasonChanged(absl::string_view delay_reason) {
+    interface_->RecordDelayReasonChanged(delay_reason);
+  }
+  void RecordDelayEnd() { interface_->RecordDelayEnd(); }
 
  private:
   ClientCallTracerInterface::CallAttemptTracer* interface_;
