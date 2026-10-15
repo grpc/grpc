@@ -29,6 +29,8 @@
 #include "src/core/util/grpc_check.h"
 #include "absl/functional/bind_front.h"
 
+using tsi::RootCertInfo;
+
 namespace grpc_core {
 
 namespace {
@@ -46,8 +48,8 @@ class RootCertificatesWatcher final
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
-                             std::optional<PemKeyCertPairList>
-                             /* key_cert_pairs */) override {
+                             std::optional<KeyCertPairsOrSelector>
+                             /* key_cert_pairs_or_selector */) override {
     if (roots != nullptr) {
       parent_->SetKeyMaterials("", roots, std::nullopt);
     }
@@ -77,11 +79,11 @@ class IdentityCertificatesWatcher final
       RefCountedPtr<grpc_tls_certificate_distributor> parent)
       : parent_(std::move(parent)) {}
 
-  void OnCertificatesChanged(
-      std::shared_ptr<RootCertInfo> /* root_certs */,
-      std::optional<PemKeyCertPairList> key_cert_pairs) override {
-    if (key_cert_pairs.has_value()) {
-      parent_->SetKeyMaterials("", nullptr, key_cert_pairs);
+  void OnCertificatesChanged(std::shared_ptr<RootCertInfo> /* root_certs */,
+                             std::optional<KeyCertPairsOrSelector>
+                                 key_cert_pairs_or_selector) override {
+    if (key_cert_pairs_or_selector.has_value()) {
+      parent_->SetKeyMaterials("", nullptr, key_cert_pairs_or_selector);
     }
   }
 

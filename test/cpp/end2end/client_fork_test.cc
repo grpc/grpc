@@ -59,34 +59,34 @@ class EchoClientBidiReactor
  public:
   void OnDone(const grpc::Status& /*s*/) override {
     VLOG(2) << "[" << getpid() << "] Everything done";
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     all_done_ = true;
     cond_.SignalAll();
   }
 
   void OnReadDone(bool ok) override {
     VLOG(2) << "[" << getpid() << "] Read done: " << ok;
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     read_ = true;
     cond_.SignalAll();
   }
 
   void OnWriteDone(bool ok) override {
     VLOG(2) << "[" << getpid() << "] Async client write done: " << ok;
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     write_ = true;
     cond_.SignalAll();
   }
 
   void WaitReadWriteDone() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     while (!read_ || !write_) {
       cond_.Wait(&mu_);
     }
   }
 
   void WaitAllDone() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     while (!all_done_) {
       cond_.Wait(&mu_);
     }

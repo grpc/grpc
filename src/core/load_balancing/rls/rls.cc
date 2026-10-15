@@ -51,8 +51,8 @@
 #include <utility>
 #include <vector>
 
+#include "grpc/lookup/v1/rls.upb.h"
 #include "src/core/channelz/channelz.h"
-#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -61,6 +61,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -76,6 +78,7 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/telemetry_label.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -95,7 +98,6 @@
 #include "src/core/util/uuid_v4.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
-#include "src/proto/grpc/lookup/v1/rls.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "absl/base/thread_annotations.h"
@@ -146,6 +148,7 @@ const auto kMetricDefaultTargetPicks =
         "{pick}", false)
         .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget,
                 kMetricRlsDataPlaneTarget, kMetricLabelPickResult)
+        .OptionalLabels(kMetricLabelTelemetry)
         .Build();
 
 const auto kMetricTargetPicks =
@@ -158,6 +161,7 @@ const auto kMetricTargetPicks =
         "{pick}", false)
         .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget,
                 kMetricRlsDataPlaneTarget, kMetricLabelPickResult)
+        .OptionalLabels(kMetricLabelTelemetry)
         .Build();
 
 const auto kMetricFailedPicks =
@@ -167,6 +171,7 @@ const auto kMetricFailedPicks =
         "request or the RLS channel being throttled.",
         "{pick}", false)
         .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget)
+        .OptionalLabels(kMetricLabelTelemetry)
         .Build();
 
 const char kGrpc[] = "grpc";
@@ -696,7 +701,8 @@ class RlsLb final : public LoadBalancingPolicy {
   template <typename HandleType>
   void MaybeExportPickCount(HandleType handle, absl::string_view target,
                             absl::string_view lookup_service,
-                            const PickResult& pick_result);
+                            const PickResult& pick_result,
+                            absl::string_view telemetry_label);
 
   const std::string instance_uuid_;
 
@@ -866,7 +872,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
       << ", status=" << status << ", picker=" << picker.get() << ")";
   if (wrapper_->is_shutdown_) return;
   {
-    MutexLock lock(&wrapper_->lb_policy_->mu_);
+    MutexLock lock(wrapper_->lb_policy_->mu_);
     // TODO(roth): It looks like this ignores subsequent TF updates that
     // might change the status used to fail picks, which seems wrong.
     if (wrapper_->connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
@@ -967,7 +973,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
       << "[rlslb " << lb_policy_.get() << "] picker=" << this
       << ": request keys: " << key.ToString();
   Timestamp now = Timestamp::Now();
-  MutexLock lock(&lb_policy_->mu_);
+  MutexLock lock(lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
         absl::UnavailableError("LB policy already shut down"));
@@ -1023,14 +1029,19 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
     const char* reason, PickArgs args, absl::Status status) {
+  absl::string_view telemetry_label;
+  if (auto* label = GetContext<Arena>()->GetContext<TelemetryLabel>();
+      label != nullptr) {
+    telemetry_label = label->value;
+  }
   if (default_child_policy_ != nullptr) {
     GRPC_TRACE_LOG(rls_lb, INFO)
         << "[rlslb " << lb_policy_.get() << "] picker=" << this << ": "
         << reason << "; using default target";
     auto pick_result = default_child_policy_->Pick(args);
-    lb_policy_->MaybeExportPickCount(kMetricDefaultTargetPicks,
-                                     config_->default_target(),
-                                     config_->lookup_service(), pick_result);
+    lb_policy_->MaybeExportPickCount(
+        kMetricDefaultTargetPicks, config_->default_target(),
+        config_->lookup_service(), pick_result, telemetry_label);
     return pick_result;
   }
   GRPC_TRACE_LOG(rls_lb, INFO)
@@ -1041,7 +1052,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
   stats_plugins.AddCounter(kMetricFailedPicks, 1,
                            {lb_policy_->channel_control_helper()->GetTarget(),
                             config_->lookup_service()},
-                           {});
+                           {telemetry_label});
   return PickResult::Fail(std::move(status));
 }
 
@@ -1079,7 +1090,7 @@ void RlsLb::Cache::Entry::BackoffTimer::Orphan() {
 
 void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimerLocked() {
   {
-    MutexLock lock(&entry_->lb_policy_->mu_);
+    MutexLock lock(entry_->lb_policy_->mu_);
     GRPC_TRACE_LOG(rls_lb, INFO)
         << "[rlslb " << entry_->lb_policy_.get()
         << "] cache entry=" << entry_.get() << " "
@@ -1170,10 +1181,15 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
       << child_policy_wrappers_.size() << ") in state "
       << ConnectivityStateName(child_policy_wrapper->connectivity_state())
       << "; delegating";
+  absl::string_view telemetry_label;
+  if (auto* label = GetContext<Arena>()->GetContext<TelemetryLabel>();
+      label != nullptr) {
+    telemetry_label = label->value;
+  }
   auto pick_result = child_policy_wrapper->Pick(args);
-  lb_policy_->MaybeExportPickCount(kMetricTargetPicks,
-                                   child_policy_wrapper->target(),
-                                   lookup_service, pick_result);
+  lb_policy_->MaybeExportPickCount(
+      kMetricTargetPicks, child_policy_wrapper->target(), lookup_service,
+      pick_result, telemetry_label);
   // Add header data.
   if (!header_data_.empty()) {
     auto* complete_pick =
@@ -1402,7 +1418,7 @@ void RlsLb::Cache::OnCleanupTimer() {
       << "[rlslb " << lb_policy_ << "] cache cleanup timer fired";
   std::vector<RefCountedPtr<ChildPolicyWrapper>>
       child_policy_wrappers_to_delete;
-  MutexLock lock(&lb_policy_->mu_);
+  MutexLock lock(lb_policy_->mu_);
   if (!cleanup_timer_handle_.has_value()) return;
   if (lb_policy_->is_shutdown_) return;
   for (auto it = map_.begin(); it != map_.end();) {
@@ -1457,7 +1473,7 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
       << " StateWatcher=" << this << ": state changed to "
       << ConnectivityStateName(new_state) << " (" << status << ")";
   if (rls_channel_->is_shutdown_) return;
-  MutexLock lock(&lb_policy->mu_);
+  MutexLock lock(lb_policy->mu_);
   if (new_state == GRPC_CHANNEL_READY && was_transient_failure_) {
     was_transient_failure_ = false;
     // Reset the backoff of all cache entries, so that we don't
@@ -1524,9 +1540,15 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       lb_policy_->channel_control_helper()->GetUnsafeChannelCredentials();
   // Use the parent channel's authority.
   auto authority = lb_policy_->channel_control_helper()->GetAuthority();
-  ChannelArgs args = ChannelArgs()
-                         .Set(GRPC_ARG_DEFAULT_AUTHORITY, authority)
-                         .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1);
+  ChannelArgs args;
+  const grpc_channel_args* child_args =
+      lb_policy_->channel_args_.GetPointer<grpc_channel_args>(
+          GRPC_ARG_CHILD_CHANNEL_ARGS);
+  if (child_args != nullptr) {
+    args = ChannelArgs::FromC(child_args).UnionWith(args);
+  }
+  args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, authority)
+             .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1);
   // Propagate fake security connector expected targets, if any.
   // (This is ugly, but it seems better than propagating all channel args
   // from the parent channel by default and then having a giant
@@ -1669,7 +1691,7 @@ void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle /*error*/) {
 
 void RlsLb::RlsRequest::StartCallLocked() {
   {
-    MutexLock lock(&lb_policy_->mu_);
+    MutexLock lock(lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
   }
   Timestamp now = Timestamp::Now();
@@ -1680,7 +1702,8 @@ void RlsLb::RlsRequest::StartCallLocked() {
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       lb_policy_->interested_parties(),
       Slice::FromStaticString(kRlsRequestPath), /*authority=*/std::nullopt,
-      deadline_, /*registered_method=*/true);
+      deadline_, /*registered_method=*/true,
+      /*arena_init_function=*/std::nullopt);
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;
@@ -1758,7 +1781,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
       child_policy_wrappers_to_delete;
   OrphanablePtr<ChildPolicyHandler> child_policy_to_delete;
   {
-    MutexLock lock(&lb_policy_->mu_);
+    MutexLock lock(lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
     rls_channel_->ReportResponseLocked(response.status.ok());
     Cache::Entry* cache_entry =
@@ -1946,7 +1969,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
       child_policy_wrappers_to_delete;
   OrphanablePtr<ChildPolicyHandler> child_policy_to_delete;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // Swap out RLS channel if needed.
     if (old_config == nullptr ||
         config_->lookup_service() != old_config->lookup_service()) {
@@ -2003,7 +2026,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     registered_metric_callback_ =
         channel_control_helper()->GetStatsPluginGroup().RegisterCallback(
             [this](CallbackMetricReporter& reporter) {
-              MutexLock lock(&mu_);
+              MutexLock lock(mu_);
               cache_.ReportMetricsLocked(reporter);
             },
             Duration::Seconds(5), kMetricCacheSize, kMetricCacheEntries);
@@ -2024,7 +2047,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
 }
 
 void RlsLb::ExitIdleLocked() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   for (auto& [_, child] : child_policy_map_) {
     child->ExitIdleLocked();
   }
@@ -2032,7 +2055,7 @@ void RlsLb::ExitIdleLocked() {
 
 void RlsLb::ResetBackoffLocked() {
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     rls_channel_->ResetBackoff();
     cache_.ResetAllBackoff();
   }
@@ -2049,7 +2072,7 @@ void RlsLb::ShutdownLocked() {
       child_policy_wrappers_to_delete;
   OrphanablePtr<RlsChannel> rls_channel_to_delete;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     is_shutdown_ = true;
     config_.reset(DEBUG_LOCATION, "ShutdownLocked");
     child_policy_wrappers_to_delete = cache_.Shutdown();
@@ -2082,7 +2105,7 @@ void RlsLb::UpdatePickerLocked() {
     int num_idle = 0;
     int num_connecting = 0;
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (is_shutdown_) return;
       for (auto& [_, child] : child_policy_map_) {
         grpc_connectivity_state child_state = child->connectivity_state();
@@ -2121,7 +2144,8 @@ void RlsLb::UpdatePickerLocked() {
 template <typename HandleType>
 void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
                                  absl::string_view lookup_service,
-                                 const PickResult& pick_result) {
+                                 const PickResult& pick_result,
+                                 absl::string_view telemetry_label) {
   absl::string_view pick_result_string = Match(
       pick_result.result,
       [](const LoadBalancingPolicy::PickResult::Complete&) {
@@ -2135,7 +2159,7 @@ void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
   stats_plugins.AddCounter(handle, 1,
                            {channel_control_helper()->GetTarget(),
                             lookup_service, target, pick_result_string},
-                           {});
+                           {telemetry_label});
 }
 
 //

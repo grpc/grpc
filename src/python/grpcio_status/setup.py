@@ -54,7 +54,9 @@ CLASSIFIERS = [
 
 
 INSTALL_REQUIRES = (
-    "protobuf>=6.31.1,<7.0.0",
+    # Note that we don't ship pb2 files with this package, so the protobuf
+    # version bounds don't have to be in lockstep with grpcio-tools.
+    "protobuf>=6.33.5,<8.0.0",
     "grpcio>={version}".format(version=grpc_version.VERSION),
     "googleapis-common-protos>=1.5.5",
 )

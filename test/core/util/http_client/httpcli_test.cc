@@ -19,6 +19,7 @@
 #include "src/core/util/http_client/httpcli.h"
 
 #include <ares.h>
+#include <fcntl.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -26,6 +27,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
+#include <sys/poll.h>
 #include <sys/socket.h>
 
 #include <memory>
@@ -34,10 +36,11 @@
 #include <utility>
 
 #include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/subprocess.h"
 #include "src/core/util/time.h"
@@ -123,6 +126,69 @@ class HttpRequestTest : public ::testing::Test {
 
   static void TearDownTestSuite() { gpr_subprocess_destroy(g_server); }
 
+  static void WaitForServerReady(const std::string& host_port,
+                                 absl::Duration timeout) {
+    absl::Time deadline = absl::Now() + timeout;
+
+    std::string host;
+    std::string port;
+    GRPC_CHECK(grpc_core::SplitHostPort(host_port, &host, &port));
+
+    struct sockaddr_in serv_addr;
+    std::memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(atoi(port.c_str()));
+    inet_pton(AF_INET, host.c_str(), &serv_addr.sin_addr);
+
+    while (absl::Now() < deadline) {
+      int sock = socket(AF_INET, SOCK_STREAM, 0);
+      if (sock < 0) return;
+
+      // Set socket to non-blocking mode
+      int flags = fcntl(sock, F_GETFL, 0);
+      fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+
+      // Attempt connection
+      int res = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+
+      if (res == 0) {
+        // Instant success (rare for non-blocking but possible)
+        close(sock);
+        return;
+      }
+
+      if (errno == EINPROGRESS) {
+        // Connection is underway. Use poll to wait for completion.
+        struct pollfd pfd;
+        pfd.fd = sock;
+        pfd.events = POLLOUT;  // Socket becomes writable when connected
+
+        // Calculate remaining milliseconds for poll
+        int remaining_ms = absl::ToInt64Milliseconds(deadline - absl::Now());
+        if (remaining_ms < 0) remaining_ms = 0;
+
+        int poll_res = poll(&pfd, 1, remaining_ms);
+
+        if (poll_res > 0) {
+          // Check if it's a real connection or an error
+          int result;
+          socklen_t len = sizeof(result);
+          getsockopt(sock, SOL_SOCKET, SO_ERROR, &result, &len);
+
+          if (result == 0) {
+            // Successfully connected
+            close(sock);
+            return;
+          }
+        }
+      }
+
+      // Clean up and retry if time remains
+      close(sock);
+      absl::SleepFor(absl::Milliseconds(100));
+    }
+  }
+
  private:
   static void DestroyPops(void* p, grpc_error_handle /*error*/) {
     grpc_polling_entity* pops = static_cast<grpc_polling_entity*>(p);
@@ -191,6 +257,9 @@ TEST_F(HttpRequestTest, Get) {
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  // Wait for Server to become ready. Trying to send a request immediately
+  // can result in a connection_refused error.
+  WaitForServerReady(host, absl::Seconds(10));
   LOG(INFO) << "requesting from " << host;
   memset(&req, 0, sizeof(req));
   auto uri = grpc_core::URI::Create(
@@ -217,6 +286,9 @@ TEST_F(HttpRequestTest, Post) {
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  // Wait for Server to become ready. Trying to send a request immediately
+  // can result in a connection_refused error.
+  WaitForServerReady(host, absl::Seconds(10));
   LOG(INFO) << "posting to " << host;
   memset(&req, 0, sizeof(req));
   req.body = const_cast<char*>("hello");
@@ -239,6 +311,8 @@ TEST_F(HttpRequestTest, Post) {
   PollUntil([&request_state]() { return request_state.done; },
             AbslDeadlineSeconds(60));
 }
+
+#if GRPC_ARES == 1
 
 int g_fake_non_responsive_dns_server_port;
 
@@ -266,8 +340,8 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   g_fake_non_responsive_dns_server_port = fake_dns_server.port();
   void (*prev_test_only_inject_config)(ares_channel* channel) =
-      grpc_ares_test_only_inject_config;
-  grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
+      event_engine_grpc_ares_test_only_inject_config;
+  event_engine_grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
   int kNumThreads = 10;
@@ -309,8 +383,10 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
   for (auto& t : threads) {
     t.join();
   }
-  grpc_ares_test_only_inject_config = prev_test_only_inject_config;
+  event_engine_grpc_ares_test_only_inject_config = prev_test_only_inject_config;
 }
+
+#endif  // GRPC_ARES == 1
 
 TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
   // Start up a fake HTTP server which just accepts connections
@@ -514,6 +590,9 @@ TEST_F(HttpRequestTest,
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  // Wait for Server to become ready. Trying to send a request immediately
+  // can result in a connection_refused error.
+  WaitForServerReady(host, absl::Seconds(10));
   LOG(INFO) << "requesting from " << host;
   memset(&req, 0, sizeof(req));
   auto uri = grpc_core::URI::Create("http", /*user_info=*/"", host, "/get",

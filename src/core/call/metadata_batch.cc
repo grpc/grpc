@@ -58,6 +58,7 @@ bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key) {
   if (key == TeMetadata::key()) return true;
   if (key == UserAgentMetadata::key()) return true;
   if (key == W3CTraceParentMetadata::key()) return true;
+  if (key == XEnvoyAuthFailureModeAllowedMetadata::key()) return true;
   if (key == XEnvoyPeerMetadata::key()) return true;
   if (key == XForwardedForMetadata::key()) return true;
   if (key == XForwardedHostMetadata::key()) return true;
@@ -90,7 +91,7 @@ void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
   } else {
     // If the type of metadata is not in the allow list, we want to prevent it
     // from getting logged. Custom metadata types may have sensitive information
-    // that should never be logged. Programatically, we have no way to know
+    // that should never be logged. Programmatically, we have no way to know
     // which data is sensitive and which is not. So we redact all values which
     // are not in the allow list.
     Add(key,

@@ -16,5 +16,5 @@
 
 SUPPORTED_PYTHON_VERSIONS = {{settings.supported_python_versions}}
 
-MIN_PYTHON_VERSION = {{settings.min_python_version}}
-MAX_PYTHON_VERSION = {{settings.max_python_version}}
+MIN_PYTHON_VERSION = "{{settings.min_python_version}}"
+MAX_PYTHON_VERSION = "{{settings.max_python_version}}"

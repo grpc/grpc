@@ -29,7 +29,9 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "upb/mem/arena.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -226,6 +228,58 @@ TEST(ForEachTest, NextResultHeldThroughCallback) {
       SimpleArenaAllocator()->MakeArena());
   Mock::VerifyAndClearExpectations(&on_done);
   EXPECT_EQ(num_received, 1);
+}
+
+TEST(ForEachTest, ToProto) {
+  struct TestReader {
+    std::shared_ptr<int> i = std::make_shared<int>(0);
+    auto Next() {
+      return [i = i]() -> Poll<ValueOrFailure<std::optional<int>>> {
+        if (*i == 0) {
+          (*i)++;
+          return ValueOrFailure<std::optional<int>>(std::optional<int>(42));
+        }
+        return Pending{};
+      };
+    }
+  };
+
+  auto promise = ForEach(TestReader{}, [](int) {
+    return []() -> Poll<absl::Status> { return Pending{}; };
+  });
+
+  // Initial state: reading_next
+  {
+    upb::Arena arena;
+    grpc_channelz_v2_Promise* promise_proto =
+        grpc_channelz_v2_Promise_new(arena.ptr());
+    promise.ToProto(promise_proto, arena.ptr());
+    auto* for_each_proto =
+        grpc_channelz_v2_Promise_for_each_promise(promise_proto);
+    ASSERT_NE(for_each_proto, nullptr);
+    EXPECT_TRUE(
+        grpc_channelz_v2_Promise_ForEach_has_reader_promise(for_each_proto));
+    EXPECT_FALSE(
+        grpc_channelz_v2_Promise_ForEach_has_action_promise(for_each_proto));
+  }
+
+  // Poll once to transition to action
+  EXPECT_TRUE(promise().pending());
+
+  // Now state: in_action
+  {
+    upb::Arena arena;
+    grpc_channelz_v2_Promise* promise_proto =
+        grpc_channelz_v2_Promise_new(arena.ptr());
+    promise.ToProto(promise_proto, arena.ptr());
+    auto* for_each_proto =
+        grpc_channelz_v2_Promise_for_each_promise(promise_proto);
+    ASSERT_NE(for_each_proto, nullptr);
+    EXPECT_FALSE(
+        grpc_channelz_v2_Promise_ForEach_has_reader_promise(for_each_proto));
+    EXPECT_TRUE(
+        grpc_channelz_v2_Promise_ForEach_has_action_promise(for_each_proto));
+  }
 }
 
 }  // namespace grpc_core

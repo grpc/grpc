@@ -94,7 +94,7 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
                 ExecCtx exec_ctx;
                 self->Complete(std::move(status), num_bytes_requested);
               },
-              &pending_buffer, std::move(read_args))) {
+              &pending_buffer, read_args)) {
         continue;
       }
       return;

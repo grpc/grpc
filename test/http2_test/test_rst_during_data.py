@@ -15,7 +15,7 @@
 import http2_base_server
 
 
-class TestcaseRstStreamDuringData(object):
+class TestcaseRstStreamDuringData:
     """
     In response to an incoming request, this test sends headers, followed by
     some data, followed by a reset stream frame. Client asserts that the RPC

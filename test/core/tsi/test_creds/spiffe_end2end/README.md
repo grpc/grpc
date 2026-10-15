@@ -28,7 +28,7 @@ certificate by getting the RSA key from the cert and extracting the value. This
 can be done in golang with the following codeblock:
 
 ```
-func(GetBase64ModulusFromPublicKey(key *rsa.PublicKey) string {
+func GetBase64ModulusFromPublicKey(key *rsa.PublicKey) string {
     return base64.RawURLEncoding.EncodeToString(key.N.Bytes())
 }
 

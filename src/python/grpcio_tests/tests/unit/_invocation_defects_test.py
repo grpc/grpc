@@ -35,7 +35,7 @@ _STREAM_STREAM = "StreamStream"
 _DEFECTIVE_GENERIC_RPC_HANDLER = "DefectiveGenericRpcHandler"
 
 
-class _Handler(object):
+class _Handler:
     def __init__(self, control):
         self._control = control
 
@@ -199,7 +199,7 @@ def get_method_handlers(handler):
     }
 
 
-class FailAfterFewIterationsCounter(object):
+class FailAfterFewIterationsCounter:
     def __init__(self, high, bytestring):
         self._current = 0
         self._high = high

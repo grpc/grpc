@@ -33,6 +33,7 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/seq_bit_set.h"
@@ -117,7 +118,7 @@ class OutputBuffers final
       output_buffers_->DestroyReader(id_);
     }
     void FinishEndpointWrite() {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       send_rate_.FinishEndpointWrite();
     }
 
@@ -179,7 +180,7 @@ class OutputBuffers final
       ABSL_LOCKS_EXCLUDED(mu_reader_data_);
 
   void SetMpscProbe(MpscProbe<OutgoingFrame> probe) {
-    MutexLock lock(&mu_reader_data_);
+    MutexLock lock(mu_reader_data_);
     mpsc_probe_ = std::move(probe);
   }
 
@@ -357,7 +358,7 @@ class InputQueue final : public RefCounted<InputQueue> {
   void SetClosed(absl::Status status);
   auto AwaitClosed() {
     return [this]() -> Poll<absl::Status> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (closed_error_.ok()) {
         await_closed_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
@@ -388,7 +389,7 @@ class SecureFrameQueue
 
   auto Next() {
     return [this]() -> Poll<SliceBuffer> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (all_frames_.Length() == 0) {
         read_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
@@ -400,7 +401,7 @@ class SecureFrameQueue
   }
 
   size_t InstantaneousQueuedBytes() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return all_frames_.Length();
   }
 
@@ -414,7 +415,8 @@ class SecureFrameQueue
 class Endpoint final {
  public:
   Endpoint(uint32_t id, uint32_t encode_alignment, uint32_t decode_alignment,
-           Clock* clock, RefCountedPtr<OutputBuffers> output_buffers,
+           uint32_t max_receive_message_length, Clock* clock,
+           RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
            TransportContextPtr ctx,
@@ -435,6 +437,7 @@ class Endpoint final {
     uint32_t id;
     uint32_t encode_alignment;
     uint32_t decode_alignment;
+    uint32_t max_receive_message_length;
     bool enable_tracing;
     // TODO(ctiller): Inline members into EndpointContext.
     RefCountedPtr<OutputBuffers> output_buffers;
@@ -447,6 +450,8 @@ class Endpoint final {
     Clock* clock;
     RefCountedPtr<OutputBuffers::Reader> reader;
     Timestamp last_metrics_update = Timestamp::ProcessEpoch();
+    TcpCallTracer::IpAddress local_addr;
+    TcpCallTracer::IpAddress peer_addr;
   };
 
   static auto PullDataPayload(RefCountedPtr<EndpointContext> ctx);
@@ -468,6 +473,7 @@ class DataEndpoints final : public channelz::DataSource {
   explicit DataEndpoints(std::vector<PendingConnection> endpoints,
                          TransportContextPtr ctx, uint32_t encode_alignment,
                          uint32_t decode_alignment,
+                         uint32_t max_receive_message_length,
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                          bool enable_tracing, std::string scheduler_config,
                          data_endpoints_detail::Clock* clock = DefaultClock());

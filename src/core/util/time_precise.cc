@@ -29,6 +29,9 @@
 
 #include "src/core/util/time_precise.h"
 #include "absl/log/log.h"
+#ifdef GPR_CYCLE_COUNTER_CUSTOM
+#include "absl/base/internal/cycleclock.h"
+#endif  // GPR_CYCLE_COUNTER_CUSTOM
 
 #ifndef GPR_CYCLE_COUNTER_CUSTOM
 #if GPR_CYCLE_COUNTER_RDTSC_32 || GPR_CYCLE_COUNTER_RDTSC_64
@@ -164,4 +167,42 @@ gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
                       gpr_cycle_counter_to_time(b));
 }
 #endif  // GPR_CYCLE_COUNTER_FALLBACK
-#endif  // !GPR_CYCLE_COUNTER_CUSTOM
+#else   // !defined(GPR_CYCLE_COUNTER_CUSTOM)
+
+static double cycles_per_second = 0;
+static gpr_cycle_counter start_cycle;
+
+gpr_cycle_counter gpr_get_cycle_counter() { return CycleClock::Now(); }
+
+void gpr_precise_clock_init(void) {
+  start_cycle = gpr_get_cycle_counter();
+  cycles_per_second = CycleClock::Frequency();
+}
+
+void gpr_precise_clock_now(gpr_timespec* clk) {
+  int64_t counter = gpr_get_cycle_counter();
+  *clk = gpr_cycle_counter_to_time(counter);
+}
+
+gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
+  const double secs =
+      static_cast<double>(cycles - start_cycle) / cycles_per_second;
+  gpr_timespec ts;
+  ts.tv_sec = static_cast<int64_t>(secs);
+  ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC *
+                                    (secs - static_cast<double>(ts.tv_sec)));
+  ts.clock_type = GPR_CLOCK_PRECISE;
+  return ts;
+}
+
+gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
+  const double secs = static_cast<double>(a - b) / cycles_per_second;
+  gpr_timespec ts;
+  ts.tv_sec = static_cast<int64_t>(secs);
+  ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC *
+                                    (secs - static_cast<double>(ts.tv_sec)));
+  ts.clock_type = GPR_TIMESPAN;
+  return ts;
+}
+
+#endif  // GPR_CYCLE_COUNTER_CUSTOM

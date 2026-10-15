@@ -121,7 +121,7 @@ def test_server(max_workers=10, reuse_port=False):
     )
 
 
-class WaitGroup(object):
+class WaitGroup:
     def __init__(self, n=0):
         self.count = n
         self.cv = threading.Condition()

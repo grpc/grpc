@@ -423,6 +423,23 @@ TEST(Http2SettingsTest, WireIdToNameWorks) {
   EXPECT_EQ(Http2Settings::WireIdToName(65030), "UNKNOWN (65030)");
 }
 
+TEST(Http2SettingsTest, IsKnownSettingIdWorks) {
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(1));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(2));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(3));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(4));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(5));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(6));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(65027));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(65028));
+  EXPECT_TRUE(Http2Settings::IsKnownSettingId(65029));
+
+  EXPECT_FALSE(Http2Settings::IsKnownSettingId(0));
+  EXPECT_FALSE(Http2Settings::IsKnownSettingId(7));
+  EXPECT_FALSE(Http2Settings::IsKnownSettingId(65026));
+  EXPECT_FALSE(Http2Settings::IsKnownSettingId(65030));
+}
+
 TEST(Http2SettingsTest, ApplyHeaderTableSizeWorks) {
   Http2Settings settings;
   EXPECT_EQ(settings.Apply(1, 1), Http2ErrorCode::kNoError);

@@ -26,7 +26,7 @@ import grpc_version
 import python_version
 
 INSTALL_REQUIRES = (
-    "protobuf>=6.31.1,<7.0.0",
+    "protobuf>=7.35.1,<8.0.0",
     f"xds-protos=={grpc_version.VERSION}",
     f"grpcio>={grpc_version.VERSION}",
 )

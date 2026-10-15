@@ -278,8 +278,6 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
 }
 
 TEST_F(ClientChannelParserTest, ConnectionScaling) {
-  ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   const char* test_json =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -295,26 +293,7 @@ TEST_F(ClientChannelParserTest, ConnectionScaling) {
   EXPECT_EQ(parsed_config->max_connections_per_subchannel(), 7);
 }
 
-// TODO(roth): Remove this test once the env var guard goes away.
-TEST_F(ClientChannelParserTest, ConnectionScalingNotEnabled) {
-  const char* test_json =
-      "{\n"
-      "  \"connectionScaling\": {\n"
-      "    \"maxConnectionsPerSubchannel\": 7\n"
-      "  }\n"
-      "}";
-  auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  const auto* parsed_config =
-      static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(parser_index_));
-  ASSERT_NE(parsed_config, nullptr);
-  EXPECT_EQ(parsed_config->max_connections_per_subchannel(), 0);
-}
-
 TEST_F(ClientChannelParserTest, ConnectionScalingUnset) {
-  ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   const char* test_json =
       "{\n"
       "}";
@@ -328,8 +307,6 @@ TEST_F(ClientChannelParserTest, ConnectionScalingUnset) {
 }
 
 TEST_F(ClientChannelParserTest, ConnectionScalingFieldUnset) {
-  ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   const char* test_json =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -345,8 +322,6 @@ TEST_F(ClientChannelParserTest, ConnectionScalingFieldUnset) {
 }
 
 TEST_F(ClientChannelParserTest, ConnectionScalingWrongType) {
-  ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   const char* test_json =
       "{\n"
       "  \"connectionScaling\": 3\n"
@@ -360,8 +335,6 @@ TEST_F(ClientChannelParserTest, ConnectionScalingWrongType) {
 }
 
 TEST_F(ClientChannelParserTest, ConnectionScalingFieldHasWrongType) {
-  ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
   const char* test_json =
       "{\n"
       "  \"connectionScaling\": {\n"

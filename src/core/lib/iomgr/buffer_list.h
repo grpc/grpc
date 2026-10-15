@@ -64,7 +64,7 @@ struct ConnectionMetrics {
   std::optional<uint32_t> congestion_window;
   // Slow start threshold in packets.
   std::optional<uint32_t> snd_ssthresh;
-  // Maximum degree of reordering (i.e., maximum number of packets reodered)
+  // Maximum degree of reordering (i.e., maximum number of packets reordered)
   // on the connection.
   std::optional<uint32_t> reordering;
   // Represents the number of recurring retransmissions of the first sequence
@@ -123,7 +123,7 @@ class TracedBufferList {
                         struct scm_timestamping* tss);
   // The Size() operation is slow and is used only in tests.
   int Size() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     int size = 0;
     TracedBuffer* curr = head_;
     while (curr) {

@@ -28,6 +28,8 @@
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 
@@ -38,7 +40,13 @@ TmpFile::TmpFile(absl::string_view data) {
   GRPC_CHECK(!name_.empty());
 }
 
-TmpFile::~TmpFile() { GRPC_CHECK_EQ(remove(name_.c_str()), 0); }
+TmpFile::~TmpFile() {
+  int max_attempts = 20;
+  while (remove(name_.c_str()) != 0 && --max_attempts > 0) {
+    absl::SleepFor(absl::Seconds(1));
+  }
+  GRPC_CHECK(max_attempts >= 0) << "Failed to delete file " << name_;
+}
 
 void TmpFile::RewriteFile(absl::string_view data) {
   // Create a new file containing new data.
@@ -73,11 +81,11 @@ PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
   if (private_key.empty() && certs.empty()) {
     return {};
   }
-  return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
+  return {{std::string(private_key), certs}};
 }
 
 std::string GetFileContents(const std::string& path) {
-  auto slice = LoadFile(path, /*add_null_terminator=*/false);
+  auto slice = LoadFile(path);
   if (!slice.ok()) {
     Crash(absl::StrCat("error loading file ", path, ": ",
                        slice.status().ToString()));
@@ -108,7 +116,7 @@ void SyncExternalVerifier::Destruct(void* user_data) {
 AsyncExternalVerifier::~AsyncExternalVerifier() {
   // Tell the thread to shut down.
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     queue_.push_back(Request{nullptr, nullptr, nullptr, true});
   }
   // Wait for thread to exit.
@@ -122,7 +130,7 @@ int AsyncExternalVerifier::Verify(
     grpc_status_code*, char**) {
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
   // Add request to queue to be picked up by worker thread.
-  MutexLock lock(&self->mu_);
+  MutexLock lock(self->mu_);
   self->queue_.push_back(Request{request, callback, callback_arg, false});
   return false;  // Asynchronous call
 }
@@ -152,7 +160,7 @@ void AsyncExternalVerifier::WorkerThread(void* arg) {
     bool got_request = false;
     Request request;
     {
-      MutexLock lock(&self->mu_);
+      MutexLock lock(self->mu_);
       if (!self->queue_.empty()) {
         got_request = true;
         request = self->queue_.front();

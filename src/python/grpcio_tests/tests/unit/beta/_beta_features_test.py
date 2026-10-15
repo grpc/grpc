@@ -40,7 +40,7 @@ _REQUEST = b"abc"
 _RESPONSE = b"123"
 
 
-class _Servicer(object):
+class _Servicer:
     def __init__(self):
         self._condition = threading.Condition()
         self._peer = None
@@ -99,7 +99,7 @@ class _Servicer(object):
                 self._condition.wait()
 
 
-class _BlockingIterator(object):
+class _BlockingIterator:
     def __init__(self, upstream):
         self._condition = threading.Condition()
         self._upstream = upstream

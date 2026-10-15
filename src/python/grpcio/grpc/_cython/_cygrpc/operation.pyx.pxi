@@ -161,19 +161,20 @@ cdef class ReceiveMessageOperation(Operation):
     cdef bint message_reader_status
     cdef grpc_slice message_slice
     cdef size_t message_slice_length
-    cdef void *message_slice_pointer
+    cdef list chunks = []
+
     if self._c_message_byte_buffer != NULL:
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
-        message = bytearray()
         while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
-          message_slice_pointer = grpc_slice_start_ptr(message_slice)
           message_slice_length = grpc_slice_length(message_slice)
-          message += (<char *>message_slice_pointer)[:message_slice_length]
+          if message_slice_length > 0:
+            chunks.append((<char *>grpc_slice_start_ptr(message_slice))[:message_slice_length])
           grpc_slice_unref(message_slice)
+
         grpc_byte_buffer_reader_destroy(&message_reader)
-        self._message = bytes(message)
+        self._message = b"".join(chunks)
       else:
         self._message = None
       grpc_byte_buffer_destroy(self._c_message_byte_buffer)

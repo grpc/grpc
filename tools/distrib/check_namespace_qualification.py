@@ -34,7 +34,7 @@ def save(fpath, contents):
         f.write(contents)
 
 
-class QualificationValidator(object):
+class QualificationValidator:
     def __init__(self):
         self.fully_qualified_re = re.compile(r"([ (<])::(grpc[A-Za-z_:])")
         self.using_re = re.compile(

@@ -2,7 +2,6 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 exports_files([
     "gtest.BUILD",
-    "zlib.BUILD",
     "twisted.BUILD",
     "yaml.BUILD",
     "incremental.BUILD",
@@ -13,6 +12,7 @@ exports_files([
     "typing_extensions.BUILD",
     "enum34.BUILD",
     "futures.BUILD",
+    "envoy-api.patch",
     "opencensus-cpp.patch",
     "protobuf.patch",
     "protoc-gen-validate.patch",

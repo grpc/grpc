@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
@@ -311,13 +312,25 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
                               authorization_provider_->c_provider(),
                               grpc_authorization_policy_provider_arg_vtable());
   }
+  if (event_engine_ != nullptr) {
+    args.SetPointerWithVtable(
+        GRPC_ARG_EVENT_ENGINE, &event_engine_,
+        grpc_event_engine::experimental::grpc_event_engine_arg_vtable());
+  }
   return args;
+}
+
+ServerBuilder& ServerBuilder::SetEventEngine(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
+  event_engine_ = event_engine;
+  return *this;
 }
 
 std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   ChannelArguments args = BuildChannelArgs();
 
-  // == Determine if the server has any syncrhonous methods ==
+  // == Determine if the server has any synchronous methods ==
   bool has_sync_methods = false;
   for (const auto& value : services_) {
     if (value->service->has_synchronous_methods()) {
@@ -400,8 +413,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       &args, sync_server_cqs, sync_server_settings_.min_pollers,
       sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
-      std::move(acceptors_), server_config_fetcher_, resource_quota_,
-      std::move(interceptor_creators_), server_metric_recorder_));
+      std::move(acceptors_), resource_quota_, std::move(interceptor_creators_),
+      server_metric_recorder_));
 
   ServerInitializer* initializer = server->initializer();
 
@@ -521,4 +534,24 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
   }
 }
 
+namespace {
+class ChildChannelArgsOption : public ServerBuilderOption {
+ public:
+  explicit ChildChannelArgsOption(const ChannelArguments& args) : args_(args) {}
+  void UpdateArguments(ChannelArguments* args) override {
+    args->SetChildChannelArgs(args_);
+  }
+  void UpdatePlugins(
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>* /*plugins*/) override {
+  }
+
+ private:
+  ChannelArguments args_;
+};
+}  // namespace
+
+ServerBuilder& ServerBuilder::SetChildChannelArgs(
+    const ChannelArguments& args) {
+  return SetOption(std::make_unique<ChildChannelArgsOption>(args));
+}
 }  // namespace grpc

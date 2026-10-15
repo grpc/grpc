@@ -60,6 +60,14 @@ grpc_service_account_jwt_access_credentials_create(const char* json_key,
 GRPCAPI grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string);
 
+/** Builds Google Distributed Cloud Hosting Service Account credentials.
+- json_string is the JSON string containing the service account key.
+- audience_string is the intended recipient or service.
+  This API is used for experimental purposes for now and may change in the
+ future. */
+GRPCAPI grpc_call_credentials* grpc_gdch_service_account_credentials_create(
+    const char* json_string, const char* audience_string);
+
 /** Creates an Oauth2 Refresh Token credentials object for connecting to Google.
    May return NULL if the input is invalid.
    WARNING: Do NOT use this credentials to connect to a non-google service as
@@ -765,6 +773,8 @@ typedef struct grpc_tls_custom_verification_check_request {
      * This value will only be filled if the cryptographic peer certificate
      * verification was successful */
     const char* verified_root_cert_subject;
+    /* The negotiated key exchange group. */
+    const char* negotiated_key_exchange_group;
   } peer_info;
 } grpc_tls_custom_verification_check_request;
 
@@ -1256,6 +1266,17 @@ GRPCAPI void grpc_tls_credentials_options_set_check_call_host(
  */
 GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
     grpc_tls_credentials_options* options, const char* path);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the list of key exchange groups (TLS curves) that will be negotiated
+ * during the TLS handshake, in order of preference. If not set, a default list
+ * will be used.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_key_exchange_groups(
+    grpc_tls_credentials_options* options,
+    const grpc_tls_key_exchange_group* groups, size_t num_groups);
 
 #ifdef __cplusplus
 }

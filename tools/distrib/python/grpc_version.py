@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpc_version.py.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpc_version.py.inja`!!!
 
-VERSION = '1.79.0.dev0'
-PROTOBUF_VERSION = '4.31.1'
+VERSION = '1.86.0.dev0'
+PROTOBUF_VERSION = '7.35.1'

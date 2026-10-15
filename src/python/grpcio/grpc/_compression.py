@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
@@ -53,7 +53,8 @@ def create_channel_option(compression: Optional[grpc.Compression]):
 
 
 def augment_metadata(
-    metadata: Optional[MetadataType], compression: Optional[grpc.Compression]
+    metadata: Optional[Union[MetadataType, grpc.aio.Metadata]],
+    compression: Optional[grpc.Compression],
 ):
     if not metadata and not compression:
         return None

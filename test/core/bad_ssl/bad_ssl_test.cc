@@ -38,6 +38,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
@@ -117,11 +118,13 @@ static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials_release(ssl_creds);
 }
 
-int main(int argc, char** argv) {
-  char* me = argv[0];
-  char* lslash = strrchr(me, '/');
-  char* lunder = strrchr(me, '_');
-  char* tmp;
+const char* g_argv_0;
+
+TEST(BadSsl, Test) {
+  const char* me = g_argv_0;
+  const char* lslash = strrchr(me, '/');
+  const char* lunder = strrchr(me, '_');
+  const char* tmp;
   char root[1024];
   char test[64];
   int port = grpc_pick_unused_port_or_die();
@@ -136,21 +139,21 @@ int main(int argc, char** argv) {
   } else {
     strcpy(root, ".");
   }
-  if (argc == 2) {
-    grpc_core::SetEnv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", argv[1]);
-  }
   // figure out our test name
   tmp = lunder - 1;
   while (*tmp != '_') tmp--;
   tmp++;
-  memcpy(test, tmp, static_cast<size_t>(lunder - tmp));
+  size_t test_len = static_cast<size_t>(lunder - tmp);
+  if (test_len >= sizeof(test)) test_len = sizeof(test) - 1;
+  memcpy(test, tmp, test_len);
+  test[test_len] = 0;
   // start the server
   gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test,
                gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--bind");
   std::string joined = grpc_core::JoinHostPort("::", port);
   args[2] = const_cast<char*>(joined.c_str());
-  svr = gpr_subprocess_create(4, const_cast<const char**>(args));
+  svr = gpr_subprocess_create(3, const_cast<const char**>(args));
   gpr_free(args[0]);
 
   for (i = 3; i <= 4; i++) {
@@ -162,5 +165,19 @@ int main(int argc, char** argv) {
   gpr_subprocess_interrupt(svr);
   status = gpr_subprocess_join(svr);
   gpr_subprocess_destroy(svr);
-  return status;
+  EXPECT_EQ(status, 0);
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
+  g_argv_0 = argv[0];
+  if (argc == 2) {
+    grpc_core::SetEnv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", argv[1]);
+  }
+  if (!grpc_core::GetEnv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH").has_value()) {
+    grpc_core::SetEnv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH",
+                      "src/core/tsi/test_creds/ca.pem");
+  }
+  return RUN_ALL_TESTS();
 }

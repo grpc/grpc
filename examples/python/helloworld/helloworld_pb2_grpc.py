@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class GreeterStub(object):
+class GreeterStub:
     """The greeting service definition.
     """
 
@@ -52,7 +52,7 @@ class GreeterStub(object):
                 _registered_method=True)
 
 
-class GreeterServicer(object):
+class GreeterServicer:
     """The greeting service definition.
     """
 
@@ -101,7 +101,7 @@ def add_GreeterServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class Greeter(object):
+class Greeter:
     """The greeting service definition.
     """
 

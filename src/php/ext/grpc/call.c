@@ -335,6 +335,14 @@ PHP_METHOD(Call, startBatch) {
       goto cleanup;
     }
 
+    // We shouldn't hit this as there are 0-7 valid op codes.
+    // Adding this as a safeguard against incorrect usage of this method.
+    if (op_num >= 8) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "Too many operations in batch", 1 TSRMLS_CC);
+      goto cleanup;
+    }
+
     ops[op_num].op = (grpc_op_type)index;
     ops[op_num].flags = 0;
     ops[op_num].reserved = NULL;

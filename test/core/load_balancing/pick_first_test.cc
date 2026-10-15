@@ -42,6 +42,7 @@
 #include "src/core/util/work_serializer.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -1057,9 +1058,6 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
 }
 
 TEST_F(PickFirstTest, GoesConnectingWhenSelectedSubchannelGoesConnecting) {
-  if (!IsPickFirstReadyToConnectingEnabled()) {
-    GTEST_SKIP() << "requires pick_first_ready_to_connecting experiment";
-  }
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
@@ -1124,9 +1122,6 @@ TEST_F(PickFirstTest, GoesConnectingWhenSelectedSubchannelGoesConnecting) {
 
 TEST_F(PickFirstTest,
        GoesConnectingWhenSelectedSubchannelGoesTransientFailure) {
-  if (!IsPickFirstReadyToConnectingEnabled()) {
-    GTEST_SKIP() << "requires pick_first_ready_to_connecting experiment";
-  }
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
@@ -1232,8 +1227,6 @@ TEST_F(PickFirstTest, AddressUpdateRemovedSelectedAddress) {
   status = ApplyUpdate(BuildUpdate({kAddresses[1]}, MakePickFirstConfig(false)),
                        lb_policy());
   EXPECT_TRUE(status.ok()) << status;
-  // We should see a re-resolution request.
-  if (!IsPickFirstReadyToConnectingEnabled()) ExpectReresolutionRequest();
   // LB policy reports IDLE with a queueing picker.
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE);
   // By checking the picker, we told the LB policy to trigger a new
@@ -1509,6 +1502,32 @@ TEST_F(PickFirstTest, WithShuffle) {
   std::vector<absl::string_view> addresses_on_another_try;
   GetOrderAddressesArePicked(kAddresses, &addresses_on_another_try);
   EXPECT_EQ(addresses_on_another_try, addresses_after_update);
+}
+
+TEST_F(PickFirstTest, WithWeightedShuffle) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
+  std::vector<EndpointAddresses> endpoints;
+  endpoints.push_back(MakeEndpointAddresses(
+      {kAddresses[0]}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 10000)));
+  endpoints.push_back(MakeEndpointAddresses(
+      {kAddresses[1]}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
+  endpoints.push_back(MakeEndpointAddresses(
+      {kAddresses[2]}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
+  size_t first_address_picked_count = 0;
+  constexpr size_t kRuns = 100;
+  for (size_t i = 0; i < kRuns; ++i) {
+    absl::Status status = ApplyUpdate(
+        BuildUpdate(endpoints, MakePickFirstConfig(true)), lb_policy());
+    EXPECT_TRUE(status.ok()) << status;
+    std::vector<absl::string_view> addresses_after_update;
+    GetOrderAddressesArePicked(kAddresses, &addresses_after_update);
+    if (addresses_after_update.front() == kAddresses[0]) {
+      ++first_address_picked_count;
+    }
+  }
+  EXPECT_GE(first_address_picked_count, 95);
 }
 
 TEST_F(PickFirstTest, ShufflingDisabled) {

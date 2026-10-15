@@ -176,6 +176,28 @@ absl::Status HpackParseResult::BuildMaterialized() const {
           "Invalid HPACK index received (%d)", state_->invalid_hpack_index));
     case HpackParseStatus::kIllegalHpackOpCode:
       return absl::InternalError("Illegal hpack op code");
+    case HpackParseStatus::kMitigationEngineConnectionError:
+      if (state_->key.empty()) {
+        return absl::InternalError(
+            absl::StrCat("Mitigation engine triggered action ",
+                         MitigationEngine::ActionToString(state_->action)));
+      } else {
+        return absl::InternalError(
+            absl::StrCat("Mitigation engine triggered action ",
+                         MitigationEngine::ActionToString(state_->action),
+                         " for key: ", state_->key));
+      }
+    case HpackParseStatus::kMitigationEngineStreamError:
+      if (state_->key.empty()) {
+        return MakeStreamError(absl::InternalError(
+            absl::StrCat("Mitigation engine triggered action ",
+                         MitigationEngine::ActionToString(state_->action))));
+      } else {
+        return MakeStreamError(absl::InternalError(
+            absl::StrCat("Mitigation engine triggered action ",
+                         MitigationEngine::ActionToString(state_->action),
+                         " for key: ", state_->key)));
+      }
   }
   GPR_UNREACHABLE_CODE(return absl::UnknownError("Should never reach here"));
 }

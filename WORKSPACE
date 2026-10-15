@@ -1,5 +1,16 @@
 workspace(name = "com_github_grpc_grpc")
 
+# buildifier: disable=print
+print("""
+============================================================================
+[WARNING] gRPC will deprecate WORKSPACE support in 1.87 in favor of bzlmod
+to ensure compatibility with Bazel 9 and newer. Please migrate to using a
+MODULE.bazel file for dependency management.
+
+Migration Guide: https://bazel.build/external/migration
+============================================================================
+""")
+
 load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
 
 grpc_deps()
@@ -42,10 +53,18 @@ local_repository(
     path = "third_party/utf8_range",
 )
 
+load("@rules_python//python:repositories.bzl", "python_register_toolchains")
+
+python_register_toolchains(
+    name = "python_3_11",
+    python_version = "3.11",
+)
+
 load("@rules_python//python:pip.bzl", "pip_parse")
 
 pip_parse(
     name = "grpc_python_dependencies",
+    python_interpreter_target = "@python_3_11_host//:python",
     requirements_lock = "@com_github_grpc_grpc//:requirements.bazel.lock",
 )
 
@@ -57,7 +76,7 @@ load("@com_google_protobuf//python/dist:system_python.bzl", "system_python")
 
 system_python(
     name = "system_python",
-    minimum_python_version = "3.9",
+    minimum_python_version = "3.10",
 )
 
 load("@system_python//:pip.bzl", system_pip_parse = "pip_parse")

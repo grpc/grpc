@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Unary response, as configured by the request.
@@ -110,9 +110,8 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\Payload $var
      * @return $this
      */
-    public function setPayload($var)
+    public function setPayload(\Grpc\Testing\Payload|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\Payload::class);
         $this->payload = $var;
 
         return $this;
@@ -138,9 +137,9 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setUsername($var)
+    public function setUsername(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->username = $var;
 
         return $this;
@@ -164,9 +163,9 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setOauthScope($var)
+    public function setOauthScope(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->oauth_scope = $var;
 
         return $this;
@@ -192,9 +191,9 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setServerId($var)
+    public function setServerId(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->server_id = $var;
 
         return $this;
@@ -204,7 +203,7 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * gRPCLB Path.
      *
      * Generated from protobuf field <code>.grpc.testing.GrpclbRouteType grpclb_route_type = 5;</code>
-     * @return int
+     * @return int one of the values in {@see \Grpc\Testing\GrpclbRouteType}
      */
     public function getGrpclbRouteType()
     {
@@ -215,10 +214,10 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * gRPCLB Path.
      *
      * Generated from protobuf field <code>.grpc.testing.GrpclbRouteType grpclb_route_type = 5;</code>
-     * @param int $var
+     * @param int $var one of the values in {@see \Grpc\Testing\GrpclbRouteType}
      * @return $this
      */
-    public function setGrpclbRouteType($var)
+    public function setGrpclbRouteType(int $var)
     {
         GPBUtil::checkEnum($var, \Grpc\Testing\GrpclbRouteType::class);
         $this->grpclb_route_type = $var;
@@ -244,9 +243,9 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setHostname($var)
+    public function setHostname(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->hostname = $var;
 
         return $this;

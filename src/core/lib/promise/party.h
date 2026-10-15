@@ -280,10 +280,12 @@ class Party : public Activity, private Wakeable {
     // spawning of promises is expected to be serialized by some external entity
     // (usually this is a Seq running on a different party).
     template <class Factory>
-    void Spawn(Factory factory) {
+    void Spawn(Factory&& factory) {
       auto empty_completion = [](Empty) {};
-      next_.Push(new ParticipantImpl<Factory, decltype(empty_completion)>(
-          "SpawnSerializer", std::move(factory), empty_completion));
+      next_.Push(new ParticipantImpl<std::decay_t<Factory>,
+                                     decltype(empty_completion)>(
+          "SpawnSerializer", std::forward<Factory>(factory),
+          std::move(empty_completion)));
       party_->WakeupFromState<false>(
           party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
     }
@@ -338,11 +340,11 @@ class Party : public Activity, private Wakeable {
   // A party can hold upto 16 unresolved promises at a time. However, this
   // number might change in the future.
   template <typename Factory, typename OnComplete>
-  void Spawn(absl::string_view name, Factory promise_factory,
-             OnComplete on_complete);
+  void Spawn(absl::string_view name, Factory&& promise_factory,
+             OnComplete&& on_complete);
 
   template <typename Factory>
-  auto SpawnWaitable(absl::string_view name, Factory factory);
+  auto SpawnWaitable(absl::string_view name, Factory&& factory);
 
   void Orphan() final { Crash("unused"); }
 
@@ -430,10 +432,10 @@ class Party : public Activity, private Wakeable {
     using Promise = typename Factory::Promise;
 
    public:
-    ParticipantImpl(absl::string_view, SuppliedFactory promise_factory,
-                    OnComplete on_complete)
-        : on_complete_(std::move(on_complete)) {
-      Construct(&factory_, std::move(promise_factory));
+    ParticipantImpl(absl::string_view, SuppliedFactory&& promise_factory,
+                    OnComplete&& on_complete)
+        : on_complete_(std::forward<OnComplete>(on_complete)) {
+      Construct(&factory_, std::forward<SuppliedFactory>(promise_factory));
     }
     ~ParticipantImpl() {
       if (!started_) {
@@ -492,8 +494,9 @@ class Party : public Activity, private Wakeable {
     using Result = typename Promise::Result;
 
    public:
-    PromiseParticipantImpl(absl::string_view, SuppliedFactory promise_factory) {
-      Construct(&factory_, std::move(promise_factory));
+    PromiseParticipantImpl(absl::string_view,
+                           SuppliedFactory&& promise_factory) {
+      Construct(&factory_, std::forward<SuppliedFactory>(promise_factory));
     }
 
     ~PromiseParticipantImpl() {
@@ -716,18 +719,21 @@ struct ContextSubclass<Party> {
 };
 
 template <typename Factory, typename OnComplete>
-void Party::Spawn(absl::string_view name, Factory promise_factory,
-                  OnComplete on_complete) {
+void Party::Spawn(absl::string_view name, Factory&& promise_factory,
+                  OnComplete&& on_complete) {
   GRPC_TRACE_LOG(party_state, INFO) << "PARTY[" << this << "]: spawn " << name;
-  MaybeAsyncAddParticipant(new ParticipantImpl<Factory, OnComplete>(
-      name, std::move(promise_factory), std::move(on_complete)));
+  MaybeAsyncAddParticipant(
+      new ParticipantImpl<std::decay_t<Factory>, std::decay_t<OnComplete>>(
+          name, std::forward<Factory>(promise_factory),
+          std::forward<OnComplete>(on_complete)));
 }
 
 template <typename Factory>
-auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
+auto Party::SpawnWaitable(absl::string_view name, Factory&& promise_factory) {
   GRPC_TRACE_LOG(party_state, INFO) << "PARTY[" << this << "]: spawn " << name;
-  auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
-      name, std::move(promise_factory));
+  auto participant =
+      MakeRefCounted<PromiseParticipantImpl<std::decay_t<Factory>>>(
+          name, std::forward<Factory>(promise_factory));
   Participant* p = participant->Ref().release();
   MaybeAsyncAddParticipant(p);
   return [participant = std::move(participant)]() mutable {

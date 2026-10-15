@@ -40,6 +40,47 @@ class ChannelCredentialsTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($channel_credentials);
     }
 
+    public function testCreateSslHashingIsolation()
+    {
+        $cred1 = Grpc\ChannelCredentials::createSsl('ca1', 'key1', 'cert1');
+        $channel1 = new Grpc\Channel('localhost:1', ['credentials' => $cred1]);
+        if (!method_exists($channel1, 'getChannelInfo')) {
+            $this->markTestSkipped('GRPC_PHP_DEBUG not enabled');
+        }
+        $info1 = $channel1->getChannelInfo();
+
+        // Change CA
+        $cred2 = Grpc\ChannelCredentials::createSsl('ca2', 'key1', 'cert1');
+        $channel2 = new Grpc\Channel('localhost:1', ['credentials' => $cred2]);
+        $info2 = $channel2->getChannelInfo();
+
+        // Change Key
+        $cred3 = Grpc\ChannelCredentials::createSsl('ca1', 'key2', 'cert1');
+        $channel3 = new Grpc\Channel('localhost:1', ['credentials' => $cred3]);
+        $info3 = $channel3->getChannelInfo();
+
+        // Change Cert
+        $cred4 = Grpc\ChannelCredentials::createSsl('ca1', 'key1', 'cert2');
+        $channel4 = new Grpc\Channel('localhost:1', ['credentials' => $cred4]);
+        $info4 = $channel4->getChannelInfo();
+
+        // All Same
+        $cred5 = Grpc\ChannelCredentials::createSsl('ca1', 'key1', 'cert1');
+        $channel5 = new Grpc\Channel('localhost:1', ['credentials' => $cred5]);
+        $info5 = $channel5->getChannelInfo();
+
+        $this->assertNotEquals($info1['key'], $info2['key']);
+        $this->assertNotEquals($info1['key'], $info3['key']);
+        $this->assertNotEquals($info1['key'], $info4['key']);
+        $this->assertEquals($info1['key'], $info5['key']);
+
+        $channel1->close();
+        $channel2->close();
+        $channel3->close();
+        $channel4->close();
+        $channel5->close();
+    }
+
     public function testCreateInsecure()
     {
         $channel_credentials = Grpc\ChannelCredentials::createInsecure();
@@ -60,6 +101,14 @@ class ChannelCredentialsTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $channel_credentials = Grpc\ChannelCredentials::createSsl([]);
+    }
+
+    public function testCreateCompositeWithDefault()
+    {
+        $cred1 = Grpc\ChannelCredentials::createDefault();
+        $cred2 = Grpc\CallCredentials::createFromPlugin(function($context) { return []; });
+        $channel_credentials = Grpc\ChannelCredentials::createComposite($cred1, $cred2);
+        $this->assertNotNull($channel_credentials);
     }
 
     public function testInvalidCreateComposite()

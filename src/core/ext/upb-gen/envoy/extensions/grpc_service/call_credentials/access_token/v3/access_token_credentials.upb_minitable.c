@@ -14,25 +14,27 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableField envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials__fields[1] = {
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+} envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init_Fields;
+
+static const envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init_Fields envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials__fields = {{
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init = {
-  NULL,
-  &envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials__fields[0],
+  &envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.grpc_service.call_credentials.access_token.v3.AccessTokenCredentials",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
+    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init_ptr = &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init,
 };

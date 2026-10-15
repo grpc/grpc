@@ -42,11 +42,11 @@ class InterActivityLatch {
   // Produce a promise to wait for this latch.
   auto Wait() {
     return [this]() -> Poll<T> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       GRPC_TRACE_LOG(promise_primitives, INFO)
           << DebugTag() << "PollWait " << StateString();
-      if (is_set_) {
-        return std::move(value_);
+      if (value_.has_value()) {
+        return std::move(*value_);
       } else {
         return waiters_.AddPending(
             GetContext<Activity>()->MakeNonOwningWaker());
@@ -56,17 +56,16 @@ class InterActivityLatch {
 
   // Set the latch.
   void Set(T value) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugTag() << "Set " << StateString();
-    is_set_ = true;
     value_ = std::move(value);
     waiters_.WakeupAsync();
   }
 
   bool IsSet() const ABSL_LOCKS_EXCLUDED(mu_) {
-    MutexLock lock(&mu_);
-    return is_set_;
+    MutexLock lock(mu_);
+    return value_.has_value();
   }
 
  private:
@@ -78,14 +77,12 @@ class InterActivityLatch {
   }
 
   std::string StateString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return absl::StrCat("is_set:", is_set_);
+    return absl::StrCat("is_set:", value_.has_value());
   }
 
   mutable Mutex mu_;
-  // True if we have a value set, false otherwise.
-  bool is_set_ ABSL_GUARDED_BY(mu_) = false;
   WaitSet waiters_ ABSL_GUARDED_BY(mu_);
-  T value_ ABSL_GUARDED_BY(mu_);
+  std::optional<T> value_ ABSL_GUARDED_BY(mu_);
 };
 
 template <>
@@ -98,7 +95,7 @@ class InterActivityLatch<void> {
   // Produce a promise to wait for this latch.
   auto Wait() {
     return [this]() -> Poll<Empty> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       GRPC_TRACE_LOG(promise_primitives, INFO)
           << DebugTag() << "PollWait " << StateString();
       if (is_set_) {
@@ -112,7 +109,7 @@ class InterActivityLatch<void> {
 
   // Set the latch.
   void Set() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugTag() << "Set " << StateString();
     is_set_ = true;
@@ -120,7 +117,7 @@ class InterActivityLatch<void> {
   }
 
   bool IsSet() const ABSL_LOCKS_EXCLUDED(mu_) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return is_set_;
   }
 

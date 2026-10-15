@@ -26,6 +26,7 @@ fi
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
+    'bazel/update_mirror_helper.py'
     'examples/python'
     'src/python'
     'test'
@@ -34,11 +35,11 @@ DIRS=(
 )
 
 VIRTUALENV=".venv-ci-isort"
-python3 -m virtualenv "${VIRTUALENV}"
+python3 -m venv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
 python -VV
 
 pip install isort==6.0.1
 pip list
 
-isort $ACTION --settings-path=grpc-style-config.toml "${DIRS[@]}"
+isort $ACTION "${DIRS[@]}"

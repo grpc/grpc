@@ -232,10 +232,10 @@ tsi_result tsi_handshaker_next(
                             handshaker_result, cb, user_data, error);
 }
 
-void tsi_handshaker_shutdown(tsi_handshaker* self) {
+void tsi_handshaker_shutdown(tsi_handshaker* self, bool peer_closed) {
   if (self == nullptr || self->vtable == nullptr) return;
   if (self->vtable->shutdown != nullptr) {
-    self->vtable->shutdown(self);
+    self->vtable->shutdown(self, peer_closed);
   }
   self->handshake_shutdown = true;
 }

@@ -70,7 +70,7 @@ CONTROL_ENDPOINT_TEST(CanWriteSecurityFrame) {
                  nullptr);
   SliceBuffer security_frame_bytes(
       Slice::FromCopiedString("security_frame_bytes"));
-  control_endpoint.SecureFrameWriterCallback()(&security_frame_bytes);
+  control_endpoint.SecureFrameWriterCallback()(std::move(security_frame_bytes));
   WaitForAllPendingWork();
 }
 

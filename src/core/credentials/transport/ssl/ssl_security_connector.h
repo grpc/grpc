@@ -25,13 +25,15 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
+#include <vector>
+
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 struct grpc_ssl_config {
-  tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
-  char* pem_root_certs;
+  grpc_core::PemKeyCertPair pem_key_cert_pair;
+  std::string pem_root_certs;
   verify_peer_options verify_options;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
@@ -60,9 +62,8 @@ grpc_ssl_channel_security_connector_create(
 
 // Config for ssl servers.
 struct grpc_ssl_server_config {
-  tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
-  size_t num_key_cert_pairs = 0;
-  char* pem_root_certs = nullptr;
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+  std::string pem_root_certs;
   grpc_ssl_client_certificate_request_type client_certificate_request =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;

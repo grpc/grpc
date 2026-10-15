@@ -18,6 +18,8 @@
 #include <memory>
 #include <utility>
 
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
+#include "upb/mem/arena.hpp"
 #include "gtest/gtest.h"
 #include "absl/utility/utility.h"
 
@@ -178,6 +180,46 @@ TEST(TryJoinTestBasic, TryJoinPendingFailure) {
 
   EXPECT_EQ(retval.value().status().code(), absl::StatusCode::kInternal);
   EXPECT_EQ(retval.value().status().message(), "Promise Errror");
+}
+
+TEST(TryJoinTestBasic, ToProto) {
+  auto promise = TryJoin<absl::StatusOr>(
+      []() -> Poll<absl::StatusOr<int>> { return 1; },
+      []() -> Poll<absl::StatusOr<int>> { return Pending{}; });
+
+  upb::Arena arena;
+  grpc_channelz_v2_Promise* proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  promise.ToProto(proto, arena.ptr());
+
+  const auto* join = grpc_channelz_v2_Promise_join_promise(proto);
+  ASSERT_NE(join, nullptr);
+  EXPECT_EQ(grpc_channelz_v2_Promise_Join_kind(join),
+            grpc_channelz_v2_Promise_TRY);
+
+  size_t num_branches = 0;
+  const auto* const* branches =
+      grpc_channelz_v2_Promise_Join_branches(join, &num_branches);
+  ASSERT_EQ(num_branches, 2);
+
+  // Poll once.
+  promise();
+
+  // Re-generate proto.
+  proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  promise.ToProto(proto, arena.ptr());
+  join = grpc_channelz_v2_Promise_join_promise(proto);
+  branches = grpc_channelz_v2_Promise_Join_branches(join, &num_branches);
+
+  // Branch 0 should be ready.
+  upb_StringView result_view0 =
+      grpc_channelz_v2_Promise_JoinBranch_result(branches[0]);
+  EXPECT_TRUE(
+      upb_StringView_IsEqual(result_view0, upb_StringView_FromString("ready")));
+
+  // Branch 1 should be pending.
+  upb_StringView result_view1 =
+      grpc_channelz_v2_Promise_JoinBranch_result(branches[1]);
+  EXPECT_EQ(result_view1.size, 0);
 }
 
 struct AbslStatusTraits {

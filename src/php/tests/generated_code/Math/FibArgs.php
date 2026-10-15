@@ -6,8 +6,8 @@
 namespace Math;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>math.FibArgs</code>
@@ -47,7 +47,7 @@ class FibArgs extends \Google\Protobuf\Internal\Message
      * @param int|string $var
      * @return $this
      */
-    public function setLimit($var)
+    public function setLimit(int|string $var)
     {
         GPBUtil::checkInt64($var);
         $this->limit = $var;

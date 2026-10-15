@@ -5,7 +5,7 @@ import grpc
 import route_guide_pb2 as route__guide__pb2
 
 
-class RouteGuideStub(object):
+class RouteGuideStub:
     """Interface exported by the server.
     """
 
@@ -37,7 +37,7 @@ class RouteGuideStub(object):
                 )
 
 
-class RouteGuideServicer(object):
+class RouteGuideServicer:
     """Interface exported by the server.
     """
 
@@ -115,7 +115,7 @@ def add_RouteGuideServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class RouteGuide(object):
+class RouteGuide:
     """Interface exported by the server.
     """
 

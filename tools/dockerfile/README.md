@@ -19,11 +19,11 @@ including artifact registry location, docker image name, the current tag and the
 SHA256 image digest.
 
 Example:
-For `tools/dockerfile/test/cxx_debian11_x64/Dockerfile`, there is a
-`tools/dockerfile/test/cxx_debian11_x64.current_version` file which contains info
+For `tools/dockerfile/test/cxx_debian12_x64/Dockerfile`, there is a
+`tools/dockerfile/test/cxx_debian12_x64.current_version` file which contains info
 as follows:
 ```
-us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian11_x64:[CURRENT_CHECKSUM]@sha256:[CURRENT_SHA256_DIGEST]
+us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian12_x64:[CURRENT_CHECKSUM]@sha256:[CURRENT_SHA256_DIGEST]
 ```
 This info can be passed directly to `docker run` command to get an environment
 that's identical to what we use when testing on CI.

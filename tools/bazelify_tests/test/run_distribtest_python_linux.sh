@@ -25,4 +25,10 @@ ls -lR input_artifacts
 export EXTERNAL_GIT_ROOT="$(pwd)"
 mv input_artifacts/package_python_linux/* input_artifacts/ || true
 
+# Use /usr/local/bin/python3 if it exists (typical for official Python Docker
+# images or source installs) to ensure we test against the intended Python
+# version rather than the system default.
+if [ -x /usr/local/bin/python3 ]; then
+  export PYTHON_BIN=/usr/local/bin/python3
+fi
 test/distrib/python/run_binary_distrib_test.sh

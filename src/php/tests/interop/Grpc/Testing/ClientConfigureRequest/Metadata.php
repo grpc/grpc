@@ -6,8 +6,8 @@
 namespace Grpc\Testing\ClientConfigureRequest;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Metadata to be attached for the given type of RPCs.
@@ -47,7 +47,7 @@ class Metadata extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>.grpc.testing.ClientConfigureRequest.RpcType type = 1;</code>
-     * @return int
+     * @return int one of the values in {@see \Grpc\Testing\ClientConfigureRequest\RpcType}
      */
     public function getType()
     {
@@ -56,10 +56,10 @@ class Metadata extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>.grpc.testing.ClientConfigureRequest.RpcType type = 1;</code>
-     * @param int $var
+     * @param int $var one of the values in {@see \Grpc\Testing\ClientConfigureRequest\RpcType}
      * @return $this
      */
-    public function setType($var)
+    public function setType(int $var)
     {
         GPBUtil::checkEnum($var, \Grpc\Testing\ClientConfigureRequest\RpcType::class);
         $this->type = $var;
@@ -81,9 +81,9 @@ class Metadata extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setKey($var)
+    public function setKey(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->key = $var;
 
         return $this;
@@ -103,9 +103,9 @@ class Metadata extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setValue($var)
+    public function setValue(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->value = $var;
 
         return $this;

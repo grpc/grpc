@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Client-streaming response.
@@ -56,7 +56,7 @@ class StreamingInputCallResponse extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setAggregatedPayloadSize($var)
+    public function setAggregatedPayloadSize(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->aggregated_payload_size = $var;

@@ -34,9 +34,15 @@ tools/bazel version
 # for kokoro mac workers, exact image version is store in a well-known location on disk
 KOKORO_IMAGE_VERSION="$(cat /VERSION)"
 
+# only upload results to the remote cache for the master branch
+UPLOAD_LOCAL_RESULTS="true"
+if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
+  UPLOAD_LOCAL_RESULTS="false"
+fi
+
 BAZEL_REMOTE_CACHE_ARGS=(
   # Enable uploading to remote cache. Requires the "roles/remotebuildexecution.actionCacheWriter" permission.
-  --remote_upload_local_results=true
+  --remote_upload_local_results="${UPLOAD_LOCAL_RESULTS}"
   # allow invalidating the old cache by setting to a new random key
   --remote_default_exec_properties="grpc_cache_silo_key1=83d8e488-1ca9-40fd-929e-d37d13529c99"
   # make sure we only get cache hits from binaries built on exact same macos image
@@ -54,8 +60,17 @@ TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsLocalCleartext
   //src/objective-c/tests:InteropTestsLocalSSL
   //src/objective-c/tests:InteropTestsRemote
-  //src/objective-c/tests:MacTests
-  //src/objective-c/tests:UnitTests
+  //src/objective-c/tests:APIv2Tests
+  //src/objective-c/tests:ChannelPoolTest
+  //src/objective-c/tests:ChannelTests
+  //src/objective-c/tests:GRPCBasicUnitTests
+  //src/objective-c/tests:GRPCClientTests
+  //src/objective-c/tests:NSErrorUnitTests
+  //src/objective-c/tests:RxLibraryUnitTests
+  //src/objective-c/tests:MacStressTests
+  //src/objective-c/tests:MacInteropTestsLocalCleartext
+  //src/objective-c/tests:MacInteropTestsLocalSSL
+  //src/objective-c/tests:MacInteropTestsRemote
   #//src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests
   # Needs oracle engine, which doesn't work with GRPC_IOS_EVENT_ENGINE_CLIENT=1
@@ -128,8 +143,17 @@ EVENT_ENGINE_TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsLocalCleartext
   //src/objective-c/tests:InteropTestsLocalSSL
   //src/objective-c/tests:InteropTestsRemote
-  //src/objective-c/tests:MacTests
-  //src/objective-c/tests:UnitTests
+  //src/objective-c/tests:APIv2Tests
+  //src/objective-c/tests:ChannelPoolTest
+  //src/objective-c/tests:ChannelTests
+  //src/objective-c/tests:GRPCBasicUnitTests
+  //src/objective-c/tests:GRPCClientTests
+  //src/objective-c/tests:NSErrorUnitTests
+  //src/objective-c/tests:RxLibraryUnitTests
+  //src/objective-c/tests:MacStressTests
+  //src/objective-c/tests:MacInteropTestsLocalCleartext
+  //src/objective-c/tests:MacInteropTestsLocalSSL
+  //src/objective-c/tests:MacInteropTestsRemote
   //src/objective-c/tests:EventEngineUnitTests
   //src/objective-c/tests:CFStreamTests
   //src/objective-c/tests:tvtests_build_test

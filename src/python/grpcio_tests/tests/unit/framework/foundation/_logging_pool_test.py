@@ -21,7 +21,7 @@ from grpc.framework.foundation import logging_pool
 _POOL_SIZE = 16
 
 
-class _CallableObject(object):
+class _CallableObject:
     def __init__(self):
         self._lock = threading.Lock()
         self._passed_values = []

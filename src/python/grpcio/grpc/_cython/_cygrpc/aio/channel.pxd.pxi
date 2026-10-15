@@ -22,6 +22,7 @@ cdef class AioChannel:
     cdef:
         grpc_channel * channel
         object loop
-        bytes _target
+        readonly bytes target
         AioChannelStatus _status
         bint _is_secure
+        dict _registered_call_handles

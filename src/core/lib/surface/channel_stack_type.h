@@ -36,6 +36,10 @@ typedef enum {
   GRPC_CLIENT_DIRECT_CHANNEL,
   // server side channel
   GRPC_SERVER_CHANNEL,
+  // virtual client channel
+  GRPC_CLIENT_VIRTUAL_CHANNEL,
+  // virtual server channel
+  GRPC_SERVER_VIRTUAL_CHANNEL,
   // must be last
   GRPC_NUM_CHANNEL_STACK_TYPES
 } grpc_channel_stack_type;

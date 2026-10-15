@@ -28,10 +28,10 @@
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/grpc/xds_tls_context.h"
 #include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
-#include "absl/container/flat_hash_map.h"
 
 namespace grpc_core {
 

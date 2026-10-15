@@ -51,6 +51,7 @@ grpc_cc_test(
     srcs = ["cf_engine_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/time",
         "gtest",
     ],
     tags = [

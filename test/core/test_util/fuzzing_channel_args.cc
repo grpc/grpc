@@ -47,6 +47,11 @@ ChannelArgs CreateChannelArgsFromFuzzingConfiguration(
         break;
     }
   }
+
+  if (fuzzing_environment.event_engine != nullptr) {
+    channel_args = channel_args.SetObject(fuzzing_environment.event_engine);
+  }
+
   return channel_args;
 }
 

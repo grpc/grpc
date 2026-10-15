@@ -31,8 +31,8 @@ template <typename T>
 class Observable {
  public:
   // We need to assign a value initially.
-  explicit Observable(T initial)
-      : state_(MakeRefCounted<State>(std::move(initial))) {}
+  explicit Observable(T&& initial)
+      : state_(MakeRefCounted<State>(std::forward<T>(initial))) {}
 
   // Update the value to something new. Awakes any waiters.
   void Set(T value) { state_->Set(std::move(value)); }
@@ -41,8 +41,8 @@ class Observable {
   // that value.
   // is_acceptable is any invocable that takes a `const T&` and returns a bool.
   template <typename F>
-  auto NextWhen(F is_acceptable) {
-    return ObserverWhen<F>(state_, std::move(is_acceptable));
+  auto NextWhen(F&& is_acceptable) {
+    return ObserverWhen<F>(state_, std::forward<F>(is_acceptable));
   }
 
   // Returns a promise that resolves to a T when the value becomes != current.
@@ -65,7 +65,7 @@ class Observable {
 
     // Update the value and wake all observers.
     void Set(T value) {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       std::swap(value_, value);
       WakeAll();
     }
@@ -115,7 +115,7 @@ class Observable {
       // If we saw a pending at all then we *may* be in the set of observers.
       // If not we're definitely not and we can avoid taking the lock at all.
       if (!saw_pending_) return;
-      MutexLock lock(state_->mu());
+      MutexLock lock(*state_->mu());
       auto w = std::move(waker_);
       state_->Remove(this);
     }
@@ -134,7 +134,7 @@ class Observable {
     virtual bool ShouldReturn(const T& current) = 0;
 
     Poll<T> operator()() {
-      MutexLock lock(state_->mu());
+      MutexLock lock(*state_->mu());
       // Check if the value has changed yet.
       if (ShouldReturn(state_->current())) {
         if (saw_pending_ && !waker_.is_unwakeable()) state_->Remove(this);
@@ -157,9 +157,9 @@ class Observable {
   template <typename F>
   class ObserverWhen : public Observer {
    public:
-    ObserverWhen(RefCountedPtr<State> state, F is_acceptable)
+    ObserverWhen(RefCountedPtr<State> state, F&& is_acceptable)
         : Observer(std::move(state)),
-          is_acceptable_(std::move(is_acceptable)) {}
+          is_acceptable_(std::forward<F>(is_acceptable)) {}
 
     ObserverWhen(ObserverWhen&& other) noexcept
         : Observer(std::move(other)),

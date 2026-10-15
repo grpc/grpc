@@ -69,10 +69,13 @@ _GRPC_DEP_NAMES = [
     "com_google_libprotobuf_mutator",
     "com_github_cncf_xds",
     "dev_cel",
+    "cel_c",
     "google_cloud_cpp",
     "rules_shell",
     "rules_java",
     "yaml-cpp",
+    "grpc_proto",
+    "autosharding",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -103,7 +106,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
 ]
 
 
-class BazelEvalState(object):
+class BazelEvalState:
     def __init__(self, names_and_urls, overridden_name=None):
         self.names_and_urls = names_and_urls
         self.overridden_name = overridden_name

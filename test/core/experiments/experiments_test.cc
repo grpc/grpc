@@ -40,6 +40,8 @@ bool GetExperimentTestExperiment3ExpectedValue() {
 
 bool GetExperimentTestExperiment4ExpectedValue() { return true; }
 
+bool GetExperimentTestExperiment5ExpectedValue() { return false; }
+
 #elif defined(GPR_WINDOWS)
 bool GetExperimentTestExperiment1ExpectedValue() { return false; }
 
@@ -55,6 +57,8 @@ bool GetExperimentTestExperiment3ExpectedValue() {
 }
 
 bool GetExperimentTestExperiment4ExpectedValue() { return true; }
+
+bool GetExperimentTestExperiment5ExpectedValue() { return false; }
 
 #else
 bool GetExperimentTestExperiment1ExpectedValue() {
@@ -85,6 +89,8 @@ bool GetExperimentTestExperiment3ExpectedValue() {
 }
 
 bool GetExperimentTestExperiment4ExpectedValue() { return false; }
+
+bool GetExperimentTestExperiment5ExpectedValue() { return false; }
 #endif
 
 TEST(ExperimentsTest, CheckExperimentValuesTest) {
@@ -99,6 +105,9 @@ TEST(ExperimentsTest, CheckExperimentValuesTest) {
 
   ASSERT_EQ(grpc_core::IsTestExperiment4Enabled(),
             GetExperimentTestExperiment4ExpectedValue());
+
+  ASSERT_EQ(grpc_core::IsTestExperiment5Enabled(),
+            GetExperimentTestExperiment5ExpectedValue());
 }
 
 #endif  // GRPC_EXPERIMENTS_ARE_FINAL

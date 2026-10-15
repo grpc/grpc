@@ -27,7 +27,7 @@ if "%GRPC_PROTOC_BUILD_COMPILER_JOBS%"=="" (
   set GRPC_PROTOC_BUILD_COMPILER_JOBS=2
 )
 
-@rem set cl.exe build environment to build with VS2019 tooling
+@rem set cl.exe build environment to build with VS2022 tooling
 @rem this is required for Ninja build to work
 call "%VS170COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" %ARCHITECTURE%
 @rem restore command echo

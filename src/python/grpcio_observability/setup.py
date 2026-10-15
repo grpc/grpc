@@ -187,6 +187,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # Required to build upb from protobuf 33.x
+        # https://github.com/grpc/grpc/issues/41951
+        EXTRA_ENV_COMPILE_ARGS += " /Zc:preprocessor"
     elif "linux" in sys.platform or "darwin" in sys.platform:
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti -fvisibility=hidden"
 
@@ -215,9 +218,16 @@ EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 if BUILD_WITH_STATIC_LIBSTDCXX:
     EXTRA_LINK_ARGS.append("-static-libstdc++")
 
-CC_FILES = [
-    os.path.normpath(cc_file) for cc_file in observability_lib_deps.CC_FILES
-]
+
+def _get_cc_files():
+    cc_files = list(observability_lib_deps.CC_FILES)
+    if "win32" in sys.platform:
+        cc_files += observability_lib_deps.CC_FILES_WINDOWS_ONLY
+    return [os.path.normpath(cc_file) for cc_file in cc_files]
+
+
+CC_FILES = _get_cc_files()
+
 CC_INCLUDES = [
     os.path.normpath(include_dir)
     for include_dir in observability_lib_deps.CC_INCLUDES
@@ -308,10 +318,10 @@ def extension_modules():
 if __name__ == "__main__":
     setuptools.setup(
         ext_modules=extension_modules(),
+        platforms=["Linux"],
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=[
             "grpcio=={version}".format(version=grpc_version.VERSION),
-            "setuptools>=77.0.1",
             "opentelemetry-api>=1.21.0",
         ],
         cmdclass={"build_ext": BuildExt},

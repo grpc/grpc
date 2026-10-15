@@ -33,6 +33,7 @@ ignore = [
     "B027",    # {name} is an empty method in an abstract base class, but has no abstract decorator
     "B028",    # No explicit stacklevel keyword argument found
     "B904",    # Within an except* clause, raise exceptions with raise ... from err or raise ... from None to distinguish them from errors in exception handling
+    "B905",    # Ignore zip() calls missing the strict parameter
     "BLE001",  # Do not catch blind exception: {name}
     "C402",    # Unnecessary generator (rewrite as a dict comprehension)
     "C405",    # Unnecessary {kind} literal (rewrite as a set literal)

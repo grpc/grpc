@@ -6,8 +6,8 @@
 namespace Grpc\Testing\LoadBalancerStatsResponse;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>grpc.testing.LoadBalancerStatsResponse.MetadataEntry</code>
@@ -74,9 +74,9 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setKey($var)
+    public function setKey(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->key = $var;
 
         return $this;
@@ -100,9 +100,9 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setValue($var)
+    public function setValue(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->value = $var;
 
         return $this;
@@ -112,7 +112,7 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
      * Metadata type
      *
      * Generated from protobuf field <code>.grpc.testing.LoadBalancerStatsResponse.MetadataType type = 3;</code>
-     * @return int
+     * @return int one of the values in {@see \Grpc\Testing\LoadBalancerStatsResponse\MetadataType}
      */
     public function getType()
     {
@@ -123,10 +123,10 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
      * Metadata type
      *
      * Generated from protobuf field <code>.grpc.testing.LoadBalancerStatsResponse.MetadataType type = 3;</code>
-     * @param int $var
+     * @param int $var one of the values in {@see \Grpc\Testing\LoadBalancerStatsResponse\MetadataType}
      * @return $this
      */
-    public function setType($var)
+    public function setType(int $var)
     {
         GPBUtil::checkEnum($var, \Grpc\Testing\LoadBalancerStatsResponse\MetadataType::class);
         $this->type = $var;

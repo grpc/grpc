@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Server-streaming response, as configured by the request and parameters.
@@ -22,6 +22,12 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
      */
     protected $payload = null;
+    /**
+     * The peer's socket address if requested.
+     *
+     * Generated from protobuf field <code>string peer_socket_address = 2;</code>
+     */
+    protected $peer_socket_address = '';
 
     /**
      * Constructor.
@@ -31,6 +37,8 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
      *
      *     @type \Grpc\Testing\Payload $payload
      *           Payload to increase response size.
+     *     @type string $peer_socket_address
+     *           The peer's socket address if requested.
      * }
      */
     public function __construct($data = NULL) {
@@ -66,10 +74,35 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\Payload $var
      * @return $this
      */
-    public function setPayload($var)
+    public function setPayload(\Grpc\Testing\Payload|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\Payload::class);
         $this->payload = $var;
+
+        return $this;
+    }
+
+    /**
+     * The peer's socket address if requested.
+     *
+     * Generated from protobuf field <code>string peer_socket_address = 2;</code>
+     * @return string
+     */
+    public function getPeerSocketAddress()
+    {
+        return $this->peer_socket_address;
+    }
+
+    /**
+     * The peer's socket address if requested.
+     *
+     * Generated from protobuf field <code>string peer_socket_address = 2;</code>
+     * @param string $var
+     * @return $this
+     */
+    public function setPeerSocketAddress(string $var)
+    {
+        GPBUtil::checkString($var, true);
+        $this->peer_socket_address = $var;
 
         return $this;
     }

@@ -21,8 +21,10 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/alarm.h>
+#include <grpcpp/impl/server_callback_handlers.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/server_callback.h>
 
 #include <condition_variable>
 #include <memory>
@@ -57,6 +59,17 @@ typedef enum {
   CANCEL_DURING_PROCESSING,
   CANCEL_AFTER_PROCESSING
 } ServerTryCancelRequestPhase;
+
+class EchoSessionReactor : public grpc::experimental::ServerSessionReactor {
+ public:
+  explicit EchoSessionReactor(grpc::CallbackServerContext* context) {
+    // Signal that the session is ready for virtual traffic
+    StartVirtualRPCs();
+  }
+  void OnSendInitialMetadataDone(bool /*ok*/) override {}
+  void OnCancel() override { Finish(grpc::Status::CANCELLED); }
+  void OnDone() override { delete this; }
+};
 
 namespace internal {
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
@@ -145,9 +158,41 @@ class TestServiceSignaller {
 template <typename RpcService>
 class TestMultipleServiceImpl : public RpcService {
  public:
-  TestMultipleServiceImpl() : signal_client_(false), host_() {}
+  TestMultipleServiceImpl() : TestMultipleServiceImpl(false) {}
+
+  explicit TestMultipleServiceImpl(bool is_virtual)
+      : signal_client_(false), host_() {
+    if (is_virtual) {
+      grpc::experimental::SetVirtualService(this);
+      AddSessionMethod();
+    }
+  }
+
   explicit TestMultipleServiceImpl(const std::string& host)
-      : signal_client_(false), host_(new std::string(host)) {}
+      : TestMultipleServiceImpl(host, false) {}
+
+  TestMultipleServiceImpl(const std::string& host, bool is_virtual)
+      : signal_client_(false), host_(new std::string(host)) {
+    if (is_virtual) {
+      grpc::experimental::SetVirtualService(this);
+      AddSessionMethod();
+    }
+  }
+
+  void AddSessionMethod() {
+    auto* method = new grpc::internal::RpcServiceMethod(
+        "/grpc.testing.EchoTestService/SessionRequest",
+        grpc::internal::RpcMethod::SESSION_RPC,
+        new grpc::experimental::internal::CallbackSessionHandler<EchoRequest>(
+            [](grpc::CallbackServerContext* context, const EchoRequest*)
+                -> grpc::experimental::ServerSessionReactor* {
+              return new EchoSessionReactor(context);
+            },
+            this));
+    method->SetServerApiType(
+        grpc::internal::RpcServiceMethod::ApiType::CALL_BACK);
+    this->AddMethod(method);
+  }
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) {
@@ -491,9 +536,30 @@ class TestMultipleServiceImpl : public RpcService {
 class CallbackTestServiceImpl
     : public grpc::testing::EchoTestService::CallbackService {
  public:
-  CallbackTestServiceImpl() : signal_client_(false), host_() {}
+  CallbackTestServiceImpl() : signal_client_(false), host_() {
+    grpc::experimental::SetVirtualService(this);
+    AddSessionMethod();
+  }
   explicit CallbackTestServiceImpl(const std::string& host)
-      : signal_client_(false), host_(new std::string(host)) {}
+      : signal_client_(false), host_(new std::string(host)) {
+    grpc::experimental::SetVirtualService(this);
+    AddSessionMethod();
+  }
+
+  void AddSessionMethod() {
+    auto* method = new grpc::internal::RpcServiceMethod(
+        "/grpc.testing.EchoTestService/SessionRequest",
+        grpc::internal::RpcMethod::SESSION_RPC,
+        new grpc::experimental::internal::CallbackSessionHandler<EchoRequest>(
+            [](grpc::CallbackServerContext* context, const EchoRequest*)
+                -> grpc::experimental::ServerSessionReactor* {
+              return new EchoSessionReactor(context);
+            },
+            this));
+    method->SetServerApiType(
+        grpc::internal::RpcServiceMethod::ApiType::CALL_BACK);
+    this->AddMethod(method);
+  }
 
   ServerUnaryReactor* Echo(CallbackServerContext* context,
                            const EchoRequest* request,
@@ -511,6 +577,9 @@ class CallbackTestServiceImpl
 
   ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
       CallbackServerContext* context) override;
+
+  grpc::experimental::ServerSessionReactor* SessionRequest(
+      CallbackServerContext* context, const EchoRequest* request);
 
   // Unimplemented is left unimplemented to test the returned error.
   bool signal_client() {

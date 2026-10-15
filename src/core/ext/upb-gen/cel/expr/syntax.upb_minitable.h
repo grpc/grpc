@@ -19,35 +19,20 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable cel__expr__ParsedExpr_msg_init;
-extern const upb_MiniTable* cel__expr__ParsedExpr_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Expr_msg_init;
-extern const upb_MiniTable* cel__expr__Expr_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Expr__Ident_msg_init;
-extern const upb_MiniTable* cel__expr__Expr__Ident_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Expr__Select_msg_init;
-extern const upb_MiniTable* cel__expr__Expr__Select_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Expr__Call_msg_init;
-extern const upb_MiniTable* cel__expr__Expr__Call_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Expr__CreateList_msg_init;
-extern const upb_MiniTable* cel__expr__Expr__CreateList_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Expr__CreateStruct_msg_init;
-extern const upb_MiniTable* cel__expr__Expr__CreateStruct_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Expr__CreateStruct__Entry_msg_init;
-extern const upb_MiniTable* cel__expr__Expr__CreateStruct__Entry_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Expr__Comprehension_msg_init;
-extern const upb_MiniTable* cel__expr__Expr__Comprehension_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Constant_msg_init;
-extern const upb_MiniTable* cel__expr__Constant_msg_init_ptr;
 extern const upb_MiniTable cel__expr__SourceInfo_msg_init;
-extern const upb_MiniTable* cel__expr__SourceInfo_msg_init_ptr;
 extern const upb_MiniTable cel__expr__SourceInfo__PositionsEntry_msg_init;
-extern const upb_MiniTable* cel__expr__SourceInfo__PositionsEntry_msg_init_ptr;
 extern const upb_MiniTable cel__expr__SourceInfo__MacroCallsEntry_msg_init;
-extern const upb_MiniTable* cel__expr__SourceInfo__MacroCallsEntry_msg_init_ptr;
 extern const upb_MiniTable cel__expr__SourceInfo__Extension_msg_init;
-extern const upb_MiniTable* cel__expr__SourceInfo__Extension_msg_init_ptr;
 extern const upb_MiniTable cel__expr__SourceInfo__Extension__Version_msg_init;
-extern const upb_MiniTable* cel__expr__SourceInfo__Extension__Version_msg_init_ptr;
 
 extern const upb_MiniTableFile cel_expr_syntax_proto_upb_file_layout;
 

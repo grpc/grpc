@@ -17,7 +17,7 @@ import threading
 from grpc._cython import cygrpc
 
 
-class SimpleFuture(object):
+class SimpleFuture:
     """A simple future mechanism."""
 
     def __init__(self, function, *args, **kwargs):

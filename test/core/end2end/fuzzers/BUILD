@@ -101,7 +101,6 @@ grpc_fuzz_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_core_credentials_header",
-        "//:grpc_resolver_dns_ares",
         "//:iomgr",
         "//:parse_address",
         "//:ref_counted_ptr",

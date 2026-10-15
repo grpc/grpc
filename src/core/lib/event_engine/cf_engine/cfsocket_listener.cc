@@ -63,21 +63,22 @@ void CFSocketListenerImpl::Shutdown() {
   GRPC_TRACE_LOG(event_engine, INFO)
       << "CFSocketListenerImpl::Shutdown: this: " << this;
 
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
 
   shutdown_ = true;
   for (auto& [ipv6cfsock] : ipv6cfsocks_) {
     CFSocketInvalidate(ipv6cfsock);
   }
   if (runloop_) {
-    CFRunLoopWakeUp(runloop_);
     CFRunLoopStop(runloop_);
+    CFRelease(runloop_);
+    runloop_ = nullptr;
   }
 }
 
 absl::StatusOr<int> CFSocketListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
 
   if (started_) {
     return absl::FailedPreconditionError(
@@ -159,7 +160,7 @@ absl::StatusOr<int> CFSocketListenerImpl::Bind(
 }
 
 absl::Status CFSocketListenerImpl::Start() {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(mu_);
 
   CHECK(!started_);
   started_ = true;
@@ -173,12 +174,12 @@ absl::Status CFSocketListenerImpl::Start() {
         << ", this: " << thatPtr;
 
     {
-      grpc_core::MutexLock lock(&that->mu_);
+      grpc_core::MutexLock lock(that->mu_);
       if (that->shutdown_) {
         return;
       }
 
-      that->runloop_ = CFRunLoopGetCurrent();
+      that->runloop_ = (CFRunLoopRef)CFRetain(CFRunLoopGetCurrent());
       for (auto& [ipv6cfsock] : that->ipv6cfsocks_) {
         CFTypeUniqueRef<CFRunLoopSourceRef> ipv6cfsock_source =
             CFSocketCreateRunLoopSource(kCFAllocatorDefault, ipv6cfsock, 0);

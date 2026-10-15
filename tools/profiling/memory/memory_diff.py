@@ -88,7 +88,20 @@ _INTERESTING = {
 _SCENARIOS = {
     "default": [],
     "minstack": ["--scenario_config=minstack"],
-    "chaotic_good": ["--scenario_config=chaotic_good"],
+    # TODO(aananthv)(b/500562759): Figure out why chaotic good test cases are
+    # taking time.
+    # The reason for disabling:
+    # For the call Benchmark (server.cc and client.cc)
+    # Client: Uses Chaotic Good transport. It processes the --chaotic_good flag
+    # and adds the GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS argument to args_vec
+    # before creating the channel.
+    #
+    # Server: Falls back to chttp2 (due to a bug). The server binary receives
+    # the --chaotic_good flag from the runner, but it pushes the
+    # GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS argument to args_vec after it has
+    # already called grpc_server_create with the older snapshot of arguments.
+    #
+    # "chaotic_good": ["--scenario_config=chaotic_good"],
 }
 
 _BENCHMARKS = {
@@ -109,6 +122,13 @@ def _run():
             "build",
             "-c",
             "opt",
+            # TODO(weizheyuan): Upgrade to abseil >= 20260817.0
+            # or replace this flag with
+            # --bazelrc=tools/remote_build/include/absl_copts.bazelrc
+            # once the file is available on master branch.
+            #
+            # Needed for compiling with abseil on Clang < 16 (https://github.com/abseil/abseil-cpp/issues/2073)
+            "--cxxopt=-Wno-invalid-partial-specialization",
             "test/core/memory_usage/memory_usage_test",
         ]
     )

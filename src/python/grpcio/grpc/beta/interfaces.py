@@ -24,7 +24,7 @@ ChannelConnectivity.FATAL_FAILURE = ChannelConnectivity.SHUTDOWN
 StatusCode = grpc.StatusCode
 
 
-class GRPCCallOptions(object):
+class GRPCCallOptions:
     """A value encapsulating gRPC-specific options passed on RPC invocation.
 
     This class and its instances have no supported interface - it exists to
