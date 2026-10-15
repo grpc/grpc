@@ -33,3 +33,15 @@ py_test(
         requirement("googleapis-common-protos"),
     ],
 )
+
+py_test(
+    name = "grpc_status_version_test",
+    size = "small",
+    srcs = ["_grpc_status_version_test.py"],
+    imports = ["../../"],
+    main = "_grpc_status_version_test.py",
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio_status/grpc_status",
+    ],
+)

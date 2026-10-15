@@ -9505,6 +9505,7 @@ grpc_cc_library(
         ":header_assembler",
         ":http2_status",
         ":http2_transport",
+        ":http2_transport_stats",
         ":metadata_info",
         ":ph2_stream",
         ":shared_bit_gen",
@@ -9591,6 +9592,7 @@ grpc_cc_library(
         "metadata_batch",
         "ref_counted",
         "stream_data_queue",
+        "time",
         "write_cycle",
         ":chttp2_flow_control",
         "//:chttp2_frame",
@@ -9671,6 +9673,7 @@ grpc_cc_library(
         "http2_settings_promises",
         "http2_status",
         "http2_transport",
+        "http2_transport_stats",
         "http2_ztrace_collector",
         "if",
         "inter_activity_mutex",
@@ -9770,6 +9773,7 @@ grpc_cc_library(
         "http2_settings_promises",
         "http2_status",
         "http2_transport",
+        "http2_transport_stats",
         "http2_ztrace_collector",
         "if",
         "inter_activity_mutex",
@@ -9877,6 +9881,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "http2_transport_stats",
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_transport_stats.h",
+    ],
+    deps = [
+        "channel_args",
+        "http2_stats_collector",
+        "stats_data",
+        "time",
+        "//:chttp2_frame",
+        "//:gpr_platform",
+        "//:grpc_core_credentials_header",
+        "//:transport_auth_context",
+    ],
+)
+
+grpc_cc_library(
     name = "transport_common",
     srcs = [
         "ext/transport/chttp2/transport/transport_common.cc",
@@ -9920,6 +9941,7 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "http2_settings",
         "http2_status",
+        "http2_transport_stats",
         "slice",
         "slice_buffer",
         "transport_common",
@@ -9962,6 +9984,7 @@ grpc_cc_library(
         "http2_settings_manager",
         "http2_settings_promises",
         "http2_status",
+        "http2_transport_stats",
         "if",
         "internal_channel_arg_names",
         "latch",

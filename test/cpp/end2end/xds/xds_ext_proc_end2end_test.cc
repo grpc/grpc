@@ -831,7 +831,11 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/nullptr);
-    CreateAndStartBackends(1);
+    // The backend is not started until StartBackendServer() is called.
+    // For server-side tests, this ensures the server does not accept a
+    // connection using the default listener (without the ext_proc filter)
+    // before it receives the updated listener with the ext_proc filter.
+    CreateBackends(1, /*xds_enabled=*/GetParam().filter_on_server());
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     })));
@@ -842,20 +846,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   void TearDown() override {
     if (ext_proc_server_ != nullptr) ext_proc_server_->Shutdown();
     XdsEnd2endTest::TearDown();
-  }
-
-  void CreateAndStartBackends(
-      size_t num_backends = 1,
-      std::shared_ptr<ServerCredentials> credentials = nullptr) {
-    XdsEnd2endTest::CreateAndStartBackends(
-        num_backends, /*xds_enabled=*/GetParam().filter_on_server(),
-        std::move(credentials));
-    if (GetParam().filter_on_server()) {
-      for (auto& backend : backends_) {
-        EXPECT_THAT(backend->GetNextStatus(),
-                    ::testing::Optional(absl::OkStatus()));
-      }
-    }
   }
 
   Listener BuildListenerWithExtProcFilter(
@@ -940,6 +930,14 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                                              : default_route_config_);
         break;
       }
+    }
+  }
+
+  void StartBackendServer() {
+    StartBackend(0);
+    if (GetParam().filter_on_server()) {
+      EXPECT_THAT(backends_[0]->GetNextStatus(),
+                  ::testing::Optional(absl::OkStatus()));
     }
   }
 
@@ -1177,6 +1175,7 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
                              .SetResponseHeaderMode(false)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(ext_proc_service().GetStream(absl::ZeroDuration()), nullptr);
 }
@@ -1186,6 +1185,7 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllDisabledSuccess) {
 TEST_P(XdsExtProcEnd2endTest, ProcessingModeNotSetSuccess) {
   auto ext_proc_config = MakeFilterConfigBuilder().Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1222,6 +1222,7 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   AsyncRpc rpc;
@@ -1294,6 +1295,7 @@ TEST_P(XdsExtProcEnd2endTest,
           .SetResponseBodyMode(true)
           .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   rpc_options.set_metadata({{"custom-header-key", "custom-header-value"}});
@@ -1377,6 +1379,7 @@ TEST_P(XdsExtProcEnd2endTest, TrailersOnlyProcessingModeAllEnabled) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   RpcOptions rpc_options;
   rpc_options.set_server_fail(true);
   AsyncRpc rpc;
@@ -1422,6 +1425,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   RpcOptions rpc_options;
   rpc_options.set_server_fail(true);
   AsyncRpc rpc;
@@ -1474,6 +1478,7 @@ TEST_P(XdsExtProcEnd2endTest, ContinueAndReplaceFails) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1501,6 +1506,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersInvalidHeaderMutationFails) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1528,6 +1534,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestHeadersRequestAttributesSent) {
                              .AddRequestAttribute("request.method")
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1556,6 +1563,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .AddRequestAttribute("request.method")
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1592,6 +1600,7 @@ TEST_P(XdsExtProcEnd2endTest, RequestBodyGrpcMessageCompressed) {
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1625,6 +1634,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1672,6 +1682,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1715,6 +1726,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1741,6 +1753,10 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
         stream.ReadMessage(),
         ::testing::Optional(MatchesEchoResponse(absl::StrCat("message", i))));
   }
+  // Start the read before half-closing, so the pending read keeps the call
+  // alive. Once the client half-closes, the RPC may finish at any time, and
+  // starting a new read after that point is not safe.
+  stream.StartReadMessage();
   stream.StartWritesDone();
   auto eos_req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(eos_req, ::testing::Optional(
@@ -1753,9 +1769,6 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
       common_response->mutable_body_mutation()->mutable_streamed_response();
   streamed_response->set_end_of_stream(true);
   streamed_response->set_end_of_stream_without_message(true);
-  // Start the read before letting the RPC finish, so the pending read keeps
-  // the call alive.
-  stream.StartReadMessage();
   ext_proc_stream->SendResponse(proc_response);
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
@@ -1771,6 +1784,7 @@ TEST_P(XdsExtProcEnd2endTest, ResponseHeadersInvalidHeaderMutationFails) {
                              .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1807,6 +1821,7 @@ TEST_P(XdsExtProcEnd2endTest, ResponseBodyGrpcMessageCompressed) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1841,6 +1856,7 @@ TEST_P(XdsExtProcEnd2endTest, ResponseTrailersInvalidHeaderMutationFails) {
                              .SetResponseTrailerMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1872,6 +1888,7 @@ TEST_P(XdsExtProcEnd2endTest, DisableImmediateResponse) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -1905,6 +1922,7 @@ TEST_P(XdsExtProcEnd2endTest, ImmediateResponse) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2449,6 +2467,7 @@ TEST_P(XdsExtProcEnd2endTest, UnexpectedDrainCompleteFailsCall) {
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2491,6 +2510,128 @@ TEST_P(XdsExtProcEnd2endTest, DrainIgnoredAfterHalfClose) {
   EXPECT_TRUE(stream.WaitForWrite());
   EXPECT_THAT(stream.ReadMessage(),
               ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+}
+
+TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnRequestHeaders) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  StartBackendServer();
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(
+      req,
+      ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
+          ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
+  ext_proc_stream->SendResponse(
+      MakeRequestHeadersMutationResponse({}, {}, /*request_drain=*/true));
+  Status status = rpc.GetStatus();
+  EXPECT_THAT(status, IsStatusOk());
+  EXPECT_EQ(rpc.response().message(), kRequestMessage);
+}
+
+TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseHeaders) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  StartBackendServer();
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto resp_headers_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(resp_headers_req,
+              ::testing::Optional(MatchesResponseHeaders(::testing::_)));
+  ext_proc_stream->SendResponse(
+      MakeResponseHeadersMutationResponse({}, {}, /*request_drain=*/true));
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+}
+
+TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnResponseTrailers) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  StartBackendServer();
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1)));
+  stream.StartWritesDone();
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req, ::testing::Optional(MatchesResponseTrailers(::testing::_)));
+  ext_proc_stream->SendResponse(
+      MakeResponseTrailersMutationResponse({}, {}, /*request_drain=*/true));
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+}
+
+TEST_P(XdsExtProcEnd2endTest, StreamDrainRequestOnServerBody) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetFailureModeAllow(false)
+                             .SetRequestHeaderMode(false)
+                             .SetResponseHeaderMode(false)
+                             .SetResponseTrailerMode(true)
+                             .SetResponseBodyMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  StartBackendServer();
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto resp_body_req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(resp_body_req,
+              ::testing::Optional(MatchesResponseBody(
+                  EchoResponseMessageIs(kMessage1), !kEndOfStream)));
+  ext_proc_stream->SendResponse(MakeResponseBodyMutationResponse(
+      ModifyEchoResponse(resp_body_req->response_body().body(), kMutatedSuffix),
+      !kEndOfStream, /*request_drain=*/true));
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1Mutated)));
+  request.set_message(kMessage2);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  stream.StartReadMessage();
+  EXPECT_THAT(stream.WaitForRead(),
+              ::testing::Optional(MatchesEchoResponse(kMessage2)));
   stream.StartWritesDone();
   auto req2 = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req2, ::testing::Optional(MatchesRequestBody("", kEndOfStream)));
@@ -2514,6 +2655,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2536,6 +2678,7 @@ TEST_P(XdsExtProcEnd2endTest, ClientToServerOrderingRequestBodyBeforeHeaders) {
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2564,6 +2707,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2589,6 +2733,7 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingResponseBodyBeforeHeaders) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2611,6 +2756,7 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientOrderingTrailersBeforeHeaders) {
                              .SetResponseTrailerMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2635,6 +2781,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2669,6 +2816,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2702,6 +2850,7 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientResponseBodyHalfClose) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2741,6 +2890,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBodiesNotConfiguredSuccess) {
                              .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -2767,6 +2917,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBodiesDrainedSuccess) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2820,6 +2971,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2855,6 +3007,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2884,6 +3037,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseRequestBodyNotDrainedFails) {
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -2913,6 +3067,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyNotDrainedFails) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   EchoRequest request;
@@ -3033,6 +3188,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseBeforeBodySentDrainSuccess) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncBidiStream stream;
   stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3078,6 +3234,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3106,6 +3263,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowObservabilitySuccess) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3135,6 +3293,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3162,6 +3321,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3191,6 +3351,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowBodiesDrainedSuccess) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3217,6 +3378,7 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeFalseFails) {
                              .SetResponseHeaderMode(false)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3250,6 +3412,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHeadersDurationMetric) {
                              .SetResponseHeaderMode(false)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3292,6 +3455,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
                              .SetRequestBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3386,6 +3550,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerHeadersDurationMetric) {
                              .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
@@ -3420,6 +3585,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
                              .SetResponseTrailerMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
