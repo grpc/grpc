@@ -80,16 +80,16 @@ Ignore Resource Deletion | [A53](https://github.com/grpc/proposal/blob/master/A5
 Pick First | [A62](https://github.com/grpc/proposal/blob/master/A62-pick-first.md) | v1.58.0 | v1.58.1 | v1.56.0 | |
 [StringMatcher for Header Matching](https://github.com/envoyproxy/envoy/blob/3fe4b8d335fa339ef6f17325c8d31f87ade7bb1a/api/envoy/config/route/v3/route_components.proto#L2280) | [A63](https://github.com/grpc/proposal/blob/master/A63-xds-string-matcher-in-header-matching.md) | v1.56.0 | v1.53.0 | v1.56.0 | v1.9.0 |
 LRS Custom Metrics Support | [A64](https://github.com/grpc/proposal/blob/master/A64-lrs-custom-metrics.md) | v1.54.0 | v1.57.0 | v1.63.0 | |
-LRS Custom Metrics Changes | [A85](https://github.com/grpc/proposal/blob/master/A85-lrs-custom-metrics-changes.md) | v1.82.0 | | v1.81.0 | |
+LRS Custom Metrics Changes | [A85](https://github.com/grpc/proposal/blob/master/A85-lrs-custom-metrics-changes.md) | v1.82.0 | v1.83.0 | v1.81.0 | |
 mTLS Credentials in xDS Bootstrap File | [A65](https://github.com/grpc/proposal/blob/master/A65-xds-mtls-creds-in-bootstrap.md) | v1.65.0 | | v1.61.0 | |
 Stateful Session Affinity | [A55](https://github.com/grpc/proposal/blob/master/A55-xds-stateful-session-affinity.md), [A60](https://github.com/grpc/proposal/blob/master/A60-xds-stateful-session-affinity-weighted-clusters.md), [A75](https://github.com/grpc/proposal/blob/master/A75-xds-aggregate-cluster-behavior-fixes.md) | v1.61.0 | | | |
 OpenTelemetry XdsClient metrics, and xDS Locality label for per-call metrics | [A78](https://github.com/grpc/proposal/blob/master/A78-grpc-metrics-wrr-pf-xds.md) | v1.63.0 (C++) | v1.64.0 | v1.81.0 | |
-Backend Service Metric Label | [A89](https://github.com/grpc/proposal/blob/master/A89-backend-service-metric-label.md) | v1.76.0 (C++) | | v1.78.0 | |
+Backend Service Metric Label | [A89](https://github.com/grpc/proposal/blob/master/A89-backend-service-metric-label.md) | v1.76.0 (C++) | v1.73.0 | v1.78.0 | |
 xDS Fallback | [A71](https://github.com/grpc/proposal/blob/master/A71-xds-fallback.md) | v1.67.0 | v1.71.0 | v1.70.0 | |
 Dualstack Backend Support | [A61](https://github.com/grpc/proposal/blob/master/A61-IPv4-IPv6-dualstack-backends.md) | v1.66.1 | | v1.71.0 | v1.12.0 |
 WRR Support for Custom Backend Metrics | [A114](https://github.com/grpc/proposal/blob/master/A114-wrr-metric-names-for-computing-utilization.md) | v1.84.0 | | | |
-xDS Authority Rewriting | [A81](https://github.com/grpc/proposal/blob/master/A81-xds-authority-rewriting.md) | v1.73.0 | | v1.79.0 | |
-xDS System Root Certificates | [A82](https://github.com/grpc/proposal/blob/master/A82-xds-system-root-certs.md) | v1.73.0 | | v1.71.0 | |
-GCP Authentication Filter | [A83](https://github.com/grpc/proposal/blob/master/A83-xds-gcp-authn-filter.md) | v1.73.0 | | v1.86.0 | |
-xDS xDS-Based setting SNI and server certificate SAN validation | [A101](https://github.com/grpc/proposal/blob/master/A101-SNI-setting-and-SNI-SAN-validation.md) | v1.80.0 | | v1.81.0 | |
-Disable Priority LB policy child policy retention cache | [A115](https://github.com/grpc/proposal/blob/master/A115-remove-priority-lb-child-policy-cache.md) | N/A | | v1.81.0 | |
+xDS Authority Rewriting | [A81](https://github.com/grpc/proposal/blob/master/A81-xds-authority-rewriting.md) | v1.73.0 | v1.78.0 | v1.79.0 | |
+xDS System Root Certificates | [A82](https://github.com/grpc/proposal/blob/master/A82-xds-system-root-certs.md) | v1.73.0 | v1.78.0 | v1.71.0 | |
+GCP Authentication Filter | [A83](https://github.com/grpc/proposal/blob/master/A83-xds-gcp-authn-filter.md) | v1.73.0 | v1.78.0 | v1.86.0 | |
+xDS xDS-Based setting SNI and server certificate SAN validation | [A101](https://github.com/grpc/proposal/blob/master/A101-SNI-setting-and-SNI-SAN-validation.md) | v1.80.0 | v1.78.0 | v1.81.0 | |
+Disable Priority LB policy child policy retention cache | [A115](https://github.com/grpc/proposal/blob/master/A115-remove-priority-lb-child-policy-cache.md) | N/A | v1.82.0 | v1.81.0 | |
