@@ -53,7 +53,8 @@ grpc_slice grpc_chttp2_window_update_create(
   GRPC_CHECK(sink.WriteU8(GRPC_CHTTP2_FRAME_WINDOW_UPDATE));
   GRPC_CHECK(sink.WriteU8(0));  // flags
   GRPC_CHECK(sink.WriteU32BE(id));
-  GRPC_CHECK(sink.WriteU31BE(window_delta));
+  GRPC_CHECK_LE(window_delta, 0x7fffffffu);
+  GRPC_CHECK(sink.WriteU32BE(window_delta));
   GRPC_CHECK(sink.empty());
 
   return slice;
