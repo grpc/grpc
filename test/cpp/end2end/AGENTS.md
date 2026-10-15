@@ -4,6 +4,18 @@ This directory contains end-to-end tests for the gRPC C++ library.
 These tests cover the full gRPC stack,
 from the C++ API down to the core transport and back.
 
+## Keep This Document Current
+
+**Keep this document in sync with the code it describes. This is mandatory.**
+
+*   **Trigger:** Your CL adds, renames, moves, or deletes a file, BUILD target,
+    class, function, experiment, or date that this document references.
+*   **Action:** Search this document for the old name and fix every hit, in
+    the same CL. Add new items to the relevant table or list. Remove deleted
+    ones.
+*   **Verify:** Before finishing, re-check every table, list, and count you
+    touched against the source. Do not leave stale references behind.
+
 ## Key Test Files
 
 *   **`end2end_test.cc`**: The main end-to-end test suite. It covers basic RPC functionality, cancellation, deadlines, metadata, and various channel/server configurations.
@@ -51,7 +63,7 @@ Reference for PH2 and cpp_end2end_test : src/core/lib/experiments/experiments.ya
 
 We have temporarily used SKIP_TEST_FOR_PH2_CLIENT and SKIP_TEST_FOR_PH2_SERVER
 to mark tests that are failing for PH2 experiment, and are WIP.
-ETA to finish : 30-Aug-2026. Owner : tjagtap
+ETA to finish : 30-Dec-2026. Owner : tjagtap
 For more information on PH2 refer file src/core/ext/transport/chttp2/AGENTS.md
 
 ### Retry for PH2

@@ -385,7 +385,7 @@ XdsClusterManagerLb::ClusterChild::ClusterChild(
       name_(name),
       picker_(MakeRefCounted<QueuePicker>(
           nullptr, kDelayTypeConnecting,
-          absl::StrCat("xds_cluster_manager: cluster '", name_,
+          absl::StrCat("xds_cluster_manager: cluster '", name,
                        "' waiting for initial picker"))) {
   GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
       << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
