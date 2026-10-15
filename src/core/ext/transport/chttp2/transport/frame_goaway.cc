@@ -1,3 +1,4 @@
+```cpp
 //
 // Copyright 2015 gRPC authors.
 //
@@ -146,17 +147,17 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(
 
       if (grpc_core::IsPh2Perf01Enabled()) {
         const size_t buffered = p->debug_slice_buffer.Length();
-
         GRPC_CHECK_LE(buffered, p->debug_length);
         GRPC_CHECK_LE(
             debug_remaining,
             static_cast<size_t>(p->debug_length) - buffered);
 
         if (debug_remaining > 0) {
-        auto sp = src.ReadSpan(debug_remaining);
-        GRPC_CHECK(sp.has_value());
-        memcpy(p->debug_data + p->debug_pos, sp->data(), sp->size());
-}
+          auto sp = src.ReadSpan(debug_remaining);
+          GRPC_CHECK(sp.has_value());
+          p->debug_slice_buffer.AppendIndexed(
+              grpc_core::Slice::FromCopiedBuffer(sp->data(), sp->size()));
+        }
 
         p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
 
@@ -185,11 +186,9 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(
             static_cast<size_t>(p->debug_length - p->debug_pos));
 
         if (debug_remaining > 0) {
-          GRPC_CHECK(src.CopyTo(
-              absl::MakeSpan(
-                  reinterpret_cast<uint8_t*>(p->debug_data) + p->debug_pos,
-                  debug_remaining),
-              debug_remaining));
+          auto sp = src.ReadSpan(debug_remaining);
+          GRPC_CHECK(sp.has_value());
+          memcpy(p->debug_data + p->debug_pos, sp->data(), sp->size());
         }
 
         p->debug_pos += static_cast<uint32_t>(debug_remaining);
@@ -273,3 +272,4 @@ void grpc_chttp2_goaway_append(
   grpc_slice_buffer_add(slice_buffer, header);
   grpc_slice_buffer_add(slice_buffer, debug_data);
 }
+```
