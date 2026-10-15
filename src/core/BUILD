@@ -4224,7 +4224,6 @@ grpc_cc_library(
         "closure",
         "dual_ref_counted",
         "error",
-        "event_engine_common",
         "grpc_backend_metric_data",
         "iomgr_fwd",
         "metrics",
