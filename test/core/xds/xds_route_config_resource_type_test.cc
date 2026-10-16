@@ -133,11 +133,9 @@ TEST_F(XdsRouteConfigTest, UnparsableProto) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "Can't parse RouteConfiguration resource.")
-      << decode_result.resource.status();
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError("Can't parse RouteConfiguration resource."));
 }
 
 TEST_F(XdsRouteConfigTest, MinimumValidConfig) {
@@ -330,13 +328,11 @@ TEST_F(VirtualHostTest, BadDomainPattern) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].domains[0] "
-            "error:invalid domain pattern \"foo*bar\"]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].domains[0] "
+                "error:invalid domain pattern \"foo*bar\"]"));
 }
 
 TEST_F(VirtualHostTest, NoDomainsSpecified) {
@@ -351,12 +347,10 @@ TEST_F(VirtualHostTest, NoDomainsSpecified) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].domains error:must be non-empty]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].domains error:must be non-empty]"));
 }
 
 //
@@ -520,13 +514,10 @@ TEST_P(TypedPerFilterConfigTest, EmptyName) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat("errors validating RouteConfiguration resource: [field:",
-                   FieldName(), "[] error:filter name must be non-empty]"))
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating RouteConfiguration resource: [field:",
+                FieldName(), "[] error:filter name must be non-empty]")));
 }
 
 TEST_P(TypedPerFilterConfigTest, EmptyConfig) {
@@ -538,13 +529,10 @@ TEST_P(TypedPerFilterConfigTest, EmptyConfig) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat("errors validating RouteConfiguration resource: [field:",
-                   FieldName(), "[fault].type_url error:field not present]"))
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating RouteConfiguration resource: [field:",
+                FieldName(), "[fault].type_url error:field not present]")));
 }
 
 TEST_P(TypedPerFilterConfigTest, UnsupportedFilterType) {
@@ -556,15 +544,12 @@ TEST_P(TypedPerFilterConfigTest, UnsupportedFilterType) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
           "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.config.route.v3.RouteConfiguration] "
-          "error:unsupported filter type]"))
-      << decode_result.resource.status();
+          "error:unsupported filter type]")));
 }
 
 TEST_P(TypedPerFilterConfigTest, FilterTypeNotSupportedOnClient) {
@@ -672,16 +657,13 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigInvalid) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
           "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.extensions.filters.http.fault.v3.HTTPFault]"
           ".abort.grpc_status "
-          "error:invalid gRPC status code: 123]"))
-      << decode_result.resource.status();
+          "error:invalid gRPC status code: 123]")));
 }
 
 TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
@@ -728,16 +710,13 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperInTypedStruct) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
           "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[xds.type.v3.TypedStruct].value["
           "envoy.config.route.v3.FilterConfig] "
-          "error:could not parse FilterConfig]"))
-      << decode_result.resource.status();
+          "error:could not parse FilterConfig]")));
 }
 
 TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnparsable) {
@@ -751,15 +730,12 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnparsable) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
           "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.config.route.v3.FilterConfig] "
-          "error:could not parse FilterConfig]"))
-      << decode_result.resource.status();
+          "error:could not parse FilterConfig]")));
 }
 
 TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperEmptyConfig) {
@@ -772,15 +748,12 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperEmptyConfig) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
           "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.config.route.v3.FilterConfig].config "
-          "error:field not present]"))
-      << decode_result.resource.status();
+          "error:field not present]")));
 }
 
 TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperDisabled) {
@@ -828,16 +801,13 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnsupportedFilterType) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
           "errors validating RouteConfiguration resource: [field:", FieldName(),
           "[fault].value[envoy.config.route.v3.FilterConfig].config.value["
           "envoy.config.route.v3.RouteConfiguration] "
-          "error:unsupported filter type]"))
-      << decode_result.resource.status();
+          "error:unsupported filter type]")));
 }
 
 TEST_P(TypedPerFilterConfigTest,
@@ -1055,19 +1025,16 @@ TEST_P(RetryPolicyTest, InvalidValues) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
           "errors validating RouteConfiguration resource: [field:", FieldName(),
           ".num_retries error:must be greater than 0; field:", FieldName(),
           ".retry_back_off.base_interval.seconds "
           "error:value must be in the range [0, 315576000000]; field:",
           FieldName(),
           ".retry_back_off.max_interval.seconds "
-          "error:value must be in the range [0, 315576000000]]"))
-      << decode_result.resource.status();
+          "error:value must be in the range [0, 315576000000]]")));
 }
 
 TEST_P(RetryPolicyTest, MissingBaseInterval) {
@@ -1078,14 +1045,11 @@ TEST_P(RetryPolicyTest, MissingBaseInterval) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
           "errors validating RouteConfiguration resource: [field:", FieldName(),
-          ".retry_back_off.base_interval error:field not present]"))
-      << decode_result.resource.status();
+          ".retry_back_off.base_interval error:field not present]")));
 }
 
 using RetryPolicyOverrideTest = XdsRouteConfigTest;
@@ -1142,13 +1106,11 @@ TEST_F(RouteMatchTest, RouteMatchNotPresent) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].match "
-            "error:field not present]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].routes[0].match "
+                "error:field not present]"));
 }
 
 TEST_F(RouteMatchTest, PathMatchers) {
@@ -1258,16 +1220,14 @@ TEST_F(RouteMatchTest, PathMatchersInvalid) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].match "
-            "error:invalid path specifier; "
-            "field:virtual_hosts[0].routes[1].match "
-            "error:error creating path matcher: "
-            "Invalid regex string specified in matcher: missing ]: []")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].routes[0].match "
+                "error:invalid path specifier; "
+                "field:virtual_hosts[0].routes[1].match "
+                "error:error creating path matcher: "
+                "Invalid regex string specified in matcher: missing ]: []"));
 }
 
 TEST_F(RouteMatchTest, HeaderMatchers) {
@@ -1413,19 +1373,18 @@ TEST_F(RouteMatchTest, HeaderMatchersInvalid) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].match.headers[0] "
-            "error:invalid header matcher; "
-            "field:virtual_hosts[0].routes[0].match.headers[1] "
-            "error:cannot create header matcher: "
-            "Invalid range specifier specified: "
-            "end cannot be smaller than start.; "
-            "field:virtual_hosts[0].routes[0].match.headers[2].string_match "
-            "error:invalid string matcher]")
-      << decode_result.resource.status();
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating RouteConfiguration resource: ["
+          "field:virtual_hosts[0].routes[0].match.headers[0] "
+          "error:invalid header matcher; "
+          "field:virtual_hosts[0].routes[0].match.headers[1] "
+          "error:cannot create header matcher: "
+          "Invalid range specifier specified: "
+          "end cannot be smaller than start.; "
+          "field:virtual_hosts[0].routes[0].match.headers[2].string_match "
+          "error:invalid string matcher]"));
 }
 
 TEST_F(RouteMatchTest, RuntimeFractionMatcher) {
@@ -1503,14 +1462,12 @@ TEST_F(RouteMatchTest, RuntimeFractionMatcherInvalid) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].match.runtime_fraction"
-            ".default_value.denominator "
-            "error:unknown denominator type]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].routes[0].match.runtime_fraction"
+                ".default_value.denominator "
+                "error:unknown denominator type]"));
 }
 
 //
@@ -1632,14 +1589,12 @@ TEST_F(MaxStreamDurationTest, GrpcTimeoutHeaderMaxInvalid) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].route.max_stream_duration"
-            ".grpc_timeout_header_max.seconds "
-            "error:value must be in the range [0, 315576000000]]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].routes[0].route.max_stream_duration"
+                ".grpc_timeout_header_max.seconds "
+                "error:value must be in the range [0, 315576000000]]"));
 }
 
 TEST_F(MaxStreamDurationTest, MaxStreamDurationInvalid) {
@@ -1659,14 +1614,12 @@ TEST_F(MaxStreamDurationTest, MaxStreamDurationInvalid) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].route.max_stream_duration"
-            ".max_stream_duration.seconds "
-            "error:value must be in the range [0, 315576000000]]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].routes[0].route.max_stream_duration"
+                ".max_stream_duration.seconds "
+                "error:value must be in the range [0, 315576000000]]"));
 }
 
 //
@@ -1780,23 +1733,21 @@ TEST_F(HashPolicyTest, InvalidPolicies) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].route.hash_policy[0].header"
-            ".header_name "
-            "error:must be non-empty; "
-            "field:virtual_hosts[0].routes[0].route.hash_policy[1].header"
-            ".regex_rewrite.pattern "
-            "error:field not present; "
-            "field:virtual_hosts[0].routes[0].route.hash_policy[2].header"
-            ".regex_rewrite.pattern.regex "
-            "error:field not present; "
-            "field:virtual_hosts[0].routes[0].route.hash_policy[3].header"
-            ".regex_rewrite.pattern.regex "
-            "error:errors compiling regex: missing ]: []")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].routes[0].route.hash_policy[0].header"
+                ".header_name "
+                "error:must be non-empty; "
+                "field:virtual_hosts[0].routes[0].route.hash_policy[1].header"
+                ".regex_rewrite.pattern "
+                "error:field not present; "
+                "field:virtual_hosts[0].routes[0].route.hash_policy[2].header"
+                ".regex_rewrite.pattern.regex "
+                "error:field not present; "
+                "field:virtual_hosts[0].routes[0].route.hash_policy[3].header"
+                ".regex_rewrite.pattern.regex "
+                "error:errors compiling regex: missing ]: []"));
 }
 
 //
@@ -1947,19 +1898,17 @@ TEST_F(WeightedClusterTest, Invalid) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].route.weighted_clusters"
-            ".clusters[0].name "
-            "error:must be non-empty; "
-            "field:virtual_hosts[0].routes[0].route.weighted_clusters"
-            ".clusters[1].weight "
-            "error:field not present; "
-            "field:virtual_hosts[0].routes[1].route.weighted_clusters "
-            "error:no valid clusters specified]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].routes[0].route.weighted_clusters"
+                ".clusters[0].name "
+                "error:must be non-empty; "
+                "field:virtual_hosts[0].routes[0].route.weighted_clusters"
+                ".clusters[1].weight "
+                "error:field not present; "
+                "field:virtual_hosts[0].routes[1].route.weighted_clusters "
+                "error:no valid clusters specified]"));
 }
 
 TEST_F(WeightedClusterTest, TotalWeightExceedsUint32Max) {
@@ -1983,13 +1932,11 @@ TEST_F(WeightedClusterTest, TotalWeightExceedsUint32Max) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].route.weighted_clusters "
-            "error:sum of cluster weights exceeds uint32 max]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:virtual_hosts[0].routes[0].route.weighted_clusters "
+                "error:sum of cluster weights exceeds uint32 max]"));
 }
 
 //
@@ -2243,13 +2190,11 @@ TEST_F(RlsTest, DuplicateClusterSpecifierPluginNames) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:cluster_specifier_plugins[1].extension.name "
-            "error:duplicate name \"rls\"]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:cluster_specifier_plugins[1].extension.name "
+                "error:duplicate name \"rls\"]"));
 }
 
 TEST_F(RlsTest, ClusterSpecifierPluginTypedConfigNotPresent) {
@@ -2269,13 +2214,11 @@ TEST_F(RlsTest, ClusterSpecifierPluginTypedConfigNotPresent) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:cluster_specifier_plugins[0].extension.typed_config "
-            "error:field not present]")
-      << decode_result.resource.status();
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating RouteConfiguration resource: ["
+                "field:cluster_specifier_plugins[0].extension.typed_config "
+                "error:field not present]"));
 }
 
 TEST_F(RlsTest, UnsupportedClusterSpecifierPlugin) {
@@ -2297,14 +2240,13 @@ TEST_F(RlsTest, UnsupportedClusterSpecifierPlugin) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:cluster_specifier_plugins[0].extension.typed_config.value["
-            "envoy.config.route.v3.RouteConfiguration] "
-            "error:unsupported ClusterSpecifierPlugin type]")
-      << decode_result.resource.status();
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating RouteConfiguration resource: ["
+          "field:cluster_specifier_plugins[0].extension.typed_config.value["
+          "envoy.config.route.v3.RouteConfiguration] "
+          "error:unsupported ClusterSpecifierPlugin type]"));
 }
 
 TEST_F(RlsTest, UnsupportedButOptionalClusterSpecifierPlugin) {
@@ -2375,15 +2317,14 @@ TEST_F(RlsTest, InvalidGrpcLbPolicyConfig) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:cluster_specifier_plugins[0].extension.typed_config "
-            "error:ClusterSpecifierPlugin returned invalid LB policy config: "
-            "errors validating RLS LB policy config: ["
-            "field:routeLookupConfig.lookupService error:field not present]]")
-      << decode_result.resource.status();
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating RouteConfiguration resource: ["
+          "field:cluster_specifier_plugins[0].extension.typed_config "
+          "error:ClusterSpecifierPlugin returned invalid LB policy config: "
+          "errors validating RLS LB policy config: ["
+          "field:routeLookupConfig.lookupService error:field not present]]"));
 }
 
 TEST_F(RlsTest, RlsInTypedStruct) {
@@ -2407,15 +2348,14 @@ TEST_F(RlsTest, RlsInTypedStruct) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:cluster_specifier_plugins[0].extension.typed_config.value["
-            "xds.type.v3.TypedStruct].value["
-            "grpc.lookup.v1.RouteLookupClusterSpecifier] "
-            "error:could not parse plugin config]")
-      << decode_result.resource.status();
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating RouteConfiguration resource: ["
+          "field:cluster_specifier_plugins[0].extension.typed_config.value["
+          "xds.type.v3.TypedStruct].value["
+          "grpc.lookup.v1.RouteLookupClusterSpecifier] "
+          "error:could not parse plugin config]"));
 }
 
 TEST_F(RlsTest, RlsConfigUnparsable) {
@@ -2438,14 +2378,13 @@ TEST_F(RlsTest, RlsConfigUnparsable) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:cluster_specifier_plugins[0].extension.typed_config.value["
-            "grpc.lookup.v1.RouteLookupClusterSpecifier] "
-            "error:could not parse plugin config]")
-      << decode_result.resource.status();
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating RouteConfiguration resource: ["
+          "field:cluster_specifier_plugins[0].extension.typed_config.value["
+          "grpc.lookup.v1.RouteLookupClusterSpecifier] "
+          "error:could not parse plugin config]"));
 }
 
 TEST_F(RlsTest, RlsMissingRouteLookupConfig) {
@@ -2467,14 +2406,13 @@ TEST_F(RlsTest, RlsMissingRouteLookupConfig) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:cluster_specifier_plugins[0].extension.typed_config.value["
-            "grpc.lookup.v1.RouteLookupClusterSpecifier].route_lookup_config "
-            "error:field not present]")
-      << decode_result.resource.status();
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating RouteConfiguration resource: ["
+          "field:cluster_specifier_plugins[0].extension.typed_config.value["
+          "grpc.lookup.v1.RouteLookupClusterSpecifier].route_lookup_config "
+          "error:field not present]"));
 }
 
 TEST_F(RlsTest, RouteUsesUnconfiguredClusterSpecifierPlugin) {
@@ -2491,13 +2429,12 @@ TEST_F(RlsTest, RouteUsesUnconfiguredClusterSpecifierPlugin) {
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
       resource_type->Decode(MakeDecodeContext(), serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating RouteConfiguration resource: ["
-            "field:virtual_hosts[0].routes[0].route.cluster_specifier_plugin "
-            "error:unknown cluster specifier plugin name \"rls\"]")
-      << decode_result.resource.status();
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating RouteConfiguration resource: ["
+          "field:virtual_hosts[0].routes[0].route.cluster_specifier_plugin "
+          "error:unknown cluster specifier plugin name \"rls\"]"));
 }
 
 }  // namespace
