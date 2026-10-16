@@ -74,10 +74,7 @@ class ActiveConnectionTestPeer {
       NewChttp2ServerListener::ActiveConnection* connection)
       : connection_(connection) {}
 
-  void OnClose() {
-    NewChttp2ServerListener::ActiveConnection::OnClose(connection_,
-                                                       absl::OkStatus());
-  }
+  void OnClose() { connection_->OnClose(); }
 
   NewChttp2ServerListener::ActiveConnection::HandshakingState*
   handshaking_state() {
