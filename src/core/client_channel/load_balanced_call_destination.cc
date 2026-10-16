@@ -135,10 +135,9 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
               << " returned by LB picker has no connected subchannel; queueing "
                  "pick";
           if (tracer != nullptr) {
-            tracer->RecordDelay(kDelayTypeSubchannelStateMismatch, []() {
-              return std::string(
-                  "picked subchannel left READY before it could be used");
-            });
+            tracer->RecordDelay(
+                kDelayTypeSubchannelStateMismatch,
+                "picked subchannel left READY before it could be used");
           }
           return Continue{};
         }
@@ -164,7 +163,7 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
             << "client_channel: " << GetContext<Activity>()->DebugTag()
             << " pick queued";
         if (tracer != nullptr) {
-          tracer->RecordDelay(std::move(queue_pick->delay_type),
+          tracer->RecordDelay(queue_pick->delay_type,
                               std::move(queue_pick->delay_reason));
         }
         return Continue{};
@@ -186,9 +185,8 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         // If wait_for_ready is true, then queue to retry when we get a new
         // picker.
         if (tracer != nullptr) {
-          tracer->RecordDelay(
-              kDelayTypePickerFailingWithWaitForReady,
-              [fail_pick]() { return fail_pick->status.ToString(); });
+          tracer->RecordDelay(kDelayTypePickerFailingWithWaitForReady,
+                              fail_pick->status.ToString());
         }
         return Continue{};
       },

@@ -112,18 +112,24 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
     }
     void RecordDelayStart(absl::string_view delay_type,
                           absl::string_view delay_reason) override {
+      EXPECT_FALSE(delay_open_);
+      EXPECT_FALSE(delay_type.empty());
+      delay_open_ = true;
       delay_type_ = std::string(delay_type);
       delay_reason_ = std::string(delay_reason);
       annotation_logger_->push_back(absl::StrCat(
           "RecordDelayStart: type=", delay_type_, " reason=", delay_reason_));
     }
     void RecordDelayReasonChanged(absl::string_view delay_reason) override {
+      EXPECT_TRUE(delay_open_);
       delay_reason_ = std::string(delay_reason);
       annotation_logger_->push_back(
           absl::StrCat("RecordDelayReasonChanged: type=", delay_type_,
                        " reason=", delay_reason_));
     }
     void RecordDelayEnd() override {
+      if (!delay_open_) return;
+      delay_open_ = false;
       annotation_logger_->push_back(absl::StrCat(
           "RecordDelayEnd: type=", delay_type_, " reason=", delay_reason_));
     }
@@ -139,6 +145,7 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
    private:
     std::vector<std::string>* annotation_logger_;
     std::map<OptionalLabelKey, RefCountedStringValue> optional_labels_;
+    bool delay_open_ = false;
     std::string delay_type_;
     std::string delay_reason_;
   };
@@ -159,18 +166,24 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
   void RecordDelayStart(absl::string_view delay_type,
                         absl::string_view delay_reason) override {
+    EXPECT_FALSE(delay_open_);
+    EXPECT_FALSE(delay_type.empty());
+    delay_open_ = true;
     delay_type_ = std::string(delay_type);
     delay_reason_ = std::string(delay_reason);
     annotation_logger_->push_back(absl::StrCat(
         "RecordDelayStart: type=", delay_type_, " reason=", delay_reason_));
   }
   void RecordDelayReasonChanged(absl::string_view delay_reason) override {
+    EXPECT_TRUE(delay_open_);
     delay_reason_ = std::string(delay_reason);
     annotation_logger_->push_back(
         absl::StrCat("RecordDelayReasonChanged: type=", delay_type_,
                      " reason=", delay_reason_));
   }
   void RecordDelayEnd() override {
+    if (!delay_open_) return;
+    delay_open_ = false;
     annotation_logger_->push_back(absl::StrCat(
         "RecordDelayEnd: type=", delay_type_, " reason=", delay_reason_));
   }
@@ -185,6 +198,7 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
  private:
   std::vector<std::string>* annotation_logger_;
   std::vector<RefCountedPtr<FakeClientCallAttemptTracer>> call_attempt_tracers_;
+  bool delay_open_ = false;
   std::string delay_type_;
   std::string delay_reason_;
 };

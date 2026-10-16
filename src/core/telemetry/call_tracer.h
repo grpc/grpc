@@ -36,6 +36,7 @@
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/ref_counted_string.h"
+#include "absl/base/optimization.h"
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -377,40 +378,29 @@ class CallTracer : public CallSpan {
   CallTracerInterface* interface_;
 };
 
+// Interface to track delay type and reason.
 class CallDelayTracker {
  public:
-  template <typename TracerInterface>
-  void RecordDelay(TracerInterface* interface, std::string delay_type,
-                   std::string delay_reason) {
-    if (current_delay_type_ != delay_type) {
-      if (!current_delay_type_.empty()) {
-        interface->RecordDelayEnd();
-      }
-      current_delay_type_ = std::move(delay_type);
-      current_delay_reason_ = std::move(delay_reason);
-      interface->RecordDelayStart(current_delay_type_, current_delay_reason_);
-    } else if (current_delay_reason_ != delay_reason) {
-      current_delay_reason_ = std::move(delay_reason);
-      interface->RecordDelayReasonChanged(current_delay_reason_);
-    }
-  }
-
+  // Record a delay.
+  // New delay type: End the current delay and start a delay.
+  // Same delay type, new delay reason: Update the reason.
+  // Same delay type and reason: No-op.
   template <typename TracerInterface>
   void RecordDelay(TracerInterface* interface, absl::string_view delay_type,
-                   absl::FunctionRef<std::string()> make_delay_reason) {
+                   std::string delay_reason) {
+    // An empty delay type is used to check whether there is an ongoing delay.
+    // So an empty delay type can never be set.
+    if (ABSL_PREDICT_FALSE(delay_type.empty())) delay_type = "unknown";
     if (current_delay_type_ != delay_type) {
       if (!current_delay_type_.empty()) {
         interface->RecordDelayEnd();
       }
       current_delay_type_ = std::string(delay_type);
-      current_delay_reason_ = make_delay_reason();
+      current_delay_reason_ = std::move(delay_reason);
       interface->RecordDelayStart(current_delay_type_, current_delay_reason_);
-    } else {
-      std::string delay_reason = make_delay_reason();
-      if (current_delay_reason_ != delay_reason) {
-        current_delay_reason_ = std::move(delay_reason);
-        interface->RecordDelayReasonChanged(current_delay_reason_);
-      }
+    } else if (current_delay_reason_ != delay_reason) {
+      current_delay_reason_ = std::move(delay_reason);
+      interface->RecordDelayReasonChanged(current_delay_reason_);
     }
   }
 
@@ -439,13 +429,8 @@ class ClientCallTracer final : public CallSpan {
       bool is_transparent_retry) {
     return interface_->StartNewAttempt(is_transparent_retry);
   }
-  void RecordDelay(std::string delay_type, std::string delay_reason) {
-    delay_tracker_.RecordDelay(interface_, std::move(delay_type),
-                               std::move(delay_reason));
-  }
-  void RecordDelay(absl::string_view delay_type,
-                   absl::FunctionRef<std::string()> make_delay_reason) {
-    delay_tracker_.RecordDelay(interface_, delay_type, make_delay_reason);
+  void RecordDelay(absl::string_view delay_type, std::string delay_reason) {
+    delay_tracker_.RecordDelay(interface_, delay_type, std::move(delay_reason));
   }
   void MaybeRecordDelayEnd() { delay_tracker_.MaybeRecordDelayEnd(interface_); }
 
@@ -474,13 +459,8 @@ class CallAttemptTracer final : public CallTracer {
       RefCountedStringValue value) {
     interface_->SetOptionalLabel(key, value);
   }
-  void RecordDelay(std::string delay_type, std::string delay_reason) {
-    delay_tracker_.RecordDelay(interface_, std::move(delay_type),
-                               std::move(delay_reason));
-  }
-  void RecordDelay(absl::string_view delay_type,
-                   absl::FunctionRef<std::string()> make_delay_reason) {
-    delay_tracker_.RecordDelay(interface_, delay_type, make_delay_reason);
+  void RecordDelay(absl::string_view delay_type, std::string delay_reason) {
+    delay_tracker_.RecordDelay(interface_, delay_type, std::move(delay_reason));
   }
   void MaybeRecordDelayEnd() { delay_tracker_.MaybeRecordDelayEnd(interface_); }
 

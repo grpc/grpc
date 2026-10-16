@@ -979,13 +979,11 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
                   if (tracer != nullptr) {
                     if (!got_result) {
                       tracer->RecordDelay(
-                          kDelayTypeResolving, [&config_selector]() {
-                            return config_selector.ok()
-                                       ? std::string(
-                                             "waiting for initial resolver "
-                                             "result")
-                                       : config_selector.status().ToString();
-                          });
+                          kDelayTypeResolving,
+                          config_selector.ok()
+                              ? std::string(
+                                    "waiting for initial resolver result")
+                              : config_selector.status().ToString());
                     } else if (config_selector.ok()) {
                       tracer->MaybeRecordDelayEnd();
                     }

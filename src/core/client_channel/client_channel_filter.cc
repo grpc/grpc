@@ -1882,11 +1882,11 @@ std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
       if (call_tracer != nullptr) {
         const absl::Status resolver_error =
             chand()->resolver_transient_failure_error_;
-        call_tracer->RecordDelay(kDelayTypeResolving, [&resolver_error]() {
-          return resolver_error.ok()
-                     ? std::string("waiting for initial resolver result")
-                     : resolver_error.ToString();
-        });
+        call_tracer->RecordDelay(
+            kDelayTypeResolving,
+            resolver_error.ok()
+                ? std::string("waiting for initial resolver result")
+                : resolver_error.ToString());
       }
       AddCallToResolverQueuedCallsLocked();
       return std::nullopt;
@@ -2516,10 +2516,8 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
                  "has no connected subchannel; queueing pick";
           if (call_attempt_tracer_ != nullptr) {
             call_attempt_tracer_->RecordDelay(
-                kDelayTypeSubchannelStateMismatch, []() {
-                  return std::string(
-                      "picked subchannel left READY before it could be used");
-                });
+                kDelayTypeSubchannelStateMismatch,
+                "picked subchannel left READY before it could be used");
           }
           return false;
         }
@@ -2538,8 +2536,7 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
             << "chand=" << chand_ << " lb_call=" << this << ": LB pick queued";
         if (call_attempt_tracer_ != nullptr) {
           call_attempt_tracer_->RecordDelay(
-              std::move(queue_pick->delay_type),
-              std::move(queue_pick->delay_reason));
+              queue_pick->delay_type, std::move(queue_pick->delay_reason));
         }
         return false;
       },
@@ -2562,7 +2559,7 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         if (call_attempt_tracer_ != nullptr) {
           call_attempt_tracer_->RecordDelay(
               kDelayTypePickerFailingWithWaitForReady,
-              [fail_pick]() { return fail_pick->status.ToString(); });
+              fail_pick->status.ToString());
         }
         return false;
       },
