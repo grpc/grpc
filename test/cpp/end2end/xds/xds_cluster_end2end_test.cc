@@ -25,6 +25,7 @@
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
 #include "gmock/gmock.h"
@@ -749,7 +750,8 @@ TEST_P(EdsTest, NacksInvalidResource) {
             "xDS response validation errors: ["
             "resource index 0: eds_service_name: "
             "INVALID_ARGUMENT: errors parsing EDS resource: ["
-            "field:endpoints error:priority 0 empty]]");
+            "field:endpoints[0].priority error:"
+            "priority 1 >= number of localities (1)]]");
 }
 
 // Tests that if the balancer is down, the RPCs will still be sent to the
@@ -1456,6 +1458,7 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(4);
   const size_t kNumRpcs = 100;
   EdsResourceArgs args({

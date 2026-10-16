@@ -50,6 +50,8 @@ const char* const kClientTryCancelRequest = "client_try_cancel";
 const char* const kDebugInfoTrailerKey = "debug-info-bin";
 const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
 const char* const kServerUseCoalescingApi = "server_use_coalescing_api";
+const char* const kServerSendResponseHeadersImmediately =
+    "send_response_headers_immediately";
 const char* const kCheckClientInitialMetadataKey = "custom_client_metadata";
 const char* const kCheckClientInitialMetadataVal = "Value for client metadata";
 
@@ -471,6 +473,15 @@ class TestMultipleServiceImpl : public RpcService {
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
           new std::thread([context] { internal::ServerTryCancel(context); });
+    }
+
+    // If kServerSendResponseHeadersImmediately is set to "true", the server
+    // sends its initial metadata immediately, rather than waiting to send it
+    // along with the first message.
+    if (internal::MetadataMatchCount(context->client_metadata(),
+                                     kServerSendResponseHeadersImmediately,
+                                     "true") > 0) {
+      stream->SendInitialMetadata();
     }
 
     // kServerFinishAfterNReads suggests after how many reads, the server should

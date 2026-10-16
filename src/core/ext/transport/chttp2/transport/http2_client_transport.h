@@ -40,6 +40,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
@@ -694,6 +695,7 @@ class Http2ClientTransport final : public ClientTransport,
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   bool should_reset_ping_clock_;
+  Http2TransportStats http2_transport_stats_;
   ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
