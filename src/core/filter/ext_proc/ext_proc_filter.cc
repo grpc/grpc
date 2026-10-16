@@ -836,12 +836,10 @@ ExtProcFilter::ExtProcCall::MaybeGetClientWindowUpdate() {
       std::exchange(pending_increment_sidestream_to_upstream_, 0);
   update.window_increment_sidestream_to_downstream =
       std::exchange(pending_increment_sidestream_to_downstream_, 0);
-  sidestream_to_upstream_window_ =
-      SaturatingAdd(sidestream_to_upstream_window_,
-                    update.window_increment_sidestream_to_upstream);
-  sidestream_to_downstream_window_ =
-      SaturatingAdd(sidestream_to_downstream_window_,
-                    update.window_increment_sidestream_to_downstream);
+  sidestream_to_upstream_window_ +=
+      update.window_increment_sidestream_to_upstream;
+  sidestream_to_downstream_window_ +=
+      update.window_increment_sidestream_to_downstream;
   return update;
 }
 
@@ -1005,8 +1003,7 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
           "messages"));
       return Failure{};
     }
-    sidestream_to_upstream_window_ =
-        SaturatingAdd(sidestream_to_upstream_window_, -message_size);
+    sidestream_to_upstream_window_ -= message_size;
     auto slice = Slice::FromCopiedString(response.mutation.body);
     auto new_msg = initiator_.arena()->MakePooled<Message>(
         SliceBuffer(std::move(slice)), /*flags=*/0);
@@ -1025,9 +1022,7 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
           handler.SpawnInfallible(
               "ext_proc_return_sidestream_to_upstream_window",
               [self = std::move(self), message_size]() {
-                self->pending_increment_sidestream_to_upstream_ = SaturatingAdd(
-                    self->pending_increment_sidestream_to_upstream_,
-                    message_size);
+                self->pending_increment_sidestream_to_upstream_ += message_size;
                 self->MaybeSendStandaloneWindowUpdate();
               });
         });
@@ -1164,8 +1159,7 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
         "messages"));
     return Failure{};
   }
-  sidestream_to_downstream_window_ =
-      SaturatingAdd(sidestream_to_downstream_window_, -message_size);
+  sidestream_to_downstream_window_ -= message_size;
   auto slice = Slice::FromCopiedString(response.mutation.body);
   auto new_msg = handler_.arena()->MakePooled<Message>(
       SliceBuffer(std::move(slice)), /*flags=*/0);
@@ -1178,8 +1172,7 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
   handler_.SpawnPushMessage(
       std::move(new_msg), [self = WeakRef(), message_size](bool ok) {
         if (!ok) return;
-        self->pending_increment_sidestream_to_downstream_ = SaturatingAdd(
-            self->pending_increment_sidestream_to_downstream_, message_size);
+        self->pending_increment_sidestream_to_downstream_ += message_size;
         self->MaybeSendStandaloneWindowUpdate();
       });
   return Success{};
@@ -1620,8 +1613,7 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
                       GetContext<Activity>()->MakeNonOwningWaker();
                   return Pending{};
                 }
-                self->downstream_to_sidestream_window_ = SaturatingAdd(
-                    self->downstream_to_sidestream_window_, -message_size);
+                self->downstream_to_sidestream_window_ -= message_size;
                 if (self->downstream_to_sidestream_window_ <= 0) {
                   self->MaybeSendStandaloneWindowUpdate();
                 }
@@ -2022,8 +2014,7 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
                       GetContext<Activity>()->MakeNonOwningWaker();
                   return Pending{};
                 }
-                self->upstream_to_sidestream_window_ = SaturatingAdd(
-                    self->upstream_to_sidestream_window_, -message_size);
+                self->upstream_to_sidestream_window_ -= message_size;
                 if (self->upstream_to_sidestream_window_ <= 0) {
                   self->MaybeSendStandaloneWindowUpdate();
                 }
