@@ -66,6 +66,8 @@ VALIDATE_ROOT = os.path.join("third_party", "protoc-gen-validate")
 OPENCENSUS_PROTO_ROOT = os.path.join(
     "third_party", "opencensus-proto", "src"
 )
+# Include path only: Envoy protos import OpenTelemetry types, whose generated
+# code is provided by the opentelemetry-proto package.
 OPENTELEMETRY_PROTO_ROOT = os.path.join("third_party", "opentelemetry")
 WELL_KNOWN_PROTOS_INCLUDE = _get_resource_file_name("grpc_tools", "_proto")
 
@@ -185,7 +187,6 @@ def main():
         "udpa",
         "validate",
         "xds",
-        "opentelemetry",
         "cel",
     ]:
         for root, _, _ in os.walk(os.path.join(WORK_DIR, proto_root_module)):
