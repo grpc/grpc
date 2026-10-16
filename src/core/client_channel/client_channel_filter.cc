@@ -1881,7 +1881,7 @@ std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
     bool result_ready = CheckResolutionLocked(&config_selector);
     // If no result is available, queue the call.
     if (!result_ready) {
-      const absl::Status& resolver_error =
+      const absl::Status resolver_error =
           chand()->resolver_transient_failure_error_;
       delay_tracker_.RecordDelay(
           call_tracer, kDelayTypeResolving, [&resolver_error]() {
