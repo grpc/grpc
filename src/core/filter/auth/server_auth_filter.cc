@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -202,6 +203,16 @@ absl::StatusOr<std::unique_ptr<ServerAuthFilter>> ServerAuthFilter::Create(
   auto creds = args.GetObjectRef<grpc_server_credentials>();
   return std::make_unique<ServerAuthFilter>(std::move(creds),
                                             std::move(auth_context));
+}
+
+bool ServerAuthFilter::IsReplacedByServerCredentials(const ChannelArgs& args) {
+  // The experiment check is temporary. It runs once per channel stack
+  // build, not per call. The cost is acceptable.
+  if (!IsReplaceAuthFilterEnabled()) return false;
+  grpc_server_credentials* server_credentials =
+      args.GetObject<grpc_server_credentials>();
+  return server_credentials != nullptr &&
+         server_credentials->replaces_server_auth_filter();
 }
 
 }  // namespace grpc_core
