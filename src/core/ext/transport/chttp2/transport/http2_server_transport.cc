@@ -59,6 +59,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/all_ok.h"
@@ -82,6 +83,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
@@ -1527,6 +1529,10 @@ Http2Status Http2ServerTransport::IncomingStream(
 
   RefCountedPtr<Arena> arena = call_arena_allocator_->MakeArena();
   arena->SetContext<EventEngine>(event_engine_.get());
+
+  if (IsCallTracerInTransportEnabled() && stats_plugin_group_ != nullptr) {
+    stats_plugin_group_->AddServerCallTracers(arena.get(), {});
+  }
   CallInitiatorAndHandler call =
       MakeCallPair(std::move(metadata), std::move(arena));
 
@@ -2188,7 +2194,10 @@ Http2ServerTransport::Http2ServerTransport(
           &memory_owner_),
       security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
-      tarpit_manager_(channel_args) {
+      tarpit_manager_(channel_args),
+      stats_plugin_group_(
+          channel_args
+              .GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor Begin";
 
   // Initialize the general party and write party.

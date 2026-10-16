@@ -102,6 +102,7 @@ RegisteredMetricCallback::~RegisteredMetricCallback() {
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
     const Slice& path, bool registered_method, Arena* arena) {
+  promise_detail::Context<Arena> context(arena);
   absl::InlinedVector<ClientCallTracerInterface*, 3> tracers;
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetClientCallTracer(
@@ -116,6 +117,7 @@ void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
     Arena* arena,
     absl::Span<ServerCallTracerInterface* const> additional_tracers) {
+  promise_detail::Context<Arena> context(arena);
   absl::InlinedVector<ServerCallTracerInterface*, 3> tracers;
   for (auto* tracer : additional_tracers) {
     if (tracer != nullptr) tracers.push_back(tracer);
