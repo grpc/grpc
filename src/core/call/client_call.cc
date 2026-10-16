@@ -48,6 +48,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/bitset.h"
@@ -102,18 +103,26 @@ grpc_call_error ValidateClientBatch(
 
 }  // namespace
 
-ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
-                       Slice path, std::optional<Slice> authority,
-                       bool registered_method, Timestamp deadline,
-                       grpc_compression_options compression_options,
-                       RefCountedPtr<Arena> arena,
-                       RefCountedPtr<UnstartedCallDestination> destination)
+ClientCall::ClientCall(
+    grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* cq, Slice path, std::optional<Slice> authority,
+    bool registered_method, Timestamp deadline,
+    grpc_compression_options compression_options, RefCountedPtr<Arena> arena,
+    RefCountedPtr<UnstartedCallDestination> destination,
+    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group)
     : Call(/*is_client=*/true, deadline, std::move(arena)),
       DualRefCounted("ClientCall"),
       cq_(cq),
       call_destination_(std::move(destination)),
       compression_options_(compression_options) {
   global_stats().IncrementClientCallsCreated();
+
+  if (stats_plugin_group != nullptr) {
+    stats_plugin_group->AddClientCallTracers(path, registered_method,
+                                             this->arena());
+  }
+
   send_initial_metadata_->Set(HttpPathMetadata(), std::move(path));
   if (authority.has_value()) {
     send_initial_metadata_->Set(HttpAuthorityMetadata(), std::move(*authority));
@@ -488,13 +497,14 @@ char* ClientCall::GetPeer() {
   return gpr_strdup("unknown");
 }
 
-grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
-                          grpc_completion_queue* cq, Slice path,
-                          std::optional<Slice> authority,
-                          bool registered_method, Timestamp deadline,
-                          grpc_compression_options compression_options,
-                          RefCountedPtr<Arena> arena,
-                          RefCountedPtr<UnstartedCallDestination> destination) {
+grpc_call* MakeClientCall(
+    grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* cq, Slice path, std::optional<Slice> authority,
+    bool registered_method, Timestamp deadline,
+    grpc_compression_options compression_options, RefCountedPtr<Arena> arena,
+    RefCountedPtr<UnstartedCallDestination> destination,
+    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group) {
   GRPC_DCHECK_NE(arena.get(), nullptr);
   GRPC_DCHECK_NE(
       arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
@@ -502,7 +512,8 @@ grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
   return arena
       ->New<ClientCall>(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), registered_method, deadline,
-                        compression_options, arena, destination)
+                        compression_options, arena, destination,
+                        std::move(stats_plugin_group))
       ->c_ptr();
 }
 
