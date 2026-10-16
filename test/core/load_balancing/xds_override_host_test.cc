@@ -586,10 +586,9 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
   // A pick with an override pointing to the draining endpoint should
   // queue the pick and trigger subchannel creation.
   auto* address1_attribute = MakeOverrideHostAttribute(kAddresses[1]);
-  ExpectPickQueued(picker.get(),
-                   "xds_override_host: creating subchannel for 127.0.0.1:442",
-                   LoadBalancingPolicy::kDelayTypeConnecting,
-                   {address1_attribute});
+  ExpectPickQueued(
+      picker.get(), "xds_override_host: creating subchannel for 127.0.0.1:442",
+      LoadBalancingPolicy::kDelayTypeConnecting, {address1_attribute});
   WaitForWorkSerializerToFlush();
   subchannel2 = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel2, nullptr);

@@ -370,9 +370,9 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         case GRPC_CHANNEL_IDLE:
           RequestConnectionForEndpoint(endpoint_info.endpoint);
           if (endpoint_info.picker == nullptr) {
-            PickResult result = PickResult::Queue{
-                kDelayTypeConnecting,
-                "child policy has not yet returned a picker"};
+            PickResult result =
+                PickResult::Queue{kDelayTypeConnecting,
+                                  "child policy has not yet returned a picker"};
             MaybeModifyDelayReason(/*is_first_index=*/i == 0, last_failure,
                                    result);
             return result;

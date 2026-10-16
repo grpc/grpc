@@ -645,10 +645,10 @@ void PickFirst::GoIdle(absl::string_view reason) {
   // Drop the current subchannel list, if any.
   subchannel_list_.reset();
   // Enter idle.
-  UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-              MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"),
-                                          kDelayTypeConnecting,
-                                          std::string(reason)));
+  UpdateState(
+      GRPC_CHANNEL_IDLE, absl::OkStatus(),
+      MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"),
+                                  kDelayTypeConnecting, std::string(reason)));
 }
 
 //
