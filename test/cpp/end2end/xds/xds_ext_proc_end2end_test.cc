@@ -803,11 +803,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void SetUp() override {
-    if (GetParam().filter_on_server() &&
-        !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
-      GTEST_SKIP()
-          << "test requires xds_server_filter_chain_per_route experiment";
-    }
     if (GetParam().filter_on_server()) {
       SKIP_TEST_FOR_PH2_SERVER(
           "TODO(rishesh): [PH2] Server-side ext_proc crashes with PH2 server");
