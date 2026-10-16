@@ -119,7 +119,6 @@ static void test_grpc_parse_vsock_invalid(const char* uri_text) {
     ASSERT_TRUE(uri.ok());
   }
   grpc_resolved_address addr;
-
   ASSERT_FALSE(grpc_parse_uri(*uri, &addr));
 }
 
@@ -214,43 +213,51 @@ TEST(ParseAddressTest, MainTest) {
 
 TEST(ParseAddressTest, PortParsing) {
   grpc_init();
-
   // Boundary ports are still accepted.
   test_grpc_parse_ipv4("ipv4:192.0.2.1:0", "192.0.2.1", 0);
   test_grpc_parse_ipv4("ipv4:192.0.2.1:65535", "192.0.2.1", 65535);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1]:65535", "2001:db8::1", 65535, 0);
-
   // Trailing garbage after the digits is rejected instead of partially
   // parsed.
   test_grpc_parse_ipv4_invalid("ipv4:192.0.2.1:123x");
   test_grpc_parse_ipv6_invalid("ipv6:[2001:db8::1]:123x");
   test_grpc_parse_vsock_invalid("vsock:10:123x");
-
+  // Surrounding whitespace and a leading '+' sign are rejected, even
+  // when they arrive percent-encoded in the uri.
+  test_grpc_parse_ipv4_invalid("ipv4:192.0.2.1:%2080");
+  test_grpc_parse_ipv4_invalid("ipv4:192.0.2.1:80%20");
+  test_grpc_parse_ipv4_invalid("ipv4:192.0.2.1:%2B80");
+  test_grpc_parse_ipv6_invalid("ipv6:[2001:db8::1]:%2080");
+  test_grpc_parse_ipv6_invalid("ipv6:[2001:db8::1]:80%20");
+  test_grpc_parse_ipv6_invalid("ipv6:[2001:db8::1]:%2B80");
   // Ports that do not fit in 16 bits are rejected.
   test_grpc_parse_ipv4_invalid("ipv4:192.0.2.1:65536");
   test_grpc_parse_ipv6_invalid("ipv6:[2001:db8::1]:65536");
-
   // Negative ports are rejected.
   test_grpc_parse_ipv4_invalid("ipv4:192.0.2.1:-1");
   test_grpc_parse_ipv6_invalid("ipv6:[2001:db8::1]:-1");
-  test_grpc_parse_vsock_invalid("vsock:10:-1");
-
   grpc_shutdown();
 }
 
 TEST(ParseAddressTest, VsockParsing) {
   grpc_init();
-
   test_grpc_parse_vsock("vsock:10:1234", 10, 1234);
-  // Both spellings of VMADDR_CID_ANY.
+  // Both spellings of VMADDR_CID_ANY are accepted.
   test_grpc_parse_vsock("vsock:4294967295:1234", 4294967295u, 1234);
+  test_grpc_parse_vsock("vsock:-1:1234", -1, 1234);
+  // Both spellings of VMADDR_PORT_ANY are accepted.
+  test_grpc_parse_vsock("vsock:10:4294967295", 10, 4294967295u);
+  test_grpc_parse_vsock("vsock:10:-1", 10, -1);
   // Extra fields are rejected instead of ignored.
   test_grpc_parse_vsock_invalid("vsock:10");
   test_grpc_parse_vsock_invalid("vsock:10:20:30");
   test_grpc_parse_vsock_invalid("vsock:1x:20");
-  // -1 is the only negative cid that is accepted.
+  // -1 is the only negative cid or port that is accepted.
   test_grpc_parse_vsock_invalid("vsock:-2:20");
-
+  test_grpc_parse_vsock_invalid("vsock:10:-2");
+  // Values that do not fit in 32 bits are rejected.
+  test_grpc_parse_vsock_invalid("vsock:4294967296:20");
+  test_grpc_parse_vsock_invalid("vsock:10:4294967296");
   grpc_shutdown();
 }
 
