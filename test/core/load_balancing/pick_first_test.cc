@@ -158,8 +158,8 @@ TEST_F(PickFirstTest, FirstAddressWorks) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // When the first subchannel becomes connected, it reports READY.
@@ -193,8 +193,8 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   // CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The first subchannel's connection attempt fails.
@@ -206,8 +206,9 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   // CONNECTING.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:444 (subchannel 2 of 2); "
-      "last attempt failure: UNAVAILABLE: failed to connect");
+      absl::StrCat("pick_first: connecting to ", kAddresses[1],
+                   " (subchannel 2 of 2); last attempt failure: UNAVAILABLE: "
+                   "failed to connect"));
   // The connection attempt succeeds.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
@@ -247,7 +248,8 @@ TEST_F(PickFirstTest, FlattensEndpointAddressesList) {
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 3)");
+      absl::StrCat("pick_first: connecting to ", kEndpoint1Addresses[0],
+                   " (subchannel 1 of 3)"));
   // The other subchannels should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   EXPECT_FALSE(subchannel3->ConnectionRequested());
@@ -313,8 +315,9 @@ TEST_F(PickFirstTest, FirstTwoAddressesInTransientFailureAtStart) {
   subchannel3->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:445 (subchannel 3 of 3); "
-      "last attempt failure: UNAVAILABLE: failed to connect");
+      absl::StrCat("pick_first: connecting to ", kAddresses[2],
+                   " (subchannel 3 of 3); last attempt failure: UNAVAILABLE: "
+                   "failed to connect"));
   // The connection attempt succeeds.
   subchannel3->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
@@ -448,8 +451,8 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // When the first subchannel becomes connected, it reports READY.
@@ -506,8 +509,8 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
   // The subchannel starts a connection attempt.
   subchannel3->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // The LB policy should now report CONNECTING.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:445 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kNewAddresses[0], " (subchannel 1 of 2)"));
   // The connection attempt succeeds.
   subchannel3->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
@@ -541,8 +544,8 @@ TEST_F(PickFirstTest, HappyEyeballs) {
   // CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 3)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 3)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The timer fires before the connection attempt completes.
@@ -596,8 +599,8 @@ TEST_F(PickFirstTest, HappyEyeballsCompletesWithoutSuccess) {
   // CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 3)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 3)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The timer fires before the connection attempt completes.
@@ -715,8 +718,8 @@ TEST_F(PickFirstTest,
   // CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The timer fires before the connection attempt completes.
@@ -793,8 +796,8 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_TRUE(subchannel_ipv4_1->ConnectionRequested());
   subchannel_ipv4_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 6)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv4_2->ConnectionRequested());
   EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
@@ -809,7 +812,8 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   subchannel_ipv6_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv6:%5B::1%5D:444 (subchannel 2 of 6)");
+      absl::StrCat("pick_first: connecting to ", subchannel_ipv6_1->address(),
+                   " (subchannel 2 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv4_2->ConnectionRequested());
   EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
@@ -822,8 +826,8 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_TRUE(subchannel_ipv4_2->ConnectionRequested());
   subchannel_ipv4_2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:444 (subchannel 3 of 6)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[1], " (subchannel 3 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
@@ -836,7 +840,8 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   subchannel_ipv6_2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv6:%5B::1%5D:445 (subchannel 4 of 6)");
+      absl::StrCat("pick_first: connecting to ", subchannel_ipv6_2->address(),
+                   " (subchannel 4 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
@@ -847,8 +852,8 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_TRUE(subchannel_ipv4_3->ConnectionRequested());
   subchannel_ipv4_3->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:445 (subchannel 5 of 6)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[2], " (subchannel 5 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
   // The timer fires before the connection attempt completes.
@@ -858,8 +863,8 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   EXPECT_TRUE(subchannel_ipv4_4->ConnectionRequested());
   subchannel_ipv4_4->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:446 (subchannel 6 of 6)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[3], " (subchannel 6 of 6)"));
 }
 
 TEST_F(PickFirstTest,
@@ -892,7 +897,8 @@ TEST_F(PickFirstTest,
   subchannel_ipv6_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv6:%5B::1%5D:444 (subchannel 1 of 6)");
+      absl::StrCat("pick_first: connecting to ", subchannel_ipv6_1->address(),
+                   " (subchannel 1 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv6_2->ConnectionRequested());
   EXPECT_FALSE(subchannel_ipv4_1->ConnectionRequested());
@@ -906,8 +912,8 @@ TEST_F(PickFirstTest,
   EXPECT_TRUE(subchannel_ipv4_1->ConnectionRequested());
   subchannel_ipv4_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 2 of 6)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[2], " (subchannel 2 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv6_2->ConnectionRequested());
   EXPECT_FALSE(subchannel_ipv4_2->ConnectionRequested());
@@ -921,7 +927,8 @@ TEST_F(PickFirstTest,
   subchannel_ipv6_2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv6:%5B::1%5D:445 (subchannel 3 of 6)");
+      absl::StrCat("pick_first: connecting to ", subchannel_ipv6_2->address(),
+                   " (subchannel 3 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv4_2->ConnectionRequested());
   EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
@@ -933,8 +940,8 @@ TEST_F(PickFirstTest,
   EXPECT_TRUE(subchannel_ipv4_2->ConnectionRequested());
   subchannel_ipv4_2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:444 (subchannel 4 of 6)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[3], " (subchannel 4 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv4_3->ConnectionRequested());
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
@@ -945,8 +952,8 @@ TEST_F(PickFirstTest,
   EXPECT_TRUE(subchannel_ipv4_3->ConnectionRequested());
   subchannel_ipv4_3->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:445 (subchannel 5 of 6)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[4], " (subchannel 5 of 6)"));
   // No other subchannels should be connecting.
   EXPECT_FALSE(subchannel_ipv4_4->ConnectionRequested());
   // The timer fires before the connection attempt completes.
@@ -956,8 +963,8 @@ TEST_F(PickFirstTest,
   EXPECT_TRUE(subchannel_ipv4_4->ConnectionRequested());
   subchannel_ipv4_4->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:446 (subchannel 6 of 6)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[5], " (subchannel 6 of 6)"));
 }
 
 TEST_F(PickFirstTest, FirstAddressGoesIdleBeforeSecondOneFails) {
@@ -979,8 +986,8 @@ TEST_F(PickFirstTest, FirstAddressGoesIdleBeforeSecondOneFails) {
   // CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The first subchannel's connection attempt fails.
@@ -993,8 +1000,9 @@ TEST_F(PickFirstTest, FirstAddressGoesIdleBeforeSecondOneFails) {
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:444 (subchannel 2 of 2); "
-      "last attempt failure: UNAVAILABLE: failed to connect");
+      absl::StrCat("pick_first: connecting to ", kAddresses[1],
+                   " (subchannel 2 of 2); last attempt failure: UNAVAILABLE: "
+                   "failed to connect"));
   // Before the second subchannel's attempt completes, the first
   // subchannel reports IDLE.
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
@@ -1042,8 +1050,8 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // When the first subchannel becomes connected, it reports READY.
@@ -1078,8 +1086,8 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   // The subchannel starts connecting.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // Subchannel succeeds in connecting.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // LB policy reports READY.
@@ -1109,8 +1117,8 @@ TEST_F(PickFirstTest, GoesConnectingWhenSelectedSubchannelGoesConnecting) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // Subchannel fails to connect.
@@ -1137,9 +1145,9 @@ TEST_F(PickFirstTest, GoesConnectingWhenSelectedSubchannelGoesConnecting) {
   // We should see a re-resolution request.
   ExpectReresolutionRequest();
   // LB policy reports CONNECTNG with a queueing picker.
-  ExpectConnectingUpdate(
-      "pick_first: connection to ipv4:127.0.0.1:444 disconnected (CONNECTING, "
-      "OK); attempting to reconnect");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connection to ", kAddresses[1],
+      " disconnected (CONNECTING, OK); attempting to reconnect"));
   // LB policy asks the first subchannel to connect.
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // First subchannel reports CONNECTING.
@@ -1176,8 +1184,8 @@ TEST_F(PickFirstTest,
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // Subchannel fails to connect.
@@ -1206,8 +1214,9 @@ TEST_F(PickFirstTest,
   ExpectReresolutionRequest();
   // LB policy reports CONNECTNG with a queueing picker.
   ExpectConnectingUpdate(
-      "pick_first: connection to ipv4:127.0.0.1:444 disconnected "
-      "(TRANSIENT_FAILURE, UNAVAILABLE: failed); attempting to reconnect");
+      absl::StrCat("pick_first: connection to ", kAddresses[1],
+                   " disconnected (TRANSIENT_FAILURE, UNAVAILABLE: "
+                   "failed); attempting to reconnect"));
   // LB policy asks the first subchannel to connect.
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // First subchannel reports CONNECTING.
@@ -1250,8 +1259,8 @@ TEST_F(PickFirstTest, AddressUpdateRemovedSelectedAddress) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // When the first subchannel becomes connected, it reports READY.
@@ -1287,8 +1296,8 @@ TEST_F(PickFirstTest, AddressUpdateRemovedSelectedAddress) {
   // The subchannel starts connecting.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:444 (subchannel 1 of 1)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[1], " (subchannel 1 of 1)"));
   // Subchannel succeeds in connecting.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
   // LB policy reports READY.
@@ -1318,8 +1327,8 @@ TEST_F(PickFirstTest, AddressUpdateRetainsSelectedAddress) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // When the first subchannel becomes connected, it reports READY.
@@ -1368,8 +1377,8 @@ TEST_F(PickFirstTest, SubchannelNotificationAfterShutdown) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The following things happen in order:
   // 1. We enqueue a READY notification for the subchannel in the
   //    WorkSerializer, but do not yet execute it.
@@ -1432,8 +1441,9 @@ TEST_F(PickFirstTest,
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2); "
-      "last attempt failure: UNAVAILABLE: failed to connect");
+      absl::StrCat("pick_first: connecting to ", kAddresses[0],
+                   " (subchannel 1 of 2); last attempt failure: UNAVAILABLE: "
+                   "failed to connect"));
   // Second subchannel finishes backoff.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_IDLE);
   // No connection attempt triggered on the second subchannel yet.
@@ -1446,8 +1456,9 @@ TEST_F(PickFirstTest,
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:444 (subchannel 2 of 2); "
-      "last attempt failure: UNAVAILABLE: failed to connect");
+      absl::StrCat("pick_first: connecting to ", kAddresses[1],
+                   " (subchannel 2 of 2); last attempt failure: UNAVAILABLE: "
+                   "failed to connect"));
   // Second subchannel fails immediately.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     absl::UnavailableError("ugh"));
@@ -1493,8 +1504,8 @@ TEST_F(PickFirstTest,
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // Second subchannel reports TF.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     absl::UnavailableError("failed to connect"),
@@ -1509,9 +1520,9 @@ TEST_F(PickFirstTest,
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:444 (subchannel 2 of 2); "
-      "last attempt failure: UNAVAILABLE: ugh");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[1],
+      " (subchannel 2 of 2); last attempt failure: UNAVAILABLE: ugh"));
   // First subchannel finishes backoff.
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
   // Second subchannel fails.
@@ -1683,8 +1694,8 @@ TEST_F(PickFirstTest, MetricValues) {
   // CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 2)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 2)"));
   // The second subchannel should not be connecting.
   EXPECT_FALSE(subchannel2->ConnectionRequested());
   // The first subchannel's connection attempt fails.
@@ -1742,8 +1753,8 @@ TEST_F(PickFirstHealthCheckingEnabledTest, UpdateWithReadyChannel) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(
-      "pick_first: connecting to ipv4:127.0.0.1:443 (subchannel 1 of 1)");
+  ExpectConnectingUpdate(absl::StrCat(
+      "pick_first: connecting to ", kAddress, " (subchannel 1 of 1)"));
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
