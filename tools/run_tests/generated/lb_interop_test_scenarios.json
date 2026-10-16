@@ -1,0 +1,1167 @@
+
+[
+    {
+        "backend_configs": [],
+        "balancer_configs": [],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "no_balancer_because_lb_a_record_returns_nx_domain_insecure",
+        "skip_langs": [],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "name": "no_balancer_because_lb_a_record_returns_nx_domain_alts",
+        "skip_langs": [],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "no_balancer_because_lb_a_record_returns_nx_domain_tls",
+        "skip_langs": [],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "no_balancer_because_lb_a_record_returns_nx_domain_google_default_credentials",
+        "skip_langs": [],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [],
+        "cause_no_error_no_data_for_balancer_a_record": true,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "no_balancer_because_lb_a_record_returns_no_data_insecure",
+        "skip_langs": [],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [],
+        "cause_no_error_no_data_for_balancer_a_record": true,
+        "fallback_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "name": "no_balancer_because_lb_a_record_returns_no_data_alts",
+        "skip_langs": [],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [],
+        "cause_no_error_no_data_for_balancer_a_record": true,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "no_balancer_because_lb_a_record_returns_no_data_tls",
+        "skip_langs": [],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [],
+        "cause_no_error_no_data_for_balancer_a_record": true,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "no_balancer_because_lb_a_record_returns_no_data_google_default_credentials",
+        "skip_langs": [],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_insecure_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_alts_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_tls_short_stream_True",
+        "skip_langs": [
+            "java",
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_google_default_credentials_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_insecure_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_alts_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_tls_short_stream_False",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_google_default_credentials_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "client_referred_to_backend_fallback_broken_alts_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "client_referred_to_backend_fallback_broken_tls_short_stream_True",
+        "skip_langs": [
+            "java",
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "client_referred_to_backend_fallback_broken_google_default_credentials_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "client_referred_to_backend_fallback_broken_alts_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "client_referred_to_backend_fallback_broken_tls_short_stream_False",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "client_referred_to_backend_fallback_broken_google_default_credentials_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "insecure"
+            },
+            {
+                "transport_sec": "insecure"
+            },
+            {
+                "transport_sec": "insecure"
+            },
+            {
+                "transport_sec": "insecure"
+            },
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_backends_insecure_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_backends_alts_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "tls"
+            },
+            {
+                "transport_sec": "tls"
+            },
+            {
+                "transport_sec": "tls"
+            },
+            {
+                "transport_sec": "tls"
+            },
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_backends_tls_short_stream_True",
+        "skip_langs": [
+            "java",
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_backends_google_default_credentials_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "insecure"
+            },
+            {
+                "transport_sec": "insecure"
+            },
+            {
+                "transport_sec": "insecure"
+            },
+            {
+                "transport_sec": "insecure"
+            },
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_backends_insecure_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_backends_alts_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "tls"
+            },
+            {
+                "transport_sec": "tls"
+            },
+            {
+                "transport_sec": "tls"
+            },
+            {
+                "transport_sec": "tls"
+            },
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_backends_tls_short_stream_False",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            },
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_backends_google_default_credentials_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "client_falls_back_because_no_backends_insecure_short_stream_True",
+        "skip_langs": [
+            "go",
+            "java",
+            "java"
+        ],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "name": "client_falls_back_because_no_backends_alts_short_stream_True",
+        "skip_langs": [
+            "go",
+            "java",
+            "java"
+        ],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "client_falls_back_because_no_backends_tls_short_stream_True",
+        "skip_langs": [
+            "go",
+            "java",
+            "java",
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "client_falls_back_because_no_backends_google_default_credentials_short_stream_True",
+        "skip_langs": [
+            "go",
+            "java",
+            "java"
+        ],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "name": "client_falls_back_because_no_backends_insecure_short_stream_False",
+        "skip_langs": [
+            "go",
+            "java"
+        ],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "name": "client_falls_back_because_no_backends_alts_short_stream_False",
+        "skip_langs": [
+            "go",
+            "java"
+        ],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "client_falls_back_because_no_backends_tls_short_stream_False",
+        "skip_langs": [
+            "go",
+            "java",
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "client_falls_back_because_no_backends_google_default_credentials_short_stream_False",
+        "skip_langs": [
+            "go",
+            "java"
+        ],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "name": "client_falls_back_because_balancer_connection_broken_alts",
+        "skip_langs": [],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "client_falls_back_because_balancer_connection_broken_tls",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "name": "client_falls_back_because_balancer_connection_broken_google_default_credentials",
+        "skip_langs": [],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "insecure"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "insecure"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "insecure"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "insecure"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_balancers_insecure_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_balancers_alts_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "tls"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "tls"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "tls"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "tls"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_balancers_tls_short_stream_True",
+        "skip_langs": [
+            "java",
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": true,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_balancers_google_default_credentials_short_stream_True",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "google_default_credentials"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "insecure"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "insecure"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_balancers_insecure_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "insecure"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_balancers_alts_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "alts"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "tls"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "tls"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "tls"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "tls"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "tls"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "tls"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_balancers_tls_short_stream_False",
+        "skip_langs": [
+            "java"
+        ],
+        "transport_sec": "tls"
+    },
+    {
+        "backend_configs": [
+            {
+                "transport_sec": "alts"
+            }
+        ],
+        "balancer_configs": [
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            },
+            {
+                "short_stream": false,
+                "transport_sec": "alts"
+            }
+        ],
+        "cause_no_error_no_data_for_balancer_a_record": false,
+        "fallback_configs": [],
+        "name": "client_referred_to_backend_multiple_balancers_google_default_credentials_short_stream_False",
+        "skip_langs": [],
+        "transport_sec": "google_default_credentials"
+    }
+]

@@ -1,0 +1,393 @@
+# Copyright 2017 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+
+licenses(["notice"])
+
+grpc_package(
+    name = "test/core/tsi",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+    visibility = "public",
+)
+
+grpc_cc_library(
+    name = "transport_security_test_lib",
+    testonly = 1,
+    srcs = ["transport_security_test_lib.cc"],
+    hdrs = ["transport_security_test_lib.h"],
+    external_deps = [
+        "absl/log:check",
+        "libssl",
+        "libcrypto",
+        "absl/strings",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:tsi_base",
+        "//src/core:error",
+        "//src/core:grpc_check",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "fake_transport_security_test",
+    srcs = ["fake_transport_security_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        ":transport_security_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ssl_session_cache_test",
+    srcs = ["ssl_session_cache_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:tsi_ssl_session_cache",
+        "//src/core:grpc_check",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ssl_transport_security_utils_test",
+    srcs = ["ssl_transport_security_utils_test.cc"],
+    data = [
+        "//:etc/roots.pem",
+        "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:ca_with_akid.pem",
+        "//test/core/tsi/test_creds/crl_data:crl_with_akid.crl",
+        "//test/core/tsi/test_creds/crl_data:evil_ca.pem",
+        "//test/core/tsi/test_creds/crl_data:intermediate_ca.pem",
+        "//test/core/tsi/test_creds/crl_data:leaf_signed_by_intermediate.pem",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:invalid_content.crl",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:invalid_signature.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:tsi_base",
+        "//src/core:load_file",
+        "//src/core:slice",
+        "//src/core:ssl_transport_security_utils",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/tsi:transport_security_test_lib",
+    ],
+)
+
+grpc_cc_test(
+    name = "ssl_transport_security_test",
+    timeout = "eternal",
+    srcs = ["ssl_transport_security_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:badclient.key",
+        "//src/core/tsi/test_creds:badclient.pem",
+        "//src/core/tsi/test_creds:badserver.key",
+        "//src/core/tsi/test_creds:badserver.pem",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:leaf_and_intermediate_chain.pem",
+        "//src/core/tsi/test_creds:leaf_signed_by_intermediate.key",
+        "//src/core/tsi/test_creds:multi-domain.key",
+        "//src/core/tsi/test_creds:multi-domain.pem",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "gtest",
+        "libcrypto",
+    ],
+    shard_count = 5,
+    tags = [
+        # TODO: cannot load data
+        "grpc:fails-internally",
+        "no_windows",
+    ],
+    deps = [
+        ":transport_security_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:histogram",
+        "//src/core:instrument",
+        "//src/core:tls_telemetry",
+        "//test/core/test_util:build",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ssl_telemetry_utils_test",
+    srcs = ["ssl_telemetry_utils_test.cc"],
+    external_deps = [
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:ssl_telemetry_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "crl_ssl_transport_security_test",
+    srcs = ["crl_ssl_transport_security_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:intermediate_ca.key",
+        "//test/core/tsi/test_creds/crl_data:intermediate_ca.pem",
+        "//test/core/tsi/test_creds/crl_data:leaf_and_intermediate_chain.pem",
+        "//test/core/tsi/test_creds/crl_data:leaf_signed_by_intermediate.key",
+        "//test/core/tsi/test_creds/crl_data:leaf_signed_by_intermediate.pem",
+        "//test/core/tsi/test_creds/crl_data:revoked.key",
+        "//test/core/tsi/test_creds/crl_data:revoked.pem",
+        "//test/core/tsi/test_creds/crl_data:valid.key",
+        "//test/core/tsi/test_creds/crl_data:valid.pem",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:evil.crl",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:invalid_content.crl",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:invalid_signature.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
+        "//test/core/tsi/test_creds/crl_data/crls_missing_intermediate:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data/crls_missing_root:b9322cac.r0",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        ":transport_security_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:grpc_check",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "spiffe_ssl_transport_security_test",
+    srcs = ["spiffe_ssl_transport_security_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:valid.key",
+        "//test/core/tsi/test_creds/crl_data:valid.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:ca.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:client.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:client_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:client_spiffebundle.json",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate.cnf",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate_ca.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate_ca.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate_gen.sh",
+        "//test/core/tsi/test_creds/spiffe_end2end:invalid_utf8_san.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:invalid_utf8_san_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:leaf_and_intermediate_chain.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:leaf_signed_by_intermediate.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:leaf_signed_by_intermediate.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:multi_san.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:multi_san_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:server.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:server_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:server_spiffebundle.json",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+        "libcrypto",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        ":transport_security_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "transport_security_test",
+    srcs = ["transport_security_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings:str_format",
+        "gtest",
+        "libcrypto",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
+        "//:tsi_ssl_credentials",
+        "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "private_key_signer_test_util",
+    testonly = 1,
+    srcs = ["private_key_signer_test_util.cc"],
+    hdrs = ["private_key_signer_test_util.h"],
+    external_deps = [
+        "libcrypto",
+        "absl/strings",
+        "absl/status",
+        "absl/status:statusor",
+        "libssl",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:tsi_base",
+        "//src/core:time",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "private_key_offload_test",
+    srcs = ["private_key_offload_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:client1.key",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/synchronization",
+        "absl/types:optional",
+        "gtest",
+        "libcrypto",
+    ],
+    deps = [
+        ":private_key_signer_test_util",
+        ":transport_security_test_lib",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:iomgr_timer",
+        "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:wait_for_single_owner",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "cert_selection_offload_test",
+    srcs = ["cert_selection_offload_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        ":private_key_signer_test_util",
+        ":transport_security_test_lib",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:iomgr_timer",
+        "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:grpc_tls_certificate_selector",
+        "//src/core:match",
+        "//src/core:time",
+        "//src/core:wait_for_single_owner",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

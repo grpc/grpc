@@ -1,0 +1,3 @@
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean

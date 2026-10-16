@@ -1,0 +1,96 @@
+//
+// Copyright 2024 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#include "src/core/xds/grpc/xds_metadata.h"
+
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/string.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+
+void XdsMetadataMap::Insert(absl::string_view key,
+                            std::unique_ptr<XdsMetadataValue> value) {
+  GRPC_CHECK(value != nullptr);
+  GRPC_CHECK(map_.emplace(key, std::move(value)).second)
+      << "duplicate key: " << key;
+}
+
+const XdsMetadataValue* XdsMetadataMap::Find(absl::string_view key) const {
+  auto it = map_.find(key);
+  if (it == map_.end()) return nullptr;
+  return it->second.get();
+}
+
+bool XdsMetadataMap::operator==(const XdsMetadataMap& other) const {
+  if (map_.size() != other.map_.size()) return false;
+  for (const auto& [key, value] : map_) {
+    auto it = other.map_.find(key);
+    if (it == other.map_.end()) return false;
+    if (*value != *it->second) return false;
+  }
+  return true;
+}
+
+std::string XdsMetadataMap::ToString() const {
+  std::vector<absl::string_view> keys;
+  for (const auto& [key, _] : map_) {
+    keys.push_back(key);
+  }
+  std::sort(keys.begin(), keys.end());
+  std::string result = "{";
+  for (size_t i = 0; i < keys.size(); ++i) {
+    auto it = map_.find(keys[i]);
+    if (it == map_.end()) continue;  // Should never happen.
+    if (i > 0) StrAppend(result, ", ");
+    StrAppend(result, keys[i]);
+    StrAppend(result, "=");
+    StrAppend(result, it->second->ToString());
+  }
+  StrAppend(result, "}");
+  return result;
+}
+
+std::string XdsStructMetadataValue::ToString() const {
+  std::string result = std::string(type());
+  StrAppend(result, "{");
+  StrAppend(result, JsonDump(json_));
+  StrAppend(result, "}");
+  return result;
+}
+
+std::string XdsGcpAuthnAudienceMetadataValue::ToString() const {
+  std::string result = std::string(type());
+  StrAppend(result, "{url=\"");
+  StrAppend(result, url_);
+  StrAppend(result, "\"}");
+  return result;
+}
+
+std::string XdsAddressMetadataValue::ToString() const {
+  std::string result = std::string(type());
+  StrAppend(result, "{address=\"");
+  StrAppend(result, address_);
+  StrAppend(result, "\"}");
+  return result;
+}
+
+}  // namespace grpc_core

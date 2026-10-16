@@ -1,0 +1,1865 @@
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include "src/core/tsi/ssl_transport_security.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <openssl/crypto.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <thread>
+#include <tuple>
+#include <vector>
+
+#include "src/core/telemetry/instrument.h"
+#include "src/core/tsi/tls_telemetry.h"
+#include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/memory.h"
+#include "test/core/test_util/build.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
+#include "test/core/tsi/transport_security_test_lib.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+#define SSL_TSI_TEST_WRONG_SNI "test.google.cn"
+#define SSL_TSI_TEST_INVALID_SNI "1.2.3.4"
+
+namespace grpc_core {
+namespace testing {
+namespace {
+
+const char kSslTsiTestAlpn1[] = "foo";
+const char kSslTsiTestAlpn2[] = "toto";
+const char kSslTsiTestAlpn3[] = "baz";
+constexpr size_t kSslTsiTestAlpnNum = 2;
+constexpr size_t kSslTsiTestServerKeyCertPairsNum = 2;
+constexpr size_t kSslTsiTestBadServerKeyCertPairsNum = 1;
+constexpr size_t kSslTsiTestLeafSignedByIntermediateKeyCertPairsNum = 1;
+constexpr absl::string_view kSslTsiTestCredentialsDir =
+    "src/core/tsi/test_creds/";
+constexpr absl::string_view kSslTsiTestWrongSni = "test.google.cn";
+constexpr absl::string_view kSslTsiTestInvalidSni = "1.2.3.4";
+constexpr size_t kTls13FrameOverhead = 22;
+// OpenSSL 1.1 uses AES256 for encryption session ticket by default so specify
+// different STEK size.
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(OPENSSL_IS_BORINGSSL)
+constexpr size_t kSessionTicketEncryptionKeySize = 80;
+#else
+constexpr size_t kSessionTicketEncryptionKeySize = 48;
+#endif
+
+using ::grpc_core::testing::GetFileContents;
+using ::testing::Combine;
+using ::testing::TestParamInfo;
+using ::testing::Values;
+
+typedef enum AlpnMode {
+  NO_ALPN,
+  ALPN_CLIENT_NO_SERVER,
+  ALPN_SERVER_NO_CLIENT,
+  ALPN_CLIENT_SERVER_OK,
+  ALPN_CLIENT_SERVER_MISMATCH
+} AlpnMode;
+
+typedef struct ssl_alpn_lib {
+  AlpnMode alpn_mode;
+  const char** server_alpn_protocols;
+  const char** client_alpn_protocols;
+  uint16_t num_server_alpn_protocols;
+  uint16_t num_client_alpn_protocols;
+} ssl_alpn_lib;
+
+typedef struct ssl_key_cert_lib {
+  bool use_bad_server_cert;
+  bool use_bad_client_cert;
+  bool use_root_store;
+  bool use_pem_root_certs;
+  bool use_cert_signed_by_intermediate_ca;
+  bool skip_server_certificate_verification;
+  std::string root_cert;
+  tsi_ssl_root_certs_store* root_store;
+  PemKeyCertPairList server_pem_key_cert_pairs;
+  PemKeyCertPairList bad_server_pem_key_cert_pairs;
+  PemKeyCertPairList leaf_signed_by_intermediate_key_cert_pairs;
+  PemKeyCertPair client_pem_key_cert_pair;
+  PemKeyCertPair bad_client_pem_key_cert_pair;
+  uint16_t server_num_key_cert_pairs;
+  uint16_t bad_server_num_key_cert_pairs;
+  uint16_t leaf_signed_by_intermediate_num_key_cert_pairs;
+} ssl_key_cert_lib;
+
+bool check_property(tsi_peer* peer, const char* property_name,
+                    const char* property_value) {
+  for (size_t i = 0; i < peer->property_count; i++) {
+    const tsi_peer_property* prop = &peer->properties[i];
+    if (strcmp(prop->name, property_name) == 0) {
+      if (strlen(property_value) == prop->value.length &&
+          memcmp(prop->value.data, property_value, prop->value.length) == 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool is_slow_build() {
+#if defined(GPR_ARCH_32) || defined(__APPLE__)
+  return true;
+#else
+  return BuiltUnderMsan() || BuiltUnderTsan() || BuiltUnderUbsan();
+#endif
+}
+
+std::string GenerateTrustBundle() {
+  // Create a trust bundle, consisting of 200 self-signed certs. The self-signed
+  // certs have subject DNs that are sufficiently big and complex that they
+  // substantially increase the server handshake message size.
+  std::string trust_bundle;
+  int trust_bundle_size = is_slow_build() ? 20 : 200;
+  for (int i = 0; i < trust_bundle_size; ++i) {
+    SelfSignedCertificateOptions options;
+    options.common_name =
+        absl::StrCat("{46f0eaed-6e05-43f5-9289-379104612fc", i, "}");
+    options.organization = absl::StrCat("organization-", i);
+    options.organizational_unit = absl::StrCat("organizational-unit-", i);
+    std::string self_signed_cert = GenerateSelfSignedCertificate(options);
+    trust_bundle.append(self_signed_cert);
+  }
+  return trust_bundle;
+}
+
+class TestMetricsSink;
+
+class SslTransportSecurityTest
+    : public ::testing::TestWithParam<std::tuple<tsi_tls_version, bool>> {
+ protected:
+  // A tsi_test_fixture implementation
+  class SslTsiTestFixture {
+   public:
+    SslTsiTestFixture(tsi_tls_version tls_version, bool send_client_ca_list) {
+      tsi_test_fixture_init(&base_);
+      verify_root_cert_subject_ = true;
+      base_.test_unused_bytes = true;
+      base_.vtable = &kVtable;
+      // Create ssl_key_cert_lib.
+      key_cert_lib_ = std::make_unique<ssl_key_cert_lib>();
+      key_cert_lib_->use_bad_server_cert = false;
+      key_cert_lib_->use_bad_client_cert = false;
+      key_cert_lib_->use_root_store = false;
+      key_cert_lib_->use_pem_root_certs = true;
+      key_cert_lib_->skip_server_certificate_verification = false;
+      key_cert_lib_->server_num_key_cert_pairs =
+          kSslTsiTestServerKeyCertPairsNum;
+      key_cert_lib_->bad_server_num_key_cert_pairs =
+          kSslTsiTestBadServerKeyCertPairsNum;
+      key_cert_lib_->leaf_signed_by_intermediate_num_key_cert_pairs =
+          kSslTsiTestLeafSignedByIntermediateKeyCertPairsNum;
+      key_cert_lib_->server_pem_key_cert_pairs.emplace_back(
+          testing::GetFileContents(
+              absl::StrCat(kSslTsiTestCredentialsDir, "server0.key")),
+          testing::GetFileContents(
+              absl::StrCat(kSslTsiTestCredentialsDir, "server0.pem")));
+      key_cert_lib_->server_pem_key_cert_pairs.emplace_back(
+          testing::GetFileContents(
+              absl::StrCat(kSslTsiTestCredentialsDir, "server1.key")),
+          testing::GetFileContents(
+              absl::StrCat(kSslTsiTestCredentialsDir, "server1.pem")));
+      key_cert_lib_->bad_server_pem_key_cert_pairs.emplace_back(
+          testing::GetFileContents(
+              absl::StrCat(kSslTsiTestCredentialsDir, "badserver.key")),
+          testing::GetFileContents(
+              absl::StrCat(kSslTsiTestCredentialsDir, "badserver.pem")));
+      key_cert_lib_->client_pem_key_cert_pair =
+          PemKeyCertPair(testing::GetFileContents(absl::StrCat(
+                             kSslTsiTestCredentialsDir, "client.key")),
+                         testing::GetFileContents(absl::StrCat(
+                             kSslTsiTestCredentialsDir, "client.pem")));
+      key_cert_lib_->bad_client_pem_key_cert_pair =
+          PemKeyCertPair(testing::GetFileContents(absl::StrCat(
+                             kSslTsiTestCredentialsDir, "badclient.key")),
+                         testing::GetFileContents(absl::StrCat(
+                             kSslTsiTestCredentialsDir, "badclient.pem")));
+      key_cert_lib_->bad_server_pem_key_cert_pairs.emplace_back(
+          testing::GetFileContents(absl::StrCat(
+              kSslTsiTestCredentialsDir, "leaf_signed_by_intermediate.key")),
+          testing::GetFileContents(absl::StrCat(
+              kSslTsiTestCredentialsDir, "leaf_and_intermediate_chain.pem")));
+      key_cert_lib_->root_cert =
+          GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
+      key_cert_lib_->root_store =
+          tsi_ssl_root_certs_store_create(key_cert_lib_->root_cert.c_str());
+      EXPECT_NE(key_cert_lib_->root_store, nullptr);
+      // Create ssl_alpn_lib.
+      alpn_lib_ = Zalloc<ssl_alpn_lib>();
+      alpn_lib_->server_alpn_protocols = static_cast<const char**>(
+          gpr_zalloc(sizeof(char*) * kSslTsiTestAlpnNum));
+      alpn_lib_->client_alpn_protocols = static_cast<const char**>(
+          gpr_zalloc(sizeof(char*) * kSslTsiTestAlpnNum));
+      alpn_lib_->server_alpn_protocols[0] = gpr_strdup(kSslTsiTestAlpn1);
+      alpn_lib_->server_alpn_protocols[1] = gpr_strdup(kSslTsiTestAlpn3);
+      alpn_lib_->client_alpn_protocols[0] = gpr_strdup(kSslTsiTestAlpn2);
+      alpn_lib_->client_alpn_protocols[1] = gpr_strdup(kSslTsiTestAlpn3);
+      alpn_lib_->num_server_alpn_protocols = kSslTsiTestAlpnNum;
+      alpn_lib_->num_client_alpn_protocols = kSslTsiTestAlpnNum;
+      alpn_lib_->alpn_mode = NO_ALPN;
+      session_reused_ = false;
+      session_ticket_key_ = nullptr;
+      session_ticket_key_size_ = 0;
+      force_client_auth_ = false;
+      network_bio_buf_size_ = 0;
+      ssl_bio_buf_size_ = 0;
+      send_client_ca_list_ = send_client_ca_list;
+      tls_version_ = tls_version;
+    }
+
+    ~SslTsiTestFixture() {
+      // Destroy ssl_alpn_lib.
+      for (size_t i = 0; i < alpn_lib_->num_server_alpn_protocols; i++) {
+        gpr_free(const_cast<char*>(alpn_lib_->server_alpn_protocols[i]));
+      }
+      gpr_free(alpn_lib_->server_alpn_protocols);
+      for (size_t i = 0; i < alpn_lib_->num_client_alpn_protocols; i++) {
+        gpr_free(const_cast<char*>(alpn_lib_->client_alpn_protocols[i]));
+      }
+      gpr_free(alpn_lib_->client_alpn_protocols);
+      gpr_free(alpn_lib_);
+      tsi_ssl_root_certs_store_destroy(key_cert_lib_->root_store);
+      if (session_cache_ != nullptr) {
+        tsi_ssl_session_cache_unref(session_cache_);
+      }
+      // Unreference others.
+      tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
+      tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
+    }
+
+    tsi_test_fixture* GetBaseFixture() { return &base_; }
+
+    void SetVerifyRootCertSubject(bool verify_root_cert_subject) {
+      verify_root_cert_subject_ = verify_root_cert_subject;
+    }
+
+    ssl_key_cert_lib* MutableKeyCertLib() { return key_cert_lib_.get(); }
+
+    void SetForceClientAuth(bool force_client_auth) {
+      force_client_auth_ = force_client_auth;
+    }
+
+    void SetAlpnMode(AlpnMode alpn_mode) { alpn_lib_->alpn_mode = alpn_mode; }
+
+    void SetServerNameIndication(absl::string_view server_name_indication) {
+      server_name_indication_ = server_name_indication;
+    }
+
+    void SetSessionCache(tsi_ssl_session_cache* cache) {
+      session_cache_ = cache;
+    }
+
+    void SetSessionReused(bool session_reused) {
+      session_reused_ = session_reused;
+    }
+
+    void SetSessionTicketKey(const char* session_ticket_key,
+                             size_t session_ticket_key_size) {
+      session_ticket_key_ = session_ticket_key;
+      session_ticket_key_size_ = session_ticket_key_size;
+    }
+
+    void SetBioBufSizes(size_t network_bio_buf_size, size_t ssl_bio_buf_size) {
+      network_bio_buf_size_ = network_bio_buf_size;
+      ssl_bio_buf_size_ = ssl_bio_buf_size;
+    }
+
+    void OverrideHanshakerAlpnClientProtocols(
+        std::optional<std::string> alpn_client_protocols) {
+      alpn_client_overriden_protocols_ = alpn_client_protocols;
+    }
+
+    void OverrideHanshakerAlpnServerProtocols(
+        std::optional<std::string> alpn_server_protocols) {
+      alpn_server_overriden_protocols_ = alpn_server_protocols;
+    }
+
+    void SetExpectedAlpnNegotiatedProtocol(
+        std::optional<std::string> expected_alpn_negotiated_protocol) {
+      expected_alpn_negotiated_protocol_ = expected_alpn_negotiated_protocol;
+    }
+
+    void OverrideServerKeyExchangeGroups(
+        const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+      server_key_exchange_groups_ = key_exchange_groups;
+    }
+
+    void OverrideClientKeyExchangeGroups(
+        const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+      client_key_exchange_groups_ = key_exchange_groups;
+    }
+
+    void SetExpectedNegotiatedGroup(
+        std::optional<std::string> expected_negotiated_group) {
+      expected_negotiated_group_ = expected_negotiated_group;
+    }
+
+    void SetServerExpectsHandshakeFailure(
+        bool server_expects_handshake_failure) {
+      server_expects_handshake_failure_ = server_expects_handshake_failure;
+    }
+
+    void SetClientExpectsHandshakeFailure(
+        bool client_expects_handshake_failure) {
+      client_expects_handshake_failure_ = client_expects_handshake_failure;
+    }
+
+    void SetCollectionScope(RefCountedPtr<CollectionScope> collection_scope) {
+      collection_scope_ = std::move(collection_scope);
+    }
+
+    const std::string& server_name_indication() const {
+      return server_name_indication_;
+    }
+
+   private:
+    static void SetupHandshakers(tsi_test_fixture* fixture) {
+      SslTsiTestFixture* ssl_fixture =
+          reinterpret_cast<SslTsiTestFixture*>(fixture);
+      ASSERT_NE(ssl_fixture, nullptr);
+      ASSERT_NE(ssl_fixture->key_cert_lib_, nullptr);
+      ASSERT_NE(ssl_fixture->alpn_lib_, nullptr);
+      ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib_.get();
+      ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib_;
+      // Create client handshaker factory.
+      tsi_ssl_client_handshaker_options client_options;
+      if (key_cert_lib->use_pem_root_certs &&
+          !key_cert_lib->root_cert.empty()) {
+        client_options.root_cert_info =
+            std::make_shared<tsi::RootCertInfo>(key_cert_lib->root_cert);
+      }
+      if (ssl_fixture->force_client_auth_) {
+        client_options.pem_key_cert_pair =
+            key_cert_lib->use_bad_client_cert
+                ? &key_cert_lib->bad_client_pem_key_cert_pair
+                : &key_cert_lib->client_pem_key_cert_pair;
+      }
+      if (alpn_lib->alpn_mode == ALPN_CLIENT_NO_SERVER ||
+          alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
+          alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_MISMATCH) {
+        client_options.alpn_protocols = alpn_lib->client_alpn_protocols;
+        client_options.num_alpn_protocols = alpn_lib->num_client_alpn_protocols;
+      }
+      client_options.root_store =
+          key_cert_lib->use_root_store ? key_cert_lib->root_store : nullptr;
+      if (ssl_fixture->session_cache_ != nullptr) {
+        client_options.session_cache = ssl_fixture->session_cache_;
+      }
+      client_options.min_tls_version = ssl_fixture->tls_version_;
+      client_options.max_tls_version = ssl_fixture->tls_version_;
+      client_options.skip_server_certificate_verification =
+          key_cert_lib->skip_server_certificate_verification;
+      if (ssl_fixture->client_key_exchange_groups_.has_value()) {
+        client_options.key_exchange_groups =
+            ssl_fixture->client_key_exchange_groups_.value();
+      }
+      ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                    &client_options, &ssl_fixture->client_handshaker_factory_),
+                TSI_OK);
+      // Create server handshaker factory.
+      tsi_ssl_server_handshaker_options server_options;
+      if (alpn_lib->alpn_mode == ALPN_SERVER_NO_CLIENT ||
+          alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
+          alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_MISMATCH) {
+        if (ssl_fixture->alpn_server_overriden_protocols_.has_value()) {
+          size_t num_parsed_protocols = 0;
+          server_options.alpn_protocols = ParseAlpnStringIntoArray(
+              ssl_fixture->alpn_server_overriden_protocols_.value(),
+              static_cast<size_t*>(&num_parsed_protocols));
+          server_options.num_alpn_protocols = num_parsed_protocols;
+        } else {
+          server_options.alpn_protocols = alpn_lib->server_alpn_protocols;
+          server_options.num_alpn_protocols =
+              alpn_lib->num_server_alpn_protocols;
+        }
+        if (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_MISMATCH) {
+          server_options.num_alpn_protocols--;
+        }
+      }
+      if (key_cert_lib->use_cert_signed_by_intermediate_ca) {
+        server_options.key_cert_pairs_or_selector =
+            key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs;
+      } else {
+        server_options.key_cert_pairs_or_selector =
+            key_cert_lib->use_bad_server_cert
+                ? key_cert_lib->bad_server_pem_key_cert_pairs
+                : key_cert_lib->server_pem_key_cert_pairs;
+      }
+      if (!key_cert_lib->root_cert.empty()) {
+        server_options.root_cert_info =
+            std::make_shared<tsi::RootCertInfo>(key_cert_lib->root_cert);
+      }
+      if (ssl_fixture->force_client_auth_) {
+        server_options.client_certificate_request =
+            TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
+      } else {
+        server_options.client_certificate_request =
+            TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
+      }
+      server_options.send_client_ca_list = ssl_fixture->send_client_ca_list_;
+      server_options.session_ticket_key = ssl_fixture->session_ticket_key_;
+      server_options.session_ticket_key_size =
+          ssl_fixture->session_ticket_key_size_;
+      server_options.min_tls_version = ssl_fixture->tls_version_;
+      server_options.max_tls_version = ssl_fixture->tls_version_;
+      if (ssl_fixture->server_key_exchange_groups_.has_value()) {
+        server_options.key_exchange_groups =
+            ssl_fixture->server_key_exchange_groups_.value();
+      }
+      ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                    &server_options, &ssl_fixture->server_handshaker_factory_),
+                TSI_OK);
+      if (ssl_fixture->alpn_server_overriden_protocols_.has_value()) {
+        // Free memory from creating the server protocol list if
+        // ParseAlpnStringIntoArray was used.
+        for (size_t i = 0; i < server_options.num_alpn_protocols; i++) {
+          gpr_free(const_cast<char*>(server_options.alpn_protocols[i]));
+        }
+        gpr_free(server_options.alpn_protocols);
+      }
+      // Create server and client handshakers.
+      ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                    ssl_fixture->client_handshaker_factory_,
+                    ssl_fixture->server_name_indication_.empty()
+                        ? nullptr
+                        : ssl_fixture->server_name_indication_.c_str(),
+                    ssl_fixture->network_bio_buf_size_,
+                    ssl_fixture->ssl_bio_buf_size_,
+                    ssl_fixture->alpn_client_overriden_protocols_,
+                    ssl_fixture->collection_scope_,
+                    /*target=*/ssl_fixture->server_name_indication_,
+                    /*locality=*/"", /*backend_service=*/"",
+                    &ssl_fixture->base_.client_handshaker),
+                TSI_OK);
+      ASSERT_EQ(
+          tsi_ssl_server_handshaker_factory_create_handshaker(
+              ssl_fixture->server_handshaker_factory_,
+              ssl_fixture->network_bio_buf_size_,
+              ssl_fixture->ssl_bio_buf_size_, ssl_fixture->collection_scope_,
+              &ssl_fixture->base_.server_handshaker),
+          TSI_OK);
+    }
+
+    static void CheckAlpn(SslTsiTestFixture* ssl_fixture,
+                          const tsi_peer* peer) {
+      ASSERT_NE(ssl_fixture, nullptr);
+      ASSERT_NE(ssl_fixture->alpn_lib_, nullptr);
+      ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib_;
+      const tsi_peer_property* alpn_property =
+          tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
+      if (alpn_lib->alpn_mode != ALPN_CLIENT_SERVER_OK) {
+        ASSERT_EQ(alpn_property, nullptr);
+      } else {
+        ASSERT_NE(alpn_property, nullptr);
+        std::string expected_match;
+        if (ssl_fixture->expected_alpn_negotiated_protocol_.has_value()) {
+          expected_match =
+              ssl_fixture->expected_alpn_negotiated_protocol_.value();
+        } else {
+          expected_match = "baz";
+        }
+        ASSERT_EQ(
+            std::string(alpn_property->value.data, alpn_property->value.length),
+            expected_match);
+      }
+    }
+
+    static void CheckSecurityLevel(const tsi_peer* peer) {
+      const tsi_peer_property* security_level =
+          tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+      ASSERT_NE(security_level, nullptr);
+      std::string expected_match = "TSI_PRIVACY_AND_INTEGRITY";
+      ASSERT_EQ(expected_match, std::string(security_level->value.data,
+                                            security_level->value.length));
+    }
+
+    static void CheckNegotiatedGroup(SslTsiTestFixture* ssl_fixture,
+                                     const tsi_peer* peer) {
+      if (ssl_fixture->expected_negotiated_group_.has_value()) {
+        const tsi_peer_property* property = tsi_peer_get_property_by_name(
+            peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP);
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
+        ASSERT_NE(property, nullptr);
+        ASSERT_EQ(std::string(property->value.data, property->value.length),
+                  ssl_fixture->expected_negotiated_group_.value());
+#else
+        ASSERT_EQ(property, nullptr);
+#endif
+      }
+    }
+
+    static const tsi_peer_property* CheckBasicAuthenticatedPeerAndGetCommonName(
+        const tsi_peer* peer) {
+      const tsi_peer_property* cert_type_property =
+          tsi_peer_get_property_by_name(peer,
+                                        TSI_CERTIFICATE_TYPE_PEER_PROPERTY);
+      EXPECT_NE(cert_type_property, nullptr);
+      EXPECT_EQ(
+          memcmp(cert_type_property->value.data, TSI_X509_CERTIFICATE_TYPE,
+                 cert_type_property->value.length),
+          0);
+      const tsi_peer_property* property = tsi_peer_get_property_by_name(
+          peer, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
+      EXPECT_NE(property, nullptr);
+      return property;
+    }
+
+    static void CheckSessionReusage(SslTsiTestFixture* ssl_fixture,
+                                    tsi_peer* peer) {
+      const tsi_peer_property* session_reused = tsi_peer_get_property_by_name(
+          peer, TSI_SSL_SESSION_REUSED_PEER_PROPERTY);
+      ASSERT_NE(session_reused, nullptr);
+      if (ssl_fixture->session_reused_) {
+        ASSERT_EQ("true", std::string(session_reused->value.data,
+                                      session_reused->value.length));
+      } else {
+        ASSERT_EQ("false", std::string(session_reused->value.data,
+                                       session_reused->value.length));
+      }
+    }
+
+    // This is tied specifically to server0.pem loaded by the fixture.
+    static void CheckServer0Peer(tsi_peer* peer) {
+      const tsi_peer_property* property =
+          CheckBasicAuthenticatedPeerAndGetCommonName(peer);
+      std::string expected_match = "*.test.google.com.au";
+      ASSERT_EQ(expected_match,
+                std::string(property->value.data, property->value.length));
+      ASSERT_EQ(tsi_peer_get_property_by_name(
+                    peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY),
+                nullptr);
+      ASSERT_TRUE(tsi_ssl_peer_matches_name(peer, "foo.test.google.com.au"));
+      ASSERT_TRUE(tsi_ssl_peer_matches_name(peer, "bar.test.google.com.au"));
+      ASSERT_TRUE(tsi_ssl_peer_matches_name(peer, "BAR.TEST.GOOGLE.COM.AU"));
+      ASSERT_TRUE(tsi_ssl_peer_matches_name(peer, "Bar.Test.Google.Com.Au"));
+      ASSERT_TRUE(tsi_ssl_peer_matches_name(peer, "bAr.TeST.gOOgle.cOm.AU"));
+      ASSERT_FALSE(tsi_ssl_peer_matches_name(peer, "bar.test.google.blah"));
+      ASSERT_FALSE(
+          tsi_ssl_peer_matches_name(peer, "foo.bar.test.google.com.au"));
+      ASSERT_FALSE(tsi_ssl_peer_matches_name(peer, "test.google.com.au"));
+      tsi_peer_destruct(peer);
+    }
+
+    // This is tied specifically to server1.pem loaded by the fixture.
+    static void CheckServer1Peer(tsi_peer* peer) {
+      const tsi_peer_property* property =
+          CheckBasicAuthenticatedPeerAndGetCommonName(peer);
+      std::string expected_match = "*.test.google.com";
+      ASSERT_EQ(expected_match,
+                std::string(property->value.data, property->value.length));
+      ASSERT_TRUE(
+          check_property(peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                         "*.test.google.fr"));
+      ASSERT_TRUE(
+          check_property(peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                         "waterzooi.test.google.be"));
+      ASSERT_TRUE(tsi_ssl_peer_matches_name(peer, "foo.test.google.fr"));
+      ASSERT_TRUE(tsi_ssl_peer_matches_name(peer, "bar.test.google.fr"));
+      ASSERT_TRUE(tsi_ssl_peer_matches_name(peer, "waterzooi.test.google.be"));
+      ASSERT_TRUE(tsi_ssl_peer_matches_name(peer, "foo.test.youtube.com"));
+      ASSERT_FALSE(tsi_ssl_peer_matches_name(peer, "bar.foo.test.google.com"));
+      ASSERT_FALSE(tsi_ssl_peer_matches_name(peer, "test.google.fr"));
+      ASSERT_FALSE(tsi_ssl_peer_matches_name(peer, "tartines.test.google.be"));
+      ASSERT_FALSE(tsi_ssl_peer_matches_name(peer, "tartines.youtube.com"));
+      tsi_peer_destruct(peer);
+    }
+
+    static void CheckClientPeer(SslTsiTestFixture* ssl_fixture,
+                                tsi_peer* peer) {
+      ASSERT_NE(ssl_fixture, nullptr);
+      ASSERT_NE(ssl_fixture->alpn_lib_, nullptr);
+      ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib_;
+      if (!ssl_fixture->force_client_auth_) {
+        size_t expected_property_count =
+            (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 3 : 2);
+        if (tsi_peer_get_property_by_name(
+                peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) != nullptr) {
+          expected_property_count++;
+        }
+        const tsi_peer_property* server_name_prop =
+            tsi_peer_get_property_by_name(
+                peer, TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY);
+        if (server_name_prop != nullptr) {
+          expected_property_count++;
+          if (!ssl_fixture->server_name_indication_.empty() &&
+              ssl_fixture->server_name_indication_ != kSslTsiTestInvalidSni) {
+            EXPECT_EQ(std::string(server_name_prop->value.data,
+                                  server_name_prop->value.length),
+                      ssl_fixture->server_name_indication_);
+          }
+        }
+        const tsi_peer_property* tls_version_prop =
+            tsi_peer_get_property_by_name(peer,
+                                          TSI_SSL_TLS_VERSION_PEER_PROPERTY);
+        if (tls_version_prop != nullptr) {
+          expected_property_count++;
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+          // OpenSSL versions < 1.1.1 do not support TLS 1.3, so TLS 1.2 is
+          // negotiated.
+          std::string expected_tls_version = "TLSv1.2";
+#else
+          std::string expected_tls_version =
+              ssl_fixture->tls_version_ == TSI_TLS1_2 ? "TLSv1.2" : "TLSv1.3";
+#endif
+          EXPECT_EQ(std::string(tls_version_prop->value.data,
+                                tls_version_prop->value.length),
+                    expected_tls_version);
+        }
+        ASSERT_EQ(peer->property_count, expected_property_count);
+
+      } else {
+        const tsi_peer_property* property =
+            CheckBasicAuthenticatedPeerAndGetCommonName(peer);
+        std::string expected_match = "testclient";
+        ASSERT_EQ(expected_match,
+                  std::string(property->value.data, property->value.length));
+      }
+      tsi_peer_destruct(peer);
+    }
+
+    static void CheckVerifiedRootCertSubject(const tsi_peer* peer) {
+      const tsi_peer_property* verified_root_cert_subject =
+          tsi_peer_get_property_by_name(
+              peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
+      ASSERT_NE(verified_root_cert_subject, nullptr);
+      std::string expected_match =
+          "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
+      ASSERT_EQ(expected_match,
+                std::string(verified_root_cert_subject->value.data,
+                            verified_root_cert_subject->value.length));
+    }
+
+    static void CheckVerifiedRootCertSubjectUnset(const tsi_peer* peer) {
+      const tsi_peer_property* verified_root_cert_subject =
+          tsi_peer_get_property_by_name(
+              peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
+      ASSERT_EQ(verified_root_cert_subject, nullptr);
+    }
+
+    static void CheckHandshakerPeers(tsi_test_fixture* fixture) {
+      SslTsiTestFixture* ssl_fixture =
+          reinterpret_cast<SslTsiTestFixture*>(fixture);
+      ASSERT_NE(ssl_fixture, nullptr);
+      ASSERT_NE(ssl_fixture->key_cert_lib_, nullptr);
+      ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib_.get();
+      tsi_peer peer;
+      // In TLS 1.3, the client-side handshake succeeds even if the client sends
+      // a bad certificate. In such a case, the server would fail the TLS
+      // handshake and send an alert to the client as the first application data
+      // message. In TLS 1.2, the client-side handshake will fail if the client
+      // sends a bad certificate.
+      //
+      // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the
+      // client-side handshake should succeed precisely when the server-side
+      // handshake succeeds.
+      bool expect_server_success =
+          !ssl_fixture->server_expects_handshake_failure_ &&
+          (!(key_cert_lib->use_bad_server_cert ||
+             (key_cert_lib->use_bad_client_cert &&
+              ssl_fixture->force_client_auth_)));
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+      bool expect_client_success =
+          !ssl_fixture->client_expects_handshake_failure_ &&
+          (ssl_fixture->tls_version_ == tsi_tls_version::TSI_TLS1_2
+               ? expect_server_success
+               : !key_cert_lib->use_bad_server_cert);
+#else
+      bool expect_client_success = expect_server_success;
+#endif
+      if (expect_client_success) {
+        ASSERT_EQ(tsi_handshaker_result_extract_peer(
+                      ssl_fixture->base_.client_result, &peer),
+                  TSI_OK);
+        CheckSessionReusage(ssl_fixture, &peer);
+        CheckAlpn(ssl_fixture, &peer);
+        CheckSecurityLevel(&peer);
+        CheckNegotiatedGroup(ssl_fixture, &peer);
+        if (ssl_fixture->verify_root_cert_subject_) {
+          if (!ssl_fixture->session_reused_) {
+            CheckVerifiedRootCertSubject(&peer);
+          } else {
+            CheckVerifiedRootCertSubjectUnset(&peer);
+          }
+        }
+        if (ssl_fixture->server_name_indication_.empty() ||
+            ssl_fixture->server_name_indication_ == kSslTsiTestWrongSni ||
+            ssl_fixture->server_name_indication_ == kSslTsiTestInvalidSni) {
+          // Expect server to use default server0.pem.
+          CheckServer0Peer(&peer);
+        } else {
+          // Expect server to use server1.pem.
+          CheckServer1Peer(&peer);
+        }
+      } else {
+        ASSERT_EQ(ssl_fixture->base_.client_result, nullptr);
+      }
+      if (expect_server_success) {
+        ASSERT_EQ(tsi_handshaker_result_extract_peer(
+                      ssl_fixture->base_.server_result, &peer),
+                  TSI_OK);
+        CheckSessionReusage(ssl_fixture, &peer);
+        CheckAlpn(ssl_fixture, &peer);
+        CheckSecurityLevel(&peer);
+        CheckNegotiatedGroup(ssl_fixture, &peer);
+        if (ssl_fixture->force_client_auth_ && !ssl_fixture->session_reused_) {
+          CheckVerifiedRootCertSubject(&peer);
+        } else {
+          CheckVerifiedRootCertSubjectUnset(&peer);
+        }
+        CheckClientPeer(ssl_fixture, &peer);
+      } else {
+        ASSERT_EQ(ssl_fixture->base_.server_result, nullptr);
+      }
+    }
+
+    static void Destruct(tsi_test_fixture* fixture) {
+      // We don't delete here because we are managed by std::shared_ptr.
+    }
+
+    static tsi_test_fixture_vtable kVtable;
+
+    tsi_test_fixture base_;
+    std::unique_ptr<ssl_key_cert_lib> key_cert_lib_;
+    ssl_alpn_lib* alpn_lib_;
+    bool force_client_auth_;
+    std::string server_name_indication_;
+    tsi_ssl_session_cache* session_cache_ = nullptr;
+    bool session_reused_;
+    const char* session_ticket_key_ = nullptr;
+    size_t session_ticket_key_size_;
+    size_t network_bio_buf_size_;
+    size_t ssl_bio_buf_size_;
+    bool verify_root_cert_subject_;
+    tsi_tls_version tls_version_;
+    bool send_client_ca_list_;
+    std::optional<std::string> alpn_client_overriden_protocols_ = std::nullopt;
+    std::optional<std::string> alpn_server_overriden_protocols_ = std::nullopt;
+    std::optional<std::string> expected_alpn_negotiated_protocol_ =
+        std::nullopt;
+    std::optional<std::vector<grpc_tls_key_exchange_group>>
+        client_key_exchange_groups_ = std::nullopt;
+    std::optional<std::vector<grpc_tls_key_exchange_group>>
+        server_key_exchange_groups_ = std::nullopt;
+    std::optional<std::string> expected_negotiated_group_ = std::nullopt;
+
+    tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
+    tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
+    // This isn't required for existing tests, but helps new tests express their
+    // intent.
+    bool server_expects_handshake_failure_ = false;
+    bool client_expects_handshake_failure_ = false;
+    RefCountedPtr<CollectionScope> collection_scope_;
+  };
+
+  SslTransportSecurityTest() { grpc_init(); }
+
+  ~SslTransportSecurityTest() override {
+    DestroyFixture();
+    grpc_shutdown();
+  }
+
+  void SetUpSslFixture(tsi_tls_version tls_version, bool send_client_ca_list) {
+    ssl_fixture_ =
+        std::make_shared<SslTsiTestFixture>(tls_version, send_client_ca_list);
+    ssl_tsi_test_fixture_ = ssl_fixture_->GetBaseFixture();
+    fixture_destroyed = false;
+  }
+
+  void DoHandshake() { tsi_test_do_handshake(ssl_tsi_test_fixture_); }
+
+  void DoRoundTrip() { tsi_test_do_round_trip(ssl_tsi_test_fixture_); }
+
+  void DestroyFixture() {
+    if (fixture_destroyed) {
+      return;
+    }
+    tsi_test_fixture_destroy(ssl_tsi_test_fixture_);
+    fixture_destroyed = true;
+  }
+
+  void ExpectHandshakeWithLabels(
+      const TestMetricsSink& sink_before, const TestMetricsSink& sink_after,
+      std::optional<std::map<std::string, std::string>> expected_client_labels,
+      std::optional<std::map<std::string, std::string>> expected_server_labels);
+
+  tsi_test_fixture* ssl_tsi_test_fixture_;
+  std::shared_ptr<SslTsiTestFixture> ssl_fixture_;
+  bool fixture_destroyed = true;
+};
+
+tsi_test_fixture_vtable SslTransportSecurityTest::SslTsiTestFixture::kVtable = {
+    SslTransportSecurityTest::SslTsiTestFixture::SetupHandshakers,
+    SslTransportSecurityTest::SslTsiTestFixture::CheckHandshakerPeers,
+    SslTransportSecurityTest::SslTsiTestFixture::Destruct};
+
+INSTANTIATE_TEST_SUITE_P(
+    SslTestGroup, SslTransportSecurityTest,
+    Combine(Values(TSI_TLS1_2, TSI_TLS1_3), Values(true, false)),
+    [](const TestParamInfo<SslTransportSecurityTest::ParamType>& info) {
+      return absl::StrCat(
+          std::get<0>(info.param) == TSI_TLS1_2 ? "tls_12" : "tls_13", "_",
+          std::get<1>(info.param) ? "send_client_ca_list"
+                                  : "no_send_client_ca_list");
+    });
+
+TEST_P(SslTransportSecurityTest, DoHandshakeTinyHandshakeBuffer) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_tsi_test_fixture_->handshake_buffer_size =
+      TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE;
+  // Handshake buffer is too small to hold both handshake messages and the
+  // unused bytes.
+  ssl_tsi_test_fixture_->test_unused_bytes = false;
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshakeSmallHandshakeBuffer) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_tsi_test_fixture_->handshake_buffer_size =
+      TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE;
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshake) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshakeWithRootStore) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->MutableKeyCertLib()->use_root_store = true;
+  DoHandshake();
+}
+
+// TODO(gregorycooke) - failing with OpenSSL1.0.2
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+TEST_P(SslTransportSecurityTest,
+       DoHandshakeSkippingServerCertificateVerification) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetVerifyRootCertSubject(false);
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->use_root_store = false;
+  key_cert_lib->use_pem_root_certs = false;
+  key_cert_lib->skip_server_certificate_verification = true;
+  DoHandshake();
+}
+#endif
+
+TEST_P(SslTransportSecurityTest, DoHandshakeWithLargeServerHandshakeMessages) {
+  std::string trust_bundle = GenerateTrustBundle();
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // Force the test to read more handshake bytes from the peer than we have room
+  // for in the BIO. The default BIO buffer size is 17kB.
+  ssl_tsi_test_fixture_->handshake_buffer_size = 18000;
+  // Make a copy of the root cert and free the original.
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  // Create a new root store, consisting of the root cert that is actually
+  // needed and 200 self-signed certs.
+  key_cert_lib->root_cert = absl::StrCat(key_cert_lib->root_cert, trust_bundle);
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->use_root_store = true;
+  ssl_fixture_->SetForceClientAuth(true);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshakeWithClientAuthentication) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetForceClientAuth(true);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest,
+       DoHandshakeWithClientAuthenticationAndRootStore) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->MutableKeyCertLib()->use_root_store = true;
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest,
+       DoHandshakeWithServerNameIndicationExactDomain) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // server1 cert contains "waterzooi.test.google.be" in SAN.
+  ssl_fixture_->SetServerNameIndication(
+      const_cast<char*>("waterzooi.test.google.be"));
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest,
+       DoHandshakeWithServerNameIndicationWildStarDomain) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // server1 cert contains "*.test.google.fr" in SAN.
+  ssl_fixture_->SetServerNameIndication(
+      const_cast<char*>("juju.test.google.fr"));
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshakeWithWrongServerNameIndication) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // server certs do not contain "test.google.cn".
+  ssl_fixture_->SetServerNameIndication(
+      const_cast<char*>(SSL_TSI_TEST_WRONG_SNI));
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest,
+       DoHandshakeWithInvalidAndIgnoredServerNameIndication) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // SNI that's an IP address will be ignored.
+  ssl_fixture_->SetServerNameIndication(kSslTsiTestInvalidSni);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshakeWithBadServerCert) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->MutableKeyCertLib()->use_bad_server_cert = true;
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshakeWithBadClientCert) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->MutableKeyCertLib()->use_bad_client_cert = true;
+  ssl_fixture_->SetForceClientAuth(true);
+  DoHandshake();
+}
+
+#ifdef OPENSSL_IS_BORINGSSL
+// BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
+TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientNoServer) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetAlpnMode(ALPN_CLIENT_NO_SERVER);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientServerMismatch) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_MISMATCH);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoRoundTripForAllConfigs) {
+  unsigned int* bit_array = static_cast<unsigned int*>(
+      gpr_zalloc(sizeof(unsigned int) * TSI_TEST_NUM_OF_ARGUMENTS));
+  const unsigned int mask = 1U << (TSI_TEST_NUM_OF_ARGUMENTS - 1);
+  for (unsigned int val = 0; val < TSI_TEST_NUM_OF_COMBINATIONS; val++) {
+    unsigned int v = val;
+    for (unsigned int ind = 0; ind < TSI_TEST_NUM_OF_ARGUMENTS; ind++) {
+      bit_array[ind] = (v & mask) ? 1 : 0;
+      v <<= 1;
+    }
+    SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                    /*send_client_ca_list=*/std::get<1>(GetParam()));
+    tsi_test_frame_protector_config_destroy(ssl_tsi_test_fixture_->config);
+    ssl_tsi_test_fixture_->config = tsi_test_frame_protector_config_create(
+        bit_array[0], bit_array[1], bit_array[2], bit_array[3], bit_array[4],
+        bit_array[5], bit_array[6]);
+    DoRoundTrip();
+    DestroyFixture();
+  }
+  gpr_free(bit_array);
+}
+
+TEST_P(SslTransportSecurityTest, DoRoundTripWithErrorOnStack) {
+  // Invoke an SSL function that causes an error, and ensure the error
+  // makes it to the stack.
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+  ASSERT_FALSE(EC_KEY_new_by_curve_name(NID_rsa));
+#else
+  // Use EVP_PKEY_CTX with an invalid operation to push an error.
+  EVP_PKEY_CTX* err_ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
+  ASSERT_NE(err_ctx, nullptr);
+  // Calling sign_init without a key will fail and push an error.
+  ASSERT_LE(EVP_PKEY_sign_init(err_ctx), 0);
+  EVP_PKEY_CTX_free(err_ctx);
+#endif
+  ASSERT_NE(ERR_peek_error(), 0);
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  DoRoundTrip();
+}
+
+TEST_P(SslTransportSecurityTest, DoRoundTripOddBufferSize) {
+  const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
+  size_t size = sizeof(odd_sizes) / sizeof(size_t);
+  // 1. This test is extremely slow under MSAN and TSAN.
+  // 2. On 32-bit, the test is much slower (probably due to lack of boringssl
+  // asm optimizations) so we only run a subset of tests to avoid timeout.
+  // 3. On Mac OS, we have slower testing machines so we only run a subset
+  // of tests to avoid timeout.
+  if (is_slow_build()) {
+    size = 1;
+  }
+  for (size_t ind1 = 0; ind1 < size; ind1++) {
+    for (size_t ind2 = 0; ind2 < size; ind2++) {
+      for (size_t ind3 = 0; ind3 < size; ind3++) {
+        for (size_t ind4 = 0; ind4 < size; ind4++) {
+          for (size_t ind5 = 0; ind5 < size; ind5++) {
+            SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                            /*send_client_ca_list=*/std::get<1>(GetParam()));
+            tsi_test_frame_protector_config_set_buffer_size(
+                ssl_fixture_->GetBaseFixture()->config, odd_sizes[ind1],
+                odd_sizes[ind2], odd_sizes[ind3], odd_sizes[ind4],
+                odd_sizes[ind5]);
+            DoRoundTrip();
+            DestroyFixture();
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshakeSessionCache) {
+  tsi_ssl_session_cache* session_cache = tsi_ssl_session_cache_create_lru(16);
+  char session_ticket_key[kSessionTicketEncryptionKeySize];
+  auto do_handshake = [this, &session_ticket_key,
+                       &session_cache](bool session_reused) {
+    SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                    /*send_client_ca_list=*/std::get<1>(GetParam()));
+    ssl_fixture_->SetServerNameIndication(
+        const_cast<char*>("waterzooi.test.google.be"));
+    ssl_fixture_->SetSessionTicketKey(session_ticket_key,
+                                      sizeof(session_ticket_key));
+    tsi_ssl_session_cache_ref(session_cache);
+    ssl_fixture_->SetSessionCache(session_cache);
+    ssl_fixture_->SetSessionReused(session_reused);
+    DoRoundTrip();
+    DestroyFixture();
+  };
+  memset(session_ticket_key, 'a', sizeof(session_ticket_key));
+  do_handshake(false);
+  do_handshake(true);
+  do_handshake(true);
+  // Changing session_ticket_key on server invalidates ticket.
+  memset(session_ticket_key, 'b', sizeof(session_ticket_key));
+  do_handshake(false);
+  do_handshake(true);
+  memset(session_ticket_key, 'c', sizeof(session_ticket_key));
+  do_handshake(false);
+  do_handshake(true);
+  tsi_ssl_session_cache_unref(session_cache);
+}
+#endif  // OPENSSL_IS_BORINGSSL
+
+TEST_P(SslTransportSecurityTest, DoHandshakeAlpnServerNoClient) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetAlpnMode(ALPN_SERVER_NO_CLIENT);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientServerOk) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
+  DoHandshake();
+}
+
+// TODO(matthewstevenson88): Make tests below compatible with OpenSSL.
+#if defined(OPENSSL_IS_BORINGSSL)
+TEST_P(SslTransportSecurityTest, Protect) {
+  SetUpSslFixture(tsi_tls_version::TSI_TLS1_3, /*send_client_ca_list=*/false);
+  DoHandshake();
+  tsi_frame_protector* protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->client_result,
+                /*max_output_protected_frame_size=*/nullptr, &protector),
+            TSI_OK);
+  ASSERT_NE(protector, nullptr);
+  std::string buffer(1024, 'a');
+  std::string protected_bytes = Protect(protector, buffer);
+  EXPECT_EQ(protected_bytes.size(), buffer.size() + kTls13FrameOverhead);
+  tsi_frame_protector_destroy(protector);
+}
+
+TEST_P(SslTransportSecurityTest, ProtectAndUnprotect) {
+  SetUpSslFixture(tsi_tls_version::TSI_TLS1_3, /*send_client_ca_list=*/false);
+  DoHandshake();
+  tsi_frame_protector* client_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->client_result,
+                /*max_output_protected_frame_size=*/nullptr, &client_protector),
+            TSI_OK);
+  ASSERT_NE(client_protector, nullptr);
+  tsi_frame_protector* server_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->server_result,
+                /*max_output_protected_frame_size=*/nullptr, &server_protector),
+            TSI_OK);
+  ASSERT_NE(server_protector, nullptr);
+  std::string buffer(1024, 'a');
+  std::string protected_bytes = Protect(client_protector, buffer);
+  std::string unprotected_bytes = Unprotect(server_protector, protected_bytes);
+  EXPECT_EQ(unprotected_bytes, buffer);
+  tsi_frame_protector_destroy(client_protector);
+  tsi_frame_protector_destroy(server_protector);
+}
+
+TEST_P(SslTransportSecurityTest, ConcurrentlyProtectAndUnprotectOnClient) {
+  SetUpSslFixture(tsi_tls_version::TSI_TLS1_3, /*send_client_ca_list=*/false);
+  DoHandshake();
+  tsi_frame_protector* client_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->client_result,
+                /*max_output_protected_frame_size=*/nullptr, &client_protector),
+            TSI_OK);
+  ASSERT_NE(client_protector, nullptr);
+  tsi_frame_protector* server_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->server_result,
+                /*max_output_protected_frame_size=*/nullptr, &server_protector),
+            TSI_OK);
+  ASSERT_NE(server_protector, nullptr);
+  std::string buffer(1024, 'a');
+  std::string protected_bytes = Protect(server_protector, buffer);
+  std::thread protect_thread([&client_protector]() {
+    std::string second_buffer(2048, 'b');
+    std::string second_protected_buffer =
+        Protect(client_protector, second_buffer);
+    EXPECT_EQ(second_protected_buffer.size(),
+              second_buffer.size() + kTls13FrameOverhead);
+  });
+  std::thread unprotect_thread([&client_protector, protected_bytes, buffer]() {
+    std::string unprotected_bytes =
+        Unprotect(client_protector, protected_bytes);
+    EXPECT_EQ(unprotected_bytes, buffer);
+  });
+  protect_thread.join();
+  unprotect_thread.join();
+  tsi_frame_protector_destroy(client_protector);
+  tsi_frame_protector_destroy(server_protector);
+}
+
+TEST_P(SslTransportSecurityTest, ConcurrentlyProtectAndUnprotectOnServer) {
+  SetUpSslFixture(tsi_tls_version::TSI_TLS1_3, /*send_client_ca_list=*/false);
+  DoHandshake();
+  tsi_frame_protector* client_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->client_result,
+                /*max_output_protected_frame_size=*/nullptr, &client_protector),
+            TSI_OK);
+  ASSERT_NE(client_protector, nullptr);
+  tsi_frame_protector* server_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->server_result,
+                /*max_output_protected_frame_size=*/nullptr, &server_protector),
+            TSI_OK);
+  ASSERT_NE(server_protector, nullptr);
+  std::string buffer(1024, 'a');
+  std::string protected_bytes = Protect(client_protector, buffer);
+  std::thread protect_thread([&server_protector]() {
+    std::string second_buffer(20, 'b');
+    std::string second_protected_buffer =
+        Protect(server_protector, second_buffer);
+    // The protected bytes may be prefixed by a TLS record containing session
+    // tickets, so the total number of protected bytes is greater or equal to
+    // the expected bytes, based on the length of the plaintext.
+    EXPECT_GE(second_protected_buffer.size(),
+              second_buffer.size() + kTls13FrameOverhead);
+  });
+  std::thread unprotect_thread([&server_protector, protected_bytes, buffer]() {
+    std::string unprotected_bytes =
+        Unprotect(server_protector, protected_bytes);
+    EXPECT_GE(unprotected_bytes, buffer);
+  });
+  protect_thread.join();
+  unprotect_thread.join();
+  tsi_frame_protector_destroy(client_protector);
+  tsi_frame_protector_destroy(server_protector);
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL)
+
+const tsi_ssl_handshaker_factory_vtable* original_vtable;
+bool handshaker_factory_destructor_called;
+
+void ssl_tsi_test_handshaker_factory_destructor(
+    tsi_ssl_handshaker_factory* factory) {
+  ASSERT_NE(factory, nullptr);
+  handshaker_factory_destructor_called = true;
+  if (original_vtable != nullptr && original_vtable->destroy != nullptr) {
+    original_vtable->destroy(factory);
+  }
+}
+
+tsi_ssl_handshaker_factory_vtable test_handshaker_factory_vtable = {
+    ssl_tsi_test_handshaker_factory_destructor};
+
+TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
+  int i;
+  std::string cert_chain =
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "client.pem"));
+
+  tsi_ssl_client_handshaker_options options;
+  if (!cert_chain.empty()) {
+    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
+  }
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory;
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_OK);
+
+  handshaker_factory_destructor_called = false;
+  original_vtable = tsi_ssl_handshaker_factory_swap_vtable(
+      reinterpret_cast<tsi_ssl_handshaker_factory*>(client_handshaker_factory),
+      &test_handshaker_factory_vtable);
+
+  tsi_handshaker* handshaker[3];
+
+  for (i = 0; i < 3; ++i) {
+    ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                  client_handshaker_factory, "google.com", 0, 0,
+                  /*alpn_preferred_protocol_list=*/std::nullopt,
+                  /*collection_scope=*/nullptr, /*target=*/"google.com",
+                  /*locality=*/"", /*backend_service=*/"", &handshaker[i]),
+              TSI_OK);
+  }
+
+  client_handshaker_factory =
+      tsi_ssl_client_handshaker_factory_ref(client_handshaker_factory);
+
+  tsi_handshaker_destroy(handshaker[1]);
+  ASSERT_FALSE(handshaker_factory_destructor_called);
+
+  tsi_handshaker_destroy(handshaker[0]);
+  ASSERT_FALSE(handshaker_factory_destructor_called);
+
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+  ASSERT_FALSE(handshaker_factory_destructor_called);
+
+  tsi_handshaker_destroy(handshaker[2]);
+  ASSERT_FALSE(handshaker_factory_destructor_called);
+
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+  ASSERT_TRUE(handshaker_factory_destructor_called);
+}
+
+TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
+  int i;
+  tsi_ssl_server_handshaker_factory* server_handshaker_factory;
+  tsi_handshaker* handshaker[3];
+  std::string cert_chain = testing::GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "server0.pem"));
+  PemKeyCertPair cert_pair(testing::GetFileContents(absl::StrCat(
+                               kSslTsiTestCredentialsDir, "server0.key")),
+                           cert_chain);
+  tsi_ssl_server_handshaker_options options;
+  options.key_cert_pairs_or_selector = PemKeyCertPairList{cert_pair};
+  if (!cert_chain.empty()) {
+    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
+  }
+
+  ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                &options, &server_handshaker_factory),
+            TSI_OK);
+
+  handshaker_factory_destructor_called = false;
+  original_vtable = tsi_ssl_handshaker_factory_swap_vtable(
+      reinterpret_cast<tsi_ssl_handshaker_factory*>(server_handshaker_factory),
+      &test_handshaker_factory_vtable);
+
+  for (i = 0; i < 3; ++i) {
+    ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
+                  server_handshaker_factory, 0, 0,
+                  /*collection_scope=*/nullptr, &handshaker[i]),
+              TSI_OK);
+  }
+
+  tsi_handshaker_destroy(handshaker[1]);
+  ASSERT_FALSE(handshaker_factory_destructor_called);
+
+  tsi_handshaker_destroy(handshaker[0]);
+  ASSERT_FALSE(handshaker_factory_destructor_called);
+
+  tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory);
+  ASSERT_FALSE(handshaker_factory_destructor_called);
+
+  tsi_handshaker_destroy(handshaker[2]);
+  ASSERT_TRUE(handshaker_factory_destructor_called);
+}
+
+// Attempting to create a handshaker factory with invalid parameters should fail
+// but not crash.
+TEST(SslTransportSecurityTest, TestClientHandshakerFactoryBadParams) {
+  std::string cert_chain = "This is not a valid PEM file.";
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory;
+  tsi_ssl_client_handshaker_options options;
+  options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_INVALID_ARGUMENT);
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+}
+
+TEST(SslTransportSecurityTest,
+     TestClientHandshakerFactorySkipServerVerificationNoRoots) {
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory = nullptr;
+  tsi_ssl_client_handshaker_options options;
+  options.skip_server_certificate_verification = true;
+  EXPECT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &options, &client_handshaker_factory),
+            TSI_OK);
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+}
+
+TEST(SslTransportSecurityTest, DuplicateRootCertificates) {
+  std::string root_cert =
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
+  std::string dup_root_cert = absl::StrCat(root_cert, root_cert);
+  tsi_ssl_root_certs_store* root_store =
+      tsi_ssl_root_certs_store_create(dup_root_cert.c_str());
+  ASSERT_NE(root_store, nullptr);
+  // Free memory.
+  tsi_ssl_root_certs_store_destroy(root_store);
+}
+
+TEST(SslTransportSecurityTest, ExtractX509SubjectNames) {
+  std::string cert = GetFileContents(
+      absl::StrCat(kSslTsiTestCredentialsDir, "multi-domain.pem"));
+  tsi_peer peer;
+  ASSERT_EQ(
+      tsi_ssl_extract_x509_subject_names_from_pem_cert(cert.c_str(), &peer),
+      TSI_OK);
+  // tsi_peer should include one subject, one common name, one certificate, one
+  // security level, ten SAN fields, two DNS SAN fields, three URI fields, two
+  // email addresses and two IP addresses.
+  size_t expected_property_count = 22;
+  ASSERT_EQ(peer.property_count, expected_property_count);
+  // Check subject
+  std::string expected_subject = "CN=xpigors,OU=Google,L=SF,ST=CA,C=US";
+  const tsi_peer_property* property =
+      tsi_peer_get_property_by_name(&peer, TSI_X509_SUBJECT_PEER_PROPERTY);
+  ASSERT_NE(property, nullptr);
+  ASSERT_EQ(std::string(property->value.data, property->value.length),
+            expected_subject);
+  // Check common name
+  std::string expected_cn = "xpigors";
+  property = tsi_peer_get_property_by_name(
+      &peer, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
+  ASSERT_NE(property, nullptr);
+  ASSERT_EQ(std::string(property->value.data, property->value.length),
+            expected_cn);
+  // Check certificate data
+  property = tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
+  ASSERT_NE(property, nullptr);
+  ASSERT_EQ(cert, std::string(property->value.data, property->value.length));
+  // Check DNS
+  ASSERT_TRUE(check_property(&peer,
+                             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                             "foo.test.domain.com"));
+  ASSERT_TRUE(check_property(&peer,
+                             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                             "bar.test.domain.com"));
+  ASSERT_TRUE(
+      check_property(&peer, TSI_X509_DNS_PEER_PROPERTY, "foo.test.domain.com"));
+  ASSERT_TRUE(
+      check_property(&peer, TSI_X509_DNS_PEER_PROPERTY, "bar.test.domain.com"));
+  // Check URI
+  // Note that a valid SPIFFE certificate should only have one URI.
+  ASSERT_TRUE(check_property(&peer,
+                             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                             "spiffe://foo.com/bar/baz"));
+  ASSERT_TRUE(check_property(&peer,
+                             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                             "https://foo.test.domain.com/test"));
+  ASSERT_TRUE(check_property(&peer,
+                             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                             "https://bar.test.domain.com/test"));
+  ASSERT_TRUE(check_property(&peer, TSI_X509_URI_PEER_PROPERTY,
+                             "spiffe://foo.com/bar/baz"));
+  ASSERT_TRUE(check_property(&peer, TSI_X509_URI_PEER_PROPERTY,
+                             "https://foo.test.domain.com/test"));
+  ASSERT_TRUE(check_property(&peer, TSI_X509_URI_PEER_PROPERTY,
+                             "https://bar.test.domain.com/test"));
+  // Check email address
+  ASSERT_TRUE(check_property(&peer,
+                             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                             "foo@test.domain.com"));
+  ASSERT_TRUE(check_property(&peer,
+                             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                             "bar@test.domain.com"));
+  ASSERT_TRUE(check_property(&peer, TSI_X509_EMAIL_PEER_PROPERTY,
+                             "foo@test.domain.com"));
+  ASSERT_TRUE(check_property(&peer, TSI_X509_EMAIL_PEER_PROPERTY,
+                             "bar@test.domain.com"));
+  // Check ip address
+  ASSERT_TRUE(check_property(
+      &peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "192.168.7.1"));
+  ASSERT_TRUE(check_property(
+      &peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "13::17"));
+  ASSERT_TRUE(check_property(&peer, TSI_X509_IP_PEER_PROPERTY, "192.168.7.1"));
+  ASSERT_TRUE(check_property(&peer, TSI_X509_IP_PEER_PROPERTY, "13::17"));
+  // Check other fields
+  ASSERT_TRUE(check_property(&peer,
+                             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                             "other types of SAN"));
+  // Free memory
+  tsi_peer_destruct(&peer);
+}
+
+TEST(SslTransportSecurityTest,
+     ExtractX509SubjectNamesMalformedIpAddressSanFailsGracefully) {
+  // This certificate contains a subjectAltName extension with an iPAddress of
+  // length 5 bytes (rather than 4 or 16 bytes). This causes
+  // add_subject_alt_names_properties_to_peer() to fail, which should result in
+  // a clean error return rather than triggering process abort.
+  std::string cert =
+      "-----BEGIN CERTIFICATE-----\n"
+      "MIIC3zCCAcegAwIBAgIUKMYmbfEcNkln+NB2bntR6854MpswDQYJKoZIhvcNAQEL\n"
+      "BQAwDzENMAsGA1UEAwwEZXZpbDAeFw0yNjA1MTAyMjIzMThaFw0yNjA1MTEyMjIz\n"
+      "MThaMA8xDTALBgNVBAMMBGV2aWwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\n"
+      "AoIBAQDJunMBKb/jsFIIxBeiEoniP5vQRGY65NDPmRPpZ3Ow423IHMDkITve7wzU\n"
+      "A8pr8+CuwNt9BRRL/6lzXKa7f9DdYEXAtqeuQRrgmSMGAJeayQjgwe7Z2zUaMGNv\n"
+      "92WiSNUBMu2O+6gOQqPaVw5NlcYPvccWawddeFuSmY/RlIUjQrCS3SWLLHaykSeQ\n"
+      "gXmwdaBhtmz+EOVcNMrMk3eMsQMeF0gef6gqeHy8/plITyh2/x/sf8O8QPidAbCB\n"
+      "8mLgUKT9jWSx4v/CVy3d3QuEmeDz111WoT+EWIMMNlNxVH9ZKhXKINLlsh81zgXO\n"
+      "QC5OVvdPVHG5gSFpuWzkN0MsW7KtAgMBAAGjMzAxMBAGA1UdEQQJMAeHBQECAwQF\n"
+      "MB0GA1UdDgQWBBTv0tHsQgZ8fdz5wq3EQF839GmvpzANBgkqhkiG9w0BAQsFAAOC\n"
+      "AQEArl2g0+d5FT7CZgKWecSiT4cBYCQfblB8pu0lTebOIz9qTUjkmo44SFTQvG2T\n"
+      "6Pztk4iPIGfrXSHeqTZchfuOVTuWV5RcKcGO73cShfzbnAX70eLnxCqUwwv41a5Y\n"
+      "nJYgEzZoSuaoXd2S3wfNWBROFvDoBoZd8/61xTTCG2026eVpzOya6tgAPPitzz0k\n"
+      "Bs4ONyXtnJSueO/Aoajo7eflDkYicgOoDq0C1oNICfdvgV1A+bODwMF01uqQvqGy\n"
+      "T0FCfB2EfpqgvvhXHLhk1wlHilsRyFNt/gmvgHP1AKvFq8lQOi9R0ZETXLkRxs57\n"
+      "9wpUdmSKwssGfTXAD5PfyRB3Qw==\n"
+      "-----END CERTIFICATE-----\n";
+  tsi_peer peer;
+  EXPECT_EQ(
+      tsi_ssl_extract_x509_subject_names_from_pem_cert(cert.c_str(), &peer),
+      TSI_INTERNAL_ERROR);
+}
+
+TEST(SslTransportSecurityTest, ExtractCertChain) {
+  std::string cert =
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "server1.pem"));
+  std::string ca =
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem"));
+  std::string chain = absl::StrCat(cert, ca);
+  STACK_OF(X509)* cert_chain = sk_X509_new_null();
+  ASSERT_NE(cert_chain, nullptr);
+  BIO* bio = BIO_new_mem_buf(chain.data(), chain.size());
+  ASSERT_NE(bio, nullptr);
+  STACK_OF(X509_INFO)* certInfos =
+      PEM_X509_INFO_read_bio(bio, nullptr, nullptr, nullptr);
+  ASSERT_NE(certInfos, nullptr);
+  for (size_t i = 0; i < sk_X509_INFO_num(certInfos); i++) {
+    X509_INFO* certInfo = sk_X509_INFO_value(certInfos, i);
+    if (certInfo->x509 != nullptr) {
+      ASSERT_NE(sk_X509_push(cert_chain, certInfo->x509), 0);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+      X509_up_ref(certInfo->x509);
+#else
+      certInfo->x509->references += 1;
+#endif
+    }
+  }
+  tsi_peer_property chain_property;
+  ASSERT_EQ(tsi_ssl_get_cert_chain_contents(cert_chain, &chain_property),
+            TSI_OK);
+  ASSERT_EQ(chain, std::string(chain_property.value.data,
+                               chain_property.value.length));
+  BIO_free(bio);
+  tsi_peer_property_destruct(&chain_property);
+  sk_X509_INFO_pop_free(certInfos, X509_INFO_free);
+  sk_X509_pop_free(cert_chain, X509_free);
+}
+
+// Attempt to perform a handshake between a client and server with ALPN enabled
+// and overriding the preferred protocols on the handshaker factory.
+TEST_P(SslTransportSecurityTest, TestClientAndServerHandshakerOverrideALPN) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->OverrideHanshakerAlpnClientProtocols("toto,bar");
+  ssl_fixture_->OverrideHanshakerAlpnServerProtocols("bar,foo,toto");
+  ssl_fixture_->SetExpectedAlpnNegotiatedProtocol("bar");
+  ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
+  DoHandshake();
+}
+
+// Attempt to perform a handshake between a client and server with ALPN enabled
+// and overriding the preferred protocols on the handshaker factory.
+TEST_P(SslTransportSecurityTest, TestClientHandshakerOverrideALPN) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->OverrideHanshakerAlpnClientProtocols("toto,baz");
+  // The server default protocols set by the handshaker factory are [foo, baz].
+  ssl_fixture_->SetExpectedAlpnNegotiatedProtocol("baz");
+  ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
+  DoHandshake();
+}
+
+// Attempt to perform a handshake between a client and server with ALPN enabled
+// and overriding the preferred protocols on the handshaker factory.
+TEST_P(SslTransportSecurityTest, TestServerHandshakerOverrideALPN) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // The client default protocols set by the handshaker factory are [toto, baz].
+  ssl_fixture_->OverrideHanshakerAlpnServerProtocols("bar,foo,toto");
+  ssl_fixture_->SetExpectedAlpnNegotiatedProtocol("toto");
+  ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
+  DoHandshake();
+}
+
+class TestMetricsSink final : public MetricsSink {
+ public:
+  using Labels = std::map<std::string, std::string>;
+
+  void Counter(InstrumentLabelList label_keys,
+               absl::Span<const std::string> label, absl::string_view name,
+               uint64_t value) override {
+    EXPECT_EQ(label_keys.size(), label.size());
+    Labels labels;
+    for (size_t i = 0; i < label_keys.size(); ++i) {
+      labels[std::string(label_keys[i].label())] = label[i];
+    }
+    data_[std::string(name)][labels] += value;
+  }
+  void UpDownCounter(InstrumentLabelList /*label_keys*/,
+                     absl::Span<const std::string> /*label*/,
+                     absl::string_view /*name*/, uint64_t /*value*/) override {}
+  void Int64Histogram(InstrumentLabelList /*label_keys*/,
+                      absl::Span<const std::string> /*label*/,
+                      absl::string_view /*name*/,
+                      Int64HistogramBuckets /*bounds*/,
+                      absl::Span<const uint64_t> /*counts*/) override {}
+  void DoubleHistogram(InstrumentLabelList /*label_keys*/,
+                       absl::Span<const std::string> /*label*/,
+                       absl::string_view /*name*/,
+                       DoubleHistogramBuckets /*bounds*/,
+                       absl::Span<const uint64_t> /*counts*/) override {}
+  void DoubleGauge(InstrumentLabelList /*label_keys*/,
+                   absl::Span<const std::string> /*labels*/,
+                   absl::string_view /*name*/, double /*value*/) override {}
+  void IntGauge(InstrumentLabelList /*label_keys*/,
+                absl::Span<const std::string> /*labels*/,
+                absl::string_view /*name*/, int64_t /*value*/) override {}
+  void UintGauge(InstrumentLabelList /*label_keys*/,
+                 absl::Span<const std::string> /*labels*/,
+                 absl::string_view /*name*/, uint64_t /*value*/) override {}
+
+  // Returns the accumulated sum of values recorded for the given instrument
+  // name that match the specified labels.
+  uint64_t GetCount(const std::string& instrument_name,
+                    const Labels& labels) const {
+    auto it = data_.find(instrument_name);
+    if (it == data_.end()) return 0;
+    auto val_it = it->second.find(labels);
+    if (val_it == it->second.end()) return 0;
+    return val_it->second;
+  }
+
+  uint64_t GetTotalCount(const std::string& instrument_name) const {
+    auto it = data_.find(instrument_name);
+    if (it == data_.end()) return 0;
+    uint64_t sum = 0;
+    for (const auto& kv : it->second) {
+      sum += kv.second;
+    }
+    return sum;
+  }
+
+ private:
+  std::map<std::string /*instrument_name*/,
+           std::map<Labels, uint64_t /*accumulated_value*/>>
+      data_;
+};
+
+TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
+  TestOnlyResetInstruments();
+  auto root_scope = CreateRootCollectionScope(
+      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
+  TestMetricsSink sink_before;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(root_scope, sink_before);
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetCollectionScope(root_scope);
+  DoHandshake();
+  TestMetricsSink sink_after;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(root_scope, sink_after);
+  const TestMetricsSink::Labels client_labels = {
+      {"grpc.tls.handshake.result", "OK"},
+      {"grpc.tls.handshake.resumed", "false"},
+  };
+  const TestMetricsSink::Labels server_labels = {
+      {"grpc.tls.handshake.result", "OK"},
+      {"grpc.tls.handshake.resumed", "false"},
+  };
+  // Assert client handshake succeeded.
+  EXPECT_EQ(
+      sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
+      sink_before.GetCount("grpc.client.tls.handshakes", client_labels) + 1);
+  // Assert server handshake succeeded.
+  EXPECT_EQ(
+      sink_after.GetCount("grpc.server.tls.handshakes", server_labels),
+      sink_before.GetCount("grpc.server.tls.handshakes", server_labels) + 1);
+}
+TEST_P(SslTransportSecurityTest, TestBadServerCertMetricsIncremented) {
+  TestOnlyResetInstruments();
+  auto root_scope = CreateRootCollectionScope(
+      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
+  TestMetricsSink sink_before;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(root_scope, sink_before);
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->MutableKeyCertLib()->use_bad_server_cert = true;
+  ssl_fixture_->SetCollectionScope(root_scope);
+  DoHandshake();
+  TestMetricsSink sink_after;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(root_scope, sink_after);
+  // In an end2end flow, the server should see a metric recorded here. However,
+  // in the unit test flow, when the client fails due to the bad server cert,
+  // the handshaker exits immediately and the server handshaker is never called
+  // again and is simply destroyed.
+  const TestMetricsSink::Labels client_labels = {
+      {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
+      {"grpc.tls.handshake.resumed", "false"},
+  };
+  EXPECT_EQ(
+      sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
+      sink_before.GetCount("grpc.client.tls.handshakes", client_labels) + 1);
+  EXPECT_EQ(sink_after.GetTotalCount("grpc.server.tls.handshakes"),
+            sink_before.GetTotalCount("grpc.server.tls.handshakes"));
+}
+TEST_P(SslTransportSecurityTest, TestBadClientCertMetricsIncremented) {
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+  if (std::get<0>(GetParam()) == TSI_TLS1_3) {
+    GTEST_SKIP() << "TLS 1.3 is not supported in OpenSSL < 1.1.1";
+    return;
+  }
+#endif
+  TestOnlyResetInstruments();
+  auto root_scope = CreateRootCollectionScope(
+      {"grpc.tls.handshake.result", "grpc.tls.handshake.resumed"}, 32, 32);
+  TestMetricsSink sink_before;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(root_scope, sink_before);
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->MutableKeyCertLib()->use_bad_client_cert = true;
+  ssl_fixture_->SetForceClientAuth(true);
+  ssl_fixture_->SetCollectionScope(root_scope);
+  DoHandshake();
+  TestMetricsSink sink_after;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(root_scope, sink_after);
+  // When the server rejects the client cert, the client will see handshake
+  // success with TLS 1.3 but not with TLS 1.2
+  bool is_tls_13 = (std::get<0>(GetParam()) == tsi_tls_version::TSI_TLS1_3);
+  const TestMetricsSink::Labels client_labels = {
+      {"grpc.tls.handshake.result", "OK"},
+      {"grpc.tls.handshake.resumed", "false"},
+  };
+  const TestMetricsSink::Labels server_labels = {
+      {"grpc.tls.handshake.result", "CERTIFICATE_AUTHORITY_INVALID"},
+      {"grpc.tls.handshake.resumed", "false"},
+  };
+  if (is_tls_13) {
+    EXPECT_EQ(
+        sink_after.GetCount("grpc.client.tls.handshakes", client_labels),
+        sink_before.GetCount("grpc.client.tls.handshakes", client_labels) + 1);
+  } else {
+    EXPECT_EQ(sink_after.GetTotalCount("grpc.client.tls.handshakes"),
+              sink_before.GetTotalCount("grpc.client.tls.handshakes"));
+  }
+  EXPECT_EQ(
+      sink_after.GetCount("grpc.server.tls.handshakes", server_labels),
+      sink_before.GetCount("grpc.server.tls.handshakes", server_labels) + 1);
+}
+
+// Configuring key exchange groups requires SSL_CTX_set1_groups_list(),
+// which was introduced in OpenSSL 1.1.1 (and is supported in BoringSSL).
+// Tests are gated to prevent failures on older OpenSSL 1.0.2/1.1.0
+// installations.
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupSuccess) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+// The client default protocols set by the handshaker factory are [toto, baz].
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+  ssl_fixture_->OverrideClientKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519_MLKEM768, GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_X25519_MLKEM768});
+#else
+  ssl_fixture_->OverrideClientKeyExchangeGroups(
+      {GRPC_TLS_GROUP_SECP256R1, GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_SECP256R1});
+#endif
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // The client default protocols set by the handshaker factory are [toto, baz].
+  ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
+  // In TLS1.2, on key exchange group mismatch, it will fall back to an ECDHE
+  // ciphersuite, provided there is a matching one between the client and server
+  // TLS1.3 is stricter and requires a match, and will thus fail in this test
+  // case.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  DoHandshake();
+}
+
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+TEST_P(SslTransportSecurityTest,
+       SuccessfulHandshakeServerSpecifiesX25519Mlkem768) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideServerKeyExchangeGroups(
+        {GRPC_TLS_GROUP_X25519_MLKEM768});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519MLKEM768");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest,
+       SuccessfulHandshakeClientSpecifiesX25519Mlkem768) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups(
+        {GRPC_TLS_GROUP_X25519_MLKEM768});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519MLKEM768");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMlkem1024) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_MLKEM1024});
+    ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_MLKEM1024});
+    ssl_fixture_->SetExpectedNegotiatedGroup("id-alg-ml-kem-1024");
+  }
+  DoHandshake();
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
+        // 0x30500000L
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesX25519) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesX25519) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesP256) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
+    ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
+    ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
+  }
+  DoHandshake();
+}
+
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10101000L
+
+}  // namespace
+}  // namespace testing
+}  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
+}

@@ -1,0 +1,167 @@
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include "test/core/test_util/mock_endpoint.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+
+#include <memory>
+#include <utility>
+
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_event_engine {
+namespace experimental {
+using WriteArgs = EventEngine::Endpoint::WriteArgs;
+using ReadArgs = EventEngine::Endpoint::ReadArgs;
+
+MockEndpoint::MockEndpoint(
+    std::shared_ptr<BaseMockEndpointController> endpoint_control, int fd)
+    : endpoint_control_(std::move(endpoint_control)),
+      peer_addr_(URIToResolvedAddress("ipv4:127.0.0.1:12345").value()),
+      local_addr_(URIToResolvedAddress("ipv4:127.0.0.1:6789").value()),
+      fd_(fd) {}
+
+MockEndpoint::MockEndpoint(
+    std::shared_ptr<BaseMockEndpointController> endpoint_control)
+    : MockEndpoint(std::move(endpoint_control), -1) {}
+
+MockEndpointController::~MockEndpointController() {
+  grpc_core::MutexLock lock(mu_);
+  if (on_read_) {
+    engine_->Run([cb = std::move(on_read_)]() mutable {
+      cb(absl::InternalError("Endpoint Shutdown"));
+    });
+    on_read_ = nullptr;
+  }
+}
+
+std::shared_ptr<MockEndpointController> MockEndpointController::Create(
+    std::shared_ptr<EventEngine> engine, int fd) {
+  std::shared_ptr<MockEndpointController> controller =
+      std::shared_ptr<MockEndpointController>(
+          new MockEndpointController(std::move(engine)));
+  controller->InitMockGrpcEndpoint(fd);
+  return controller;
+}
+
+MockEndpointController::MockEndpointController(
+    std::shared_ptr<EventEngine> engine)
+    : engine_(std::move(engine)), mock_grpc_endpoint_(nullptr) {}
+
+void MockEndpointController::InitMockGrpcEndpoint(int fd) {
+  mock_grpc_endpoint_ = grpc_event_engine_endpoint_create(
+      std::make_unique<grpc_event_engine::experimental::MockEndpoint>(
+          shared_from_this(), fd));
+}
+
+void MockEndpointController::TriggerReadEvent(Slice read_data) {
+  grpc_core::MutexLock lock(mu_);
+  GRPC_CHECK(!reads_done_)
+      << "Cannot trigger a read event after NoMoreReads has been called.";
+  if (on_read_) {
+    on_read_slice_buffer_->Append(std::move(read_data));
+    engine_->Run(
+        [cb = std::move(on_read_)]() mutable { cb(absl::OkStatus()); });
+    on_read_ = nullptr;
+    on_read_slice_buffer_ = nullptr;
+  } else {
+    read_buffer_.Append(std::move(read_data));
+  }
+}
+
+void MockEndpointController::NoMoreReads() {
+  grpc_core::MutexLock lock(mu_);
+  GRPC_CHECK(!std::exchange(reads_done_, true))
+      << "NoMoreReads() can only be called once";
+}
+
+bool MockEndpointController::Read(
+    absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+    ReadArgs /*args*/) {
+  grpc_core::MutexLock lock(mu_);
+  if (read_buffer_.Count() > 0) {
+    GRPC_CHECK(buffer->Count() == 0);
+    GRPC_CHECK(!on_read_);
+    read_buffer_.Swap(*buffer);
+    engine_->Run([cb = std::move(on_read)]() mutable { cb(absl::OkStatus()); });
+  } else if (reads_done_) {
+    engine_->Run([cb = std::move(on_read)]() mutable {
+      cb(absl::UnavailableError("reads done"));
+    });
+  } else {
+    on_read_ = std::move(on_read);
+    on_read_slice_buffer_ = buffer;
+  }
+  return false;
+}
+
+bool MockEndpointController::Write(
+    absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
+    WriteArgs /*args*/) {
+  grpc_core::MutexLock lock(mu_);
+  // No-op implementation. Nothing was using it.
+  data->Clear();
+  engine()->Run(
+      [cb = std::move(on_writable)]() mutable { cb(absl::OkStatus()); });
+  return false;
+}
+
+grpc_endpoint* MockEndpointController::TakeCEndpoint() {
+  GRPC_CHECK_NE(mock_grpc_endpoint_, nullptr)
+      << "The endpoint has already been taken";
+  auto ret = mock_grpc_endpoint_;
+  mock_grpc_endpoint_ = nullptr;
+  return ret;
+}
+
+bool MockEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                        SliceBuffer* buffer, ReadArgs args) {
+  return endpoint_control_->Read(std::move(on_read), buffer, args);
+}
+
+bool MockEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+                         SliceBuffer* data, WriteArgs args) {
+  return endpoint_control_->Write(std::move(on_writable), data,
+                                  std::move(args));
+}
+
+const EventEngine::ResolvedAddress& MockEndpoint::GetPeerAddress() const {
+  return peer_addr_;
+}
+
+const EventEngine::ResolvedAddress& MockEndpoint::GetLocalAddress() const {
+  return local_addr_;
+}
+
+int MockEndpoint::GetWrappedFd() { return fd_; }
+
+void MockEndpoint::Shutdown(
+    absl::AnyInvocable<void(absl::StatusOr<int> release_fd)> on_release_fd) {
+  on_release_fd(fd_);
+}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine

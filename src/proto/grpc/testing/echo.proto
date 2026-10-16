@@ -1,0 +1,70 @@
+
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.testing;
+
+import "src/proto/grpc/testing/echo_messages.proto";
+import "src/proto/grpc/testing/simple_messages.proto";
+
+service EchoTestService {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc Echo1(EchoRequest) returns (EchoResponse);
+  rpc Echo2(EchoRequest) returns (EchoResponse);
+  rpc CheckDeadlineUpperBound(SimpleRequest) returns (StringValue);
+  rpc CheckDeadlineSet(SimpleRequest) returns (StringValue);
+  // A service which checks that the initial metadata sent over contains some
+  // expected key value pair
+  rpc CheckClientInitialMetadata(SimpleRequest) returns (SimpleResponse);
+  rpc RequestStream(stream EchoRequest) returns (EchoResponse);
+  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
+  rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
+  rpc UnimplementedBidi(stream EchoRequest) returns (stream EchoResponse);
+}
+
+service EchoTest1Service {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc Echo1(EchoRequest) returns (EchoResponse);
+  rpc Echo2(EchoRequest) returns (EchoResponse);
+  // A service which checks that the initial metadata sent over contains some
+  // expected key value pair
+  rpc CheckClientInitialMetadata(SimpleRequest) returns (SimpleResponse);
+  rpc RequestStream(stream EchoRequest) returns (EchoResponse);
+  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
+  rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
+}
+
+service EchoTest2Service {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc Echo1(EchoRequest) returns (EchoResponse);
+  rpc Echo2(EchoRequest) returns (EchoResponse);
+  // A service which checks that the initial metadata sent over contains some
+  // expected key value pair
+  rpc CheckClientInitialMetadata(SimpleRequest) returns (SimpleResponse);
+  rpc RequestStream(stream EchoRequest) returns (EchoResponse);
+  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
+  rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
+}
+
+service UnimplementedEchoService {
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
+}
+
+// A service without any rpc defined to test coverage.
+service NoRpcService {}

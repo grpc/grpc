@@ -1,0 +1,35 @@
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package prime;
+
+// A candidate integer for primality testing.
+message PrimeCandidate {
+    // The candidate.
+    int64 candidate = 1;
+}
+
+// The primality of the requested integer candidate.
+message Primality {
+    // Is the candidate prime?
+    bool isPrime = 1;
+}
+
+// Service to check primality.
+service PrimeChecker {
+    // Determines the primality of an integer.
+    rpc check (PrimeCandidate) returns (Primality) {}
+}

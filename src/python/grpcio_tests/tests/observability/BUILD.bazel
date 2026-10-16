@@ -1,0 +1,96 @@
+# Copyright 2023 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "test_server",
+    srcs = ["_test_server.py"],
+)
+
+py_library(
+    name = "_from_observability_import_star",
+    srcs = ["_from_observability_import_star.py"],
+)
+
+py_library(
+    name = "_from_csm_observability_import_star",
+    srcs = ["_from_csm_observability_import_star.py"],
+)
+
+py_test(
+    name = "_open_telemetry_observability_test",
+    size = "small",
+    srcs = ["_open_telemetry_observability_test.py"],
+    imports = ["../../"],
+    main = "_open_telemetry_observability_test.py",
+    deps = [
+        ":test_server",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "//src/python/grpcio_tests/tests/testing",
+        requirement("opentelemetry-sdk"),
+    ],
+)
+
+py_test(
+    name = "_observability_plugin_test",
+    size = "small",
+    srcs = ["_observability_plugin_test.py"],
+    imports = ["../../"],
+    main = "_observability_plugin_test.py",
+    deps = [
+        ":test_server",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "//src/python/grpcio_tests/tests/testing",
+        requirement("protobuf"),
+        requirement("opentelemetry-sdk"),
+    ],
+)
+
+py_test(
+    name = "_csm_observability_plugin_test",
+    size = "small",
+    srcs = ["_csm_observability_plugin_test.py"],
+    imports = ["../../"],
+    main = "_csm_observability_plugin_test.py",
+    deps = [
+        ":test_server",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
+        "//src/python/grpcio_tests/tests/testing",
+        requirement("protobuf"),
+        requirement("opentelemetry-sdk"),
+    ],
+)
+
+py_test(
+    name = "_observability_api_test",
+    size = "small",
+    srcs = ["_observability_api_test.py"],
+    imports = ["../../"],
+    main = "_observability_api_test.py",
+    deps = [
+        ":_from_csm_observability_import_star",
+        ":_from_observability_import_star",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
+        "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "//src/python/grpcio_tests/tests/testing",
+    ],
+)

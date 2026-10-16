@@ -1,0 +1,4 @@
+grpcio>=1.68.0
+grpcio-observability>=1.68.0
+grpcio-tools>=1.68.0
+opentelemetry-sdk>=1.21.0

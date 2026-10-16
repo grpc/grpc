@@ -1,0 +1,12 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+CN = intermediatecert.example.com
+
+[v3_req]
+keyUsage = critical, digitalSignature, keyEncipherment, keyCertSign
+extendedKeyUsage = clientAuth, serverAuth
+basicConstraints = critical, CA:true

@@ -1,0 +1,199 @@
+//
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#include "src/core/xds/grpc/xds_http_fault_filter.h"
+
+#include <grpc/status.h>
+#include <stdint.h>
+
+#include <string>
+#include <utility>
+#include <variant>
+
+#include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
+#include "envoy/type/v3/percent.upb.h"
+#include "google/protobuf/wrappers.upb.h"
+#include "src/core/call/status_util.h"
+#include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
+#include "src/core/lib/transport/status_conversion.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+
+namespace {
+
+uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
+  if (fraction != nullptr) {
+    const auto denominator =
+        static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
+            envoy_type_v3_FractionalPercent_denominator(fraction));
+    switch (denominator) {
+      case envoy_type_v3_FractionalPercent_MILLION:
+        return 1000000;
+      case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
+        return 10000;
+      case envoy_type_v3_FractionalPercent_HUNDRED:
+      default:
+        return 100;
+    }
+  }
+  // Use 100 as the default denominator
+  return 100;
+}
+
+}  // namespace
+
+absl::string_view XdsHttpFaultFilterFactory::ConfigProtoName() const {
+  return "envoy.extensions.filters.http.fault.v3.HTTPFault";
+}
+
+absl::string_view XdsHttpFaultFilterFactory::OverrideConfigProtoName() const {
+  return "envoy.extensions.filters.http.fault.v3.HTTPFault";
+}
+
+void XdsHttpFaultFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
+  envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
+}
+
+const grpc_channel_filter* XdsHttpFaultFilterFactory::channel_filter() const {
+  return &FaultInjectionFilter::kFilterVtable;
+}
+
+void XdsHttpFaultFilterFactory::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const FilterConfig> config) const {
+  builder.AddFilter<FaultInjectionFilter>(std::move(config));
+}
+
+RefCountedPtr<const FilterConfig>
+XdsHttpFaultFilterFactory::ParseTopLevelConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse fault injection filter config");
+    return nullptr;
+  }
+  auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
+      serialized_filter_config->data(), serialized_filter_config->size(),
+      context.arena);
+  if (http_fault == nullptr) {
+    errors->AddError("could not parse fault injection filter config");
+    return nullptr;
+  }
+  auto config = MakeRefCounted<FaultInjectionFilter::Config>();
+  // Section 1: Parse the abort injection config
+  const auto* fault_abort =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_abort(http_fault);
+  if (fault_abort != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".abort");
+    // Try if gRPC status code is set first.  Otherwise, use HTTP status.
+    if (int abort_grpc_status_code_raw =
+            envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+                fault_abort);
+        abort_grpc_status_code_raw != 0) {
+      if (!grpc_status_code_from_int(abort_grpc_status_code_raw,
+                                     &config->abort_code)) {
+        ValidationErrors::ScopedField field(errors, ".grpc_status");
+        errors->AddError(absl::StrCat("invalid gRPC status code: ",
+                                      abort_grpc_status_code_raw));
+      }
+    } else if (
+        int abort_http_status_code =
+            envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
+                fault_abort);
+        abort_http_status_code != 0 && abort_http_status_code != 200) {
+      config->abort_code =
+          grpc_http2_status_to_grpc_status(abort_http_status_code);
+    }
+    // Set the headers if we enabled header abort injection control
+    if (envoy_extensions_filters_http_fault_v3_FaultAbort_has_header_abort(
+            fault_abort)) {
+      config->abort_code_header = "x-envoy-fault-abort-grpc-request";
+      config->abort_percentage_header = "x-envoy-fault-abort-percentage";
+    }
+    // Set the fraction percent
+    auto* percent =
+        envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
+            fault_abort);
+    if (percent != nullptr) {
+      config->abort_percentage_numerator =
+          envoy_type_v3_FractionalPercent_numerator(percent);
+      config->abort_percentage_denominator = GetDenominator(percent);
+    }
+  }
+  // Section 2: Parse the delay injection config
+  const auto* fault_delay =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_delay(http_fault);
+  if (fault_delay != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".delay");
+    // Parse the delay duration
+    const auto* delay_duration =
+        envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
+            fault_delay);
+    if (delay_duration != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".fixed_delay");
+      config->delay = ParseDuration(delay_duration, errors);
+    }
+    // Set the headers if we enabled header delay injection control
+    if (envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(
+            fault_delay)) {
+      config->delay_header = "x-envoy-fault-delay-request";
+      config->delay_percentage_header =
+          "x-envoy-fault-delay-request-percentage";
+    }
+    // Set the fraction percent
+    auto* percent =
+        envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
+            fault_delay);
+    if (percent != nullptr) {
+      config->delay_percentage_numerator =
+          envoy_type_v3_FractionalPercent_numerator(percent);
+      config->delay_percentage_denominator = GetDenominator(percent);
+    }
+  }
+  // Section 3: Parse the maximum active faults
+  auto max_fault_wrapper = ParseUInt32Value(
+      envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
+          http_fault));
+  if (max_fault_wrapper.has_value()) {
+    config->max_faults = *max_fault_wrapper;
+  }
+  return config;
+}
+
+RefCountedPtr<const FilterConfig>
+XdsHttpFaultFilterFactory::ParseOverrideConfig(
+    absl::string_view instance_name,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  // HTTPFault filter has the same message type in HTTP connection manager's
+  // filter config and in overriding filter config field.
+  return ParseTopLevelConfig(instance_name, context, extension, errors);
+}
+
+}  // namespace grpc_core

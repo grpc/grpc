@@ -1,0 +1,53 @@
+%YAML 1.2
+--- |
+  <%
+  # TODO (mxyan): Make this list from build.yaml
+  textual_headers = {"include/grpc/support/atm_gcc_atomic.h",
+                     "include/grpc/support/atm_gcc_sync.h",
+                     "include/grpc/support/atm_windows.h",
+                     "include/grpc/support/sync_custom.h",
+                     "include/grpc/support/sync_posix.h",
+                     "include/grpc/support/sync_windows.h",
+                     "include/grpc/support/tls_gcc.h",
+                     "include/grpc/support/tls_msvc.h",
+                     "include/grpc/support/tls_pthread.h",
+                     "include/grpc/impl/codegen/atm_gcc_atomic.h",
+                     "include/grpc/impl/codegen/atm_gcc_sync.h",
+                     "include/grpc/impl/codegen/atm_windows.h",
+                     "include/grpc/impl/codegen/sync_custom.h",
+                     "include/grpc/impl/codegen/sync_posix.h",
+                     "include/grpc/impl/codegen/sync_windows.h"}
+
+  grpc_public_headers = {
+      file for lib in libs for file in lib.get('public_headers', [])
+      if lib.name in ("grpc", "gpr")
+  }
+
+  event_engine_files = {
+      file for file in grpc_public_headers if 'event_engine' in file
+  }
+
+  def un_dir(files):
+    return {f.split ('/', 2)[2] for f in files}
+
+  def header_lines(files):
+    return ('\n  ').join('header "%s"' % f for f in files)
+
+  def textual_header_lines(files):
+    return ('\n  ').join('textual header "%s"' % f for f in files)
+  %>
+  framework module grpc {
+    umbrella header "grpc.h"
+
+  ${header_lines(
+      sorted(un_dir(grpc_public_headers - event_engine_files -
+                    textual_headers)))}
+
+  ${textual_header_lines(
+      sorted(un_dir(grpc_public_headers.intersection(textual_headers) -
+                    event_engine_files)))}
+
+    export *
+    module * { export * }
+  }
+

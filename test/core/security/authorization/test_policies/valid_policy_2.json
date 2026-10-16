@@ -1,0 +1,26 @@
+{
+      "name": "authz",
+      "allow_rules": 
+      [
+            {
+                  "name": "allow_foo",
+                  "request": 
+                  {
+                        "paths": 
+                        [
+                              "*/foo"
+                        ]
+                  }
+            },
+            {
+                  "name": "allow_bar",
+                  "request": 
+                  {
+                        "paths": 
+                        [
+                              "*/bar"
+                        ]
+                  }
+            }
+      ]
+}

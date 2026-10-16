@@ -1,0 +1,31 @@
+
+<%namespace import="doxy_base" file="Doxyfile.base"/>
+<%def name="gen_doxyfile(internal)">
+<%
+  import itertools
+  import glob
+  import os
+  import fnmatch
+  import subprocess
+  
+  srcdoc = []
+  for dirpath, dirnames, filenames in os.walk('src/php'):
+    for filename in filenames:
+      if os.path.splitext(filename)[1] == '.md':
+        srcdoc.append(os.path.join(dirpath, filename))
+
+  subprocess.check_call(["src/php/bin/php_extension_to_php_doc.sh", "generate"])
+
+  version = settings.php_version
+  doxy_input = ' \\\n'.join(sorted(set(
+        itertools.chain(
+            glob.glob('src/php/lib/Grpc/*.php'),
+            glob.glob('src/php/lib/Grpc/Internal/*.php') if internal else [],
+            glob.glob('doc/*.md'),
+            srcdoc)
+    )))
+
+  subprocess.check_call(["src/php/bin/php_extension_to_php_doc.sh", "cleanup"])
+%>
+${doxy_base("PHP", version, doxy_input, internal)}
+</%def> 

@@ -1,0 +1,201 @@
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include "src/core/ext/transport/chttp2/transport/frame_data.h"
+
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+#include <stdlib.h>
+
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/status_helper.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+
+absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
+                                                 uint32_t stream_id,
+                                                 grpc_chttp2_stream* s) {
+  if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
+    return absl::InternalError(absl::StrFormat(
+        "unsupported data flags: 0x%02x stream: %d", flags, stream_id));
+  }
+
+  if (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
+    s->received_last_frame = true;
+    s->eos_received = true;
+  } else {
+    s->received_last_frame = false;
+  }
+  ++s->num_frames;
+
+  return absl::OkStatus();
+}
+
+void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
+                             uint32_t write_bytes, int is_eof,
+                             grpc_core::CallTracerInterface* call_tracer,
+                             grpc_core::Http2ZTraceCollector* ztrace_collector,
+                             grpc_slice_buffer* outbuf) {
+  grpc_slice hdr;
+  uint8_t* p;
+  static const size_t header_size = 9;
+
+  hdr = GRPC_SLICE_MALLOC(header_size);
+  p = GRPC_SLICE_START_PTR(hdr);
+  GRPC_CHECK(write_bytes < (1 << 24));
+  *p++ = static_cast<uint8_t>(write_bytes >> 16);
+  *p++ = static_cast<uint8_t>(write_bytes >> 8);
+  *p++ = static_cast<uint8_t>(write_bytes);
+  *p++ = GRPC_CHTTP2_FRAME_DATA;
+  *p++ = is_eof ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0;
+  *p++ = static_cast<uint8_t>(id >> 24);
+  *p++ = static_cast<uint8_t>(id >> 16);
+  *p++ = static_cast<uint8_t>(id >> 8);
+  *p++ = static_cast<uint8_t>(id);
+  grpc_slice_buffer_add(outbuf, hdr);
+
+  ztrace_collector->Append(
+      grpc_core::H2DataTrace<false>{id, is_eof != 0, write_bytes});
+
+  grpc_slice_buffer_move_first_no_ref(inbuf, write_bytes, outbuf);
+
+  grpc_core::http2_global_stats().IncrementHttp2WriteDataFrameSize(write_bytes);
+  call_tracer->RecordOutgoingBytes({header_size, 0, 0});
+}
+
+grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
+    grpc_chttp2_stream* s, int64_t* min_progress_size,
+    grpc_core::SliceBuffer* stream_out, uint32_t* message_flags) {
+  grpc_slice_buffer* slices = &s->frame_storage;
+  grpc_error_handle error;
+
+  if (slices->length < GRPC_HEADER_SIZE_IN_BYTES) {
+    if (min_progress_size != nullptr) {
+      *min_progress_size = GRPC_HEADER_SIZE_IN_BYTES - slices->length;
+    }
+    return grpc_core::Pending{};
+  }
+
+  uint8_t header[GRPC_HEADER_SIZE_IN_BYTES];
+  grpc_slice_buffer_copy_first_into_buffer(slices, GRPC_HEADER_SIZE_IN_BYTES,
+                                           header);
+
+  switch (header[0]) {
+    case 0:
+      if (message_flags != nullptr) *message_flags = 0;
+      break;
+    case 1:
+      if (message_flags != nullptr) {
+        *message_flags = GRPC_WRITE_INTERNAL_COMPRESS;
+      }
+      break;
+    default:
+      error = GRPC_ERROR_CREATE(
+          absl::StrFormat("Bad GRPC frame type 0x%02x", header[0]));
+      error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kStreamId,
+                                 static_cast<intptr_t>(s->id));
+      return error;
+  }
+
+  size_t length = (static_cast<uint32_t>(header[1]) << 24) |
+                  (static_cast<uint32_t>(header[2]) << 16) |
+                  (static_cast<uint32_t>(header[3]) << 8) |
+                  static_cast<uint32_t>(header[4]);
+
+  if (grpc_core::IsMessageSizeRefactoringEnabled()) {
+    if (s->max_recv_message_length.has_value() &&
+        length > *(s->max_recv_message_length)) {
+      error = GRPC_ERROR_CREATE(
+          absl::StrFormat("%s: Received message larger than max (%d vs. %u)",
+                          s->t->is_client ? "CLIENT" : "SERVER", length,
+                          *(s->max_recv_message_length)));
+      error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kStreamId,
+                                 static_cast<intptr_t>(s->id));
+      // Attach the explicit gRPC status code to fail the RPC correctly
+      error = grpc_core::ReplaceStatusCode(
+          error, absl::StatusCode::kResourceExhausted);
+      s->message_size_limit_exceeded = true;
+      return error;
+    }
+  }
+
+  if (slices->length < length + GRPC_HEADER_SIZE_IN_BYTES) {
+    if (min_progress_size != nullptr) {
+      *min_progress_size = length + GRPC_HEADER_SIZE_IN_BYTES - slices->length;
+    }
+    return grpc_core::Pending{};
+  }
+
+  if (min_progress_size != nullptr) *min_progress_size = 0;
+
+  if (stream_out != nullptr) {
+    s->call_tracer_wrapper.RecordIncomingBytes(
+        {GRPC_HEADER_SIZE_IN_BYTES, length, 0});
+    grpc_slice_buffer_move_first_into_buffer(slices, GRPC_HEADER_SIZE_IN_BYTES,
+                                             header);
+    grpc_slice_buffer_move_first(slices, length, stream_out->c_slice_buffer());
+    s->num_frames = 0;
+  }
+
+  return absl::OkStatus();
+}
+
+grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
+                                                grpc_chttp2_transport* t,
+                                                grpc_chttp2_stream* s,
+                                                const grpc_slice& slice,
+                                                int is_last) {
+  const size_t slice_len = GRPC_SLICE_LENGTH(slice);
+  bool is_small_frame = 0 < slice_len && slice_len < GRPC_SLICE_INLINED_SIZE;
+  bool multiple_small_frames =
+      (s->num_frames >= 64) &&
+      ((s->frame_storage.length / s->num_frames) < GRPC_SLICE_INLINED_SIZE);
+  if (GPR_UNLIKELY(multiple_small_frames && is_small_frame &&
+                   grpc_core::IsHeaderDataFrameEnabled())) {
+    uint8_t* append_ptr =
+        grpc_slice_buffer_tiny_add(&s->frame_storage, slice_len);
+    memcpy(append_ptr, GRPC_SLICE_START_PTR(slice), slice_len);
+  } else {
+    grpc_core::CSliceRef(slice);
+    grpc_slice_buffer_add(&s->frame_storage, slice);
+  }
+  grpc_chttp2_maybe_complete_recv_message(t, s);
+
+  if (is_last) {
+    t->http2_ztrace_collector.Append(grpc_core::H2DataTrace<true>{
+        t->incoming_stream_id,
+        (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0,
+        t->incoming_frame_size});
+  }
+  if (is_last && s->received_last_frame) {
+    grpc_chttp2_mark_stream_closed(
+        t, s, true, false,
+        t->is_client
+            ? GRPC_ERROR_CREATE("Data frame with END_STREAM flag received")
+            : absl::OkStatus());
+  }
+
+  return absl::OkStatus();
+}

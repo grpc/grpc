@@ -1,0 +1,11 @@
+<!--
+  This overrides the Directory.Build.targets in src/csharp/ 
+  since we want different settings for the integration tests, particularly
+  we don't want to sign assemblies
+-->
+<Project>
+
+  <!-- These would normally be imported from the Grpc.Tools NuGet package -->
+  <Import Project="$(GrpcToolsBuildDir)\_grpc\_Grpc.Tools.targets"/>
+  <Import Project="$(GrpcToolsBuildDir)\_protobuf\Google.Protobuf.Tools.targets"/>
+</Project>

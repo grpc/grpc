@@ -1,0 +1,335 @@
+#!/bin/bash
+# Copyright 2016 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+set -ex
+
+cd "$(dirname "$0")/../../.."
+
+export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+export PYTHON=${PYTHON:-python}
+export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+export CCACHE_NOHASHDIR=true
+
+# activate ccache if desired
+# shellcheck disable=SC1091
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
+
+# Needed for building binary distribution wheels -- bdist_wheel
+"${PYTHON}" -m pip install --upgrade pip
+# Pin to a single version to make sure we're building the same artifacts
+"${PYTHON}" -m pip install setuptools==77.0.1 wheel==0.43.0 build==1.5.0
+
+if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
+then
+  # Install Cython to avoid source wheel build failure.
+  # This only needs to be done when not running under docker (=on MacOS)
+  # since the docker images used for building python wheels
+  # already have a new-enough version of cython pre-installed.
+  # Any installation step is a potential source of breakages,
+  # so we are trying to perform as few download-and-install operations
+  # as possible.
+  "${PYTHON}" -m pip install --upgrade 'cython==3.2.8'
+fi
+
+# Allow build_ext to build C/C++ files in parallel
+# by enabling a monkeypatch. It speeds up the build a lot.
+# Use externally provided GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS value if set.
+export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-2}
+
+mkdir -p "${ARTIFACTS_OUT}"
+ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
+
+# check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
+if [ "$AUDITWHEEL_ARCH" == "aarch64" ]
+then
+  # when crosscompiling for aarch64, --plat-name needs to be set explicitly
+  # to end up with correctly named wheel file
+  # the value should be manylinuxABC_ARCH and dockcross docker image
+  # conveniently provides the value in the AUDITWHEEL_PLAT env
+  WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
+
+  # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
+  GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-aarch64-linux-gnu.so"))')"
+  export GRPC_PYTHON_OVERRIDE_EXT_SUFFIX
+
+  # since we're crosscompiling, we need to explicitly choose the right platform for boringssl assembly optimizations
+  export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-aarch64"
+fi
+
+# check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
+if [ "$AUDITWHEEL_ARCH" == "armv7l" ]
+then
+  # when crosscompiling for arm, --plat-name needs to be set explicitly
+  # to end up with correctly named wheel file
+  # our dockcross-based docker image conveniently provides the value in the AUDITWHEEL_PLAT env
+  WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
+
+  # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
+  GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-arm-linux-gnueabihf.so"))')"
+  export GRPC_PYTHON_OVERRIDE_EXT_SUFFIX
+
+  # since we're crosscompiling, we need to explicitly choose the right platform for boringssl assembly optimizations
+  export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-arm"
+fi
+
+ancillary_package_dir=(
+  "src/python/grpcio_admin/"
+  "src/python/grpcio_channelz/"
+  "src/python/grpcio_csds/"
+  "src/python/grpcio_health_checking/"
+  "src/python/grpcio_reflection/"
+  "src/python/grpcio_status/"
+  "src/python/grpcio_testing/"
+  "src/python/grpcio_observability/"
+  "src/python/grpcio_csm_observability/"
+)
+
+# Copy license to ancillary package directories so it will be distributed.
+for directory in "${ancillary_package_dir[@]}"; do
+  cp "LICENSE" "${directory}"
+done
+
+# Set build config option with WHEEL_PLAT_NAME_FLAG if it exists
+WHEEL_PLAT_CONFIG_OPTION=()
+if [[ -n "$WHEEL_PLAT_NAME_FLAG" ]]; then
+  WHEEL_PLAT_CONFIG_OPTION+=("-C--build-option=\"$WHEEL_PLAT_NAME_FLAG\"")
+fi
+
+# Build without setting explicit flags like --sdist or --wheel so that `build`
+# package first builds the sdist and use that as the source to build the wheel.
+# This is necessary as the file exclusions mentioned in pyproject.toml are
+# otherwise not respected when directly building the wheel.
+${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+
+GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
+GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
+GRPCIO_TAR_GZ=${GRPCIO_TAR_GZ_LIST[0]}
+GRPCIO_STRIPPED_TAR_GZ=$(mktemp -t "TAR_GZ_XXXXXXXXXX")
+
+clean_non_source_files() {
+( cd "$1"
+  find . -type f \
+    | grep -v '\.c$' | grep -v '\.cc$' | grep -v '\.cpp$' \
+    | grep -v '\.h$' | grep -v '\.hh$' | grep -v '\.inc$' \
+    | grep -v '\.s$' | grep -v '\.py$' | grep -v '\.hpp$' \
+    | grep -v '\.S$' | grep -v '\.asm$'                   \
+    | while read -r file; do
+      rm -f "$file" || true
+    done
+  find . -type d -empty -delete
+)
+}
+
+tar xzf "${GRPCIO_TAR_GZ}" -C "${GRPCIO_STRIP_TEMPDIR}"
+( cd "${GRPCIO_STRIP_TEMPDIR}"
+  find . -type d -name .git -exec rm -fr {} \; || true
+  for dir in */third_party/*; do
+    clean_non_source_files "${dir}" || true
+  done
+  tar czf "${GRPCIO_STRIPPED_TAR_GZ}" -- *
+  chmod ugo+r "${GRPCIO_STRIPPED_TAR_GZ}"
+)
+mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
+
+# Build gRPC tools package distribution
+"${PYTHON}" tools/distrib/python/make_grpcio_tools.py
+
+# Build gRPC tools package source and binary distribution
+${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" \
+  --no-isolation "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+
+if [ "$GRPC_BUILD_MAC" == "" ]; then
+  "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
+  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
+    --no-isolation "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+fi
+
+
+# run twine check before auditwheel, because auditwheel puts the repaired wheels into
+# the artifacts output dir.
+if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
+then
+  # Install virtualenv if it isn't already available.
+  # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
+  "${PYTHON}" -m pip install virtualenv
+  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+  # Ensure the generated artifacts are valid using "twine check"
+  venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
+  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+  if [ "$GRPC_BUILD_MAC" == "" ]; then
+    venv/bin/python -m twine check src/python/grpcio_observability/dist/*
+  fi
+  rm -rf venv/
+fi
+
+assert_is_universal_wheel()  {
+  WHL="$1"
+  TMPDIR=$(mktemp -d)
+  unzip "$WHL" -d "$TMPDIR"
+  SO=$(find "$TMPDIR" -name '*.so' | head -n1)
+  if ! file "$SO" | grep "Mach-O universal binary with 2 architectures"; then
+    echo "$WHL is not universal2. Found the following:" >/dev/stderr
+    file "$SO" >/dev/stderr
+    exit 1
+  fi
+}
+
+fix_faulty_universal2_wheel() {
+  WHL="$1"
+  assert_is_universal_wheel "$WHL"
+  if echo "$WHL" | grep "x86_64"; then
+    UPDATED_NAME="${WHL//x86_64/universal2}"
+    mv "$WHL" "$UPDATED_NAME"
+  fi
+}
+
+# This is necessary due to https://github.com/pypa/wheel/issues/406.
+# wheel incorrectly generates a universal2 artifact that only contains
+# x86_64 libraries.
+if [ "$GRPC_BUILD_MAC" != "" ]; then
+  for WHEEL in dist/*.whl tools/distrib/python/grpcio_tools/dist/*.whl; do
+    fix_faulty_universal2_wheel "$WHEEL"
+  done
+fi
+
+
+if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
+then
+  for wheel in dist/*.whl; do
+    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
+    "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
+    rm "$wheel"
+  done
+  for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
+    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
+    "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
+    rm "$wheel"
+  done
+else
+  cp -r dist/*.whl "$ARTIFACT_DIR"
+  cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
+fi
+
+# grpcio and grpcio-tools have already been copied to artifact_dir
+# by "auditwheel repair", now copy the .tar.gz source archives as well.
+cp -r dist/*.tar.gz "$ARTIFACT_DIR"
+cp -r tools/distrib/python/grpcio_tools/dist/*.tar.gz "$ARTIFACT_DIR"
+
+
+if [ "$GRPC_BUILD_MAC" == "" ]; then
+  if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
+  then
+    for wheel in src/python/grpcio_observability/dist/*.whl; do
+      "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
+      "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
+      rm "$wheel"
+    done
+  else
+    cp -r src/python/grpcio_observability/dist/*.whl "$ARTIFACT_DIR"
+  fi
+  cp -r src/python/grpcio_observability/dist/*.tar.gz "$ARTIFACT_DIR"
+
+  # Build grpcio_csm_observability distribution
+  if [ "$GRPC_BUILD_MAC" == "" ]; then
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_csm_observability"
+    cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
+  fi
+fi
+
+# We need to use the built grpcio-tools/grpcio to compile the health proto
+# Wheels are not supported by setup_requires/dependency_links, so we
+# manually install the dependency.  Note we should only do this if we
+# are in a docker image or in a virtualenv.
+if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
+then
+  "${PYTHON}" -m pip install -r requirements.txt
+
+  "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
+
+  # Ancillary packages below require source-built grpcio/grpcio_tools packages
+  # (unavailable on PyPI). `--no-isolation` prevents setuptools from failing to
+  # find these dependencies in PyPi and use the pre-built packages in the env
+
+  # Build xds_protos source distribution
+  # build_xds_protos.py is invoked as part of generate_projects.
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "py_xds_protos"
+
+  cp -r py_xds_protos/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_testing source distribution
+  # TODO(ssreenithi): find pyproject.toml/nox equivalent
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py preprocess
+  ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_testing
+  cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_channelz source distribution
+  # TODO(ssreenithi): find pyproject.toml/nox equivalent
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
+      preprocess build_package_protos
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "src/python/grpcio_channelz"
+
+  cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_health_checking source distribution
+  # TODO(ssreenithi): find pyproject.toml/nox equivalent
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \
+      preprocess build_package_protos
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "src/python/grpcio_health_checking"
+
+  cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_reflection source distribution
+  # TODO(ssreenithi): find pyproject.toml/nox equivalent
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_reflection/setup.py \
+      preprocess build_package_protos
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "src/python/grpcio_reflection"
+
+  cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_status source distribution
+  # TODO(ssreenithi): find pyproject.toml/nox equivalent
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_status/setup.py \
+      preprocess
+  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_status"
+  cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
+
+  # Install xds-protos as a dependency of grpcio-csds
+  "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
+
+  # Build grpcio_csds source distribution
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_csds"
+
+  cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_admin source distribution and it needs the cutting-edge version
+  # of Channelz and CSDS to be installed.
+  "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_admin"
+
+  cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
+
+fi
+
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi

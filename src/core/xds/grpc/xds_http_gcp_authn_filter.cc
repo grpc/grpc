@@ -1,0 +1,134 @@
+//
+// Copyright 2024 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
+
+#include <string>
+#include <utility>
+#include <variant>
+
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
+#include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+
+absl::string_view XdsHttpGcpAuthnFilterFactory::ConfigProtoName() const {
+  return "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig";
+}
+
+absl::string_view XdsHttpGcpAuthnFilterFactory::OverrideConfigProtoName()
+    const {
+  return "";
+}
+
+void XdsHttpGcpAuthnFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
+  envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_getmsgdef(
+      symtab);
+}
+
+const grpc_channel_filter* XdsHttpGcpAuthnFilterFactory::channel_filter()
+    const {
+  return &GcpAuthenticationFilter::kFilterVtable;
+}
+
+void XdsHttpGcpAuthnFilterFactory::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const FilterConfig> config) const {
+  builder.AddFilter<GcpAuthenticationFilter>(std::move(config));
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilterFactory::MergeConfigs(
+    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig> /*virtual_host_override_config*/,
+    RefCountedPtr<const FilterConfig> /*route_override_config*/,
+    RefCountedPtr<const FilterConfig> /*cluster_weight_override_config*/,
+    XdsTransportFactory& /*transport_factory*/, Blackboard& blackboard) const {
+  // Make a copy of the parsed config.
+  const auto& parsed_config =
+      DownCast<const GcpAuthenticationFilter::Config&>(*top_level_config);
+  auto new_config = MakeRefCounted<GcpAuthenticationFilter::Config>();
+  new_config->instance_name = parsed_config.instance_name;
+  new_config->cache_size = parsed_config.cache_size;
+  // Get the cache from the blackboard, adding it if necessary.
+  bool constructed = false;
+  new_config->cache = blackboard.GetOrSet<
+      GcpAuthenticationFilter::CallCredentialsCache>(
+      new_config->instance_name, [&]() {
+        constructed = true;
+        return MakeRefCounted<GcpAuthenticationFilter::CallCredentialsCache>(
+            new_config->cache_size);
+      });
+  // If we didn't just construct the cache object, make sure it has the
+  // right size.
+  if (!constructed) new_config->cache->SetMaxSize(new_config->cache_size);
+  return new_config;
+}
+
+RefCountedPtr<const FilterConfig>
+XdsHttpGcpAuthnFilterFactory::ParseTopLevelConfig(
+    absl::string_view instance_name,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse GCP auth filter config");
+    return nullptr;
+  }
+  auto* gcp_auth =
+      envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena);
+  if (gcp_auth == nullptr) {
+    errors->AddError("could not parse GCP auth filter config");
+    return nullptr;
+  }
+  auto config = MakeRefCounted<GcpAuthenticationFilter::Config>();
+  config->instance_name = std::string(instance_name);
+  const auto* cache_config =
+      envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_cache_config(
+          gcp_auth);
+  if (cache_config == nullptr) return config;
+  uint64_t cache_size =
+      ParseUInt64Value(
+          envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_cache_size(
+              cache_config))
+          .value_or(10);
+  if (cache_size == 0) {
+    ValidationErrors::ScopedField field(errors, ".cache_config.cache_size");
+    errors->AddError("must be greater than 0");
+  }
+  config->cache_size = cache_size;
+  return config;
+}
+
+RefCountedPtr<const FilterConfig>
+XdsHttpGcpAuthnFilterFactory::ParseOverrideConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
+  errors->AddError("GCP auth filter does not support config override");
+  return nullptr;
+}
+
+}  // namespace grpc_core

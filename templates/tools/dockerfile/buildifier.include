@@ -1,0 +1,4 @@
+# Install buildifier v8.0.0
+RUN wget -O buildifier https://github.com/bazelbuild/buildtools/releases/download/v8.0.0/buildifier-linux-amd64
+RUN chmod +x buildifier
+RUN mv buildifier /usr/local/bin

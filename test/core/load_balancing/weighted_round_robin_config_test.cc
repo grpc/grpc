@@ -1,0 +1,163 @@
+//
+// Copyright 2022 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#include <grpc/grpc.h>
+
+#include <memory>
+
+#include "src/core/client_channel/client_channel_service_config.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/load_balancing/weighted_round_robin/weighted_round_robin.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
+namespace grpc_core {
+namespace testing {
+namespace {
+
+TEST(WeightedRoundRobinConfigTest, EmptyConfig) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok());
+  EXPECT_NE(*service_config, nullptr);
+}
+
+TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"enableOobLoadReport\": 5,\n"
+      "      \"oobReportingPeriod\": true,\n"
+      "      \"blackoutPeriod\": [],\n"
+      "      \"weightUpdatePeriod\": {},\n"
+      "      \"weightExpirationPeriod\": {},\n"
+      "      \"errorUtilizationPenalty\": []\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_FALSE(service_config.ok());
+  EXPECT_EQ(
+      service_config.status(),
+      absl::InvalidArgumentError(
+          "errors validating service config: [field:loadBalancingConfig "
+          "error:errors validating weighted_round_robin LB policy config: ["
+          "field:blackoutPeriod error:is not a string; "
+          "field:enableOobLoadReport error:is not a boolean; "
+          "field:errorUtilizationPenalty error:is not a number; "
+          "field:oobReportingPeriod error:is not a string; "
+          "field:weightExpirationPeriod error:is not a string; "
+          "field:weightUpdatePeriod error:is not a string]]"));
+}
+
+TEST(WeightedRoundRobinConfigTest, InvalidValues) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"errorUtilizationPenalty\": -1.0\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_FALSE(service_config.ok());
+  EXPECT_EQ(
+      service_config.status(),
+      absl::InvalidArgumentError(
+          "errors validating service config: [field:loadBalancingConfig "
+          "error:errors validating weighted_round_robin LB policy config: ["
+          "field:errorUtilizationPenalty error:must be non-negative]]"));
+}
+
+TEST(WeightedRoundRobinConfigTest, UnsupportedMetricNames) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"metricNamesForComputingUtilization\": [\"invalid_metric\"]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_FALSE(service_config.ok());
+  EXPECT_EQ(
+      service_config.status(),
+      absl::InvalidArgumentError(
+          "errors validating service config: [field:loadBalancingConfig "
+          "error:errors validating weighted_round_robin LB policy config: ["
+          "field:metricNamesForComputingUtilization[0] error:unsupported "
+          "metric name \"invalid_metric\"]]"));
+}
+
+TEST(WeightedRoundRobinConfigTest, ValidMetricNamesEnabled) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"metricNamesForComputingUtilization\": [\"cpu_utilization\"]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  EXPECT_NE(*service_config, nullptr);
+  auto global_config = DownCast<internal::ClientChannelGlobalParsedConfig*>(
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              internal::ClientChannelServiceConfigParser::ParserIndex()));
+  ASSERT_NE(global_config, nullptr);
+  auto lb_config = global_config->parsed_lb_config();
+  ASSERT_NE(lb_config, nullptr);
+  ASSERT_EQ(lb_config->name(), "weighted_round_robin");
+  auto* wrr_config = DownCast<WeightedRoundRobinConfig*>(lb_config.get());
+  const auto& custom_metrics = wrr_config->parsed_custom_metrics();
+  ASSERT_EQ(custom_metrics.size(), 1);
+  EXPECT_EQ(custom_metrics[0].type,
+            WeightedRoundRobinConfig::ParsedMetric::Type::kCpu);
+  EXPECT_EQ(custom_metrics[0].name, "");
+}
+
+}  // namespace
+}  // namespace testing
+}  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
+  auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return result;
+}

@@ -1,0 +1,708 @@
+// Copyright 2024 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_UTILS_H
+#define GRPC_SRC_CORE_LIB_SURFACE_CALL_UTILS_H
+
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <algorithm>
+#include <atomic>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <variant>
+
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/property_list.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
+#include "upb/mem/arena.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+
+class PublishToAppEncoder {
+ public:
+  explicit PublishToAppEncoder(grpc_metadata_array* dest,
+                               const grpc_metadata_batch* encoding,
+                               bool is_client)
+      : dest_(dest), encoding_(encoding), is_client_(is_client) {}
+
+  void Encode(const Slice& key, const Slice& value) {
+    Append(key.c_slice(), value.c_slice());
+  }
+
+  // Publish only metadata traits that have kPublishToApp == true.
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    if (IsMetadataPublishToAppTagEnabled()) {
+      if constexpr (Which::kPublishToApp) {
+        Append(Which::key(), value);
+      }
+    } else {
+      if constexpr (std::is_same<UserAgentMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<HostMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<GrpcPreviousRpcAttemptsMetadata,
+                                 Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<GrpcRetryPushbackMsMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<LbTokenMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<W3CTraceParentMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<XEnvoyAuthFailureModeAllowedMetadata,
+                                 Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<XForwardedForMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<XForwardedHostMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+    }
+  }
+
+ private:
+  void Append(absl::string_view key, Duration value) {
+    Append(StaticSlice::FromStaticString(key).c_slice(),
+           Slice::FromInt64(value.millis()).c_slice());
+  }
+
+  void Append(absl::string_view key, int64_t value) {
+    Append(StaticSlice::FromStaticString(key).c_slice(),
+           Slice::FromInt64(value).c_slice());
+  }
+
+  void Append(absl::string_view key, const Slice& value) {
+    Append(StaticSlice::FromStaticString(key).c_slice(), value.c_slice());
+  }
+
+  void Append(grpc_slice key, grpc_slice value) {
+    if (dest_->count == dest_->capacity) {
+      Crash(absl::StrCat(
+          "Too many metadata entries: capacity=", dest_->capacity, " on ",
+          is_client_ ? "client" : "server", " encoding ", encoding_->count(),
+          " elements: ", encoding_->DebugString().c_str()));
+    }
+    auto* mdusr = &dest_->metadata[dest_->count++];
+    mdusr->key = key;
+    mdusr->value = value;
+  }
+
+  grpc_metadata_array* const dest_;
+  const grpc_metadata_batch* const encoding_;
+  const bool is_client_;
+};
+
+void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array,
+                          bool is_client);
+void CToMetadata(grpc_metadata* metadata, size_t count, grpc_metadata_batch* b);
+const char* GrpcOpTypeName(grpc_op_type op);
+
+bool ValidateMetadata(size_t count, grpc_metadata* metadata);
+void PreFillReceiveOpsForInvalidMetadata(const grpc_op* ops, size_t nops);
+void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
+                      bool is_notify_tag_closure,
+                      grpc_error_handle error = absl::OkStatus());
+
+inline bool AreWriteFlagsValid(uint32_t flags) {
+  // check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set
+  const uint32_t allowed_write_positions =
+      (GRPC_WRITE_USED_MASK | GRPC_WRITE_INTERNAL_USED_MASK);
+  const uint32_t invalid_positions = ~allowed_write_positions;
+  return !(flags & invalid_positions);
+}
+
+inline bool AreInitialMetadataFlagsValid(uint32_t flags) {
+  // check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set
+  uint32_t invalid_positions = ~GRPC_INITIAL_METADATA_USED_MASK;
+  return !(flags & invalid_positions);
+}
+
+// One batch operation
+// Wrapper around promise steps to perform once of the batch operations for the
+// legacy grpc surface api.
+template <typename SetupResult, grpc_op_type kOp>
+class OpHandlerImpl {
+ public:
+  using PromiseFactory = promise_detail::OncePromiseFactory<void, SetupResult>;
+  using Promise = typename PromiseFactory::Promise;
+  static_assert(!std::is_same<Promise, void>::value,
+                "PromiseFactory must return a promise");
+
+  OpHandlerImpl() : state_(State::kDismissed) {}
+  explicit OpHandlerImpl(SetupResult&& result)
+      : state_(State::kPromiseFactory) {
+    Construct(&promise_factory_, std::forward<SetupResult>(result));
+  }
+
+  ~OpHandlerImpl() {
+    switch (state_) {
+      case State::kDismissed:
+        break;
+      case State::kPromiseFactory:
+        Destruct(&promise_factory_);
+        break;
+      case State::kPromise:
+        Destruct(&promise_);
+        break;
+    }
+  }
+
+  OpHandlerImpl(const OpHandlerImpl&) = delete;
+  OpHandlerImpl& operator=(const OpHandlerImpl&) = delete;
+  OpHandlerImpl(OpHandlerImpl&& other) noexcept : state_(other.state_) {
+    switch (state_) {
+      case State::kDismissed:
+        break;
+      case State::kPromiseFactory:
+        Construct(&promise_factory_, std::move(other.promise_factory_));
+        break;
+      case State::kPromise:
+        Construct(&promise_, std::move(other.promise_));
+        break;
+    }
+  }
+  OpHandlerImpl& operator=(OpHandlerImpl&& other) noexcept = delete;
+
+  Poll<StatusFlag> operator()() {
+    switch (state_) {
+      case State::kDismissed:
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "Dismissed " << OpName();
+        return Success{};
+      case State::kPromiseFactory: {
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "Construct " << OpName();
+        auto promise = promise_factory_.Make();
+        Destruct(&promise_factory_);
+        Construct(&promise_, std::move(promise));
+        state_ = State::kPromise;
+      }
+        [[fallthrough]];
+      case State::kPromise: {
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "BeginPoll " << OpName();
+        auto r = poll_cast<StatusFlag>(promise_());
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "EndPoll " << OpName()
+            << " --> "
+            << (r.pending() ? "PENDING" : (r.value().ok() ? "OK" : "FAILURE"));
+        return r;
+      }
+    }
+    GPR_UNREACHABLE_CODE(return Pending{});
+  }
+
+ private:
+  enum class State {
+    kDismissed,
+    kPromiseFactory,
+    kPromise,
+  };
+
+  static const char* OpName() { return GrpcOpTypeName(kOp); }
+
+  // gcc-12 has problems with this being a variant
+  GPR_NO_UNIQUE_ADDRESS State state_;
+  union {
+    PromiseFactory promise_factory_;
+    Promise promise_;
+  };
+
+ public:
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* custom_promise =
+        grpc_channelz_v2_Promise_mutable_custom_promise(promise_proto, arena);
+    std::string type = absl::StrCat("OpHandlerImpl<", OpName(), ">");
+    grpc_channelz_v2_Promise_Custom_set_type(
+        custom_promise, CopyStdStringToUpbString(type, arena));
+    channelz::PropertyList properties;
+    switch (state_) {
+      case State::kDismissed:
+        properties.Set("state", "dismissed");
+        break;
+      case State::kPromiseFactory:
+        properties.Set("state", "promise_factory");
+        break;
+      case State::kPromise:
+        properties.Set("state", "promise");
+        properties.Set("promise", PromiseProperty(&promise_));
+        break;
+    }
+    properties.FillUpbProto(grpc_channelz_v2_Promise_Custom_mutable_properties(
+                                custom_promise, arena),
+                            arena);
+  }
+};
+
+template <grpc_op_type op_type, typename PromiseFactory>
+auto OpHandler(PromiseFactory&& setup) {
+  return OpHandlerImpl<PromiseFactory, op_type>(
+      std::forward<PromiseFactory>(setup));
+}
+
+class BatchOpIndex {
+ public:
+  BatchOpIndex(const grpc_op* ops, size_t nops) : ops_(ops) {
+    for (size_t i = 0; i < nops; i++) {
+      idxs_[ops[i].op] = static_cast<uint8_t>(i);
+    }
+  }
+
+  // 1. Check if op_type is in the batch
+  // 2. If it is, run the setup function in the context of the API call (NOT in
+  //    the call party).
+  // 3. This setup function returns a promise factory which we'll then run *in*
+  //    the party to do initial setup, and have it return the promise that we'll
+  //    ultimately poll on til completion.
+  // Once we express our surface API in terms of core internal types this whole
+  // dance will go away.
+  template <grpc_op_type op_type, typename SetupFn>
+  auto OpHandler(SetupFn setup) {
+    using SetupResult = decltype(std::declval<SetupFn>()(grpc_op()));
+    using Impl = OpHandlerImpl<SetupResult, op_type>;
+    if (const grpc_op* op = this->op(op_type)) {
+      auto r = setup(*op);
+      return Impl(std::move(r));
+    } else {
+      return Impl();
+    }
+  }
+
+  const grpc_op* op(grpc_op_type op_type) const {
+    return idxs_[op_type] == 255 ? nullptr : &ops_[idxs_[op_type]];
+  }
+
+  bool has_op(grpc_op_type op_type) const { return idxs_[op_type] != 255; }
+
+ private:
+  const grpc_op* const ops_;
+  std::array<uint8_t, 8> idxs_{255, 255, 255, 255, 255, 255, 255, 255};
+};
+
+// Defines a promise that calls grpc_cq_end_op() (on first poll) and then waits
+// for the callback supplied to grpc_cq_end_op() to be called, before resolving
+// to Empty{}
+class WaitForCqEndOp {
+ public:
+  struct NotStarted {
+    bool is_closure;
+    void* tag;
+    grpc_error_handle error;
+    grpc_completion_queue* cq;
+  };
+  struct Started {
+    explicit Started(Waker&& waker) : waker(std::forward<Waker>(waker)) {}
+    Waker waker;
+    grpc_cq_completion completion;
+    std::atomic<bool> done{false};
+  };
+  struct Invalid {};
+  using State = std::variant<NotStarted, Started, Invalid>;
+
+  WaitForCqEndOp(bool is_closure, void* tag, grpc_error_handle error,
+                 grpc_completion_queue* cq)
+      : state_{NotStarted{is_closure, tag, std::move(error), cq}} {}
+
+  Poll<Empty> operator()();
+
+  WaitForCqEndOp(const WaitForCqEndOp&) = delete;
+  WaitForCqEndOp& operator=(const WaitForCqEndOp&) = delete;
+  WaitForCqEndOp(WaitForCqEndOp&& other) noexcept
+      : state_(std::move(std::get<NotStarted>(other.state_))) {
+    other.state_.emplace<Invalid>();
+  }
+  WaitForCqEndOp& operator=(WaitForCqEndOp&& other) noexcept {
+    state_ = std::move(std::get<NotStarted>(other.state_));
+    other.state_.emplace<Invalid>();
+    return *this;
+  }
+
+ private:
+  static std::string StateString(const State& state);
+
+  State state_{Invalid{}};
+
+ public:
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* custom_promise =
+        grpc_channelz_v2_Promise_mutable_custom_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Custom_set_type(
+        custom_promise, CopyStdStringToUpbString("WaitForCqEndOp", arena));
+    channelz::PropertyList properties;
+    std::visit(
+        [&properties](const auto& s) {
+          using T = std::decay_t<decltype(s)>;
+          if constexpr (std::is_same_v<T, NotStarted>) {
+            properties.Set("state", "not_started");
+          } else if constexpr (std::is_same_v<T, Started>) {
+            properties.Set("state", "started");
+            properties.Set("done", s.done.load(std::memory_order_relaxed));
+          } else if constexpr (std::is_same_v<T, Invalid>) {
+            properties.Set("state", "invalid");
+          }
+        },
+        state_);
+    properties.FillUpbProto(grpc_channelz_v2_Promise_Custom_mutable_properties(
+                                custom_promise, arena),
+                            arena);
+  }
+};
+
+inline void CompleteBatchOp(grpc_completion_queue* cq, void* notify_tag,
+                            bool is_notify_tag_closure, absl::Status&& status) {
+  // Notifies the upper layer that a Batch op is completed:
+  // - If notify_tag is a closure, executes it directly to propagate completion.
+  // - Otherwise, uses the completion queue (grpc_cq_end_op) to notify.
+  // Note: CommitBatch calls grpc_cq_begin_op() only if notify_tag is not a
+  // closure.
+  if (IsPromiseBatchCleanupOnCancelEnabled() && is_notify_tag_closure) {
+    EnsureRunInExecCtx([notify_tag, status = std::move(status)]() mutable {
+      ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
+                   std::move(status));
+    });
+  } else {
+    grpc_cq_end_op(
+        cq, notify_tag, std::forward<absl::Status>(status),
+        [](void*, grpc_cq_completion* completion) { delete completion; },
+        nullptr, new grpc_cq_completion);
+  }
+}
+
+template <typename FalliblePart, typename FinalPart>
+auto InfallibleBatch(FalliblePart&& fallible_part, FinalPart&& final_part,
+                     bool is_notify_tag_closure, void* notify_tag,
+                     grpc_completion_queue* cq) {
+  // Perform fallible_part, then final_part, then wait for the
+  // completion queue to be done.
+  // If cancelled, we'll ensure the completion queue is notified.
+  // There's a slight bug here in that if we cancel this promise after
+  // the WaitForCqEndOp we'll double post -- but we don't currently do that.
+  return OnCancelFactory(
+      [fallible_part = std::forward<FalliblePart>(fallible_part),
+       final_part = std::forward<FinalPart>(final_part), is_notify_tag_closure,
+       notify_tag, cq]() mutable {
+        return LogPollBatch(notify_tag,
+                            Seq(std::move(fallible_part), std::move(final_part),
+                                [is_notify_tag_closure, notify_tag, cq]() {
+                                  return WaitForCqEndOp(is_notify_tag_closure,
+                                                        notify_tag,
+                                                        absl::OkStatus(), cq);
+                                }));
+      },
+      [cq, notify_tag, is_notify_tag_closure]() {
+        CompleteBatchOp(cq, notify_tag, is_notify_tag_closure,
+                        absl::OkStatus());
+      });
+}
+
+template <typename FalliblePart>
+auto FallibleBatch(FalliblePart&& fallible_part, bool is_notify_tag_closure,
+                   void* notify_tag, grpc_completion_queue* cq) {
+  // Perform fallible_part, then wait for the completion queue to be done.
+  // If cancelled, we'll ensure the completion queue is notified.
+  // There's a slight bug here in that if we cancel this promise after
+  // the WaitForCqEndOp we'll double post -- but we don't currently do that.
+  return OnCancelFactory(
+      [fallible_part = std::forward<FalliblePart>(fallible_part),
+       is_notify_tag_closure, notify_tag, cq]() mutable {
+        return LogPollBatch(
+            notify_tag,
+            Seq(std::move(fallible_part),
+                [is_notify_tag_closure, notify_tag, cq](StatusFlag r) {
+                  return WaitForCqEndOp(is_notify_tag_closure, notify_tag,
+                                        StatusCast<absl::Status>(r), cq);
+                }));
+      },
+      [cq, notify_tag, is_notify_tag_closure]() {
+        CompleteBatchOp(cq, notify_tag, is_notify_tag_closure,
+                        absl::CancelledError());
+      });
+}
+
+template <typename F>
+class PollBatchLogger {
+ public:
+  PollBatchLogger(void* tag, F&& f) : tag_(tag), f_(std::forward<F>(f)) {}
+
+  auto operator()() {
+    GRPC_TRACE_LOG(call, INFO) << "Poll batch " << tag_;
+    auto r = f_();
+    GRPC_TRACE_LOG(call, INFO)
+        << "Poll batch " << tag_ << " --> " << ResultString(r);
+    return r;
+  }
+
+ private:
+  template <typename T>
+  static std::string ResultString(Poll<T> r) {
+    if (r.pending()) return "PENDING";
+    return ResultString(r.value());
+  }
+  static std::string ResultString(Empty) { return "DONE"; }
+
+  void* tag_;
+  F f_;
+
+ public:
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    PromiseAsProto(f_, promise_proto, arena);
+  }
+};
+
+template <typename F>
+PollBatchLogger<F> LogPollBatch(void* tag, F&& f) {
+  return PollBatchLogger<F>(tag, std::forward<F>(f));
+}
+
+class MessageReceiver {
+ public:
+  grpc_compression_algorithm incoming_compression_algorithm() const {
+    return incoming_compression_algorithm_;
+  }
+
+  void SetIncomingCompressionAlgorithm(
+      grpc_compression_algorithm incoming_compression_algorithm) {
+    incoming_compression_algorithm_ = incoming_compression_algorithm;
+  }
+
+  uint32_t last_message_flags() const { return test_only_last_message_flags_; }
+
+  template <typename Puller>
+  auto MakeBatchOp(const grpc_op& op, Puller* puller) {
+    GRPC_CHECK_EQ(recv_message_, nullptr);
+    recv_message_ = op.data.recv_message.recv_message;
+    return [this, puller]() mutable {
+      return Map(puller->PullMessage(),
+                 [this](typename Puller::NextMessage&& msg) {
+                   return FinishRecvMessage(
+                       std::forward<typename Puller::NextMessage>(msg));
+                 });
+    };
+  }
+
+ private:
+  template <typename NextMessage>
+  StatusFlag FinishRecvMessage(NextMessage result) {
+    if (!result.ok()) {
+      GRPC_TRACE_LOG(call, INFO)
+          << Activity::current()->DebugTag()
+          << "[call] RecvMessage: outstanding_recv "
+             "finishes: received end-of-stream with error";
+      *recv_message_ = nullptr;
+      recv_message_ = nullptr;
+      return Failure{};
+    }
+    if (!result.has_value()) {
+      GRPC_TRACE_LOG(call, INFO) << Activity::current()->DebugTag()
+                                 << "[call] RecvMessage: outstanding_recv "
+                                    "finishes: received end-of-stream";
+      *recv_message_ = nullptr;
+      recv_message_ = nullptr;
+      return Success{};
+    }
+    MessageHandle message = result.TakeValue();
+    test_only_last_message_flags_ = message->flags();
+    if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
+        (incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
+      *recv_message_ = grpc_raw_compressed_byte_buffer_create(
+          nullptr, 0, incoming_compression_algorithm_);
+    } else {
+      *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
+    }
+    grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
+                                &(*recv_message_)->data.raw.slice_buffer);
+    GRPC_TRACE_LOG(call, INFO)
+        << Activity::current()->DebugTag()
+        << "[call] RecvMessage: outstanding_recv "
+           "finishes: received "
+        << (*recv_message_)->data.raw.slice_buffer.length << " byte message";
+    recv_message_ = nullptr;
+    return Success{};
+  }
+
+  grpc_byte_buffer** recv_message_ = nullptr;
+  uint32_t test_only_last_message_flags_ = 0;
+  // Compression algorithm for incoming data
+  grpc_compression_algorithm incoming_compression_algorithm_ =
+      GRPC_COMPRESS_NONE;
+};
+
+// Tracks and validates the state of operations on a call to ensure invariants.
+//
+// Invariants validated:
+// 1. Intra-batch duplicates: A single batch cannot contain multiple operations
+//    of the same type.
+// 2. Once-only operations: Operations like sending initial metadata or closing
+//    the call can only be performed once.
+// 3. Concurrent operations: Operations like sending or receiving messages
+//    cannot run concurrently (i.e., a new one cannot start until the previous
+//    one completes).
+//
+// This class is thread-safe.
+class CallOpInvariantsValidator {
+ public:
+  CallOpInvariantsValidator() = default;
+
+  // Validates a batch of operations against the current call state and commits
+  // them if valid.
+  //
+  // Returns GRPC_CALL_OK if the batch is valid and its operations are
+  // successfully committed to the active state.
+  // Returns GRPC_CALL_ERROR_TOO_MANY_OPERATIONS if:
+  // - The batch contains duplicate operations of the same type.
+  // - Any operation in the batch conflicts with the current state (either
+  //   because a once-only operation has already been performed, or a
+  //   concurrent operation is already active).
+  grpc_call_error ValidateAndCommit(const grpc_op* ops, size_t nops) {
+    if (!IsCallv3BatchValidationEnabled()) {
+      return GRPC_CALL_OK;
+    }
+
+    uint8_t batch_ops = 0;
+    for (size_t i = 0; i < nops; i++) {
+      uint8_t op_bit = OpBit(ops[i].op);
+      // Detect intra-batch duplicate operations!
+      if ((batch_ops & op_bit) != 0) {
+        return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+      }
+      batch_ops |= op_bit;
+    }
+
+    uint8_t current_state = ops_state_.load(std::memory_order_relaxed);
+    while (true) {
+      if ((current_state & batch_ops) != 0) {
+        return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+      }
+      if (ops_state_.compare_exchange_weak(
+              current_state, current_state | batch_ops,
+              std::memory_order_relaxed, std::memory_order_relaxed)) {
+        return GRPC_CALL_OK;
+      }
+    }
+  }
+
+  // Resets the state of a concurrent operation, marking it as no longer active.
+  // This allows subsequent operations of the same type to be validated and
+  // committed. Should be called when the operation completes.
+  void ResetConcurrentOps(uint8_t ops_mask) {
+    if (ops_mask == 0 || !IsCallv3BatchValidationEnabled()) {
+      return;
+    }
+    GRPC_DCHECK((ops_mask & kConcurrentOpsMask) != 0);
+    GRPC_DCHECK((ops_mask & kOnceOpsMask) == 0);
+    ops_state_.fetch_and(~ops_mask, std::memory_order_relaxed);
+  }
+
+  static constexpr uint8_t OpBit(const grpc_op_type op) { return 1 << op; }
+
+ private:
+  static constexpr uint8_t kOnceOpsMask =
+      (1 << GRPC_OP_SEND_INITIAL_METADATA) |
+      (1 << GRPC_OP_SEND_CLOSE_FROM_CLIENT) |
+      (1 << GRPC_OP_SEND_STATUS_FROM_SERVER) |
+      (1 << GRPC_OP_RECV_INITIAL_METADATA) |
+      (1 << GRPC_OP_RECV_STATUS_ON_CLIENT) |
+      (1 << GRPC_OP_RECV_CLOSE_ON_SERVER);
+
+  static constexpr uint8_t kConcurrentOpsMask =
+      (1 << GRPC_OP_SEND_MESSAGE) | (1 << GRPC_OP_RECV_MESSAGE);
+
+  std::atomic<uint8_t> ops_state_{0};
+};
+
+// Helper class to perform cleanup of primary ops for both ClientCall and
+// ServerCall.
+template <typename CallType>
+class PrimaryOpsCleanup {
+ public:
+  explicit PrimaryOpsCleanup(WeakRefCountedPtr<CallType> self,
+                             uint8_t concurrent_ops_to_reset)
+      : self_(std::move(self)),
+        concurrent_ops_to_reset_(concurrent_ops_to_reset) {}
+
+  // PrimaryOpsCleanup is move only.
+  PrimaryOpsCleanup(const PrimaryOpsCleanup&) = delete;
+  PrimaryOpsCleanup& operator=(const PrimaryOpsCleanup&) = delete;
+  PrimaryOpsCleanup(PrimaryOpsCleanup&&) = default;
+  PrimaryOpsCleanup& operator=(PrimaryOpsCleanup&&) = default;
+
+  ~PrimaryOpsCleanup() {
+    if (concurrent_ops_to_reset_ == 0) return;
+    if (self_ != nullptr) {
+      self_->call_op_invariants_validator_.ResetConcurrentOps(
+          concurrent_ops_to_reset_);
+    }
+  }
+
+ private:
+  WeakRefCountedPtr<CallType> self_;
+  uint8_t concurrent_ops_to_reset_;
+};
+
+std::string MakeErrorString(const ServerMetadata* trailing_metadata);
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_CALL_UTILS_H

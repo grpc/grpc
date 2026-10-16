@@ -1,0 +1,123 @@
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#ifndef GRPC_TEST_CORE_TEST_UTIL_MOCK_ENDPOINT_H
+#define GRPC_TEST_CORE_TEST_UTIL_MOCK_ENDPOINT_H
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice.h>
+
+#include <memory>
+
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include "src/core/lib/event_engine/query_extensions.h"
+#include "src/core/lib/iomgr/endpoint.h"
+
+namespace grpc_event_engine {
+namespace experimental {
+
+class BaseMockEndpointController {
+ public:
+  virtual ~BaseMockEndpointController() = default;
+  virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                    SliceBuffer* buffer,
+                    EventEngine::Endpoint::ReadArgs args) = 0;
+  virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+                     SliceBuffer* data,
+                     EventEngine::Endpoint::WriteArgs args) = 0;
+};
+
+// Internal controller object for mock endpoint operations.
+//
+// This helps avoid shared ownership issues. The endpoint itself may destroyed
+// while a fuzzer is still attempting to use it (e.g., the transport is closed,
+// and a fuzzer still wants to schedule reads).
+class MockEndpointController
+    : public BaseMockEndpointController,
+      public std::enable_shared_from_this<MockEndpointController> {
+ public:
+  // Factory method ensures this class is always a shared_ptr.
+  static std::shared_ptr<MockEndpointController> Create(
+      std::shared_ptr<EventEngine> engine, int fd = -1);
+
+  ~MockEndpointController() override;
+
+  // ---- mock methods ----
+  void TriggerReadEvent(Slice read_data);
+  void NoMoreReads();
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            EventEngine::Endpoint::ReadArgs /*args*/) override;
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data,
+             EventEngine::Endpoint::WriteArgs /*args*/) override;
+  // Takes ownership of the grpc_endpoint object from the controller.
+  grpc_endpoint* TakeCEndpoint();
+
+  // ---- accessors ----
+  EventEngine* engine() { return engine_.get(); }
+
+ private:
+  explicit MockEndpointController(std::shared_ptr<EventEngine> engine);
+  void InitMockGrpcEndpoint(int fd);
+
+  std::shared_ptr<EventEngine> engine_;
+  grpc_core::Mutex mu_;
+  bool reads_done_ ABSL_GUARDED_BY(mu_) = false;
+  SliceBuffer read_buffer_ ABSL_GUARDED_BY(mu_);
+  absl::AnyInvocable<void(absl::Status)> on_read_ ABSL_GUARDED_BY(mu_);
+  SliceBuffer* on_read_slice_buffer_ ABSL_GUARDED_BY(mu_) = nullptr;
+  grpc_endpoint* mock_grpc_endpoint_;
+};
+
+class MockEndpoint
+    : public ExtendedType<EventEngine::Endpoint, EndpointSupportsFdExtension> {
+ public:
+  // When using a MockEndpoint in a test, don't construct it directly. Instead
+  // call TakeCEndpoint on the MockEndpointController.
+  explicit MockEndpoint(
+      std::shared_ptr<BaseMockEndpointController> endpoint_control);
+  explicit MockEndpoint(
+      std::shared_ptr<BaseMockEndpointController> endpoint_control, int fd);
+  ~MockEndpoint() override = default;
+
+  // ---- overrides ----
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            ReadArgs args) override;
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data, WriteArgs args) override;
+  const EventEngine::ResolvedAddress& GetPeerAddress() const override;
+  const EventEngine::ResolvedAddress& GetLocalAddress() const override;
+  int GetWrappedFd() override;
+  void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
+                    on_release_fd) override;
+
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
+  }
+
+ private:
+  std::shared_ptr<BaseMockEndpointController> endpoint_control_;
+  EventEngine::ResolvedAddress peer_addr_;
+  EventEngine::ResolvedAddress local_addr_;
+  int fd_;
+};
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
+#endif  // GRPC_TEST_CORE_TEST_UTIL_MOCK_ENDPOINT_H

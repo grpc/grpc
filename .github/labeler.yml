@@ -1,0 +1,66 @@
+lang/core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/abseil-cpp/**
+          - src/boringssl/**
+          - src/c-ares/**
+          - src/core/**
+          - src/proto/**
+          - src/re2/**
+          - src/upb/**
+          - src/zlib/**
+          - include/grpc/**
+          - test/core/**
+          - tools/codegen/core/**
+lang/c++:
+  - changed-files:
+      - any-glob-to-any-file:
+          - examples/cpp/**
+          - src/cpp/**
+          - include/grpc++/**
+          - include/grpcpp/**
+          - test/cpp/**
+area/infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**
+lang/node:
+  - changed-files:
+      - any-glob-to-any-file:
+          - examples/node/**
+          - src/compiler/node*
+lang/ObjC:
+  - changed-files:
+      - any-glob-to-any-file:
+          - examples/objective-c/**
+          - src/compiler/objective_c*
+          - src/objective-c/**
+lang/php:
+  - changed-files:
+      - any-glob-to-any-file:
+          - examples/php/**
+          - src/compiler/php*
+          - src/php/**
+lang/python:
+  - changed-files:
+      - any-glob-to-any-file:
+          - bazel/python_rules.bzl
+          - examples/python/**
+          - requirements.bazel.lock
+          - requirements.bazel.txt
+          - src/compiler/python*
+      - all-globs-to-any-file:
+          - src/python/**
+          - '!src/python/grpcio/grpc_core_dependencies.py'
+          - '!src/python/grpcio_observability/observability_lib_deps.py'
+lang/ruby:
+  - changed-files:
+      - any-glob-to-any-file:
+          - examples/ruby/**
+          - src/compiler/ruby*
+          - src/ruby/**
+'lang/C#':
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/compiler/csharp*
+          - src/csharp/**

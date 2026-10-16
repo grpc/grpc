@@ -1,0 +1,501 @@
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "src/core/call/metadata_batch.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "test/core/test_util/parse_hexstring.h"
+#include "test/core/test_util/slice_splitter.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/transport/chttp2/hpack_encoder_test_helper.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+grpc_core::HPackCompressor* g_compressor;
+grpc_core::Http2ZTraceCollector* g_ztrace_collector =
+    new grpc_core::Http2ZTraceCollector();
+
+typedef struct {
+  bool eof;
+  bool use_true_binary_metadata;
+} verify_params;
+
+static void CrashOnAppendError(absl::string_view, const grpc_core::Slice&) {
+  abort();
+}
+
+namespace grpc_core {
+
+class FakeCallTracer final : public CallTracerInterface {
+ public:
+  void RecordIncomingBytes(
+      const TransportByteSize& transport_byte_size) override {}
+  void RecordOutgoingBytes(
+      const TransportByteSize& transport_byte_size) override {}
+  void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* /*send_initial_metadata*/) override {}
+  void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+    MutateSendTrailingMetadata(send_trailing_metadata);
+  }
+  void MutateSendTrailingMetadata(
+      grpc_metadata_batch* /*send_trailing_metadata*/) override {}
+  void RecordSendMessage(const Message& send_message) override {}
+  void RecordSendCompressedMessage(
+      const Message& send_compressed_message) override {}
+  void RecordReceivedInitialMetadata(
+      grpc_metadata_batch* recv_initial_metadata) override {}
+  void RecordReceivedMessage(const Message& recv_message) override {}
+  void RecordReceivedDecompressedMessage(
+      const Message& recv_decompressed_message) override {}
+  void RecordCancel(grpc_error_handle cancel_error) override {}
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
+  void RecordAnnotation(absl::string_view annotation) override {}
+  void RecordAnnotation(const Annotation& annotation) override {}
+  std::string TraceId() override { return ""; }
+  std::string SpanId() override { return ""; }
+  bool IsSampled() override { return false; }
+};
+
+}  // namespace grpc_core
+
+grpc_slice EncodeHeaderIntoBytes(
+    bool is_eof,
+    const std::vector<std::pair<std::string, std::string>>& header_fields) {
+  std::unique_ptr<grpc_core::HPackCompressor> compressor =
+      std::make_unique<grpc_core::HPackCompressor>();
+  grpc_metadata_batch b;
+
+  for (const auto& field : header_fields) {
+    b.Append(field.first,
+             grpc_core::Slice::FromStaticString(field.second.c_str()),
+             CrashOnAppendError);
+  }
+
+  grpc_core::FakeCallTracer call_tracer;
+  grpc_core::HPackCompressor::EncodeHeaderOptions hopt{
+      0xdeadbeef,  // stream_id
+      is_eof,      // is_eof
+      false,       // use_true_binary_metadata
+      16384,       // max_frame_size
+      &call_tracer, g_ztrace_collector};
+  grpc_slice_buffer output;
+  grpc_slice_buffer_init(&output);
+
+  compressor->EncodeHeaders(hopt, b, &output);
+  grpc_core::HpackEncoderTestHelper::verify_frames(output, is_eof);
+
+  grpc_slice ret = grpc_slice_merge(output.slices, output.count);
+  grpc_slice_buffer_destroy(&output);
+
+  return ret;
+}
+
+// verify that the output generated by encoding the stream matches the
+// hexstring passed in
+static void verify(
+    bool is_eof, const char* expected,
+    const std::vector<std::pair<std::string, std::string>>& header_fields) {
+  const grpc_core::Slice merged(EncodeHeaderIntoBytes(is_eof, header_fields));
+  const grpc_core::Slice expect(grpc_core::ParseHexstring(expected));
+
+  EXPECT_EQ(merged, expect);
+}
+
+TEST(HpackEncoderTest, TestBasicHeaders) {
+  grpc_core::ExecCtx exec_ctx;
+  g_compressor = new grpc_core::HPackCompressor();
+
+  verify(false, "000005 0104 deadbeef 00 0161 0161", {{"a", "a"}});
+  verify(false, "00000a 0104 deadbeef 00 0161 0161 00 0162 0163",
+         {{"a", "a"}, {"b", "c"}});
+
+  delete g_compressor;
+}
+
+MATCHER(HasLiteralHeaderFieldNewNameFlagIncrementalIndexing, "") {
+  constexpr size_t kHttp2FrameHeaderSize = 9u;
+  /// Reference: https://httpwg.org/specs/rfc7541.html#rfc.section.6.2.1
+  /// The first byte of a literal header field with incremental indexing should
+  /// be 0x40.
+  constexpr uint8_t kLiteralHeaderFieldNewNameFlagIncrementalIndexing = 0x40;
+  return (GRPC_SLICE_START_PTR(arg)[kHttp2FrameHeaderSize] ==
+          kLiteralHeaderFieldNewNameFlagIncrementalIndexing);
+}
+
+MATCHER(HasLiteralHeaderFieldNewNameFlagNoIndexing, "") {
+  constexpr size_t kHttp2FrameHeaderSize = 9u;
+  /// Reference: https://httpwg.org/specs/rfc7541.html#rfc.section.6.2.2
+  /// The first byte of a literal header field without indexing should be 0x0.
+  constexpr uint8_t kLiteralHeaderFieldNewNameFlagNoIndexing = 0x00;
+  return (GRPC_SLICE_START_PTR(arg)[kHttp2FrameHeaderSize] ==
+          kLiteralHeaderFieldNewNameFlagNoIndexing);
+}
+
+TEST(HpackEncoderTest, GrpcTraceBinMetadataIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      false, {{grpc_core::GrpcTraceBinMetadata::key().data(), "value"}});
+  EXPECT_THAT(encoded_header,
+              HasLiteralHeaderFieldNewNameFlagIncrementalIndexing());
+
+  grpc_slice_unref(encoded_header);
+}
+
+TEST(HpackEncoderTest, GrpcTraceBinMetadataNoIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+
+  /// needs to be greater than `HPackEncoderTable::MaxEntrySize()`
+  constexpr size_t long_value_size = 70000u;
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      false, {{grpc_core::GrpcTraceBinMetadata::key().data(),
+               std::string(long_value_size, 'a')}});
+  EXPECT_THAT(encoded_header, HasLiteralHeaderFieldNewNameFlagNoIndexing());
+
+  grpc_slice_unref(encoded_header);
+}
+
+TEST(HpackEncoderTest, TestGrpcTagsBinMetadataIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      false,
+      {{grpc_core::GrpcTagsBinMetadata::key().data(), std::string("value")}});
+  EXPECT_THAT(encoded_header,
+              HasLiteralHeaderFieldNewNameFlagIncrementalIndexing());
+
+  grpc_slice_unref(encoded_header);
+}
+
+TEST(HpackEncoderTest, TestGrpcTagsBinMetadataNoIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+
+  /// needs to be greater than `HPackEncoderTable::MaxEntrySize()`
+  constexpr size_t long_value_size = 70000u;
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      false, {{grpc_core::GrpcTagsBinMetadata::key().data(),
+               std::string(long_value_size, 'a')}});
+  EXPECT_THAT(encoded_header, HasLiteralHeaderFieldNewNameFlagNoIndexing());
+
+  grpc_slice_unref(encoded_header);
+}
+
+TEST(HpackEncoderTest, UserAgentMetadataIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      false, {{grpc_core::UserAgentMetadata::key().data(), "value"}});
+  EXPECT_THAT(encoded_header,
+              HasLiteralHeaderFieldNewNameFlagIncrementalIndexing());
+
+  grpc_slice_unref(encoded_header);
+}
+
+TEST(HpackEncoderTest, UserAgentMetadataNoIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+
+  /// needs to be greater than `HPackEncoderTable::MaxEntrySize()`
+  constexpr size_t long_value_size = 70000u;
+  const grpc_slice encoded_header =
+      EncodeHeaderIntoBytes(false, {{grpc_core::UserAgentMetadata::key().data(),
+                                     std::string(long_value_size, 'a')}});
+  EXPECT_THAT(encoded_header, HasLiteralHeaderFieldNewNameFlagNoIndexing());
+
+  grpc_slice_unref(encoded_header);
+}
+
+static void verify_continuation_headers(const char* key, const char* value,
+                                        bool is_eof) {
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  grpc_slice_buffer output;
+  grpc_metadata_batch b;
+  b.Append(key, grpc_core::Slice::FromStaticString(value), CrashOnAppendError);
+  grpc_slice_buffer_init(&output);
+
+  grpc_core::FakeCallTracer call_tracer;
+  grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
+      0xdeadbeef,  // stream_id
+      is_eof,      // is_eof
+      false,       // use_true_binary_metadata
+      150,         // max_frame_size
+      &call_tracer, g_ztrace_collector};
+  g_compressor->EncodeHeaders(hopt, b, &output);
+  grpc_core::HpackEncoderTestHelper::verify_frames(output, is_eof);
+  grpc_slice_buffer_destroy(&output);
+}
+
+TEST(HpackEncoderTest, TestContinuationHeaders) {
+  grpc_core::ExecCtx exec_ctx;
+  g_compressor = new grpc_core::HPackCompressor();
+
+  char value[200];
+  memset(value, 'a', 200);
+  value[199] = 0;  // null terminator
+  verify_continuation_headers("key", value, true);
+
+  char value2[400];
+  memset(value2, 'b', 400);
+  value2[399] = 0;  // null terminator
+  verify_continuation_headers("key2", value2, true);
+
+  delete g_compressor;
+}
+
+TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
+  grpc_metadata_batch b;
+  // Haiku by Bard
+  b.Append("grpc-trace-bin",
+           grpc_core::Slice::FromStaticString(
+               "Base64, a tool\nTo encode binary data into "
+               "text\nSo it can be shared."),
+           CrashOnAppendError);
+  grpc_core::FakeCallTracer call_tracer;
+  grpc_slice_buffer output;
+  grpc_slice_buffer_init(&output);
+  grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
+      0xdeadbeef,  // stream_id
+      true,        // is_eof
+      false,       // use_true_binary_metadata
+      150,         // max_frame_size
+      &call_tracer, g_ztrace_collector};
+  grpc_core::HPackCompressor compressor;
+  compressor.EncodeHeaders(hopt, b, &output);
+  grpc_slice_buffer_destroy(&output);
+
+  EXPECT_EQ(compressor.test_only_table_size(), 136);
+}
+
+TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
+  grpc_metadata_batch b;
+  // Haiku by Bard
+  b.Append("grpc-trace-bin",
+           grpc_core::Slice::FromStaticString(
+               "Base64, a tool\nTo encode binary data into "
+               "text\nSo it can be shared."),
+           CrashOnAppendError);
+  grpc_core::FakeCallTracer call_tracer;
+  grpc_slice_buffer output;
+  grpc_slice_buffer_init(&output);
+  grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
+      0xdeadbeef,  // stream_id
+      true,        // is_eof
+      true,        // use_true_binary_metadata
+      150,         // max_frame_size
+      &call_tracer, g_ztrace_collector};
+  grpc_core::HPackCompressor compressor;
+  compressor.EncodeHeaders(hopt, b, &output);
+  grpc_slice_buffer_destroy(&output);
+
+  EXPECT_EQ(compressor.test_only_table_size(), 114);
+}
+
+class RawEncoderTest : public grpc_core::HpackEncoderTestHelper,
+                       public ::testing::Test {
+ protected:
+  void Verify(absl::AnyInvocable<void(grpc_core::RawEncoder&)> encode_actions,
+              absl::AnyInvocable<void(grpc_metadata_batch&)> verify_actions,
+              bool use_true_binary_metadata = false) {
+    grpc_core::RawEncoder encoder(use_true_binary_metadata);
+    encode_actions(encoder);
+    grpc_metadata_batch b;
+    EncodeAndParse(std::move(encoder), &b);
+    verify_actions(b);
+  }
+};
+
+// Test basic encoding of a regular metadata key-value pair.
+TEST_F(RawEncoderTest, BasicMetadata) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatakey),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+      },
+      [](grpc_metadata_batch& b) {
+        std::string value;
+        EXPECT_EQ(b.GetStringValue(kMetadatakey, &value), kMetadataValue);
+      });
+}
+
+class RawEncoderBinaryTest : public RawEncoderTest,
+                             public ::testing::WithParamInterface<bool> {};
+
+// Test encoding of a binary metadata key-value pair with both true-binary
+// enabled and disabled.
+TEST_P(RawEncoderBinaryTest, BinaryMetadata) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatabinarykey),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+      },
+      [](grpc_metadata_batch& b) {
+        std::string value;
+        EXPECT_EQ(b.GetStringValue(kMetadatabinarykey, &value), kMetadataValue);
+      },
+      /*use_true_binary_metadata=*/GetParam());
+}
+
+INSTANTIATE_TEST_SUITE_P(RawEncoder, RawEncoderBinaryTest, ::testing::Bool());
+
+// Test encoding of the grpc-status header.
+TEST_F(RawEncoderTest, Status) {
+  grpc_status_code status = GRPC_STATUS_OK;
+  Verify(
+      [status](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::GrpcStatusMetadata(), status);
+      },
+      [status](grpc_metadata_batch& b) {
+        EXPECT_EQ(b.get(grpc_core::GrpcStatusMetadata()).value(), status);
+      });
+}
+
+// Test encoding of the grpc-message header.
+TEST_F(RawEncoderTest, Message) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::GrpcMessageMetadata(),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+      },
+      [](grpc_metadata_batch& b) {
+        const auto* message = b.get_pointer(grpc_core::GrpcMessageMetadata());
+        ASSERT_NE(message, nullptr);
+        EXPECT_EQ(*message, grpc_core::Slice::FromStaticString(kMetadataValue));
+      });
+}
+
+// Test that only the first encoded grpc-status and grpc-message headers are
+// preserved if multiple are encoded.
+TEST_F(RawEncoderTest, IgnoresMultipleStatusAndMessage) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::GrpcStatusMetadata(), GRPC_STATUS_OK);
+        encoder.Encode(grpc_core::GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
+        encoder.Encode(grpc_core::GrpcMessageMetadata(),
+                       grpc_core::Slice::FromStaticString("msg1"));
+        encoder.Encode(grpc_core::GrpcMessageMetadata(),
+                       grpc_core::Slice::FromStaticString("msg2"));
+      },
+      [](grpc_metadata_batch& b) {
+        EXPECT_EQ(b.get(grpc_core::GrpcStatusMetadata()).value(),
+                  GRPC_STATUS_OK);
+        const auto* message = b.get_pointer(grpc_core::GrpcMessageMetadata());
+        ASSERT_NE(message, nullptr);
+        EXPECT_EQ(*message, grpc_core::Slice::FromStaticString("msg1"));
+      });
+}
+
+// Test encoding of multiple different headers in a single batch.
+TEST_F(RawEncoderTest, EncodeMultipleHeaders) {
+  grpc_status_code status = GRPC_STATUS_OK;
+  Verify(
+      [&](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatakey),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatabinarykey),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+        encoder.Encode(grpc_core::GrpcStatusMetadata(), status);
+        encoder.Encode(grpc_core::GrpcMessageMetadata(),
+                       grpc_core::Slice::FromStaticString("message"));
+      },
+      [&](grpc_metadata_batch& b) {
+        std::string value;
+        EXPECT_EQ(b.GetStringValue(kMetadatakey, &value), kMetadataValue);
+        EXPECT_EQ(b.GetStringValue(kMetadatabinarykey, &value), kMetadataValue);
+        EXPECT_EQ(b.get(grpc_core::GrpcStatusMetadata()).value(), status);
+        const auto* message = b.get_pointer(grpc_core::GrpcMessageMetadata());
+        ASSERT_NE(message, nullptr);
+        EXPECT_EQ(*message, grpc_core::Slice::FromStaticString("message"));
+      });
+}
+
+// Test that a single header pair exceeding the size limit is rejected.
+TEST_F(RawEncoderTest, SizeLimitExceededSinglePair) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        // Limit is 2048 (2 * 1024).
+        // Create a value larger than 2048.
+        std::string value(2050, 'a');
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatakey),
+                       grpc_core::Slice::FromCopiedString(value));
+      },
+      [](grpc_metadata_batch& b) {
+        std::string value;
+        EXPECT_EQ(b.GetStringValue(kMetadatakey, &value), std::nullopt);
+      });
+}
+
+// Test that adding headers is stopped when the total size limit is exceeded.
+TEST_F(RawEncoderTest, SizeLimitExceededTotal) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        // Limit is 16384 (1 << 14).
+        // Encode multiple pairs.
+        // Use 1000 which fits in 2048 limit, but 20 of them exceed 16384 total.
+        std::string value(1000, 'a');
+        for (int i = 0; i < 20; ++i) {
+          encoder.Encode(
+              grpc_core::Slice::FromCopiedString(absl::StrCat(kMetadatakey, i)),
+              grpc_core::Slice::FromCopiedString(value));
+        }
+        EXPECT_LE(encoder.Length(), 16384);
+        EXPECT_GT(encoder.Length(), 0);
+      },
+      [](grpc_metadata_batch& b) {
+        EXPECT_GT(b.count(), 0);
+        EXPECT_LT(b.count(), 20);
+      });
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
+}

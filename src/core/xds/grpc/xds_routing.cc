@@ -1,0 +1,565 @@
+//
+//
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include "src/core/xds/grpc/xds_routing.h"
+
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <algorithm>
+#include <cctype>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "src/core/call/metadata_batch.h"
+#include "src/core/filter/filter_args.h"
+#include "src/core/filter/filter_chain.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/xds/grpc/blackboard.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
+#include "src/core/xds/grpc/xds_http_filter_registry.h"
+#include "src/core/xds/grpc/xds_listener.h"
+#include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/functional/function_ref.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+
+namespace {
+enum MatchType {
+  EXACT_MATCH,
+  SUFFIX_MATCH,
+  PREFIX_MATCH,
+  UNIVERSE_MATCH,
+  INVALID_MATCH,
+};
+
+// Returns true if match succeeds.
+bool DomainMatch(MatchType match_type, absl::string_view domain_pattern_in,
+                 absl::string_view expected_host_name_in) {
+  // Normalize the args to lower-case. Domain matching is case-insensitive.
+  std::string domain_pattern = std::string(domain_pattern_in);
+  std::string expected_host_name = std::string(expected_host_name_in);
+  std::transform(domain_pattern.begin(), domain_pattern.end(),
+                 domain_pattern.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  std::transform(expected_host_name.begin(), expected_host_name.end(),
+                 expected_host_name.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (match_type == EXACT_MATCH) {
+    return domain_pattern == expected_host_name;
+  } else if (match_type == SUFFIX_MATCH) {
+    // Asterisk must match at least one char.
+    if (expected_host_name.size() < domain_pattern.size()) return false;
+    absl::string_view pattern_suffix(domain_pattern.c_str() + 1);
+    absl::string_view host_suffix(expected_host_name.c_str() +
+                                  expected_host_name.size() -
+                                  pattern_suffix.size());
+    return pattern_suffix == host_suffix;
+  } else if (match_type == PREFIX_MATCH) {
+    // Asterisk must match at least one char.
+    if (expected_host_name.size() < domain_pattern.size()) return false;
+    absl::string_view pattern_prefix(domain_pattern.c_str(),
+                                     domain_pattern.size() - 1);
+    absl::string_view host_prefix(expected_host_name.c_str(),
+                                  pattern_prefix.size());
+    return pattern_prefix == host_prefix;
+  } else {
+    return match_type == UNIVERSE_MATCH;
+  }
+}
+
+MatchType DomainPatternMatchType(absl::string_view domain_pattern) {
+  if (domain_pattern.empty()) return INVALID_MATCH;
+  if (!absl::StrContains(domain_pattern, '*')) return EXACT_MATCH;
+  if (domain_pattern == "*") return UNIVERSE_MATCH;
+  if (domain_pattern[0] == '*') return SUFFIX_MATCH;
+  if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;
+  return INVALID_MATCH;
+}
+
+}  // namespace
+
+std::optional<size_t> XdsRouting::FindVirtualHostForDomain(
+    const VirtualHostListIterator& vhost_iterator, absl::string_view domain) {
+  // Find the best matched virtual host.
+  // The search order for 4 groups of domain patterns:
+  //   1. Exact match.
+  //   2. Suffix match (e.g., "*ABC").
+  //   3. Prefix match (e.g., "ABC*").
+  //   4. Universe match (i.e., "*").
+  // Within each group, longest match wins.
+  // If the same best matched domain pattern appears in multiple virtual
+  // hosts, the first matched virtual host wins.
+  std::optional<size_t> target_index;
+  MatchType best_match_type = INVALID_MATCH;
+  size_t longest_match = 0;
+  // Check each domain pattern in each virtual host to determine the best
+  // matched virtual host.
+  for (size_t i = 0; i < vhost_iterator.Size(); ++i) {
+    const auto& domains = vhost_iterator.GetDomainsForVirtualHost(i);
+    for (const std::string& domain_pattern : domains) {
+      // Check the match type first. Skip the pattern if it's not better
+      // than current match.
+      const MatchType match_type = DomainPatternMatchType(domain_pattern);
+      // This should be caught by RouteConfigParse().
+      GRPC_CHECK(match_type != INVALID_MATCH);
+      if (match_type > best_match_type) continue;
+      if (match_type == best_match_type &&
+          domain_pattern.size() <= longest_match) {
+        continue;
+      }
+      // Skip if match fails.
+      if (!DomainMatch(match_type, domain_pattern, domain)) continue;
+      // Choose this match.
+      target_index = i;
+      best_match_type = match_type;
+      longest_match = domain_pattern.size();
+      if (best_match_type == EXACT_MATCH) break;
+    }
+    if (best_match_type == EXACT_MATCH) break;
+  }
+  return target_index;
+}
+
+namespace {
+
+bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
+                  grpc_metadata_batch* initial_metadata) {
+  for (const auto& header_matcher : header_matchers) {
+    std::string concatenated_value;
+    if (!header_matcher.Match(XdsRouting::GetHeaderValue(
+            initial_metadata, header_matcher.name(), &concatenated_value))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool UnderFraction(const uint32_t fraction_per_million) {
+  // Generate a random number in [0, 1000000).
+  const uint32_t random_number = rand() % 1000000;
+  return random_number < fraction_per_million;
+}
+
+}  // namespace
+
+std::optional<size_t> XdsRouting::GetRouteForRequest(
+    const RouteListIterator& route_list_iterator, absl::string_view path,
+    grpc_metadata_batch* initial_metadata) {
+  for (size_t i = 0; i < route_list_iterator.Size(); ++i) {
+    const XdsRouteConfigResource::Route::Matchers& matchers =
+        route_list_iterator.GetMatchersForRoute(i);
+    if (matchers.path_matcher.Match(path) &&
+        HeadersMatch(matchers.header_matchers, initial_metadata) &&
+        (!matchers.fraction_per_million.has_value() ||
+         UnderFraction(*matchers.fraction_per_million))) {
+      return i;
+    }
+  }
+  return std::nullopt;
+}
+
+bool XdsRouting::IsValidDomainPattern(absl::string_view domain_pattern) {
+  return DomainPatternMatchType(domain_pattern) != INVALID_MATCH;
+}
+
+std::optional<absl::string_view> XdsRouting::GetHeaderValue(
+    grpc_metadata_batch* initial_metadata, absl::string_view header_name,
+    std::string* concatenated_value) {
+  // Note: If we ever allow binary headers here, we still need to
+  // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
+  // they are not visible to the LB policy in grpc-go.
+  if (absl::EndsWith(header_name, "-bin")) {
+    return std::nullopt;
+  } else if (header_name == "content-type") {
+    return "application/grpc";
+  } else if (IsAuthorityHeaderName(header_name)) {
+    // ":authority" and "host" are treated as the same header so that routing
+    // and RBAC always agree on the authority.
+    const Slice* authority = GetAuthorityOrHost(*initial_metadata);
+    if (authority == nullptr) return std::nullopt;
+    return authority->as_string_view();
+  }
+  return initial_metadata->GetStringValue(header_name, concatenated_value);
+}
+
+XdsRouting::RouteConfigFilterChainBuilder::RouteConfigFilterChainBuilder(
+    const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+        hcm_filter_configs,
+    const XdsHttpFilterRegistry& http_filter_registry,
+    XdsFilterChainBuilder& builder, XdsTransportFactory& transport_factory,
+    Blackboard& blackboard)
+    : hcm_filter_configs_(hcm_filter_configs),
+      builder_(builder),
+      blackboard_(blackboard),
+      transport_factory_(transport_factory) {
+  factories_.reserve(hcm_filter_configs.size());
+  for (const auto& http_filter : hcm_filter_configs) {
+    // Find filter.  This is guaranteed to succeed, because it's checked
+    // at config validation time.
+    const XdsHttpFilterFactory* factory =
+        http_filter_registry.GetFilterForTopLevelType(
+            http_filter.config_proto_type);
+    GRPC_CHECK_NE(factory, nullptr);
+    // Add filter to list.
+    factories_.push_back(factory);
+  }
+}
+
+absl::StatusOr<RefCountedPtr<const FilterChain>>
+XdsRouting::RouteConfigFilterChainBuilder::GetDefaultFilterChain() {
+  if (default_filter_chain_.ok() && *default_filter_chain_ == nullptr) {
+    GRPC_TRACE_LOG(xds_resolver, INFO) << "Building default filter chain:";
+    for (size_t i = 0; i < factories_.size(); ++i) {
+      auto* factory = factories_[i];
+      const auto& filter_config = hcm_filter_configs_[i];
+      if (filter_config.disabled) continue;
+      RefCountedPtr<const FilterConfig> config;
+      if (filter_config.filter_config != nullptr) {
+        config =
+            factory->MergeConfigs(filter_config.filter_config, nullptr, nullptr,
+                                  nullptr, transport_factory_, blackboard_);
+      }
+      GRPC_TRACE_LOG(xds_resolver, INFO)
+          << "  Adding filter=" << filter_config.name
+          << " config=" << (config == nullptr ? "<null>" : config->ToString());
+      builder_.AddFilter(factory, std::move(config));
+    }
+    default_filter_chain_ = builder_.Build();
+    GRPC_TRACE_LOG(xds_resolver, INFO)
+        << "Filter chain creation status: " << default_filter_chain_.status();
+  }
+  return default_filter_chain_;
+}
+
+namespace {
+
+RefCountedPtr<const FilterConfig> GetOverrideConfig(
+    const XdsHttpFilterFactory* factory,
+    const XdsRouteConfigResource::TypedPerFilterConfig& typed_per_filter_config,
+    const std::string& name) {
+  auto it = typed_per_filter_config.find(name);
+  if (it == typed_per_filter_config.end()) return nullptr;
+  if (it->second.config_proto_type != factory->OverrideConfigProtoName()) {
+    return nullptr;
+  }
+  return it->second.filter_config;
+}
+
+// Returns true if the filter is disabled.
+// The resolution order for the disabled flag is:
+// 1. ClusterWeight override (most specific)
+// 2. Route override
+// 3. VirtualHost override
+// 4. HCM config (least specific, default)
+bool IsFilterDisabled(
+    const XdsHttpFilterFactory* factory,
+    const XdsListenerResource::HttpConnectionManager::HttpFilter&
+        hcm_filter_config,
+    const XdsRouteConfigResource::TypedPerFilterConfig*
+        vhost_typed_per_filter_config,
+    const XdsRouteConfigResource::TypedPerFilterConfig*
+        route_typed_per_filter_config,
+    const XdsRouteConfigResource::TypedPerFilterConfig*
+        cluster_weight_typed_per_filter_config) {
+  if (cluster_weight_typed_per_filter_config != nullptr) {
+    auto it =
+        cluster_weight_typed_per_filter_config->find(hcm_filter_config.name);
+    if (it != cluster_weight_typed_per_filter_config->end()) {
+      return it->second.disabled;
+    }
+  }
+  if (route_typed_per_filter_config != nullptr) {
+    auto it = route_typed_per_filter_config->find(hcm_filter_config.name);
+    if (it != route_typed_per_filter_config->end()) {
+      return it->second.disabled;
+    }
+  }
+  if (vhost_typed_per_filter_config != nullptr) {
+    auto it = vhost_typed_per_filter_config->find(hcm_filter_config.name);
+    if (it != vhost_typed_per_filter_config->end()) {
+      return it->second.disabled;
+    }
+  }
+  return hcm_filter_config.disabled;
+}
+
+}  // namespace
+
+absl::StatusOr<RefCountedPtr<const FilterChain>>
+XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
+    GetVirtualHostFilterChain() {
+  if (vhost_filter_chain_.ok() && *vhost_filter_chain_ == nullptr) {
+    // If there are no per-vhost overrides, use the default filter chain.
+    if (vhost_.typed_per_filter_config.empty()) {
+      return route_config_builder_.GetDefaultFilterChain();
+    }
+    GRPC_TRACE_LOG(xds_resolver, INFO) << "Building virtual host filter chain:";
+    for (size_t i = 0; i < route_config_builder_.factories_.size(); ++i) {
+      auto* factory = route_config_builder_.factories_[i];
+      const auto& filter_config = route_config_builder_.hcm_filter_configs_[i];
+      if (IsFilterDisabled(factory, filter_config,
+                           &vhost_.typed_per_filter_config, nullptr, nullptr)) {
+        continue;
+      }
+      RefCountedPtr<const FilterConfig> config;
+      if (filter_config.filter_config != nullptr) {
+        auto vhost_override_config = GetOverrideConfig(
+            factory, vhost_.typed_per_filter_config, filter_config.name);
+        config = factory->MergeConfigs(
+            filter_config.filter_config, std::move(vhost_override_config),
+            nullptr, nullptr, route_config_builder_.transport_factory_,
+            route_config_builder_.blackboard_);
+      }
+      GRPC_TRACE_LOG(xds_resolver, INFO)
+          << "  Adding filter=" << filter_config.name
+          << " config=" << (config == nullptr ? "<null>" : config->ToString());
+      route_config_builder_.builder_.AddFilter(factory, std::move(config));
+    }
+    vhost_filter_chain_ = route_config_builder_.builder_.Build();
+    GRPC_TRACE_LOG(xds_resolver, INFO)
+        << "Filter chain creation status: " << vhost_filter_chain_.status();
+  }
+  return vhost_filter_chain_;
+}
+
+absl::StatusOr<RefCountedPtr<const FilterChain>>
+XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
+    BuildFilterChainForRoute(const XdsRouteConfigResource::Route& route) {
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "Building filter chain for route:" << route.ToString();
+  // If there are no per-route overrides, use the vhost filter chain.
+  if (route.typed_per_filter_config.empty()) return GetVirtualHostFilterChain();
+  // Otherwise, build a new filter chain for the route.
+  for (size_t i = 0; i < route_config_builder_.factories_.size(); ++i) {
+    auto* factory = route_config_builder_.factories_[i];
+    const auto& filter_config = route_config_builder_.hcm_filter_configs_[i];
+    if (IsFilterDisabled(factory, filter_config,
+                         &vhost_.typed_per_filter_config,
+                         &route.typed_per_filter_config, nullptr)) {
+      continue;
+    }
+    RefCountedPtr<const FilterConfig> config;
+    if (filter_config.filter_config != nullptr) {
+      auto vhost_override_config = GetOverrideConfig(
+          factory, vhost_.typed_per_filter_config, filter_config.name);
+      auto route_override_config = GetOverrideConfig(
+          factory, route.typed_per_filter_config, filter_config.name);
+      config = factory->MergeConfigs(filter_config.filter_config,
+                                     std::move(vhost_override_config),
+                                     std::move(route_override_config), nullptr,
+                                     route_config_builder_.transport_factory_,
+                                     route_config_builder_.blackboard_);
+    }
+    GRPC_TRACE_LOG(xds_resolver, INFO)
+        << "  Adding filter=" << filter_config.name
+        << " config=" << (config == nullptr ? "<null>" : config->ToString());
+    route_config_builder_.builder_.AddFilter(factory, std::move(config));
+  }
+  absl::StatusOr<RefCountedPtr<const FilterChain>> route_filter_chain =
+      route_config_builder_.builder_.Build();
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "Filter chain creation status: " << route_filter_chain.status();
+  return route_filter_chain;
+}
+
+absl::StatusOr<RefCountedPtr<const FilterChain>>
+XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
+    WeightedClusterRouteFilterChainBuilder::GetRouteFilterChain() {
+  if (route_filter_chain_.ok() && *route_filter_chain_ == nullptr) {
+    route_filter_chain_ = vhost_builder_.BuildFilterChainForRoute(route_);
+  }
+  return route_filter_chain_;
+}
+
+absl::StatusOr<RefCountedPtr<const FilterChain>>
+XdsRouting::RouteConfigFilterChainBuilder::VirtualHostFilterChainBuilder::
+    WeightedClusterRouteFilterChainBuilder::BuildFilterChainForClusterWeight(
+        const XdsRouteConfigResource::Route::RouteAction::ClusterWeight&
+            cluster_weight) {
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "Building filter chain for route:" << route_.ToString()
+      << " ClusterWeight:" << cluster_weight.ToString();
+  // If there are no per-ClusterWeight overrides, use the route filter chain.
+  if (cluster_weight.typed_per_filter_config.empty()) {
+    return GetRouteFilterChain();
+  }
+  // Otherwise, build a new filter chain for the ClusterWeight.
+  auto& route_config_builder = vhost_builder_.route_config_builder_;
+  for (size_t i = 0; i < route_config_builder.factories_.size(); ++i) {
+    auto* factory = route_config_builder.factories_[i];
+    const auto& filter_config = route_config_builder.hcm_filter_configs_[i];
+    if (IsFilterDisabled(factory, filter_config,
+                         &vhost_builder_.vhost_.typed_per_filter_config,
+                         &route_.typed_per_filter_config,
+                         &cluster_weight.typed_per_filter_config)) {
+      continue;
+    }
+    RefCountedPtr<const FilterConfig> config;
+    if (filter_config.filter_config != nullptr) {
+      auto vhost_override_config = GetOverrideConfig(
+          factory, vhost_builder_.vhost_.typed_per_filter_config,
+          filter_config.name);
+      auto route_override_config = GetOverrideConfig(
+          factory, route_.typed_per_filter_config, filter_config.name);
+      auto cluster_weight_override_config = GetOverrideConfig(
+          factory, cluster_weight.typed_per_filter_config, filter_config.name);
+      config = factory->MergeConfigs(filter_config.filter_config,
+                                     std::move(vhost_override_config),
+                                     std::move(route_override_config),
+                                     std::move(cluster_weight_override_config),
+                                     route_config_builder.transport_factory_,
+                                     route_config_builder.blackboard_);
+    }
+    GRPC_TRACE_LOG(xds_resolver, INFO)
+        << "  Adding filter=" << filter_config.name
+        << " config=" << (config == nullptr ? "<null>" : config->ToString());
+    route_config_builder.builder_.AddFilter(factory, std::move(config));
+  }
+  auto filter_chain = route_config_builder.builder_.Build();
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "Filter chain creation status: " << filter_chain.status();
+  return filter_chain;
+}
+
+namespace {
+
+const XdsRouteConfigResource::FilterConfigOverride* FindFilterConfigOverride(
+    const std::string& instance_name,
+    const XdsRouteConfigResource::VirtualHost& vhost,
+    const XdsRouteConfigResource::Route& route,
+    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+        cluster_weight) {
+  // Check ClusterWeight, if any.
+  if (cluster_weight != nullptr) {
+    auto it = cluster_weight->typed_per_filter_config.find(instance_name);
+    if (it != cluster_weight->typed_per_filter_config.end()) return &it->second;
+  }
+  // Check Route.
+  auto it = route.typed_per_filter_config.find(instance_name);
+  if (it != route.typed_per_filter_config.end()) return &it->second;
+  // Check VirtualHost.
+  it = vhost.typed_per_filter_config.find(instance_name);
+  if (it != vhost.typed_per_filter_config.end()) return &it->second;
+  // Not found.
+  return nullptr;
+}
+
+absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
+GeneratePerHTTPFilterConfigs(
+    const XdsHttpFilterRegistry& http_filter_registry,
+    const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+        http_filters,
+    const ChannelArgs& args,
+    absl::FunctionRef<
+        absl::StatusOr<XdsHttpFilterFactory::ServiceConfigJsonEntry>(
+            const XdsHttpFilterFactory&,
+            const XdsListenerResource::HttpConnectionManager::HttpFilter&)>
+        generate_service_config) {
+  XdsRouting::GeneratePerHttpFilterConfigsResult result;
+  result.args = args;
+  for (const auto& http_filter : http_filters) {
+    // Find filter.  This is guaranteed to succeed, because it's checked
+    // at config validation time in the listener parsing code.
+    const XdsHttpFilterFactory* factory =
+        http_filter_registry.GetFilterForTopLevelType(
+            http_filter.config_proto_type);
+    GRPC_CHECK_NE(factory, nullptr);
+    // If there is not actually any C-core filter associated with this
+    // xDS filter, then it won't need any config, so skip it.
+    if (factory->channel_filter() == nullptr) continue;
+    // Allow filter to add channel args that may affect service config
+    // parsing.
+    result.args = factory->ModifyChannelArgs(result.args);
+    // Generate service config for filter.
+    auto service_config_field = generate_service_config(*factory, http_filter);
+    if (!service_config_field.ok()) {
+      return absl::FailedPreconditionError(absl::StrCat(
+          "failed to generate service config for HTTP filter ",
+          http_filter.name, ": ", service_config_field.status().ToString()));
+    }
+    if (service_config_field->service_config_field_name.empty()) continue;
+    result.per_filter_configs[service_config_field->service_config_field_name]
+        .push_back(service_config_field->element);
+  }
+  return result;
+}
+
+}  // namespace
+
+absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
+XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
+    const XdsHttpFilterRegistry& http_filter_registry,
+    const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+        http_filters,
+    const XdsRouteConfigResource::VirtualHost& vhost,
+    const XdsRouteConfigResource::Route& route,
+    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+        cluster_weight,
+    const ChannelArgs& args) {
+  return GeneratePerHTTPFilterConfigs(
+      http_filter_registry, http_filters, args,
+      [&](const XdsHttpFilterFactory& factory,
+          const XdsListenerResource::HttpConnectionManager::HttpFilter&
+              http_filter) {
+        // Find override config, if any.
+        const XdsRouteConfigResource::FilterConfigOverride*
+            filter_config_override = FindFilterConfigOverride(
+                http_filter.name, vhost, route, cluster_weight);
+        const Json* config_override = nullptr;
+        if (filter_config_override != nullptr &&
+            filter_config_override->config_proto_type ==
+                factory.OverrideConfigProtoName()) {
+          config_override = &filter_config_override->config;
+        }
+        // Generate service config for filter.
+        return factory.GenerateMethodConfig(http_filter.config,
+                                            config_override);
+      });
+}
+
+absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
+XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
+    const XdsHttpFilterRegistry& http_filter_registry,
+    const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+        http_filters,
+    const ChannelArgs& args) {
+  return GeneratePerHTTPFilterConfigs(
+      http_filter_registry, http_filters, args,
+      [&](const XdsHttpFilterFactory& factory,
+          const XdsListenerResource::HttpConnectionManager::HttpFilter&
+              http_filter) {
+        return factory.GenerateServiceConfig(http_filter.config);
+      });
+}
+
+}  // namespace grpc_core

@@ -1,0 +1,774 @@
+// Copyright 2023 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "src/core/lib/surface/channel_init.h"
+
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "src/core/call/call_arena_allocator.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+namespace {
+
+const grpc_channel_filter* FilterNamed(const char* name) {
+  static auto* filters =
+      new std::map<absl::string_view, const grpc_channel_filter*>;
+  auto it = filters->find(name);
+  if (it != filters->end()) return it->second;
+  static auto* name_factories =
+      new std::vector<std::unique_ptr<UniqueTypeName::Factory>>();
+  name_factories->emplace_back(std::make_unique<UniqueTypeName::Factory>(name));
+  auto unique_type_name = name_factories->back()->Create();
+  return filters
+      ->emplace(name,
+                new grpc_channel_filter{nullptr, nullptr, 0, nullptr, nullptr,
+                                        nullptr, 0, nullptr, nullptr, nullptr,
+                                        nullptr, unique_type_name})
+      .first->second;
+}
+
+auto RemoveFilterNamed(std::string name) {
+  return [name](ChannelStackBuilder& builder) {
+    auto* stk = builder.mutable_stack();
+    stk->erase(std::remove_if(stk->begin(), stk->end(),
+                              [name](const FilterAndConfig& filter_and_config) {
+                                return filter_and_config.filter->name.name() ==
+                                       name;
+                              }),
+               stk->end());
+  };
+}
+
+std::vector<std::string> GetFilterNames(const ChannelInit& init,
+                                        grpc_channel_stack_type type,
+                                        const ChannelArgs& args) {
+  ChannelStackBuilderImpl b("test", type, args);
+  if (!init.CreateStack(&b)) return {};
+  std::vector<std::string> names;
+  for (auto& [filter, _] : b.stack()) {
+    names.push_back(std::string(filter->name.name()));
+  }
+  EXPECT_NE(names, std::vector<std::string>());
+  return names;
+}
+
+class NoOpCall {
+ public:
+  static inline const NoInterceptor OnClientInitialMetadata;
+  static inline const NoInterceptor OnServerInitialMetadata;
+  static inline const NoInterceptor OnServerTrailingMetadata;
+  static inline const NoInterceptor OnClientToServerMessage;
+  static inline const NoInterceptor OnClientToServerHalfClose;
+  static inline const NoInterceptor OnServerToClientMessage;
+  static inline const NoInterceptor OnFinalize;
+  channelz::PropertyList ChannelzProperties() {
+    return channelz::PropertyList();
+  }
+};
+
+// A helper class that tracks the order of V3 filter registration.
+template <typename T>
+class OrderTrackingV3Filter {
+ public:
+  static absl::StatusOr<std::unique_ptr<T>> Create(const ChannelArgs& args,
+                                                   const ChannelFilter::Args&) {
+    auto* order = args.GetPointer<std::vector<std::string>>("ordering_tracker");
+    if (order != nullptr) {
+      order->push_back(std::string{T::TypeName()});
+    }
+    return std::make_unique<T>();
+  }
+};
+
+class V3FilterA : public ImplementChannelFilter<V3FilterA>,
+                  public OrderTrackingV3Filter<V3FilterA> {
+ public:
+  using Call = NoOpCall;
+  static const grpc_channel_filter kFilter;
+  static absl::string_view TypeName() { return "A"; }
+};
+
+const grpc_channel_filter V3FilterA::kFilter =
+    MakePromiseBasedFilter<V3FilterA, FilterEndpoint::kServer>();
+
+class V3FilterB : public ImplementChannelFilter<V3FilterB>,
+                  public OrderTrackingV3Filter<V3FilterB> {
+ public:
+  using Call = NoOpCall;
+  static const grpc_channel_filter kFilter;
+  static absl::string_view TypeName() { return "B"; }
+};
+
+const grpc_channel_filter V3FilterB::kFilter =
+    MakePromiseBasedFilter<V3FilterB, FilterEndpoint::kServer>();
+
+class V3FilterC : public ImplementChannelFilter<V3FilterC>,
+                  public OrderTrackingV3Filter<V3FilterC> {
+ public:
+  using Call = NoOpCall;
+  static const grpc_channel_filter kFilter;
+  static absl::string_view TypeName() { return "C"; }
+};
+
+const grpc_channel_filter V3FilterC::kFilter =
+    MakePromiseBasedFilter<V3FilterC, FilterEndpoint::kServer>();
+
+TEST(ChannelInitTest, Empty) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  auto init = b.Build();
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"terminator"}));
+}
+
+TEST(ChannelInitTest, OneClientFilter) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator")).Terminal();
+  auto init = b.Build();
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"foo", "terminator"}));
+  EXPECT_EQ(GetFilterNames(init, GRPC_SERVER_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"terminator"}));
+}
+
+TEST(ChannelInitTest, DefaultLexicalOrdering) {
+  // ChannelInit defaults to lexical ordering in the absence of other
+  // constraints, to ensure that a stable ordering is produced between builds.
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("baz"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
+  auto init = b.Build();
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"bar", "baz", "foo", "aaa"}));
+}
+
+TEST(ChannelInitTest, AfterConstraintsApply) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar"))
+      .After({FilterNamed("foo")->name});
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("baz"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
+  auto init = b.Build();
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"baz", "foo", "bar", "aaa"}));
+}
+
+TEST(ChannelInitTest, BeforeConstraintsApply) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"))
+      .Before({FilterNamed("bar")->name});
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("baz"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
+  auto init = b.Build();
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"baz", "foo", "bar", "aaa"}));
+}
+
+TEST(ChannelInitTest, PredicatesCanFilter) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"))
+      .IfChannelArg("foo", true);
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar"))
+      .IfChannelArg("bar", false);
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
+  auto init = b.Build();
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"foo", "aaa"}));
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL,
+                           ChannelArgs().Set("foo", false)),
+            std::vector<std::string>({"aaa"}));
+  EXPECT_EQ(
+      GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs().Set("bar", true)),
+      std::vector<std::string>({"bar", "foo", "aaa"}));
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL,
+                           ChannelArgs().Set("bar", true).Set("foo", false)),
+            std::vector<std::string>({"bar", "aaa"}));
+}
+
+TEST(ChannelInitTest, CanAddTerminalFilter) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar")).Terminal();
+  auto init = b.Build();
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"foo", "bar"}));
+}
+
+TEST(ChannelInitTest, CanAddMultipleTerminalFilters) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar"))
+      .Terminal()
+      .IfChannelArg("bar", false);
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("baz"))
+      .Terminal()
+      .IfChannelArg("baz", false);
+  auto init = b.Build();
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>());
+  EXPECT_EQ(
+      GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs().Set("bar", true)),
+      std::vector<std::string>({"foo", "bar"}));
+  EXPECT_EQ(
+      GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs().Set("baz", true)),
+      std::vector<std::string>({"foo", "baz"}));
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL,
+                           ChannelArgs().Set("bar", true).Set("baz", true)),
+            std::vector<std::string>());
+}
+
+TEST(ChannelInitTest, CanAddBeforeAllOnce) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo")).BeforeAll();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("baz"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"foo", "bar", "baz", "aaa"}));
+}
+
+TEST(ChannelInitTest, FloatToTopRespectsBeforeAll) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo")).BeforeAll();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("baz")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"foo", "baz", "bar", "aaa"}));
+}
+
+TEST(ChannelInitDeathTest, CanAddBeforeAllTwice) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo")).BeforeAll();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar")).BeforeAll();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("baz"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
+  EXPECT_DEATH_IF_SUPPORTED(b.Build(), "Unresolvable graph of channel filters");
+}
+
+TEST(ChannelInitTest, CanPostProcessFilters) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("aaa")).Terminal();
+  int called_post_processor = 0;
+  b.RegisterPostProcessor(
+      GRPC_CLIENT_CHANNEL,
+      ChannelInit::PostProcessorSlot::kXdsChannelStackModifier,
+      [&called_post_processor](ChannelStackBuilder& b) {
+        ++called_post_processor;
+        b.mutable_stack()->push_back({FilterNamed("bar"), nullptr});
+      });
+  auto init = b.Build();
+  EXPECT_EQ(called_post_processor, 0);
+  EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"foo", "aaa", "bar"}));
+}
+
+TEST(ChannelInitTest, OrderingConstraintsAreSatisfied) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("a")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"c", "b", "a", "terminator"}));
+}
+
+TEST(ChannelInitServerFilterTest, AmbiguousBottomCrashes) {
+  ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c")).SinkToBottom();
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b")).SinkToBottom();
+  b.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_DEATH_IF_SUPPORTED(b.Build(), "Ambiguous");
+}
+
+// Ensure that `fix_v3_filter_stack_server_side_ordering` experiment doesn't
+// affect client side ordering.
+TEST(ChannelInitServerFilterTest, ReversalDoesNotAffectClient) {
+  ChannelInit::Builder b{/*fix_v3_filter_stack_server_side_ordering=*/true};
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("a")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"a", "b", "c", "terminator"}));
+}
+
+TEST(ChannelInitServerFilterTest, BeforeAllBecomesSinkToBottom) {
+  // The expected filter order, both old and new behavior should generate
+  // this output.
+  std::vector<std::string> expected_filters({"a", "b", "c", "terminator"});
+  {
+    ChannelInit::Builder b1{/*fix_v3_filter_stack_server_side_ordering=*/false};
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).BeforeAll();
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b1.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+  {
+    ChannelInit::Builder b2{/*fix_v3_filter_stack_server_side_ordering=*/true};
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).SinkToBottom();
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+}
+
+TEST(ChannelInitServerFilterTest, OrderingConstraintsAreSatisfied) {
+  std::vector<std::string> expected_filters({"c", "b", "a", "terminator"});
+  {
+    ChannelInit::Builder b1{/*fix_v3_filter_stack_server_side_ordering=*/false};
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).SinkToBottom();
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c")).FloatToTop();
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b1.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              std::vector<std::string>({"c", "b", "a", "terminator"}));
+  }
+  {
+    ChannelInit::Builder b2{/*fix_v3_filter_stack_server_side_ordering=*/true};
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).FloatToTop();
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c")).SinkToBottom();
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              std::vector<std::string>({"c", "b", "a", "terminator"}));
+  }
+}
+
+TEST(ChannelInitServerFilterTest, AfterBecomesBefore) {
+  std::vector<std::string> expected_filters(
+      {"Filter2", "Filter1", "Filter3", "Terminator"});
+  {
+    ChannelInit::Builder b1{/*fix_v3_filter_stack_server_side_ordering=*/false};
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter2"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter1"))
+        .After({FilterNamed("Filter2")->name});
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter3"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b1.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+  {
+    ChannelInit::Builder b2{/*fix_v3_filter_stack_server_side_ordering=*/true};
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter2"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter1"))
+        .Before({FilterNamed("Filter2")->name});
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter3"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+}
+
+TEST(ChannelInitServerFilterTest, BeforeBecomesAfter) {
+  std::vector<std::string> expected_filters(
+      {"Filter2", "Filter1", "Filter3", "Terminator"});
+  {
+    ChannelInit::Builder b1{/*fix_v3_filter_stack_server_side_ordering=*/false};
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter2"))
+        .Before({FilterNamed("Filter1")->name});
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter1"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter3"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b1.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+  {
+    ChannelInit::Builder b2{/*fix_v3_filter_stack_server_side_ordering=*/true};
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter2"))
+        .After({FilterNamed("Filter1")->name});
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter1"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Filter3"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("Terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+}
+
+TEST(ChannelInitServerFilterTest, SinkToBottomBecomesFloatToTop) {
+  std::vector<std::string> expected_filters({"b", "c", "a", "terminator"});
+  {
+    ChannelInit::Builder b1{/*fix_v3_filter_stack_server_side_ordering=*/false};
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).SinkToBottom();
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c"));
+    b1.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b1.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+  {
+    ChannelInit::Builder b2{/*fix_v3_filter_stack_server_side_ordering=*/true};
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("a")).FloatToTop();
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("b"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("c"));
+    b2.RegisterFilter(GRPC_SERVER_CHANNEL, FilterNamed("terminator"))
+        .Terminal();
+    EXPECT_EQ(GetFilterNames(b2.Build(), GRPC_SERVER_CHANNEL, ChannelArgs()),
+              expected_filters);
+  }
+}
+
+TEST(ChannelInitClientV3FilterTest, ClientOrderingIsUnchanged) {
+  std::vector<std::string> expected{"A", "B", "C"};
+  auto get_registration_order =
+      [](bool fix_v3_filter_stack_server_side_ordering) {
+        ChannelInit::Builder b{
+            /*fix_v3_filter_stack_server_side_ordering=*/true};
+        b.RegisterFilter<V3FilterA>(GRPC_CLIENT_CHANNEL).FloatToTop();
+        b.RegisterFilter<V3FilterB>(GRPC_CLIENT_CHANNEL);
+        b.RegisterFilter<V3FilterC>(GRPC_CLIENT_CHANNEL).SinkToBottom();
+        auto init = b.Build();
+        std::vector<std::string> order;
+        ChannelArgs args = ChannelArgs().Set(
+            "ordering_tracker", ChannelArgs::UnownedPointer(&order));
+        InterceptionChainBuilder chain_builder{args};
+        init.AddToInterceptionChainBuilder(GRPC_CLIENT_CHANNEL, chain_builder);
+        return order;
+      };
+  EXPECT_EQ(
+      get_registration_order(/*fix_v3_filter_stack_server_side_ordering=*/true),
+      expected);
+  EXPECT_EQ(get_registration_order(
+                /*fix_v3_filter_stack_server_side_ordering=*/false),
+            expected);
+}
+
+TEST(ChannelInitServerV3FilterTest, SinkToBottomBecomesFloatToTop) {
+  auto get_registration_order =
+      [](bool fix_v3_filter_stack_server_side_ordering) {
+        ChannelInit::Builder b{fix_v3_filter_stack_server_side_ordering};
+        b.RegisterFilter<V3FilterA>(GRPC_SERVER_CHANNEL).FloatToTop();
+        b.RegisterFilter<V3FilterB>(GRPC_SERVER_CHANNEL);
+        b.RegisterFilter<V3FilterC>(GRPC_SERVER_CHANNEL).SinkToBottom();
+        auto init = b.Build();
+        std::vector<std::string> order;
+        ChannelArgs args = ChannelArgs().Set(
+            "ordering_tracker", ChannelArgs::UnownedPointer(&order));
+        InterceptionChainBuilder chain_builder{args};
+        init.AddToInterceptionChainBuilder(GRPC_SERVER_CHANNEL, chain_builder);
+        return order;
+      };
+
+  EXPECT_EQ(get_registration_order(
+                /*fix_v3_filter_stack_server_side_ordering=*/false),
+            std::vector<std::string>({"A", "B", "C"}));
+
+  EXPECT_EQ(
+      get_registration_order(/*fix_v3_filter_stack_server_side_ordering=*/true),
+      std::vector<std::string>({"C", "B", "A"}));
+}
+
+TEST(ChannelInitServerV3FilterTest, BeforeAllBecomesTheLast) {
+  auto get_registration_order =
+      [](bool fix_v3_filter_stack_server_side_ordering) {
+        ChannelInit::Builder b{fix_v3_filter_stack_server_side_ordering};
+        b.RegisterFilter<V3FilterA>(GRPC_SERVER_CHANNEL).BeforeAll();
+        b.RegisterFilter<V3FilterB>(GRPC_SERVER_CHANNEL);
+        b.RegisterFilter<V3FilterC>(GRPC_SERVER_CHANNEL);
+        auto init = b.Build();
+        std::vector<std::string> order;
+        ChannelArgs args = ChannelArgs().Set(
+            "ordering_tracker", ChannelArgs::UnownedPointer(&order));
+        InterceptionChainBuilder chain_builder{args};
+        init.AddToInterceptionChainBuilder(GRPC_SERVER_CHANNEL, chain_builder);
+        return order;
+      };
+
+  EXPECT_EQ(get_registration_order(
+                /*fix_v3_filter_stack_server_side_ordering=*/false),
+            std::vector<std::string>({"A", "B", "C"}));
+
+  EXPECT_EQ(
+      get_registration_order(/*fix_v3_filter_stack_server_side_ordering=*/true),
+      std::vector<std::string>({"B", "C", "A"}));
+}
+
+TEST(ChannelInitServerV3FilterTest, BeforeBecomesAfter) {
+  auto get_registration_order =
+      [](bool fix_v3_filter_stack_server_side_ordering) {
+        ChannelInit::Builder b{fix_v3_filter_stack_server_side_ordering};
+        b.RegisterFilter<V3FilterA>(GRPC_SERVER_CHANNEL);
+        b.RegisterFilter<V3FilterB>(GRPC_SERVER_CHANNEL).Before<V3FilterA>();
+        b.RegisterFilter<V3FilterC>(GRPC_SERVER_CHANNEL).After<V3FilterA>();
+        auto init = b.Build();
+        std::vector<std::string> order;
+        ChannelArgs args = ChannelArgs().Set(
+            "ordering_tracker", ChannelArgs::UnownedPointer(&order));
+        InterceptionChainBuilder chain_builder{args};
+        init.AddToInterceptionChainBuilder(GRPC_SERVER_CHANNEL, chain_builder);
+        return order;
+      };
+
+  EXPECT_EQ(get_registration_order(
+                /*fix_v3_filter_stack_server_side_ordering=*/false),
+            std::vector<std::string>({"B", "A", "C"}));
+
+  EXPECT_EQ(
+      get_registration_order(/*fix_v3_filter_stack_server_side_ordering=*/true),
+      std::vector<std::string>({"C", "A", "B"}));
+}
+
+TEST(ChannelInitDeathTest, AmbiguousTopCrashes) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_DEATH_IF_SUPPORTED(b.Build(), "Ambiguous");
+}
+
+TEST(ChannelInitTest, ExplicitOrderingBetweenTopResolvesAmbiguity) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"))
+      .FloatToTop()
+      .After({FilterNamed("c")->name});
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"c", "b", "terminator"}));
+}
+
+TEST(ChannelInitDeathTest, AmbiguousBottomCrashes) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_DEATH_IF_SUPPORTED(b.Build(), "Ambiguous");
+}
+
+TEST(ChannelInitTest, ExplicitOrderingBetweenBottomResolvesAmbiguity) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).SinkToBottom();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"))
+      .SinkToBottom()
+      .After({FilterNamed("c")->name});
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"c", "b", "terminator"}));
+}
+
+TEST(ChannelInitTest, BottomCanComeBeforeTopWithExplicitOrdering) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b"))
+      .SinkToBottom()
+      .Before({FilterNamed("c")->name});
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminator")).Terminal();
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"b", "c", "terminator"}));
+}
+
+TEST(ChannelInitTest, CanRegisterFusedFilters) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter1"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter3"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter4"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter5"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter6"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter7"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter8"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter9"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1")).Terminal();
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter4+Filter5+Filter6+Filter7"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter2+Filter3+Filter4"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2+Filter3"));
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"Filter1", "Filter2+Filter3",
+                                      "Filter4+Filter5+Filter6+Filter7",
+                                      "Filter8", "Filter9", "terminal1"}));
+}
+
+TEST(ChannelInitTest, CanRegisterFusedFiltersWithPostProcessors) {
+  ChannelInit::Builder b;
+  // Register 2 post processors to remove filter 2 and filter 5.
+  b.RegisterPostProcessor(GRPC_CLIENT_CHANNEL,
+                          ChannelInit::PostProcessorSlot::kAuthSubstitution,
+                          RemoveFilterNamed("Filter2"));
+  b.RegisterPostProcessor(
+      GRPC_CLIENT_CHANNEL,
+      ChannelInit::PostProcessorSlot::kXdsChannelStackModifier,
+      RemoveFilterNamed("Filter5"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter1"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter3"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter4"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter5"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter6"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter7"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter8"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter9"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1")).Terminal();
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter4+Filter5+Filter6+Filter7"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter4+Filter6+Filter7"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter2+Filter3+Filter4"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2+Filter3"));
+  // Filter2 is removed by the post processor, so it should not be present in
+  // the fused filters. Filter5 is removed by the post processor, so the fused
+  // filter that contains it should not be present but the fusion
+  // "Filter4+Filter6+Filter7" should be included.
+  EXPECT_EQ(
+      GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+      std::vector<std::string>({"Filter1", "Filter3", "Filter4+Filter6+Filter7",
+                                "Filter8", "Filter9", "terminal1"}));
+}
+
+TEST(ChannelInitTest, PredicateMatchingWithFusedFilters) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter1"))
+      .IfChannelArg("filter1", true);
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2"))
+      .IfChannelArg("filter2", true);
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter3"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter4"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter5"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter6"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1")).Terminal();
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter1+Filter2+Filter3+Filter4+Filter5"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter2+Filter3+Filter4+Filter5"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter3+Filter4+Filter5"));
+  EXPECT_EQ(
+      GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL,
+                     ChannelArgs().Set("filter1", false).Set("filter2", true)),
+      std::vector<std::string>(
+          {"Filter2+Filter3+Filter4+Filter5", "Filter6", "terminal1"}));
+}
+
+class TestFilter1 {
+ public:
+  explicit TestFilter1(int* p) : p_(p) {}
+
+  static absl::string_view TypeName() { return "TestFilter1"; }
+
+  static absl::StatusOr<std::unique_ptr<TestFilter1>> Create(
+      const ChannelArgs& args, ChannelFilter::Args) {
+    EXPECT_EQ(args.GetInt("foo"), 1);
+    return std::make_unique<TestFilter1>(args.GetPointer<int>("p"));
+  }
+
+  static const grpc_channel_filter kFilter;
+
+  class Call {
+   public:
+    explicit Call(TestFilter1* filter) {
+      EXPECT_EQ(*filter->x_, 0);
+      *filter->x_ = 1;
+      ++*filter->p_;
+    }
+    static const NoInterceptor OnClientInitialMetadata;
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", 1);
+    }
+  };
+
+ private:
+  std::unique_ptr<int> x_ = std::make_unique<int>(0);
+  int* const p_;
+};
+
+const grpc_channel_filter TestFilter1::kFilter = {
+    nullptr, nullptr, 0,       nullptr,
+    nullptr, nullptr, 0,       nullptr,
+    nullptr, nullptr, nullptr, GRPC_UNIQUE_TYPE_NAME_HERE("test_filter1")};
+const NoInterceptor TestFilter1::Call::OnClientInitialMetadata;
+const NoInterceptor TestFilter1::Call::OnServerInitialMetadata;
+const NoInterceptor TestFilter1::Call::OnServerTrailingMetadata;
+const NoInterceptor TestFilter1::Call::OnClientToServerMessage;
+const NoInterceptor TestFilter1::Call::OnClientToServerHalfClose;
+const NoInterceptor TestFilter1::Call::OnServerToClientMessage;
+const NoInterceptor TestFilter1::Call::OnFinalize;
+
+TEST(ChannelInitTest, CanCreateFilterWithCall) {
+  grpc::testing::TestGrpcScope g;
+  ChannelInit::Builder b;
+  b.RegisterFilter<TestFilter1>(GRPC_CLIENT_CHANNEL);
+  auto init = b.Build();
+  int p = 0;
+  InterceptionChainBuilder chain_builder{
+      ChannelArgs().Set("foo", 1).Set("p", ChannelArgs::UnownedPointer(&p))};
+  init.AddToInterceptionChainBuilder(GRPC_CLIENT_CHANNEL, chain_builder);
+  int handled = 0;
+  auto stack = chain_builder.Build(MakeCallDestinationFromHandlerFunction(
+      [&handled](CallHandler) { ++handled; }));
+  ASSERT_TRUE(stack.ok()) << stack.status();
+  RefCountedPtr<CallArenaAllocator> allocator =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test"),
+          1024);
+  auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto arena = allocator->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine.get());
+  auto call = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                           std::move(arena));
+  (*stack)->StartCall(std::move(call.handler));
+  EXPECT_EQ(p, 1);
+  EXPECT_EQ(handled, 1);
+}
+
+}  // namespace
+}  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

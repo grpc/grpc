@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <gRPC_PluginFileName Condition=" '$(gRPC_PluginFileName)' == '' and '$(Language)' == 'C#' ">grpc_csharp_plugin</gRPC_PluginFileName>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
+    <!-- Extend property pages with gRPC properties. -->
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Grpc.CSharp.xml">
+      <Context>File;BrowseObject</Context>
+    </PropertyPageSchema>
+  </ItemGroup>
+
+  <ItemDefinitionGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
+    <Protobuf>
+      <GrpcServices Condition=" '%(Protobuf.GrpcServices)' == '' ">Both</GrpcServices>
+    </Protobuf>
+  </ItemDefinitionGroup>
+
+  <!-- This target is invoked in a C# project, or can be called in a customized project. -->
+  <Target Name="gRPC_ResolvePluginFullPath" AfterTargets="Protobuf_ResolvePlatform">
+    <PropertyGroup>
+      <!-- First try environment variable. -->
+      <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' ">$(GRPC_PROTOC_PLUGIN)</gRPC_PluginFullPath>
+
+      <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' and '$(Protobuf_ToolsOs)' == 'windows' "
+           >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)\$(gRPC_PluginFileName).exe</gRPC_PluginFullPath>
+      <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' "
+           >$(Protobuf_PackagedToolsPath)/$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)/$(gRPC_PluginFileName)</gRPC_PluginFullPath>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="_gRPC_PrepareCompileOptions" AfterTargets="Protobuf_PrepareCompileOptions">
+    <ItemGroup Condition=" '$(Language)' == 'C#' ">
+      <Protobuf_Compile Condition=" %(Protobuf_Compile.GrpcServices) != 'None' ">
+        <GrpcPluginExe Condition=" '%(Protobuf_Compile.GrpcPluginExe)' == '' ">$(gRPC_PluginFullPath)</GrpcPluginExe>
+        <GrpcOutputDir Condition=" '%(Protobuf_Compile.GrpcOutputDir)' == '' " >%(Protobuf_Compile.OutputDir)</GrpcOutputDir>
+        <_GrpcOutputOptions Condition=" '%(Protobuf_Compile.Access)' == 'Internal' ">%(Protobuf_Compile._GrpcOutputOptions);internal_access</_GrpcOutputOptions>
+      </Protobuf_Compile>
+      <Protobuf_Compile Condition=" '%(Protobuf_Compile.GrpcServices)' == 'Client' ">
+        <_GrpcOutputOptions>%(Protobuf_Compile._GrpcOutputOptions);no_server</_GrpcOutputOptions>
+      </Protobuf_Compile>
+      <Protobuf_Compile Condition=" '%(Protobuf_Compile.GrpcServices)' == 'Server' ">
+        <_GrpcOutputOptions>%(Protobuf_Compile._GrpcOutputOptions);no_client</_GrpcOutputOptions>
+      </Protobuf_Compile>
+    </ItemGroup>
+  </Target>
+</Project>

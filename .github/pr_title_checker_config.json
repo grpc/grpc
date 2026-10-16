@@ -1,0 +1,16 @@
+{
+    "LABEL": {
+        "name": "PR title format",
+        "color": "EEEEEE"
+    },
+    "CHECKS": {
+        "regexp": "^((\\[[^\\]]+\\])+|Revert|Automated fix for) ",
+        "regexpFlags": "i",
+        "ignoreLabels": []
+    },
+    "MESSAGES": {
+        "success": "All OK",
+        "failure": "PR title should be like this: '[component] Brief summary'",
+        "notice": ""
+    }
+}

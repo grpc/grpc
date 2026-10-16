@@ -1,0 +1,19 @@
+name: PR Auto Tag
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
+permissions:
+  contents: read # to determine modified files (actions/labeler)
+
+jobs:
+  triage:
+    permissions:
+      contents: read # to determine modified files (actions/labeler)
+      pull-requests: write # to add labels to PRs (actions/labeler)
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7.0.0
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        sync-labels: false

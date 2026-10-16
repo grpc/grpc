@@ -1,0 +1,17 @@
+[sni1]
+subjectAltName = @sni1_alt_names
+
+[sni2]
+subjectAltName = @sni2_alt_names
+
+[sni3]
+subjectAltName = @sni3_alt_names
+
+[sni1_alt_names]
+DNS.1 = foo
+
+[sni2_alt_names]
+DNS.1 = bar
+
+[sni3_alt_names]
+DNS.1 = server.example.com

@@ -1,0 +1,78 @@
+# Copyright 2017 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+
+licenses(["notice"])
+
+grpc_package(
+    name = "test/core/credentials/transport",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
+
+grpc_cc_test(
+    name = "security_connector_test",
+    srcs = ["security_connector_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    deps = [
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:grpc_credentials_util",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:slice",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "channel_creds_registry_test",
+    srcs = ["channel_creds_registry_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:config",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//src/core:channel_creds_registry",
+        "//src/core:grpc_fake_credentials",
+        "//src/core:grpc_insecure_credentials",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:xds_certificate_provider_store",
+        "//src/core:xds_credentials",
+        "//src/core:xds_file_watcher_certificate_provider_factory",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/google_default/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/tls/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/xds/v3:pkg_cc_proto",
+    ],
+)

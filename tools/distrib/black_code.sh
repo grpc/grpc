@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Copyright 2015 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -eux
+
+ACTION="${1:-}"
+[[ $ACTION == '' ]] || [[ $ACTION == '--diff' ]] || [[ $ACTION == '--check' ]]
+
+# change to root directory
+cd "$(dirname "${0}")/../.."
+
+DIRS=(
+    'bazel/update_mirror_helper.py'
+    'examples'
+    'src'
+    'test'
+    'tools'
+    'setup.py'
+    'doc/python'
+)
+
+VIRTUALENV=".venv-ci-black"
+python3 -m venv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python -VV
+
+pip install black==25.1.0
+pip list
+
+if [[ "$ACTION" == "--check" ]]; then
+    exec black --check --diff "${DIRS[@]}"
+else
+    exec black $ACTION "${DIRS[@]}"
+fi

@@ -1,0 +1,163 @@
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SSL_UTILS_H
+#define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SSL_UTILS_H
+
+#include <grpc/grpc_crl_provider.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+#include <openssl/x509.h>
+#include <stddef.h>
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
+#include "src/core/credentials/transport/tls/spiffe_utils.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
+#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+// --- Util ---
+
+// Check ALPN information returned from SSL handshakes.
+grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer);
+
+// Check peer name information returned from SSL handshakes.
+grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
+                                           const tsi_peer* peer);
+// Compare target_name information extracted from SSL security connectors.
+int grpc_ssl_cmp_target_name(absl::string_view target_name,
+                             absl::string_view other_target_name,
+                             absl::string_view overridden_target_name,
+                             absl::string_view other_overridden_target_name);
+
+namespace grpc_core {
+// Check the host that will be set for a call is acceptable.
+absl::Status SslCheckCallHost(absl::string_view host,
+                              absl::string_view target_name,
+                              absl::string_view overridden_target_name,
+                              grpc_auth_context* auth_context);
+}  // namespace grpc_core
+
+// Return HTTP2-compliant cipher suites that gRPC accepts by default.
+const char* grpc_get_ssl_cipher_suites(void);
+
+// Map from grpc_ssl_client_certificate_request_type to
+// tsi_client_certificate_request_type.
+tsi_client_certificate_request_type
+grpc_get_tsi_client_certificate_request_type(
+    grpc_ssl_client_certificate_request_type grpc_request_type);
+
+// Map grpc_tls_version to tsi_tls_version.
+tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version);
+
+// Return an array of strings containing alpn protocols.
+const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
+
+// Parse a list of comma-separated protocol names into a const char** struct
+// that can be injected into the handshaker factory options.
+const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols,
+                                      size_t* num_alpn_protocols);
+
+// Initialize TSI SSL server/client handshaker factory.
+grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
+    const grpc_core::PemKeyCertPair* key_cert_pair,
+    std::shared_ptr<tsi::RootCertInfo> root_cert_info,
+    bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
+    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
+    tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
+    const char* crl_directory,
+    std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    tsi_ssl_client_handshaker_factory** handshaker_factory);
+
+grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
+    grpc_core::KeyCertPairsOrSelector key_cert_pairs,
+    std::shared_ptr<tsi::RootCertInfo> root_cert_info,
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
+    tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
+    const char* crl_directory, bool send_client_ca_list,
+    std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    tsi_ssl_server_handshaker_factory** handshaker_factory);
+
+// Exposed for testing only.
+grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
+    const tsi_peer* peer, const char* transport_security_type);
+tsi_peer grpc_shallow_peer_from_ssl_auth_context(
+    const grpc_auth_context* auth_context);
+void grpc_shallow_peer_destruct(tsi_peer* peer);
+int grpc_ssl_host_matches_name(const tsi_peer* peer,
+                               absl::string_view peer_name);
+
+// --- Default SSL Root Store. ---
+namespace grpc_core {
+bool IsPrivateKeyEmpty(const PrivateKey& private_key);
+
+// The class implements default SSL root store.
+class DefaultSslRootStore {
+ public:
+  // Gets the default SSL root store. Returns nullptr if not found.
+  static const tsi_ssl_root_certs_store* GetRootStore();
+
+  // Gets the default PEM root certificate.
+  static absl::string_view GetPemRootCerts();
+
+  // Returns default PEM root certificates.
+  // DO NOT USE -- exposed for testing purposes only.
+  static Slice ComputePemRootCerts();
+
+ private:
+  // Construct me not!
+  DefaultSslRootStore();
+
+  // Initialization of default SSL root store.
+  static void InitRootStore();
+
+  // One-time initialization of default SSL root store.
+  static void InitRootStoreOnce();
+
+  // SSL root store in tsi_ssl_root_certs_store object.
+  static tsi_ssl_root_certs_store* default_root_store_;
+
+  // Default PEM root certificates.
+  static Slice default_pem_root_certs_;
+};
+
+// Checks whether `std::vector<PemKeyCertPair>` in the variant is empty, or the
+// `CertficateSelector` is nullptr.
+bool IsKeyCertPairsOrSelectorEmpty(
+    const KeyCertPairsOrSelector& key_cert_pairs_or_selector);
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SSL_UTILS_H

@@ -1,0 +1,10 @@
+/bazel/experiments.yaml
+/bazel/rollouts.yaml
+/src/core/client_channel/** @markdroth
+/src/core/load_balancing/** @markdroth
+/src/core/resolver/** @markdroth
+/src/core/server/xds* @markdroth
+/src/core/service_config/** @markdroth
+/src/core/xds/** @markdroth
+/tools/dockerfile/** @sergiitk
+/tools/dockerfile/**/*python* @sergiitk

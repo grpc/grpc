@@ -1,0 +1,17 @@
+%YAML 1.2
+--- |
+  <%
+  import json
+  out_configs = []
+  for name, args in configs.items():
+    config_args={}
+    config_args['config'] = name
+    if args.get('valgrind', None) is not None:
+      config_args['tool_prefix'] = ['valgrind'] + args.valgrind.split(' ')
+    if args.get('timeout_multiplier', 1) != 1:
+      config_args['timeout_multiplier'] = args.timeout_multiplier
+    if args.get('test_environ', None) is not None:
+      config_args['environ'] = args.test_environ
+    out_configs.append(config_args)
+  %>\
+  ${json.dumps(out_configs, sort_keys=True, indent=2)}

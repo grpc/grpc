@@ -1,0 +1,81 @@
+#!/bin/bash
+# Copyright 2022 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+cd "$(dirname "$0")"
+
+# Shellcheck cant find the included file.
+# shellcheck disable=SC1091
+source common.sh
+
+set -euxo pipefail
+
+RUNTIME="$1"
+ARTIFACT_URL="$2"
+# region us-west1 was already hardcoded in run.sh, we should propagate it.
+REGION="us-west1"
+
+REQUEST_COUNT=20
+LOG_QUIESCE_SECONDS=10
+
+rm -f requirements.txt
+cp requirements.txt.base requirements.txt
+echo "${ARTIFACT_URL}" >>requirements.txt
+
+# Generate Function name.
+FUNCTION_NAME="${FUNCTION_PREFIX}-$(uuidgen)"
+
+function cleanup() {
+  # Capture exit status of the main script.
+  local exit_status="$?"
+
+  # Print without repeating due to -x.
+  { set +x; } 2>/dev/null
+  echo -e "\nInitiating cleanup for ${FUNCTION_NAME}. Waiting for logs to quiesce: ${LOG_QUIESCE_SECONDS} sec."
+  set -x
+
+  # Wait for logs to quiesce.
+  sleep "${LOG_QUIESCE_SECONDS}"
+
+  # TODO: improve log error detection per https://github.com/grpc/grpc/pull/41749#discussion_r2876215927
+  gcloud functions logs read "${FUNCTION_NAME}" --region="${REGION}" || true
+  gcloud -q functions delete "${FUNCTION_NAME}" --region="${REGION}" || true
+
+  # Propagate exit status.
+  exit "$exit_status"
+}
+
+trap cleanup SIGINT SIGTERM EXIT
+
+# Deploy
+
+DEPLOY_OUTPUT=$(gcloud functions deploy "${FUNCTION_NAME}" \
+  --entry-point="test_publish" \
+  --runtime="${RUNTIME}"  \
+  --region="${REGION}"  \
+  --gen2 \
+  --trigger-http \
+  --allow-unauthenticated \
+  --ingress-settings="internal-only")
+HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
+
+# Send Requests
+for _ in $(seq 1 "${REQUEST_COUNT}"); do
+  # TODO(sergiitk): switch to --fail-with-body once the base image contains
+  #   curl >= v7.76.0; as of 2026-03-04 it's v7.68.0.
+  curl -L --fail --no-progress-meter "${HTTP_URL}"
+
+  # Print a newline to make logs readable: the "ok" response end with \n.
+  { set +x; } 2>/dev/null; echo; set -x
+done

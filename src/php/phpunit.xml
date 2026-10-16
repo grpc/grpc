@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php" colors="true">
+  <testsuites>
+    <testsuite name="grpc-unit-tests">
+      <directory suffix="Test.php">tests/unit_tests</directory>
+    </testsuite>
+    <testsuite name="grpc-genereated-code-tests">
+      <file>tests/generated_code/GeneratedCodeTest.php</file>
+      <file>tests/generated_code/GeneratedCodeWithCallbackTest.php</file>
+    </testsuite>
+  </testsuites>
+  <filter>
+    <whitelist>
+      <directory suffix=".php">lib/Grpc</directory>
+    </whitelist>
+  </filter>
+  <logging>
+    <log type="coverage-html" target="./log/codeCoverage" charset="UTF-8"
+         yui="true" highlight="true"
+         lowUpperBound="75" highLowerBound="95"/>
+  </logging>
+</phpunit>
