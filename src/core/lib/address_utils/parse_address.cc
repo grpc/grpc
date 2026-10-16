@@ -40,7 +40,7 @@
 #endif  // GRPC_HAVE_UNIX_SOCKET
 #include <limits>
 #include <string>
-#include <vector>
+#include <utility>
 
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -48,15 +48,35 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
+#include "absl/algorithm/container.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/strip.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
+
+namespace {
+
+// Parses a port number, rejecting anything that is not exactly a sequence
+// of decimal digits whose value fits in 16 bits. absl::SimpleAtoi() alone
+// would also accept values with surrounding whitespace or a leading '+'
+// sign.
+bool ParsePort(absl::string_view port, uint16_t* out) {
+  uint32_t port_num;
+  if (port.empty() || !absl::c_all_of(port, absl::ascii_isdigit) ||
+      !absl::SimpleAtoi(port, &port_num) || port_num > 65535) {
+    return false;
+  }
+  *out = static_cast<uint16_t>(port_num);
+  return true;
+}
+
+}  // namespace
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
@@ -159,6 +179,24 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 
 #ifdef GRPC_HAVE_VSOCK
 
+namespace {
+
+// A vsock cid or port is an unsigned 32-bit value, but VMADDR_CID_ANY and
+// VMADDR_PORT_ANY are conventionally written as -1, so parse it as a signed
+// value and accept that one negative spelling in addition to the range that
+// fits in 32 bits.
+bool ParseVsockComponent(absl::string_view text, uint32_t* out) {
+  int64_t value;
+  if (!absl::SimpleAtoi(text, &value) || value < -1 ||
+      value > std::numeric_limits<uint32_t>::max()) {
+    return false;
+  }
+  *out = static_cast<uint32_t>(value);
+  return true;
+}
+
+}  // namespace
+
 bool grpc_parse_vsock(const grpc_core::URI& uri,
                       grpc_resolved_address* resolved_addr) {
   if (uri.scheme() != "vsock") {
@@ -182,18 +220,17 @@ grpc_error_handle VSockaddrPopulate(absl::string_view path,
   struct sockaddr_vm* vm =
       reinterpret_cast<struct sockaddr_vm*>(resolved_addr->addr);
   vm->svm_family = AF_VSOCK;
-  std::vector<absl::string_view> parts = absl::StrSplit(path, ':');
-  // The cid is an unsigned 32-bit value, but VMADDR_CID_ANY is conventionally
-  // written as -1, so parse it as a signed value and accept that one negative
-  // spelling in addition to the range that fits in 32 bits.
-  int64_t cid;
-  if (parts.size() != 2 || !absl::SimpleAtoi(parts[0], &cid) ||
-      (cid < -1 || cid > std::numeric_limits<uint32_t>::max()) ||
-      !absl::SimpleAtoi(parts[1], &vm->svm_port)) {
+  std::pair<absl::string_view, absl::string_view> parts =
+      absl::StrSplit(path, absl::MaxSplits(':', 1));
+  uint32_t cid;
+  uint32_t port;
+  if (!ParseVsockComponent(parts.first, &cid) ||
+      !ParseVsockComponent(parts.second, &port)) {
     return GRPC_ERROR_CREATE(
         absl::StrCat("Failed to parse vsock cid/port: ", path));
   }
-  vm->svm_cid = static_cast<uint32_t>(cid);
+  vm->svm_cid = cid;
+  vm->svm_port = port;
   resolved_addr->len = static_cast<socklen_t>(sizeof(*vm));
   return absl::OkStatus();
 }
@@ -245,12 +282,12 @@ bool grpc_parse_ipv4_hostport(absl::string_view hostport,
     if (log_errors) LOG(ERROR) << "no port given for ipv4 scheme";
     goto done;
   }
-  uint32_t port_num;
-  if (!absl::SimpleAtoi(port, &port_num) || port_num > 65535) {
+  uint16_t port_num;
+  if (!ParsePort(port, &port_num)) {
     if (log_errors) LOG(ERROR) << "invalid ipv4 port: '" << port << "'";
     goto done;
   }
-  in->sin_port = grpc_htons(static_cast<uint16_t>(port_num));
+  in->sin_port = grpc_htons(port_num);
   success = true;
 done:
   return success;
@@ -333,12 +370,12 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
     if (log_errors) LOG(ERROR) << "no port given for ipv6 scheme";
     goto done;
   }
-  uint32_t port_num;
-  if (!absl::SimpleAtoi(port, &port_num) || port_num > 65535) {
+  uint16_t port_num;
+  if (!ParsePort(port, &port_num)) {
     if (log_errors) LOG(ERROR) << "invalid ipv6 port: '" << port << "'";
     goto done;
   }
-  in6->sin6_port = grpc_htons(static_cast<uint16_t>(port_num));
+  in6->sin6_port = grpc_htons(port_num);
   success = true;
 done:
   return success;
@@ -381,11 +418,11 @@ uint16_t grpc_strhtons(const char* port) {
   } else if (strcmp(port, "https") == 0) {
     return htons(443);
   }
-  uint32_t port_num;
-  if (!absl::SimpleAtoi(port, &port_num) || port_num > 65535) {
+  uint16_t port_num;
+  if (!ParsePort(port, &port_num)) {
     return 0;
   }
-  return htons(static_cast<uint16_t>(port_num));
+  return htons(port_num);
 }
 
 namespace grpc_core {
