@@ -46,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
@@ -854,8 +855,10 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
   }
 
   if (apply_settings_result.should_spawn_security_frame_loop) {
+    EventEngine::Endpoint* const endpoint =
+        endpoint_.GetEventEngineEndpoint().get();
     const SecurityFrameHandler::EndpointExtensionState state =
-        security_frame_handler_->Initialize(event_engine_);
+        security_frame_handler_->Initialize(endpoint, event_engine_);
     if (state.is_set) {
       SpawnInfallibleTransportParty("SecurityFrameLoop",
                                     UntilTransportClosed(SecurityFrameLoop()));
@@ -1202,9 +1205,11 @@ Http2ClientTransport::Http2ClientTransport(
           kIsClient, std::move(on_receive_settings))),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
+      http2_transport_stats_(channel_args),
       read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient,
                     GetMaxSecurityFrameSize(channel_args),
-                    GetPingOnRstStreamPercent(channel_args, kIsClient)),
+                    GetPingOnRstStreamPercent(channel_args, kIsClient),
+                    http2_transport_stats_),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),

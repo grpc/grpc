@@ -19,11 +19,15 @@
 #include <grpc/grpc.h>
 
 #include <memory>
+#include <optional>
+#include <string>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/xds/grpc/blackboard.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
@@ -738,6 +742,58 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
                   GetTestXdsHttpFilterFactory(),
                   "hcm+vhost+route+cw/blackboard{hcm+vhost+route+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route+cw"), "hcm+vhost+route+cw");
+}
+
+//
+// GetHeaderValue() tests
+//
+
+TEST(XdsRoutingGetHeaderValueTest, HostAndAuthorityUseAuthority) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer),
+            "authority");
+}
+
+TEST(XdsRoutingGetHeaderValueTest, HostOnlyUsesHost) {
+  grpc_metadata_batch md;
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), "host");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer), "host");
+}
+
+TEST(XdsRoutingGetHeaderValueTest, AuthorityOnlyUsesAuthority) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer),
+            "authority");
+}
+
+TEST(XdsRoutingGetHeaderValueTest, NeitherHostNorAuthority) {
+  grpc_metadata_batch md;
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), std::nullopt);
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer),
+            std::nullopt);
+}
+
+TEST(XdsRoutingGetHeaderValueTest, AuthorityHeaderNamesAreCaseInsensitive) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "Host", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "HOST", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":Authority", &buffer),
+            "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":AUTHORITY", &buffer),
+            "authority");
 }
 
 }  // namespace
