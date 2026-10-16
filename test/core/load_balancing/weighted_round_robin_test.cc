@@ -155,7 +155,14 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       // The subchannel will connect successfully.
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
       // Expect the initial CONNECTNG update with a picker that queues.
-      if (i == 0) ExpectConnectingUpdate(::testing::_, ::testing::_, location);
+      if (i == 0) {
+        ExpectConnectingUpdate(
+            absl::StrCat(
+                "weighted_round_robin: connecting to endpoints (num_children=",
+                addresses.size(),
+                " num_ready=0 num_connecting=1 num_transient_failure=0)"),
+            LoadBalancingPolicy::kDelayTypeConnecting, location);
+      }
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
     }
     return WaitForConnected(location);
@@ -1096,9 +1103,8 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
   // This causes WRR to report CONNECTING.
   subchannel1_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   ExpectConnectingUpdate(
-      LoadBalancingPolicy::kDelayTypeConnecting,
-      ::testing::HasSubstr("num_children=3 num_ready=0 num_connecting=1 "
-                           "num_transient_failure=0"));
+      "weighted_round_robin: connecting to endpoints (num_children=3 "
+      "num_ready=0 num_connecting=1 num_transient_failure=0)");
   // In the second endpoint, the first subchannel reports CONNECTING.
   subchannel2_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // In the third endpoint, the first subchannel reports CONNECTING.

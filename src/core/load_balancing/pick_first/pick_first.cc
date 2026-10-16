@@ -645,11 +645,10 @@ void PickFirst::GoIdle(absl::string_view reason) {
   // Drop the current subchannel list, if any.
   subchannel_list_.reset();
   // Enter idle.
-  UpdateState(
-      GRPC_CHANNEL_IDLE, absl::OkStatus(),
-      MakeRefCounted<QueuePicker>(
-          Ref(DEBUG_LOCATION, "QueuePicker"),
-          PickResult::Queue(kDelayTypeConnecting, std::string(reason))));
+  UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+              MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"),
+                                          kDelayTypeConnecting,
+                                          std::string(reason)));
 }
 
 //
@@ -679,11 +678,9 @@ void PickFirst::HealthWatcher::OnConnectivityStateChange(
       policy_->channel_control_helper()->UpdateState(
           new_state, absl::OkStatus(),
           MakeRefCounted<QueuePicker>(
-              policy_->Ref(),
-              PickResult::Queue(
-                  kDelayTypeConnecting,
-                  absl::StrCat("pick_first: waiting for health check on ",
-                               policy_->selected_->subchannel()->address()))));
+              policy_->Ref(), kDelayTypeConnecting,
+              absl::StrCat("pick_first: waiting for health check on ",
+                           policy_->selected_->subchannel()->address())));
       break;
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
       std::string message = absl::StrCat("health watch: ", status.message());
@@ -830,9 +827,8 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
                      status.ToString(), "); attempting to reconnect");
     pick_first_->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-        MakeRefCounted<QueuePicker>(
-            nullptr,
-            PickResult::Queue(kDelayTypeConnecting, std::move(reason))));
+        MakeRefCounted<QueuePicker>(nullptr, kDelayTypeConnecting,
+                                    std::move(reason)));
     pick_first_->AttemptToConnectUsingLatestUpdateArgsLocked();
     // Unset the selected subchannel, so that when we see the initial
     // connectivity state notifications for the subchannels in the new
@@ -1013,13 +1009,12 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
             subchannel_state_->subchannel()->address(), " (subchannel ",
             index_ + 1, " of ", subchannel_list_->size(), ")");
         if (!subchannel_list_->last_failure_.ok()) {
-          absl::StrAppend(&reason, "; previous attempt failed: ",
+          absl::StrAppend(&reason, "; last attempt failure: ",
                           subchannel_list_->last_failure_.ToString());
         }
         p->UpdateState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                        MakeRefCounted<QueuePicker>(
-                           nullptr, PickResult::Queue(kDelayTypeConnecting,
-                                                      std::move(reason))));
+                           nullptr, kDelayTypeConnecting, std::move(reason)));
       }
       break;
     default:

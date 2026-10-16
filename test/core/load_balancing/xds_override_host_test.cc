@@ -311,8 +311,11 @@ TEST_F(XdsOverrideHostTest,
   picker =
       WaitForRoundRobinListChange(kAddresses, {kAddresses[0], kAddresses[2]});
   // Picks with the override will be queued.
-  ExpectPickQueued(picker.get(), {address1_attribute}, {}, "connecting",
-                   ::testing::HasSubstr("was IDLE, connection requested"));
+  ExpectPickQueued(picker.get(),
+                   "xds_override_host: subchannel for 127.0.0.1:442 was IDLE, "
+                   "connection requested",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address1_attribute});
   // The subchannel starts trying to reconnect.
   LOG(INFO) << "### subchannel 1 reporting CONNECTING";
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -320,8 +323,10 @@ TEST_F(XdsOverrideHostTest,
   ASSERT_NE(picker, nullptr);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // Picks with the override will still be queued.
-  ExpectPickQueued(picker.get(), {address1_attribute}, {}, "connecting",
-                   ::testing::HasSubstr("to connect"));
+  ExpectPickQueued(
+      picker.get(),
+      "xds_override_host: waiting for subchannel 127.0.0.1:442 to connect",
+      LoadBalancingPolicy::kDelayTypeConnecting, {address1_attribute});
   // The connection attempt fails.
   LOG(INFO) << "### subchannel 1 reporting TRANSIENT_FAILURE";
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
@@ -400,8 +405,11 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   LOG(INFO) << "### closing connection to DRAINING host";
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
   picker = ExpectState(GRPC_CHANNEL_READY);
-  ExpectPickQueued(picker.get(), {address1_attribute}, {}, "connecting",
-                   ::testing::HasSubstr("was IDLE, connection requested"));
+  ExpectPickQueued(picker.get(),
+                   "xds_override_host: subchannel for 127.0.0.1:442 was IDLE, "
+                   "connection requested",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address1_attribute});
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // The subchannel should have been asked to reconnect as a result of the
   // queued pick above.  It will therefore transition into state CONNECTING.
@@ -414,8 +422,10 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   ExpectQueueEmpty();
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_READY);
-  ExpectPickQueued(picker.get(), {address1_attribute}, {}, "connecting",
-                   ::testing::HasSubstr("to connect"));
+  ExpectPickQueued(
+      picker.get(),
+      "xds_override_host: waiting for subchannel 127.0.0.1:442 to connect",
+      LoadBalancingPolicy::kDelayTypeConnecting, {address1_attribute});
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // The subchannel now becomes connected again.
   // Now picks with this override host can be completed again.
@@ -576,8 +586,10 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
   // A pick with an override pointing to the draining endpoint should
   // queue the pick and trigger subchannel creation.
   auto* address1_attribute = MakeOverrideHostAttribute(kAddresses[1]);
-  ExpectPickQueued(picker.get(), {address1_attribute}, {}, "connecting",
-                   ::testing::HasSubstr("creating subchannel for"));
+  ExpectPickQueued(picker.get(),
+                   "xds_override_host: creating subchannel for 127.0.0.1:442",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address1_attribute});
   WaitForWorkSerializerToFlush();
   subchannel2 = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel2, nullptr);
@@ -589,8 +601,11 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // Trying the pick again with the new picker will trigger a connection
   // attempt on the new subchannel.
-  ExpectPickQueued(picker.get(), {address1_attribute}, {}, "connecting",
-                   ::testing::HasSubstr("was IDLE, connection requested"));
+  ExpectPickQueued(picker.get(),
+                   "xds_override_host: subchannel for 127.0.0.1:442 was IDLE, "
+                   "connection requested",
+                   LoadBalancingPolicy::kDelayTypeConnecting,
+                   {address1_attribute});
   WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -601,8 +616,10 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // Trying the pick with override again should queue, because the
   // connection attempt is still pending.
-  ExpectPickQueued(picker.get(), {address1_attribute}, {}, "connecting",
-                   ::testing::HasSubstr("to connect"));
+  ExpectPickQueued(
+      picker.get(),
+      "xds_override_host: waiting for subchannel 127.0.0.1:442 to connect",
+      LoadBalancingPolicy::kDelayTypeConnecting, {address1_attribute});
   // Connection attempt succeeds.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
   // Subchannel state change will trigger returning a new picker.

@@ -241,8 +241,8 @@ TEST_F(OutlierDetectionTest, Basic) {
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate(
-      LoadBalancingPolicy::kDelayTypeConnecting,
-      ::testing::HasSubstr("round_robin: connecting to endpoints"));
+      "round_robin: connecting to endpoints (num_children=1 num_ready=0 "
+      "num_connecting=1 num_transient_failure=0)");
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
@@ -496,8 +496,8 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(LoadBalancingPolicy::kDelayTypeConnecting,
-                         ::testing::HasSubstr("pick_first: connecting to"));
+  ExpectConnectingUpdate(
+      "pick_first: connecting to ipv4:127.0.0.1:440 (subchannel 1 of 3)");
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
