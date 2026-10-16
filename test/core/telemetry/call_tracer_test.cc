@@ -99,15 +99,15 @@ TEST_F(CallTracerTest, RecordDelayTest) {
   FakeClientCallTracer client_call_tracer(&annotation_logger_);
   SetClientCallTracer(arena_.get(), {&client_call_tracer});
   auto* call_tracer = arena_->GetContext<ClientCallTracer>();
-  call_tracer->RecordDelayStart("resolving", "initial dns lookup");
-  call_tracer->RecordDelayReasonChanged("dns retry");
-  call_tracer->RecordDelayEnd();
+  call_tracer->RecordDelay("resolving", "initial dns lookup");
+  call_tracer->RecordDelay("resolving", "dns retry");
+  call_tracer->MaybeRecordDelayEnd();
   auto* attempt_tracer_impl =
       call_tracer->StartNewAttempt(true /* is_transparent_retry */);
   CallAttemptTracer attempt_tracer(attempt_tracer_impl);
-  attempt_tracer.RecordDelayStart("connecting", "subchannel 1");
-  attempt_tracer.RecordDelayReasonChanged("subchannel 2");
-  attempt_tracer.RecordDelayEnd();
+  attempt_tracer.RecordDelay("connecting", "subchannel 1");
+  attempt_tracer.RecordDelay("connecting", "subchannel 2");
+  attempt_tracer.MaybeRecordDelayEnd();
   attempt_tracer.RecordEnd();
   EXPECT_EQ(
       annotation_logger_,
@@ -128,15 +128,15 @@ TEST_F(CallTracerTest, RecordDelayOnMultipleTracersTest) {
                       std::vector<ClientCallTracerInterface*>{
                           &client_call_tracer1, &client_call_tracer2});
   auto* call_tracer = arena_->GetContext<ClientCallTracer>();
-  call_tracer->RecordDelayStart("resolving", "initial dns lookup");
-  call_tracer->RecordDelayReasonChanged("dns retry");
-  call_tracer->RecordDelayEnd();
+  call_tracer->RecordDelay("resolving", "initial dns lookup");
+  call_tracer->RecordDelay("resolving", "dns retry");
+  call_tracer->MaybeRecordDelayEnd();
   auto* attempt_tracer_impl =
       call_tracer->StartNewAttempt(true /* is_transparent_retry */);
   CallAttemptTracer attempt_tracer(attempt_tracer_impl);
-  attempt_tracer.RecordDelayStart("connecting", "subchannel 1");
-  attempt_tracer.RecordDelayReasonChanged("subchannel 2");
-  attempt_tracer.RecordDelayEnd();
+  attempt_tracer.RecordDelay("connecting", "subchannel 1");
+  attempt_tracer.RecordDelay("connecting", "subchannel 2");
+  attempt_tracer.MaybeRecordDelayEnd();
   attempt_tracer.RecordEnd();
   EXPECT_EQ(
       annotation_logger_,

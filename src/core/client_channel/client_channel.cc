@@ -962,9 +962,9 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
         return Map(
             // Wait for the resolver result.
             CheckDelayed(self->resolver_data_for_calls_.NextWhen(
-                [wait_for_ready, delay_tracker = CallDelayTracker()](
+                [wait_for_ready](
                     const absl::StatusOr<RefCountedPtr<ConfigSelector>>
-                        config_selector) mutable {
+                        config_selector) {
                   bool got_result = false;
                   // If the resolver reports an error but the call is
                   // wait_for_ready, keep waiting for the next result
@@ -976,17 +976,19 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
                     got_result = *config_selector != nullptr;
                   }
                   auto* tracer = MaybeGetContext<ClientCallTracer>();
-                  if (!got_result) {
-                    delay_tracker.RecordDelay(
-                        tracer, kDelayTypeResolving, [&config_selector]() {
-                          return config_selector.ok()
-                                     ? std::string(
-                                           "waiting for initial resolver "
-                                           "result")
-                                     : config_selector.status().ToString();
-                        });
-                  } else if (config_selector.ok()) {
-                    delay_tracker.MaybeRecordDelayEnd(tracer);
+                  if (tracer != nullptr) {
+                    if (!got_result) {
+                      tracer->RecordDelay(
+                          kDelayTypeResolving, [&config_selector]() {
+                            return config_selector.ok()
+                                       ? std::string(
+                                             "waiting for initial resolver "
+                                             "result")
+                                       : config_selector.status().ToString();
+                          });
+                    } else if (config_selector.ok()) {
+                      tracer->MaybeRecordDelayEnd();
+                    }
                   }
                   return got_result;
                 })),
