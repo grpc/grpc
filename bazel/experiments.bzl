@@ -192,6 +192,7 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
+                "map_host_header_to_authority",
                 "ph2_client",
                 "ph2_client_server",
                 "ph2_server",
