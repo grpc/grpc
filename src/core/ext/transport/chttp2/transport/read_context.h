@@ -313,7 +313,7 @@ class ReadContext {
                              const Http2FrameHeader& current_frame_header,
                              const uint32_t last_stream_id,
                              const bool is_first_settings_processed) {
-    GRPC_HTTP2_COMMON_DLOG << "ReadContext::ValidateFrameHeader "
+    GRPC_HTTP2_COMMON_DLOG << "ReadContext::ValidateHeader "
                            << current_frame_header.ToString();
     return ValidateFrameHeader(
         /*max_frame_size_setting=*/max_frame_size_setting,

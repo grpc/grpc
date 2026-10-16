@@ -90,7 +90,7 @@ const std::vector<uint8_t> kGrpcStatusCancelledOnly = {
 class Http2ServerTransportTest : public Http2TransportTest {
  public:
   Http2ServerTransportTest() = default;
-  // Http2TransportTest is not copyable or movable.
+
   Http2ServerTransportTest(const Http2ServerTransportTest&) = delete;
   Http2ServerTransportTest& operator=(const Http2ServerTransportTest&) = delete;
   Http2ServerTransportTest(Http2ServerTransportTest&&) = delete;
