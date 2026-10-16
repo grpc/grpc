@@ -19,7 +19,7 @@ import threading
 from cpython.version cimport PY_MINOR_VERSION
 
 TYPE_METADATA_STRING = "Tuple[Tuple[str, Union[str, bytes]]...]"
-_LOOP_CLOSED_POLL_INTERVAL_S = 1.0
+_LOOP_CLOSED_POLL_INTERVAL_S = 0.1
 
 
 cdef grpc_status_code get_status_code(object code) except *:
