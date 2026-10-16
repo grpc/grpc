@@ -1127,7 +1127,6 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
         "absl/status",
-        "absl/strings",
         "absl/time",
         "gtest",
     ],
