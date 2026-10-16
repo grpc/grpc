@@ -55,6 +55,7 @@ grpc_cc_library(
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_util",
     ],
@@ -64,6 +65,15 @@ grpc_cc_test(
     name = "otel_plugin_test",
     srcs = [
         "otel_plugin_test.cc",
+    ],
+    data = [
+        "//src/core/tsi/test_creds:badclient.key",
+        "//src/core/tsi/test_creds:badclient.pem",
+        "//src/core/tsi/test_creds:badserver.key",
+        "//src/core/tsi/test_creds:badserver.pem",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
         "gtest",

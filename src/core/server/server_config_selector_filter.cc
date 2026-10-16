@@ -81,7 +81,7 @@ class LegacyServerConfigSelectorFilter final
   };
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return config_selector_.value();
   }
 
@@ -94,7 +94,7 @@ class LegacyServerConfigSelectorFilter final
         : filter_(filter) {}
     void OnServerConfigSelectorUpdate(
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-      MutexLock lock(&filter_->mu_);
+      MutexLock lock(filter_->mu_);
       filter_->config_selector_ = std::move(update);
     }
 
@@ -128,7 +128,7 @@ LegacyServerConfigSelectorFilter::LegacyServerConfigSelectorFilter(
   GRPC_CHECK(server_config_selector_provider_ != nullptr);
   watcher_ = std::make_shared<ServerConfigSelectorWatcher>(Ref());
   auto config_selector = server_config_selector_provider_->Watch(watcher_);
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   // It's possible for the watcher to have already updated config_selector_
   if (!config_selector_.has_value()) {
     config_selector_ = std::move(config_selector);
@@ -213,7 +213,12 @@ ServerConfigSelectorInterceptor::Create(const ChannelArgs& args,
 ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
     const ChannelArgs& args, ChannelFilter::Args /*filter_args*/,
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
-    : args_(args),
+    : V3InterceptorToV2Bridge<ServerConfigSelectorInterceptor>(args),
+      args_(
+          // Tell filters that they're running in a v3 stack and running
+          // on the server side.
+          args.Set(GRPC_ARG_USE_V3_STACK, 1)
+              .Set(GRPC_ARG_IS_SERVER_FILTER_STACK, 1)),
       server_config_selector_provider_(
           std::move(server_config_selector_provider)),
       config_selector_(nullptr) {
@@ -329,14 +334,6 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                       return absl::UnavailableError(
                           StatusToString(call_config.status()));
                     }
-                    // TODO(roth): Remove this once we switch to per-route
-                    // filter chains.
-                    auto* service_config_call_data =
-                        GetContext<Arena>()->New<ServiceConfigCallData>(
-                            GetContext<Arena>());
-                    service_config_call_data->SetServiceConfig(
-                        std::move(call_config->service_config),
-                        call_config->method_configs);
                     // Get filter chain.
                     if (!call_config->filter_chain.ok()) {
                       GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)

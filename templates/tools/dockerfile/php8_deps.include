@@ -1,0 +1,4 @@
+#=================
+# PHP8 dependencies
+
+RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean

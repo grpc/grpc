@@ -152,22 +152,22 @@ $Python314x64Config = @{
 Install-Python @Python314x64Config
 
 # Python 3.15
-# python.org only publishes SHA-256 (not MD5) for 3.15.0b2 installers,
+# python.org only publishes SHA-256 (not MD5) for 3.15.0rc1 installers,
 # so these configs override the default hash algorithm.
 $Python315x86Config = @{
     PythonVersion = "3.15.0"
-    PythonInstaller = "python-3.15.0b2"
+    PythonInstaller = "python-3.15.0rc1"
     PythonInstallPath = "C:\Python315_32bit"
-    PythonInstallerHash = "308d6e8c8c7beb034f61602373f5336e0854c018d4f8b3aff856d9127ac879b5"
+    PythonInstallerHash = "faddd74cbcfd5b7d8a66fafb49477ad45841fd61c20ff0664e702b0e0b02fa03"
     PythonInstallerHashAlgorithm = "SHA256"
 }
 Install-Python @Python315x86Config
 
 $Python315x64Config = @{
     PythonVersion = "3.15.0"
-    PythonInstaller = "python-3.15.0b2-amd64"
+    PythonInstaller = "python-3.15.0rc1-amd64"
     PythonInstallPath = "C:\Python315"
-    PythonInstallerHash = "f73038ee13ab1b131e6b2082a0f5c94e2a6d0aa834c452f2e1cefb90eba92c89"
+    PythonInstallerHash = "be7efa348927146eec51e3f8fd8381a92882ff6e4275c7a2fe003624719e6e5e"
     PythonInstallerHashAlgorithm = "SHA256"
 }
 Install-Python @Python315x64Config

@@ -80,7 +80,7 @@ struct tsi_handshaker_vtable {
                      tsi_handshaker_result** handshaker_result,
                      tsi_handshaker_on_next_done_cb cb, void* user_data,
                      std::string* error);
-  void (*shutdown)(tsi_handshaker* self);
+  void (*shutdown)(tsi_handshaker* self, bool peer_closed);
 };
 struct tsi_handshaker {
   tsi_handshaker() = default;

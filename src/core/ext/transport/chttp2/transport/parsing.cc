@@ -53,7 +53,6 @@
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -430,6 +429,13 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
         t->incoming_frame_type));
   }
   t->is_first_frame = false;
+
+  if (t->incoming_frame_size > t->settings.acked().max_frame_size()) {
+    return GRPC_ERROR_CREATE(absl::StrFormat(
+        "Frame size %d is larger than max frame size %d",
+        t->incoming_frame_size, t->settings.acked().max_frame_size()));
+  }
+
   if (t->expect_continuation_stream_id != 0) {
     if (t->incoming_frame_type != GRPC_CHTTP2_FRAME_CONTINUATION) {
       return GRPC_ERROR_CREATE(
@@ -442,8 +448,7 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
           "grpc_chttp2_stream %08x",
           t->expect_continuation_stream_id, t->incoming_stream_id));
     }
-    if (GPR_UNLIKELY(grpc_core::IsOptimization02Enabled() &&
-                     t->incoming_frame_size == 0u &&
+    if (GPR_UNLIKELY(t->incoming_frame_size == 0u &&
                      (t->incoming_frame_flags &
                       GRPC_CHTTP2_DATA_FLAG_END_HEADERS) == 0u)) {
       t->noop_continuation_frames++;
@@ -536,7 +541,8 @@ static grpc_error_handle init_header_skip_frame_parser(
       t->settings.acked().max_header_list_size(),
       hpack_boundary_type(t, is_eoh), priority_type,
       hpack_parser_log_info(t, HPackParser::LogInfo::kDontKnow),
-      t->mitigation_engine.get());
+      t->mitigation_engine.get(), t->peer_string.as_string_view(),
+      t->auth_context);
   return absl::OkStatus();
 }
 
@@ -576,7 +582,7 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   grpc_chttp2_stream* s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   absl::Status status = absl::OkStatus();
-  if (!grpc_core::IsOptimization01Enabled() || t->incoming_frame_size > 0u) {
+  if (t->incoming_frame_size > 0u) {
     // Received data frame with size 0 can happen when the peer wants to send an
     // END_STREAM. It is a legitimate data frame.
     grpc_core::chttp2::FlowControlAction action;
@@ -592,8 +598,7 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
       action = upd.MakeAction();
     }
     grpc_chttp2_act_on_flowctl_action(action, t, s);
-  } else if (grpc_core::IsOptimization02Enabled() &&
-             t->incoming_frame_size == 0u &&
+  } else if (t->incoming_frame_size == 0u &&
              (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) ==
                  0u) {
     t->noop_data_frames++;
@@ -623,8 +628,7 @@ error_handler:
     return absl::OkStatus();
   } else if (s != nullptr) {
     // handle stream errors by closing the stream
-    grpc_chttp2_mark_stream_closed(t, s, true, false,
-                                   absl_status_to_grpc_error(status));
+    grpc_chttp2_mark_stream_closed(t, s, true, false, status);
     grpc_error_handle rst_error = grpc_chttp2_add_rst_stream_to_next_write(
         t, t->incoming_stream_id,
         static_cast<uint32_t>(Http2ErrorCode::kProtocolError),
@@ -632,7 +636,7 @@ error_handler:
     if (GPR_UNLIKELY(!rst_error.ok())) return rst_error;
     return init_non_header_skip_frame_parser(t);
   } else {
-    return absl_status_to_grpc_error(status);
+    return status;
   }
 }
 
@@ -887,7 +891,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                              t->settings.acked().max_header_list_size(),
                              hpack_boundary_type(t, is_eoh), priority_type,
                              hpack_parser_log_info(t, frame_type),
-                             t->mitigation_engine.get());
+                             t->mitigation_engine.get(),
+                             t->peer_string.as_string_view(), t->auth_context);
   return absl::OkStatus();
 }
 

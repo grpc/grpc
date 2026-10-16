@@ -27,6 +27,15 @@
 
 #include "absl/strings/string_view.h"
 
+// --- Auth context property names for connection/TLS attributes. ---
+
+// The server name requested by the client via the TLS SNI extension. Note that
+// this is the SNI requested by the client regardless of whether the auth
+// context is on the client side or the server side.
+#define GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME "ssl_requested_server_name"
+// The TLS version negotiated for the connection.
+#define GRPC_SSL_TLS_VERSION_PROPERTY_NAME "ssl_tls_version"
+
 namespace grpc_core {
 
 // Matches \a subject_alternative_name with \a matcher. Returns true if there

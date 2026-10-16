@@ -30,21 +30,6 @@
 
 using grpc_core::http2::Http2ErrorCode;
 
-static grpc_error_handle recursively_find_error_with_field(
-    grpc_error_handle error, grpc_core::StatusIntProperty which) {
-  intptr_t unused;
-  // If the error itself has a status code, return it.
-  if (grpc_error_get_int(error, which, &unused)) {
-    return error;
-  }
-  std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
-  for (const absl::Status& child : children) {
-    grpc_error_handle result = recursively_find_error_with_field(child, which);
-    if (!result.ok()) return result;
-  }
-  return absl::OkStatus();
-}
-
 namespace {
 
 std::optional<Http2ErrorCode> GetHttp2Error(const absl::Status& status) {
@@ -94,16 +79,4 @@ void grpc_error_get_status(grpc_error_handle error,
                                : Http2ErrorCode::kInternalError;
     }
   }
-}
-
-absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
-  return error;
-}
-
-grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
-  return status;
-}
-
-bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
-  return error.code() != absl::StatusCode::kUnknown;
 }

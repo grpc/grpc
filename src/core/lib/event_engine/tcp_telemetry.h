@@ -29,8 +29,8 @@ class TcpTelemetryDomain final : public InstrumentDomain<TcpTelemetryDomain> {
                                 "network.remote.address", "network.remote.port",
                                 "is_control_endpoint", "is_client");
 
-  static HistogramHandle<ExponentialHistogramShape> kMinRtt;
-  static HistogramHandle<ExponentialHistogramShape> kDeliveryRate;
+  static HistogramHandle<ExponentialInt64HistogramShape> kMinRtt;
+  static HistogramHandle<ExponentialInt64HistogramShape> kDeliveryRate;
   static CounterHandle kPacketsSent;
   static CounterHandle kPacketsRetransmitted;
   static CounterHandle kPacketsSpuriousRetransmitted;
@@ -39,16 +39,16 @@ class TcpTelemetryDomain final : public InstrumentDomain<TcpTelemetryDomain> {
   static CounterHandle kBytesRetransmitted;
   static UpDownCounterHandle kConnectionCount;
   static CounterHandle kSyscallWrites;
-  static HistogramHandle<ExponentialHistogramShape> kWriteSize;
+  static HistogramHandle<ExponentialInt64HistogramShape> kWriteSize;
   static CounterHandle kSyscallReads;
-  static HistogramHandle<ExponentialHistogramShape> kReadSize;
-  static HistogramHandle<ExponentialHistogramShape> kSenderLatency;
-  static HistogramHandle<ExponentialHistogramShape> kTransferLatency1k;
-  static HistogramHandle<ExponentialHistogramShape> kTransferLatency8k;
-  static HistogramHandle<ExponentialHistogramShape> kTransferLatency64k;
-  static HistogramHandle<ExponentialHistogramShape> kTransferLatency256k;
-  static HistogramHandle<ExponentialHistogramShape> kTransferLatency2m;
-  static HistogramHandle<ExponentialHistogramShape> kTransferLatency8m;
+  static HistogramHandle<ExponentialInt64HistogramShape> kReadSize;
+  static HistogramHandle<ExponentialInt64HistogramShape> kSenderLatency;
+  static HistogramHandle<ExponentialInt64HistogramShape> kTransferLatency1k;
+  static HistogramHandle<ExponentialInt64HistogramShape> kTransferLatency8k;
+  static HistogramHandle<ExponentialInt64HistogramShape> kTransferLatency64k;
+  static HistogramHandle<ExponentialInt64HistogramShape> kTransferLatency256k;
+  static HistogramHandle<ExponentialInt64HistogramShape> kTransferLatency2m;
+  static HistogramHandle<ExponentialInt64HistogramShape> kTransferLatency8m;
 };
 
 };  // namespace grpc_core

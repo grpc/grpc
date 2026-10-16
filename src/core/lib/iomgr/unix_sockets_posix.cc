@@ -59,8 +59,7 @@ grpc_resolve_unix_domain_address(absl::string_view name) {
   if (error.ok()) {
     return std::vector<grpc_resolved_address>({addr});
   }
-  auto result = grpc_error_to_absl_status(error);
-  return result;
+  return error;
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
@@ -71,8 +70,7 @@ grpc_resolve_unix_abstract_domain_address(const absl::string_view name) {
   if (error.ok()) {
     return std::vector<grpc_resolved_address>({addr});
   }
-  auto result = grpc_error_to_absl_status(error);
-  return result;
+  return error;
 }
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {

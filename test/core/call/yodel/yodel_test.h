@@ -319,6 +319,26 @@ class YodelTest {
 
   void TickUntilTrue(absl::FunctionRef<bool()> poll);
 
+  template <typename T>
+  std::optional<T> TryTickUntil(
+      grpc_event_engine::experimental::EventEngine::Duration timeout,
+      absl::FunctionRef<Poll<T>()> poll) {
+    std::optional<T> result;
+    TryTickUntilTrue(timeout, [poll, &result]() {
+      auto r = poll();
+      if (auto* p = r.value_if_ready()) {
+        result = std::move(*p);
+        return true;
+      }
+      return false;
+    });
+    return result;
+  }
+
+  bool TryTickUntilTrue(
+      grpc_event_engine::experimental::EventEngine::Duration timeout,
+      absl::FunctionRef<bool()> poll);
+
   const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
   event_engine() {
     return state_->event_engine;

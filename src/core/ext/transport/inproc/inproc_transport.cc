@@ -100,7 +100,7 @@ class InprocServerTransport final : public ServerTransport {
   void Disconnect(absl::Status error) {
     RefCountedPtr<ConnectedState> connected_state;
     {
-      MutexLock lock(&connected_state_mu_);
+      MutexLock lock(connected_state_mu_);
       connected_state = std::move(connected_state_);
     }
     if (connected_state == nullptr) return;
@@ -136,7 +136,7 @@ class InprocServerTransport final : public ServerTransport {
     }
 
     void SetReady() {
-      MutexLock lock(&state_tracker_mu_);
+      MutexLock lock(state_tracker_mu_);
       state_tracker_.SetState(GRPC_CHANNEL_READY, absl::OkStatus(),
                               "accept function set");
     }
@@ -147,12 +147,12 @@ class InprocServerTransport final : public ServerTransport {
 
     void AddWatcher(grpc_connectivity_state initial_state,
                     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
-      MutexLock lock(&state_tracker_mu_);
+      MutexLock lock(state_tracker_mu_);
       state_tracker_.AddWatcher(initial_state, std::move(watcher));
     }
 
     void RemoveWatcher(ConnectivityStateWatcherInterface* watcher) {
-      MutexLock lock(&state_tracker_mu_);
+      MutexLock lock(state_tracker_mu_);
       state_tracker_.RemoveWatcher(watcher);
     }
 
@@ -164,7 +164,7 @@ class InprocServerTransport final : public ServerTransport {
   };
 
   RefCountedPtr<ConnectedState> connected_state() {
-    MutexLock lock(&connected_state_mu_);
+    MutexLock lock(connected_state_mu_);
     return connected_state_;
   }
 
@@ -252,11 +252,7 @@ InprocServerTransport::MakeClientTransport() {
 RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
   LOG(ERROR) << why << ": " << error.message();
-  intptr_t integer;
-  grpc_status_code status = GRPC_STATUS_INTERNAL;
-  if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {
-    status = static_cast<grpc_status_code>(integer);
-  }
+  grpc_status_code status = static_cast<grpc_status_code>(error.code());
   return RefCountedPtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
       nullptr, status, std::string(why).c_str())));
 }

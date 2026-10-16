@@ -398,6 +398,8 @@ inline constexpr absl::string_view kSettingsTimeout =
     "timeout. Connection will be closed";
 inline constexpr absl::string_view kLastStreamClosed =
     "Closing last stream and cannot create any more streams.";
+inline constexpr absl::string_view kReceivedStreamAfterGoaway =
+    "Received new stream after GOAWAY was received.";
 inline constexpr absl::string_view kFirstSettingsFrameClient =
     "RFC9113: The server connection preface consists of a potentially empty "
     "SETTINGS frame that MUST be the first frame the server sends in the "
@@ -413,6 +415,8 @@ inline constexpr absl::string_view kIdleStreamError =
     "Stream Idle : Receiving any frame other than HEADERS or PRIORITY on a "
     "stream in this state MUST be treated as a connection error of type "
     "PROTOCOL_ERROR.";
+inline constexpr absl::string_view kMaxConcurrentStreamsExceeded =
+    "Exceeded MAX_CONCURRENT_STREAMS limit.";
 
 inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;
@@ -443,6 +447,13 @@ inline constexpr absl::string_view kFailedToEnqueueStream =
     "gRPC Transport Error : Failed to enqueue stream to writable stream list";
 inline constexpr absl::string_view kStreamCreationFailed =
     "gRPC Transport Error : Stream creation failed";
+inline constexpr absl::string_view kTransportUnderHighMemoryPressure =
+    "gRPC Stream Error : Server is under memory pressure. Stream rejected.";
+inline constexpr absl::string_view kRejectStreamBeforeSettingsAck =
+    "gRPC Stream Error : Rejecting stream before settings have been "
+    "acknowledged.";
+inline constexpr absl::string_view kRejectStreamOverload =
+    "Rejecting stream due to overload protection.";
 
 inline constexpr uint32_t kDefaultMaxPendingInducedFrames = 10000u;
 

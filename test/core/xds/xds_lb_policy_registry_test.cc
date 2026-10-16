@@ -160,40 +160,11 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
             "\"blackoutPeriod\":\"2.000000000s\","
             "\"enableOobLoadReport\":true,"
             "\"errorUtilizationPenalty\":5,"
+            "\"metricNamesForComputingUtilization\":[\"cpu_usage\"],"
             "\"oobReportingPeriod\":\"1.000000000s\","
             "\"weightExpirationPeriod\":\"3.000000000s\","
             "\"weightUpdatePeriod\":\"4.000000000s\""
             "}}");
-}
-
-TEST(ClientSideWeightedRoundRobinTest, WrrCustomMetricsEnabled) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  ClientSideWeightedRoundRobin wrr;
-  wrr.add_metric_names_for_computing_utilization("cpu_usage");
-  LoadBalancingPolicyProto policy;
-  policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(wrr);
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result,
-            "{\"weighted_round_robin\":{"
-            "\"metricNamesForComputingUtilization\":[\"cpu_usage\"]"
-            "}}");
-}
-
-TEST(ClientSideWeightedRoundRobinTest, WrrCustomMetricsDisabled) {
-  ClientSideWeightedRoundRobin wrr;
-  wrr.add_metric_names_for_computing_utilization("cpu_usage");
-  LoadBalancingPolicyProto policy;
-  policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(wrr);
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result, "{\"weighted_round_robin\":{}}");
 }
 
 TEST(ClientSideWeightedRoundRobinTest, InvalidValues) {

@@ -46,7 +46,7 @@ GrpcXdsServerTarget ParseXdsGrpcService(
                                /*call_creds_configs=*/{});
   }
   // timeout
-  Duration timeout = Duration::Zero();
+  Duration timeout = Duration::Infinity();
   if (auto* timeout_proto =
           envoy_config_core_v3_GrpcService_timeout(grpc_service);
       timeout_proto != nullptr) {
@@ -58,15 +58,17 @@ GrpcXdsServerTarget ParseXdsGrpcService(
   }
   // initial_metadata
   std::vector<std::pair<std::string, std::string>> initial_metadata;
-  size_t initial_metadata_size;
-  auto* initial_metadata_proto =
-      envoy_config_core_v3_GrpcService_initial_metadata(grpc_service,
-                                                        &initial_metadata_size);
-  for (size_t i = 0; i < initial_metadata_size; ++i) {
-    ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".initial_metadata[", i, "]"));
-    initial_metadata.push_back(
-        ParseXdsHeader(initial_metadata_proto[i], errors));
+  if (DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
+    size_t initial_metadata_size;
+    auto* initial_metadata_proto =
+        envoy_config_core_v3_GrpcService_initial_metadata(
+            grpc_service, &initial_metadata_size);
+    for (size_t i = 0; i < initial_metadata_size; ++i) {
+      ValidationErrors::ScopedField field(
+          errors, absl::StrCat(".initial_metadata[", i, "]"));
+      initial_metadata.push_back(
+          ParseXdsHeader(initial_metadata_proto[i], errors));
+    }
   }
   // google_grpc
   ValidationErrors::ScopedField field(errors, ".google_grpc");

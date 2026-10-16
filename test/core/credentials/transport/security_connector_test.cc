@@ -28,6 +28,7 @@
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -602,6 +603,41 @@ TEST(SecurityConnectorTest, SubjectToAuthContext) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
+TEST(SecurityConnectorTest, RequestedServerNameToAuthContext) {
+  tsi_peer peer;
+  const char* expected_server_name = "server.example.com";
+  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY,
+                expected_server_name, &peer.properties[0]),
+            TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  ASSERT_NE(ctx, nullptr);
+  ASSERT_TRUE(check_property(ctx.get(),
+                             GRPC_SSL_REQUESTED_SERVER_NAME_PROPERTY_NAME,
+                             expected_server_name));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
+TEST(SecurityConnectorTest, TlsVersionToAuthContext) {
+  tsi_peer peer;
+  const char* expected_tls_version = "TLSv1.3";
+  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_SSL_TLS_VERSION_PEER_PROPERTY, expected_tls_version,
+                &peer.properties[0]),
+            TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  ASSERT_NE(ctx, nullptr);
+  ASSERT_TRUE(check_property(ctx.get(), GRPC_SSL_TLS_VERSION_PROPERTY_NAME,
+                             expected_tls_version));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
 static const char* roots_for_override_api = "roots for override api";
 
 static grpc_ssl_roots_override_result override_roots_success(
@@ -637,19 +673,6 @@ TEST(SecurityConnectorTest, IPv6AddressSan) {
   tsi_peer_destruct(&peer);
 }
 
-namespace grpc_core {
-namespace {
-
-class TestDefaultSslRootStore : public DefaultSslRootStore {
- public:
-  static grpc_slice ComputePemRootCertsForTesting() {
-    return ComputePemRootCerts();
-  }
-};
-
-}  // namespace
-}  // namespace grpc_core
-
 // TODO(unknown): Convert this test to C++ test when security_connector
 // implementation is converted to C++.
 TEST(SecurityConnectorTest, DefaultSslRoots) {
@@ -668,52 +691,33 @@ TEST(SecurityConnectorTest, DefaultSslRoots) {
   overrides.default_ssl_roots_file_path = "";
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_set_ssl_roots_override_callback(override_roots_success);
-  grpc_slice roots =
-      grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-  char* roots_contents = grpc_slice_to_c_string(roots);
-  grpc_slice_unref(roots);
-  ASSERT_STREQ(roots_contents, roots_for_override_api);
-  gpr_free(roots_contents);
+  grpc_core::Slice roots =
+      grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+  ASSERT_EQ(roots.as_string_view(), roots_for_override_api);
 
   // Now let's set the config: We should get the contents pointed value
   // instead
   overrides.default_ssl_roots_file_path = roots_env_var_file_path;
   grpc_core::ConfigVars::SetOverrides(overrides);
-  roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-  roots_contents = grpc_slice_to_c_string(roots);
-  grpc_slice_unref(roots);
-  ASSERT_STREQ(roots_contents, roots_for_env_var);
-  gpr_free(roots_contents);
+  roots = grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+  ASSERT_EQ(roots.as_string_view(), roots_for_env_var);
 
   // Now reset the config. We should fall back to the value overridden using
   // the api.
   overrides.default_ssl_roots_file_path = "";
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_set_ssl_roots_override_callback(override_roots_success);
-  roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-  roots_contents = grpc_slice_to_c_string(roots);
-  grpc_slice_unref(roots);
-  ASSERT_STREQ(roots_contents, roots_for_override_api);
-  gpr_free(roots_contents);
+  roots = grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+  ASSERT_EQ(roots.as_string_view(), roots_for_override_api);
 
   // Now set the config to prefer system roots over the callback. Only check
   // if we find system roots.
   auto system_roots = grpc_core::LoadSystemRootCerts();
-
-  if (!GRPC_SLICE_IS_EMPTY(system_roots)) {
-    auto system_roots_contents = grpc_slice_to_c_string(system_roots);
-    grpc_slice_unref(system_roots);
-
+  if (!system_roots.empty()) {
     overrides.use_system_roots_over_language_callback = true;
     grpc_core::ConfigVars::SetOverrides(overrides);
-    roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-    roots_contents = grpc_slice_to_c_string(roots);
-    grpc_slice_unref(roots);
-
-    ASSERT_STREQ(roots_contents, system_roots_contents);
-    gpr_free(roots_contents);
-    gpr_free(system_roots_contents);
-
+    roots = grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+    ASSERT_EQ(roots.as_string_view(), system_roots.as_string_view());
     overrides.use_system_roots_over_language_callback = false;
   }
 
@@ -722,10 +726,11 @@ TEST(SecurityConnectorTest, DefaultSslRoots) {
   overrides.not_use_system_ssl_roots = true;
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
-  roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
-  ASSERT_TRUE(GRPC_SLICE_IS_EMPTY(roots));
+  roots = grpc_core::DefaultSslRootStore::ComputePemRootCerts();
+  ASSERT_EQ(roots.as_string_view(), "");
+
   const tsi_ssl_root_certs_store* root_store =
-      grpc_core::TestDefaultSslRootStore::GetRootStore();
+      grpc_core::DefaultSslRootStore::GetRootStore();
   ASSERT_EQ(root_store, nullptr);
 
   // Cleanup.

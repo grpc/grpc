@@ -275,39 +275,6 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_->subchannel_.get()
         << " watcher=" << watcher_.get()
         << " state=" << ConnectivityStateName(state) << " status=" << status;
-    if (!IsSubchannelConnectionScalingEnabled()) {
-      auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
-      if (keepalive_throttling.has_value()) {
-        int new_keepalive_time_ms = -1;
-        if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                             &new_keepalive_time_ms)) {
-          Duration new_keepalive_time =
-              Duration::Milliseconds(new_keepalive_time_ms);
-          if (new_keepalive_time >
-              subchannel_wrapper_->client_channel_->keepalive_time_) {
-            subchannel_wrapper_->client_channel_->keepalive_time_ =
-                new_keepalive_time;
-            GRPC_TRACE_LOG(client_channel, INFO)
-                << "client_channel="
-                << subchannel_wrapper_->client_channel_.get()
-                << ": throttling keepalive time to "
-                << subchannel_wrapper_->client_channel_->keepalive_time_;
-            // Propagate the new keepalive time to all subchannels. This is so
-            // that new transports created by any subchannel (and not just the
-            // subchannel that received the GOAWAY), use the new keepalive time.
-            for (auto& [subchannel, _] :
-                 subchannel_wrapper_->client_channel_->subchannel_map_) {
-              subchannel->ThrottleKeepaliveTime(new_keepalive_time);
-            }
-          }
-        } else {
-          LOG(ERROR) << "client_channel="
-                     << subchannel_wrapper_->client_channel_.get()
-                     << ": Illegal keepalive throttling value "
-                     << std::string(keepalive_throttling.value());
-        }
-      }
-    }
     // Propagate status only in state TF.
     // We specifically want to avoid propagating the status for
     // state IDLE that the real subchannel gave us only for the
@@ -751,7 +718,7 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
                        Timestamp deadline)
       : channel_(std::move(channel)), cq_(cq), tag_(tag) {
     grpc_cq_begin_op(cq, tag);
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     // Start watch.  This inherits the ref from creation.
     auto watcher =
         MakeOrphanable<Watcher>(RefCountedPtr<ExternalStateWatcher>(this));
@@ -789,7 +756,7 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
   // on the first call.  Subsequent calls will be ignored, because
   // events can come in asynchronously.
   void MaybeStartCompletion(absl::Status status) {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (watcher_ == nullptr) return;  // Ignore subsequent notifications.
     // Cancel watch.
     channel_->RemoveConnectivityWatcher(watcher_);
@@ -851,7 +818,7 @@ void ClientChannel::RemoveConnectivityWatcher(
 }
 
 void ClientChannel::GetInfo(const grpc_channel_info* info) {
-  MutexLock lock(&info_mu_);
+  MutexLock lock(info_mu_);
   if (info->lb_policy_name != nullptr) {
     *info->lb_policy_name = gpr_strdup(info_lb_policy_name_.c_str());
   }
@@ -1378,7 +1345,7 @@ void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
   saved_config_selector_ = std::move(config_selector);
   // Update the data used by GetChannelInfo().
   {
-    MutexLock lock(&info_mu_);
+    MutexLock lock(info_mu_);
     info_lb_policy_name_ = std::move(lb_policy_name);
     info_service_config_json_ = std::move(service_config_json);
   }

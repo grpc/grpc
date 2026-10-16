@@ -1477,6 +1477,223 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterMultipleStatsPluginsPerServer) {
                                        ::testing::Eq(1)))))))));
 }
 
+TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kClientHandshakesInstrumentName})
+                     .add_optional_label("grpc.lb.locality")
+                     .add_optional_label("grpc.lb.backend_service")
+                     .set_client_credentials_options(
+                         MakeClientTlsOptions("src/core/tsi/test_creds/ca.pem"))
+                     .set_server_credentials_options(MakeServerTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/server1.key",
+                         "src/core/tsi/test_creds/server1.pem"))));
+  SendRPC();
+  const char* kMetricName = "grpc.client.tls.handshakes";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  const auto& point = data[kMetricName][0];
+  EXPECT_THAT(
+      point.point_data,
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<int64_t>(1))));
+  EXPECT_THAT(
+      point.attributes.GetAttributes(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair("grpc.tls.handshake.result",
+                          ::testing::VariantWith<std::string>("OK")),
+          ::testing::Pair("grpc.target", ::testing::VariantWith<std::string>(
+                                             canonical_server_address_)),
+          ::testing::Pair("grpc.tls.handshake.resumed",
+                          ::testing::VariantWith<std::string>("false")),
+          ::testing::Pair("grpc.lb.locality",
+                          ::testing::VariantWith<std::string>("")),
+          ::testing::Pair("grpc.lb.backend_service",
+                          ::testing::VariantWith<std::string>(""))));
+}
+
+TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kServerHandshakesInstrumentName})
+                     .set_client_credentials_options(
+                         MakeClientTlsOptions("src/core/tsi/test_creds/ca.pem"))
+                     .set_server_credentials_options(MakeServerTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/server1.key",
+                         "src/core/tsi/test_creds/server1.pem"))));
+  SendRPC();
+  const char* kMetricName = "grpc.server.tls.handshakes";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  const auto& point = data[kMetricName][0];
+  EXPECT_THAT(
+      point.point_data,
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<int64_t>(1))));
+  EXPECT_THAT(
+      point.attributes.GetAttributes(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair("grpc.tls.handshake.result",
+                          ::testing::VariantWith<std::string>("OK")),
+          ::testing::Pair("grpc.tls.handshake.resumed",
+                          ::testing::VariantWith<std::string>("false"))));
+}
+
+TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadServerCert) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kClientHandshakesInstrumentName})
+                     .add_optional_label("grpc.lb.locality")
+                     .add_optional_label("grpc.lb.backend_service")
+                     .set_client_credentials_options(
+                         MakeClientTlsOptions("src/core/tsi/test_creds/ca.pem"))
+                     .set_server_credentials_options(MakeServerTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/badserver.key",
+                         "src/core/tsi/test_creds/badserver.pem"))));
+  SendRPC();
+  const char* kMetricName = "grpc.client.tls.handshakes";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        if (!data.contains(kMetricName)) return true;
+        for (const auto& point : data.at(kMetricName)) {
+          const auto& attributes = point.attributes.GetAttributes();
+          if (attributes.find("grpc.tls.handshake.result") !=
+              attributes.end()) {
+            const auto* status = std::get_if<std::string>(
+                &attributes.at("grpc.tls.handshake.result"));
+            if (status != nullptr && *status != "OK") {
+              return false;
+            }
+          }
+        }
+        return true;
+      });
+  const opentelemetry::sdk::metrics::PointDataAttributes* failure_point =
+      nullptr;
+  for (const auto& point : data.at(kMetricName)) {
+    const auto& attributes = point.attributes.GetAttributes();
+    if (attributes.find("grpc.tls.handshake.result") != attributes.end()) {
+      const auto* status =
+          std::get_if<std::string>(&attributes.at("grpc.tls.handshake.result"));
+      if (status != nullptr && *status != "OK") {
+        failure_point = &point;
+        break;
+      }
+    }
+  }
+  ASSERT_NE(failure_point, nullptr);
+  EXPECT_THAT(
+      failure_point->point_data,
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<int64_t>(1))));
+  EXPECT_THAT(
+      failure_point->attributes.GetAttributes(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair(
+              "grpc.tls.handshake.result",
+              ::testing::VariantWith<std::string>(::testing::Ne("OK"))),
+          ::testing::Pair("grpc.target", ::testing::VariantWith<std::string>(
+                                             canonical_server_address_)),
+          ::testing::Pair("grpc.tls.handshake.resumed",
+                          ::testing::VariantWith<std::string>("false")),
+          ::testing::Pair("grpc.lb.locality",
+                          ::testing::VariantWith<std::string>("")),
+          ::testing::Pair("grpc.lb.backend_service",
+                          ::testing::VariantWith<std::string>(""))));
+}
+
+TEST_F(OpenTelemetryPluginEnd2EndTest, HandshakesWithBadClientCert) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kServerHandshakesInstrumentName})
+                     .set_client_credentials_options(MakeClientTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/badclient.key",
+                         "src/core/tsi/test_creds/badclient.pem"))
+                     .set_server_credentials_options(MakeServerTlsOptions(
+                         "src/core/tsi/test_creds/ca.pem",
+                         "src/core/tsi/test_creds/server1.key",
+                         "src/core/tsi/test_creds/server1.pem",
+                         /*require_client_cert=*/true))));
+  SendRPC();
+  const char* kMetricName = "grpc.server.tls.handshakes";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        if (!data.contains(kMetricName)) return true;
+        for (const auto& point : data.at(kMetricName)) {
+          const auto& attributes = point.attributes.GetAttributes();
+          if (attributes.find("grpc.tls.handshake.result") !=
+              attributes.end()) {
+            const auto* status = std::get_if<std::string>(
+                &attributes.at("grpc.tls.handshake.result"));
+            if (status != nullptr && *status != "OK") {
+              return false;
+            }
+          }
+        }
+        return true;
+      });
+  const opentelemetry::sdk::metrics::PointDataAttributes* failure_point =
+      nullptr;
+  for (const auto& point : data.at(kMetricName)) {
+    const auto& attributes = point.attributes.GetAttributes();
+    if (attributes.find("grpc.tls.handshake.result") != attributes.end()) {
+      const auto* status =
+          std::get_if<std::string>(&attributes.at("grpc.tls.handshake.result"));
+      if (status != nullptr && *status != "OK") {
+        failure_point = &point;
+        break;
+      }
+    }
+  }
+  ASSERT_NE(failure_point, nullptr);
+  EXPECT_THAT(
+      failure_point->point_data,
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<int64_t>(1))));
+  EXPECT_THAT(
+      failure_point->attributes.GetAttributes(),
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair(
+              "grpc.tls.handshake.result",
+              ::testing::VariantWith<std::string>(::testing::Ne("OK"))),
+          ::testing::Pair("grpc.tls.handshake.resumed",
+                          ::testing::VariantWith<std::string>("false"))));
+}
+
 TEST_F(OpenTelemetryPluginEnd2EndTest, TelemetryLabelPropagation) {
   Init(std::move(
       Options()

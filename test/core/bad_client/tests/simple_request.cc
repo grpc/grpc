@@ -219,43 +219,64 @@ static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
   }
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
-
+TEST(SimpleRequestTest, BasicRequest) {
   // basic request: check that things are working
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR, 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR_UNUSUAL, 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR_UNUSUAL2, 0);
+}
 
+TEST(SimpleRequestTest, UnusualRequest) {
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR_UNUSUAL, 0);
+}
+
+TEST(SimpleRequestTest, UnusualRequest2) {
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR_UNUSUAL2, 0);
+}
+
+TEST(SimpleRequestTest, TextHtmlContentTypeHeader) {
   // A basic request with a "content-type: text/html" header. The spec is
   // not clear on what the behavior should be here, so to avoid breaking anyone,
   // we should continue to accept this header.
   GRPC_RUN_BAD_CLIENT_TEST(VerifyRpcDoesNotGetCanceled, nullptr,
                            PFX_STR_TEXT_HTML_CONTENT_TYPE_HEADER, 0);
+}
 
+TEST(SimpleRequestTest, IllegalDataFrame) {
   // push an illegal data frame
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
                            "\x34\x00\x00\x00\x00",
                            0);
+}
+
+TEST(SimpleRequestTest, DataFrameWithBadFlags) {
   // push a data frame with bad flags
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x00\x02\x00\x00\x00\x01", 0);
+}
+
+TEST(SimpleRequestTest, WindowUpdateWithBadLength) {
   // push a window update with a bad length
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x01\x08\x00\x00\x00\x00\x01", 0);
+}
+
+TEST(SimpleRequestTest, WindowUpdateWithBadFlags) {
   // push a window update with bad flags
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x08\x10\x00\x00\x00\x01", 0);
+}
+
+TEST(SimpleRequestTest, WindowUpdateWithBadData) {
   // push a window update with bad data (0 is not legal window size increment)
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x04\x08\x00\x00\x00\x00\x01"
                            "\x00\x00\x00\x00",
                            0);
+}
+
+TEST(SimpleRequestTest, ValidSecureFrameParsed) {
   // push a valid secure frame with payload "hello" and setting
   // `allow_security_frame` enabled, frame should be parsed
   GRPC_RUN_BAD_CLIENT_TEST(
@@ -264,6 +285,9 @@ int main(int argc, char** argv) {
       "\xFE\x05\x00\x00\x00\x01" USUAL_HDR
       "\x00\x00\x05\xC8\x00\x00\x00\x00\x00\x68\x65\x6C\x6C\x6F",
       0);
+}
+
+TEST(SimpleRequestTest, ValidSecureFrameIgnored) {
   // push a valid secure frame with payload "hello" and setting
   // `allow_security_frame` disabled, frame should be ignored
   GRPC_RUN_BAD_CLIENT_TEST(
@@ -272,20 +296,38 @@ int main(int argc, char** argv) {
       "\xFE\x05\x00\x00\x00\x00" USUAL_HDR
       "\x00\x00\x05\xC8\x00\x00\x00\x00\x00\x68\x65\x6C\x6C\x6F",
       0);
+}
+
+TEST(SimpleRequestTest, ShortGoaway) {
   // push a short goaway
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x04\x07\x00\x00\x00\x00\x00", 0);
+}
+
+TEST(SimpleRequestTest, DisconnectBeforeGoaway) {
   // disconnect before sending goaway
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x01\x12\x07\x00\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
+}
+
+TEST(SimpleRequestTest, RstStreamBadLength) {
   // push a rst_stream with a bad length
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x01\x03\x00\x00\x00\x00\x01", 0);
+}
+
+TEST(SimpleRequestTest, RstStreamBadFlags) {
   // push a rst_stream with bad flags
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x03\x10\x00\x00\x00\x01", 0);
+}
 
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
+  int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return result;
 }

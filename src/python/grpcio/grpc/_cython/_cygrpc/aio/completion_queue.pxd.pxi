@@ -28,7 +28,10 @@ cdef extern from *:
     #ifdef _WIN32
         send((SOCKET)fd, "1", 1, 0);
     #else
-        write(fd, "1", 1);
+        // Discard the return value via a variable to satisfy
+        // __attribute__((warn_unused_result)) under -Werror=unused-result.
+        ssize_t rc = write(fd, "1", 1);
+        (void)rc;
     #endif
     }
     """
@@ -51,7 +54,7 @@ cdef class _BoundEventLoop:
 
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
-    cdef bint _shutdown
+    cdef atomic[bint] _shutdown
     cdef cpp_event_queue _queue
     cdef mutex _queue_mutex
     cdef object _poller_thread  # threading.Thread

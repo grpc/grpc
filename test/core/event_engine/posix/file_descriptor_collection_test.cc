@@ -26,7 +26,7 @@ bool ForkEnabled() {
 #ifndef GRPC_ENABLE_FORK_SUPPORT
   return false;
 #else
-  return grpc_core::IsEventEngineForkEnabled();
+  return true;
 #endif
 }
 

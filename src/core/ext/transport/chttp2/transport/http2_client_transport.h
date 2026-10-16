@@ -40,10 +40,12 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -158,7 +160,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   template <typename Factory>
   void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
-    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+    SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
   absl::Status TestOnlyTriggerWriteCycle() { return TriggerWriteCycle(); }
@@ -363,7 +365,7 @@ class Http2ClientTransport final : public ClientTransport,
   template <typename Factory>
   void SpawnInfallibleTransportParty(absl::string_view name,
                                      Factory&& factory) {
-    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+    SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
   // Spawns a promise on the transport party. If the promise returns a non-ok
@@ -371,7 +373,7 @@ class Http2ClientTransport final : public ClientTransport,
   // status.
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
-    general_party_->Spawn(
+    transport_party_->Spawn(
         name, std::forward<Factory>(factory),
         [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
           if (!status.ok()) {
@@ -384,8 +386,8 @@ class Http2ClientTransport final : public ClientTransport,
   template <typename Factory, typename OnDone>
   void SpawnWithOnDoneTransportParty(absl::string_view name, Factory&& factory,
                                      OnDone&& on_done) {
-    general_party_->Spawn(name, std::forward<Factory>(factory),
-                          std::forward<OnDone>(on_done));
+    transport_party_->Spawn(name, std::forward<Factory>(factory),
+                            std::forward<OnDone>(on_done));
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -410,15 +412,7 @@ class Http2ClientTransport final : public ClientTransport,
   // tokens are calculated based on the initial window size.
   absl::Status UpdateAllStreamsWritability();
 
-  auto FlowControlPeriodicUpdateLoop();
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  void AddPeriodicUpdatePromiseWaker() {
-    periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-  }
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
+  auto BdpLoop();
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream List Operations
@@ -540,7 +534,7 @@ class Http2ClientTransport final : public ClientTransport,
   auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
   Duration NextAllowedPingInterval() {
-    MutexLock lock(&transport_mutex_);
+    MutexLock lock(transport_mutex_);
     return (!keepalive_permit_without_calls_ &&
             GetActiveStreamCountLocked() == 0)
                ? Duration::Hours(2)
@@ -679,7 +673,8 @@ class Http2ClientTransport final : public ClientTransport,
   //////////////////////////////////////////////////////////////////////////////
   // All Data Members
 
-  RefCountedPtr<Party> general_party_;  // Refer AGENTS.md for party slot usage
+  // Refer AGENTS.md for party slot usage
+  RefCountedPtr<Party> transport_party_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;
@@ -700,6 +695,7 @@ class Http2ClientTransport final : public ClientTransport,
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   bool should_reset_ping_clock_;
+  Http2TransportStats http2_transport_stats_;
   ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
@@ -726,9 +722,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  Waker periodic_updates_waker_;
 };
 
 }  // namespace http2

@@ -19,13 +19,18 @@
 #
 # This script should be run each time bazel dependencies are updated.
 
-set -e
+PS4='+ $(date "+[%H:%M:%S %Z]") $LINENO:\011'
+set -ex
+set -o pipefail
 
 cd $(dirname $0)/..
 
 # Create a temp directory to hold the versioned tarball,
 # and clean it up when the script exits.
 tmpdir="$(mktemp -d)"
+archive_dir=${tmpdir}/archives
+mkdir -p ${archive_dir}
+
 success=0
 failure=0
 function cleanup {
@@ -34,95 +39,74 @@ function cleanup {
 }
 trap cleanup EXIT
 
-function _upload() {
+function _download() {
   local uri="$1"
-  local dst_path="${uri}"
+  # The relative path of gcs object.
+  local obj_path="${uri#https://}"
 
-  if [[ "$dst_path" == https://sourceforge.net/*/download ]]; then
-    dst_path="${dst_path%/download}"
+  if [[ "$obj_path" == sourceforge.net/*/download ]]; then
+    obj_path="${obj_path%/download}"
   fi
 
-  if gcloud storage objects list --stat --fetch-encrypted-object-hashes "gs://grpc-bazel-mirror/${uri}" > /dev/null; then
-    echo "Skipping ${uri}"
-    return 0
+  local local_path="${archive_dir}/${obj_path}" 
+
+  echo "Downloading ${uri}"
+  if ! curl -L --fail --create-dirs --output "${local_path}" "${uri}"; then
+    echo "Failed to download ${uri}: curl command failed"
+    return 1
   fi
 
-  echo "Downloading https://${uri}"
-  curl -L --fail --output "${tmpdir}/archive" "https://${uri}"
-  if [[ ! -s "${tmpdir}/archive" ]]; then
-    echo "Failed to download https://${uri}: zero bytes returned"
-    return 0
+  if [[ ! -s "${local_path}" ]]; then
+    echo "Failed to download ${uri}: zero bytes returned"
+    return 1
   fi
-
-  echo "Uploading https://${uri} to https://storage.googleapis.com/grpc-bazel-mirror/${dst_path}"
-  gcloud storage cp "${tmpdir}/archive" "gs://grpc-bazel-mirror/${dst_path}"
-
-  rm -rf "${tmpdir}/archive"
 }
 
-# Wrapper of _upload() which handles errors and keep track of stats.
-function upload() {
+# Wrapper of _download() which handles errors and keep track of stats.
+function download() {
   local url="$1"
-  local exit_code=0
-  _upload "${url}" || exit_code=$?
-  if [[ "$exit_code" != 0 ]]; then
-    echo "Failed to upload url ${url}"
+  if ! _download "${url}"; then
+    echo "Failed to download url ${url}"
     failure=$((failure + 1))
   else
     success=$((success + 1))
   fi
-  return 0
 }
 
-function upload_bzlmod_deps {
-  tools/bazel mod show_repo --all_repos --output=streamed_jsonproto > ${tmpdir}/repos.ndjson || true
-  python3 bazel/update_mirror_helper.py ${tmpdir}/repos.ndjson ${tmpdir}/repos.txt
+function rsync_archives() {
+  gcloud storage rsync --recursive "${archive_dir}/" gs://grpc-bazel-mirror/
+}
+
+# Download everything into a temporary folder and perform rsync in one go.
+function upload_deps {
+  local bzlmod_deps_file=${tmpdir}/bzlmod_deps.ndjson
+  local output_file=${tmpdir}/urls_to_upload.txt
+  local existing_archives_file=${tmpdir}/existing_archives.txt
+
+  tools/bazel mod show_repo --all_repos --output=streamed_jsonproto > ${bzlmod_deps_file} || true
+  gcloud storage objects list '--format=json(name, md5_hash)' 'gs://grpc-bazel-mirror/**' | jq '.[] | "https://" + .name ' -r > ${existing_archives_file}
+
+  python3 \
+    bazel/update_mirror_helper.py \
+    --bzlmod_deps_file=${bzlmod_deps_file} \
+    --existing_archives_file=${existing_archives_file} \
+    --output_file=${output_file}
+
   while read -r url; do
       case "$url" in
-          *grpc-bazel-mirror*)
-            echo "Skipping URL from mirror site: ${url}"
-            ;;
           *github.com*)
-            echo "Uploading archive from github.com: ${url}"
-            upload "${url}"
+            echo "Downloading archive from github.com: ${url}"
+            download "${url}"
             ;;
           *)
-            echo "Uploading archive from non-github site: ${url}"
-            upload "${url}"
+            echo "Downloading archive from non-github site: ${url}"
+            download "${url}"
             ;;
       esac
-  done < "${tmpdir}/repos.txt"
+  done < "${output_file}"
+  rsync_archives
 }
 
-# How to check that all mirror URLs work:
-# 1. clean $HOME/.cache/bazel
-# 2. bazel clean --expunge
-# 3. bazel sync (failed downloads will print warnings)
+upload_deps
 
-# A specific link can be upload manually by running e.g.
-# upload "github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz"
 
-# bazel binaries used by the tools/bazel wrapper script
-upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-arm64
-upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-x86_64
-upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-darwin-x86_64
-upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-windows-x86_64.exe
-
-# Collect the github archives to mirror from grpc_deps.bzl
-# TODO(weizheyuan): Considier removing this block completely (since it's used by WORKSPACE only)
-# and use bzlmod as the only source of truth.
-echo "Updating Bazel dependency mirrors (WORKSPACE)"
-grep -o '"https://github.com/[^"]*"' bazel/grpc_deps.bzl | sed 's/^"https:\/\///' | sed 's/"$//' | while read -r line ; do
-    echo "Updating mirror for ${line}"
-    upload "${line}"
-done
-
-echo "Updating Bazel dependency mirrors (Bzlmod)"
-upload_bzlmod_deps
-
-# Collect the github archives to mirror from build_autogenerated.yaml
-echo "Updating CMake dependency mirrors"
-grep -Eo '\s*- https://github.com/.+\.(tar\.gz|zip)' build_autogenerated.yaml | sed 's@^[[:space:]]*- https://@@' | while read -r line ; do
-    echo "Updating mirror for ${line}"
-    upload "${line}"
-done

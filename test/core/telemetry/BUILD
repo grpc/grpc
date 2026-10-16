@@ -59,6 +59,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:channel_args_endpoint_config",
+        "//src/core:histogram",
         "//src/core:instrument",
         "//src/core:metrics",
         "//test/core/test_util:fake_stats_plugin",
@@ -109,11 +110,13 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
         "absl/random",
+        "absl/types:span",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//src/core:histogram",
         "//src/core:instrument",
         "//test/core/test_util:grpc_test_util",
     ],

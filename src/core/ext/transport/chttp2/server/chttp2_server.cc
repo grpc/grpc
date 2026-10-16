@@ -65,8 +65,6 @@
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
@@ -510,7 +508,7 @@ grpc_error_handle NewChttp2ServerListener::Create(
     // number.
     listener->resolved_address_ = iomgr_addr;
     {
-      MutexLock lock(&listener->mu_);
+      MutexLock lock(listener->mu_);
       listener->add_port_on_start_ = true;
     }
   } else {
@@ -585,7 +583,7 @@ void NewChttp2ServerListener::Start() {
   bool should_add_port = false;
   grpc_tcp_server* tcp_server = nullptr;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     if (!shutdown_) {
       should_add_port = std::exchange(add_port_on_start_, false);
       // Hold a ref while we start the server
@@ -614,7 +612,7 @@ void NewChttp2ServerListener::Start() {
 }
 
 void NewChttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   on_destroy_done_ = on_destroy_done;
 }
 
@@ -637,7 +635,8 @@ void NewChttp2ServerListener::OnAccept(
   }
   RefCountedPtr<MitigationEngine> mitigation_engine = self->mitigation_engine();
   if (mitigation_engine != nullptr) {
-    auto action = mitigation_engine->EvaluateIncomingConnection(peer);
+    auto action = mitigation_engine->EvaluateIncomingConnection(
+        MitigationEngine::EvaluateArgs(peer, endpoint.get()));
     if (action == MitigationEngine::Action::kCloseConnection) {
       LOG_EVERY_N_SEC(INFO, 60)
           << "Mitigation engine rejected connection from " << peer;
@@ -653,7 +652,7 @@ void NewChttp2ServerListener::OnAccept(
     // tcp_server but this ref is given away when the listener is orphaned
     // (shutdown). A connection needs the tcp_server to outlast the handshake
     // since the acceptor needs it.
-    MutexLock lock(&self->mu_);
+    MutexLock lock(self->mu_);
     if (self->shutdown_) {
       self->listener_state_->connection_quota()->ReleaseConnections(1);
       return;
@@ -692,7 +691,7 @@ void NewChttp2ServerListener::TcpServerShutdownComplete(
 void NewChttp2ServerListener::Orphan() {
   grpc_tcp_server* tcp_server;
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     shutdown_ = true;
     tcp_server = tcp_server_;
   }
@@ -744,24 +743,12 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
       resolved = grpc_resolve_vsock_address(parsed_addr_unprefixed);
       GRPC_RETURN_IF_ERROR(resolved.status());
     } else {
-      if (IsEventEngineDnsNonClientChannelEnabled()) {
-        absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
-            args.GetObjectRef<EventEngine>()->GetDNSResolver(
-                EventEngine::DNSResolver::ResolverOptions());
-        GRPC_RETURN_IF_ERROR(ee_resolver.status());
-        results = grpc_event_engine::experimental::LookupHostnameBlocking(
-            ee_resolver->get(), parsed_addr, "https");
-      } else {
-        // TODO(yijiem): Remove this after event_engine_dns_non_client_channel
-        // is fully enabled.
-        absl::StatusOr<std::vector<grpc_resolved_address>> iomgr_results =
-            GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");
-        GRPC_RETURN_IF_ERROR(iomgr_results.status());
-        for (const auto& addr : *iomgr_results) {
-          results->push_back(
-              grpc_event_engine::experimental::CreateResolvedAddress(addr));
-        }
-      }
+      absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
+          args.GetObjectRef<EventEngine>()->GetDNSResolver(
+              EventEngine::DNSResolver::ResolverOptions());
+      GRPC_RETURN_IF_ERROR(ee_resolver.status());
+      results = grpc_event_engine::experimental::LookupHostnameBlocking(
+          ee_resolver->get(), parsed_addr, "https");
     }
     if (resolved.ok()) {
       for (const auto& addr : *resolved) {
@@ -815,17 +802,22 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
 
 namespace experimental {
 
+void PassiveListenerImpl::Init(RefCountedPtr<Server> server,
+                               NewChttp2ServerListener* listener) {
+  MutexLock lock(mu_);
+  server_ = std::move(server);
+  listener_ = listener;
+}
+
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
-  GRPC_CHECK_NE(server_.get(), nullptr);
   RefCountedPtr<NewChttp2ServerListener> new_listener;
   {
-    MutexLock lock(&mu_);
-    auto* new_listener_ptr = std::get_if<NewChttp2ServerListener*>(&listener_);
-    if (new_listener_ptr != nullptr && *new_listener_ptr != nullptr) {
-      new_listener = (*new_listener_ptr)
-                         ->RefIfNonZero()
-                         .TakeAsSubclass<NewChttp2ServerListener>();
+    MutexLock lock(mu_);
+    GRPC_CHECK_NE(server_.get(), nullptr);
+    if (listener_ != nullptr) {
+      new_listener =
+          listener_->RefIfNonZero().TakeAsSubclass<NewChttp2ServerListener>();
     }
   }
   if (new_listener == nullptr) {
@@ -837,9 +829,13 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
-  GRPC_CHECK_NE(server_.get(), nullptr);
   ExecCtx exec_ctx;
-  auto& args = server_->channel_args();
+  ChannelArgs args;
+  {
+    MutexLock lock(mu_);
+    GRPC_CHECK_NE(server_.get(), nullptr);
+    args = server_->channel_args();
+  }
   auto* supports_fd = QueryExtension<EventEngineSupportsFdExtension>(
       args.GetObjectRef<EventEngine>().get());
   if (supports_fd == nullptr) {
@@ -856,8 +852,8 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
 }
 
 void PassiveListenerImpl::ListenerDestroyed() {
-  MutexLock lock(&mu_);
-  listener_ = static_cast<Chttp2ServerListener*>(nullptr);
+  MutexLock lock(mu_);
+  listener_ = nullptr;
 }
 
 }  // namespace experimental
@@ -967,10 +963,9 @@ absl::Status grpc_server_add_passive_listener(
                   .SetObject(std::move(sc))
                   .Set(GRPC_ARG_USE_V3_STACK,
                        grpc_core::http2::ShouldEnablePh2Server());
-  passive_listener->listener_ =
+  passive_listener->Init(
+      server->Ref(),
       grpc_core::NewChttp2ServerListener::CreateForPassiveListener(
-          server, args, passive_listener);
-
-  passive_listener->server_ = server->Ref();
+          server, args, passive_listener));
   return absl::OkStatus();
 }

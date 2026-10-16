@@ -44,6 +44,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -209,6 +210,16 @@ class StreamState {
   std::atomic<bool> writes_closed_{false};
 };
 
+// Lifecycle state of a stream undergoing tarpitting.
+enum class TarpitState : uint8_t {
+  // Stream has never been tarpitted.
+  kNone = 0,
+  // Stream is actively tarpitted (timer running in queue).
+  kActive = 1,
+  // Tarpit timer expired; executing final post-tarpit action.
+  kCompleted = 2,
+};
+
 // Managing the streams
 class Stream : public RefCounted<Stream> {
  public:
@@ -217,14 +228,9 @@ class Stream : public RefCounted<Stream> {
       : flow_control_(&transport_flow_control),
         call_(std::move(call_handler)),
         state_(/*started=*/false),
-        stream_id_(kInvalidStreamId),
-        did_receive_initial_metadata_(false),
-        did_receive_trailing_metadata_(false),
-        did_push_server_trailing_metadata_(false),
-        did_cancel_(false),
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-            std::get<CallHandler>(call_).arena(), /*is_client*/ true,
-            /*queue_size*/ kStreamQueueSize)) {}
+            std::get<CallHandler>(call_).arena(), /*is_client=*/true,
+            /*queue_size=*/kStreamQueueSize)) {}
 
   explicit Stream(CallInitiator call_initiator,
                   chttp2::TransportFlowControl& transport_flow_control,
@@ -234,13 +240,9 @@ class Stream : public RefCounted<Stream> {
         call_(std::move(call_initiator)),
         state_(/*started=*/true),
         stream_id_(stream_id),
-        did_receive_initial_metadata_(false),
-        did_receive_trailing_metadata_(false),
-        did_push_server_trailing_metadata_(false),
-        did_cancel_(false),
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-            std::get<CallInitiator>(call_).arena(), /*is_client*/ false,
-            /*queue_size*/ kStreamQueueSize)) {
+            std::get<CallInitiator>(call_).arena(), /*is_client=*/false,
+            /*queue_size=*/kStreamQueueSize)) {
     InitializeStream(allow_true_binary_metadata_peer);
   }
 
@@ -331,6 +333,44 @@ class Stream : public RefCounted<Stream> {
   // gRPC stream state
   bool IsClosedForReads() const { return state_.reads_closed(); }
   bool IsClosedForWrites() const { return state_.writes_closed(); }
+  // Returns the current tarpit lifecycle state of the stream.
+  TarpitState GetTarpitState() const {
+    return tarpit_state_.load(std::memory_order_relaxed);
+  }
+  // Returns true if the stream has never entered the tarpit lifecycle.
+  bool WasNeverTarpitted() const {
+    return tarpit_state_.load(std::memory_order_relaxed) == TarpitState::kNone;
+  }
+  // Returns true if the stream is either actively tarpitted or has completed
+  // tarpitting.
+  bool IsTarpitted() const {
+    return tarpit_state_.load(std::memory_order_relaxed) != TarpitState::kNone;
+  }
+  // Returns true only while the tarpit timer is actively running.
+  bool IsTarpitTimerActive() const {
+    return tarpit_state_.load(std::memory_order_relaxed) ==
+           TarpitState::kActive;
+  }
+  // Returns true if tarpitting has completed. The stream may not yet be closed,
+  // but stream closure is imminent.
+  bool IsTarpitCompleted() const {
+    return tarpit_state_.load(std::memory_order_relaxed) ==
+           TarpitState::kCompleted;
+  }
+
+  // Transitions tarpit state from kNone to kActive.
+  void SetTarpitActive() {
+    GRPC_DCHECK(tarpit_state_.load(std::memory_order_relaxed) ==
+                TarpitState::kNone);
+    tarpit_state_.store(TarpitState::kActive, std::memory_order_relaxed);
+  }
+
+  // Transitions tarpit state from kActive to kCompleted.
+  void SetTarpitCompleted() {
+    GRPC_DCHECK(tarpit_state_.load(std::memory_order_relaxed) ==
+                TarpitState::kActive);
+    tarpit_state_.store(TarpitState::kCompleted, std::memory_order_relaxed);
+  }
 
   // Semantic state transitions
   void OnInitialMetadataSent() {
@@ -388,6 +428,7 @@ class Stream : public RefCounted<Stream> {
   }
 
   StreamStateChange OnInitiateReset(absl::Status status) {
+    GRPC_DCHECK(!status.ok());
     const StreamStateChange change = state_.OnInitiateReset();
     CancelCall(std::move(status));
     return change;
@@ -399,14 +440,14 @@ class Stream : public RefCounted<Stream> {
     return change;
   }
 
-  inline uint32_t GetStreamId() const { return stream_id_; }
+  uint32_t GetStreamId() const { return stream_id_; }
 
-  inline bool CanSendWindowUpdateFrames() const {
+  bool CanSendWindowUpdateFrames() const {
     return IsOpen() || IsHalfClosedLocal();
   }
 
-  inline Http2Status CanStreamReceiveDataFrames() const {
-    if (IsStreamHalfClosedRemote()) {
+  Http2Status CanStreamReceiveDataFrames() const {
+    if (IsClosedForReads()) {
       return Http2Status::Http2StreamError(
           Http2ErrorCode::kStreamClosed,
           std::string(RFC9113::kHalfClosedRemoteState));
@@ -497,7 +538,7 @@ class Stream : public RefCounted<Stream> {
   void InitializeStream(const bool allow_true_binary_metadata_peer) {
     GRPC_HTTP2_STREAM_LOG << "Stream::InitializeStream stream_id="
                           << stream_id_;
-    GRPC_DCHECK_GE(stream_id_, 0u);
+    GRPC_DCHECK_NE(stream_id_, kInvalidStreamId);
     data_queue_->SetStreamId(stream_id_, allow_true_binary_metadata_peer);
   }
 
@@ -517,11 +558,12 @@ class Stream : public RefCounted<Stream> {
   }
 
   StreamState state_;
-  uint32_t stream_id_;
-  bool did_receive_initial_metadata_;
-  bool did_receive_trailing_metadata_;
-  bool did_push_server_trailing_metadata_;
-  bool did_cancel_;
+  uint32_t stream_id_ = kInvalidStreamId;
+  bool did_receive_initial_metadata_ = false;
+  bool did_receive_trailing_metadata_ = false;
+  bool did_push_server_trailing_metadata_ = false;
+  bool did_cancel_ = false;
+  std::atomic<TarpitState> tarpit_state_{TarpitState::kNone};
   // Change this if ClientMetadataHandle and ServerMetadataHandle are changed
   // to different types.
   RefCountedPtr<StreamDataQueue<Arena::PoolPtr<grpc_metadata_batch>>>

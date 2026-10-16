@@ -81,11 +81,11 @@ PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
   if (private_key.empty() && certs.empty()) {
     return {};
   }
-  return PemKeyCertPairList{PemKeyCertPair(std::string(private_key), certs)};
+  return {{std::string(private_key), certs}};
 }
 
 std::string GetFileContents(const std::string& path) {
-  auto slice = LoadFile(path, /*add_null_terminator=*/false);
+  auto slice = LoadFile(path);
   if (!slice.ok()) {
     Crash(absl::StrCat("error loading file ", path, ": ",
                        slice.status().ToString()));
@@ -116,7 +116,7 @@ void SyncExternalVerifier::Destruct(void* user_data) {
 AsyncExternalVerifier::~AsyncExternalVerifier() {
   // Tell the thread to shut down.
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     queue_.push_back(Request{nullptr, nullptr, nullptr, true});
   }
   // Wait for thread to exit.
@@ -130,7 +130,7 @@ int AsyncExternalVerifier::Verify(
     grpc_status_code*, char**) {
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
   // Add request to queue to be picked up by worker thread.
-  MutexLock lock(&self->mu_);
+  MutexLock lock(self->mu_);
   self->queue_.push_back(Request{request, callback, callback_arg, false});
   return false;  // Asynchronous call
 }
@@ -160,7 +160,7 @@ void AsyncExternalVerifier::WorkerThread(void* arg) {
     bool got_request = false;
     Request request;
     {
-      MutexLock lock(&self->mu_);
+      MutexLock lock(self->mu_);
       if (!self->queue_.empty()) {
         got_request = true;
         request = self->queue_.front();

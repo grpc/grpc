@@ -143,7 +143,7 @@ spec:
     clone:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
-    language: php7
+    language: php8
     pool: ${client_pool}
     run:
     - args:
@@ -161,7 +161,7 @@ spec:
     clone:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
-    language: php7_protobuf_c
+    language: php8_protobuf_c
     pool: ${client_pool}
     run:
     - args:
@@ -233,6 +233,30 @@ spec:
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" ruby \
             src/ruby/qps/worker.rb --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      name: main
+  - build:
+      args:
+      - build
+      - -p
+      - grpc-benchmark
+      - --release
+      - --bin
+      - worker
+      command:
+      - cargo
+    clone:
+      gitRef: master
+      repo: https://github.com/grpc/grpc-rust.git
+    language: rust
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /src/workspace/target/release/worker --driver_port="${DRIVER_PORT}"
       command:
       - bash
       name: main
@@ -425,6 +449,30 @@ spec:
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" ruby \
             src/ruby/qps/worker.rb --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      name: main
+  - build:
+      args:
+      - build
+      - -p
+      - grpc-benchmark
+      - --release
+      - --bin
+      - worker
+      command:
+      - cargo
+    clone:
+      gitRef: master
+      repo: https://github.com/grpc/grpc-rust.git
+    language: rust
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /src/workspace/target/release/worker --driver_port="${DRIVER_PORT}"
       command:
       - bash
       name: main
