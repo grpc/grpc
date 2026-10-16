@@ -470,6 +470,14 @@ absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
           "X25519_MLKEM768 is not supported in this OpenSSL version with "
           "SSL_CTX_set1_groups_list.");
 #endif
+    case GRPC_TLS_GROUP_MLKEM1024:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "MLKEM1024";
+#else
+      return absl::InvalidArgumentError(
+          "MLKEM1024 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_groups_list.");
+#endif
     case GRPC_TLS_GROUP_UNSPECIFIED:
       return absl::InvalidArgumentError("Unspecified key exchange group.");
     default:

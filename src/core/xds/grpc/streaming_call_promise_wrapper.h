@@ -26,7 +26,9 @@
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -50,7 +52,9 @@ class XdsStreamingCallPromiseWrapper final
 
   // Constructs a new streaming call wrapper for the given method on the
   // transport.
-  XdsStreamingCallPromiseWrapper(XdsTransport& transport, const char* method);
+  XdsStreamingCallPromiseWrapper(
+      XdsTransport& transport, const char* method,
+      XdsTransport::CallOptions options = XdsTransport::CallOptions());
 
   // Pushes a message on the stream.
   //
@@ -58,15 +62,18 @@ class XdsStreamingCallPromiseWrapper final
   // message was sent successfully.
   //
   // Contract: The caller MUST NOT call PushMessage() again until the promise
-  // from the previous PushMessage() resolves.
-  auto PushMessage(std::string msg) {
+  // from the previous PushMessage() resolves. If send_half_close is true, no
+  // further messages can be pushed on the stream.
+  auto PushMessage(std::string msg, bool send_half_close = false) {
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       GRPC_CHECK(send_state_ == SendState::kIdle);
-      send_state_ = SendState::kSendMessageInFlight;
+      send_state_ = send_half_close
+                        ? SendState::kSendMessageAndHalfCloseInFlight
+                        : SendState::kSendMessageInFlight;
       send_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     }
-    call_->SendMessage(std::move(msg));
+    call_->SendMessage(std::move(msg), send_half_close);
     return [self = WeakRefAsSubclass<XdsStreamingCallPromiseWrapper>()]() {
       return self->PollPushMessage();
     };
@@ -80,7 +87,7 @@ class XdsStreamingCallPromiseWrapper final
   auto PullMessage() {
     bool start_recv = false;
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (recv_state_ == RecvState::kIdle) {
         recv_state_ = RecvState::kRecvMessageInFlight;
         recv_message_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
@@ -105,7 +112,7 @@ class XdsStreamingCallPromiseWrapper final
   // the final status of the call.
   auto PullServerTrailingMetadata() {
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (recv_state_ != RecvState::kReceivedStatus) {
         recv_status_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       }
@@ -129,7 +136,8 @@ class XdsStreamingCallPromiseWrapper final
 
   enum class SendState {
     // Initial state: no send op in flight.
-    // Upon calling PushMessage(), transitions to kSendMessageInFlight.
+    // Upon calling PushMessage(), transitions to kSendMessageInFlight or
+    // kSendMessageAndHalfCloseInFlight.
     // Upon calling SendHalfClose(), transitions to kHalfCloseInFlight.
     kIdle,
     // Send message in flight.
@@ -138,6 +146,10 @@ class XdsStreamingCallPromiseWrapper final
     // transitions to kSendMessageInFlightAndHalfCloseRequested.
     // Otherwise, transitions to kIdle.
     kSendMessageInFlight,
+    // Send message and half close in flight.
+    // If the send fails, transitions to kSendFailed.
+    // Otherwise, transitions to kHalfCloseInFlight.
+    kSendMessageAndHalfCloseInFlight,
     // A send failed.
     // Once entering this state, we never leave.
     kSendFailed,
@@ -145,7 +157,7 @@ class XdsStreamingCallPromiseWrapper final
     // If the send fails, transitions to kSendFailed.
     // Otherwise, transitions to kHalfCloseInFlight.
     kSendMessageInFlightAndHalfCloseRequested,
-    // A half-close is in flight.
+    // A half-close is in flight or has completed.
     kHalfCloseInFlight,
   };
 

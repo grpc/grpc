@@ -182,6 +182,7 @@ struct google_protobuf_Any;
 struct google_protobuf_Duration;
 struct google_protobuf_Int64Value;
 struct google_protobuf_Timestamp;
+struct google_protobuf_UInt32Value;
 
 typedef enum {
   grpc_channelz_v1_ChannelConnectivityState_UNKNOWN = 0,
@@ -980,107 +981,119 @@ UPB_INLINE char* grpc_channelz_v1_ChannelData_serialize_ex(const grpc_channelz_v
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_clear_state(grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 24, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const grpc_channelz_v1_ChannelConnectivityState* grpc_channelz_v1_ChannelData_state(const grpc_channelz_v1_ChannelData* msg) {
   const grpc_channelz_v1_ChannelConnectivityState* default_val = NULL;
   const grpc_channelz_v1_ChannelConnectivityState* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 24, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__ChannelConnectivityState_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v1_ChannelData_has_state(const grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 24, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_clear_target(grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView grpc_channelz_v1_ChannelData_target(const grpc_channelz_v1_ChannelData* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_clear_trace(grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(16, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(19, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const grpc_channelz_v1_ChannelTrace* grpc_channelz_v1_ChannelData_trace(const grpc_channelz_v1_ChannelData* msg) {
   const grpc_channelz_v1_ChannelTrace* default_val = NULL;
   const grpc_channelz_v1_ChannelTrace* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(16, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(19, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__ChannelTrace_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v1_ChannelData_has_trace(const grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(16, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(19, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_clear_calls_started(grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t grpc_channelz_v1_ChannelData_calls_started(const grpc_channelz_v1_ChannelData* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_clear_calls_succeeded(grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(40, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t grpc_channelz_v1_ChannelData_calls_succeeded(const grpc_channelz_v1_ChannelData* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(40, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_clear_calls_failed(grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(48, 64), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(56, 64), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t grpc_channelz_v1_ChannelData_calls_failed(const grpc_channelz_v1_ChannelData* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {6, UPB_SIZE(48, 64), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(56, 64), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_clear_last_call_started_timestamp(grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(20, 72), 66, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(20, 72), 66, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* grpc_channelz_v1_ChannelData_last_call_started_timestamp(const grpc_channelz_v1_ChannelData* msg) {
   const struct google_protobuf_Timestamp* default_val = NULL;
   const struct google_protobuf_Timestamp* ret;
-  const upb_MiniTableField field = {7, UPB_SIZE(20, 72), 66, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(20, 72), 66, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v1_ChannelData_has_last_call_started_timestamp(const grpc_channelz_v1_ChannelData* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(20, 72), 66, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(20, 72), 66, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void grpc_channelz_v1_ChannelData_clear_max_connections_per_subchannel(grpc_channelz_v1_ChannelData* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(24, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE uint32_t grpc_channelz_v1_ChannelData_max_connections_per_subchannel(const grpc_channelz_v1_ChannelData* msg) {
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(24, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void grpc_channelz_v1_ChannelData_set_state(grpc_channelz_v1_ChannelData* msg, grpc_channelz_v1_ChannelConnectivityState* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 24, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__ChannelConnectivityState_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -1094,11 +1107,11 @@ UPB_INLINE struct grpc_channelz_v1_ChannelConnectivityState* grpc_channelz_v1_Ch
   return sub;
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_set_target(grpc_channelz_v1_ChannelData* msg, upb_StringView value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_set_trace(grpc_channelz_v1_ChannelData* msg, grpc_channelz_v1_ChannelTrace* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(16, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, UPB_SIZE(19, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__ChannelTrace_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -1112,19 +1125,19 @@ UPB_INLINE struct grpc_channelz_v1_ChannelTrace* grpc_channelz_v1_ChannelData_mu
   return sub;
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_set_calls_started(grpc_channelz_v1_ChannelData* msg, int64_t value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(32, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_set_calls_succeeded(grpc_channelz_v1_ChannelData* msg, int64_t value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(40, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_set_calls_failed(grpc_channelz_v1_ChannelData* msg, int64_t value) {
-  const upb_MiniTableField field = {6, UPB_SIZE(48, 64), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(56, 64), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_ChannelData_set_last_call_started_timestamp(grpc_channelz_v1_ChannelData* msg, struct google_protobuf_Timestamp* value) {
-  const upb_MiniTableField field = {7, UPB_SIZE(20, 72), 66, UPB_SIZE(5, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(20, 72), 66, UPB_SIZE(8, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -1136,6 +1149,10 @@ UPB_INLINE struct google_protobuf_Timestamp* grpc_channelz_v1_ChannelData_mutabl
     if (sub) grpc_channelz_v1_ChannelData_set_last_call_started_timestamp(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void grpc_channelz_v1_ChannelData_set_max_connections_per_subchannel(grpc_channelz_v1_ChannelData* msg, uint32_t value) {
+  const upb_MiniTableField field = {8, UPB_SIZE(24, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 
 /* grpc.channelz.v1.ChannelTraceEvent */
@@ -2356,186 +2373,186 @@ UPB_INLINE char* grpc_channelz_v1_SocketData_serialize_ex(const grpc_channelz_v1
   return ptr;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_streams_started(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(40, 16), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(48, 16), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t grpc_channelz_v1_SocketData_streams_started(const grpc_channelz_v1_SocketData* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(40, 16), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(48, 16), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_streams_succeeded(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(48, 24), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(56, 24), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t grpc_channelz_v1_SocketData_streams_succeeded(const grpc_channelz_v1_SocketData* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(48, 24), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(56, 24), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_streams_failed(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(56, 32), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(64, 32), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t grpc_channelz_v1_SocketData_streams_failed(const grpc_channelz_v1_SocketData* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(56, 32), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(64, 32), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_messages_sent(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(64, 40), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(72, 40), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t grpc_channelz_v1_SocketData_messages_sent(const grpc_channelz_v1_SocketData* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(64, 40), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(72, 40), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_messages_received(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(72, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(80, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t grpc_channelz_v1_SocketData_messages_received(const grpc_channelz_v1_SocketData* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(72, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(80, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_keep_alives_sent(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(80, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(88, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t grpc_channelz_v1_SocketData_keep_alives_sent(const grpc_channelz_v1_SocketData* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {6, UPB_SIZE(80, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(88, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_last_local_stream_created_timestamp(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 64), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 64), 64, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* grpc_channelz_v1_SocketData_last_local_stream_created_timestamp(const grpc_channelz_v1_SocketData* msg) {
   const struct google_protobuf_Timestamp* default_val = NULL;
   const struct google_protobuf_Timestamp* ret;
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 64), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 64), 64, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v1_SocketData_has_last_local_stream_created_timestamp(const grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 64), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 64), 64, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_last_remote_stream_created_timestamp(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 65, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* grpc_channelz_v1_SocketData_last_remote_stream_created_timestamp(const grpc_channelz_v1_SocketData* msg) {
   const struct google_protobuf_Timestamp* default_val = NULL;
   const struct google_protobuf_Timestamp* ret;
-  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 65, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v1_SocketData_has_last_remote_stream_created_timestamp(const grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 65, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_last_message_sent_timestamp(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 66, UPB_SIZE(23, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* grpc_channelz_v1_SocketData_last_message_sent_timestamp(const grpc_channelz_v1_SocketData* msg) {
   const struct google_protobuf_Timestamp* default_val = NULL;
   const struct google_protobuf_Timestamp* ret;
-  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 66, UPB_SIZE(23, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v1_SocketData_has_last_message_sent_timestamp(const grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 66, UPB_SIZE(23, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_last_message_received_timestamp(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {10, UPB_SIZE(24, 88), 67, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {10, UPB_SIZE(24, 88), 67, UPB_SIZE(21, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* grpc_channelz_v1_SocketData_last_message_received_timestamp(const grpc_channelz_v1_SocketData* msg) {
   const struct google_protobuf_Timestamp* default_val = NULL;
   const struct google_protobuf_Timestamp* ret;
-  const upb_MiniTableField field = {10, UPB_SIZE(24, 88), 67, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {10, UPB_SIZE(24, 88), 67, UPB_SIZE(21, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v1_SocketData_has_last_message_received_timestamp(const grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {10, UPB_SIZE(24, 88), 67, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {10, UPB_SIZE(24, 88), 67, UPB_SIZE(21, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_local_flow_control_window(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(28, 96), 68, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(28, 96), 68, UPB_SIZE(19, 24), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Int64Value* grpc_channelz_v1_SocketData_local_flow_control_window(const grpc_channelz_v1_SocketData* msg) {
   const struct google_protobuf_Int64Value* default_val = NULL;
   const struct google_protobuf_Int64Value* ret;
-  const upb_MiniTableField field = {11, UPB_SIZE(28, 96), 68, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(28, 96), 68, UPB_SIZE(19, 24), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Int64Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v1_SocketData_has_local_flow_control_window(const grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(28, 96), 68, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(28, 96), 68, UPB_SIZE(19, 24), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_remote_flow_control_window(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {12, UPB_SIZE(32, 104), 69, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(32, 104), 69, UPB_SIZE(17, 23), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Int64Value* grpc_channelz_v1_SocketData_remote_flow_control_window(const grpc_channelz_v1_SocketData* msg) {
   const struct google_protobuf_Int64Value* default_val = NULL;
   const struct google_protobuf_Int64Value* ret;
-  const upb_MiniTableField field = {12, UPB_SIZE(32, 104), 69, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(32, 104), 69, UPB_SIZE(17, 23), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Int64Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool grpc_channelz_v1_SocketData_has_remote_flow_control_window(const grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {12, UPB_SIZE(32, 104), 69, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(32, 104), 69, UPB_SIZE(17, 23), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_clear_option(grpc_channelz_v1_SocketData* msg) {
-  const upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(15, 22), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const grpc_channelz_v1_SocketOption* const* grpc_channelz_v1_SocketData_option(const grpc_channelz_v1_SocketData* msg,
                                                   size_t* size) {
-  const upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(15, 22), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__SocketOption_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -2550,7 +2567,7 @@ UPB_INLINE const grpc_channelz_v1_SocketOption* const* grpc_channelz_v1_SocketDa
 //
 UPB_INLINE const upb_Array* _grpc_channelz_v1_SocketData_option_upb_array(
     const grpc_channelz_v1_SocketData* msg, size_t* size) {
-  const upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(15, 22), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__SocketOption_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -2561,7 +2578,7 @@ UPB_INLINE const upb_Array* _grpc_channelz_v1_SocketData_option_upb_array(
 
 UPB_INLINE upb_Array* _grpc_channelz_v1_SocketData_option_mutable_upb_array(
     grpc_channelz_v1_SocketData* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(15, 22), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__SocketOption_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -2570,33 +2587,62 @@ UPB_INLINE upb_Array* _grpc_channelz_v1_SocketData_option_mutable_upb_array(
   }
   return arr;
 }
+UPB_INLINE void grpc_channelz_v1_SocketData_clear_received_goaway_error(grpc_channelz_v1_SocketData* msg) {
+  const upb_MiniTableField field = {14, UPB_SIZE(40, 120), 70, UPB_SIZE(13, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct google_protobuf_UInt32Value* grpc_channelz_v1_SocketData_received_goaway_error(const grpc_channelz_v1_SocketData* msg) {
+  const struct google_protobuf_UInt32Value* default_val = NULL;
+  const struct google_protobuf_UInt32Value* ret;
+  const upb_MiniTableField field = {14, UPB_SIZE(40, 120), 70, UPB_SIZE(13, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool grpc_channelz_v1_SocketData_has_received_goaway_error(const grpc_channelz_v1_SocketData* msg) {
+  const upb_MiniTableField field = {14, UPB_SIZE(40, 120), 70, UPB_SIZE(13, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void grpc_channelz_v1_SocketData_clear_peer_max_concurrent_streams(grpc_channelz_v1_SocketData* msg) {
+  const upb_MiniTableField field = {15, UPB_SIZE(44, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE uint32_t grpc_channelz_v1_SocketData_peer_max_concurrent_streams(const grpc_channelz_v1_SocketData* msg) {
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {15, UPB_SIZE(44, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void grpc_channelz_v1_SocketData_set_streams_started(grpc_channelz_v1_SocketData* msg, int64_t value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(40, 16), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(48, 16), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_streams_succeeded(grpc_channelz_v1_SocketData* msg, int64_t value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(48, 24), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(56, 24), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_streams_failed(grpc_channelz_v1_SocketData* msg, int64_t value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(56, 32), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(64, 32), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_messages_sent(grpc_channelz_v1_SocketData* msg, int64_t value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(64, 40), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(72, 40), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_messages_received(grpc_channelz_v1_SocketData* msg, int64_t value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(72, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(80, 48), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_keep_alives_sent(grpc_channelz_v1_SocketData* msg, int64_t value) {
-  const upb_MiniTableField field = {6, UPB_SIZE(80, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(88, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_last_local_stream_created_timestamp(grpc_channelz_v1_SocketData* msg, struct google_protobuf_Timestamp* value) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 64), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 64), 64, UPB_SIZE(27, 28), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -2610,7 +2656,7 @@ UPB_INLINE struct google_protobuf_Timestamp* grpc_channelz_v1_SocketData_mutable
   return sub;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_last_remote_stream_created_timestamp(grpc_channelz_v1_SocketData* msg, struct google_protobuf_Timestamp* value) {
-  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(16, 72), 65, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -2624,7 +2670,7 @@ UPB_INLINE struct google_protobuf_Timestamp* grpc_channelz_v1_SocketData_mutable
   return sub;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_last_message_sent_timestamp(grpc_channelz_v1_SocketData* msg, struct google_protobuf_Timestamp* value) {
-  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {9, UPB_SIZE(20, 80), 66, UPB_SIZE(23, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -2638,7 +2684,7 @@ UPB_INLINE struct google_protobuf_Timestamp* grpc_channelz_v1_SocketData_mutable
   return sub;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_last_message_received_timestamp(grpc_channelz_v1_SocketData* msg, struct google_protobuf_Timestamp* value) {
-  const upb_MiniTableField field = {10, UPB_SIZE(24, 88), 67, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {10, UPB_SIZE(24, 88), 67, UPB_SIZE(21, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Timestamp_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -2652,7 +2698,7 @@ UPB_INLINE struct google_protobuf_Timestamp* grpc_channelz_v1_SocketData_mutable
   return sub;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_local_flow_control_window(grpc_channelz_v1_SocketData* msg, struct google_protobuf_Int64Value* value) {
-  const upb_MiniTableField field = {11, UPB_SIZE(28, 96), 68, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(28, 96), 68, UPB_SIZE(19, 24), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Int64Value_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -2666,7 +2712,7 @@ UPB_INLINE struct google_protobuf_Int64Value* grpc_channelz_v1_SocketData_mutabl
   return sub;
 }
 UPB_INLINE void grpc_channelz_v1_SocketData_set_remote_flow_control_window(grpc_channelz_v1_SocketData* msg, struct google_protobuf_Int64Value* value) {
-  const upb_MiniTableField field = {12, UPB_SIZE(32, 104), 69, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(32, 104), 69, UPB_SIZE(17, 23), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Int64Value_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -2681,7 +2727,7 @@ UPB_INLINE struct google_protobuf_Int64Value* grpc_channelz_v1_SocketData_mutabl
 }
 UPB_INLINE grpc_channelz_v1_SocketOption** grpc_channelz_v1_SocketData_mutable_option(grpc_channelz_v1_SocketData* msg,
                                               size_t* size) {
-  upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(15, 22), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__SocketOption_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -2696,14 +2742,14 @@ UPB_INLINE grpc_channelz_v1_SocketOption** grpc_channelz_v1_SocketData_mutable_o
 UPB_INLINE grpc_channelz_v1_SocketOption** grpc_channelz_v1_SocketData_resize_option(grpc_channelz_v1_SocketData* msg,
                                              size_t size,
                                              upb_Arena* arena) {
-  upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(15, 22), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__SocketOption_msg_init);
   return (grpc_channelz_v1_SocketOption**)upb_Message_ResizeArrayUninitialized(
       UPB_UPCAST(msg), &field, size, arena);
 }
 UPB_INLINE struct grpc_channelz_v1_SocketOption* grpc_channelz_v1_SocketData_add_option(
     grpc_channelz_v1_SocketData* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {13, UPB_SIZE(36, 112), 0, UPB_SIZE(15, 22), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&grpc__channelz__v1__SocketOption_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -2717,6 +2763,24 @@ UPB_INLINE struct grpc_channelz_v1_SocketOption* grpc_channelz_v1_SocketData_add
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
   return sub;
+}
+UPB_INLINE void grpc_channelz_v1_SocketData_set_received_goaway_error(grpc_channelz_v1_SocketData* msg, struct google_protobuf_UInt32Value* value) {
+  const upb_MiniTableField field = {14, UPB_SIZE(40, 120), 70, UPB_SIZE(13, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_UInt32Value* grpc_channelz_v1_SocketData_mutable_received_goaway_error(
+    grpc_channelz_v1_SocketData* msg, upb_Arena* arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)grpc_channelz_v1_SocketData_received_goaway_error(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)_upb_Message_New(&google__protobuf__UInt32Value_msg_init, arena);
+    if (sub) grpc_channelz_v1_SocketData_set_received_goaway_error(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void grpc_channelz_v1_SocketData_set_peer_max_concurrent_streams(grpc_channelz_v1_SocketData* msg, uint32_t value) {
+  const upb_MiniTableField field = {15, UPB_SIZE(44, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 
 /* grpc.channelz.v1.Address */

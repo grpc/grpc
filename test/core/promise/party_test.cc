@@ -886,7 +886,7 @@ class PromiseNotification {
 
   auto Wait() {
     return [this]() -> Poll<int> {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       if (done_) return 42;
       if (!polled_) {
         if (owning_waker_) {
@@ -903,7 +903,7 @@ class PromiseNotification {
   void Notify() {
     Waker waker;
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       done_ = true;
       waker = std::move(waker_);
     }
@@ -911,7 +911,7 @@ class PromiseNotification {
   }
 
   void NotifyUnderLock() {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     done_ = true;
     waker_.WakeupAsync();
   }
