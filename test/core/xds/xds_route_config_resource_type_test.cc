@@ -35,6 +35,7 @@
 #include "envoy/config/core/v3/extension.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
@@ -564,6 +565,100 @@ TEST_P(TypedPerFilterConfigTest, UnsupportedFilterType) {
           "[fault].value[envoy.config.route.v3.RouteConfiguration] "
           "error:unsupported filter type]"))
       << decode_result.resource.status();
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterTypeNotSupportedOnClient) {
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["rbac"].PackFrom(
+      envoy::extensions::filters::http::rbac::v3::RBACPerRoute());
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
+          "[rbac].value[envoy.extensions.filters.http.rbac.v3.RBACPerRoute] "
+          "error:filter is not supported on clients]")));
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterTypeNotSupportedOnClientButOptional) {
+  envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.mutable_config()->PackFrom(
+      envoy::extensions::filters::http::rbac::v3::RBACPerRoute());
+  filter_config_wrapper.set_is_optional(true);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["rbac"].PackFrom(filter_config_wrapper);
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
+  auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
+  EXPECT_THAT(typed_per_filter_config, ::testing::ElementsAre());
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterTypeNotSupportedOnServer) {
+  if (GetParam().scope() == TypedPerFilterConfigScope::kWeightedCluster) {
+    GTEST_SKIP() << "WeightedClusters not supported on server side";
+  }
+  ResetXdsClient(/*trusted_xds_server=*/false, /*is_client=*/false);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(
+      envoy::extensions::filters::http::fault::v3::HTTPFault());
+  route_config_.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_non_forwarding_action();
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(absl::StrCat(
+          "errors validating RouteConfiguration resource: [field:", FieldName(),
+          "[fault].value[envoy.extensions.filters.http.fault.v3.HTTPFault] "
+          "error:filter is not supported on servers]")));
+}
+
+TEST_P(TypedPerFilterConfigTest, FilterTypeNotSupportedOnServerButOptional) {
+  if (GetParam().scope() == TypedPerFilterConfigScope::kWeightedCluster) {
+    GTEST_SKIP() << "WeightedClusters not supported on server side";
+  }
+  ResetXdsClient(/*trusted_xds_server=*/false, /*is_client=*/false);
+  envoy::config::route::v3::FilterConfig filter_config_wrapper;
+  filter_config_wrapper.mutable_config()->PackFrom(
+      envoy::extensions::filters::http::fault::v3::HTTPFault());
+  filter_config_wrapper.set_is_optional(true);
+  auto* typed_per_filter_config_proto =
+      GetTypedPerFilterConfigProto(&route_config_);
+  (*typed_per_filter_config_proto)["fault"].PackFrom(filter_config_wrapper);
+  route_config_.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_non_forwarding_action();
+  std::string serialized_resource;
+  ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsRouteConfigResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
+  auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
+  EXPECT_THAT(typed_per_filter_config, ::testing::ElementsAre());
 }
 
 TEST_P(TypedPerFilterConfigTest, FilterConfigInvalid) {

@@ -289,6 +289,12 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     bool (*upb_next_func)(const ParentType*, upb_StringView*,
                           const struct google_protobuf_Any**, size_t* iter),
     ValidationErrors* errors) {
+  const bool is_client =
+      DownCast<GrpcXdsClient*>(context.client)->component() ==
+      GrpcXdsClient::Component::kClient;
+  const auto& http_filter_registry =
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+          .http_filter_registry();
   XdsRouteConfigResource::TypedPerFilterConfig typed_per_filter_config;
   size_t filter_it = kUpb_Map_Begin;
   upb_StringView key_view;
@@ -325,13 +331,18 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       if (!nested_extension.has_value()) continue;
       extension_to_use = &*nested_extension;
     }
-    const auto& http_filter_registry =
-        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-            .http_filter_registry();
     const XdsHttpFilterFactory* factory =
         http_filter_registry.GetFilterForOverrideType(extension_to_use->type);
     if (factory == nullptr) {
       if (!is_optional) errors->AddError("unsupported filter type");
+      continue;
+    }
+    if ((is_client && !factory->IsSupportedOnClients()) ||
+        (!is_client && !factory->IsSupportedOnServers())) {
+      if (!is_optional) {
+        errors->AddError(absl::StrCat("filter is not supported on ",
+                                      is_client ? "clients" : "servers"));
+      }
       continue;
     }
     auto& entry = typed_per_filter_config[std::string(key)];
