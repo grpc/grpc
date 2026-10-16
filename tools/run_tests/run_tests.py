@@ -641,12 +641,14 @@ class Php8Language:
 
     def dockerfile_dir(self):
         if self.args.compiler == "php8.2":
-            return "tools/dockerfile/test/php8_debian12_%s" % _docker_arch_suffix(
-                self.args.arch
+            return (
+                "tools/dockerfile/test/php8_debian12_%s"
+                % _docker_arch_suffix(self.args.arch)
             )
         elif self.args.compiler == "php8.5":
-            return "tools/dockerfile/test/php85_debian13_%s" % _docker_arch_suffix(
-                self.args.arch
+            return (
+                "tools/dockerfile/test/php85_debian13_%s"
+                % _docker_arch_suffix(self.args.arch)
             )
         return "tools/dockerfile/test/php8_debian13_%s" % _docker_arch_suffix(
             self.args.arch
