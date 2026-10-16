@@ -106,6 +106,12 @@
 const size_t kMaxChainLength = 100;
 const char kDefaultBoringSSLKeyExchangeGroups[] =
     "X25519MLKEM768:X25519:P-256:P-384:P-521";
+[[maybe_unused]] const char kDefaultBoringSSLSignatureAlgorithms[] =
+    "mldsa44:mldsa65:mldsa87:"
+    "ed25519:ecdsa_secp256r1_sha256:rsa_pss_rsae_sha256:rsa_pkcs1_sha256:"
+    "ecdsa_secp384r1_sha384:rsa_pss_rsae_sha384:rsa_pkcs1_sha384:"
+    "ecdsa_secp521r1_sha512:rsa_pss_rsae_sha512:rsa_pkcs1_sha512:"
+    "rsa_pkcs1_sha1";
 [[maybe_unused]] const char kDefaultOpenSSL1_1_1KeyExchangeGroups[] =
     "X25519:P-256:P-384:P-521";
 [[maybe_unused]] const char kDefaultOpenSSL1_0_2KeyExchangeGroups[] =
@@ -556,6 +562,22 @@ tsi_result SetKeyExchangeGroups(
     }
 #endif
   }
+  return TSI_OK;
+}
+
+// Populates the signature algorithms.
+// Uses the following defaults:
+//   - BoringSSL: BoringSSL defaults + ML-DSA (mldsa44, mldsa65, mldsa87) and
+//     ecdsa_secp521r1_sha512.
+//   - OpenSSL: OpenSSL Defaults (which already include ML-DSA in OpenSSL 3.5+).
+tsi_result SetSignatureAlgorithms([[maybe_unused]] SSL_CTX* context) {
+#if defined(OPENSSL_IS_BORINGSSL)
+  if (!SSL_CTX_set1_sigalgs_list(context,
+                                 kDefaultBoringSSLSignatureAlgorithms)) {
+    LOG(ERROR) << "Could not set default signature algorithms for BoringSSL.";
+    return TSI_INTERNAL_ERROR;
+  }
+#endif
   return TSI_OK;
 }
 }  // namespace
@@ -1592,6 +1614,10 @@ static tsi_result populate_ssl_context(
     return TSI_INVALID_ARGUMENT;
   }
   result = SetKeyExchangeGroups(context, key_exchange_groups);
+  if (result != TSI_OK) {
+    return result;
+  }
+  result = SetSignatureAlgorithms(context);
   if (result != TSI_OK) {
     return result;
   }
