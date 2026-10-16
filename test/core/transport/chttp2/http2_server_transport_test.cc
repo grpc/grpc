@@ -72,6 +72,8 @@ namespace testing {
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 using ::testing::MockFunction;
+using ::testing::Pointee;
+using ::testing::Property;
 using ::testing::StrictMock;
 using util::testing::EventSequenceEndpoint;
 
@@ -251,6 +253,12 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
           call_handler.PullClientInitialMetadata(),
           [call_handler](ClientMetadataHandle metadata) mutable {
             LOG(INFO) << "Client initial metadata: " << metadata->DebugString();
+            EXPECT_THAT(metadata->get_pointer(PeerString()),
+                        Pointee(Property(&Slice::as_string_view,
+                                         "ipv4:127.0.0.1:12345")));
+            EXPECT_THAT(metadata->get_pointer(LocalAddressString()),
+                        Pointee(Property(&Slice::as_string_view,
+                                         "ipv4:127.0.0.1:6789")));
             return call_handler.PushServerInitialMetadata(
                 ServerMetadataFromStatus(absl::OkStatus()));
           },
