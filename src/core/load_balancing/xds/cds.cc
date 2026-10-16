@@ -373,9 +373,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
           MakeRefCounted<QueuePicker>(
               nullptr, kDelayTypeCdsDynamicDiscovery,
-              absl::StrCat(
-                  "cds: waiting for CDS resource definition for cluster ",
-                  cluster_name_.as_string_view())));
+              absl::StrCat("cds: waiting for CDS resource ",
+                           cluster_name_.as_string_view())));
       return absl::OkStatus();
     }
     // Not a dynamic cluster.  This should never happen.

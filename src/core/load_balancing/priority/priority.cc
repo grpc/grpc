@@ -126,7 +126,7 @@ class PriorityLb final : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class PriorityPicker final : public LoadBalancingPolicy::SubchannelPicker {
+  class PriorityPicker final : public SubchannelPicker {
    public:
     PriorityPicker(uint32_t priority, absl::string_view child_name,
                    std::string failover_suffix,
@@ -138,11 +138,9 @@ class PriorityLb final : public LoadBalancingPolicy {
           failover_suffix_(std::move(failover_suffix)),
           child_picker_(std::move(child_picker)) {}
 
-    LoadBalancingPolicy::PickResult Pick(
-        LoadBalancingPolicy::PickArgs args) override {
-      LoadBalancingPolicy::PickResult result = child_picker_->Pick(args);
-      auto* queue =
-          std::get_if<LoadBalancingPolicy::PickResult::Queue>(&result.result);
+    PickResult Pick(PickArgs args) override {
+      PickResult result = child_picker_->Pick(args);
+      auto* queue = std::get_if<PickResult::Queue>(&result.result);
       if (queue != nullptr) {
         queue->delay_type = absl::StrCat(delay_type_prefix_, queue->delay_type);
         queue->delay_reason = absl::StrCat(
@@ -675,8 +673,7 @@ PriorityLb::ChildPriority::GetPicker() {
   if (picker_ == nullptr) {
     return MakeRefCounted<QueuePicker>(
         priority_policy_->Ref(DEBUG_LOCATION, "QueuePicker"),
-        LoadBalancingPolicy::kDelayTypeConnecting,
-        "child policy has not yet returned a picker");
+        kDelayTypeConnecting, "child policy has not yet returned a picker");
   }
   return picker_;
 }

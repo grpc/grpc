@@ -95,9 +95,8 @@ TEST_F(RoundRobinTest, MultipleAddressesPerEndpoint) {
   // This causes RR to report CONNECTING.
   subchannel1_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   ExpectConnectingUpdate(
-      LoadBalancingPolicy::kDelayTypeConnecting,
-      ::testing::HasSubstr("num_children=2 num_ready=0 num_connecting=1 "
-                           "num_transient_failure=0"));
+      "round_robin: connecting to endpoints (num_children=2 num_ready=0 "
+      "num_connecting=1 num_transient_failure=0)");
   // In the second endpoint, the first subchannel reports CONNECTING.
   subchannel2_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // In the first endpoint, the first subchannel fails to connect.

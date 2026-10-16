@@ -881,8 +881,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), {}, {}, ::testing::_,
-                             ::testing::_, location);
+            ExpectPickQueued(update.picker.get(), ::testing::_, ::testing::_,
+                             {}, {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
@@ -926,8 +926,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             EXPECT_TRUE(update.status.ok())
                 << update.status << " at " << location.file() << ":"
                 << location.line();
-            ExpectPickQueued(update.picker.get(), {}, {}, ::testing::_,
-                             ::testing::_, location);
+            ExpectPickQueued(update.picker.get(), ::testing::_, ::testing::_,
+                             {}, {}, location);
             return true;  // Keep going.
           }
           EXPECT_EQ(update.state, GRPC_CHANNEL_TRANSIENT_FAILURE)
@@ -945,23 +945,26 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Expects a state update for the specified state and status, and then
   // expects the resulting picker to queue picks.
   bool ExpectStateAndQueuingPicker(
-      grpc_connectivity_state expected_state, absl::Status expected_status,
-      ::testing::Matcher<absl::string_view> expected_delay_type,
+      grpc_connectivity_state expected_state,
       ::testing::Matcher<absl::string_view> expected_delay_reason,
+      ::testing::Matcher<absl::string_view> expected_delay_type =
+          LoadBalancingPolicy::kDelayTypeConnecting,
+      absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
     auto picker = ExpectState(expected_state, expected_status, location);
-    return ExpectPickQueued(picker.get(), {}, {}, expected_delay_type,
-                            expected_delay_reason, location);
+    return ExpectPickQueued(picker.get(), expected_delay_reason,
+                            expected_delay_type, {}, {}, location);
   }
 
   // Convenient frontend to ExpectStateAndQueuingPicker() for CONNECTING.
   bool ExpectConnectingUpdate(
-      ::testing::Matcher<absl::string_view> expected_delay_type,
       ::testing::Matcher<absl::string_view> expected_delay_reason,
+      ::testing::Matcher<absl::string_view> expected_delay_type =
+          LoadBalancingPolicy::kDelayTypeConnecting,
       SourceLocation location = SourceLocation()) {
-    return ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING,
-                                       absl::OkStatus(), expected_delay_type,
-                                       expected_delay_reason, location);
+    return ExpectStateAndQueuingPicker(
+        GRPC_CHANNEL_CONNECTING, expected_delay_reason, expected_delay_type,
+        absl::OkStatus(), location);
   }
 
   static std::unique_ptr<LoadBalancingPolicy::MetadataInterface> MakeMetadata(
@@ -983,10 +986,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Requests a pick on picker and expects a Queue result.
   bool ExpectPickQueued(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      const CallAttributes call_attributes,
-      const std::map<std::string, std::string>& metadata,
-      ::testing::Matcher<absl::string_view> expected_delay_type,
       ::testing::Matcher<absl::string_view> expected_delay_reason,
+      ::testing::Matcher<absl::string_view> expected_delay_type =
+          LoadBalancingPolicy::kDelayTypeConnecting,
+      const CallAttributes call_attributes = {},
+      const std::map<std::string, std::string>& metadata = {},
       SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr) << location.file() << ":" << location.line();
     if (picker == nullptr) return false;
