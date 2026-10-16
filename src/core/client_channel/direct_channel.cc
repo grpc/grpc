@@ -14,6 +14,8 @@
 
 #include "src/core/client_channel/direct_channel.h"
 
+#include <utility>
+
 #include "src/core/call/client_call.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/config/core_configuration.h"
@@ -87,7 +89,8 @@ grpc_call* DirectChannel::CreateCall(
   }
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
-                        compression_options(), std::move(arena), Ref());
+                        compression_options(), std::move(arena), Ref(),
+                        /*stats_plugin_group=*/nullptr);
 }
 
 }  // namespace grpc_core

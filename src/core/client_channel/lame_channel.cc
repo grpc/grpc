@@ -14,6 +14,8 @@
 
 #include "src/core/client_channel/lame_channel.h"
 
+#include <utility>
+
 #include "src/core/call/client_call.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/surface/lame_client.h"
@@ -53,7 +55,8 @@ grpc_call* LameChannel::CreateCall(
   }
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
-                        compression_options(), std::move(arena), Ref());
+                        compression_options(), std::move(arena), Ref(),
+                        /*stats_plugin_group=*/nullptr);
 }
 
 }  // namespace grpc_core
