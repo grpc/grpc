@@ -32,7 +32,6 @@ PROTO_STEM = os.path.join(ROOT_DIR, "src", "proto")
 PYTHON_PROTO_TOP_LEVEL = os.path.join(ROOT_DIR, "src")
 
 
-
 def _prepend_root_to_sys_path():
     while ROOT_DIR in sys.path:
         sys.path.remove(ROOT_DIR)
