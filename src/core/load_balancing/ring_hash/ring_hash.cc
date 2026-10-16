@@ -384,7 +384,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
           MaybeModifyDelayReason(/*is_first_index=*/i == 0, last_failure,
                                  child_pick);
           return child_pick;
-        }
+        } break;
         case GRPC_CHANNEL_TRANSIENT_FAILURE:
           last_failure = endpoint_info.status;
         default:

@@ -497,8 +497,8 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate(absl::StrCat(
-      "pick_first: connecting to ", kAddresses[0], " (subchannel 1 of 3)"));
+  ExpectConnectingUpdate(absl::StrCat("pick_first: connecting to ",
+                                      kAddresses[0], " (subchannel 1 of 3)"));
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
