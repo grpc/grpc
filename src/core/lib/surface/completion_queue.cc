@@ -553,11 +553,10 @@ bool CqEventQueue::Push(grpc_cq_completion* c) {
 grpc_cq_completion* CqEventQueue::Pop() {
   grpc_cq_completion* c = nullptr;
 
-  if (gpr_spinlock_trylock(&queue_lock_)) {
-    bool is_empty = false;
-    c = reinterpret_cast<grpc_cq_completion*>(queue_.PopAndCheckEnd(&is_empty));
-    gpr_spinlock_unlock(&queue_lock_);
-  }
+  gpr_spinlock_lock(&queue_lock_);
+  bool is_empty = false;
+  c = reinterpret_cast<grpc_cq_completion*>(queue_.PopAndCheckEnd(&is_empty));
+  gpr_spinlock_unlock(&queue_lock_);
 
   if (c) {
     num_queue_items_.fetch_sub(1, std::memory_order_relaxed);
