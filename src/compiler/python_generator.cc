@@ -692,6 +692,14 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
   if (config.grpc_tools_version.size() > 0) {
     out->Print(var, "import warnings\n");
   }
+  // The experimental service class calls grpc.experimental.*, which is bound only once the caller
+  // imports it explicitly. Declaring that import to the type checker alone leaves the deliberate
+  // runtime AttributeError intact while letting the generated module type-check.
+  if (file->service_count() > 0) {
+    out->Print("import typing\n");
+    out->Print("if typing.TYPE_CHECKING:\n");
+    out->Print("    import grpc.experimental\n");
+  }
   if (generate_in_pb2_grpc) {
     out->Print("\n");
     StringPairSet imports_set;
