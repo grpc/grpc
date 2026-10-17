@@ -327,6 +327,8 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
                          &auth_context_, on_peer_checked_);
   if (auth_context_ != nullptr) {
     auth_context_->set_protocol(connector_->type().name());
+    tsi_handshaker_result_populate_connection_context(
+        handshaker_result_, auth_context_->connection_context());
   }
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);

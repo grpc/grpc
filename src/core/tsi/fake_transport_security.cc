@@ -619,6 +619,7 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     fake_handshaker_result_create_frame_protector,
     fake_handshaker_result_get_unused_bytes,
     fake_handshaker_result_destroy,
+    nullptr,  // populate_connection_context
 };
 
 static tsi_result fake_handshaker_result_create(
