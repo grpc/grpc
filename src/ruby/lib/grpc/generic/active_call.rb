@@ -213,10 +213,14 @@ module GRPC
     # list, mulitple metadata for its key are sent
     def send_status(code = OK, details = '', assert_finished = false,
                     metadata: {})
-      send_initial_metadata
-      ops = {
-        SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
-      }
+      ops = {}
+
+      @send_initial_md_mutex.synchronize do
+        ops[SEND_INITIAL_METADATA] = @metadata_to_send unless @metadata_sent
+        @metadata_sent = true
+      end
+
+      ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(code, details, metadata)
       ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
       @call.run_batch(ops)
       set_output_stream_done
