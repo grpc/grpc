@@ -44,6 +44,9 @@ cdef class CallbackWrapper:
     cdef CallbackContext context
     cdef object _reference_of_future
     cdef object _reference_of_failure_handler
+    # the object owning the storage where the Core module writes the result of
+    # this operation (a batch's _BatchOperationTag or a request call's RPCState)
+    cdef object _reference_of_tag
 
     @staticmethod
     cdef void functor_run(
