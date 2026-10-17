@@ -136,6 +136,13 @@ void TlsCredentialsOptions::set_key_exchange_groups(
       key_exchange_groups.size());
 }
 
+void TlsCredentialsOptions::set_verification_key_purpose(
+    grpc_tls_verification_key_purpose purpose) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GRPC_CHECK_NE(options, nullptr);
+  grpc_tls_credentials_options_set_verification_key_purpose(options, purpose);
+}
+
 grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()
     const {
   if (legacy_certificate_provider_ != nullptr) {
