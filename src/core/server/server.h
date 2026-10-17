@@ -172,6 +172,7 @@ class Server : public ServerInterface,
     // transport.
     // Implementations are responsible for informing ListenerState about the
     // following stages of a connection -
+// FIXME: update comment
     // 1) Invoke AddLogicalConnection() on accepting a new connection. Do not
     // invoke if the connection is going to be closed immediately.
     // 2) Invoke OnHandshakeDone() (irrespective of error) once handshake is
@@ -250,10 +251,15 @@ class Server : public ServerInterface,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
 
-// FIXME: merge OnHandshakeDone() and SetupTransport(), and maybe add
-// LogicalConnection accessor to get underlying transport.  use that to
-// plumb LogicalConnection into a call context element (will need
-// different plumbing in v1 and v3)
+    // Called to set up the transport.  Note that this may happen prior
+    // to handshaking completing (e.g., for HTTP/2, it happens before
+    // receiving the initial SETTINGS frame from the peer).
+    absl::Status SetupTransport(
+        ListenerInterface::LogicalConnection* connection, Transport* transport,
+        grpc_pollset* accepting_pollset, const ChannelArgs& args);
+
+    // Called when handshaking is complete and the connection will start
+    // accepting RPCs.
     void OnHandshakeDone(ListenerInterface::LogicalConnection* connection);
 
     // Removes the logical connection from being tracked. This could happen for
@@ -385,6 +391,12 @@ class Server : public ServerInterface,
                                    grpc_pollset* accepting_pollset,
                                    const ChannelArgs& args,
                                    grpc_channel_stack_type channel_stack_type)
+      ABSL_LOCKS_EXCLUDED(mu_global_);
+
+  grpc_error_handle SetupTransport(
+      ListenerInterface::LogicalConnection* connection, Transport* transport,
+      grpc_pollset* accepting_pollset, const ChannelArgs& args,
+      grpc_channel_stack_type channel_stack_type)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);

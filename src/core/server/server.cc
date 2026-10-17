@@ -278,28 +278,38 @@ std::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
   return new_args;
 }
 
+absl::Status Server::ListenerState::SetupTransport(
+    ListenerInterface::LogicalConnection* connection, Transport* transport,
+    grpc_pollset* accepting_pollset, const ChannelArgs& args) {
+  GRPC_TRACE_LOG(server, INFO)
+      << "[server " << server_.get() << " ListenerState " << this
+      << "] SetupTransport(" << connection << ")";
+  if (!IsServerConnectionTrackingEnabled()) {
+    if (server_->config_fetcher() == nullptr) {
+      // There is no config fetcher, so we can remove this connection from being
+      // tracked immediately.
+      OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
+      {
+        // Remove the connection if it wasn't already removed.
+        MutexLock lock(mu_);
+        auto connection_handle = connections_.extract(connection);
+        if (!connection_handle.empty()) {
+          connection_to_remove = std::move(connection_handle.value());
+        }
+        // We do not need to check draining_connections_list_ since that only
+        // gets set if there is a config fetcher.
+      }
+    }
+  }
+  return server_->SetupTransport(transport, accepting_pollset, args);
+}
+
 void Server::ListenerState::OnHandshakeDone(
     ListenerInterface::LogicalConnection* connection) {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " ListenerState " << this
       << "] OnHandshakeDone(" << connection << ")";
-  if (IsServerConnectionTrackingEnabled()) return;
-  if (server_->config_fetcher() != nullptr) {
-    return;
-  }
-  // There is no config fetcher, so we can remove this connection from being
-  // tracked immediately.
-  OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
-  {
-    // Remove the connection if it wasn't already removed.
-    MutexLock lock(mu_);
-    auto connection_handle = connections_.extract(connection);
-    if (!connection_handle.empty()) {
-      connection_to_remove = std::move(connection_handle.value());
-    }
-    // We do not need to check draining_connections_list_ since that only
-    // gets set if there is a config fetcher.
-  }
+  // FIXME: notify application of connection start
 }
 
 void Server::ListenerState::RemoveLogicalConnection(
@@ -1385,6 +1395,16 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
 grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
+  return SetupTransport(nullptr, transport, accepting_pollset, args,
+                        channel_stack_type);
+}
+
+// FIXME: plumb connection into a call context element for both v1 and
+// v3 calls
+grpc_error_handle Server::SetupTransport(
+    ListenerInterface::LogicalConnection* connection, Transport* transport,
+    grpc_pollset* accepting_pollset, const ChannelArgs& args,
+    grpc_channel_stack_type channel_stack_type) {
   GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
