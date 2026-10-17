@@ -711,7 +711,7 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata";
   if (assembler.IsReady()) {
-    ValueOrHttp2Status<ServerMetadataHandle> read_result =
+    ValueOrHttp2Status<ClientMetadataHandle> read_result =
         assembler.ReadMetadata(read_context_.parser(),
                                !read_context_.HeaderHasEndStream(),
                                /*max_header_list_size_soft_limit=*/
@@ -719,7 +719,7 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
                                /*max_header_list_size_hard_limit=*/
                                settings_->acked().max_header_list_size());
     if (read_result.IsOk()) {
-      ServerMetadataHandle metadata = TakeValue(std::move(read_result));
+      ClientMetadataHandle metadata = TakeValue(std::move(read_result));
       // TODO(tjagtap): [PH2][P0] : Might be worth differentiating between
       // initial and trailing metadata based on the number of header frames
       // received.
