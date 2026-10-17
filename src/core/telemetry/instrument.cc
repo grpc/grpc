@@ -112,41 +112,6 @@ std::string InstrumentLabelList::DebugString() const {
 }
 
 namespace {
-template <typename T>
-struct Hook {
-  InstrumentCollectionHook<T> hook;
-  Hook<T>* next;
-};
-
-template <typename T>
-std::atomic<Hook<T>*> hooks = nullptr;
-}  // namespace
-
-template <typename T>
-void RegisterInstrumentCollectionHook(InstrumentCollectionHook<T> hook) {
-  auto* new_hook =
-      new Hook<T>{std::move(hook), hooks<T>.load(std::memory_order_acquire)};
-  while (!hooks<T>.compare_exchange_weak(new_hook->next, new_hook,
-                                         std::memory_order_acq_rel)) {
-  }
-}
-
-namespace instrument_detail {
-
-template <typename T>
-void CallInstrumentCollectionHooks(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, T value) {
-  Hook<T>* hook = hooks<T>.load(std::memory_order_acquire);
-  while (GPR_UNLIKELY(hook != nullptr)) {
-    hook->hook(instrument, labels, value);
-    hook = hook->next;
-  }
-}
-
-}  // namespace instrument_detail
-
-namespace {
 std::vector<std::string> FilterLabels(
     InstrumentLabelList domain_label_names,
     InstrumentLabelSet scope_labels_of_interest,
@@ -167,11 +132,13 @@ std::vector<std::string> FilterLabels(
 CollectionScope::CollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
     InstrumentLabelSet labels_of_interest, size_t child_shards_count,
-    size_t storage_shards_count)
+    size_t storage_shards_count,
+    std::weak_ptr<InstrumentRecorder> instrument_recorder)
     : parents_(std::move(parents)),
       labels_of_interest_(labels_of_interest),
       child_shards_(child_shards_count),
-      storage_shards_(storage_shards_count) {
+      storage_shards_(storage_shards_count),
+      instrument_recorder_(std::move(instrument_recorder)) {
   // Sort parents (by address) and then remove any duplicates.
   std::sort(parents_.begin(), parents_.end());
   parents_.erase(std::unique(parents_.begin(), parents_.end()), parents_.end());
@@ -258,9 +225,11 @@ void CollectionScope::TestOnlyReset() {
 RefCountedPtr<CollectionScope> CreateCollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
     InstrumentLabelSet labels, size_t child_shards_count,
-    size_t storage_shards_count) {
+    size_t storage_shards_count,
+    std::weak_ptr<InstrumentRecorder> instrument_recorder) {
   return MakeRefCounted<CollectionScope>(
-      std::move(parents), labels, child_shards_count, storage_shards_count);
+      std::move(parents), labels, child_shards_count, storage_shards_count,
+      std::move(instrument_recorder));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -712,12 +681,14 @@ const InstrumentMetadata::Description* InstrumentIndex::Find(
 ////////////////////////////////////////////////////////////////////////////////
 // DomainStorage
 
-DomainStorage::DomainStorage(QueryableDomain* domain,
-                             std::vector<std::string> label)
+DomainStorage::DomainStorage(
+    QueryableDomain* domain, std::vector<std::string> label,
+    std::weak_ptr<InstrumentRecorder> instrument_recorder)
     : DataSource(MakeRefCounted<channelz::MetricsDomainStorageNode>(
           absl::StrCat(domain->name(), ":", absl::StrJoin(label, ",")))),
       domain_(domain),
-      label_(std::move(label)) {
+      label_(std::move(label)),
+      instrument_recorder_(std::move(instrument_recorder)) {
   channelz_node()->AddParent(domain->channelz_node().get());
   SourceConstructed();
 }
@@ -1000,7 +971,7 @@ RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
   if (it != shard.storage.end()) {
     return it->second;
   }
-  auto storage = CreateDomainStorage(key_labels);
+  auto storage = CreateDomainStorage(key_labels, scope->instrument_recorder());
   shard.storage.emplace(std::pair(this, key_labels), storage);
   return storage;
 }
@@ -1147,34 +1118,8 @@ RefCountedPtr<CollectionScope> GlobalCollectionScope() {
 }
 
 void TestOnlyResetInstruments() {
-  Hook<int64_t>* int64_hook = hooks<int64_t>.load(std::memory_order_acquire);
-  while (int64_hook != nullptr) {
-    Hook<int64_t>* next = int64_hook->next;
-    delete int64_hook;
-    int64_hook = next;
-  }
-  hooks<int64_t>.store(nullptr, std::memory_order_release);
-  Hook<double>* double_hook = hooks<double>.load(std::memory_order_acquire);
-  while (double_hook != nullptr) {
-    Hook<double>* next = double_hook->next;
-    delete double_hook;
-    double_hook = next;
-  }
-  hooks<double>.store(nullptr, std::memory_order_release);
   instrument_detail::QueryableDomain::TestOnlyResetAll();
   GlobalCollectionScopeManager::Get().TestOnlyReset();
 }
 
-template void RegisterInstrumentCollectionHook<int64_t>(
-    InstrumentCollectionHook<int64_t> hook);
-template void RegisterInstrumentCollectionHook<double>(
-    InstrumentCollectionHook<double> hook);
-namespace instrument_detail {
-template void CallInstrumentCollectionHooks<int64_t>(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, int64_t value);
-template void CallInstrumentCollectionHooks<double>(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, double value);
-}  // namespace instrument_detail
 }  // namespace grpc_core
