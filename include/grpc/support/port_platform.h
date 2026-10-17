@@ -754,6 +754,14 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif
 #endif /* GPR_ATTRIBUTE_NOINLINE */
 
+#ifndef GPR_ATTRIBUTE_COUNTED_BY
+#if GPR_HAS_ATTRIBUTE(__counted_by__)
+#define GPR_ATTRIBUTE_COUNTED_BY(n) __attribute__((__counted_by__(n)))
+#else
+#define GPR_ATTRIBUTE_COUNTED_BY(n)
+#endif
+#endif /* GPR_ATTRIBUTE_COUNTED_BY */
+
 #ifndef GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 #ifdef __cplusplus
 #if GPR_HAS_CPP_ATTRIBUTE(clang::always_inline)

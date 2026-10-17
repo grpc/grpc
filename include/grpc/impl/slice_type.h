@@ -79,8 +79,9 @@ struct grpc_slice {
    single item. */
 typedef struct grpc_slice_buffer {
   /** This is for internal use only. External users (i.e any code outside grpc
-   * core) MUST NOT use this field */
-  grpc_slice* base_slices;
+   * core) MUST NOT use this field. Bound by capacity when counted_by is
+   * available; inert otherwise. */
+  grpc_slice* base_slices GPR_ATTRIBUTE_COUNTED_BY(capacity);
 
   /** slices in the array (Points to the first valid grpc_slice in the array) */
   grpc_slice* slices;
