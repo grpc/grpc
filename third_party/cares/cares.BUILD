@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 
 config_setting(

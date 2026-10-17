@@ -14,6 +14,7 @@
 
 # This becomes the BUILD file for @local_config_cc// under non-BSD unixes.
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load(":cc_toolchain_config.bzl", "cc_toolchain_config")
 load(":armeabi_cc_toolchain_config.bzl", "armeabi_cc_toolchain_config")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain", "cc_toolchain_suite")
