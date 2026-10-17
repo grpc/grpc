@@ -48,6 +48,30 @@ def _merge_pyinfos(pyinfos):
         imports = depset(transitive = [p.imports for p in pyinfos]),
     )
 
+def _check_python_import_path(proto):
+    """Fails early for a .proto whose generated module cannot be imported.
+
+    protoc derives the Python package of the generated modules from the
+    directory of the .proto file, relative to its include directory. Python
+    cannot import a package whose name contains '-', and protoc fails late
+    with an unhelpful "not all outputs were created or valid" error, so report
+    the actual problem instead.
+
+    Args:
+      proto: The staged .proto file about to be compiled.
+    """
+    import_path = proto.path
+    include_directory = get_include_directory(proto)
+    if import_path.startswith(include_directory + "/"):
+        import_path = import_path[len(include_directory) + 1:]
+    directory = import_path.rpartition("/")[0]
+    if "-" in directory:
+        fail(("Cannot generate Python code for a .proto whose path contains " +
+              "'-' ({}). Python cannot import a package named with '-'; " +
+              "rename the directory or use strip_import_prefix/import_prefix " +
+              "on the proto_library to change the generated package " +
+              "path.").format(proto.short_path))
+
 def _gen_py_aspect_impl(target, context):
     # Early return for well-known protos.
     if is_well_known(str(context.label)):
@@ -61,6 +85,8 @@ def _gen_py_aspect_impl(target, context):
     protos = []
     for p in target[ProtoInfo].direct_sources:
         protos.append(get_staged_proto_file(target.label, context, p))
+    for p in protos:
+        _check_python_import_path(p)
 
     includes = depset(direct = protos, transitive = [target[ProtoInfo].transitive_sources])
     out_files = (declare_out_files(protos, context, _GENERATED_PROTO_FORMAT) +
@@ -201,6 +227,8 @@ def py_proto_library(name, deps, use_protobuf = True, **kwargs):
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
+    for p in protos:
+        _check_python_import_path(p)
     includes = includes_from_deps(context.attr.deps)
 
     out_files = declare_out_files(protos, context, _GENERATED_GRPC_PROTO_FORMAT)
