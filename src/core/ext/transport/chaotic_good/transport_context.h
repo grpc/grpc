@@ -31,7 +31,8 @@ namespace grpc_core::chaotic_good {
 struct TransportContext : public RefCounted<TransportContext> {
   TransportContext(const ChannelArgs& args,
                    RefCountedPtr<channelz::SocketNode> socket_node)
-      : event_engine(
+      : args(args),
+        event_engine(
             args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
         stats_plugin_group(
             args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
@@ -43,12 +44,14 @@ struct TransportContext : public RefCounted<TransportContext> {
   TransportContext(std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                        event_engine,
                    RefCountedPtr<channelz::SocketNode> socket_node)
-      : event_engine(std::move(event_engine)),
+      : args(),
+        event_engine(std::move(event_engine)),
         stats_plugin_group(nullptr),
         socket_node(std::move(socket_node)),
         trace_full_buffer(false) {
     CHECK(this->event_engine != nullptr);
   }
+  const ChannelArgs args;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine;
   const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
