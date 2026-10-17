@@ -57,6 +57,7 @@ include "_cygrpc/tag.pyx.pxi"
 include "_cygrpc/time.pyx.pxi"
 include "_cygrpc/vtable.pyx.pxi"
 include "_cygrpc/_hooks.pyx.pxi"
+include "_cygrpc/server_call_hook.pyx.pxi"
 include "_cygrpc/observability.pyx.pxi"
 
 include "_cygrpc/grpc_gevent.pyx.pxi"
