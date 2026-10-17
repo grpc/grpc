@@ -39,6 +39,13 @@ bool SyncCertificateVerifier::Verify(TlsCustomVerificationCheckRequest*,
   return true;
 }
 
+bool SyncCertificateVerifierNoStatusSet::Verify(
+    TlsCustomVerificationCheckRequest*, std::function<void(grpc::Status)>,
+    grpc::Status*) {
+  // Don't set the status
+  return true;
+}
+
 AsyncCertificateVerifier::AsyncCertificateVerifier(bool success)
     : success_(success),
       thread_("AsyncCertificateVerifierWorkerThread", WorkerThread, this) {
