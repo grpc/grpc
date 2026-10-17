@@ -279,7 +279,7 @@ class XdsClient::XdsChannel::AdsCall final
   };
 
   class StreamEventHandler final
-      : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+      : public XdsTransport::StreamingCall::EventHandler {
    public:
     explicit StreamEventHandler(RefCountedPtr<AdsCall> ads_call)
         : ads_call_(std::move(ads_call)) {}
@@ -359,8 +359,7 @@ class XdsClient::XdsChannel::AdsCall final
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCall>> retryable_call_;
 
-  OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
-      streaming_call_;
+  OrphanablePtr<XdsTransport::StreamingCall> streaming_call_;
 
   bool sent_initial_message_ = false;
   bool seen_response_ = false;
@@ -380,7 +379,7 @@ class XdsClient::XdsChannel::AdsCall final
 //
 
 class XdsClient::XdsChannel::ConnectivityFailureWatcher
-    : public XdsTransportFactory::XdsTransport::ConnectivityFailureWatcher {
+    : public XdsTransport::ConnectivityFailureWatcher {
  public:
   explicit ConnectivityFailureWatcher(WeakRefCountedPtr<XdsChannel> xds_channel)
       : xds_channel_(std::move(xds_channel)) {}
@@ -730,8 +729,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
           // Passing the initial ref here.  This ref will go away when
           // the StreamEventHandler is destroyed.
           RefCountedPtr<AdsCall>(this)),
-      XdsTransportFactory::XdsTransport::CallOptions().set_wait_for_ready(
-          true));
+      XdsTransport::CallOptions().set_wait_for_ready(true));
   GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
