@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 
 package(
@@ -27,7 +28,6 @@ _XDS_PROTO_DIRECTORIES = [
     "envoy",
     "google",
     "opencensus",
-    "opentelemetry",
     "udpa",
     "validate",
     "xds",
@@ -41,5 +41,6 @@ py_library(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "@com_google_protobuf//:protobuf_python",
+        requirement("opentelemetry-proto"),
     ],
 )
