@@ -2273,7 +2273,11 @@ static tsi_result ssl_handshaker_result_extract_peer(
   unsigned int alpn_selected_len;
   const tsi_ssl_handshaker_result* impl =
       reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   X509* peer_cert = SSL_get_peer_certificate(impl->ssl);
+#else
+  X509* peer_cert = SSL_get1_peer_certificate(impl->ssl);
+#endif
   if (peer_cert != nullptr) {
     result = peer_from_x509(peer_cert, 1, peer);
     X509_free(peer_cert);
