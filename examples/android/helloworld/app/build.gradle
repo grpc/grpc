@@ -1,6 +1,22 @@
 apply plugin: 'com.android.application'
 
+// For demonstration purposes, this uses the ABI matching the host architecture.
+// For prod builds, explicitly define which architectures you want to support:
+// https://developer.android.com/ndk/guides/abis
+def getHostArchitectureFilter() {
+    String arch = System.getProperty("os.arch").toLowerCase()
+    // Apple Silicon or ARM64 Linux/Windows machine
+    if (arch.contains("aarch64") || arch.contains("arm64")) {
+        return ['arm64-v8a']
+    }
+    // Intel/AMD computer
+    else {
+        return ['x86_64']
+    }
+}
+
 android {
+    namespace "io.grpc.helloworldexample.cpp"
     compileSdkVersion 26
     ndkVersion "29.0.14206865"
     defaultConfig {
@@ -36,7 +52,9 @@ android {
                 version "3.22.1"
             }
         }
-        ndk.abiFilters 'x86'
+        ndk {
+            abiFilters.addAll(getHostArchitectureFilter())
+        }
     }
     buildTypes {
         debug {
@@ -44,7 +62,7 @@ android {
         }
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     externalNativeBuild {
