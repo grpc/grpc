@@ -40,3 +40,6 @@ find = {}
 
 [tool.setuptools.package-dir]
 "" = "."
+
+[tool.setuptools.package-data]
+"grpc_health" = ["py.typed"]
