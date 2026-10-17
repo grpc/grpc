@@ -37,6 +37,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
@@ -728,6 +729,18 @@ class HPackParser::Parser {
       input_->SetErrorAndContinueParsing(*md.parse_status);
     }
     if (GPR_LIKELY(metadata_buffer_ != nullptr)) {
+      if (IsMapHostHeaderToAuthorityEnabled()) {
+        if (md.md.key() == HttpAuthorityMetadata::key() &&
+            metadata_buffer_->get_pointer(HttpAuthorityMetadata()) != nullptr) {
+          input_->SetErrorAndContinueParsing(
+              HpackParseResult::DuplicateHeaderError(
+                  HttpAuthorityMetadata::key()));
+        } else if (md.md.key() == HostMetadata::key() &&
+                   metadata_buffer_->get_pointer(HostMetadata()) != nullptr) {
+          input_->SetErrorAndContinueParsing(
+              HpackParseResult::DuplicateHeaderError(HostMetadata::key()));
+        }
+      }
       metadata_buffer_->Set(md.md);
     }
     if (state_.metadata_early_detection.MustReject(state_.frame_length)) {
@@ -1163,6 +1176,24 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last,
                                           CallSpan* call_tracer) {
   ParseInputInner(&input);
   if (is_last && is_boundary()) {
+    if (IsMapHostHeaderToAuthorityEnabled() && metadata_buffer_ != nullptr &&
+        !log_info_.is_client && log_info_.type == LogInfo::kHeaders) {
+      // Note: HostMetadata cannot be removed completely from
+      // grpc_metadata_batch or parsed directly as HttpAuthorityMetadata because
+      // "host" is stored at index 38 in the HPACK static table (and may be
+      // added to the dynamic table). HPackTable::Memento preserves HostMetadata
+      // so that indexed key lookups return "host" (4 bytes) rather than
+      // ":authority" (10 bytes), preventing HPACK dynamic table size
+      // desynchronization (RFC 7541). Once a server has fully parsed the
+      // request headers, we canonicalize HostMetadata into
+      // HttpAuthorityMetadata (if :authority is missing) or discard it (per
+      // gRFC A41) so downstream layers only ever see HttpAuthorityMetadata.
+      std::optional<Slice> host = metadata_buffer_->Take(HostMetadata());
+      if (host.has_value() &&
+          metadata_buffer_->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+        metadata_buffer_->Set(HttpAuthorityMetadata(), std::move(*host));
+      }
+    }
     if (state_.mitigation_engine != nullptr && metadata_buffer_ != nullptr) {
       auto action = state_.mitigation_engine->EvaluateAllIncomingMetadata(
           *metadata_buffer_,
