@@ -21,12 +21,16 @@
 
 #include <grpc/credentials.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/transport/auth_context.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -50,8 +54,115 @@ class Http2TransportStats {
     return stats_collector_;
   }
 
+  // Records the payload size (in bytes) of an incoming DATA frame.
+  void RecordReadDataFrameSize(const uint32_t data_frame_size) {
+    stats_collector_->IncrementHttp2ReadDataFrameSize(data_frame_size);
+  }
+
+  // Records the payload size (in bytes) of an outgoing gRPC message.
+  // This function is thread-safe.
+  void RecordSendMessageSize(const uint64_t send_message_size) {
+    stats_collector_->IncrementHttp2SendMessageSize(send_message_size);
+  }
+
+  // Increments the count of transport write cycles initiated and records the
+  // target byte size available for writing in a transport write cycle.
+  void BeginWrite(const size_t write_target_size) {
+    stats_collector_->IncrementHttp2WritesBegun();
+    stats_collector_->IncrementHttp2WriteTargetSize(write_target_size);
+  }
+
+  // Records the payload size (in bytes) of an outgoing DATA frame.
+  void RecordWriteDataFrameSize(const size_t data_frame_size) {
+    stats_collector_->IncrementHttp2WriteDataFrameSize(data_frame_size);
+  }
+
+  // Increments the count of non-ACK SETTINGS frames sent.
+  void RecordSettingsWrites() {
+    stats_collector_->IncrementHttp2SettingsWrites();
+  }
+
+  // Increments the count of non-ACK PING frames sent.
+  void RecordPingsSent() { stats_collector_->IncrementHttp2PingsSent(); }
+
+  // Records the window size increment from an incoming transport-level
+  // WINDOW_UPDATE frame, and records the elapsed time (in ms) since the
+  // previous transport-level WINDOW_UPDATE if one was previously received.
+  void RecordTransportWindowUpdate(const uint32_t increment) {
+    const Timestamp now = Timestamp::Now();
+    if (last_transport_window_update_time_ != Timestamp::InfPast()) {
+      stats_collector_->IncrementHttp2TransportWindowUpdatePeriod(
+          (now - last_transport_window_update_time_).millis());
+    }
+    last_transport_window_update_time_ = now;
+    stats_collector_->IncrementHttp2TransportRemoteWindowUpdate(increment);
+  }
+
+  // Records the window size increment from an incoming stream-level
+  // WINDOW_UPDATE frame, and records the elapsed time (in ms) since the
+  // previous WINDOW_UPDATE on that stream if one was previously received.
+  // Returns the timestamp of the current update.
+  Timestamp RecordStreamWindowUpdate(const uint32_t increment,
+                                     const Timestamp last_window_update_time) {
+    const Timestamp now = Timestamp::Now();
+    if (last_window_update_time != Timestamp::InfPast()) {
+      stats_collector_->IncrementHttp2StreamWindowUpdatePeriod(
+          (now - last_window_update_time).millis());
+    }
+    stats_collector_->IncrementHttp2StreamRemoteWindowUpdate(increment);
+    return now;
+  }
+
+  // Records a transport stall, where a write is attempted but blocked due to
+  // lack of transport-level flow control tokens.
+  void RecordTransportStalls() {
+    stats_collector_->IncrementHttp2TransportStalls();
+  }
+
+  // Records a stream stall, where a write is attempted but blocked due to
+  // lack of stream-level flow control tokens.
+  void RecordStreamStalls() { stats_collector_->IncrementHttp2StreamStalls(); }
+
  private:
   std::shared_ptr<Http2StatsCollector> stats_collector_;
+  Timestamp last_transport_window_update_time_ = Timestamp::InfPast();
+};
+
+class WriteFrameStatsVisitor {
+ public:
+  explicit WriteFrameStatsVisitor(Http2TransportStats& http2_transport_stats)
+      : http2_transport_stats_(http2_transport_stats) {}
+  ~WriteFrameStatsVisitor() = default;
+
+  WriteFrameStatsVisitor(const WriteFrameStatsVisitor&) = delete;
+  WriteFrameStatsVisitor& operator=(const WriteFrameStatsVisitor&) = delete;
+  WriteFrameStatsVisitor(WriteFrameStatsVisitor&&) = delete;
+  WriteFrameStatsVisitor& operator=(WriteFrameStatsVisitor&&) = delete;
+
+  void operator()(const Http2DataFrame& frame) const {
+    http2_transport_stats_.RecordWriteDataFrameSize(frame.payload.Length());
+  }
+  void operator()(const Http2HeaderFrame&) const {}
+  void operator()(const Http2ContinuationFrame&) const {}
+  void operator()(const Http2RstStreamFrame&) const {}
+  void operator()(const Http2SettingsFrame& frame) const {
+    if (!frame.ack) {
+      http2_transport_stats_.RecordSettingsWrites();
+    }
+  }
+  void operator()(const Http2PingFrame& frame) const {
+    if (!frame.ack) {
+      http2_transport_stats_.RecordPingsSent();
+    }
+  }
+  void operator()(const Http2GoawayFrame&) const {}
+  void operator()(const Http2WindowUpdateFrame&) const {}
+  void operator()(const Http2SecurityFrame&) const {}
+  void operator()(const Http2UnknownFrame&) const {}
+  void operator()(const Http2EmptyFrame&) const {}
+
+ private:
+  Http2TransportStats& http2_transport_stats_;
 };
 
 }  // namespace http2

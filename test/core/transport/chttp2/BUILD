@@ -1249,6 +1249,7 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        ":http2_common_test_inputs",
         ":http2_frame_test_helper",
         "//:chttp2_frame",
         "//:config",
