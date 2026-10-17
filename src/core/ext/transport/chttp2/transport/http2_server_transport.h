@@ -571,7 +571,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
 
-  void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
+  void MaybeSpawnPingTimeout(
+      std::optional<PingManager::PingTimeoutArgs> ping_timeout_args);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
