@@ -30,6 +30,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/string_view.h"
 
 //
 // This file contains internal interfaces used to allow various plugins
@@ -97,6 +98,12 @@ class SubchannelInterfaceWithCallDestination : public SubchannelInterface {
   // Obtain the call destination for this subchannel.
   virtual RefCountedPtr<UnstartedCallDestination> call_destination() = 0;
 };
+
+constexpr absl::string_view kDelayTypeResolving = "resolving";
+constexpr absl::string_view kDelayTypePickerFailingWithWaitForReady =
+    "picker_failing_with_wait_for_ready";
+constexpr absl::string_view kDelayTypeSubchannelStateMismatch =
+    "subchannel_state_mismatch";
 
 }  // namespace grpc_core
 

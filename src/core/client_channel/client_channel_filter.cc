@@ -1347,7 +1347,9 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannelFilter::CreateLbPolicyLocked(
   // channel into TRANSIENT_FAILURE) and make sure we have a queueing picker.
   UpdateStateAndPickerLocked(
       GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
-      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
+      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(
+          nullptr, LoadBalancingPolicy::kDelayTypeConnecting,
+          "client_channel: waiting for initial picker from LB policy"));
   // Now create the LB policy.
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
@@ -1592,11 +1594,10 @@ grpc_error_handle ClientChannelFilter::DoPingLocked(grpc_transport_op* op) {
   if (state_tracker_.state() != GRPC_CHANNEL_READY) {
     return GRPC_ERROR_CREATE("channel not connected");
   }
-  LoadBalancingPolicy::PickResult result;
-  {
-    MutexLock lock(lb_mu_);
-    result = picker_->Pick(LoadBalancingPolicy::PickArgs());
-  }
+  LoadBalancingPolicy::PickResult result = [this] {
+    MutexLock lock(&lb_mu_);
+    return picker_->Pick(LoadBalancingPolicy::PickArgs());
+  }();
   return HandlePickResult<grpc_error_handle>(
       &result,
       // Complete pick.
@@ -1872,11 +1873,21 @@ std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
     bool was_queued) {
   // Check if we have a resolver result to use.
   absl::StatusOr<RefCountedPtr<ConfigSelector>> config_selector;
+  auto* call_tracer = arena_->GetContext<ClientCallTracer>();
   {
     MutexLock lock(chand()->resolution_mu_);
     bool result_ready = CheckResolutionLocked(&config_selector);
     // If no result is available, queue the call.
     if (!result_ready) {
+      if (call_tracer != nullptr) {
+        const absl::Status resolver_error =
+            chand()->resolver_transient_failure_error_;
+        call_tracer->RecordDelay(
+            kDelayTypeResolving,
+            resolver_error.ok()
+                ? std::string("waiting for initial resolver result")
+                : resolver_error.ToString());
+      }
       AddCallToResolverQueuedCallsLocked();
       return std::nullopt;
     }
@@ -1889,6 +1900,9 @@ std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
         << "chand=" << chand() << " calld=" << this
         << ": error applying config to call: error=" << StatusToString(error);
     return error;
+  }
+  if (call_tracer != nullptr) {
+    call_tracer->MaybeRecordDelayEnd();
   }
   // If the call was queued, add trace annotation.
   if (was_queued) {
@@ -2429,6 +2443,9 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
       return std::nullopt;
     }
     // Pick is complete.
+    if (error.ok() && call_attempt_tracer_ != nullptr) {
+      call_attempt_tracer_->MaybeRecordDelayEnd();
+    }
     // If it was queued, add a trace annotation.
     if (was_queued && call_attempt_tracer_ != nullptr) {
       call_attempt_tracer_->RecordAnnotation("Delayed LB pick complete.");
@@ -2497,6 +2514,11 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
               << "chand=" << chand_ << " lb_call=" << this
               << ": subchannel returned by LB picker "
                  "has no connected subchannel; queueing pick";
+          if (call_attempt_tracer_ != nullptr) {
+            call_attempt_tracer_->RecordDelay(
+                kDelayTypeSubchannelStateMismatch,
+                "picked subchannel left READY before it could be used");
+          }
           return false;
         }
         lb_subchannel_call_tracker_ =
@@ -2509,9 +2531,13 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         return true;
       },
       // QueuePick
-      [this](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
+      [this](LoadBalancingPolicy::PickResult::Queue* queue_pick) {
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "chand=" << chand_ << " lb_call=" << this << ": LB pick queued";
+        if (call_attempt_tracer_ != nullptr) {
+          call_attempt_tracer_->RecordDelay(
+              queue_pick->delay_type, std::move(queue_pick->delay_reason));
+        }
         return false;
       },
       // FailPick
@@ -2530,6 +2556,11 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         }
         // If wait_for_ready is true, then queue to retry when we get a new
         // picker.
+        if (call_attempt_tracer_ != nullptr) {
+          call_attempt_tracer_->RecordDelay(
+              kDelayTypePickerFailingWithWaitForReady,
+              fail_pick->status.ToString());
+        }
         return false;
       },
       // DropPick

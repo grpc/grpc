@@ -975,6 +975,19 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
                     // Not an error.  Make sure we actually have a result.
                     got_result = *config_selector != nullptr;
                   }
+                  auto* tracer = MaybeGetContext<ClientCallTracer>();
+                  if (tracer != nullptr) {
+                    if (!got_result) {
+                      tracer->RecordDelay(
+                          kDelayTypeResolving,
+                          config_selector.ok()
+                              ? std::string(
+                                    "waiting for initial resolver result")
+                              : config_selector.status().ToString());
+                    } else if (config_selector.ok()) {
+                      tracer->MaybeRecordDelayEnd();
+                    }
+                  }
                   return got_result;
                 })),
             // Handle resolver result.
@@ -1312,7 +1325,9 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
   // channel into TRANSIENT_FAILURE) and make sure we have a queueing picker.
   UpdateStateAndPickerLocked(
       GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
-      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
+      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(
+          nullptr, LoadBalancingPolicy::kDelayTypeConnecting,
+          "client_channel: waiting for initial picker from LB policy"));
   // Now create the LB policy.
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
