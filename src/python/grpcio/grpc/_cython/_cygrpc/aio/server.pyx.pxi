@@ -302,17 +302,15 @@ cdef class _SyncServicerContext:
               object code,
               str details='',
               tuple trailing_metadata=_IMMUTABLE_EMPTY_METADATA):
-        future = asyncio.run_coroutine_threadsafe(
+        # Raises an AbortError
+        _run_coro_threadsafe_and_wait(
             self._context.abort(code, details, trailing_metadata),
             self._loop)
-        # Abort should raise an AbortError
-        future.result()
 
     def send_initial_metadata(self, object metadata):
-        future = asyncio.run_coroutine_threadsafe(
+        _run_coro_threadsafe_and_wait(
             self._context.send_initial_metadata(metadata),
             self._loop)
-        future.result()
 
     def set_trailing_metadata(self, object metadata):
         self._context.set_trailing_metadata(metadata)
@@ -510,17 +508,29 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
             # NOTE(lidiz) Streaming handler in sync stack is either a generator
             # function or a function returns a generator.
             sync_servicer_context = _SyncServicerContext(servicer_context)
-            gen = stream_handler(request, sync_servicer_context)
+
+            # Run sync method handlers in the thread pool
+            gen = await loop.run_in_executor(
+                rpc_state.server.thread_pool(),
+                stream_handler,
+                request,
+                sync_servicer_context,
+            )
             async_response_generator = generator_to_async_generator(gen,
                                                                     loop,
                                                                     rpc_state.server.thread_pool())
 
         # Consumes messages from the generator
-        async for response_message in async_response_generator:
-            # Raises exception if aborted
-            rpc_state.raise_for_termination()
+        try:
+            async for response_message in async_response_generator:
+                # Raises exception if aborted
+                rpc_state.raise_for_termination()
 
-            await servicer_context.write(response_message)
+                await servicer_context.write(response_message)
+        finally:
+            # Close the generator now. An aborted or cancelled RPC releases
+            # the thread pool worker and the generator immediately
+            await async_response_generator.aclose()
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()
