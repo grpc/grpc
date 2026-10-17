@@ -67,6 +67,7 @@ processing requests via debug logs. Available tracers include:
   - rls_lb - RLS load balancing policy.
   - round_robin - Round robin load balancing policy.
   - secure_endpoint - Bytes flowing through encrypted channels.
+  - server - Server operations.
   - server_channel - Lightweight trace of significant server channel events.
   - server_config_selector_interceptor - Traces calls in the server config selector interceptor.
   - stateful_session_filter - Stateful session affinity.

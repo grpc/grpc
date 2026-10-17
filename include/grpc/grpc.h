@@ -488,6 +488,11 @@ GRPCAPI void grpc_server_shutdown_and_notify(grpc_server* server,
                                              grpc_completion_queue* cq,
                                              void* tag);
 
+/* FIXME: add argument to existing method instead of duplicating. */
+GRPCAPI void grpc_server_shutdown_and_notify_with_deadline(
+    grpc_server* server, gpr_timespec deadline, grpc_completion_queue* cq,
+    void* tag);
+
 /** Cancel all in-progress calls.
     Only usable after shutdown. */
 GRPCAPI void grpc_server_cancel_all_calls(grpc_server* server);
