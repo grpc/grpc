@@ -724,6 +724,18 @@ class ModuleMainTest(unittest.TestCase):
                 stream.seek(0)
                 self.assertEqual(0, len(stream.read()))
             self.assertEqual(0, proc.returncode)
+            self.assertTrue(
+                os.path.exists(
+                    os.path.join(work_dir, "grpc", "testing", "empty_pb2.py")
+                )
+            )
+            self.assertFalse(
+                os.path.exists(
+                    os.path.join(
+                        work_dir, "grpc", "testing", "empty_pb2_grpc.py"
+                    )
+                )
+            )
         finally:
             shutil.rmtree(work_dir)
 
