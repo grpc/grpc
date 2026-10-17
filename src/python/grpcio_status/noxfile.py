@@ -1,0 +1,47 @@
+# Copyright 2025 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Provides nox command classes for the GRPC Python setup process."""
+
+import os
+import shutil
+
+import nox
+
+ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
+ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
+STATUS_PROTO = "third_party/googleapis/google/rpc/status.proto"
+STATUS_PROTO_ABS_PATH = os.path.join(GRPC_ROOT_ABS_PATH, STATUS_PROTO)
+PACKAGE_STATUS_PROTO_DIR = "grpc_status/google/rpc"
+LICENSE = os.path.join(GRPC_ROOT_ABS_PATH, "LICENSE")
+
+
+@nox.session(python=False)
+def preprocess(session: nox.Session):
+    """
+    Session to copy proto modules from third_party/googleapis/google/rpc/ and LICENCE
+    from the root directory
+    """
+    session.log("Running preprocess for grpcio_status...")
+
+    session.cd(GRPC_ROOT_ABS_PATH)
+    target_proto_dir = os.path.join(ROOT_DIR, PACKAGE_STATUS_PROTO_DIR)
+    os.makedirs(target_proto_dir, exist_ok=True)
+    if os.path.isfile(STATUS_PROTO_ABS_PATH):
+        shutil.copyfile(
+            STATUS_PROTO_ABS_PATH,
+            os.path.join(target_proto_dir, "status.proto"),
+        )
+    if os.path.isfile(LICENSE):
+        shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
