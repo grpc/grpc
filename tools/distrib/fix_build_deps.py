@@ -115,7 +115,8 @@ EXTERNAL_DEPS = {
     "opentelemetry/sdk/common/attribute_utils.h": "otel/sdk:headers",
     "opentelemetry/sdk/resource/resource.h": "otel/sdk:headers",
     "opentelemetry/sdk/resource/resource_detector.h": "otel/sdk:headers",
-    "opentelemetry/sdk/resource/semantic_conventions.h": "otel/sdk:headers",
+    "opentelemetry/semconv/incubating/cloud_attributes.h": "otel/api",
+    "opentelemetry/semconv/incubating/k8s_attributes.h": "otel/api",
     "ares.h": "cares",
     "fuzztest/fuzztest.h": ["fuzztest", "fuzztest_main"],
     "google/api/monitored_resource.pb.h": (
