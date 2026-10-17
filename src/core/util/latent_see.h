@@ -276,54 +276,94 @@ class Appender {
               int64_t timestamp_end) {
     DCHECK(Enabled());
     DCHECK_NE(metadata, nullptr);
+    ThreadBin& thread_bin = thread_bin_;
+    thread_bin.Lock();
+    std::unique_ptr<Bin>& bin = thread_bin.bin;
     Bin::AppendResult result;
     do {
-      if (GPR_UNLIKELY(bin_ == nullptr)) bin_ = std::make_unique<Bin>();
-      result = bin_->Append(metadata, timestamp_begin, timestamp_end);
+      if (GPR_UNLIKELY(bin == nullptr)) bin = std::make_unique<Bin>();
+      result = bin->Append(metadata, timestamp_begin, timestamp_end);
       if (GPR_UNLIKELY(result == Bin::AppendResult::kFailed)) {
-        sink_->Append(std::move(bin_));
+        sink_->Append(std::move(bin));
         // Retry with a new bin.
-        bin_ = nullptr;
+        bin = nullptr;
       }
     } while (result == Bin::AppendResult::kFailed);
 
     if (GPR_UNLIKELY(result == Bin::AppendResult::kFull)) {
-      sink_->Append(std::move(bin_));
+      sink_->Append(std::move(bin));
     }
+    thread_bin.Unlock();
   }
   template <typename X>
   void Append(const Metadata* metadata, int64_t timestamp_begin,
               int64_t timestamp_end, const X& x) {
     DCHECK(Enabled());
     DCHECK_NE(metadata, nullptr);
+    ThreadBin& thread_bin = thread_bin_;
+    thread_bin.Lock();
+    std::unique_ptr<Bin>& bin = thread_bin.bin;
     Bin::AppendResult result;
     do {
-      if (GPR_UNLIKELY(bin_ == nullptr)) bin_ = std::make_unique<Bin>();
-      result = bin_->Append(metadata, timestamp_begin, timestamp_end, x);
+      if (GPR_UNLIKELY(bin == nullptr)) bin = std::make_unique<Bin>();
+      result = bin->Append(metadata, timestamp_begin, timestamp_end, x);
       if (GPR_UNLIKELY(result == Bin::AppendResult::kFailed)) {
-        sink_->Append(std::move(bin_));
+        sink_->Append(std::move(bin));
         // Retry with a new bin.
-        bin_ = nullptr;
+        bin = nullptr;
       }
     } while (result == Bin::AppendResult::kFailed);
 
     if (GPR_UNLIKELY(result == Bin::AppendResult::kFull)) {
-      sink_->Append(std::move(bin_));
+      sink_->Append(std::move(bin));
     }
+    thread_bin.Unlock();
   }
 
   void Flush() {
-    if (GPR_UNLIKELY(bin_ != nullptr)) sink_->Append(std::move(bin_));
+    ThreadBin& thread_bin = thread_bin_;
+    thread_bin.Lock();
+    if (GPR_UNLIKELY(thread_bin.bin != nullptr)) {
+      sink_->Append(std::move(thread_bin.bin));
+    }
+    thread_bin.Unlock();
   }
 
  private:
   friend void Collect(Notification*, absl::Duration, size_t, Output*);
 
+  // The current bin of one thread. Every ThreadBin is registered in a global
+  // list so that Collect() can flush bins that are only partially filled when
+  // collection stops.
+  struct ThreadBin {
+    ThreadBin();
+    ~ThreadBin();
+    ThreadBin(const ThreadBin&) = delete;
+    ThreadBin& operator=(const ThreadBin&) = delete;
+
+    // Guards `bin`. Only the owning thread takes this lock, except while
+    // Collect() flushes all bins, so it is almost never contended and a single
+    // atomic exchange is much cheaper than a mutex on this hot path.
+    void Lock() {
+      while (GPR_UNLIKELY(locked.exchange(true, std::memory_order_acquire))) {
+      }
+    }
+    void Unlock() { locked.store(false, std::memory_order_release); }
+
+    std::atomic<bool> locked{false};
+    std::unique_ptr<Bin> bin;
+  };
+  // The list of all live ThreadBins. Defined in latent_see.cc.
+  struct ThreadBinRegistry;
+
   static void Enable(Sink* sink);
   static void Disable();
+  // Moves the current bin of every thread into `sink`. If `sink` is null, the
+  // bins are discarded instead.
+  static void FlushAllThreadBins(Sink* sink);
 
   Sink* sink_;
-  static thread_local std::unique_ptr<Bin> bin_;
+  static thread_local ThreadBin thread_bin_;
   static std::atomic<Sink*> active_sink_;
 };
 
