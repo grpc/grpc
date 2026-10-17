@@ -50,6 +50,7 @@
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -743,12 +744,19 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
       resolved = grpc_resolve_vsock_address(parsed_addr_unprefixed);
       GRPC_RETURN_IF_ERROR(resolved.status());
     } else {
-      absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
-          args.GetObjectRef<EventEngine>()->GetDNSResolver(
-              EventEngine::DNSResolver::ResolverOptions());
-      GRPC_RETURN_IF_ERROR(ee_resolver.status());
-      results = grpc_event_engine::experimental::LookupHostnameBlocking(
-          ee_resolver->get(), parsed_addr, "https");
+      grpc_resolved_address ip_addr;
+      if (grpc_parse_ipv4_hostport(parsed_addr, &ip_addr, false) ||
+          grpc_parse_ipv6_hostport(parsed_addr, &ip_addr, false)) {
+        results->push_back(
+            grpc_event_engine::experimental::CreateResolvedAddress(ip_addr));
+      } else {
+        absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
+            args.GetObjectRef<EventEngine>()->GetDNSResolver(
+                EventEngine::DNSResolver::ResolverOptions());
+        GRPC_RETURN_IF_ERROR(ee_resolver.status());
+        results = grpc_event_engine::experimental::LookupHostnameBlocking(
+            ee_resolver->get(), parsed_addr, "https");
+      }
     }
     if (resolved.ok()) {
       for (const auto& addr : *resolved) {

@@ -17,6 +17,7 @@
 //
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
 #include <inttypes.h>
@@ -192,8 +193,25 @@ WorkStealingThreadPool::~WorkStealingThreadPool() {
   GRPC_CHECK(pool_->IsQuiesced());
 }
 
+namespace {
+class ThreadPoolAnyInvocableClosure : public EventEngine::Closure {
+ public:
+  explicit ThreadPoolAnyInvocableClosure(absl::AnyInvocable<void()> cb)
+      : cb_(std::move(cb)) {}
+  void Run() override {
+    if (cb_ != nullptr) {
+      cb_();
+    }
+    delete this;
+  }
+
+ private:
+  absl::AnyInvocable<void()> cb_;
+};
+}  // namespace
+
 void WorkStealingThreadPool::Run(absl::AnyInvocable<void()> callback) {
-  Run(SelfDeletingClosure::Create(std::move(callback)));
+  Run(new ThreadPoolAnyInvocableClosure(std::move(callback)));
 }
 
 void WorkStealingThreadPool::Run(EventEngine::Closure* closure) {
