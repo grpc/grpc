@@ -64,12 +64,26 @@ cdef class _BatchOperationTag:
         operation.c()
         self.c_ops[index] = operation.c_op
 
-  cdef BatchOperationEvent event(self, grpc_event c_event):
+  cdef void release(self) except *:
+    # Idempotent: parses the received operations and frees the ops array once.
+    # Core consumes the ops array inside grpc_call_start_batch and keeps no
+    # pointer to it, so this only has to wait for the batch to complete, not
+    # for anyone to consume its event.
     cdef Operation operation
-    if 0 < self.c_nops:
+    if self.c_ops != NULL:
       for operation in self._operations:
         operation.un_c()
       gpr_free(self.c_ops)
+      self.c_ops = NULL
+
+  def __dealloc__(self):
+    if self.c_ops != NULL:
+      gpr_free(self.c_ops)
+      self.c_ops = NULL
+
+  cdef BatchOperationEvent event(self, grpc_event c_event):
+    if 0 < self.c_nops:
+      self.release()
       return BatchOperationEvent(
           c_event.type, c_event.success, self._user_tag, self._operations)
     else:
