@@ -23,4 +23,9 @@ void DefaultTcpTracer::RecordConnectionMetrics(TcpConnectionMetrics metrics) {
   connection_metrics_ = metrics;
 }
 
+void DefaultTcpTracer::RecordLatency(Latency latency) {
+  MutexLock lock(&mu_);
+  last_latency_ = latency;
+}
+
 }  // namespace grpc_core
