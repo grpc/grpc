@@ -144,7 +144,8 @@ TEST(FlowControlManagerTest, GetStreamFlowControlTokens) {
   {
     chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd(
         &stream_flow_control);
-    sfc_upd.RecvUpdate(500);
+    ASSERT_TRUE(
+        sfc_upd.RecvUpdate(500, peer_settings.initial_window_size()).ok());
   }
   EXPECT_EQ(chttp2::kDefaultWindow - 500,
             GetStreamFlowControlTokens(stream_flow_control, peer_settings));
@@ -203,7 +204,8 @@ TEST(FlowControlManagerTest, GetMaxPermittedDequeue) {
         &stream_flow_control);
     sfc_upd.SentData(60000);
     // This restores the stream tokens, but NOT the transport tokens.
-    sfc_upd.RecvUpdate(60000);
+    ASSERT_TRUE(
+        sfc_upd.RecvUpdate(60000, peer_settings.initial_window_size()).ok());
   }
   // transport window = 64535-60000=4535, stream_delta=-1000-60000+60000 = -1000
   // flow_control_tokens = min(4535, -1000+65535) = min(4535, 64535) = 4535
@@ -216,7 +218,7 @@ TEST(FlowControlManagerTest, GetMaxPermittedDequeue) {
   {
     chttp2::TransportFlowControl::OutgoingUpdateContext tfc_upd(
         &transport_flow_control);
-    tfc_upd.RecvUpdate(60000);
+    ASSERT_TRUE(tfc_upd.RecvUpdate(60000).ok());
   }
   // transport window = 4535+60000=64535, stream_delta=-1000
   // Decrease peer_settings initial window size
