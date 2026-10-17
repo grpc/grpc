@@ -172,14 +172,19 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
   bool multiple_small_frames =
       (s->num_frames >= 64) &&
       ((s->frame_storage.length / s->num_frames) < GRPC_SLICE_INLINED_SIZE);
-  if (GPR_UNLIKELY(multiple_small_frames && is_small_frame &&
-                   grpc_core::IsHeaderDataFrameEnabled())) {
-    uint8_t* append_ptr =
-        grpc_slice_buffer_tiny_add(&s->frame_storage, slice_len);
-    memcpy(append_ptr, GRPC_SLICE_START_PTR(slice), slice_len);
+  if (s->discard_non_grpc_response_data) {
+    // Do not feed an HTTP error body to the gRPC message deframer.
+    s->num_frames = 0;
   } else {
-    grpc_core::CSliceRef(slice);
-    grpc_slice_buffer_add(&s->frame_storage, slice);
+    if (GPR_UNLIKELY(multiple_small_frames && is_small_frame &&
+                     grpc_core::IsHeaderDataFrameEnabled())) {
+      uint8_t* append_ptr =
+          grpc_slice_buffer_tiny_add(&s->frame_storage, slice_len);
+      memcpy(append_ptr, GRPC_SLICE_START_PTR(slice), slice_len);
+    } else {
+      grpc_core::CSliceRef(slice);
+      grpc_slice_buffer_add(&s->frame_storage, slice);
+    }
   }
   grpc_chttp2_maybe_complete_recv_message(t, s);
 
@@ -192,7 +197,7 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
   if (is_last && s->received_last_frame) {
     grpc_chttp2_mark_stream_closed(
         t, s, true, false,
-        t->is_client
+        t->is_client && !s->discard_non_grpc_response_data
             ? GRPC_ERROR_CREATE("Data frame with END_STREAM flag received")
             : absl::OkStatus());
   }
