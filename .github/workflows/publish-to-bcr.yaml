@@ -1,5 +1,5 @@
 # Publish new releases to Bazel Central Registry.
-name: Publish to BCR
+name: Publish to BCR (Manual)
 on:
   # Run the publish workflow after a successful release
   # Will be triggered from the release.yaml workflow
