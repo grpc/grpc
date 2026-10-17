@@ -758,6 +758,69 @@ class TestServer(AioTestBase):
             str(exception_ctx.exception.details()),
         )
 
+    async def test_generic_only_fast_path(self):
+        server = aio.server()
+        port = server.add_insecure_port("[::]:0")
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+        await server.start()
+
+        async with aio.insecure_channel("localhost:%d" % port) as channel:
+            call = channel.unary_unary(_SIMPLE_UNARY_UNARY)
+            responses = await asyncio.gather(
+                *[call(_REQUEST) for _ in range(20)]
+            )
+            for response in responses:
+                self.assertEqual(response, _RESPONSE)
+
+        await server.stop(None)
+
+    async def test_multiple_registered_and_generic_concurrent_calls(self):
+        server = aio.server()
+        port = server.add_insecure_port("[::]:0")
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+
+        async def reg_handler_1(unused_request, unused_context):
+            return b"reg_response_1"
+
+        async def reg_handler_2(unused_request, unused_context):
+            return b"reg_response_2"
+
+        server.add_registered_method_handlers(
+            "test",
+            {
+                "RegisteredOne": grpc.unary_unary_rpc_method_handler(
+                    reg_handler_1
+                ),
+                "RegisteredTwo": grpc.unary_unary_rpc_method_handler(
+                    reg_handler_2
+                ),
+            },
+        )
+        await server.start()
+
+        async with aio.insecure_channel("localhost:%d" % port) as channel:
+            call_reg_1 = channel.unary_unary(
+                "/test/RegisteredOne", _registered_method=True
+            )
+            call_reg_2 = channel.unary_unary(
+                "/test/RegisteredTwo", _registered_method=True
+            )
+            call_generic = channel.unary_unary(_SIMPLE_UNARY_UNARY)
+
+            tasks = []
+            for _ in range(10):
+                tasks.append(call_reg_1(_REQUEST))
+                tasks.append(call_reg_2(_REQUEST))
+                tasks.append(call_generic(_REQUEST))
+
+            results = await asyncio.gather(*tasks)
+            for i in range(0, len(results), 3):
+                self.assertEqual(results[i], b"reg_response_1")
+                self.assertEqual(results[i + 1], b"reg_response_2")
+                self.assertEqual(results[i + 2], _RESPONSE)
+
+        await server.stop(None)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
