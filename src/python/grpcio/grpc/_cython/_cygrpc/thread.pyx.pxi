@@ -50,10 +50,10 @@ if _contextvars_supported():
     def _run_with_context(target):
         ctx = contextvars.copy_context()
         def _run(*args):
-            ctx.run(target, *args)
+            return ctx.run(target, *args)
         return _run
 else:
     def _run_with_context(target):
         def _run(*args):
-            target(*args)
+            return target(*args)
         return _run
