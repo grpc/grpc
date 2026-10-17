@@ -70,7 +70,7 @@ sudo apt-get install -y netperf
 # required to run kokoro_log_reader.py
 sudo apt-get install -y python-psutil python3-psutil
 
-# gcloud tools, including gsutil
+# gcloud tools, including gcloud storage
 sudo apt-get install -y google-cloud-sdk
 
 # C++ dependencies
