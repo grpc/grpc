@@ -439,7 +439,7 @@ class Server : public ServerInterface,
 
     void InitTransport(RefCountedPtr<Server> server,
                        RefCountedPtr<Channel> channel, size_t cq_idx,
-                       Transport* transport, intptr_t channelz_socket_uuid);
+                       Transport* transport);
 
     RefCountedPtr<Server> server() const { return server_; }
     Channel* channel() const { return channel_.get(); }
@@ -472,7 +472,6 @@ class Server : public ServerInterface,
     size_t cq_idx_;
     std::optional<std::list<ChannelData*>::iterator> list_position_;
     grpc_closure finish_destroy_channel_closure_;
-    intptr_t channelz_socket_uuid_;
 
     RefCountedPtr<Arena> parent_arena_;
   };
