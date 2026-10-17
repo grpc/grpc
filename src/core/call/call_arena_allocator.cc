@@ -20,8 +20,22 @@
 
 namespace grpc_core {
 
-void CallArenaAllocator::FinalizeArena(Arena* arena) {
-  call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
+void CallArenaAllocator::FinalizeArena(Arena* arena, size_t initial_zone_size,
+                                       size_t total_used) {
+  call_size_estimator_.UpdateCallSizeEstimate(total_used);
+  const size_t size =
+      Arena::RoundedInitialSize(call_size_estimator_.CallSizeEstimate());
+  size_t expected_pooled_size = pooled_size_.load(std::memory_order_relaxed);
+  if (expected_pooled_size != size) {
+    if (pooled_size_.compare_exchange_strong(expected_pooled_size, size,
+                                             std::memory_order_relaxed)) {
+      pool_.Clear();
+    }
+  }
+  if (initial_zone_size == size && pool_.TryPush(arena)) {
+    return;
+  }
+  gpr_free_aligned(arena);
 }
 
 }  // namespace grpc_core

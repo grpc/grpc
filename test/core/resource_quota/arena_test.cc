@@ -345,25 +345,32 @@ class MockArenaFactory : public ArenaFactory {
             ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
                 "test")) {}
   MOCK_METHOD(RefCountedPtr<Arena>, MakeArena, (), (override));
-  MOCK_METHOD(void, FinalizeArena, (Arena * arena), (override));
+  MOCK_METHOD(void, FinalizeArena,
+              (Arena * arena, size_t initial_zone_size, size_t total_used),
+              (override));
 };
 
 TEST(ArenaTest, FinalizeArenaIsCalled) {
   auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
   auto arena = Arena::Create(1, factory);
-  EXPECT_CALL(*factory, FinalizeArena(arena.get()));
+  EXPECT_CALL(*factory, FinalizeArena(arena.get(), ::testing::_, ::testing::_))
+      .WillOnce([](Arena* a, size_t initial_zone_size, size_t total_used) {
+        gpr_free_aligned(a);
+      });
   arena.reset();
 }
 
 TEST(ArenaTest, AccurateBaseByteCount) {
   auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
   auto arena = Arena::Create(1, factory);
-  EXPECT_CALL(*factory, FinalizeArena(arena.get())).WillOnce([](Arena* a) {
-    EXPECT_EQ(a->TotalUsedBytes(),
-              Arena::ArenaOverhead() +
-                  GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
-                      arena_detail::BaseArenaContextTraits::ContextSize()));
-  });
+  EXPECT_CALL(*factory, FinalizeArena(arena.get(), ::testing::_, ::testing::_))
+      .WillOnce([](Arena* a, size_t initial_zone_size, size_t total_used) {
+        EXPECT_EQ(total_used,
+                  Arena::ArenaOverhead() +
+                      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
+                          arena_detail::BaseArenaContextTraits::ContextSize()));
+        gpr_free_aligned(a);
+      });
   arena.reset();
 }
 
@@ -371,13 +378,15 @@ TEST(ArenaTest, AccurateByteCountWithAllocation) {
   auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
   auto arena = Arena::Create(1, factory);
   arena->Alloc(1000);
-  EXPECT_CALL(*factory, FinalizeArena(arena.get())).WillOnce([](Arena* a) {
-    EXPECT_EQ(a->TotalUsedBytes(),
-              Arena::ArenaOverhead() +
-                  GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
-                      arena_detail::BaseArenaContextTraits::ContextSize()) +
-                  GPR_ROUND_UP_TO_ALIGNMENT_SIZE(1000));
-  });
+  EXPECT_CALL(*factory, FinalizeArena(arena.get(), ::testing::_, ::testing::_))
+      .WillOnce([](Arena* a, size_t initial_zone_size, size_t total_used) {
+        EXPECT_EQ(total_used,
+                  Arena::ArenaOverhead() +
+                      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
+                          arena_detail::BaseArenaContextTraits::ContextSize()) +
+                      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(1000));
+        gpr_free_aligned(a);
+      });
   arena.reset();
 }
 
