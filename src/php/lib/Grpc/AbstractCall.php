@@ -107,7 +107,8 @@ abstract class AbstractCall
     /**
      * Serialize a message to the protobuf binary format.
      *
-     * @param mixed $data The Protobuf message
+     * @param object $data The message object, whose serializeToString()
+     *                     method returns the serialized message string
      *
      * @return string The protobuf binary format
      */
@@ -120,9 +121,11 @@ abstract class AbstractCall
     /**
      * Deserialize a response value to an object.
      *
-     * @param string $value The binary value to deserialize
+     * @param string|null $value The binary value to deserialize, or null
+     *                           when no message is available
      *
-     * @return mixed The deserialized value
+     * @return object|null An instance of the configured response class,
+     *                     or null when no message is available
      */
     protected function _deserializeResponse($value)
     {
