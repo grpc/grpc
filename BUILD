@@ -5187,6 +5187,7 @@ grpc_cc_library(
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
+        "//src/core:byte_source",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
         "@com_google_protobuf//upb/mem",
     ],

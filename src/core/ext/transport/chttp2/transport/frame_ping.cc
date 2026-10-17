@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,122 +13,213 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
 
-#include "src/core/ext/transport/chttp2/transport/frame_ping.h"
+#include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-#include <inttypes.h>
 #include <string.h>
 
-#include <algorithm>
-
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
-#include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
-#include "src/core/lib/debug/trace.h"
 #include "src/core/util/grpc_check.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/log.h"
+#include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
-grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
-  grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
-  uint8_t* p = GRPC_SLICE_START_PTR(slice);
-
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 8;
-  *p++ = GRPC_CHTTP2_FRAME_PING;
-  *p++ = ack ? 1 : 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 56);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 48);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 40);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 32);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 24);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 16);
-  *p++ = static_cast<uint8_t>(opaque_8bytes >> 8);
-  *p++ = static_cast<uint8_t>(opaque_8bytes);
-
-  return slice;
+void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser* p) {
+  if (!grpc_core::IsPh2Perf01Enabled()) {
+    p->debug_data = nullptr;
+  }
 }
 
-grpc_error_handle grpc_chttp2_ping_parser_begin_frame(
-    grpc_chttp2_ping_parser* parser, uint32_t length, uint8_t flags) {
-  if (flags & 0xfe || length != 8) {
-    return GRPC_ERROR_CREATE(
-        absl::StrFormat("invalid ping: length=%d, flags=%02x", length, flags));
+void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser* p) {
+  if (!grpc_core::IsPh2Perf01Enabled()) {
+    gpr_free(p->debug_data);
   }
-  parser->byte = 0;
-  parser->is_ack = flags;
-  parser->opaque_8bytes = 0;
+}
+
+grpc_error_handle grpc_chttp2_goaway_parser_begin_frame(
+    grpc_chttp2_goaway_parser* p, uint32_t length, uint8_t /*flags*/) {
+  if (length < 8) {
+    return GRPC_ERROR_CREATE(
+        absl::StrFormat("goaway frame too short (%d bytes)", length));
+  }
+
+  p->debug_length = length - 8;
+  if (grpc_core::IsPh2Perf01Enabled()) {
+    p->debug_slice_buffer.Clear();
+  } else {
+    gpr_free(p->debug_data);
+    p->debug_data = static_cast<char*>(gpr_malloc(p->debug_length));
+    p->debug_pos = 0;
+  }
+  p->state = GRPC_CHTTP2_GOAWAY_LSI0;
   return absl::OkStatus();
 }
 
-grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
-                                                grpc_chttp2_transport* t,
-                                                grpc_chttp2_stream* /*s*/,
-                                                const grpc_slice& slice,
-                                                int is_last) {
+grpc_error_handle grpc_chttp2_goaway_parser_parse(
+    void* parser, grpc_chttp2_transport* t, grpc_chttp2_stream* /*s*/,
+    const grpc_slice& slice, int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
-  grpc_chttp2_ping_parser* p = static_cast<grpc_chttp2_ping_parser*>(parser);
+  grpc_chttp2_goaway_parser* p =
+      static_cast<grpc_chttp2_goaway_parser*>(parser);
 
-  while (p->byte != 8 && cur != end) {
-    p->opaque_8bytes |= ((static_cast<uint64_t>(*cur)) << (56 - 8 * p->byte));
-    cur++;
-    p->byte++;
-  }
-
-  if (p->byte == 8) {
-    GRPC_CHECK(is_last);
-    t->http2_ztrace_collector.Append(
-        grpc_core::H2PingTrace<true>{p->is_ack != 0, p->opaque_8bytes});
-    if (p->is_ack) {
-      GRPC_TRACE_LOG(http2_ping, INFO)
-          << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
-          << "]: received ping ack " << p->opaque_8bytes;
-      grpc_chttp2_ack_ping(t, p->opaque_8bytes);
-    } else {
-      if (!t->is_client) {
-        const bool transport_idle =
-            t->keepalive_permit_without_calls == 0 && t->stream_map.empty();
-        if (GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
-            GRPC_TRACE_FLAG_ENABLED(http)) {
-          LOG(INFO) << "SERVER[" << t << "]: received ping " << p->opaque_8bytes
-                    << ": "
-                    << t->ping_abuse_policy.GetDebugString(transport_idle);
+  switch (p->state) {
+    case GRPC_CHTTP2_GOAWAY_LSI0:
+      if (cur == end) {
+        p->state = GRPC_CHTTP2_GOAWAY_LSI0;
+        return absl::OkStatus();
+      }
+      p->last_stream_id = (static_cast<uint32_t>(*cur)) << 24;
+      ++cur;
+      [[fallthrough]];
+    case GRPC_CHTTP2_GOAWAY_LSI1:
+      if (cur == end) {
+        p->state = GRPC_CHTTP2_GOAWAY_LSI1;
+        return absl::OkStatus();
+      }
+      p->last_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
+      ++cur;
+      [[fallthrough]];
+    case GRPC_CHTTP2_GOAWAY_LSI2:
+      if (cur == end) {
+        p->state = GRPC_CHTTP2_GOAWAY_LSI2;
+        return absl::OkStatus();
+      }
+      p->last_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
+      ++cur;
+      [[fallthrough]];
+    case GRPC_CHTTP2_GOAWAY_LSI3:
+      if (cur == end) {
+        p->state = GRPC_CHTTP2_GOAWAY_LSI3;
+        return absl::OkStatus();
+      }
+      p->last_stream_id |= (static_cast<uint32_t>(*cur));
+      ++cur;
+      [[fallthrough]];
+    case GRPC_CHTTP2_GOAWAY_ERR0:
+      if (cur == end) {
+        p->state = GRPC_CHTTP2_GOAWAY_ERR0;
+        return absl::OkStatus();
+      }
+      p->error_code = (static_cast<uint32_t>(*cur)) << 24;
+      ++cur;
+      [[fallthrough]];
+    case GRPC_CHTTP2_GOAWAY_ERR1:
+      if (cur == end) {
+        p->state = GRPC_CHTTP2_GOAWAY_ERR1;
+        return absl::OkStatus();
+      }
+      p->error_code |= (static_cast<uint32_t>(*cur)) << 16;
+      ++cur;
+      [[fallthrough]];
+    case GRPC_CHTTP2_GOAWAY_ERR2:
+      if (cur == end) {
+        p->state = GRPC_CHTTP2_GOAWAY_ERR2;
+        return absl::OkStatus();
+      }
+      p->error_code |= (static_cast<uint32_t>(*cur)) << 8;
+      ++cur;
+      [[fallthrough]];
+    case GRPC_CHTTP2_GOAWAY_ERR3:
+      if (cur == end) {
+        p->state = GRPC_CHTTP2_GOAWAY_ERR3;
+        return absl::OkStatus();
+      }
+      p->error_code |= (static_cast<uint32_t>(*cur));
+      ++cur;
+      [[fallthrough]];
+    case GRPC_CHTTP2_GOAWAY_DEBUG:
+      if (grpc_core::IsPh2Perf01Enabled()) {
+        if (end != cur) {
+          p->debug_slice_buffer.AppendIndexed(
+              grpc_core::Slice::FromCopiedBuffer(
+                  cur, static_cast<size_t>(end - cur)));
         }
-        if (t->ping_abuse_policy.ReceivedOnePing(transport_idle)) {
-          grpc_chttp2_exceeded_ping_strikes(t);
+        GRPC_CHECK(p->debug_slice_buffer.Length() <= p->debug_length);
+        p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
+        if (is_last) {
+          std::string debug_str = p->debug_slice_buffer.JoinIntoString();
+
+          grpc_chttp2_add_incoming_goaway(t, p->error_code, p->last_stream_id,
+                                          absl::string_view(debug_str));
+
+          t->http2_ztrace_collector.Append(
+              [last_stream_id = p->last_stream_id, error_code = p->error_code,
+               debug_str = std::move(debug_str)]() mutable {
+                return grpc_core::H2GoAwayTrace<true>{
+                    last_stream_id, error_code, std::move(debug_str)};
+              });
         }
       } else {
-        GRPC_TRACE_LOG(http2_ping, INFO)
-            << "CLIENT[" << t << "]: received ping " << p->opaque_8bytes;
-      }
-      if (t->ack_pings) {
-        grpc_error_handle error =
-            grpc_chttp2_increase_num_pending_induced_frames(t);
-        if (GPR_UNLIKELY(!error.ok())) return error;
-
-        if (t->ping_ack_count == t->ping_ack_capacity) {
-          t->ping_ack_capacity =
-              std::max(t->ping_ack_capacity * 3 / 2, size_t{3});
-          t->ping_acks = static_cast<uint64_t*>(gpr_realloc(
-              t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks)));
+        if (end != cur) {
+          memcpy(p->debug_data + p->debug_pos, cur,
+                 static_cast<size_t>(end - cur));
         }
-        t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
-        grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE);
+        GRPC_CHECK((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
+        p->debug_pos += static_cast<uint32_t>(end - cur);
+        p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
+        if (is_last) {
+          t->http2_ztrace_collector.Append([p]() {
+            return grpc_core::H2GoAwayTrace<true>{
+                p->last_stream_id, p->error_code,
+                std::string(absl::string_view(p->debug_data, p->debug_length))};
+          });
+          grpc_chttp2_add_incoming_goaway(
+              t, p->error_code, p->last_stream_id,
+              absl::string_view(p->debug_data, p->debug_length));
+          gpr_free(p->debug_data);
+          p->debug_data = nullptr;
+        }
       }
-    }
   }
+  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
+}
 
-  return absl::OkStatus();
+void grpc_chttp2_goaway_append(
+    uint32_t last_stream_id, uint32_t error_code, const grpc_slice& debug_data,
+    grpc_slice_buffer* slice_buffer,
+    grpc_core::Http2ZTraceCollector* ztrace_collector) {
+  grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
+  uint8_t* p = GRPC_SLICE_START_PTR(header);
+  uint32_t frame_length;
+  GRPC_CHECK(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
+  frame_length = 4 + 4 + static_cast<uint32_t> GRPC_SLICE_LENGTH(debug_data);
+
+  ztrace_collector->Append([last_stream_id, error_code, debug_data]() {
+    return grpc_core::H2GoAwayTrace<false>{
+        last_stream_id, error_code,
+        std::string(grpc_core::StringViewFromSlice(debug_data))};
+  });
+
+  // frame header: length
+  *p++ = static_cast<uint8_t>(frame_length >> 16);
+  *p++ = static_cast<uint8_t>(frame_length >> 8);
+  *p++ = static_cast<uint8_t>(frame_length);
+  // frame header: type
+  *p++ = GRPC_CHTTP2_FRAME_GOAWAY;
+  // frame header: flags
+  *p++ = 0;
+  // frame header: stream id
+  *p++ = 0;
+  *p++ = 0;
+  *p++ = 0;
+  *p++ = 0;
+  // payload: last stream id
+  *p++ = static_cast<uint8_t>(last_stream_id >> 24);
+  *p++ = static_cast<uint8_t>(last_stream_id >> 16);
+  *p++ = static_cast<uint8_t>(last_stream_id >> 8);
+  *p++ = static_cast<uint8_t>(last_stream_id);
+  // payload: error code
+  *p++ = static_cast<uint8_t>(error_code >> 24);
+  *p++ = static_cast<uint8_t>(error_code >> 16);
+  *p++ = static_cast<uint8_t>(error_code >> 8);
+  *p++ = static_cast<uint8_t>(error_code);
+  GRPC_CHECK(p == GRPC_SLICE_END_PTR(header));
+  grpc_slice_buffer_add(slice_buffer, header);
+  grpc_slice_buffer_add(slice_buffer, debug_data);
 }
