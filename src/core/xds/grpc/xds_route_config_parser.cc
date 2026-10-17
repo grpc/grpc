@@ -56,6 +56,7 @@
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
@@ -288,6 +289,12 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     bool (*upb_next_func)(const ParentType*, upb_StringView*,
                           const struct google_protobuf_Any**, size_t* iter),
     ValidationErrors* errors) {
+  const bool is_client =
+      DownCast<GrpcXdsClient*>(context.client)->component() ==
+      GrpcXdsClient::Component::kClient;
+  const auto& http_filter_registry =
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+          .http_filter_registry();
   XdsRouteConfigResource::TypedPerFilterConfig typed_per_filter_config;
   size_t filter_it = kUpb_Map_Begin;
   upb_StringView key_view;
@@ -324,13 +331,18 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       if (!nested_extension.has_value()) continue;
       extension_to_use = &*nested_extension;
     }
-    const auto& http_filter_registry =
-        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-            .http_filter_registry();
     const XdsHttpFilterFactory* factory =
         http_filter_registry.GetFilterForOverrideType(extension_to_use->type);
     if (factory == nullptr) {
       if (!is_optional) errors->AddError("unsupported filter type");
+      continue;
+    }
+    if ((is_client && !factory->IsSupportedOnClients()) ||
+        (!is_client && !factory->IsSupportedOnServers())) {
+      if (!is_optional) {
+        errors->AddError(absl::StrCat("filter is not supported on ",
+                                      is_client ? "clients" : "servers"));
+      }
       continue;
     }
     auto& entry = typed_per_filter_config[std::string(key)];
@@ -661,10 +673,14 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
     RouteRuntimeFractionParse(match, &route, errors);
   }
   // Parse route action.
+  const bool is_client =
+      DownCast<GrpcXdsClient*>(context.client)->component() ==
+      GrpcXdsClient::Component::kClient;
   const envoy_config_route_v3_RouteAction* route_action_proto =
       envoy_config_route_v3_Route_route(route_proto);
   if (route_action_proto != nullptr) {
     ValidationErrors::ScopedField field(errors, ".route");
+    if (!is_client) errors->AddError("field not supported on server");
     auto route_action = RouteActionParse(context, route_action_proto,
                                          cluster_specifier_plugin_map, errors);
     if (!route_action.has_value()) return std::nullopt;
@@ -684,6 +700,10 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
     route.action = std::move(*route_action);
   } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                  route_proto)) {
+    if (is_client) {
+      ValidationErrors::ScopedField field(errors, ".non_forwarding_action");
+      errors->AddError("field not supported on client");
+    }
     route.action = XdsRouteConfigResource::Route::NonForwardingAction();
   } else {
     // Leave route.action initialized to UnknownAction (its default).
