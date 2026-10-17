@@ -268,6 +268,18 @@ config_setting(
 )
 
 config_setting(
+    name = "windows_mingw_clang",
+    constraint_values = ["@platforms//os:windows"],
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "clang"},
+)
+
+config_setting(
+    name = "windows_mingw_gcc",
+    constraint_values = ["@platforms//os:windows"],
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "mingw-gcc"},
+)
+
+config_setting(
     name = "mac",
     constraint_values = ["@platforms//os:macos"],
 )
