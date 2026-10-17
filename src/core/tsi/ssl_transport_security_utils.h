@@ -185,6 +185,10 @@ absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name);
 // Map grpc_tls_key_exchange_group to string.
 absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
     grpc_tls_key_exchange_group group);
+
+// Map grpc_tls_signature_algorithm to string.
+absl::StatusOr<absl::string_view> ConvertSignatureAlgorithmToString(
+    grpc_tls_signature_algorithm algorithm);
 }  // namespace tsi
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H

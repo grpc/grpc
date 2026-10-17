@@ -1278,6 +1278,16 @@ GRPCAPI void grpc_tls_credentials_options_set_key_exchange_groups(
     grpc_tls_credentials_options* options,
     const grpc_tls_key_exchange_group* groups, size_t num_groups);
 
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the list of signature algorithms that will be negotiated during the TLS
+ * handshake, in order of preference. If not set, a default list will be used.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_signature_algorithms(
+    grpc_tls_credentials_options* options,
+    const grpc_tls_signature_algorithm* algorithms, size_t num_algorithms);
+
 #ifdef __cplusplus
 }
 #endif

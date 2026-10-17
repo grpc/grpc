@@ -136,6 +136,15 @@ void TlsCredentialsOptions::set_key_exchange_groups(
       key_exchange_groups.size());
 }
 
+void TlsCredentialsOptions::set_signature_algorithms(
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GRPC_CHECK_NE(options, nullptr);
+  grpc_tls_credentials_options_set_signature_algorithms(
+      c_credentials_options_, signature_algorithms.data(),
+      signature_algorithms.size());
+}
+
 grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()
     const {
   if (legacy_certificate_provider_ != nullptr) {
