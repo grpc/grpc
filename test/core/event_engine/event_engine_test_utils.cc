@@ -21,6 +21,10 @@
 #include <grpc/slice_buffer.h>
 #include <stdlib.h>
 
+#ifdef GPR_LINUX
+#include <dirent.h>
+#endif  // GPR_LINUX
+
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -254,6 +258,20 @@ bool IsSaneTimerEnvironment() {
   return grpc_core::IsEventEngineClientEnabled() &&
          grpc_core::IsEventEngineListenerEnabled();
 }
+
+#ifdef GPR_LINUX
+size_t ProcessThreadCount() {
+  DIR* dir = opendir("/proc/self/task");
+  GRPC_CHECK_NE(dir, nullptr);
+  size_t count = 0;
+  // Each entry other than "." and ".." is one thread.
+  while (dirent* entry = readdir(dir)) {
+    if (entry->d_name[0] != '.') ++count;
+  }
+  closedir(dir);
+  return count;
+}
+#endif  // GPR_LINUX
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
