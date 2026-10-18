@@ -43,6 +43,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
@@ -394,6 +395,10 @@ class Http2ServerTransport final : public ServerTransport,
                 std::forward<Promise>(promise));
   }
 
+  // Returns the transport party, or nullptr if transport shutdown has already
+  // been initiated.
+  RefCountedPtr<Party> GetTransportPartyIfNotShutdown();
+
   // Spawns an infallible promise on the given party.
   template <typename Factory>
   void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
@@ -408,19 +413,28 @@ class Http2ServerTransport final : public ServerTransport,
     SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
+  // Spawns a promise on the given party. If the promise returns a non-ok
+  // status, it is handled by closing the transport with the corresponding
+  // status.
+  template <typename Factory>
+  void SpawnGuarded(const RefCountedPtr<Party>& party, absl::string_view name,
+                    Factory&& factory) {
+    party->Spawn(
+        name, std::forward<Factory>(factory),
+        [self = RefAsSubclass<Http2ServerTransport>()](absl::Status&& status) {
+          if (!status.ok()) {
+            GRPC_UNUSED const absl::Status error = self->HandleError(
+                /*stream=*/nullptr, ToHttpOkOrConnError(status));
+          }
+        });
+  }
+
   // Spawns a promise on the transport party. If the promise returns a non-ok
   // status, it is handled by closing the transport with the corresponding
   // status.
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
-    transport_party_->Spawn(
-        name, std::forward<Factory>(factory),
-        [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
-          if (!status.ok()) {
-            GRPC_UNUSED absl::Status error = self->HandleError(
-                /*stream=*/nullptr, ToHttpOkOrConnError(status));
-          }
-        });
+    SpawnGuarded(transport_party_, name, std::forward<Factory>(factory));
   }
 
   template <typename Factory, typename OnDone>
@@ -653,7 +667,7 @@ class Http2ServerTransport final : public ServerTransport,
     }));
   }
 
-  auto SpawnGracefulGoawayPromise(Slice&& debug_data);
+  void SpawnGracefulGoawayPromise(Slice&& debug_data);
 
   //////////////////////////////////////////////////////////////////////////////
   // Tarpit
@@ -756,6 +770,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   bool should_reset_ping_clock_;
   bool max_concurrent_streams_overload_protection_ = false;
+  Http2TransportStats http2_transport_stats_;
   ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
