@@ -23327,6 +23327,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: security_handshaker_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/handshake/security_handshaker_buffer_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: seq_test
   gtest: true
   build: test
