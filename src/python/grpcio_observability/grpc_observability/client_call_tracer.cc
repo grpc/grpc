@@ -121,7 +121,7 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer*
 PythonOpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   uint64_t attempt_num;
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
       if (PythonCensusStatsEnabled() && num_active_rpcs_ == 0) {
         retry_delay_ += absl::Now() - time_at_last_attempt_end_;
@@ -342,7 +342,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
                     parent_->identifier_, parent_->registered_method_,
                     /*include_exchange_labels=*/true);
 
-    grpc_core::MutexLock lock(&parent_->mu_);
+    grpc_core::MutexLock lock(parent_->mu_);
     if (--parent_->num_active_rpcs_ == 0) {
       parent_->time_at_last_attempt_end_ = absl::Now();
     }
