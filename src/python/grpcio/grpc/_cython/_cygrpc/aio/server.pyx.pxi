@@ -1056,10 +1056,10 @@ cdef class AioServer:
             return self._loop.create_task(self._request_call())
 
 
-    async def _process_event_and_continue(self,
-                                          object pending_futures,
-                                          object rpc_tasks,
-                                          _MethodResolver method_resolver):
+    async def _process_events(self,
+                              object pending_futures,
+                              object rpc_tasks,
+                              _MethodResolver method_resolver):
         cdef RPCState rpc_state
         cdef str method_name
 
@@ -1131,9 +1131,6 @@ cdef class AioServer:
                 new_fut = self._make_request_call_future(method_bytes)
                 pending_futures[new_fut] = method_bytes
 
-        # When shutdown begins, no more new connections.
-        return self._status == AIO_SERVER_STATUS_RUNNING
-
     async def _server_main_loop(self,
                                 object server_started):
         self._server.start(backup_queue=False)
@@ -1154,9 +1151,9 @@ cdef class AioServer:
         pending_futures[self._make_request_call_future(None)] = None
 
         try:
-            should_continue = True
-            while should_continue:
-                should_continue = await self._process_event_and_continue(
+            # When shutdown begins, no more new connections.
+            while self._status == AIO_SERVER_STATUS_RUNNING:
+                await self._process_events(
                     pending_futures,
                     rpc_tasks,
                     method_resolver,
