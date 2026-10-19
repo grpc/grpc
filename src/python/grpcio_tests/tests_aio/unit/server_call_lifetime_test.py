@@ -74,8 +74,9 @@ def _use_context(context, outcome):
 
 class ServerCallLifetimeTest(AioTestBase):
     async def setUp(self):
-        # Only ref-counting may release the `RPCState` for this test suite
+        # Only ref-counting may release the `RPCState` for this test suite.
         gc.disable()
+        self.addCleanup(gc.enable)
         self._thread_pool = _common.DaemonThreadExecutor()
         self._server = aio.server(migration_thread_pool=self._thread_pool)
         self._adhoc_handlers = _common.AdhocGenericHandler()
@@ -85,11 +86,8 @@ class ServerCallLifetimeTest(AioTestBase):
         self._channel = aio.insecure_channel(f"localhost:{port}")
 
     async def tearDown(self):
-        try:
-            await self._channel.close()
-            await self._server.stop(None)
-        finally:
-            gc.enable()
+        await self._channel.close()
+        await self._server.stop(None)
 
     async def _in_thread(self, fn, *args):
         return await self.loop.run_in_executor(None, fn, *args)
