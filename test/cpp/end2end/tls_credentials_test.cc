@@ -100,15 +100,14 @@ class KeyExchangeGroupCheckingVerifier : public ExternalCertificateVerifier {
 
 class TlsCredentialsTest : public ::testing::Test {
  protected:
-  void RunServer(
-      absl::Notification* notification,
-      const std::vector<grpc_tls_key_exchange_group>* key_exchange_groups =
-          nullptr,
-      const char* ca_cert_path = kCaCertPath,
-      const char* server_cert_path = kServerCertPath,
-      const char* server_key_path = kServerKeyPath,
-      grpc_ssl_client_certificate_request_type cert_request_type =
-          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {
+  void RunServer(absl::Notification* notification,
+                 const std::vector<grpc_tls_key_exchange_group>*
+                     key_exchange_groups = nullptr,
+                 const char* ca_cert_path = kCaCertPath,
+                 const char* server_cert_path = kServerCertPath,
+                 const char* server_key_path = kServerKeyPath,
+                 grpc_ssl_client_certificate_request_type cert_request_type =
+                     GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {
     std::string root_cert = grpc_core::testing::GetFileContents(ca_cert_path);
     std::string server_key =
         grpc_core::testing::GetFileContents(server_key_path);
@@ -527,11 +526,10 @@ TEST_F(TlsCredentialsTest, MixedRsaServerAndMldsa65ClientMutualTls) {
         std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
     ASSERT_EQ(server_certificate_provider->UpdateRoot(combined_root_cert),
               absl::OkStatus());
-    ASSERT_EQ(
-        server_certificate_provider->UpdateIdentityKeyCertPair(
-            std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
-                {server_key, server_cert}}),
-        absl::OkStatus());
+    ASSERT_EQ(server_certificate_provider->UpdateIdentityKeyCertPair(
+                  std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+                      {server_key, server_cert}}),
+              absl::OkStatus());
     auto server_options_or =
         grpc::experimental::TlsServerCredentialsOptions::Create(
             server_certificate_provider);
@@ -561,11 +559,10 @@ TEST_F(TlsCredentialsTest, MixedRsaServerAndMldsa65ClientMutualTls) {
       std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
   ASSERT_EQ(client_certificate_provider->UpdateRoot(combined_root_cert),
             absl::OkStatus());
-  ASSERT_EQ(
-      client_certificate_provider->UpdateIdentityKeyCertPair(
-          std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
-              {client_key, client_cert}}),
-      absl::OkStatus());
+  ASSERT_EQ(client_certificate_provider->UpdateIdentityKeyCertPair(
+                std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+                    {client_key, client_cert}}),
+            absl::OkStatus());
 
   TlsChannelCredentialsOptions tls_options;
   tls_options.set_certificate_verifier(

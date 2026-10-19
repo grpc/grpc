@@ -2008,11 +2008,11 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMixedMldsaCerts) {
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
-  key_cert_lib->root_cert = absl::StrCat(
-      GetFileContents(
-          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa87.pem")),
-      GetFileContents(
-          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa44.pem")));
+  key_cert_lib->root_cert =
+      absl::StrCat(GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "ca_mldsa87.pem")),
+                   GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "ca_mldsa44.pem")));
   tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
   key_cert_lib->root_store =
       tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
