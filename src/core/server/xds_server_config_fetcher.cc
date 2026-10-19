@@ -56,8 +56,6 @@
 #include "src/core/server/server.h"
 #include "src/core/server/server_config_selector.h"
 #include "src/core/server/server_config_selector_filter.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"

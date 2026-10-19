@@ -30,8 +30,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_config_selector.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted_ptr.h"

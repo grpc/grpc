@@ -4456,7 +4456,6 @@ grpc_cc_library(
     deps = [
         "dual_ref_counted",
         "filter_chain",
-        "grpc_service_config",
         "metadata_batch",
         "ref_counted",
         "service_config_parser",
@@ -4489,7 +4488,6 @@ grpc_cc_library(
         "event_engine_context",
         "grpc_check",
         "grpc_server_config_selector",
-        "grpc_service_config",
         "latent_see",
         "metadata_batch",
         "observable",
@@ -7683,7 +7681,6 @@ grpc_cc_library(
         "grpc_check",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
-        "grpc_service_config",
         "grpc_sockaddr",
         "grpc_tls_credentials",
         "grpc_xds_client",

@@ -2309,8 +2309,8 @@ struct BaseCallDataMethods {
 
 // The type of object returned by a filter's Create method.
 template <typename T>
-using CreatedType =
-    typename decltype(T::Create(ChannelArgs(), {nullptr, nullptr}))::value_type;
+using CreatedType = typename decltype(T::Create(
+    ChannelArgs(), ChannelFilter::Args()))::value_type;
 
 template <typename GrpcChannelOrCallElement>
 inline ChannelFilter* ChannelFilterFromElem(GrpcChannelOrCallElement* elem) {
@@ -2372,7 +2372,7 @@ struct ChannelFilterWithFlagsMethods {
     GRPC_CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
     auto status =
         F::Create(args->channel_args,
-                  ChannelFilter::Args(args->channel_stack, elem, args->config));
+                  ChannelFilter::Args(args->channel_stack, args->config));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return status.status();

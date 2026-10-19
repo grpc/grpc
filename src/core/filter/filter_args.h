@@ -59,37 +59,17 @@ struct FilterAndConfig {
 // things that are ephemeral and disjoint from overall channel args.
 class FilterArgs {
  public:
-  FilterArgs(grpc_channel_stack* channel_stack,
-             grpc_channel_element* channel_element,
-             RefCountedPtr<const FilterConfig> config = nullptr)
-      : impl_(ChannelStackBased{channel_stack, channel_element}),
-        config_(std::move(config)) {}
-  // While we're moving to call-v3 we need to have access to
-  // grpc_channel_stack & friends here. That means that we can't rely on this
-  // type signature from interception_chain.h, which means that we need a way
-  // of constructing this object without naming it ===> implicit construction.
-  // TODO(ctiller): remove this once we're fully on call-v3
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  FilterArgs(RefCountedPtr<const FilterConfig> config = nullptr)
-      : config_(std::move(config)) {}
+  explicit FilterArgs(grpc_channel_stack* channel_stack = nullptr,
+                      RefCountedPtr<const FilterConfig> config = nullptr)
+      : channel_stack_(channel_stack), config_(std::move(config)) {}
 
   ABSL_DEPRECATED("Direct access to channel stack is deprecated")
-  grpc_channel_stack* channel_stack() const {
-    return impl_.value().channel_stack;
-  }
+  grpc_channel_stack* channel_stack() const { return channel_stack_; }
 
   RefCountedPtr<const FilterConfig> config() const { return config_; }
 
  private:
-  friend class ChannelFilter;
-
-  struct ChannelStackBased {
-    grpc_channel_stack* channel_stack;
-    grpc_channel_element* channel_element;
-  };
-
-  std::optional<ChannelStackBased> impl_;
-
+  grpc_channel_stack* channel_stack_;
   const RefCountedPtr<const FilterConfig> config_;
 };
 

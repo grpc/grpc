@@ -1327,12 +1327,13 @@ class ClientCallData::PollContext {
                 case RecvInitialMetadata::kCompleteWaitingForPipe:
                   self_->recv_initial_metadata_->state =
                       RecvInitialMetadata::kResponded;
+                  absl::Status status = StatusFromMetadata(*md);
+                  if (status.ok()) status = absl::CancelledError();
                   flusher_->AddClosure(
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      !StatusFromMetadata(*md).ok() ? StatusFromMetadata(*md)
-                                                    : absl::CancelledError(),
+                      status,
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }

@@ -33,7 +33,7 @@
 namespace grpc_core {
 
 // Filter used when xDS server config fetcher provides a configuration with an
-// HTTP RBAC filter. Also serves as the type for channel data for the filter.
+// HTTP RBAC filter.
 class RbacFilter : public ImplementChannelFilter<RbacFilter> {
  public:
   struct Config final : public FilterConfig {
@@ -50,10 +50,6 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
     Rbac rbac;
   };
 
-  // This channel filter is intended to be used by connections on xDS enabled
-  // servers configured with RBAC. The RBAC filter fetches the RBAC policy from
-  // the method config of service config returned by the ServerConfigSelector,
-  // and enforces the RBAC policy.
   static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "rbac_filter"; }
