@@ -22,52 +22,75 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 #include "absl/log/log.h"
+#include "absl/types/span.h"
 
 const size_t kInitialIovecBufferSize = 8;
 
-// Makes sure iovec_buf in alts_grpc_record_protocol is large enough.
-static void ensure_iovec_buf_size(alts_grpc_record_protocol* rp,
-                                  const grpc_slice_buffer* sb) {
-  GRPC_CHECK(rp != nullptr);
-  GRPC_CHECK_NE(sb, nullptr);
-  if (sb->count <= rp->iovec_buf_length) {
+// Makes sure iovec_buf in alts_grpc_record_protocol has capacity for count
+// descriptors, at least doubling its capacity when it needs to grow so that
+// repeated growth stays amortized.
+static void ensure_iovec_buf_capacity(alts_grpc_record_protocol* rp,
+                                      size_t count) {
+  if (count <= rp->iovec_buf.capacity()) {
     return;
   }
-  // At least double the iovec buffer size.
-  rp->iovec_buf_length = std::max(sb->count, 2 * rp->iovec_buf_length);
-  rp->iovec_buf = static_cast<iovec_t*>(
-      gpr_realloc(rp->iovec_buf, rp->iovec_buf_length * sizeof(iovec_t)));
+  rp->iovec_buf.reserve(std::max(count, 2 * rp->iovec_buf.capacity()));
 }
 
 // --- Implementation of methods defined in tsi_grpc_record_protocol_common.h.
 // ---
 
-void alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
+absl::Span<const iovec_t>
+alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
     alts_grpc_record_protocol* rp, const grpc_slice_buffer* sb) {
   GRPC_CHECK(rp != nullptr);
   GRPC_CHECK_NE(sb, nullptr);
-  ensure_iovec_buf_size(rp, sb);
+  rp->iovec_buf.clear();
+  ensure_iovec_buf_capacity(rp, sb->count);
   for (size_t i = 0; i < sb->count; i++) {
-    rp->iovec_buf[i].iov_base = GRPC_SLICE_START_PTR(sb->slices[i]);
-    rp->iovec_buf[i].iov_len = GRPC_SLICE_LENGTH(sb->slices[i]);
+    rp->iovec_buf.push_back(iovec_t{GRPC_SLICE_START_PTR(sb->slices[i]),
+                                    GRPC_SLICE_LENGTH(sb->slices[i])});
   }
+  return rp->iovec_buf;
 }
 
-void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src,
-                                                 unsigned char* dst) {
+absl::Span<const iovec_t> alts_grpc_record_protocol_set_single_iovec(
+    alts_grpc_record_protocol* rp, iovec_t iovec) {
+  GRPC_CHECK(rp != nullptr);
+  rp->iovec_buf.clear();
+  ensure_iovec_buf_capacity(rp, 1);
+  rp->iovec_buf.push_back(iovec);
+  return rp->iovec_buf;
+}
+
+bool alts_grpc_record_protocol_copy_slice_buffer(
+    const grpc_slice_buffer* src, absl::Span<unsigned char> dst) {
   GRPC_CHECK(src != nullptr);
-  GRPC_CHECK_NE(dst, nullptr);
+  if (src->length != dst.size()) {
+    return false;
+  }
+  size_t offset = 0;
   for (size_t i = 0; i < src->count; i++) {
     size_t slice_length = GRPC_SLICE_LENGTH(src->slices[i]);
-    memcpy(dst, GRPC_SLICE_START_PTR(src->slices[i]), slice_length);
-    dst += slice_length;
+    if (slice_length > dst.size() - offset) {
+      return false;
+    }
+    if (slice_length > 0) {
+      memcpy(dst.data() + offset, GRPC_SLICE_START_PTR(src->slices[i]),
+             slice_length);
+    }
+    offset += slice_length;
   }
+  return offset == dst.size();
 }
 
 iovec_t alts_grpc_record_protocol_get_header_iovec(
@@ -77,13 +100,20 @@ iovec_t alts_grpc_record_protocol_get_header_iovec(
     return header_iovec;
   }
   header_iovec.iov_len = rp->header_length;
+  if (rp->header_sb.length != rp->header_length) {
+    // Not a complete header. A null base makes the crypto layer reject it.
+    return {nullptr, 0};
+  }
   if (rp->header_sb.count == 1) {
     header_iovec.iov_base = GRPC_SLICE_START_PTR(rp->header_sb.slices[0]);
   } else {
     // Frame header is in multiple slices, copies the header bytes from slice
     // buffer to a single flat buffer.
-    alts_grpc_record_protocol_copy_slice_buffer(&rp->header_sb, rp->header_buf);
-    header_iovec.iov_base = rp->header_buf;
+    if (!alts_grpc_record_protocol_copy_slice_buffer(
+            &rp->header_sb, absl::MakeSpan(rp->header_buf))) {
+      return {nullptr, 0};
+    }
+    header_iovec.iov_base = rp->header_buf.data();
   }
   return header_iovec;
 }
@@ -113,12 +143,10 @@ tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
   grpc_slice_buffer_init(&rp->header_sb);
   // Allocates header buffer.
   rp->header_length = alts_iovec_record_protocol_get_header_length();
-  rp->header_buf = static_cast<unsigned char*>(gpr_malloc(rp->header_length));
+  rp->header_buf.assign(rp->header_length, 0);
   rp->tag_length = alts_iovec_record_protocol_get_tag_length(rp->iovec_rp);
-  // Allocates iovec buffer.
-  rp->iovec_buf_length = kInitialIovecBufferSize;
-  rp->iovec_buf =
-      static_cast<iovec_t*>(gpr_malloc(rp->iovec_buf_length * sizeof(iovec_t)));
+  // Reserves the initial iovec capacity.
+  rp->iovec_buf.reserve(kInitialIovecBufferSize);
   return TSI_OK;
 }
 
@@ -149,18 +177,20 @@ tsi_result alts_grpc_record_protocol_unprotect(
   return self->vtable->unprotect(self, protected_slices, unprotected_slices);
 }
 
+void alts_grpc_record_protocol_deinit(alts_grpc_record_protocol* rp) {
+  alts_iovec_record_protocol_destroy(rp->iovec_rp);
+  rp->iovec_rp = nullptr;
+  grpc_slice_buffer_destroy(&rp->header_sb);
+}
+
 void alts_grpc_record_protocol_destroy(alts_grpc_record_protocol* self) {
   if (self == nullptr) {
     return;
   }
-  if (self->vtable->destruct != nullptr) {
-    self->vtable->destruct(self);
-  }
-  alts_iovec_record_protocol_destroy(self->iovec_rp);
-  grpc_slice_buffer_destroy(&self->header_sb);
-  gpr_free(self->header_buf);
-  gpr_free(self->iovec_buf);
-  gpr_free(self);
+  // The concrete type releases its own state, calls
+  // alts_grpc_record_protocol_deinit() and deallocates the object.
+  GRPC_CHECK(self->vtable != nullptr && self->vtable->destruct != nullptr);
+  self->vtable->destruct(self);
 }
 
 // Integrity-only and privacy-integrity share the same implementation. No need

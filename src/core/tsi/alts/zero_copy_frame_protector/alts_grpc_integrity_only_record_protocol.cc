@@ -22,6 +22,8 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
+#include <vector>
+
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
@@ -29,14 +31,15 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
+#include "absl/types/span.h"
 
 // Main struct for alts_grpc_integrity_only_record_protocol.
-typedef struct alts_grpc_integrity_only_record_protocol {
-  alts_grpc_record_protocol base;
-  bool enable_extra_copy;
+struct alts_grpc_integrity_only_record_protocol : alts_grpc_record_protocol {
+  bool enable_extra_copy = false;
   grpc_slice_buffer data_sb;
-  unsigned char* tag_buf;
-} alts_grpc_integrity_only_record_protocol;
+  // Flat storage for a tag that arrives split across several slices.
+  std::vector<unsigned char> tag_buf;
+};
 
 // --- alts_grpc_record_protocol methods implementation. ---
 
@@ -61,14 +64,17 @@ static tsi_result alts_grpc_integrity_only_extra_copy_protect(
   iovec_t tag_iovec = {
       GRPC_SLICE_START_PTR(protected_slice) + rp->header_length + data_length,
       rp->tag_length};
-  rp->iovec_buf[0].iov_base =
-      GRPC_SLICE_START_PTR(protected_slice) + rp->header_length;
-  rp->iovec_buf[0].iov_len = data_length;
+  absl::Span<const iovec_t> data_iovecs =
+      alts_grpc_record_protocol_set_single_iovec(
+          rp, iovec_t{GRPC_SLICE_START_PTR(protected_slice) + rp->header_length,
+                      data_length});
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
-      rp->iovec_rp, rp->iovec_buf, 1, header_iovec, tag_iovec, &error_details);
+      rp->iovec_rp, data_iovecs.data(), data_iovecs.size(), header_iovec,
+      tag_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
     LOG(ERROR) << "Failed to protect, " << error_details;
     gpr_free(error_details);
+    grpc_core::CSliceUnref(protected_slice);
     return TSI_INTERNAL_ERROR;
   }
   grpc_slice_buffer_add(protected_slices, protected_slice);
@@ -87,7 +93,7 @@ static tsi_result alts_grpc_integrity_only_protect(
     return TSI_INVALID_ARGUMENT;
   }
   alts_grpc_integrity_only_record_protocol* integrity_only_record_protocol =
-      reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
+      static_cast<alts_grpc_integrity_only_record_protocol*>(rp);
   if (integrity_only_record_protocol->enable_extra_copy) {
     return alts_grpc_integrity_only_extra_copy_protect(rp, unprotected_slices,
                                                        protected_slices);
@@ -101,14 +107,17 @@ static tsi_result alts_grpc_integrity_only_protect(
                           GRPC_SLICE_LENGTH(header_slice)};
   iovec_t tag_iovec = {GRPC_SLICE_START_PTR(tag_slice),
                        GRPC_SLICE_LENGTH(tag_slice)};
-  alts_grpc_record_protocol_convert_slice_buffer_to_iovec(rp,
-                                                          unprotected_slices);
+  absl::Span<const iovec_t> unprotected_iovecs =
+      alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
+          rp, unprotected_slices);
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
-      rp->iovec_rp, rp->iovec_buf, unprotected_slices->count, header_iovec,
-      tag_iovec, &error_details);
+      rp->iovec_rp, unprotected_iovecs.data(), unprotected_iovecs.size(),
+      header_iovec, tag_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
     LOG(ERROR) << "Failed to protect, " << error_details;
     gpr_free(error_details);
+    grpc_core::CSliceUnref(header_slice);
+    grpc_core::CSliceUnref(tag_slice);
     return TSI_INTERNAL_ERROR;
   }
   // Appends result to protected_slices.
@@ -136,7 +145,7 @@ static tsi_result alts_grpc_integrity_only_unprotect(
   // and integrity_only_record_protocol points to
   // alts_grpc_integrity_only_record_protocol struct.
   alts_grpc_integrity_only_record_protocol* integrity_only_record_protocol =
-      reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
+      static_cast<alts_grpc_integrity_only_record_protocol*>(rp);
   // Strips frame header from protected slices.
   grpc_slice_buffer_reset_and_unref(&rp->header_sb);
   grpc_slice_buffer_move_first(protected_slices, rp->header_length,
@@ -155,18 +164,22 @@ static tsi_result alts_grpc_integrity_only_unprotect(
   } else {
     // Frame tag is in multiple slices, copies the tag bytes from slice
     // buffer to a single flat buffer.
-    alts_grpc_record_protocol_copy_slice_buffer(
-        protected_slices, integrity_only_record_protocol->tag_buf);
-    tag_iovec.iov_base = integrity_only_record_protocol->tag_buf;
+    if (!alts_grpc_record_protocol_copy_slice_buffer(
+            protected_slices,
+            absl::MakeSpan(integrity_only_record_protocol->tag_buf))) {
+      LOG(ERROR) << "Failed to flatten the frame tag.";
+      return TSI_INTERNAL_ERROR;
+    }
+    tag_iovec.iov_base = integrity_only_record_protocol->tag_buf.data();
   }
   // Calls alts_iovec_record_protocol unprotect.
   char* error_details = nullptr;
-  alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
-      rp, &integrity_only_record_protocol->data_sb);
+  absl::Span<const iovec_t> data_iovecs =
+      alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
+          rp, &integrity_only_record_protocol->data_sb);
   grpc_status_code status = alts_iovec_record_protocol_integrity_only_unprotect(
-      rp->iovec_rp, rp->iovec_buf,
-      integrity_only_record_protocol->data_sb.count, header_iovec, tag_iovec,
-      &error_details);
+      rp->iovec_rp, data_iovecs.data(), data_iovecs.size(), header_iovec,
+      tag_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
     LOG(ERROR) << "Failed to unprotect, " << error_details;
     gpr_free(error_details);
@@ -184,9 +197,10 @@ static void alts_grpc_integrity_only_destruct(alts_grpc_record_protocol* rp) {
     return;
   }
   alts_grpc_integrity_only_record_protocol* integrity_only_rp =
-      reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
+      static_cast<alts_grpc_integrity_only_record_protocol*>(rp);
   grpc_slice_buffer_destroy(&integrity_only_rp->data_sb);
-  gpr_free(integrity_only_rp->tag_buf);
+  alts_grpc_record_protocol_deinit(rp);
+  delete integrity_only_rp;
 }
 
 static const alts_grpc_record_protocol_vtable
@@ -202,24 +216,21 @@ tsi_result alts_grpc_integrity_only_record_protocol_create(
         << "Invalid nullptr arguments to alts_grpc_record_protocol create.";
     return TSI_INVALID_ARGUMENT;
   }
-  alts_grpc_integrity_only_record_protocol* impl =
-      static_cast<alts_grpc_integrity_only_record_protocol*>(
-          gpr_zalloc(sizeof(alts_grpc_integrity_only_record_protocol)));
+  auto* impl = new alts_grpc_integrity_only_record_protocol();
   // Calls alts_grpc_record_protocol init.
-  tsi_result result = alts_grpc_record_protocol_init(
-      &impl->base, crypter, overflow_size, is_client,
-      /*is_integrity_only=*/true, is_protect);
+  tsi_result result =
+      alts_grpc_record_protocol_init(impl, crypter, overflow_size, is_client,
+                                     /*is_integrity_only=*/true, is_protect);
   if (result != TSI_OK) {
-    gpr_free(impl);
+    delete impl;
     return result;
   }
   impl->enable_extra_copy = enable_extra_copy;
   // Initializes slice buffer for data_sb.
   grpc_slice_buffer_init(&impl->data_sb);
   // Allocates tag buffer.
-  impl->tag_buf =
-      static_cast<unsigned char*>(gpr_malloc(impl->base.tag_length));
-  impl->base.vtable = &alts_grpc_integrity_only_record_protocol_vtable;
-  *rp = &impl->base;
+  impl->tag_buf.assign(impl->tag_length, 0);
+  impl->vtable = &alts_grpc_integrity_only_record_protocol_vtable;
+  *rp = impl;
   return TSI_OK;
 }
