@@ -106,11 +106,14 @@
 const size_t kMaxChainLength = 100;
 const char kDefaultBoringSSLKeyExchangeGroups[] =
     "X25519MLKEM768:X25519:P-256:P-384:P-521";
+// Prepends the three ML-DSA algorithms (mldsa87, mldsa65, mldsa44) to the
+// BoringSSL default verify signature algorithms list:
+// https://github.com/google/boringssl/blob/fbb876dcee91c83a78d930dc9fab79db0c12053e/ssl/extensions.cc#L286-L302
 [[maybe_unused]] const char kDefaultBoringSSLSignatureAlgorithms[] =
-    "mldsa44:mldsa65:mldsa87:"
-    "ed25519:ecdsa_secp256r1_sha256:rsa_pss_rsae_sha256:rsa_pkcs1_sha256:"
+    "mldsa87:mldsa65:mldsa44:"
+    "ecdsa_secp256r1_sha256:rsa_pss_rsae_sha256:rsa_pkcs1_sha256:"
     "ecdsa_secp384r1_sha384:rsa_pss_rsae_sha384:rsa_pkcs1_sha384:"
-    "ecdsa_secp521r1_sha512:rsa_pss_rsae_sha512:rsa_pkcs1_sha512:"
+    "rsa_pss_rsae_sha512:rsa_pkcs1_sha512:"
     "rsa_pkcs1_sha1";
 [[maybe_unused]] const char kDefaultOpenSSL1_1_1KeyExchangeGroups[] =
     "X25519:P-256:P-384:P-521";
@@ -567,8 +570,9 @@ tsi_result SetKeyExchangeGroups(
 
 // Populates the signature algorithms.
 // Uses the following defaults:
-//   - BoringSSL: BoringSSL defaults + ML-DSA (mldsa44, mldsa65, mldsa87) and
-//     ecdsa_secp521r1_sha512.
+//   - BoringSSL: Prepends the three ML-DSA algorithms (mldsa87, mldsa65,
+//     mldsa44) to the BoringSSL default list at
+//     https://github.com/google/boringssl/blob/fbb876dcee91c83a78d930dc9fab79db0c12053e/ssl/extensions.cc#L286-L302
 //   - OpenSSL: OpenSSL Defaults (which already include ML-DSA in OpenSSL 3.5+).
 tsi_result SetSignatureAlgorithms([[maybe_unused]] SSL_CTX* context) {
 #if defined(OPENSSL_IS_BORINGSSL)

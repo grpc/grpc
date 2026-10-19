@@ -510,27 +510,62 @@ TEST_F(TlsCredentialsTest, MixedRsaServerAndMldsa65ClientMutualTls) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
+  // Both client and server hold both the classical (RSA) root CA and the
+  // ML-DSA-65 root CA.
+  std::string combined_root_cert =
+      absl::StrCat(grpc_core::testing::GetFileContents(kCaCertPath),
+                   grpc_core::testing::GetFileContents(kCaMldsa65CertPath));
+
   // Server presents an RSA certificate and verifies the client's ML-DSA-65
-  // certificate.
+  // certificate against the combined root store.
   server_thread_ = new std::thread([&]() {
-    RunServer(&notification, /*key_exchange_groups=*/nullptr,
-              kCaMldsa65CertPath, kServerCertPath, kServerKeyPath,
-              GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+    std::string server_key =
+        grpc_core::testing::GetFileContents(kServerKeyPath);
+    std::string server_cert =
+        grpc_core::testing::GetFileContents(kServerCertPath);
+    auto server_certificate_provider =
+        std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+    ASSERT_EQ(server_certificate_provider->UpdateRoot(combined_root_cert),
+              absl::OkStatus());
+    ASSERT_EQ(
+        server_certificate_provider->UpdateIdentityKeyCertPair(
+            std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+                {server_key, server_cert}}),
+        absl::OkStatus());
+    auto server_options_or =
+        grpc::experimental::TlsServerCredentialsOptions::Create(
+            server_certificate_provider);
+    ASSERT_TRUE(server_options_or.ok());
+    grpc::experimental::TlsServerCredentialsOptions server_options =
+        *std::move(server_options_or);
+    server_options.set_root_certificate_provider(server_certificate_provider);
+    server_options.set_cert_request_type(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+    grpc::ServerBuilder builder;
+    builder.AddListeningPort(
+        server_addr_, grpc::experimental::TlsServerCredentials(server_options));
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+    notification.Notify();
+    server_->Wait();
   });
   notification.WaitForNotification();
 
   // Client presents an ML-DSA-65 certificate and verifies the server's RSA
-  // certificate.
-  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  // certificate against the combined root store.
   std::string client_key =
       grpc_core::testing::GetFileContents(kClientMldsa65KeyPath);
   std::string client_cert =
       grpc_core::testing::GetFileContents(kClientMldsa65CertPath);
-  std::vector<grpc::experimental::IdentityKeyCertPair> identity_pairs = {
-      {client_key, client_cert}};
   auto client_certificate_provider =
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          root_cert, identity_pairs);
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_EQ(client_certificate_provider->UpdateRoot(combined_root_cert),
+            absl::OkStatus());
+  ASSERT_EQ(
+      client_certificate_provider->UpdateIdentityKeyCertPair(
+          std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+              {client_key, client_cert}}),
+      absl::OkStatus());
 
   TlsChannelCredentialsOptions tls_options;
   tls_options.set_certificate_verifier(

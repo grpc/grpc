@@ -55,7 +55,7 @@ generate_mldsa_set() {
   openssl req -x509 -new -key "ca_${suffix}.key" \
     -out "ca_${suffix}.pem" -days 3650 \
     -config "${CA_DIR}/ca-openssl.cnf" -extensions v3_req \
-    -subj "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca"
+    -subj "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca_${suffix}"
 
   # 2. Generate client key and cert signed by the ML-DSA Root CA
   openssl genpkey -algorithm "${alg}" \
