@@ -11,115 +11,52 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Loads the tests of exactly one module for the Bazel Python test runners."""
 
-import importlib.util
-import pkgutil
-import sys
+import importlib
 from typing import Optional, Sequence
 import unittest
 
 
 class SingleLoader:
+    """Loads all tests from a single module, addressed by its Bazel package.
+
+    Shared by _gevent_test_main.py, _run_time_type_check_main.py and
+    _single_module_tester.py. Any problem locating or importing the module is
+    an error: the loader never falls back to other modules and never returns
+    an empty suite, so a misconfigured target cannot pass without running
+    tests.
+    """
 
     def __init__(
         self,
         target_module: str,
-        unittest_path: Optional[str] = None,
+        unittest_path: str,
         test_patterns: Optional[Sequence[str]] = None,
     ):
+        """Initializes the loader.
+
+        Args:
+          target_module: Name of the test module, e.g. "channel_test".
+          unittest_path: Directory containing the module, relative to the
+            workspace root, e.g. native.package_name().
+          test_patterns: Optional unittest -k patterns to filter tests by.
+        """
+        package_parts = [
+            part
+            for part in unittest_path.replace("\\", "/").split("/")
+            if part not in ("", ".")
+        ]
+        module_name = ".".join(package_parts + [target_module])
+
+        # import_module() registers the module in sys.modules, binds it to its
+        # parent package and cleans up on failure. Import errors propagate
+        # with their original traceback.
+        module = importlib.import_module(module_name)
+
         loader = unittest.TestLoader()
-        loader.testNamePatterns = test_patterns
-        self.suite = unittest.TestSuite()
-        tests = []
-
-        # Try to find the module directly first to avoid expensive directory walking
-        spec = None
-        fqn = target_module
-        if unittest_path and unittest_path != ".":
-            prefix = (
-                unittest_path.replace("/", ".").replace("\\", ".").strip(".")
-                + "."
-            )
-            fqn = prefix + target_module
-
-        if sys.modules.get(fqn) is not None:
-            tests.append(loader.loadTestsFromModule(sys.modules[fqn]))
-        elif sys.modules.get(target_module) is not None:
-            tests.append(loader.loadTestsFromModule(sys.modules[target_module]))
-        else:
-            try:
-                spec = importlib.util.find_spec(fqn)
-            except Exception:
-                pass
-
-            if spec is None and fqn != target_module:
-                try:
-                    spec = importlib.util.find_spec(target_module)
-                except Exception:
-                    pass
-
-            if spec is not None:
-                try:
-                    module = importlib.util.module_from_spec(spec)
-                    sys.modules[spec.name] = module
-                    if spec.loader is not None:
-                        spec.loader.exec_module(module)
-                    tests.append(loader.loadTestsFromModule(module))
-                except Exception as e:
-                    if spec.name in sys.modules:
-                        del sys.modules[spec.name]
-                    raise AssertionError(f"Error loading module {spec.name}: {e}")
-
-        # Fallback to walking packages if direct lookup didn't find it
-        if not tests:
-            search_paths = [unittest_path] if unittest_path else ["."]
-            prefix = ""
-            if unittest_path and unittest_path != ".":
-                prefix = (
-                    unittest_path.replace("/", ".")
-                    .replace("\\", ".")
-                    .strip(".")
-                    + "."
-                )
-
-            for importer, module_name, is_package in pkgutil.walk_packages(
-                search_paths, prefix=prefix
-            ):
-                if module_name == target_module or module_name.endswith(
-                    "." + target_module
-                ):
-                    if sys.modules.get(module_name) is not None:
-                        tests.append(loader.loadTestsFromModule(sys.modules[module_name]))
-                        break
-                    try:
-                        spec = None
-                        if hasattr(importer, "find_spec"):
-                            try:
-                                spec = importer.find_spec(module_name)
-                            except Exception:
-                                pass
-                        if spec is None:
-                            spec = importlib.util.find_spec(module_name)
-                        if spec is not None:
-                            module = importlib.util.module_from_spec(spec)
-                            sys.modules[module_name] = module
-                            if spec.loader is not None:
-                                spec.loader.exec_module(module)
-                            tests.append(loader.loadTestsFromModule(module))
-                            break
-                    except Exception as e:
-                        if module_name in sys.modules:
-                            del sys.modules[module_name]
-                        raise AssertionError(
-                            f"Error loading module {module_name}: {e}"
-                        )
-
-        if len(tests) != 1:
-            raise AssertionError(f"Expected only 1 test module. Found {tests}")
-
-        self.suite.addTest(tests[0])
-
-    def loadTestsFromNames(
-        self, names: Sequence[str], module: Optional[str] = None
-    ) -> unittest.TestSuite:
-        return self.suite
+        loader.testNamePatterns = list(test_patterns) if test_patterns else None
+        self.suite = loader.loadTestsFromModule(module)
+        if self.suite.countTestCases() == 0:
+            patterns = f" matching {test_patterns}" if test_patterns else ""
+            raise AssertionError(f"No tests found in {module_name}{patterns}")

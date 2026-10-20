@@ -44,6 +44,40 @@ except ImportError:
 
 grpc.experimental.gevent.init_gevent()
 
+
+def trace_callback(event, args):
+    if event in ("switch", "throw"):
+        origin, target = args
+        sys.stderr.write(
+            "{} Transfer from {} to {} with {}\n".format(
+                datetime.datetime.now(), origin, target, event
+            )
+        )
+    else:
+        sys.stderr.write("Unknown event {}.\n".format(event))
+    sys.stderr.flush()
+
+
+if os.getenv("GREENLET_TRACE") is not None:
+    greenlet.settrace(trace_callback)
+
+
+def debug(sig, frame):
+    d = {"_frame": frame}
+    d.update(frame.f_globals)
+    d.update(frame.f_locals)
+
+    sys.stderr.write(
+        "Traceback:\n{}".format("\n".join(traceback.format_stack(frame)))
+    )
+    import gevent.util
+
+    gevent.util.print_run_info()
+    sys.stderr.flush()
+
+
+signal.signal(signal.SIGTERM, debug)
+
 if __name__ == "__main__":
 
     if len(sys.argv) < 3:

@@ -111,23 +111,18 @@ def _arg_parser() -> argparse.ArgumentParser:
 
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         print(
-            f"USAGE: {sys.argv[0]} TARGET_MODULE [UNITTEST_PATH] [TEST_ARGS]",
+            f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH [TEST_ARGS]",
             file=sys.stderr,
         )
         sys.exit(1)
 
     target_module = sys.argv[1]
-    if len(sys.argv) >= 3 and not sys.argv[2].startswith("-"):
-        unittest_path = sys.argv[2]
-        test_arg_start = 3
-    else:
-        unittest_path = None
-        test_arg_start = 2
+    unittest_path = sys.argv[2]
 
     # Optional test args the rest.
-    parsed_args = _arg_parser().parse_args(sys.argv[test_arg_start:])
+    parsed_args = _arg_parser().parse_args(sys.argv[3:])
     test_kwargs = vars(parsed_args)
 
     if test_kwargs["verbosity"] is None:
