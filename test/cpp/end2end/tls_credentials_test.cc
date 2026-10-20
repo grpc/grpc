@@ -326,6 +326,114 @@ TEST_F(TlsCredentialsTest, KeyExchangeGroupMlkem1024) {
         /*expected_key_exchange_group=*/"id-alg-ml-kem-1024");
 }
 
+TEST_F(TlsCredentialsTest, Mldsa44TlsHandshakeAndRpc) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr,
+              kCaMldsa44CertPath, kServerMldsa44CertPath,
+              kServerMldsa44KeyPath);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert =
+      grpc_core::testing::GetFileContents(kCaMldsa44CertPath);
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_EQ(client_certificate_provider->UpdateRoot(root_cert),
+            absl::OkStatus());
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  DoRpc(server_addr_, tls_options);
+}
+
+TEST_F(TlsCredentialsTest, Mldsa65TlsHandshakeAndRpc) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr,
+              kCaMldsa65CertPath, kServerMldsa65CertPath,
+              kServerMldsa65KeyPath);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert =
+      grpc_core::testing::GetFileContents(kCaMldsa65CertPath);
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_EQ(client_certificate_provider->UpdateRoot(root_cert),
+            absl::OkStatus());
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  DoRpc(server_addr_, tls_options);
+}
+
+TEST_F(TlsCredentialsTest, Mldsa87TlsHandshakeAndRpc) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr,
+              kCaMldsa87CertPath, kServerMldsa87CertPath,
+              kServerMldsa87KeyPath);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert =
+      grpc_core::testing::GetFileContents(kCaMldsa87CertPath);
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_EQ(client_certificate_provider->UpdateRoot(root_cert),
+            absl::OkStatus());
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  DoRpc(server_addr_, tls_options);
+}
+
+TEST_F(TlsCredentialsTest, Mldsa87ChainTlsHandshakeAndRpc) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, /*key_exchange_groups=*/nullptr,
+              kCaMldsa87CertPath, kServerChainMldsa87CertPath,
+              kServerChainMldsa87KeyPath);
+  });
+  notification.WaitForNotification();
+
+  std::string root_cert =
+      grpc_core::testing::GetFileContents(kCaMldsa87CertPath);
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_EQ(client_certificate_provider->UpdateRoot(root_cert),
+            absl::OkStatus());
+
+  TlsChannelCredentialsOptions tls_options;
+  tls_options.set_certificate_verifier(
+      ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
+  tls_options.set_check_call_host(false);
+  tls_options.set_root_certificate_provider(client_certificate_provider);
+  tls_options.set_sni_override("foo.test.google.fr");
+  DoRpc(server_addr_, tls_options);
+}
+
 TEST_F(TlsCredentialsTest, Mldsa44MutualTlsHandshakeAndRpc) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
