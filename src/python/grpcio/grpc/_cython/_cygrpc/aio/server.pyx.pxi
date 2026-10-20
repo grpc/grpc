@@ -238,8 +238,7 @@ cdef class _ServicerContext:
     def peer(self):
         cdef char *c_peer = NULL
         c_peer = grpc_call_get_peer(self._rpc_state.call)
-        from grpc import _common
-        peer = _common.decode(<bytes>c_peer)
+        peer = (<bytes>c_peer).decode('utf-8', 'replace')
         gpr_free(c_peer)
         return peer
 
@@ -256,8 +255,7 @@ cdef class _ServicerContext:
         identity_key = peer_identity_key(query_call)
         query_call.c_call = NULL
         if identity_key:
-            from grpc import _common
-            return _common.decode(identity_key)
+            return identity_key.decode('utf-8', 'replace')
         else:
             return None
 
@@ -267,10 +265,9 @@ cdef class _ServicerContext:
         bytes_ctx = auth_context(query_call)
         query_call.c_call = NULL
         if bytes_ctx:
-            from grpc import _common
             ctx = {}
             for key in bytes_ctx:
-                ctx[_common.decode(key)] = bytes_ctx[key]
+                ctx[key.decode('utf-8', 'replace')] = bytes_ctx[key]
             return ctx
         else:
             return {}
