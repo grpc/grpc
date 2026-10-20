@@ -50,11 +50,22 @@ constexpr char kMessage[] = "Hello";
 
 class SslCredentialsTest : public ::testing::Test {
  protected:
-  void RunServer(absl::Notification* notification) {
-    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  void RunServer(absl::Notification* notification,
+                 const char* ca_cert_path = kCaCertPath,
+                 const char* server_cert_path = kServerCertPath,
+                 const char* server_key_path = kServerKeyPath) {
+    RunServerWithRootCert(notification,
+                          grpc_core::testing::GetFileContents(ca_cert_path),
+                          server_cert_path, server_key_path);
+  }
+
+  void RunServerWithRootCert(absl::Notification* notification,
+                             const std::string& root_cert,
+                             const char* server_cert_path = kServerCertPath,
+                             const char* server_key_path = kServerKeyPath) {
     grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
-        grpc_core::testing::GetFileContents(kServerKeyPath),
-        grpc_core::testing::GetFileContents(kServerCertPath)};
+        grpc_core::testing::GetFileContents(server_key_path),
+        grpc_core::testing::GetFileContents(server_cert_path)};
     // TODO(gtcooke94) Parametrize this test for TLS and mTLS as well
     grpc::SslServerCredentialsOptions ssl_options;
     ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
@@ -89,9 +100,12 @@ class SslCredentialsTest : public ::testing::Test {
 
 void DoRpc(const std::string& server_addr,
            const SslCredentialsOptions& ssl_options,
-           grpc_ssl_session_cache* cache, bool expect_session_reuse) {
+           grpc_ssl_session_cache* cache = nullptr,
+           bool expect_session_reuse = false) {
   ChannelArguments channel_args;
-  channel_args.SetPointer(std::string(GRPC_SSL_SESSION_CACHE_ARG), cache);
+  if (cache != nullptr) {
+    channel_args.SetPointer(std::string(GRPC_SSL_SESSION_CACHE_ARG), cache);
+  }
   channel_args.SetSslTargetNameOverride("foo.test.google.fr");
   channel_args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
 
@@ -221,6 +235,183 @@ TEST_F(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
 
   grpc_ssl_session_cache_destroy(cache);
 }
+
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+constexpr char kCaMldsa44CertPath[] =
+    "test/core/tsi/test_creds/mldsa/ca_mldsa44.pem";
+constexpr char kServerMldsa44CertPath[] =
+    "test/core/tsi/test_creds/mldsa/server_mldsa44.pem";
+constexpr char kServerMldsa44KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/server_mldsa44.key";
+constexpr char kClientMldsa44CertPath[] =
+    "test/core/tsi/test_creds/mldsa/client_mldsa44.pem";
+constexpr char kClientMldsa44KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/client_mldsa44.key";
+
+constexpr char kCaMldsa65CertPath[] =
+    "test/core/tsi/test_creds/mldsa/ca_mldsa65.pem";
+constexpr char kServerMldsa65CertPath[] =
+    "test/core/tsi/test_creds/mldsa/server_mldsa65.pem";
+constexpr char kServerMldsa65KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/server_mldsa65.key";
+constexpr char kClientMldsa65CertPath[] =
+    "test/core/tsi/test_creds/mldsa/client_mldsa65.pem";
+constexpr char kClientMldsa65KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/client_mldsa65.key";
+
+constexpr char kCaMldsa87CertPath[] =
+    "test/core/tsi/test_creds/mldsa/ca_mldsa87.pem";
+constexpr char kServerMldsa87CertPath[] =
+    "test/core/tsi/test_creds/mldsa/server_mldsa87.pem";
+constexpr char kServerMldsa87KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/server_mldsa87.key";
+constexpr char kClientMldsa87CertPath[] =
+    "test/core/tsi/test_creds/mldsa/client_mldsa87.pem";
+constexpr char kClientMldsa87KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/client_mldsa87.key";
+constexpr char kServerChainMldsa87CertPath[] =
+    "test/core/tsi/test_creds/mldsa/server_chain_mldsa87.pem";
+constexpr char kServerChainMldsa87KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/server_chain_mldsa87.key";
+constexpr char kClientChainMldsa87CertPath[] =
+    "test/core/tsi/test_creds/mldsa/client_chain_mldsa87.pem";
+constexpr char kClientChainMldsa87KeyPath[] =
+    "test/core/tsi/test_creds/mldsa/client_chain_mldsa87.key";
+
+TEST_F(SslCredentialsTest, Mldsa44MutualTlsHandshakeAndRpc) {
+  server_addr_ = absl::StrCat("127.0.0.1:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kCaMldsa44CertPath, kServerMldsa44CertPath,
+              kServerMldsa44KeyPath);
+  });
+  notification.WaitForNotification();
+
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs =
+      grpc_core::testing::GetFileContents(kCaMldsa44CertPath);
+  ssl_options.pem_private_key =
+      grpc_core::testing::GetFileContents(kClientMldsa44KeyPath);
+  ssl_options.pem_cert_chain =
+      grpc_core::testing::GetFileContents(kClientMldsa44CertPath);
+
+  DoRpc(server_addr_, ssl_options);
+}
+
+TEST_F(SslCredentialsTest, Mldsa65MutualTlsHandshakeAndRpc) {
+  server_addr_ = absl::StrCat("127.0.0.1:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kCaMldsa65CertPath, kServerMldsa65CertPath,
+              kServerMldsa65KeyPath);
+  });
+  notification.WaitForNotification();
+
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs =
+      grpc_core::testing::GetFileContents(kCaMldsa65CertPath);
+  ssl_options.pem_private_key =
+      grpc_core::testing::GetFileContents(kClientMldsa65KeyPath);
+  ssl_options.pem_cert_chain =
+      grpc_core::testing::GetFileContents(kClientMldsa65CertPath);
+
+  DoRpc(server_addr_, ssl_options);
+}
+
+TEST_F(SslCredentialsTest, Mldsa87MutualTlsHandshakeAndRpc) {
+  server_addr_ = absl::StrCat("127.0.0.1:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kCaMldsa87CertPath, kServerMldsa87CertPath,
+              kServerMldsa87KeyPath);
+  });
+  notification.WaitForNotification();
+
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs =
+      grpc_core::testing::GetFileContents(kCaMldsa87CertPath);
+  ssl_options.pem_private_key =
+      grpc_core::testing::GetFileContents(kClientMldsa87KeyPath);
+  ssl_options.pem_cert_chain =
+      grpc_core::testing::GetFileContents(kClientMldsa87CertPath);
+
+  DoRpc(server_addr_, ssl_options);
+}
+
+TEST_F(SslCredentialsTest, Mldsa87ChainMutualTlsAndSessionResumption) {
+  server_addr_ = absl::StrCat("127.0.0.1:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kCaMldsa87CertPath, kServerChainMldsa87CertPath,
+              kServerChainMldsa87KeyPath);
+  });
+  notification.WaitForNotification();
+
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs =
+      grpc_core::testing::GetFileContents(kCaMldsa87CertPath);
+  ssl_options.pem_private_key =
+      grpc_core::testing::GetFileContents(kClientChainMldsa87KeyPath);
+  ssl_options.pem_cert_chain =
+      grpc_core::testing::GetFileContents(kClientChainMldsa87CertPath);
+
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
+  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
+  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/true);
+  grpc_ssl_session_cache_destroy(cache);
+}
+
+TEST_F(SslCredentialsTest, MixedMldsaCertsMutualTls) {
+  server_addr_ = absl::StrCat("127.0.0.1:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  std::string combined_root_cert = absl::StrCat(
+      grpc_core::testing::GetFileContents(kCaMldsa87CertPath),
+      grpc_core::testing::GetFileContents(kCaMldsa44CertPath));
+  server_thread_ = new std::thread([&]() {
+    RunServerWithRootCert(&notification, combined_root_cert,
+                          kServerMldsa87CertPath, kServerMldsa87KeyPath);
+  });
+  notification.WaitForNotification();
+
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = combined_root_cert;
+  ssl_options.pem_private_key =
+      grpc_core::testing::GetFileContents(kClientMldsa44KeyPath);
+  ssl_options.pem_cert_chain =
+      grpc_core::testing::GetFileContents(kClientMldsa44CertPath);
+
+  DoRpc(server_addr_, ssl_options);
+}
+
+TEST_F(SslCredentialsTest, MixedRsaServerAndMldsa65ClientMutualTls) {
+  server_addr_ = absl::StrCat("127.0.0.1:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  std::string combined_root_cert =
+      absl::StrCat(grpc_core::testing::GetFileContents(kCaCertPath),
+                   grpc_core::testing::GetFileContents(kCaMldsa65CertPath));
+  server_thread_ = new std::thread([&]() {
+    RunServerWithRootCert(&notification, combined_root_cert, kServerCertPath,
+                          kServerKeyPath);
+  });
+  notification.WaitForNotification();
+
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = combined_root_cert;
+  ssl_options.pem_private_key =
+      grpc_core::testing::GetFileContents(kClientMldsa65KeyPath);
+  ssl_options.pem_cert_chain =
+      grpc_core::testing::GetFileContents(kClientMldsa65CertPath);
+
+  DoRpc(server_addr_, ssl_options);
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
+        // 0x30500000L
 
 }  // namespace
 }  // namespace testing
