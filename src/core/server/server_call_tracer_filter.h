@@ -15,7 +15,9 @@
 #ifndef GRPC_SRC_CORE_SERVER_SERVER_CALL_TRACER_FILTER_H
 #define GRPC_SRC_CORE_SERVER_SERVER_CALL_TRACER_FILTER_H
 
+#include <grpc/server_call_hook.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include <functional>
 #include <utility>
@@ -36,6 +38,24 @@
 
 namespace grpc_core {
 
+// Returns the registered server call hook, or nullptr. One relaxed load.
+const grpc_server_call_hook* GetServerCallHook();
+
+// A call's hook state: set by StartServerCallHook, cleared by
+// EndServerCallHook.
+struct ServerCallHookState {
+  const grpc_server_call_hook* hook = nullptr;
+  uint64_t call_word = 0;
+  gpr_timespec start;
+};
+
+// Runs on_call_start; a non-null handle refuses the call.
+ServerMetadataHandle StartServerCallHook(const grpc_server_call_hook* hook,
+                                         ClientMetadata& md,
+                                         ServerCallHookState* state);
+// Runs on_call_end once, for a call StartServerCallHook saw.
+void EndServerCallHook(ServerCallHookState* state, grpc_status_code status);
+
 class ServerCallTracerFilter
     : public ImplementChannelFilter<ServerCallTracerFilter> {
  public:
@@ -48,12 +68,18 @@ class ServerCallTracerFilter
 
   class Call {
    public:
-    void OnClientInitialMetadata(ClientMetadata& client_initial_metadata) {
+    // A non-null handle refuses the call, as HttpServerFilter does.
+    ServerMetadataHandle OnClientInitialMetadata(
+        ClientMetadata& client_initial_metadata) {
       GRPC_LATENT_SEE_SCOPE(
           "ServerCallTracerFilter::Call::OnClientInitialMetadata");
       auto* call_tracer = MaybeGetContext<ServerCallTracer>();
-      if (call_tracer == nullptr) return;
-      call_tracer->RecordReceivedInitialMetadata(&client_initial_metadata);
+      if (call_tracer != nullptr) {
+        call_tracer->RecordReceivedInitialMetadata(&client_initial_metadata);
+      }
+      const grpc_server_call_hook* hook = GetServerCallHook();
+      if (hook == nullptr) return nullptr;
+      return StartServerCallHook(hook, client_initial_metadata, &hook_);
     }
 
     void OnServerInitialMetadata(ServerMetadata& server_initial_metadata) {
@@ -66,6 +92,9 @@ class ServerCallTracerFilter
 
     void OnFinalize(const grpc_call_final_info* final_info) {
       GRPC_LATENT_SEE_SCOPE("ServerCallTracerFilter::Call::OnFinalize");
+      if (hook_.hook != nullptr) {
+        EndServerCallHook(&hook_, final_info->final_status);
+      }
       auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;
       call_tracer->RecordEnd(final_info);
@@ -74,6 +103,11 @@ class ServerCallTracerFilter
     void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata) {
       GRPC_LATENT_SEE_SCOPE(
           "ServerCallTracerFilter::Call::OnServerTrailingMetadata");
+      if (hook_.hook != nullptr) {
+        EndServerCallHook(&hook_,
+                          server_trailing_metadata.get(GrpcStatusMetadata())
+                              .value_or(GRPC_STATUS_UNKNOWN));
+      }
       auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;
       call_tracer->RecordSendTrailingMetadata(&server_trailing_metadata);
@@ -86,6 +120,9 @@ class ServerCallTracerFilter
     channelz::PropertyList ChannelzProperties() {
       return channelz::PropertyList();
     }
+
+   private:
+    ServerCallHookState hook_;
   };
 };
 
