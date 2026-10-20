@@ -1894,15 +1894,19 @@ std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
   }
   // We have a result.  Apply service config to call.
   grpc_error_handle error = ApplyServiceConfigToCallLocked(config_selector);
+  if (call_tracer != nullptr) {
+    if (was_queued && !config_selector.ok()) {
+      call_tracer->RecordDelay(kDelayTypeResolving,
+                               config_selector.status().ToString());
+    }
+    call_tracer->MaybeRecordDelayEnd();
+  }
   // Handle errors.
   if (!error.ok()) {
     GRPC_TRACE_LOG(client_channel_call, INFO)
         << "chand=" << chand() << " calld=" << this
         << ": error applying config to call: error=" << StatusToString(error);
     return error;
-  }
-  if (call_tracer != nullptr) {
-    call_tracer->MaybeRecordDelayEnd();
   }
   // If the call was queued, add trace annotation.
   if (was_queued) {

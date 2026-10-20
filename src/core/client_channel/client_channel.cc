@@ -962,33 +962,36 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
         return Map(
             // Wait for the resolver result.
             CheckDelayed(self->resolver_data_for_calls_.NextWhen(
-                [wait_for_ready](
+                [wait_for_ready, delayed = false](
                     const absl::StatusOr<RefCountedPtr<ConfigSelector>>
-                        config_selector) {
-                  bool got_result = false;
-                  // If the resolver reports an error but the call is
-                  // wait_for_ready, keep waiting for the next result
-                  // instead of failing the call.
-                  if (!config_selector.ok()) {
-                    got_result = !wait_for_ready;
-                  } else {
-                    // Not an error.  Make sure we actually have a result.
-                    got_result = *config_selector != nullptr;
-                  }
+                        config_selector) mutable {
                   auto* tracer = MaybeGetContext<ClientCallTracer>();
-                  if (tracer != nullptr) {
-                    if (!got_result) {
-                      tracer->RecordDelay(
-                          kDelayTypeResolving,
-                          config_selector.ok()
-                              ? std::string(
-                                    "waiting for initial resolver result")
-                              : config_selector.status().ToString());
-                    } else if (config_selector.ok()) {
+                  // Got a result. End delay if it exists.
+                  if (config_selector.ok() && *config_selector != nullptr) {
+                    if (tracer != nullptr) tracer->MaybeRecordDelayEnd();
+                    return true;
+                  }
+                  // Resolver failed and the call is not wait_for_ready.
+                  // Record the delay failure reason and end the delay.
+                  if (!config_selector.ok() && !wait_for_ready) {
+                    if (tracer != nullptr && delayed) {
+                      tracer->RecordDelay(kDelayTypeResolving,
+                                          config_selector.status().ToString());
                       tracer->MaybeRecordDelayEnd();
                     }
+                    return true;
                   }
-                  return got_result;
+                  // No result yet, or the resolver failed but the call is
+                  // wait_for_ready. Record delay and keep waiting.
+                  if (tracer != nullptr) {
+                    tracer->RecordDelay(
+                        kDelayTypeResolving,
+                        config_selector.ok()
+                            ? std::string("waiting for initial resolver result")
+                            : config_selector.status().ToString());
+                    delayed = true;
+                  }
+                  return false;
                 })),
             // Handle resolver result.
             [self, unstarted_handler](
