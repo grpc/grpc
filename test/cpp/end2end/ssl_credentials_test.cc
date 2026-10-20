@@ -441,9 +441,9 @@ TEST_F(SslCredentialsTest, MixedMldsaCertsMutualTls) {
   server_addr_ = absl::StrCat("127.0.0.1:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
-  std::string combined_root_cert = absl::StrCat(
-      grpc_core::testing::GetFileContents(kCaMldsa87CertPath),
-      grpc_core::testing::GetFileContents(kCaMldsa44CertPath));
+  std::string combined_root_cert =
+      absl::StrCat(grpc_core::testing::GetFileContents(kCaMldsa87CertPath),
+                   grpc_core::testing::GetFileContents(kCaMldsa44CertPath));
   server_thread_ = new std::thread([&]() {
     RunServerWithRootCert(&notification, combined_root_cert,
                           kServerMldsa87CertPath, kServerMldsa87KeyPath);
