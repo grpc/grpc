@@ -196,7 +196,8 @@ class InterceptionChainBuilder final {
   std::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
     if (!status_.ok()) return *this;
-    auto filter = T::Create(args_, FilterArgs(nullptr, std::move(config)));
+    auto filter = T::Create(
+        args_, FilterArgs(/*channel_stack=*/nullptr, std::move(config)));
     if (!filter.ok()) {
       status_ = filter.status();
       return *this;
@@ -212,7 +213,8 @@ class InterceptionChainBuilder final {
   std::enable_if_t<std::is_base_of<Interceptor, T>::value,
                    InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
-    AddInterceptor(T::Create(args_, FilterArgs(nullptr, std::move(config))));
+    AddInterceptor(T::Create(
+        args_, FilterArgs(/*channel_stack=*/nullptr, std::move(config))));
     return *this;
   };
 
