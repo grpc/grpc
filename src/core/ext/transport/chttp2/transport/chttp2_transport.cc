@@ -506,9 +506,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->max_header_list_size_soft_limit =
       grpc_core::GetSoftLimitFromChannelArgs(channel_args);
 
-  grpc_core::ReadSettingsFromChannelArgs(channel_args,
-                                         t->settings.mutable_local(),
-                                         is_client);
+  grpc_core::ReadSettingsFromChannelArgs(
+      channel_args, t->settings.mutable_local(), is_client);
   const int lookahead_bytes =
       channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
   if (lookahead_bytes >= 0) {
@@ -782,8 +781,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     settings.InitFromHandshake(handshake_result->local_settings_sent(),
                                handshake_result->peer_initial_settings());
     if (keepalive_timeout != grpc_core::Duration::Infinity()) {
-      settings_ack_watchdog = event_engine->RunAfter(
-          settings_timeout, [t = Ref()]() mutable {
+      settings_ack_watchdog =
+          event_engine->RunAfter(settings_timeout, [t = Ref()]() mutable {
             grpc_core::ExecCtx exec_ctx;
             grpc_chttp2_settings_timeout(std::move(t));
           });

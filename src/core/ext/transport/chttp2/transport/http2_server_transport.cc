@@ -2326,11 +2326,11 @@ void Http2ServerTransport::SpawnTransportLoops() {
 
 void Http2ServerTransport::InitializeAndSpawnTransportLoops() {
   if (!transport_write_context_.IsFirstWrite()) {
-    SpawnGuardedTransportParty(
-        "SpawnTransportLoops", [self = RefAsSubclass<Http2ServerTransport>()] {
-          self->SpawnTransportLoops();
-          return absl::OkStatus();
-        });
+    SpawnGuardedTransportParty("SpawnTransportLoops",
+                               [self = RefAsSubclass<Http2ServerTransport>()] {
+                                 self->SpawnTransportLoops();
+                                 return absl::OkStatus();
+                               });
     return;
   }
   SpawnGuardedTransportParty(

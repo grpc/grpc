@@ -347,13 +347,14 @@ absl::Status Http2SettingsHandshaker::ProcessReadBufferLocked() {
         case ReadState::kReadingClientPreface: {
           while (cur < end &&
                  prefix_bytes_read_ < GRPC_CHTTP2_CLIENT_CONNECT_STRLEN) {
-            if (*cur != static_cast<uint8_t>(
-                            GRPC_CHTTP2_CLIENT_CONNECT_STRING[prefix_bytes_read_])) {
+            if (*cur !=
+                static_cast<uint8_t>(
+                    GRPC_CHTTP2_CLIENT_CONNECT_STRING[prefix_bytes_read_])) {
               return GRPC_ERROR_CREATE(absl::StrFormat(
                   "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
                   "at byte %d",
                   GRPC_CHTTP2_CLIENT_CONNECT_STRING[prefix_bytes_read_],
-                  static_cast<int>( static_cast<uint8_t>(
+                  static_cast<int>(static_cast<uint8_t>(
                       GRPC_CHTTP2_CLIENT_CONNECT_STRING[prefix_bytes_read_])),
                   *cur, static_cast<int>(*cur),
                   static_cast<int>(prefix_bytes_read_)));
@@ -401,11 +402,10 @@ absl::Status Http2SettingsHandshaker::ProcessReadBufferLocked() {
             }
             if (frame_length_ > settings_.acked().max_frame_size()) {
               return grpc_error_set_int(
-                  GRPC_ERROR_CREATE(
-                      absl::StrFormat("Frame size %d larger than max frame "
-                                      "size %d",
-                                      frame_length_,
-                                      settings_.acked().max_frame_size())),
+                  GRPC_ERROR_CREATE(absl::StrFormat(
+                      "Frame size %d larger than max frame "
+                      "size %d",
+                      frame_length_, settings_.acked().max_frame_size())),
                   StatusIntProperty::kHttp2Error,
                   static_cast<intptr_t>(Http2ErrorCode::kFrameSizeError));
             }
@@ -495,9 +495,9 @@ bool Http2SettingsHandshaker::MaybeFinishLocked(
       sent_goaway_ = true;
       write_done_ = false;
       write_in_progress_ = true;
-      Http2Frame goaway_frame(Http2GoawayFrame{
-          0, static_cast<uint32_t>(http2_error),
-          Slice::FromCopiedString(overall_status_.message())});
+      Http2Frame goaway_frame(
+          Http2GoawayFrame{0, static_cast<uint32_t>(http2_error),
+                           Slice::FromCopiedString(overall_status_.message())});
       Serialize(absl::Span<Http2Frame>(&goaway_frame, 1), write_buffer_);
       Ref().release();  // Ref held by OnWriteDoneScheduler
       grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs
@@ -513,9 +513,9 @@ bool Http2SettingsHandshaker::MaybeFinishLocked(
     }
   }
   if (overall_status_.ok()) {
-    args_->args = args_->args.SetObject(
-        MakeRefCounted<Http2SettingsHandshakeResult>(settings_.local(),
-                                                     settings_.peer()));
+    args_->args =
+        args_->args.SetObject(MakeRefCounted<Http2SettingsHandshakeResult>(
+            settings_.local(), settings_.peer()));
   } else {
     args_->read_buffer.Clear();
   }

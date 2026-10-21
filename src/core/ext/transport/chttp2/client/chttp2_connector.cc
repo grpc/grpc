@@ -247,17 +247,17 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
                   .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings;
       if (handshake_result == nullptr) {
-        on_receive_settings = [self = RefAsSubclass<Chttp2Connector>()](
-                                  absl::StatusOr<uint32_t>
-                                      max_concurrent_streams) {
-          self->OnReceiveSettings(max_concurrent_streams);
-        };
+        on_receive_settings =
+            [self = RefAsSubclass<Chttp2Connector>()](
+                absl::StatusOr<uint32_t> max_concurrent_streams) {
+              self->OnReceiveSettings(max_concurrent_streams);
+            };
       }
       // Http2ClientTransport does not take ownership of the channel args.
       http2::Http2ClientTransport* client_transport =
-          new http2::Http2ClientTransport(
-              std::move(promise_endpoint), (*result)->args, event_engine_ptr,
-              std::move(on_receive_settings));
+          new http2::Http2ClientTransport(std::move(promise_endpoint),
+                                          (*result)->args, event_engine_ptr,
+                                          std::move(on_receive_settings));
       GRPC_DCHECK_NE(client_transport, nullptr);
       result_->transport = client_transport;
       result_->channel_args = std::move((*result)->args);
