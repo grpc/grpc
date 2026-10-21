@@ -44,6 +44,7 @@
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_handshaker.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -65,6 +66,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/endpoint_channel_arg_wrapper.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -146,6 +148,9 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());
+  if (IsServerConnectionManagementEnabled()) {
+    handshake_mgr_->Add(MakeHttp2SettingsHandshaker(/*is_client=*/true));
+  }
   handshake_mgr_->DoHandshake(std::move(endpoint), channel_args, args.deadline,
                               /*acceptor=*/nullptr,
                               [self = RefAsSubclass<Chttp2Connector>()](
@@ -174,6 +179,8 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   } else if ((*result)->endpoint != nullptr) {
     GRPC_HTTP2_CONNECTOR_DLOG
         << "Chttp2Connector::OnHandshakeDone handshake succeeded with endpoint";
+    const auto* handshake_result =
+        (*result)->args.GetObject<Http2SettingsHandshakeResult>();
     const bool is_callv1 =
         !((*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false));
     if (is_callv1) {
@@ -183,21 +190,32 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
           (*result)->args, std::move((*result)->endpoint), true);
       GRPC_CHECK_NE(result_->transport, nullptr);
       result_->channel_args = std::move((*result)->args);
-      grpc_chttp2_transport_start_reading(
-          result_->transport, (*result)->read_buffer.c_slice_buffer(),
-          [self = RefAsSubclass<Chttp2Connector>()](
-              absl::StatusOr<uint32_t> max_concurrent_streams) {
-            self->OnReceiveSettings(max_concurrent_streams);
-          },
-          args_.interested_parties, nullptr);
-      timer_handle_ = event_engine_->RunAfter(
-          args_.deadline - Timestamp::Now(),
-          [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-            ExecCtx exec_ctx;
-            self->OnTimeout();
-            // Ensure the Chttp2Connector is deleted under an ExecCtx.
-            self.reset();
-          });
+      if (handshake_result != nullptr) {
+        result_->max_concurrent_streams =
+            handshake_result->peer_initial_settings().max_concurrent_streams();
+        grpc_chttp2_transport_start_reading(
+            result_->transport, (*result)->read_buffer.c_slice_buffer(),
+            /*notify_on_receive_settings=*/nullptr,
+            /*interested_parties_until_recv_settings=*/nullptr,
+            /*notify_on_close=*/nullptr);
+        NullThenSchedClosure(DEBUG_LOCATION, &notify_, absl::OkStatus());
+      } else {
+        grpc_chttp2_transport_start_reading(
+            result_->transport, (*result)->read_buffer.c_slice_buffer(),
+            [self = RefAsSubclass<Chttp2Connector>()](
+                absl::StatusOr<uint32_t> max_concurrent_streams) {
+              self->OnReceiveSettings(max_concurrent_streams);
+            },
+            args_.interested_parties, nullptr);
+        timer_handle_ = event_engine_->RunAfter(
+            args_.deadline - Timestamp::Now(),
+            [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+              ExecCtx exec_ctx;
+              self->OnTimeout();
+              // Ensure the Chttp2Connector is deleted under an ExecCtx.
+              self.reset();
+            });
+      }
 #ifdef GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
       // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2 is a temporary fix to help
       // some customers who are having severe memory constraints. This macro
@@ -227,26 +245,37 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
               (*result)
                   ->args
                   .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings;
+      if (handshake_result == nullptr) {
+        on_receive_settings = [self = RefAsSubclass<Chttp2Connector>()](
+                                  absl::StatusOr<uint32_t>
+                                      max_concurrent_streams) {
+          self->OnReceiveSettings(max_concurrent_streams);
+        };
+      }
       // Http2ClientTransport does not take ownership of the channel args.
       http2::Http2ClientTransport* client_transport =
           new http2::Http2ClientTransport(
               std::move(promise_endpoint), (*result)->args, event_engine_ptr,
-              [self = RefAsSubclass<Chttp2Connector>()](
-                  absl::StatusOr<uint32_t> max_concurrent_streams) {
-                self->OnReceiveSettings(max_concurrent_streams);
-              });
+              std::move(on_receive_settings));
       GRPC_DCHECK_NE(client_transport, nullptr);
       result_->transport = client_transport;
       result_->channel_args = std::move((*result)->args);
       client_transport->SpawnTransportLoops();
-      timer_handle_ = event_engine_->RunAfter(
-          args_.deadline - Timestamp::Now(),
-          [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-            ExecCtx exec_ctx;
-            self->OnTimeout();
-            // Ensure the Chttp2Connector is deleted under an ExecCtx.
-            self.reset();
-          });
+      if (handshake_result != nullptr) {
+        result_->max_concurrent_streams =
+            handshake_result->peer_initial_settings().max_concurrent_streams();
+        NullThenSchedClosure(DEBUG_LOCATION, &notify_, absl::OkStatus());
+      } else {
+        timer_handle_ = event_engine_->RunAfter(
+            args_.deadline - Timestamp::Now(),
+            [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+              ExecCtx exec_ctx;
+              self->OnTimeout();
+              // Ensure the Chttp2Connector is deleted under an ExecCtx.
+              self.reset();
+            });
+      }
     }
 #endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
   } else {

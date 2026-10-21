@@ -37,6 +37,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 #include "absl/base/attributes.h"
 #include "absl/log/log.h"
@@ -97,8 +98,10 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);
 
   if (parser->is_ack) {
-    t->http2_ztrace_collector.Append(
-        grpc_core::H2SettingsTrace<true>{true, {}});
+    if (t != nullptr) {
+      t->http2_ztrace_collector.Append(
+          grpc_core::H2SettingsTrace<true>{true, {}});
+    }
     return absl::OkStatus();
   }
 
@@ -108,6 +111,10 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_ID0;
           if (is_last) {
+            if (t == nullptr) {
+              *parser->target_settings = *parser->incoming_settings;
+              return absl::OkStatus();
+            }
             grpc_core::Http2Settings* target_settings =
                 parser->incoming_settings.get();
             t->http2_stats->IncrementHttp2HeaderTableSize(
@@ -202,7 +209,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         parser->value |= *cur;
         cur++;
 
-        if (parser->id == grpc_core::Http2Settings::kInitialWindowSizeWireId) {
+        if (t != nullptr &&
+            parser->id == grpc_core::Http2Settings::kInitialWindowSizeWireId) {
           t->initial_window_update +=
               static_cast<int64_t>(parser->value) -
               parser->incoming_settings->initial_window_size();
@@ -216,20 +224,52 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         auto error =
             parser->incoming_settings->Apply(parser->id, parser->value);
         if (error != Http2ErrorCode::kNoError) {
-          grpc_chttp2_goaway_append(
-              t->last_new_stream_id, static_cast<uint32_t>(error),
-              grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf,
-              &t->http2_ztrace_collector);
-          return GRPC_ERROR_CREATE(absl::StrFormat(
-              "invalid value %u passed for %s", parser->value,
-              grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));
+          if (t != nullptr) {
+            grpc_chttp2_goaway_append(
+                t->last_new_stream_id, static_cast<uint32_t>(error),
+                grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf,
+                &t->http2_ztrace_collector);
+          }
+          return grpc_error_set_int(
+              GRPC_ERROR_CREATE(absl::StrFormat(
+                  "invalid value %u passed for %s", parser->value,
+                  grpc_core::Http2Settings::WireIdToName(parser->id).c_str())),
+              grpc_core::StatusIntProperty::kHttp2Error,
+              static_cast<intptr_t>(error));
         }
-        GRPC_TRACE_LOG(http, INFO)
-            << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
-            << t->peer_string.as_string_view() << ": got setting "
-            << grpc_core::Http2Settings::WireIdToName(parser->id) << " = "
-            << parser->value;
+        if (t != nullptr) {
+          GRPC_TRACE_LOG(http, INFO)
+              << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
+              << t->peer_string.as_string_view() << ": got setting "
+              << grpc_core::Http2Settings::WireIdToName(parser->id) << " = "
+              << parser->value;
+        }
       } break;
     }
   }
+}
+
+void grpc_chttp2_apply_peer_settings_from_handshake(grpc_chttp2_transport* t) {
+  const grpc_core::Http2Settings& peer_settings = t->settings.peer();
+  t->http2_stats->IncrementHttp2HeaderTableSize(
+      peer_settings.header_table_size());
+  t->http2_stats->IncrementHttp2InitialWindowSize(
+      peer_settings.initial_window_size());
+  t->http2_stats->IncrementHttp2MaxConcurrentStreams(
+      peer_settings.max_concurrent_streams());
+  t->http2_stats->IncrementHttp2MaxFrameSize(peer_settings.max_frame_size());
+  t->http2_stats->IncrementHttp2MaxHeaderListSize(
+      peer_settings.max_header_list_size());
+  t->http2_stats->IncrementHttp2PreferredReceiveCryptoMessageSize(
+      peer_settings.preferred_receive_crypto_message_size());
+  t->http2_ztrace_collector.Append(
+      []() { return grpc_core::H2SettingsTrace<false>{true, {}}; });
+  t->peer_settings_applied = true;
+  t->last_reported_max_concurrent_streams =
+      peer_settings.max_concurrent_streams();
+  t->initial_window_update +=
+      static_cast<int64_t>(peer_settings.initial_window_size()) -
+      static_cast<int64_t>(grpc_core::Http2Settings::kDefaultInitialWindowSize);
+  ++t->num_pending_induced_frames;
+  grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
 }

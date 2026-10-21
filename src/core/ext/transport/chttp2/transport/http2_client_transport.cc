@@ -1163,6 +1163,8 @@ auto Http2ClientTransport::WaitForSettingsTimeoutOnDone() {
           /*stream=*/nullptr, Http2Status::Http2ConnectionError(
                                   Http2ErrorCode::kProtocolError,
                                   std::string(RFC9113::kSettingsTimeout)));
+    } else if (self->settings_->local() != self->settings_->acked()) {
+      self->TriggerWriteCycleOrHandleError();
     }
   };
 }
@@ -1232,6 +1234,15 @@ Http2ClientTransport::Http2ClientTransport(
   InitLocalSettings(settings_->mutable_local(), /*is_client=*/kIsClient);
   TransportChannelArgs args;
   ReadChannelArgs(channel_args, args);
+  const auto* handshake_result =
+      channel_args.GetObject<Http2SettingsHandshakeResult>();
+  if (handshake_result != nullptr) {
+    settings_->InitFromHandshake(handshake_result->local_settings_sent(),
+                                 handshake_result->peer_initial_settings());
+    flow_control_.FlushedSettings();
+    EnforceLatestIncomingSettings();
+    transport_write_context_.SetFirstWriteCompleted();
+  }
 
   ping_manager_.emplace(channel_args, kIsClient, args.ping_timeout,
                         PingSystemInterfaceImpl::Make(this), event_engine_);
@@ -1252,8 +1263,12 @@ Http2ClientTransport::Http2ClientTransport(
 void Http2ClientTransport::SpawnTransportLoops() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops Begin";
   MaybeSpawnKeepaliveLoop();
+  MaybeSpawnWaitForSettingsTimeout();
   if (!TriggerWriteCycleOrHandleError()) {
     return;
+  }
+  if (!transport_write_context_.IsFirstWrite()) {
+    SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
   }
   // For Client, write happens before read. So MultiplexerLoop is spawned first.
   // ReadLoop is spawned after the first write.

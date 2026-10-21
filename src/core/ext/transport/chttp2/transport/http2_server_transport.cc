@@ -1121,6 +1121,8 @@ auto Http2ServerTransport::WaitForSettingsTimeoutOnDone() {
           /*stream=*/nullptr, Http2Status::Http2ConnectionError(
                                   Http2ErrorCode::kProtocolError,
                                   std::string(RFC9113::kSettingsTimeout)));
+    } else if (self->settings_->local() != self->settings_->acked()) {
+      self->TriggerWriteCycleOrHandleError();
     }
   };
 }
@@ -2199,6 +2201,15 @@ Http2ServerTransport::Http2ServerTransport(
   InitLocalSettings(settings_->mutable_local(), /*is_client=*/kIsClient);
   TransportChannelArgs args;
   ReadChannelArgs(channel_args, args);
+  const auto* handshake_result =
+      channel_args.GetObject<Http2SettingsHandshakeResult>();
+  if (handshake_result != nullptr) {
+    settings_->InitFromHandshake(handshake_result->local_settings_sent(),
+                                 handshake_result->peer_initial_settings());
+    flow_control_.FlushedSettings();
+    EnforceLatestIncomingSettings();
+    transport_write_context_.SetFirstWriteCompleted();
+  }
 
   ping_manager_.emplace(channel_args, kIsClient, args.ping_timeout,
                         PingSystemInterfaceImpl::Make(this), event_engine_);
@@ -2292,6 +2303,7 @@ void Http2ServerTransport::Orphan() {
 void Http2ServerTransport::SpawnTransportLoops() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops Begin";
   MaybeSpawnKeepaliveLoop();
+  MaybeSpawnWaitForSettingsTimeout();
 
   if (!TriggerWriteCycleOrHandleError()) {
     return;
@@ -2313,6 +2325,14 @@ void Http2ServerTransport::SpawnTransportLoops() {
 }
 
 void Http2ServerTransport::InitializeAndSpawnTransportLoops() {
+  if (!transport_write_context_.IsFirstWrite()) {
+    SpawnGuardedTransportParty(
+        "SpawnTransportLoops", [self = RefAsSubclass<Http2ServerTransport>()] {
+          self->SpawnTransportLoops();
+          return absl::OkStatus();
+        });
+    return;
+  }
   SpawnGuardedTransportParty(
       "SpawnTransportLoops", [self = RefAsSubclass<Http2ServerTransport>()] {
         return Map(self->EndpointReadSlice(GRPC_CHTTP2_CLIENT_CONNECT_STRLEN),

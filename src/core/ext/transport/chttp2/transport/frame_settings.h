@@ -57,5 +57,6 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* parser,
                                                     grpc_chttp2_stream* s,
                                                     const grpc_slice& slice,
                                                     int is_last);
+void grpc_chttp2_apply_peer_settings_from_handshake(grpc_chttp2_transport* t);
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H
