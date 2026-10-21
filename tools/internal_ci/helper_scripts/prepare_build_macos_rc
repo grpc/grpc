@@ -68,6 +68,13 @@ export HOMEBREW_NO_INSTALL_FROM_API=1
 export HOMEBREW_CURL_RETRIES=8
 export HOMEBREW_DOWNLOAD_CONCURRENCY=1
 export HOMEBREW_CURLRC=1
+export PIP_RETRIES=3
+export PIP_DEFAULT_TIMEOUT=30
+
+git config --global http.version HTTP/1.1
+git config --global http.postBuffer 524288000
+git config --global http.lowSpeedLimit 1000
+git config --global http.lowSpeedTime 20
 
 # Instruct curl to retry on all errors including TCP connection resets (code 56)
 cat << 'EOF' > ~/.curlrc
@@ -82,11 +89,12 @@ retry_with_backoff() {
   local attempt=1
   local sleep_time=5
   until "$@"; do
+    local status=$?
     if [ "${attempt}" -ge "${max_attempts}" ]; then
-      echo "Command '$*' failed after ${max_attempts} attempts." >&2
-      return 1
+      echo "Command '$*' failed after ${max_attempts} attempts (exit code ${status})." >&2
+      return "${status}"
     fi
-    echo "Command '$*' failed (attempt ${attempt}/${max_attempts}). Retrying in ${sleep_time} seconds..." >&2
+    echo "Command '$*' failed with exit code ${status} (attempt ${attempt}/${max_attempts}). Retrying in ${sleep_time} seconds..." >&2
     sleep "${sleep_time}"
     sleep_time=$((sleep_time * 2))
     attempt=$((attempt + 1))
@@ -108,8 +116,10 @@ if $is_sonoma; then
 
   # Pin Homebrew to version 5.0.5 and homebrew/core to the matching Sonoma snapshot
   HOMEBREW_REPO="$(brew --repository)"
-  retry_with_backoff git -C "${HOMEBREW_REPO}" fetch --depth 1 https://github.com/Homebrew/brew.git tag 5.0.5
-  git -C "${HOMEBREW_REPO}" checkout -f 5.0.5
+  git -C "${HOMEBREW_REPO}" checkout -f 5.0.5 2>/dev/null || {
+    retry_with_backoff git -C "${HOMEBREW_REPO}" fetch --depth 1 https://github.com/Homebrew/brew.git tag 5.0.5
+    git -C "${HOMEBREW_REPO}" checkout -f 5.0.5
+  }
 
   HOMEBREW_CORE_DIR="${HOMEBREW_REPO}/Library/Taps/homebrew/homebrew-core"
   mkdir -p "${HOMEBREW_CORE_DIR}"
@@ -125,7 +135,7 @@ if $is_sonoma; then
 fi
 
 # Add GCP credentials for BQ access
-retry_with_backoff pip install --retries 10 --timeout 60 --user google-api-python-client oauth2client six==1.16.0
+retry_with_backoff pip install --user google-api-python-client oauth2client
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 echo $DIR
@@ -200,10 +210,10 @@ export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
 
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
-  time retry_with_backoff git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
+  time retry_with_backoff bash -c 'rm -rf ~/.cocoapods/repos/master && git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master'
 
   # Needed for ios-binary-size
-  time retry_with_backoff pip install --retries 10 --timeout 60 --user -r $DIR/requirements.macos.txt
+  time retry_with_backoff pip install --user -r "${DIR}/requirements.macos.txt"
 
   # Store intermediate build files of ObjC tests into /tmpfs
   # TODO(jtattermusch): this has likely been done to avoid running
@@ -223,8 +233,8 @@ then
   export PATH="/usr/local/bin::${PATH}"
 
   # python
-  time retry_with_backoff pip install --retries 10 --timeout 60 --user -r $DIR/requirements.macos.txt
-  time retry_with_backoff pip install --retries 10 --timeout 60 --user --upgrade virtualenv Mako tox setuptools==77.0.1 twisted
+  time retry_with_backoff pip install --user -r "${DIR}/requirements.macos.txt"
+  time retry_with_backoff pip install --user --upgrade virtualenv Mako tox setuptools==77.0.1 twisted
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then
