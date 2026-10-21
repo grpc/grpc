@@ -499,12 +499,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked() {
 WeightedTargetLb::WeightedChild::WeightedChild(
     RefCountedPtr<WeightedTargetLb> weighted_target_policy,
     const std::string& name)
-    : weighted_target_policy_(std::move(weighted_target_policy)),
-      name_(name),
-      picker_(MakeRefCounted<QueuePicker>(
-          nullptr, kDelayTypeConnecting,
-          absl::StrCat("weighted_target: child '", name,
-                       "' waiting for initial picker"))) {
+    : weighted_target_policy_(std::move(weighted_target_policy)), name_(name) {
   GRPC_TRACE_LOG(weighted_target_lb, INFO)
       << "[weighted_target_lb " << weighted_target_policy_.get()
       << "] created WeightedChild " << this << " for " << name_;

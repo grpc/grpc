@@ -1045,6 +1045,12 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
         << "[rlslb " << lb_policy_.get() << "] picker=" << this << ": "
         << reason << "; using default target";
     auto pick_result = default_child_policy_->Pick(args);
+    auto* queue = std::get_if<PickResult::Queue>(&pick_result.result);
+    if (queue != nullptr) {
+      queue->delay_reason =
+          absl::StrCat("rls: default target '", default_child_policy_->target(),
+                       "': ", queue->delay_reason);
+    }
     lb_policy_->MaybeExportPickCount(
         kMetricDefaultTargetPicks, config_->default_target(),
         config_->lookup_service(), pick_result, telemetry_label);

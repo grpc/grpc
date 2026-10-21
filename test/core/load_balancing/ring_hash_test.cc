@@ -500,15 +500,10 @@ TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_CONNECTING);
-  ExpectPickQueued(
-      picker.get(),
-      ::testing::AnyOf(
-          absl::StrCat("ring_hash: primary endpoint connecting: pick_first: "
-                       "connecting to ",
-                       kAddresses[index], " (subchannel 1 of 1)"),
-          absl::StrCat("ring_hash: fallback endpoint connecting: pick_first: "
-                       "connecting to ",
-                       kAddresses[index], " (subchannel 1 of 1)")));
+  ExpectPickQueued(picker.get(),
+                   absl::StrCat("ring_hash: primary endpoint connecting: "
+                                "pick_first: connecting to ",
+                                kAddresses[index], " (subchannel 1 of 1)"));
   // No other subchannels should have been created yet.
   for (size_t i = 0; i < kAddresses.size(); ++i) {
     if (i != index) EXPECT_EQ(nullptr, FindSubchannel(kAddresses[i]));

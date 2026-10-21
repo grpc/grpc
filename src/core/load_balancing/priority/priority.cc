@@ -518,12 +518,14 @@ void PriorityLb::SetCurrentPriorityLocked(int32_t priority,
   if (priority > 0) {
     auto previous_priority =
         children_.find(config_->priorities()[priority - 1]);
-    if (previous_priority != children_.end() &&
-        !previous_priority->second->connectivity_status().ok()) {
+    if (previous_priority != children_.end()) {
       failover_suffix = absl::StrCat(
           " (priority ", priority - 1, " (child ",
           config_->priorities()[priority - 1], ") failed: ",
-          previous_priority->second->connectivity_status().ToString(), ")");
+          previous_priority->second->connectivity_status().ok()
+              ? "failover timer expired"
+              : previous_priority->second->connectivity_status().ToString(),
+          ")");
     }
   }
   channel_control_helper()->UpdateState(
