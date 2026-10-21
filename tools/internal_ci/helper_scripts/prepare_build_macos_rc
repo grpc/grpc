@@ -16,6 +16,10 @@
 
 # Print basic info about the mac worker
 { set +x; } 2>/dev/null
+
+# Example: + [13:25:45 PDT] prepare_build_macos_rc:41	mount
+export PS4='+ [\D{%H:%M:%S %Z}] ${BASH_SOURCE[0]##*/}:${LINENO}\011 '
+
 echo "-- Kokoro worker info --"
 echo "Kokoro pool: ${KOKORO_JOB_POOL:-undefined}"
 if [[ -f /VERSION ]]; then
