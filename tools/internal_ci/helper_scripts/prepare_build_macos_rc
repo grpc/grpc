@@ -68,9 +68,19 @@ export HOMEBREW_NO_INSTALL_FROM_API=1
 export HOMEBREW_CURL_RETRIES=8
 export HOMEBREW_DOWNLOAD_CONCURRENCY=1
 export HOMEBREW_CURLRC=1
-export PIP_RETRIES=3
-export PIP_DEFAULT_TIMEOUT=30
 
+# Configure pip to retry on transient connection drops and cache wheels on
+# tmpfs to reduce network round-trips and avoid CDN rate-limiting across test
+# virtualenvs. These settings also apply to downstream pip invocations outside
+# this script, including but not limited to build_python.sh.
+export PIP_RETRIES=5
+export PIP_DEFAULT_TIMEOUT=60
+export PIP_CACHE_DIR=/tmpfs/pip-cache
+mkdir -p /tmpfs/pip-cache
+
+# Configure Git to use HTTP/1.1 to avoid libcurl HTTP/2 multiplexing stalls on
+# macOS, and increase lowSpeedTime to 90s to accommodate server-side packfile
+# assembly for large repos.
 git config --global http.version HTTP/1.1
 git config --global http.postBuffer 524288000
 git config --global http.lowSpeedLimit 1000
@@ -234,7 +244,7 @@ then
 
   # python
   time retry_with_backoff pip install --user -r "${DIR}/requirements.macos.txt"
-  time retry_with_backoff pip install --user --upgrade virtualenv Mako tox setuptools==77.0.1 twisted
+  time retry_with_backoff pip install --user --upgrade pip wheel virtualenv Mako tox setuptools==77.0.1 twisted
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then
