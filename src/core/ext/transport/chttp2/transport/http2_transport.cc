@@ -200,8 +200,7 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  Http2Settings& local_settings,
                                  chttp2::TransportFlowControl& flow_control,
                                  const bool is_client) {
-  grpc_core::ReadSettingsFromChannelArgs(channel_args, local_settings,
-                                         is_client);
+  ReadSettingsFromChannelArgs(channel_args, local_settings, is_client);
   if (channel_args.Contains(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
     int value =
         channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
