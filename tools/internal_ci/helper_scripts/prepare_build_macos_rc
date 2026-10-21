@@ -81,6 +81,10 @@ export PIP_RETRIES=5
 export PIP_DEFAULT_TIMEOUT=60
 export PIP_CACHE_DIR=/tmpfs/pip-cache
 mkdir -p /tmpfs/pip-cache
+# PIP_CACHE_DIR only caches wheels downloaded from PyPI. Wheels pre-built
+# locally with `pip wheel --wheel-dir` (e.g. gevent for Python 3.10 below) are
+# loose files that pip won't discover unless the directory is in find-links.
+export PIP_FIND_LINKS=/tmpfs/pip-cache
 
 # Configure Git to use HTTP/1.1 to avoid libcurl HTTP/2 multiplexing stalls on
 # macOS, and increase lowSpeedTime to 90s to accommodate server-side packfile
@@ -248,9 +252,14 @@ then
   # add /usr/local/bin to path to override built in Python version
   export PATH="/usr/local/bin::${PATH}"
 
-  # python
+  # Python dependencies for the default host test runner (version printed in
+  # the worker info section at the top of this script). Required by
+  # run_tests_matrix.py and run_tests.py for HTML report generation (Mako),
+  # ResultStore/BigQuery reporting (requests, PyYAML), and test matrix
+  # filtering. Twisted is used by tests/testing tools in test/cpp/naming/utils
+  # and test/http2_test.
   time retry_with_backoff pip install --user -r "${DIR}/requirements.macos.txt"
-  time retry_with_backoff pip install --user --upgrade pip wheel virtualenv Mako tox setuptools==77.0.1 twisted
+  time retry_with_backoff pip install --user --upgrade pip wheel Mako tox setuptools==77.0.1 twisted
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then
@@ -259,6 +268,27 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.10.5-macos11.pkg -target /
   fi
+
+  # Pre-warm Python 3.10 build wheels on tmpfs with retries to avoid PyPI CDN
+  # drops in downstream build_python.sh.
+  #
+  # WARNING: tools/run_tests/run_tests.py restricts basic Python testing on
+  # macOS to gRPC's minimum supported Python version (currently Python 3.10).
+  # When gRPC bumps the minimum supported Python version in run_tests.py,
+  # this pre-warming target MUST be updated to match that version.
+  time retry_with_backoff /usr/local/bin/python3.10 -m pip wheel \
+      --wheel-dir "${PIP_CACHE_DIR:-/tmpfs/pip-cache}" \
+      'cython==3.2.8' 'protobuf>=7.35.1,<8.0.0'
+
+  # NOTE: For Python 3.10, gevent has to be built from source because upstream
+  # does not publish 3.10 macOS wheels. This triggers PEP 517 build isolation,
+  # generating extra requests to PyPI and increasing the chances of network drops.
+  # Pre-building the wheel here with retry protection avoids those network drops.
+  # Since Python 3.10 is EOL, this workaround won't be needed once gRPC updates
+  # the minimum Python version to 3.11.
+  time retry_with_backoff /usr/local/bin/python3.10 -m pip wheel \
+      --wheel-dir "${PIP_CACHE_DIR:-/tmpfs/pip-cache}" \
+      gevent
 
   # Install Python 3.11 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.11" ]; then

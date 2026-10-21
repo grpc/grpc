@@ -164,15 +164,10 @@ pip_install_dir_and_deps() {
   cd "${workdir}"
 }
 
-pip_install -U gevent
-
-pip_install --upgrade 'cython==3.2.8'
-pip_install --upgrade six 'protobuf>=7.35.1,<8.0.0'
-
-if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
-then
-  pip_install --upgrade futures enum34
-fi
+# Core build dependencies for grpcio testing.
+# On macOS, these wheels (including gevent compilation from sdist) are
+# pre-warmed with network retries into PIP_CACHE_DIR by prepare_build_macos_rc.
+pip_install --upgrade gevent 'cython==3.2.8' 'protobuf>=7.35.1,<8.0.0'
 
 pip_install_dir "$ROOT"
 
