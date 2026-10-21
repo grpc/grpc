@@ -108,8 +108,10 @@ retry_with_backoff() {
       echo "Command '$*' failed after ${max_attempts} attempts (exit code ${status})." >&2
       return "${status}"
     fi
-    echo "Command '$*' failed with exit code ${status} (attempt ${attempt}/${max_attempts}). Retrying in ${sleep_time} seconds..." >&2
-    sleep "${sleep_time}"
+    local jitter=$((10 + RANDOM % 21))
+    local total_sleep=$((sleep_time + jitter))
+    echo "Command '$*' failed with exit code ${status} (attempt ${attempt}/${max_attempts}). Retrying in ${total_sleep} seconds..." >&2
+    sleep "${total_sleep}"
     sleep_time=$((sleep_time * 2))
     attempt=$((attempt + 1))
   done
