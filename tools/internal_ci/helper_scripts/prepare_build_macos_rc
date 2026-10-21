@@ -74,7 +74,7 @@ export PIP_DEFAULT_TIMEOUT=30
 git config --global http.version HTTP/1.1
 git config --global http.postBuffer 524288000
 git config --global http.lowSpeedLimit 1000
-git config --global http.lowSpeedTime 20
+git config --global http.lowSpeedTime 90
 
 # Instruct curl to retry on all errors including TCP connection resets (code 56)
 cat << 'EOF' > ~/.curlrc
