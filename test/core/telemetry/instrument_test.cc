@@ -1109,6 +1109,146 @@ TEST_F(MetricsQueryTest, StorageNotSharedWithMultipleParents) {
   EXPECT_NE(s1.get(), sc.get());
 }
 
+// The tests below model a stats plugin scope with one child scope per channel.
+// Each child has more than one parent (e.g. the global scope and the plugin
+// scope), so it owns its own storage, and every child's storage carries the
+// same observed labels. MetricsQuery::Run must emit one summed row per
+// (label values, metric name) instead of one row per storage, whether or not
+// any label is collapsed. Otherwise sinks that compute deltas against a single
+// previous value per metric diff one channel's total against another's.
+
+TEST_F(MetricsQueryTest, SumsChildStorageCountersWithSameObservedLabels) {
+  auto global_scope = CreateCollectionScope({}, {});
+  auto plugin_scope = CreateCollectionScope({}, {"grpc.target"});
+  auto channel_a = CreateCollectionScope({global_scope, plugin_scope}, {});
+  auto channel_b = CreateCollectionScope({global_scope, plugin_scope}, {});
+  auto storage_a = LowContentionDomain::GetStorage(channel_a, "example.com");
+  auto storage_b = LowContentionDomain::GetStorage(channel_b, "example.com");
+  ASSERT_NE(storage_a.get(), storage_b.get());
+  storage_a->Increment(LowContentionDomain::kCounter);
+  storage_b->Increment(LowContentionDomain::kCounter);
+  storage_b->Increment(LowContentionDomain::kCounter);
+  const std::vector<std::string> label_keys = {"grpc.target"};
+  const std::vector<std::string> label = {"example.com"};
+  {
+    ::testing::StrictMock<MockMetricsSink> sink;
+    EXPECT_CALL(
+        sink, Counter(InstrumentLabelListElementsAreArray(label_keys),
+                      ::testing::ElementsAreArray(label), "low_contention", 3));
+    MetricsQuery().OnlyMetrics({"low_contention"}).Run(plugin_scope, sink);
+  }
+  // Tearing a channel down folds its storage into the parent scopes, so the
+  // summed value must not change.
+  storage_b.reset();
+  channel_b.reset();
+  {
+    ::testing::StrictMock<MockMetricsSink> sink;
+    EXPECT_CALL(
+        sink, Counter(InstrumentLabelListElementsAreArray(label_keys),
+                      ::testing::ElementsAreArray(label), "low_contention", 3));
+    MetricsQuery().OnlyMetrics({"low_contention"}).Run(plugin_scope, sink);
+  }
+}
+
+TEST_F(MetricsQueryTest, SumsChildStorageHistogramsWithSameObservedLabels) {
+  auto global_scope = CreateCollectionScope({}, {});
+  auto plugin_scope = CreateCollectionScope({}, {"grpc.target"});
+  auto channel_a = CreateCollectionScope({global_scope, plugin_scope}, {});
+  auto channel_b = CreateCollectionScope({global_scope, plugin_scope}, {});
+  auto storage_a = LowContentionDomain::GetStorage(channel_a, "example.com");
+  auto storage_b = LowContentionDomain::GetStorage(channel_b, "example.com");
+  ASSERT_NE(storage_a.get(), storage_b.get());
+  storage_a->Increment(LowContentionDomain::kExponentialHistogram, 0);
+  storage_b->Increment(LowContentionDomain::kExponentialHistogram, 0);
+  storage_b->Increment(LowContentionDomain::kExponentialHistogram, 0);
+  const std::vector<std::string> label_keys = {"grpc.target"};
+  const std::vector<std::string> label = {"example.com"};
+  std::vector<uint64_t> counts;
+  ::testing::StrictMock<MockMetricsSink> sink;
+  EXPECT_CALL(
+      sink, Int64Histogram(InstrumentLabelListElementsAreArray(label_keys),
+                           ::testing::ElementsAreArray(label),
+                           "exponential_histogram", ::testing::_, ::testing::_))
+      .WillOnce([&counts](auto, auto, auto, auto, auto c) {
+        counts.assign(c.begin(), c.end());
+      });
+  MetricsQuery().OnlyMetrics({"exponential_histogram"}).Run(plugin_scope, sink);
+  ASSERT_FALSE(counts.empty());
+  uint64_t total = 0;
+  for (uint64_t count : counts) total += count;
+  EXPECT_EQ(counts[0], 3);
+  EXPECT_EQ(total, 3);
+}
+
+// Mirrors how XorStatsPlugin queries TCP telemetry: it collapses labels that
+// its scope never observes. The collapse is then a no-op, but child storages
+// with identical observed labels must still be summed.
+TEST_F(MetricsQueryTest, CollapsingUnobservedLabelStillSumsChildStorages) {
+  auto global_scope = CreateCollectionScope({}, {});
+  auto plugin_scope = CreateCollectionScope({}, {"grpc.target"});
+  auto channel_a = CreateCollectionScope({global_scope, plugin_scope}, {});
+  auto channel_b = CreateCollectionScope({global_scope, plugin_scope}, {});
+  auto storage_a = FanOutDomain::GetStorage(channel_a, "example.com", "foo");
+  auto storage_b = FanOutDomain::GetStorage(channel_b, "example.com", "bar");
+  ASSERT_NE(storage_a.get(), storage_b.get());
+  storage_a->Increment(FanOutDomain::kCounter);
+  storage_b->Increment(FanOutDomain::kCounter);
+  storage_b->Increment(FanOutDomain::kCounter);
+  const std::vector<std::string> label_keys = {"grpc.target"};
+  const std::vector<std::string> label = {"example.com"};
+  ::testing::StrictMock<MockMetricsSink> sink;
+  EXPECT_CALL(sink, Counter(InstrumentLabelListElementsAreArray(label_keys),
+                            ::testing::ElementsAreArray(label), "fan_out", 3));
+  MetricsQuery()
+      .OnlyMetrics({"fan_out"})
+      .CollapseLabels({InstrumentLabel("grpc.method")})
+      .Run(plugin_scope, sink);
+}
+
+// Gauges are not aggregatable: when no label is collapsed, each storage's gauge
+// must still be forwarded unchanged, even if several storages share the same
+// observed labels.
+TEST_F(MetricsQueryTest, GaugesFromChildStoragesWithSameLabelsAreForwarded) {
+  auto global_scope = CreateCollectionScope({}, {});
+  auto plugin_scope = CreateCollectionScope({}, {"grpc.target"});
+  auto channel_a = CreateCollectionScope({global_scope, plugin_scope}, {});
+  auto channel_b = CreateCollectionScope({global_scope, plugin_scope}, {});
+  auto storage_a = LowContentionDomain::GetStorage(channel_a, "example.com");
+  auto storage_b = LowContentionDomain::GetStorage(channel_b, "example.com");
+  ASSERT_NE(storage_a.get(), storage_b.get());
+
+  class MyGaugeProvider final : public GaugeProvider<LowContentionDomain> {
+   public:
+    MyGaugeProvider(InstrumentStorageRefPtr<LowContentionDomain> storage,
+                    double value)
+        : GaugeProvider(std::move(storage)), value_(value) {
+      ProviderConstructed();
+    }
+    ~MyGaugeProvider() { ProviderDestructing(); }
+
+    void PopulateGaugeData(
+        GaugeSink<LowContentionDomain>& gauge_sink) override {
+      gauge_sink.Set(LowContentionDomain::kDoubleGauge, value_);
+    }
+
+   private:
+    double value_;
+  };
+  MyGaugeProvider provider_a(storage_a, 1.5);
+  MyGaugeProvider provider_b(storage_b, 2.5);
+
+  const std::vector<std::string> label_keys = {"grpc.target"};
+  const std::vector<std::string> label = {"example.com"};
+  ::testing::StrictMock<MockMetricsSink> sink;
+  EXPECT_CALL(sink, DoubleGauge(InstrumentLabelListElementsAreArray(label_keys),
+                                ::testing::ElementsAreArray(label),
+                                "double_gauge", 1.5));
+  EXPECT_CALL(sink, DoubleGauge(InstrumentLabelListElementsAreArray(label_keys),
+                                ::testing::ElementsAreArray(label),
+                                "double_gauge", 2.5));
+  MetricsQuery().OnlyMetrics({"double_gauge"}).Run(plugin_scope, sink);
+}
+
 TEST_F(InstrumentLabelTest, RegistrationConsistency) {
   InstrumentLabel label1("foo");
   InstrumentLabel label2("foo");
