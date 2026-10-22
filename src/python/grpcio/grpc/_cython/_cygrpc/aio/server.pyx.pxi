@@ -1055,9 +1055,8 @@ cdef class AioServer:
         cdef str method_name
         cdef bint is_registered = method is not None
         cdef str registered_method_name
-        from grpc import _common
         registered_method_name = (
-            _common.decode(method) if is_registered else None
+            method.decode('utf-8', 'replace') if is_registered else None
         )
 
         while True:
@@ -1074,7 +1073,7 @@ cdef class AioServer:
                     method_name = registered_method_name
                 else:
                     rpc_state = await self._request_call()
-                    method_name = _common.decode(rpc_state.method())
+                    method_name = rpc_state.method().decode('utf-8', 'replace')
             except _RequestCallError:
                 # Only _RequestCallError (the async failure) is retried.
                 # A synchronous error from issuing the request (InternalError /
