@@ -83,13 +83,13 @@ EXCLUDE_DIRS=(
 # a list of docker directories that are based on ARM64 base images
 ARM_DOCKERFILE_DIRS=(
   tools/dockerfile/distribtest/python_alpine_aarch64
-  tools/dockerfile/distribtest/python_python310_bullseye_aarch64
+  tools/dockerfile/distribtest/python_python310_bookworm_aarch64
   tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64
   tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64
   tools/dockerfile/test/bazel_arm64
   tools/dockerfile/test/csharp_debian11_arm64
   tools/dockerfile/test/php8_debian12_arm64
-  tools/dockerfile/test/python_debian11_default_arm64
+  tools/dockerfile/test/python_debian13_default_arm64
   tools/dockerfile/test/ruby_debian12_arm64
 )
 
