@@ -35,7 +35,8 @@ RefCountedPtr<LameChannel> LameChannel::Create(std::string target,
 
 void LameChannel::StartCall(UnstartedCallHandler unstarted_handler) {
   auto handler = unstarted_handler.StartCall();
-  handler.PushServerTrailingMetadata(ServerMetadataFromStatus(status_));
+  handler.PushServerTrailingMetadata(
+      CancelledServerMetadataFromStatus(status_));
 }
 
 grpc_call* LameChannel::CreateCall(
