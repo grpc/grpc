@@ -23,6 +23,7 @@ def get_github_repo(lang):
         "go": "https://github.com/grpc/grpc-go.git",
         "java": "https://github.com/grpc/grpc-java.git",
         "node": "https://github.com/grpc/grpc-node.git",
+        "rust": "https://github.com/grpc/grpc-rust.git",
         # all other languages use the grpc.git repo.
     }.get(lang, "https://github.com/grpc/grpc.git")
 
@@ -45,7 +46,7 @@ def should_build_docker_interop_image_from_release_tag(lang):
     # All dockerfile definitions live in grpc/grpc repository.
     # For language that have a separate repo, we need to use
     # dockerfile definitions from head of grpc/grpc.
-    if lang in ["go", "java", "node"]:
+    if lang in ["go", "java", "node", "rust"]:
         return False
     return True
 
@@ -60,6 +61,7 @@ LANG_RUNTIME_MATRIX = {
     "ruby": ["ruby"],
     "php": ["php7"],
     "csharp": ["csharp", "csharpcoreclr"],
+    "rust": ["rust"],
 }
 
 
@@ -1159,4 +1161,5 @@ LANG_RELEASE_MATRIX = {
             ("v1.46.2", ReleaseInfo()),
         ]
     ),
+    "rust": OrderedDict([]),
 }

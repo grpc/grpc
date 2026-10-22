@@ -71,6 +71,14 @@ else
   echo "WARNING: grpc-dotnet not found, it won't be mounted to the docker container."
 fi
 
+echo "GRPC_RUST_ROOT: ${GRPC_RUST_ROOT:=$(cd ../grpc-rust && pwd)}"
+if [ -n "$GRPC_RUST_ROOT" ]
+then
+  MOUNT_ARGS+=" -v $GRPC_RUST_ROOT:/var/local/jenkins/grpc-rust:ro"
+else
+  echo "WARNING: grpc-rust not found, it won't be mounted to the docker container."
+fi
+
 # Mount service account dir if available.
 # If service_directory does not contain the service account JSON file,
 # some of the tests will fail.
