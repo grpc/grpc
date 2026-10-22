@@ -509,28 +509,18 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
       grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    // Create an event engine wrapped endpoint to test release_fd operations.
-    auto eeep =
-        reinterpret_cast<
-            grpc_event_engine::experimental::PosixEventEngineWithFdSupport*>(
-            grpc_event_engine::experimental::GetDefaultEventEngine().get())
-            ->CreatePosixEndpointFromFd(
-                sv[1],
-                grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-                    grpc_core::ChannelArgs::FromC(&args)),
-                memory_quota->CreateMemoryAllocator("test"));
-    ep = grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
-        std::move(eeep));
-  } else {
-    ep = grpc_tcp_create(
-        grpc_fd_create(sv[1], "read_test", false),
-        grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-            grpc_core::ChannelArgs::FromC(&args)),
-        "test");
-    GRPC_CHECK(grpc_tcp_fd(ep) == sv[1]);
-    GRPC_CHECK_GE(sv[1], 0);
-  }
+  // Create an event engine wrapped endpoint to test release_fd operations.
+  auto eeep =
+      reinterpret_cast<
+          grpc_event_engine::experimental::PosixEventEngineWithFdSupport*>(
+          grpc_event_engine::experimental::GetDefaultEventEngine().get())
+          ->CreatePosixEndpointFromFd(
+              sv[1],
+              grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                  grpc_core::ChannelArgs::FromC(&args)),
+              memory_quota->CreateMemoryAllocator("test"));
+  ep = grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
+      std::move(eeep));
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
