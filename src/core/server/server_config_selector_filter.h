@@ -71,6 +71,12 @@ class ServerConfigSelectorInterceptor final
 
   void Orphaned() override;
 
+  void Init(const ChannelArgs& args) override;
+
+  // Starts the watch on server_config_selector_provider_.  Must not be
+  // called until wrapped_destination() is set.
+  void StartWatch();
+
   void OnConfigSelectorUpdate(
       absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector);
 

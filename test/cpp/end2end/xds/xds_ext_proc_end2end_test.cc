@@ -36,7 +36,6 @@
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
-#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -819,10 +818,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
         !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
       GTEST_SKIP()
           << "test requires xds_server_filter_chain_per_route experiment";
-    }
-    if (GetParam().filter_on_server()) {
-      SKIP_TEST_FOR_PH2_SERVER(
-          "TODO(rishesh): [PH2] Server-side ext_proc crashes with PH2 server");
     }
     env_var_.emplace(GetParam().filter_on_server()
                          ? "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER"

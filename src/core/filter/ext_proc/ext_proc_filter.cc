@@ -644,6 +644,12 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   bool ext_proc_closed_c2s_ = false;
   // Latch signaled when the side-stream is closed or drained.
   Latch<void> side_stream_closed_latch_;
+  // Latch signaled when the child call has been started (i.e., initiator_
+  // has been set). The read-from-client loop waits on this before reading
+  // client messages: in a v3 stack they can otherwise be read from handler_
+  // before the ext_proc server responds to the request headers.
+  // Synchronized by the handler_ activity.
+  Latch<void> child_call_started_latch_;
 
   // Send state and waiters for coordinating message sends on the side-stream
   // within the handler_ activity.
@@ -794,6 +800,7 @@ void ExtProcFilter::ExtProcCall::StartChildCall(ClientMetadataHandle metadata) {
   initiator_ = ext_proc_filter_->MakeChildCall(std::move(metadata),
                                                handler_.arena()->Ref());
   handler_.AddChildCall(initiator_);
+  child_call_started_latch_.Set();
   SpawnReadFromServerLoop();
 }
 
@@ -1775,6 +1782,13 @@ auto ExtProcFilter::ExtProcCall::HandleReadFromClientLoop() {
       handler_.PullClientInitialMetadata(),
       [self = WeakRef()](ClientMetadataHandle metadata) {
         return self->HandleInitialMetadataFromClient(std::move(metadata));
+      },
+      // Do not read any client messages until the child call has been
+      // started, which in normal mode happens only after the ext_proc server
+      // has responded to the request headers.
+      [self = WeakRef()]() {
+        return Map(self->child_call_started_latch_.Wait(),
+                   [](Empty) { return StatusFlag(Success{}); });
       },
       [self = WeakRef()]() {
         return ForEach(
