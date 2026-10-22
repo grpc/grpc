@@ -7401,10 +7401,12 @@ grpc_cc_library(
     hdrs = [
         "xds/grpc/xds_matcher_context.h",
     ],
+    external_deps = ["absl/strings"],
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
     deps = [
         "metadata_batch",
+        "slice",
         "xds_matcher",
     ],
 )
@@ -7524,14 +7526,22 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
     deps = [
+        "blackboard",
         "channel_args",
+        "filter_args",
+        "filter_chain",
         "grpc_check",
         "grpc_matchers",
+        "json",
         "metadata_batch",
+        "slice",
         "xds_http_filter",
         "xds_http_filter_registry",
         "xds_listener",
         "xds_route_config",
+        "//:grpc_trace",
+        "//:ref_counted_ptr",
+        "//:xds_client",
     ],
 )
 
@@ -9799,6 +9809,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "resource_quota_telemetry",
+        "seq",
         "sleep",
         "status_flag",
         "stream_data_queue",
@@ -11817,6 +11828,7 @@ grpc_cc_library(
         "//:grpc_credentials_util",
         "//:grpc_security_base",
         "//:parse_address",
+        "//:transport_auth_context",
         "//:uri",
     ],
 )
@@ -12049,7 +12061,6 @@ grpc_cc_library(
         "1999",
         "channel_args",
         "grpc_check",
-        "if",
         "inter_activity_latch",
         "latch",
         "map",
@@ -12059,6 +12070,7 @@ grpc_cc_library(
         "ping_rate_policy",
         "poll",
         "race",
+        "seq",
         "shared_bit_gen",
         "sleep",
         "time",
