@@ -14,12 +14,9 @@
 """Provides nox command classes for the GRPC Python setup process."""
 
 import argparse
-import glob
 import os
 import os.path
 import pathlib
-import platform
-import re
 import shutil
 import sys
 

@@ -20,7 +20,6 @@ import nox
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
-ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 REFLECTION_PROTO = os.path.join(
     GRPC_ROOT_ABS_PATH,
     "third_party/grpc-proto/grpc/reflection/v1alpha/reflection.proto",
@@ -48,7 +47,7 @@ def preprocess(session: nox.Session):
         shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
 
 
-@nox.session(venv_params=["--system-site-packages"])
+@nox.session(python=False)
 def build_package_protos(session: nox.Session):
     """
     Session to generate project *_pb2.py modules from proto files.
