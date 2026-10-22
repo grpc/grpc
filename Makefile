@@ -2077,7 +2077,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/crypto/fuzzer_mode.cc \
     third_party/boringssl-with-bazel/crypto/hpke/hpke.cc \
     third_party/boringssl-with-bazel/crypto/hrss/hrss.cc \
-    third_party/boringssl-with-bazel/crypto/kyber/kyber.cc \
     third_party/boringssl-with-bazel/crypto/lhash/lhash.cc \
     third_party/boringssl-with-bazel/crypto/md4/md4.cc \
     third_party/boringssl-with-bazel/crypto/md5/md5.cc \
@@ -2177,6 +2176,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/crypto/x509/x509_def.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_ext.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_lu.cc \
+    third_party/boringssl-with-bazel/crypto/x509/x509_mtc.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_obj.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_req.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_set.cc \

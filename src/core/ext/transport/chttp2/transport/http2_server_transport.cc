@@ -70,6 +70,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -711,7 +712,7 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata";
   if (assembler.IsReady()) {
-    ValueOrHttp2Status<ServerMetadataHandle> read_result =
+    ValueOrHttp2Status<ClientMetadataHandle> read_result =
         assembler.ReadMetadata(read_context_.parser(),
                                !read_context_.HeaderHasEndStream(),
                                /*max_header_list_size_soft_limit=*/
@@ -719,7 +720,7 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
                                /*max_header_list_size_hard_limit=*/
                                settings_->acked().max_header_list_size());
     if (read_result.IsOk()) {
-      ServerMetadataHandle metadata = TakeValue(std::move(read_result));
+      ClientMetadataHandle metadata = TakeValue(std::move(read_result));
       // TODO(tjagtap): [PH2][P0] : Might be worth differentiating between
       // initial and trailing metadata based on the number of header frames
       // received.
@@ -746,6 +747,8 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
         GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata "
                                   "SpawnPushServerInitialMetadata";
         metadata->Set(PeerString(), read_context_.peer_string());
+        metadata->Set(LocalAddressString(),
+                      read_context_.local_address_string());
         return IncomingStream(std::move(metadata), read_context_.GetStreamId());
       }
       return Http2Status::Ok();
@@ -883,8 +886,10 @@ absl::Status Http2ServerTransport::PrepareControlFrames() {
   }
 
   if (apply_settings_result.should_spawn_security_frame_loop) {
+    EventEngine::Endpoint* const endpoint =
+        endpoint_.GetEventEngineEndpoint().get();
     const SecurityFrameHandler::EndpointExtensionState state =
-        security_frame_handler_->Initialize(event_engine_);
+        security_frame_handler_->Initialize(endpoint, event_engine_);
     if (state.is_set) {
       SpawnInfallibleTransportParty("SecurityFrameLoop",
                                     UntilTransportClosed(SecurityFrameLoop()));
@@ -1386,7 +1391,8 @@ auto Http2ServerTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
 
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
-      Seq(Map(HandleMetadataAndMessages(stream),
+      Seq(
+          Map(HandleMetadataAndMessages(stream),
               [stream = stream.get()](absl::Status&& status) {
                 GRPC_HTTP2_SERVER_DLOG
                     << "Http2ServerTransport::CallOutboundLoop "
@@ -1405,7 +1411,16 @@ auto Http2ServerTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
                          "Received Server Trailing Metadata";
                   return send_trailing_metadata(std::move(metadata));
                 });
-          }));
+          },
+          // Do not remove this no-op step. When a Seq step resolves, its
+          // promise, along with everything it captures, is destroyed only when
+          // the Seq moves on to the next step.
+          // Without this step, the previous step's promise, which holds a ref
+          // to `stream` through send_trailing_metadata, would stay alive until
+          // the CallOutboundLoop participant is destroyed, which can race with
+          // ~Http2ServerTransport. With this step, the stream ref is dropped as
+          // soon as send_trailing_metadata resolves.
+          [](absl::Status status) { return status; }));
 }
 
 absl::Status Http2ServerTransport::InitializeStream(
@@ -1679,14 +1694,17 @@ absl::Status Http2ServerTransport::UpdateAllStreamsWritability() {
 // Ping Keepalive and Goaway
 
 void Http2ServerTransport::MaybeSpawnPingTimeout(
-    std::optional<uint64_t> opaque_data) {
-  if (opaque_data.has_value()) {
-    SpawnGuardedTransportParty(
-        "PingTimeout", [self = RefAsSubclass<Http2ServerTransport>(),
-                        opaque_data = *opaque_data]() {
-          return self->ping_manager_->TimeoutPromise(opaque_data);
-        });
+    std::optional<PingManager::PingTimeoutArgs> ping_timeout_args) {
+  if (!ping_timeout_args.has_value()) {
+    return;
   }
+  SpawnGuardedTransportParty(
+      "PingTimeout",
+      [self = RefAsSubclass<Http2ServerTransport>(),
+       ping_timeout_args = std::move(*ping_timeout_args)]() mutable {
+        return self->ping_manager_->TimeoutPromise(
+            std::move(ping_timeout_args));
+      });
 }
 void Http2ServerTransport::MaybeSpawnDelayedPing(
     std::optional<Duration> delayed_ping_wait) {
