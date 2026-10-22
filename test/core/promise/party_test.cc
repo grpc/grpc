@@ -1324,6 +1324,43 @@ TEST_F(PartyTest, SpawnSerializerSerializes) {
   thd.join();
 }
 
+TEST_F(PartyTest, SpawnSerializerSpawnWaitable) {
+  // Asserts that a promise spawned using SpawnSerializer::SpawnWaitable:
+  // 1. Is not started until the promises previously spawned on the same
+  //    SpawnSerializer have resolved.
+  // 2. Returns a promise that resolves to the result of the spawned promise in
+  //    the activity that spawned it.
+  std::string execution_order;
+  auto party1 = MakeParty();
+  auto party2 = MakeParty();
+  Party::SpawnSerializer* serializer = party2->MakeSpawnSerializer();
+  InterActivityLatch<void> latch;
+  Notification test_done;
+  party1->Spawn(
+      "party1_main",
+      [serializer, &latch, &execution_order]() {
+        serializer->Spawn([&latch, &execution_order]() {
+          return Seq(latch.Wait(), [&execution_order]() {
+            absl::StrAppend(&execution_order, "1");
+            return Empty{};
+          });
+        });
+        return serializer->SpawnWaitable([&execution_order]() {
+          absl::StrAppend(&execution_order, "2");
+          return 42;
+        });
+      },
+      [&test_done, &execution_order](int result) {
+        EXPECT_EQ(result, 42);
+        absl::StrAppend(&execution_order, "3");
+        test_done.Notify();
+      });
+  EXPECT_FALSE(test_done.HasBeenNotified());
+  latch.Set();
+  test_done.WaitForNotification();
+  EXPECT_EQ(execution_order, "123");
+}
+
 TEST_F(PartyTest, SimpleJson) {
   auto party = MakeParty();
   Notification notification;

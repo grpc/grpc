@@ -305,8 +305,9 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     if (message != nullptr) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
-             "SpawnPushMessage ";
-      stream->GetCallHandler().SpawnPushMessage(std::move(message));
+             "SpawnPushMessageWithoutWaiting";
+      stream->GetCallHandler().SpawnPushMessageWithoutWaiting(
+          std::move(message));
       continue;
     }
     GRPC_HTTP2_CLIENT_DLOG

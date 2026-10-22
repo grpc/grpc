@@ -869,7 +869,7 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
     // TODO(rishesh, roth): Spawning this push into the activity means that we
     // won't have flow control feedback here in a pure v3 stack, so we need to
     // fix it before we finish the v3 migration.
-    initiator_.SpawnPushMessage(std::move(new_msg));
+    initiator_.SpawnPushMessageWithoutWaiting(std::move(new_msg));
   }
   // Handle EOS.
   if (response.mutation.end_of_stream) {
@@ -999,7 +999,7 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
   // TODO(rishesh, roth): Spawning this push into the activity means that we
   // won't have flow control feedback here in a pure v3 stack, so we need to fix
   // it before we finish the v3 migration.
-  handler_.SpawnPushMessage(std::move(new_msg));
+  handler_.SpawnPushMessageWithoutWaiting(std::move(new_msg));
   return Success{};
 }
 
@@ -1389,37 +1389,32 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
           // (If<bool> invokes its branch factory eagerly on construction).
           [self = WeakRef(), send_to_sidestream, message = std::move(message),
            payload = std::move(payload)]() mutable {
-            return Map(
-                TryJoin<ValueOrFailure>(
-                    // Forward client message to backend if not waiting for
-                    // side-stream or running in observability mode.
-                    If(
-                        !send_to_sidestream ||
-                            self->config().observability_mode,
-                        [self, message = std::move(message)]() mutable {
-                          // TODO(rishesh, roth): Spawning this push into the
-                          // activity means that we won't have flow control
-                          // feedback here in a pure v3 stack, so we need to
-                          // fix it before we finish the v3 migration.
-                          self->initiator_.SpawnPushMessage(std::move(message));
-                          return Immediate(StatusFlag(Success{}));
-                        },
-                        Immediate(StatusFlag(Success{}))),
-                    // Send client message payload to the side-stream.
-                    If(
-                        send_to_sidestream,
-                        [self, payload = std::move(payload)]() mutable {
-                          self->first_body_message_sent_ = true;
-                          if (self->config().observability_mode) {
-                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                                << self->DebugTag()
-                                << "Client message observability mode";
-                          }
-                          return self->SendMessageToSideStream(
-                              std::move(*payload));
-                        },
-                        Immediate(StatusFlag(Success{})))),
-                [](auto x) { return x.status(); });
+            return Map(TryJoin<ValueOrFailure>(
+                           // Forward client message to backend if not waiting
+                           // for side-stream or running in observability mode.
+                           If(
+                               !send_to_sidestream ||
+                                   self->config().observability_mode,
+                               [self, message = std::move(message)]() mutable {
+                                 return self->initiator_.SpawnPushMessage(
+                                     std::move(message));
+                               },
+                               Immediate(StatusFlag(Success{}))),
+                           // Send client message payload to the side-stream.
+                           If(
+                               send_to_sidestream,
+                               [self, payload = std::move(payload)]() mutable {
+                                 self->first_body_message_sent_ = true;
+                                 if (self->config().observability_mode) {
+                                   GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                                       << self->DebugTag()
+                                       << "Client message observability mode";
+                                 }
+                                 return self->SendMessageToSideStream(
+                                     std::move(*payload));
+                               },
+                               Immediate(StatusFlag(Success{})))),
+                       [](auto x) { return x.status(); });
           }));
 }
 
