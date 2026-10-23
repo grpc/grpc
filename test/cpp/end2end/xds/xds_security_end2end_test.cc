@@ -1893,8 +1893,7 @@ TEST_P(XdsRbacHostHeaderTest, HostOnlyIsDenied) {
   StartBackend(0);
   ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   absl::Status status = SendRawEchoRequest({{"host", "bar"}});
-  if (grpc_core::IsMapHostHeaderToAuthorityEnabled() ||
-      !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+  if (grpc_core::IsMapHostHeaderToAuthorityEnabled()) {
     EXPECT_EQ(status, absl::PermissionDeniedError("Unauthorized RPC rejected"));
   } else {
     EXPECT_EQ(status, absl::UnavailableError("INTERNAL:no authority found"));
