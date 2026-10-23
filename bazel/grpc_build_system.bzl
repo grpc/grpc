@@ -65,6 +65,19 @@ def if_windows(a):
         "//conditions:default": [],
     })
 
+def windows_system_lib(lib):
+    """Returns linkopts that link the given Windows system library.
+
+    MinGW toolchains expect -l<lib>, MSVC-style toolchains -defaultlib:<lib>.lib.
+    """
+    return select({
+        "//:windows_mingw_clang": ["-l" + lib],
+        "//:windows_mingw_gcc": ["-l" + lib],
+        "//:windows": ["-defaultlib:%s.lib" % lib],
+        "//:windows_clang": ["-defaultlib:%s.lib" % lib],
+        "//conditions:default": [],
+    })
+
 def _get_external_deps(external_deps):
     ret = []
     for dep in external_deps:
@@ -156,7 +169,7 @@ def grpc_cc_library(
     """
     visibility = _update_visibility(visibility)
     copts = []
-    linkopts = linkopts + if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
+    linkopts = linkopts + if_not_windows(["-pthread"]) + windows_system_lib("ws2_32")
     if select_deps:
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
@@ -581,7 +594,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     test_args = {
         "data": data,
         "copts": GRPC_DEFAULT_COPTS + copts,
-        "linkopts": if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
+        "linkopts": if_not_windows(["-pthread"]) + windows_system_lib("ws2_32"),
         "size": size,
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,
@@ -627,7 +640,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         deps = core_deps,
         testonly = 1,
         copts = GRPC_DEFAULT_COPTS + copts,
-        linkopts = ["-defaultlib:ws2_32.lib"],
+        linkopts = windows_system_lib("ws2_32"),
         linkstatic = linkstatic,
         exec_compatible_with = exec_compatible_with,
         exec_properties = exec_properties,
