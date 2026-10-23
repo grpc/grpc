@@ -106,6 +106,7 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
   LbMetadata initial_metadata(&client_initial_metadata);
   pick_args.initial_metadata = &initial_metadata;
   auto result = picker.Pick(pick_args);
+  auto* tracer = MaybeGetContext<CallAttemptTracer>();
   // Handle result.
   return HandlePickResult<
       LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>>>(
@@ -133,7 +134,15 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
               << "client_channel: " << GetContext<Activity>()->DebugTag()
               << " returned by LB picker has no connected subchannel; queueing "
                  "pick";
+          if (tracer != nullptr) {
+            tracer->RecordDelay(
+                kDelayTypeSubchannelStateMismatch,
+                "picked subchannel left READY before it could be used");
+          }
           return Continue{};
+        }
+        if (tracer != nullptr) {
+          tracer->MaybeRecordDelayEnd();
         }
         // If the LB policy returned a call tracker, add it to context, so
         // that we can notify it when the call finishes.
@@ -149,10 +158,14 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         return call_destination;
       },
       // QueuePick
-      [&](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
+      [&](LoadBalancingPolicy::PickResult::Queue* queue_pick) {
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "client_channel: " << GetContext<Activity>()->DebugTag()
             << " pick queued";
+        if (tracer != nullptr) {
+          tracer->RecordDelay(queue_pick->delay_type,
+                              std::move(queue_pick->delay_reason));
+        }
         return Continue{};
       },
       // FailPick
@@ -171,6 +184,10 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         }
         // If wait_for_ready is true, then queue to retry when we get a new
         // picker.
+        if (tracer != nullptr) {
+          tracer->RecordDelay(kDelayTypePickerFailingWithWaitForReady,
+                              fail_pick->status.ToString());
+        }
         return Continue{};
       },
       // DropPick
@@ -208,10 +225,10 @@ void LoadBalancedCallDestination::StartCall(
             CheckDelayed(Loop(
                 [last_picker =
                      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>(),
-                 unstarted_handler, picker]() mutable {
+                 picker, unstarted_handler]() mutable {
                   return Map(
                       picker.Next(last_picker),
-                      [unstarted_handler, &last_picker](
+                      [&last_picker, unstarted_handler](
                           RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
                               picker) mutable {
                         CHECK_NE(picker.get(), nullptr);
