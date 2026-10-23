@@ -237,6 +237,7 @@ libs:
   - src/core/client_channel/direct_channel.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
+  - src/core/client_channel/lame_channel.h
   - src/core/client_channel/lb_metadata.h
   - src/core/client_channel/load_balanced_call_destination.h
   - src/core/client_channel/local_subchannel_pool.h
@@ -1436,6 +1437,7 @@ libs:
   - src/core/client_channel/direct_channel.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
+  - src/core/client_channel/lame_channel.cc
   - src/core/client_channel/lb_metadata.cc
   - src/core/client_channel/load_balanced_call_destination.cc
   - src/core/client_channel/local_subchannel_pool.cc
@@ -2532,6 +2534,7 @@ libs:
   - src/core/client_channel/direct_channel.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
+  - src/core/client_channel/lame_channel.h
   - src/core/client_channel/lb_metadata.h
   - src/core/client_channel/load_balanced_call_destination.h
   - src/core/client_channel/local_subchannel_pool.h
@@ -3099,6 +3102,7 @@ libs:
   - src/core/client_channel/direct_channel.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
+  - src/core/client_channel/lame_channel.cc
   - src/core/client_channel/lb_metadata.cc
   - src/core/client_channel/load_balanced_call_destination.cc
   - src/core/client_channel/local_subchannel_pool.cc
@@ -33193,6 +33197,7 @@ targets:
   headers:
   - test/core/test_util/audit_logging_utils.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/raw_http2_client.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/end2end_test_utils.h
@@ -33338,6 +33343,7 @@ targets:
   - third_party/xds/xds/type/v3/typed_struct.proto
   - test/core/test_util/audit_logging_utils.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/raw_http2_client.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_security_end2end_test.cc

@@ -2311,6 +2311,7 @@ add_library(grpc
   src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
+  src/core/client_channel/lame_channel.cc
   src/core/client_channel/lb_metadata.cc
   src/core/client_channel/load_balanced_call_destination.cc
   src/core/client_channel/local_subchannel_pool.cc
@@ -3516,6 +3517,7 @@ add_library(grpc_unsecure
   src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
+  src/core/client_channel/lame_channel.cc
   src/core/client_channel/lb_metadata.cc
   src/core/client_channel/load_balanced_call_destination.cc
   src/core/client_channel/local_subchannel_pool.cc
@@ -55951,6 +55953,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
     test/core/test_util/audit_logging_utils.cc
     test/core/test_util/fake_stats_plugin.cc
+    test/core/test_util/raw_http2_client.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_security_end2end_test.cc

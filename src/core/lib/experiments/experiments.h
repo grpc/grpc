@@ -93,6 +93,7 @@ inline bool IsHeaderDataFrameEnabled() { return true; }
 inline bool IsInternalFixEnabled() { return false; }
 inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
+inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
@@ -175,6 +176,7 @@ inline bool IsHeaderDataFrameEnabled() { return true; }
 inline bool IsInternalFixEnabled() { return false; }
 inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
+inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
@@ -257,6 +259,7 @@ inline bool IsHeaderDataFrameEnabled() { return true; }
 inline bool IsInternalFixEnabled() { return false; }
 inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
+inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
@@ -326,6 +329,7 @@ enum ExperimentIds {
   kExperimentIdInternalFix,
   kExperimentIdInternalFix1,
   kExperimentIdKeepAlivePingTimerBatch,
+  kExperimentIdLameChannelV3,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMapHostHeaderToAuthority,
   kExperimentIdMemoryOptimization01,
@@ -451,6 +455,10 @@ inline bool IsInternalFix1Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {
   return IsExperimentEnabled<kExperimentIdKeepAlivePingTimerBatch>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_LAME_CHANNEL_V3
+inline bool IsLameChannelV3Enabled() {
+  return IsExperimentEnabled<kExperimentIdLameChannelV3>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
 inline bool IsLocalConnectorSecureEnabled() {
