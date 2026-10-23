@@ -266,6 +266,17 @@ async def _start_test_server():
     return "localhost:%d" % port, server, generic_handler
 
 
+def _running_call_handler_loops():
+    """Returns the unfinished AioServer._call_handler_loop tasks."""
+    return {
+        task
+        for task in asyncio.all_tasks()
+        if not task.done()
+        and "_call_handler_loop"
+        in getattr(task.get_coro(), "__qualname__", "")
+    }
+
+
 class TestServer(AioTestBase):
     async def setUp(self):
         addr, self._server, self._generic_handler = await _start_test_server()
@@ -757,6 +768,236 @@ class TestServer(AioTestBase):
             "Method not found",
             str(exception_ctx.exception.details()),
         )
+
+    async def test_multiple_registered_and_generic_concurrent_calls(self):
+        server = aio.server()
+        port = server.add_insecure_port("[::]:0")
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+
+        async def reg_handler_1(unused_request, unused_context):
+            return b"reg_response_1"
+
+        async def reg_handler_2(unused_request, unused_context):
+            return b"reg_response_2"
+
+        server.add_registered_method_handlers(
+            "test",
+            {
+                "RegisteredOne": grpc.unary_unary_rpc_method_handler(
+                    reg_handler_1
+                ),
+                "RegisteredTwo": grpc.unary_unary_rpc_method_handler(
+                    reg_handler_2
+                ),
+            },
+        )
+        await server.start()
+
+        async with aio.insecure_channel("localhost:%d" % port) as channel:
+            call_reg_1 = channel.unary_unary(
+                "/test/RegisteredOne", _registered_method=True
+            )
+            call_reg_2 = channel.unary_unary(
+                "/test/RegisteredTwo", _registered_method=True
+            )
+            call_generic = channel.unary_unary(_SIMPLE_UNARY_UNARY)
+
+            tasks = []
+            for _ in range(10):
+                tasks.append(call_reg_1(_REQUEST))
+                tasks.append(call_reg_2(_REQUEST))
+                tasks.append(call_generic(_REQUEST))
+
+            results = await asyncio.gather(*tasks)
+            for i in range(0, len(results), 3):
+                self.assertEqual(results[i], b"reg_response_1")
+                self.assertEqual(results[i + 1], b"reg_response_2")
+                self.assertEqual(results[i + 2], _RESPONSE)
+
+        await server.stop(None)
+
+    async def test_call_handler_loops_exit_on_stop(self):
+        async def reg_handler(unused_request, unused_context):
+            return _REGISTERED_RESPONSE
+
+        # setUp() already runs a server; ignore its loops.
+        preexisting_loops = _running_call_handler_loops()
+
+        server = aio.server()
+        port = server.add_insecure_port("[::]:0")
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+        server.add_registered_method_handlers(
+            "test",
+            {
+                "CleanupOne": grpc.unary_unary_rpc_method_handler(reg_handler),
+                "CleanupTwo": grpc.unary_unary_rpc_method_handler(reg_handler),
+            },
+        )
+        await server.start()
+
+        async with aio.insecure_channel("localhost:%d" % port) as channel:
+            self.assertEqual(
+                _REGISTERED_RESPONSE,
+                await channel.unary_unary(
+                    "/test/CleanupOne", _registered_method=True
+                )(_REQUEST),
+            )
+            self.assertEqual(
+                _RESPONSE, await channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
+            )
+
+        # One loop per registered method plus one for generic handlers.
+        server_loops = _running_call_handler_loops() - preexisting_loops
+        self.assertEqual(3, len(server_loops))
+
+        await server.stop(None)
+
+        # On a normal stop each loop exits on its own: the pending request
+        # fails with _RequestCallError and the status check breaks the loop.
+        for task in server_loops:
+            self.assertTrue(task.done())
+
+    async def test_call_handler_loop_crash_cancels_other_loops(self):
+        """Covers the cancel branch of _server_main_loop's finally block.
+
+        One per-method loop is made to crash while the others are still
+        waiting on Core. gather() then raises, and the finally block must
+        cancel the remaining loops before the serving task exits.
+        """
+
+        async def reg_handler(unused_request, unused_context):
+            return _REGISTERED_RESPONSE
+
+        # setUp() already runs a server; ignore its loops.
+        preexisting_loops = _running_call_handler_loops()
+
+        server = aio.server()
+        port = server.add_insecure_port("[::]:0")
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+        server.add_registered_method_handlers(
+            "test",
+            {
+                "CrashOne": grpc.unary_unary_rpc_method_handler(reg_handler),
+                "CrashTwo": grpc.unary_unary_rpc_method_handler(reg_handler),
+            },
+        )
+        await server.start()
+
+        server_loops = _running_call_handler_loops() - preexisting_loops
+        self.assertEqual(3, len(server_loops))
+
+        # Make the next accepted RPC crash its _call_handler_loop: the loop
+        # schedules each RPC with loop.create_task(..., name="rpc_task").
+        loop = asyncio.get_running_loop()
+        original_create_task = loop.create_task
+        injected_error = RuntimeError("injected _call_handler_loop failure")
+
+        def failing_create_task(coro, *args, **kwargs):
+            if kwargs.get("name") == "rpc_task":
+                coro.close()
+                raise injected_error
+            return original_create_task(coro, *args, **kwargs)
+
+        loop.create_task = failing_create_task
+        try:
+            async with aio.insecure_channel("localhost:%d" % port) as channel:
+                # The accepted call is never handled; dropping its RPCState
+                # releases the Core call, so the client sees an error.
+                with self.assertRaises(aio.AioRpcError):
+                    await asyncio.wait_for(
+                        channel.unary_unary(
+                            "/test/CrashOne", _registered_method=True
+                        )(_REQUEST),
+                        test_constants.SHORT_TIMEOUT,
+                    )
+        finally:
+            del loop.create_task
+
+        # The serving task crashed, so the server reports the crash. Use an
+        # outer wait_for rather than wait_for_termination(timeout=...): on
+        # timeout the latter re-raises the crash exception, which would hide
+        # a server that hangs in the finally block.
+        with self.assertRaises(RuntimeError) as exception_ctx:
+            await asyncio.wait_for(
+                server.wait_for_termination(),
+                test_constants.SHORT_TIMEOUT,
+            )
+        self.assertIs(injected_error, exception_ctx.exception)
+
+        crashed = [t for t in server_loops if t.done() and not t.cancelled()]
+        cancelled = [t for t in server_loops if t.cancelled()]
+        self.assertEqual(1, len(crashed))
+        self.assertIs(injected_error, crashed[0].exception())
+        # Without the finally block these would still be pending.
+        self.assertEqual(2, len(cancelled))
+
+        # The crash-triggered shutdown re-raises the crash before destroying
+        # the Core server, so finish the shutdown explicitly.
+        await server.stop(None)
+
+    async def test_method_name_decoding(self):
+        recorded_methods = []
+
+        class _RecordingInterceptor(aio.ServerInterceptor):
+            async def intercept_service(self, continuation, handler_call_details):
+                recorded_methods.append(handler_call_details.method)
+                return await continuation(handler_call_details)
+
+        async def reg_handler(unused_request, unused_context):
+            return _REGISTERED_RESPONSE
+
+        async def generic_handler(unused_request, unused_context):
+            return _RESPONSE
+
+        # Registered method names must be ASCII (they are registered with Core
+        # via str_to_bytes); generic method names can be any UTF-8.
+        registered_method = "/test/RegisteredDecoding"
+        generic_method = "/test/Generic\u00e9\u4e2d"
+
+        server = aio.server(interceptors=(_RecordingInterceptor(),))
+        port = server.add_insecure_port("[::]:0")
+        server.add_registered_method_handlers(
+            "test",
+            {
+                "RegisteredDecoding": grpc.unary_unary_rpc_method_handler(
+                    reg_handler
+                ),
+            },
+        )
+        server.add_generic_rpc_handlers(
+            (
+                grpc.method_handlers_generic_handler(
+                    "test",
+                    {
+                        "Generic\u00e9\u4e2d": grpc.unary_unary_rpc_method_handler(
+                            generic_handler
+                        ),
+                    },
+                ),
+            )
+        )
+        await server.start()
+
+        async with aio.insecure_channel("localhost:%d" % port) as channel:
+            for _ in range(2):
+                self.assertEqual(
+                    _REGISTERED_RESPONSE,
+                    await channel.unary_unary(
+                        registered_method, _registered_method=True
+                    )(_REQUEST),
+                )
+                self.assertEqual(
+                    _RESPONSE,
+                    await channel.unary_unary(generic_method)(_REQUEST),
+                )
+
+        self.assertEqual(
+            [registered_method, generic_method] * 2, recorded_methods
+        )
+        for method in recorded_methods:
+            self.assertIsInstance(method, str)
+
+        await server.stop(None)
 
 
 if __name__ == "__main__":
