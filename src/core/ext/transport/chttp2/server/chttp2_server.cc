@@ -596,7 +596,7 @@ void NewChttp2ServerListener::Start() {
   if (should_add_port) {
     int port_temp;
     grpc_error_handle error =
-        grpc_tcp_server_add_port(tcp_server_, resolved_address(), &port_temp);
+        grpc_tcp_server_add_port(tcp_server_, &*resolved_address_, &port_temp);
     if (!error.ok()) {
       LOG(ERROR) << "Error adding port to server: " << StatusToString(error);
       // TODO(yashykt): We wouldn't need to assert here if we bound to the
@@ -609,6 +609,11 @@ void NewChttp2ServerListener::Start() {
     // Give up the ref we took earlier
     grpc_tcp_server_unref(tcp_server);
   }
+}
+
+std::optional<std::string> NewChttp2ServerListener::listening_address() const {
+  if (!resolved_address_.has_value()) return std::nullopt;
+  return grpc_sockaddr_to_string(&*resolved_address_, false).value();
 }
 
 void NewChttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
