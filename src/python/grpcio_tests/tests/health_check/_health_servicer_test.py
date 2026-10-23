@@ -301,6 +301,54 @@ class HealthServicerTest(BaseWatchTests.WatchTests):
     def test_health_service_name(self):
         self.assertEqual(health.SERVICE_NAME, "grpc.health.v1.Health")
 
+    def test_list_services(self):
+        request = health_pb2.HealthListRequest()
+        resp = self._stub.List(request)
+        self.assertEqual(
+            {
+                "": health_pb2.HealthCheckResponse.SERVING,
+                _SERVING_SERVICE: health_pb2.HealthCheckResponse.SERVING,
+                _UNKNOWN_SERVICE: health_pb2.HealthCheckResponse.UNKNOWN,
+                _NOT_SERVING_SERVICE: (
+                    health_pb2.HealthCheckResponse.NOT_SERVING
+                ),
+            },
+            {
+                service: status.status
+                for service, status in resp.statuses.items()
+            },
+        )
+
+    def test_list_reflects_status_changes(self):
+        self._servicer.set(
+            _SERVING_SERVICE, health_pb2.HealthCheckResponse.NOT_SERVING
+        )
+        self._servicer.set(
+            _WATCH_SERVICE, health_pb2.HealthCheckResponse.SERVING
+        )
+        resp = self._stub.List(health_pb2.HealthListRequest())
+        self.assertEqual(
+            health_pb2.HealthCheckResponse.NOT_SERVING,
+            resp.statuses[_SERVING_SERVICE].status,
+        )
+        self.assertEqual(
+            health_pb2.HealthCheckResponse.SERVING,
+            resp.statuses[_WATCH_SERVICE].status,
+        )
+
+    def test_list_too_many_services(self):
+        for i in range(health.MAX_ALLOWED_SERVICES):
+            self._servicer.set(
+                "grpc.test.Service%d" % i,
+                health_pb2.HealthCheckResponse.SERVING,
+            )
+        with self.assertRaises(grpc.RpcError) as context:
+            self._stub.List(health_pb2.HealthListRequest())
+
+        self.assertEqual(
+            grpc.StatusCode.RESOURCE_EXHAUSTED, context.exception.code()
+        )
+
 
 class HealthServicerBackwardsCompatibleWatchTest(BaseWatchTests.WatchTests):
     def setUp(self):
