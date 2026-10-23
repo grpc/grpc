@@ -89,14 +89,8 @@ namespace http2 {
 // Application and the Call V3 stack.
 
 constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
-constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
-constexpr bool kDefaultKeepalivePermitWithoutCalls = false;
 constexpr bool kDefaultEnablePreferredRxCryptoFrameAdvertisement = false;
 constexpr bool kDefaultAckPings = true;
-
-constexpr Duration kClientKeepaliveTime = Duration::Infinity();
-
-constexpr Duration kServerKeepaliveTime = Duration::Hours(2);
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -164,16 +158,20 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
 
   args.max_header_list_size_soft_limit =
       GetSoftLimitFromChannelArgs(channel_args);
-  args.keepalive_time = std::max(
-      Duration::Milliseconds(1),
-      channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
-          .value_or(is_client ? kClientKeepaliveTime : kServerKeepaliveTime));
+  // The keepalive defaults are process-wide. They may have been overridden at
+  // init via SetHttp2KeepaliveDefaultsFromChannelArgs().
+  const Http2KeepaliveDefaults keepalive_defaults =
+      GetHttp2KeepaliveDefaults(is_client);
+  args.keepalive_time =
+      std::max(Duration::Milliseconds(1),
+               channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
+                   .value_or(keepalive_defaults.keepalive_time));
   args.keepalive_timeout = std::max(
       Duration::Zero(),
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
           .value_or(args.keepalive_time == Duration::Infinity()
                         ? Duration::Infinity()
-                        : kDefaultKeepaliveTimeout));
+                        : keepalive_defaults.keepalive_timeout));
   args.ping_timeout =
       std::max(Duration::Zero(),
                channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
@@ -186,7 +184,7 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
 
   args.keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-          .value_or(kDefaultKeepalivePermitWithoutCalls);
+          .value_or(keepalive_defaults.keepalive_permit_without_calls);
 
   args.max_concurrent_streams_overload_protection =
       is_client

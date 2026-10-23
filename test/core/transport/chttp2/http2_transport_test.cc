@@ -317,6 +317,102 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
   }
 }
 
+TEST(Http2CommonTransportTest, TestReadTransportChannelArgsKeepaliveDefaults) {
+  // Test to validate that ReadChannelArgs honors the process-wide keepalive
+  // defaults, which may be overridden at init via
+  // SetHttp2KeepaliveDefaultsFromChannelArgs().
+  Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*peer_name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+
+  // Save the current defaults so that they can be restored at the end of the
+  // test. Other tests in this file rely on the built-in defaults.
+  const Http2KeepaliveDefaults saved_client_defaults =
+      GetHttp2KeepaliveDefaults(/*is_client=*/true);
+  const Http2KeepaliveDefaults saved_server_defaults =
+      GetHttp2KeepaliveDefaults(/*is_client=*/false);
+
+  // 1. Override the server defaults.
+  SetHttp2KeepaliveDefaultsFromChannelArgs(
+      ChannelArgs()
+          .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 600000)    // 10min
+          .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 20000)  // 20s
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
+      /*is_client=*/false);
+
+  {
+    // 2. A server transport without explicit keepalive channel args must pick
+    // up the overridden defaults.
+    TransportChannelArgs args;
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/false);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Minutes(10));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(20));
+    EXPECT_EQ(args.keepalive_permit_without_calls, true);
+    // Values derived from the keepalive args must be unaffected.
+    EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
+  }
+
+  {
+    // 3. The client defaults must be unaffected by the server override.
+    TransportChannelArgs args;
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_timeout, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+  }
+
+  {
+    // 4. Explicit channel args must still take precedence over the overridden
+    // defaults.
+    TransportChannelArgs args;
+    ChannelArgs channel_args =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 30000)    // 30s
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000)  // 5s
+            .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, false);
+    ReadChannelArgs(channel_args, args, settings, transport_flow_control,
+                    /*is_client=*/false);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Seconds(30));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(5));
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+  }
+
+  {
+    // 5. Overriding with a partial set of channel args must leave the other
+    // defaults unchanged.
+    SetHttp2KeepaliveDefaultsFromChannelArgs(
+        ChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS, 300000),  // 5min
+        /*is_client=*/false);
+    const Http2KeepaliveDefaults defaults =
+        GetHttp2KeepaliveDefaults(/*is_client=*/false);
+
+    EXPECT_EQ(defaults.keepalive_time, Duration::Minutes(5));
+    EXPECT_EQ(defaults.keepalive_timeout, Duration::Seconds(20));
+    EXPECT_EQ(defaults.keepalive_permit_without_calls, true);
+  }
+
+  // 6. Restore the defaults and verify that the built-in server defaults are
+  // back in effect.
+  SetHttp2KeepaliveDefaults(saved_client_defaults, /*is_client=*/true);
+  SetHttp2KeepaliveDefaults(saved_server_defaults, /*is_client=*/false);
+  {
+    TransportChannelArgs args;
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/false);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Hours(2));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(20));
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+  }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Flow control helpers tests
 
