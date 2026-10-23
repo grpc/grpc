@@ -18,6 +18,7 @@
 
 # shellcheck disable=SC2103
 
+PS4='+ \D{[%H:%M:%S %Z]}\011 '
 set -ex
 
 cd "$(dirname "$0")/../../.."
