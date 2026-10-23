@@ -55,13 +55,14 @@ typedef struct {
   grpc_bad_client_server_side_validator validator;
   void* registered_method;
   gpr_event done_thd;
+  gpr_event server_ready;
 } thd_args;
 
 // Run the server side validator and set done_thd once done
 static void thd_func(void* arg) {
   thd_args* a = static_cast<thd_args*>(arg);
   if (a->validator != nullptr) {
-    a->validator(a->server, a->cq, a->registered_method);
+    a->validator(a->server, a->cq, a->registered_method, &a->server_ready);
   }
   gpr_event_set(&a->done_thd, reinterpret_cast<void*>(1));
 }
@@ -242,11 +243,16 @@ void grpc_run_bad_client_test(
   GRPC_CHECK(grpc_core::Server::FromC(a.server)->HasOpenConnections());
 
   gpr_event_init(&a.done_thd);
+  gpr_event_init(&a.server_ready);
   a.validator = server_validator;
   // Start validator
 
   grpc_core::Thread server_validator_thd("grpc_bad_client", thd_func, &a);
   server_validator_thd.Start();
+  // Wait for server thread to start. The server side validator gets a chance to
+  // set the server_ready event based on the server side logic.
+  GRPC_CHECK(
+      gpr_event_wait(&a.server_ready, grpc_timeout_seconds_to_deadline(5)));
   for (int i = 0; i < num_args; i++) {
     grpc_run_client_side_validator(&args[i], i == (num_args - 1) ? flags : 0,
                                    &sfd, client_cq);
