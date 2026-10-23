@@ -7,8 +7,10 @@ libs
 objs
 
 # Python items
+.agents/
 .coverage*
 .eggs
+.nox/
 .pytype
 *.egg
 *.egg-info
