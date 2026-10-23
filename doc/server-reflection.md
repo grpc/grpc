@@ -168,6 +168,7 @@ Enabling server reflection differs language-to-language. Here are links to docs 
 each language:
 
 - [Java](https://github.com/grpc/grpc-java/blob/master/documentation/server-reflection-tutorial.md#enable-server-reflection)
+- [C#](https://learn.microsoft.com/aspnet/core/grpc/test-tools?view=aspnetcore-9.0&preserve-view=true#set-up-grpc-reflection)
 - [Go](https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md#enable-server-reflection)
 - [C++](https://grpc.io/grpc/cpp/md_doc_server_reflection_tutorial.html)
 - [C#](https://learn.microsoft.com/en-us/aspnet/core/grpc/test-tools#set-up-grpc-reflection)
