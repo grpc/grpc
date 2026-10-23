@@ -49,6 +49,7 @@
 #include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
@@ -1872,6 +1873,26 @@ TEST_P(XdsRbacHostHeaderTest, MatchingHostAndAuthorityIsDenied) {
   ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   EXPECT_EQ(SendRawEchoRequest({{":authority", "bar"}, {"host", "bar"}}),
             absl::PermissionDeniedError("Unauthorized RPC rejected"));
+}
+
+// Only "host: bar" is sent. With map_host_header_to_authority enabled, the
+// transport copies it to ":authority: bar" before the server picks a virtual
+// host, so the route matches and RBAC denies the RPC. The same happens with
+// xds_server_filter_chain_per_route disabled, because the legacy config
+// selector filter sits above http_server_filter, which also copies "host" into
+// ":authority" when ":authority" is absent. Otherwise, virtual host selection
+// finds no ":authority" and the RPC fails closed.
+TEST_P(XdsRbacHostHeaderTest, HostOnlyIsDenied) {
+  SetHostRouteAndDenyHostRbacPolicy("bar");
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  absl::Status status = SendRawEchoRequest({{"host", "bar"}});
+  if (grpc_core::IsMapHostHeaderToAuthorityEnabled() ||
+      !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+    EXPECT_EQ(status, absl::PermissionDeniedError("Unauthorized RPC rejected"));
+  } else {
+    EXPECT_EQ(status, absl::UnavailableError("INTERNAL:no authority found"));
+  }
 }
 
 // ":authority: foo" and "host: bar" are sent. Routing and RBAC both prefer
