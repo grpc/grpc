@@ -9926,6 +9926,7 @@ grpc_cc_library(
         "//bazel:transport_common",
     ],
     deps = [
+        "channel_args",
         "grpc_check",
         "grpc_promise_endpoint",
         "http2_settings",
@@ -9933,6 +9934,7 @@ grpc_cc_library(
         "write_size_policy",
         ":shared_bit_gen",
         ":time",
+        "//:channel_arg_names",
         "//:chttp2_frame",
     ],
 )

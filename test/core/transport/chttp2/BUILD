@@ -351,6 +351,7 @@ grpc_cc_test(
         "//src/core:ping_rate_policy",
         "//src/core:resource_quota",
         "//src/core:time",
+        "//src/core:transport_common",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
