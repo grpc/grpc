@@ -1961,8 +1961,7 @@ void Server::ChannelData::FinishDestroy(void* arg,
 }
 
 void Server::ChannelData::Destroy() {
-  if (!IsServerConnectionManagementEnabled() &&
-      !list_position_.has_value()) {
+  if (!IsServerConnectionManagementEnabled() && !list_position_.has_value()) {
     return;
   }
   GRPC_CHECK(server_ != nullptr);
