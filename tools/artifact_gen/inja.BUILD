@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
 licenses(["notice"])
 
 cc_library(
     name = "inja",
     hdrs = ["include/inja/inja.hpp"],
     visibility = ["//visibility:public"],
-    deps = [":internal", "@nlohmann_json//:json"],
+    deps = [
+        ":internal",
+        "@nlohmann_json//:json",
+    ],
 )
 
 cc_library(
@@ -28,5 +33,5 @@ cc_library(
         ["include/inja/*.hpp"],
         exclude = ["include/inja/inja.hpp"],
     ),
-    deps = ["@nlohmann_json//:json"]
+    deps = ["@nlohmann_json//:json"],
 )
