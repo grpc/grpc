@@ -27,6 +27,11 @@ $PROTOC -I third_party/grpc-proto third_party/grpc-proto/grpc/health/v1/health.p
     --ruby_out=src/ruby/pb \
     --plugin=$PLUGIN
 
+$PROTOC -I src/proto src/proto/grpc/reflection/v1alpha/reflection.proto \
+    --grpc_out=src/ruby/pb \
+    --ruby_out=src/ruby/pb \
+    --plugin=$PLUGIN
+
 $PROTOC -I . \
     src/proto/grpc/testing/{messages,test,empty}.proto \
     --grpc_out=src/ruby/pb \
