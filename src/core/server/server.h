@@ -434,6 +434,8 @@ class Server : public ServerInterface,
 
   class ChannelData final {
    public:
+    class V1ChannelTransport;
+
     ChannelData() = default;
     ~ChannelData();
 
@@ -470,7 +472,11 @@ class Server : public ServerInterface,
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;
+
+    // TODO(roth): Remove this when removing the
+    // server_connection_management experiment.
     std::optional<std::list<ChannelData*>::iterator> list_position_;
+
     grpc_closure finish_destroy_channel_closure_;
     intptr_t channelz_socket_uuid_;
 
@@ -718,7 +724,10 @@ class Server : public ServerInterface,
               .value_or(3000)))};
   const Duration max_time_in_pending_queue_;
 
+  // TODO(roth): Remove this as part of removing the
+  // server_connection_management experiment.
   std::list<ChannelData*> channels_ ABSL_GUARDED_BY(mu_global_);
+
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
       ABSL_GUARDED_BY(mu_global_);
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_

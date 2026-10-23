@@ -92,6 +92,50 @@ namespace grpc_core {
 using http2::Http2ErrorCode;
 
 //
+// Server::ChannelData::V1ChannelTransport
+//
+
+class Server::ChannelData::V1ChannelTransport final : public ServerTransport {
+ public:
+  explicit V1ChannelTransport(RefCountedPtr<Channel> channel)
+      : channel_(std::move(channel)) {}
+
+  FilterStackTransport* filter_stack_transport() override { return nullptr; }
+  ClientTransport* client_transport() override { return nullptr; }
+  ServerTransport* server_transport() override { return this; }
+
+  absl::string_view GetTransportName() const override {
+    return "V1ChannelTransport";
+  }
+
+  void Orphan() override {
+    ChannelData* chand = static_cast<ChannelData*>(
+        grpc_channel_stack_element(channel_->channel_stack(), 0)->channel_data);
+    chand->Destroy();
+    channel_.reset();
+  }
+
+  void PerformOp(grpc_transport_op* op) override {
+    GRPC_CHECK(channel_ != nullptr);
+    auto* elem = grpc_channel_stack_element(channel_->channel_stack(), 0);
+    elem->filter->start_transport_op(elem, op);
+  }
+
+  // Remaining methods are unused and implemented as no-ops.
+  void SetPollset(grpc_stream*, grpc_pollset*) override {}
+  void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
+  void SetCallDestination(RefCountedPtr<UnstartedCallDestination>) override {}
+  void StartWatch(RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(RefCountedPtr<StateWatcher>) override {}
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
+
+ private:
+  RefCountedPtr<Channel> channel_;
+};
+
+//
 // Server::ListenerState::ConfigFetcherWatcher
 //
 
@@ -1369,6 +1413,19 @@ grpc_error_handle Server::SetupTransport(
     // Keep a local reference to the channel alive during setup to prevent
     // premature destruction if the transport fails concurrently.
     RefCountedPtr<Channel> channel_keep_alive = *channel;
+
+    if (IsServerConnectionManagementEnabled()) {
+      auto channel_transport =
+          MakeOrphanable<ChannelData::V1ChannelTransport>(*channel);
+      channel_transport->StartConnectivityWatch(
+          MakeOrphanable<TransportConnectivityWatcher>(
+              channel_transport->RefAsSubclass<ServerTransport>(), Ref()));
+      MutexLock lock(mu_global_);
+      GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
+      connections_.emplace(std::move(channel_transport));
+      ++connections_open_;
+    }
+
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
                          channelz_socket_uuid);
 
@@ -1775,12 +1832,14 @@ class Server::ChannelData::ConnectivityWatcher
 Server::ChannelData::~ChannelData() {
   if (server_ != nullptr) {
     server_->stream_quota_->DecrementOpenChannels();
-    MutexLock lock(server_->mu_global_);
-    if (list_position_.has_value()) {
-      server_->channels_.erase(*list_position_);
-      list_position_.reset();
+    if (!IsServerConnectionManagementEnabled()) {
+      MutexLock lock(server_->mu_global_);
+      if (list_position_.has_value()) {
+        server_->channels_.erase(*list_position_);
+        list_position_.reset();
+      }
+      server_->MaybeFinishShutdown();
     }
-    server_->MaybeFinishShutdown();
   }
 }
 
@@ -1792,8 +1851,9 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   channel_ = std::move(channel);
   cq_idx_ = cq_idx;
   channelz_socket_uuid_ = channelz_socket_uuid;
+
   // Publish channel.
-  {
+  if (!IsServerConnectionManagementEnabled()) {
     MutexLock lock(server_->mu_global_);
     server_->channels_.push_front(this);
     list_position_ = server_->channels_.begin();
@@ -1810,7 +1870,9 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
         *metadata);
   };
   op->set_accept_stream_user_data = this;
-  op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
+  if (!IsServerConnectionManagementEnabled()) {
+    op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
+  }
   if (server_->ShutdownCalled()) {
     op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
   }
@@ -1897,12 +1959,17 @@ void Server::ChannelData::FinishDestroy(void* arg,
 }
 
 void Server::ChannelData::Destroy() {
-  if (!list_position_.has_value()) return;
+  if (!IsServerConnectionManagementEnabled() &&
+      !list_position_.has_value()) {
+    return;
+  }
   GRPC_CHECK(server_ != nullptr);
-  server_->channels_.erase(*list_position_);
-  list_position_.reset();
-  server_->Ref().release();
-  server_->MaybeFinishShutdown();
+  server_->Ref().release();  // Released in FinishDestroy().
+  if (!IsServerConnectionManagementEnabled()) {
+    server_->channels_.erase(*list_position_);
+    list_position_.reset();
+    server_->MaybeFinishShutdown();
+  }
   // Unreffed by FinishDestroy
   GRPC_CHANNEL_STACK_REF(channel_->channel_stack(),
                          "Server::ChannelData::Destroy");
