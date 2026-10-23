@@ -8,9 +8,9 @@
 
 
     <!-- Tools - protocol buffers compiler and plugins -->
-    <Protobuf_PackagedToolsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../../tools) )</Protobuf_PackagedToolsPath>
+    <Protobuf_PackagedToolsPath>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../../tools))</Protobuf_PackagedToolsPath>
     <!-- Protocol buffers Well Known Types -->
-    <Protobuf_StandardImportsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../native/include) )</Protobuf_StandardImportsPath>
+    <Protobuf_StandardImportsPath>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../native/include))</Protobuf_StandardImportsPath>
   </PropertyGroup>
 
   <!-- NET SDK projects only: include proto files by default. Other project
