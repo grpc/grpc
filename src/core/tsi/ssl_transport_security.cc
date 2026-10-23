@@ -68,6 +68,7 @@
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/surface/connection_context.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
@@ -90,6 +91,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -1082,32 +1084,16 @@ static tsi_result peer_property_from_x509_common_name(
 static tsi_result peer_property_from_x509_subject(X509* cert,
                                                   tsi_peer_property* property,
                                                   bool is_verified_root_cert) {
-  auto* subject_name = X509_get_subject_name(cert);
-  if (subject_name == nullptr) {
-    GRPC_TRACE_LOG(tsi, INFO) << "Could not get subject name from certificate.";
-    return TSI_NOT_FOUND;
-  }
-  BIO* bio = BIO_new(BIO_s_mem());
-  X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
-  char* contents;
-  long len = BIO_get_mem_data(bio, &contents);
-  if (len < 0) {
-    LOG(ERROR) << "Could not get subject entry from certificate.";
-    BIO_free(bio);
+  absl::StatusOr<std::string> subject = tsi::X509SubjectRfc2253(cert);
+  if (!subject.ok()) {
+    LOG(ERROR) << "Could not get subject from certificate: "
+               << subject.status();
     return TSI_INTERNAL_ERROR;
   }
-  tsi_result result;
-  if (!is_verified_root_cert) {
-    result = tsi_construct_string_peer_property(
-        TSI_X509_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
-        property);
-  } else {
-    result = tsi_construct_string_peer_property(
-        TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY, contents,
-        static_cast<size_t>(len), property);
-  }
-  BIO_free(bio);
-  return result;
+  return tsi_construct_string_peer_property(
+      is_verified_root_cert ? TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY
+                            : TSI_X509_SUBJECT_PEER_PROPERTY,
+      subject->data(), subject->size(), property);
 }
 
 // Gets the X509 cert in PEM format as a tsi_peer_property.
@@ -2363,11 +2349,15 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (verified_root_cert != nullptr) {
     result = peer_property_from_x509_subject(
         verified_root_cert, &peer->properties[peer->property_count], true);
-    if (result != TSI_OK) {
+    if (result == TSI_OK) {
+      peer->property_count++;
+    } else {
+      // Not fatal: the handshake has already succeeded, and this property is
+      // informational only.  Leave the slot unpopulated and carry on.
       VLOG(2) << "Problem extracting subject from verified_root_cert. result: "
               << result;
+      result = TSI_OK;
     }
-    peer->property_count++;
   }
 
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
@@ -2454,6 +2444,25 @@ static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(impl);
 }
 
+static void ssl_handshaker_result_populate_connection_context(
+    const tsi_handshaker_result* self,
+    grpc_core::ConnectionContext* connection_context) {
+  const tsi_ssl_handshaker_result* impl =
+      reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+  // Only servers need their own certificate: it backs
+  // AttributeContext.destination.principal in the ext_authz filter, which is
+  // populated only for incoming calls.
+  if (!SSL_is_server(impl->ssl)) return;
+  // Returns the leaf actually configured for this connection, taking SNI and
+  // certificate selection into account.  It is owned by the SSL object;
+  // LocalCertificateInfo takes its own reference.  Its principal is only
+  // computed if a component asks for it (see
+  // tsi::LocalCertificateInfo::principal()).
+  X509* local_cert = SSL_get_certificate(impl->ssl);
+  if (local_cert == nullptr) return;
+  connection_context->Update<tsi::LocalCertificateInfo>(local_cert);
+}
+
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     ssl_handshaker_result_extract_peer,
     ssl_handshaker_result_get_frame_protector_type,
@@ -2461,6 +2470,7 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     ssl_handshaker_result_create_frame_protector,
     ssl_handshaker_result_get_unused_bytes,
     ssl_handshaker_result_destroy,
+    ssl_handshaker_result_populate_connection_context,
 };
 
 static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
