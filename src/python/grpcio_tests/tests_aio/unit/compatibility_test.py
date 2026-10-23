@@ -14,7 +14,7 @@
 """Testing the compatibility between AsyncIO stack and the old stack."""
 
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 import logging
 import os
 import random
@@ -37,6 +37,7 @@ _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
 _REQUEST = b"\x03\x07"
+_INITIAL_METADATA = (("unique", "key-42"),)
 
 
 def _unique_options() -> Sequence[Tuple[str, float]]:
@@ -49,9 +50,12 @@ def _unique_options() -> Sequence[Tuple[str, float]]:
 )
 class TestCompatibility(AioTestBase):
     async def setUp(self):
+        # A per-test executor that can tell whether all of its workers
+        # returned
+        self._thread_pool = _common.DaemonThreadExecutor()
         self._async_server = aio.server(
             options=(("grpc.so_reuseport", 0),),
-            migration_thread_pool=ThreadPoolExecutor(),
+            migration_thread_pool=self._thread_pool,
         )
 
         test_pb2_grpc.add_TestServiceServicer_to_server(
@@ -194,7 +198,8 @@ class TestCompatibility(AioTestBase):
         # It's fine to instantiate server object in the event loop thread.
         # The server will spawn its own serving thread.
         server = grpc.server(
-            ThreadPoolExecutor(), handlers=(GenericHandlers(),)
+            concurrent.futures.ThreadPoolExecutor(),
+            handlers=(GenericHandlers(),),
         )
         port = server.add_insecure_port("localhost:0")
         server.start()
@@ -316,6 +321,39 @@ class TestCompatibility(AioTestBase):
             grpc.StatusCode.UNKNOWN, exception_context.exception.code()
         )
 
+    async def test_sync_unary_stream_cancel(self):
+        closed = threading.Event()
+
+        @grpc.unary_stream_rpc_method_handler
+        def endless_unary_stream(request: bytes, unused_context):
+            try:
+                while True:
+                    yield request
+            finally:
+                closed.set()
+
+        self._adhoc_handlers.set_adhoc_handler(endless_unary_stream)
+        call = self._async_channel.unary_stream(_common.ADHOC_METHOD)(_REQUEST)
+        self.assertEqual(_REQUEST, await call.read())
+        self.assertEqual(_REQUEST, await call.read())
+        call.cancel()
+        self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+
+        self.assertTrue(
+            await self.loop.run_in_executor(
+                None, closed.wait, test_constants.TIME_ALLOWANCE
+            ),
+            "handler generator was not closed",
+        )
+        self.assertTrue(
+            await self.loop.run_in_executor(
+                None,
+                self._thread_pool.workers_finished,
+                test_constants.TIME_ALLOWANCE,
+            ),
+            "thread pool worker leaked",
+        )
+
     async def test_sync_stream_unary_success(self):
         @grpc.stream_unary_rpc_method_handler
         def echo_stream_unary(
@@ -384,6 +422,135 @@ class TestCompatibility(AioTestBase):
                 self.assertEqual(_REQUEST, response)
         self.assertEqual(
             grpc.StatusCode.UNKNOWN, exception_context.exception.code()
+        )
+
+
+class TestSyncHandlerInvokedOffLoop(unittest.TestCase):
+    """Sync response-streaming handlers must be invoked on the thread pool.
+
+    Such a handler is either a generator function or a plain function (no
+    `yield`) returning an iterator. Calling the plain function runs its body
+    right away. If the function body blocks on the loop (consuming the request
+    iterator, sending initial metadata, aborting) while on the loop's owning
+    thread, the server deadlocks.
+    """
+
+    def setUp(self):
+        self._thread_pool = _common.DaemonThreadExecutor()
+        self._adhoc_handlers = _common.AdhocGenericHandler()
+        self._loop_thread = _common.LoopInThread()
+
+        async def start_server_and_channel():
+            server = aio.server(
+                options=(("grpc.so_reuseport", 0),),
+                migration_thread_pool=self._thread_pool,
+            )
+            server.add_generic_rpc_handlers((self._adhoc_handlers,))
+            port = server.add_insecure_port("[::]:0")
+            await server.start()
+            channel = aio.insecure_channel(
+                "localhost:%d" % port, options=_unique_options()
+            )
+            return server, channel
+
+        self._async_server, self._async_channel = self._loop_thread.run(
+            start_server_and_channel()
+        )
+
+    def tearDown(self):
+        async def shutdown():
+            await self._async_channel.close()
+            await self._async_server.stop(None)
+
+        try:
+            self._loop_thread.run(
+                shutdown(), timeout=test_constants.SHORT_TIMEOUT
+            )
+        except concurrent.futures.TimeoutError:
+            # The server loop is deadlocked, which is what a failing test
+            # looks like here; its thread is a daemon.
+            pass
+        self._loop_thread.stop()
+
+    def test_plain_function_stream_stream_consumes_requests(self):
+        @grpc.stream_stream_rpc_method_handler
+        def collect_then_echo(
+            request_iterator: Iterable[bytes], unused_context
+        ):
+            # Blocks until the loop delivers the requests
+            return iter(list(request_iterator))
+
+        self._adhoc_handlers.set_adhoc_handler(collect_then_echo)
+
+        async def stream_stream():
+            call = self._async_channel.stream_stream(_common.ADHOC_METHOD)(
+                iter([_REQUEST] * _NUM_STREAM_RESPONSES),
+                timeout=test_constants.SHORT_TIMEOUT,
+            )
+            return [response async for response in call]
+
+        self.assertEqual(
+            [_REQUEST] * _NUM_STREAM_RESPONSES,
+            self._loop_thread.run(stream_stream()),
+        )
+        self.assertTrue(
+            self._thread_pool.workers_finished(test_constants.TIME_ALLOWANCE),
+            "thread pool worker leaked",
+        )
+
+    def test_plain_function_unary_stream_sends_initial_metadata(self):
+        @grpc.unary_stream_rpc_method_handler
+        def metadata_then_echo(request: bytes, context: grpc.ServicerContext):
+            # Blocks until the loop has sent the metadata.
+            context.send_initial_metadata(_INITIAL_METADATA)
+            return iter([request] * _NUM_STREAM_RESPONSES)
+
+        self._adhoc_handlers.set_adhoc_handler(metadata_then_echo)
+
+        async def unary_stream():
+            call = self._async_channel.unary_stream(_common.ADHOC_METHOD)(
+                _REQUEST, timeout=test_constants.SHORT_TIMEOUT
+            )
+            responses = [response async for response in call]
+            return responses, await call.initial_metadata()
+
+        responses, initial_metadata = self._loop_thread.run(unary_stream())
+        self.assertEqual([_REQUEST] * _NUM_STREAM_RESPONSES, responses)
+        self.assertTrue(
+            _common.seen_metadata(
+                aio.Metadata(*_INITIAL_METADATA), initial_metadata
+            )
+        )
+        self.assertTrue(
+            self._thread_pool.workers_finished(test_constants.TIME_ALLOWANCE),
+            "thread pool worker leaked",
+        )
+
+    def test_plain_function_unary_stream_aborts(self):
+        @grpc.unary_stream_rpc_method_handler
+        def abort_unary_stream(
+            unused_request: bytes, context: grpc.ServicerContext
+        ):
+            # Blocks until the loop has sent the status.
+            context.abort(grpc.StatusCode.INTERNAL, "Test")
+
+        self._adhoc_handlers.set_adhoc_handler(abort_unary_stream)
+
+        async def unary_stream():
+            call = self._async_channel.unary_stream(_common.ADHOC_METHOD)(
+                _REQUEST, timeout=test_constants.SHORT_TIMEOUT
+            )
+            return [response async for response in call]
+
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            self._loop_thread.run(unary_stream())
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
+        self.assertEqual("Test", exception_context.exception.details())
+        self.assertTrue(
+            self._thread_pool.workers_finished(test_constants.TIME_ALLOWANCE),
+            "thread pool worker leaked",
         )
 
 
