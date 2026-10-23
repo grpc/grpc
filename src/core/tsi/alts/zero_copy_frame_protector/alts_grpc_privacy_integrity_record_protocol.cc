@@ -27,6 +27,7 @@
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "src/core/util/crash.h"
 #include "absl/log/log.h"
+#include "absl/types/span.h"
 
 // Privacy-integrity alts_grpc_record_protocol object uses the same struct
 // defined in alts_grpc_record_protocol_common.h.
@@ -61,11 +62,12 @@ static tsi_result alts_grpc_privacy_integrity_protect(
                              GRPC_SLICE_LENGTH(protected_slice)};
   // Calls alts_iovec_record_protocol protect.
   char* error_details = nullptr;
-  alts_grpc_record_protocol_convert_slice_buffer_to_iovec(rp,
-                                                          unprotected_slices);
+  absl::Span<const iovec_t> unprotected_iovecs =
+      alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
+          rp, unprotected_slices);
   grpc_status_code status =
       alts_iovec_record_protocol_privacy_integrity_protect(
-          rp->iovec_rp, rp->iovec_buf, unprotected_slices->count,
+          rp->iovec_rp, unprotected_iovecs.data(), unprotected_iovecs.size(),
           protected_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
     LOG(ERROR) << "Failed to protect, " << error_details;
@@ -106,11 +108,13 @@ static tsi_result alts_grpc_privacy_integrity_unprotect(
   iovec_t header_iovec = alts_grpc_record_protocol_get_header_iovec(rp);
   // Calls alts_iovec_record_protocol unprotect.
   char* error_details = nullptr;
-  alts_grpc_record_protocol_convert_slice_buffer_to_iovec(rp, protected_slices);
+  absl::Span<const iovec_t> protected_iovecs =
+      alts_grpc_record_protocol_convert_slice_buffer_to_iovec(rp,
+                                                              protected_slices);
   grpc_status_code status =
       alts_iovec_record_protocol_privacy_integrity_unprotect(
-          rp->iovec_rp, header_iovec, rp->iovec_buf, protected_slices->count,
-          unprotected_iovec, &error_details);
+          rp->iovec_rp, header_iovec, protected_iovecs.data(),
+          protected_iovecs.size(), unprotected_iovec, &error_details);
   if (status != GRPC_STATUS_OK) {
     LOG(ERROR) << "Failed to unprotect, " << error_details;
     gpr_free(error_details);
@@ -123,10 +127,20 @@ static tsi_result alts_grpc_privacy_integrity_unprotect(
   return TSI_OK;
 }
 
+static void alts_grpc_privacy_integrity_destruct(
+    alts_grpc_record_protocol* rp) {
+  if (rp == nullptr) {
+    return;
+  }
+  alts_grpc_record_protocol_deinit(rp);
+  delete rp;
+}
+
 static const alts_grpc_record_protocol_vtable
     alts_grpc_privacy_integrity_record_protocol_vtable = {
         alts_grpc_privacy_integrity_protect,
-        alts_grpc_privacy_integrity_unprotect, nullptr};
+        alts_grpc_privacy_integrity_unprotect,
+        alts_grpc_privacy_integrity_destruct};
 
 tsi_result alts_grpc_privacy_integrity_record_protocol_create(
     gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
@@ -136,14 +150,13 @@ tsi_result alts_grpc_privacy_integrity_record_protocol_create(
         << "Invalid nullptr arguments to alts_grpc_record_protocol create.";
     return TSI_INVALID_ARGUMENT;
   }
-  auto* impl = static_cast<alts_grpc_record_protocol*>(
-      gpr_zalloc(sizeof(alts_grpc_record_protocol)));
+  auto* impl = new alts_grpc_record_protocol();
   // Calls alts_grpc_record_protocol init.
   tsi_result result =
       alts_grpc_record_protocol_init(impl, crypter, overflow_size, is_client,
                                      /*is_integrity_only=*/false, is_protect);
   if (result != TSI_OK) {
-    gpr_free(impl);
+    delete impl;
     return result;
   }
   impl->vtable = &alts_grpc_privacy_integrity_record_protocol_vtable;
