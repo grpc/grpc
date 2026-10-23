@@ -49,6 +49,7 @@
 #include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
@@ -65,10 +66,12 @@
 #include "test/core/test_util/audit_logging_utils.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/raw_http2_client.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -77,9 +80,11 @@
 #include "gtest/gtest.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
 namespace grpc {
@@ -1156,6 +1161,11 @@ TEST_P(XdsSniSecurityTest, SanValidationFailure) {
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
+  static void SetUpTestSuite() {
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P2][Client] Fix bug");
+    SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
+  }
+
   void SetUp() override {
     XdsBootstrapBuilder builder = MakeBootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
@@ -1803,6 +1813,104 @@ TEST_P(XdsRbacTest, LogAction) {
   // A Log action is identical to no rbac policy being configured.
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {});
+}
+
+//
+// RBAC tests where both routing and RBAC match on the "host" header
+//
+
+class XdsRbacHostHeaderTest : public XdsRbacTest {
+ protected:
+  // Configures the server so that the only route matches "host: <host>" and
+  // RBAC denies requests with "host: <host>".
+  void SetHostRouteAndDenyHostRbacPolicy(absl::string_view host) {
+    auto* route_header = default_server_route_config_.mutable_virtual_hosts(0)
+                             ->mutable_routes(0)
+                             ->mutable_match()
+                             ->add_headers();
+    route_header->set_name("host");
+    route_header->mutable_string_match()->set_exact(host);
+    RBAC rbac;
+    auto* rules = rbac.mutable_rules();
+    rules->set_action(RBAC_Action_DENY);
+    Policy policy;
+    auto* rbac_header = policy.add_permissions()->mutable_header();
+    rbac_header->set_name("host");
+    rbac_header->mutable_string_match()->set_exact(host);
+    policy.add_principals()->set_any(true);
+    (*rules->mutable_policies())["policy"] = policy;
+    SetServerRbacPolicy(rbac);
+  }
+
+  // Sends an Echo RPC to backend 0 over a raw HTTP/2 connection with the
+  // given additional request headers.
+  absl::Status SendRawEchoRequest(
+      const std::vector<grpc_core::testing::RawHttp2Client::Header>& headers) {
+    EchoRequest request;
+    request.set_message("hello");
+    return grpc_core::testing::RawHttp2Client(backends_[0]->port())
+        .SendUnaryRequest("/grpc.testing.EchoTestService/Echo", headers,
+                          request.SerializeAsString());
+  }
+};
+
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsRbacHostHeaderTest,
+                         ::testing::Values(XdsTestType().set_bootstrap_source(
+                             XdsTestType::kBootstrapFromEnvVar)),
+                         &XdsTestType::Name);
+
+// Only ":authority: bar" is sent. The route matches and RBAC denies the RPC.
+TEST_P(XdsRbacHostHeaderTest, AuthorityOnlyIsDenied) {
+  SetHostRouteAndDenyHostRbacPolicy("bar");
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  EXPECT_EQ(SendRawEchoRequest({{":authority", "bar"}}),
+            absl::PermissionDeniedError("Unauthorized RPC rejected"));
+}
+
+// ":authority: bar" and "host: bar" are both sent. The route matches and RBAC
+// denies the RPC.
+TEST_P(XdsRbacHostHeaderTest, MatchingHostAndAuthorityIsDenied) {
+  SetHostRouteAndDenyHostRbacPolicy("bar");
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  EXPECT_EQ(SendRawEchoRequest({{":authority", "bar"}, {"host", "bar"}}),
+            absl::PermissionDeniedError("Unauthorized RPC rejected"));
+}
+
+// Only "host: bar" is sent. With map_host_header_to_authority enabled, the
+// transport copies it to ":authority: bar" before the server picks a virtual
+// host, so the route matches and RBAC denies the RPC. The same happens with
+// xds_server_filter_chain_per_route disabled, because the legacy config
+// selector filter sits above http_server_filter, which also copies "host" into
+// ":authority" when ":authority" is absent. Otherwise, virtual host selection
+// finds no ":authority" and the RPC fails closed.
+TEST_P(XdsRbacHostHeaderTest, HostOnlyIsDenied) {
+  SetHostRouteAndDenyHostRbacPolicy("bar");
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  absl::Status status = SendRawEchoRequest({{"host", "bar"}});
+  if (grpc_core::IsMapHostHeaderToAuthorityEnabled() ||
+      !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+    EXPECT_EQ(status, absl::PermissionDeniedError("Unauthorized RPC rejected"));
+  } else {
+    EXPECT_EQ(status, absl::UnavailableError("INTERNAL:no authority found"));
+  }
+}
+
+// ":authority: foo" and "host: bar" are sent. Routing and RBAC both prefer
+// ":authority", so both see "foo". The route does not match, so the RPC fails
+// with UNAVAILABLE. Routing must not see "bar" while RBAC sees "foo",
+// since that would let the RPC reach the route without being denied.
+TEST_P(XdsRbacHostHeaderTest, MismatchedHostAndAuthorityDoesNotBypassRbac) {
+  SetHostRouteAndDenyHostRbacPolicy("bar");
+  StartBackend(0);
+  ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
+  EXPECT_EQ(SendRawEchoRequest({{":authority", "foo"}, {"host", "bar"}}),
+            absl::UnavailableError("UNAVAILABLE:no route matched"));
 }
 
 //

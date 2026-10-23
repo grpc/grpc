@@ -96,19 +96,20 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   };
 
   // Only run on the Transport Party
-  GRPC_MUST_USE_RESULT EndpointExtensionState Initialize(
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine) {
+  GRPC_MUST_USE_RESULT EndpointExtensionState
+  Initialize(grpc_event_engine::experimental::EventEngine::Endpoint* endpoint,
+             std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                 event_engine) {
     GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::Initialize";
     endpoint_extension_ = grpc_event_engine::experimental::QueryExtension<
-        TransportFramingEndpointExtension>(event_engine.get());
+        TransportFramingEndpointExtension>(endpoint);
     if (endpoint_extension_ != nullptr) {
       endpoint_extension_->SetSendFrameCallback(
           SendFrameCallbackFactory(event_engine));
       return EndpointExtensionState{true};
     }
-    LOG(ERROR) << "SecurityFrameHandler::Initialize could not initialize "
-                  "TransportFramingEndpointExtension";
+    LOG(INFO) << "SecurityFrameHandler::Initialize could not initialize "
+                 "TransportFramingEndpointExtension";
     return EndpointExtensionState{false};
   }
 

@@ -312,6 +312,9 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       if (req_->has_param() && req_->param().echo_peer()) {
         resp_->mutable_param()->set_peer(ctx_->peer());
       }
+      if (req_->has_param() && req_->param().echo_local_address()) {
+        resp_->mutable_param()->set_local_address(ctx_->local_address());
+      }
       Finish(Status::OK);
     }
     void FinishWhenCancelledAsync() {

@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.85.0-dev'
+  version = '1.86.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -327,6 +327,7 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/direct_channel.h',
                       'src/core/client_channel/dynamic_filters.h',
                       'src/core/client_channel/global_subchannel_pool.h',
+                      'src/core/client_channel/lame_channel.h',
                       'src/core/client_channel/lb_metadata.h',
                       'src/core/client_channel/load_balanced_call_destination.h',
                       'src/core/client_channel/local_subchannel_pool.h',
@@ -449,6 +450,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
                       'src/core/ext/transport/chttp2/transport/http2_transport.h',
+                      'src/core/ext/transport/chttp2/transport/http2_transport_stats.h',
                       'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
@@ -1288,6 +1290,7 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/oob_backend_metric.h',
                       'src/core/load_balancing/oob_backend_metric_internal.h',
                       'src/core/load_balancing/outlier_detection/outlier_detection.h',
+                      'src/core/load_balancing/outlier_detection/outlier_detection_metrics.h',
                       'src/core/load_balancing/pick_first/pick_first.h',
                       'src/core/load_balancing/ring_hash/ring_hash.h',
                       'src/core/load_balancing/rls/rls.h',
@@ -1786,6 +1789,7 @@ Pod::Spec.new do |s|
                               'src/core/client_channel/direct_channel.h',
                               'src/core/client_channel/dynamic_filters.h',
                               'src/core/client_channel/global_subchannel_pool.h',
+                              'src/core/client_channel/lame_channel.h',
                               'src/core/client_channel/lb_metadata.h',
                               'src/core/client_channel/load_balanced_call_destination.h',
                               'src/core/client_channel/local_subchannel_pool.h',
@@ -1907,6 +1911,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_transport.h',
+                              'src/core/ext/transport/chttp2/transport/http2_transport_stats.h',
                               'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
@@ -2746,6 +2751,7 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/oob_backend_metric.h',
                               'src/core/load_balancing/oob_backend_metric_internal.h',
                               'src/core/load_balancing/outlier_detection/outlier_detection.h',
+                              'src/core/load_balancing/outlier_detection/outlier_detection_metrics.h',
                               'src/core/load_balancing/pick_first/pick_first.h',
                               'src/core/load_balancing/ring_hash/ring_hash.h',
                               'src/core/load_balancing/rls/rls.h',

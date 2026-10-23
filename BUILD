@@ -285,11 +285,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gimbal"  # @unused
+g_stands_for = "googol"  # @unused
 
-core_version = "57.0.0"  # @unused
+core_version = "58.0.0"  # @unused
 
-version = "1.85.0-dev"  # @unused
+version = "1.86.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1913,6 +1913,7 @@ grpc_cc_library(
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
         "//src/core:grpc_check",
+        "//src/core:lame_channel",
         "//src/core:stats_data",
     ],
 )
@@ -4977,6 +4978,7 @@ grpc_cc_library(
         "stats",
         "//src/core:decode_huff",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:match",

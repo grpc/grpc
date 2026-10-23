@@ -461,7 +461,7 @@ void MaybeAddTransportWindowUpdateFrame(
       flow_control.DesiredAnnounceSize(/*writing_anyway=*/true);
   if (window_size > 0) {
     GRPC_HTTP2_COMMON_DLOG
-        << "MaybeGetWindowUpdateFrames Transport Window Update : "
+        << "MaybeAddTransportWindowUpdateFrame Transport Window Update : "
         << window_size;
     frame_sender.AddRegularFrame(
         Http2WindowUpdateFrame{/*stream_id=*/0, window_size});
