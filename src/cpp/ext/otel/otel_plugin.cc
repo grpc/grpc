@@ -1142,13 +1142,15 @@ void OpenTelemetryPluginImpl::RecordHistogram(
   }
 }
 
-// Filters labels based on the collection scope and records value in the stored histogram.
-// Returns if no histogram with this description exists. OpenTelemetry only has uint64 histograms
-// so negative values are stored in the "0" bucket.
+// Filters labels based on the collection scope and records value in the stored
+// histogram. Returns if no histogram with this description exists.
+// OpenTelemetry only has uint64 histograms so negative values are stored in the
+// "0" bucket.
 void OpenTelemetryPluginImpl::RecordHistogram(
     const grpc_core::InstrumentMetadata::Description* description,
     int64_t value, absl::Span<const std::string> label_values) {
-  if (meter_provider_ == nullptr || description == nullptr || collection_scope_ == nullptr) {
+  if (meter_provider_ == nullptr || description == nullptr ||
+      collection_scope_ == nullptr) {
     return;
   }
   auto hist = uint64_histograms_.find(description);
@@ -1172,12 +1174,13 @@ void OpenTelemetryPluginImpl::RecordHistogram(
                        labels_iterable, opentelemetry::context::Context{});
 }
 
-// Filters labels based on the collection scope and records value in the stored histogram.
-// Returns if no histogram with this description exists.
+// Filters labels based on the collection scope and records value in the stored
+// histogram. Returns if no histogram with this description exists.
 void OpenTelemetryPluginImpl::RecordHistogram(
     const grpc_core::InstrumentMetadata::Description* description, double value,
     absl::Span<const std::string> label_values) {
-  if (meter_provider_ == nullptr || description == nullptr || collection_scope_ == nullptr) {
+  if (meter_provider_ == nullptr || description == nullptr ||
+      collection_scope_ == nullptr) {
     return;
   }
   auto hist = double_histograms_.find(description);

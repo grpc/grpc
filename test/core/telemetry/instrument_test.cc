@@ -49,8 +49,8 @@ class MockInstrumentRecorder : public InstrumentRecorder {
  public:
   virtual ~MockInstrumentRecorder() = default;
   MOCK_METHOD(void, RecordHistogram,
-              (const InstrumentMetadata::Description* description, int64_t value,
-               absl::Span<const std::string> label_values),
+              (const InstrumentMetadata::Description* description,
+               int64_t value, absl::Span<const std::string> label_values),
               (override));
   MOCK_METHOD(void, RecordHistogram,
               (const InstrumentMetadata::Description* description, double value,
@@ -836,15 +836,22 @@ TEST_F(InstrumentTest, InstrumentRecorder) {
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
   ::testing::StrictMock<MockInstrumentRecorder> recorder;
 
-  EXPECT_CALL(recorder, RecordHistogram(
-      InstrumentIndex::Get().Find(LowContentionDomain::kExponentialHistogram.name()),
-      ::testing::Matcher<int64_t>(int64_t{0}), ::testing::ElementsAre("example.com")));
+  EXPECT_CALL(
+      recorder,
+      RecordHistogram(InstrumentIndex::Get().Find(
+                          LowContentionDomain::kExponentialHistogram.name()),
+                      ::testing::Matcher<int64_t>(int64_t{0}),
+                      ::testing::ElementsAre("example.com")));
   storage->Increment(LowContentionDomain::kExponentialHistogram, 0, &recorder);
 
-  EXPECT_CALL(recorder, RecordHistogram(
-      InstrumentIndex::Get().Find(LowContentionDomain::kExponentialDoubleHistogram.name()),
-      ::testing::Matcher<double>(0.5), ::testing::ElementsAre("example.com")));
-  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5, &recorder);
+  EXPECT_CALL(recorder,
+              RecordHistogram(
+                  InstrumentIndex::Get().Find(
+                      LowContentionDomain::kExponentialDoubleHistogram.name()),
+                  ::testing::Matcher<double>(0.5),
+                  ::testing::ElementsAre("example.com")));
+  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5,
+                     &recorder);
 
   storage->Increment(LowContentionDomain::kExponentialHistogram, 0, nullptr);
 }
