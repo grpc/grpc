@@ -67,7 +67,9 @@ class GrpcXdsClient final : public XdsClient {
       RefCountedPtr<XdsTransportFactory> transport_factory,
       RefCountedPtr<CertificateProviderStore> certificate_provider_store,
       std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-          stats_plugin_group);
+          stats_plugin_group,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
 
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
@@ -86,6 +88,13 @@ class GrpcXdsClient final : public XdsClient {
   }
 
   absl::string_view key() const { return key_; }
+
+  // Determines if this XdsClient is being used in a gRPC client or
+  // server.  Used to affect resource validation behavior.
+  enum class Component { kClient, kServer };
+  Component component() const {
+    return key_ == kServerKey ? Component::kServer : Component::kClient;
+  }
 
   LrsClient& lrs_client() { return *lrs_client_; }
 

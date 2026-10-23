@@ -48,6 +48,7 @@
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_listener_parser.h"
@@ -80,14 +81,7 @@ namespace {
 
 class XdsListenerTest : public ::testing::Test {
  protected:
-  XdsListenerTest()
-      : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
-
-  static RefCountedPtr<XdsClient> MakeXdsClient() {
-    grpc_error_handle error;
+  explicit XdsListenerTest(bool is_client = true) {
     auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         "{\n"
         "  \"xds_servers\": [\n"
@@ -112,17 +106,21 @@ class XdsListenerTest : public ::testing::Test {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
     }
-    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                     /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr,
-                                     /*metrics_reporter=*/nullptr, "foo agent",
-                                     "foo version");
+    xds_client_ = MakeRefCounted<GrpcXdsClient>(
+        /*key=*/(is_client ? "" : GrpcXdsClient::kServerKey),
+        std::move(*bootstrap), ChannelArgs(), /*transport_factory=*/nullptr,
+        /*certificate_provider_store=*/nullptr, /*stats_plugin_group=*/nullptr);
+  }
+
+  XdsResourceType::DecodeContext MakeDecodeContext() {
+    return XdsResourceType::DecodeContext{
+        xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+        upb_def_pool_.ptr(), upb_arena_.ptr()};
   }
 
   RefCountedPtr<XdsClient> xds_client_;
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
-  XdsResourceType::DecodeContext decode_context_;
 };
 
 TEST_F(XdsListenerTest, Definition) {
@@ -136,46 +134,9 @@ TEST_F(XdsListenerTest, UnparsableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "Can't parse Listener resource.")
-      << decode_result.resource.status();
-}
-
-TEST_F(XdsListenerTest, NeitherAddressNotApiListener) {
-  Listener listener;
-  listener.set_name("foo");
-  std::string serialized_resource;
-  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "Listener has neither address nor ApiListener")
-      << decode_result.resource.status();
-}
-
-// TODO(roth): Re-enable the following test once
-// github.com/istio/istio/issues/38914 is resolved.
-TEST_F(XdsListenerTest, DISABLED_BothAddressAndApiListener) {
-  Listener listener;
-  listener.set_name("foo");
-  listener.mutable_api_listener();
-  listener.mutable_address();
-  std::string serialized_resource;
-  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsListenerResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "Listener has both address and ApiListener")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError("Can't parse Listener resource."));
 }
 
 //
@@ -201,6 +162,9 @@ class HttpConnectionManagerTest
     : public XdsListenerTest,
       public ::testing::WithParamInterface<HttpConnectionManagerLocation> {
  protected:
+  HttpConnectionManagerTest()
+      : XdsListenerTest(/*is_client=*/GetParam().in_api_listener) {}
+
   static Listener MakeListener(HttpConnectionManager hcm) {
     Listener listener;
     listener.set_name("foo");
@@ -237,13 +201,6 @@ class HttpConnectionManagerTest
     return tcp_listener->default_filter_chain->http_connection_manager;
   }
 
-  static absl::string_view ErrorPrefix() {
-    // Client.
-    if (GetParam().in_api_listener) return "errors validating ApiListener: ";
-    // Server.
-    return "errors validating server Listener: ";
-  }
-
   static absl::string_view FieldPrefix() {
     // Client.
     if (GetParam().in_api_listener) return "api_listener.api_listener";
@@ -271,7 +228,7 @@ TEST_P(HttpConnectionManagerTest, MinimumValidConfig) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -306,7 +263,7 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceUsesAds) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -339,17 +296,14 @@ TEST_P(HttpConnectionManagerTest, NeitherRouteConfigNorRdsName) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager] "
-                   "error:neither route_config nor rds fields are present]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager] "
+                "error:neither route_config nor rds fields are present]")));
 }
 
 TEST_P(HttpConnectionManagerTest, RdsConfigSourceNotAdsOrSelf) {
@@ -365,17 +319,14 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceNotAdsOrSelf) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].rds.config_source "
-                   "error:ConfigSource does not specify ADS or SELF]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].rds.config_source "
+                "error:ConfigSource does not specify ADS or SELF]")));
 }
 
 TEST_P(HttpConnectionManagerTest, RdsConfigSourceNotSet) {
@@ -390,17 +341,14 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceNotSet) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].rds.config_source "
-                   "error:field not present]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].rds.config_source "
+                "error:field not present]")));
 }
 
 TEST_P(HttpConnectionManagerTest, SetsMaxStreamDuration) {
@@ -420,7 +368,7 @@ TEST_P(HttpConnectionManagerTest, SetsMaxStreamDuration) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -456,7 +404,7 @@ TEST_P(HttpConnectionManagerTest, HttpFilterDisabled) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -489,18 +437,15 @@ TEST_P(HttpConnectionManagerTest, InvalidMaxStreamDuration) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].common_http_protocol_options"
-                   ".max_stream_duration.seconds "
-                   "error:value must be in the range [0, 315576000000]]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].common_http_protocol_options"
+                ".max_stream_duration.seconds "
+                "error:value must be in the range [0, 315576000000]]")));
 }
 
 TEST_P(HttpConnectionManagerTest, UnsupportedFieldsSet) {
@@ -518,22 +463,19 @@ TEST_P(HttpConnectionManagerTest, UnsupportedFieldsSet) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].original_ip_detection_extensions "
-                   "error:must be empty; field:",
-                   FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].xff_num_trusted_hops "
-                   "error:must be zero]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].original_ip_detection_extensions "
+                "error:must be empty; field:",
+                FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].xff_num_trusted_hops "
+                "error:must be zero]")));
 }
 
 TEST_P(HttpConnectionManagerTest, EmptyHttpFilterName) {
@@ -548,17 +490,14 @@ TEST_P(HttpConnectionManagerTest, EmptyHttpFilterName) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].http_filters[0].name "
-                   "error:empty filter name]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].http_filters[0].name "
+                "error:empty filter name]")));
 }
 
 TEST_P(HttpConnectionManagerTest, DuplicateHttpFilterName) {
@@ -575,17 +514,14 @@ TEST_P(HttpConnectionManagerTest, DuplicateHttpFilterName) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].http_filters[1].name "
-                   "error:duplicate HTTP filter name: router]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].http_filters[1].name "
+                "error:duplicate HTTP filter name: router]")));
 }
 
 TEST_P(HttpConnectionManagerTest, HttpFilterMissingConfig) {
@@ -600,17 +536,14 @@ TEST_P(HttpConnectionManagerTest, HttpFilterMissingConfig) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].http_filters[0].typed_config "
-                   "error:field not present]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].http_filters[0].typed_config "
+                "error:field not present]")));
 }
 
 TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupported) {
@@ -626,18 +559,15 @@ TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupported) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].http_filters[0].typed_config.value["
-                   "envoy.config.listener.v3.Listener] "
-                   "error:unsupported filter type]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].http_filters[0].typed_config.value["
+                "envoy.config.listener.v3.Listener] "
+                "error:unsupported filter type]")));
 }
 
 TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupportedButOptional) {
@@ -657,7 +587,7 @@ TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupportedButOptional) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -683,17 +613,14 @@ TEST_P(HttpConnectionManagerTest, NoHttpFilters) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].http_filters "
-                   "error:expected at least one HTTP filter]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].http_filters "
+                "error:expected at least one HTTP filter]")));
 }
 
 TEST_P(HttpConnectionManagerTest, TerminalFilterNotLast) {
@@ -719,30 +646,26 @@ TEST_P(HttpConnectionManagerTest, TerminalFilterNotLast) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      absl::StrCat(ErrorPrefix(), "[field:", FieldPrefix(),
-                   ".value["
-                   "envoy.extensions.filters.network.http_connection_manager.v3"
-                   ".HttpConnectionManager].http_filters errors:["
-                   "non-terminal filter for config type ",
-                   (GetParam().in_api_listener
-                        ? "envoy.extensions.filters.http.fault.v3.HTTPFault"
-                        : "envoy.extensions.filters.http.rbac.v3.RBAC"),
-                   " is the last filter in the chain; "
-                   "terminal filter for config type "
-                   "envoy.extensions.filters.http.router.v3.Router must be the "
-                   "last filter in the chain]]"))
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(absl::StrCat(
+                "errors validating Listener resource: [field:", FieldPrefix(),
+                ".value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].http_filters errors:["
+                "non-terminal filter for config type ",
+                (GetParam().in_api_listener
+                     ? "envoy.extensions.filters.http.fault.v3.HTTPFault"
+                     : "envoy.extensions.filters.http.rbac.v3.RBAC"),
+                " is the last filter in the chain; "
+                "terminal filter for config type "
+                "envoy.extensions.filters.http.router.v3.Router must be the "
+                "last filter in the chain]]")));
 }
 
-using HttpConnectionManagerClientOrServerOnlyTest = XdsListenerTest;
+using HttpConnectionManagerOnClientTest = XdsListenerTest;
 
-TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
-       HttpFilterNotSupportedOnClient) {
+TEST_F(HttpConnectionManagerOnClientTest, HttpFilterNotSupportedOnClient) {
   Listener listener;
   listener.set_name("foo");
   HttpConnectionManager hcm;
@@ -761,20 +684,18 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating ApiListener: ["
-            "field:api_listener.api_listener.value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].http_filters[0].typed_config.value["
-            "envoy.extensions.filters.http.rbac.v3.RBAC] "
-            "error:filter is not supported on clients]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: ["
+                "field:api_listener.api_listener.value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].http_filters[0].typed_config.value["
+                "envoy.extensions.filters.http.rbac.v3.RBAC] "
+                "error:filter is not supported on clients]"));
 }
 
-TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
+TEST_F(HttpConnectionManagerOnClientTest,
        HttpFilterNotSupportedOnClientButOptional) {
   Listener listener;
   listener.set_name("foo");
@@ -795,7 +716,7 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -812,8 +733,12 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
 }
 
-TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
-       HttpFilterNotSupportedOnServer) {
+class HttpConnectionManagerOnServerTest : public XdsListenerTest {
+ protected:
+  HttpConnectionManagerOnServerTest() : XdsListenerTest(/*is_client=*/false) {}
+};
+
+TEST_F(HttpConnectionManagerOnServerTest, HttpFilterNotSupportedOnServer) {
   Listener listener;
   listener.set_name("foo");
   HttpConnectionManager hcm;
@@ -838,20 +763,18 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.filters[0].typed_config.value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager].http_filters[0].typed_config.value["
-            "envoy.extensions.filters.http.fault.v3.HTTPFault] "
-            "error:filter is not supported on servers]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: ["
+                "field:default_filter_chain.filters[0].typed_config.value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].http_filters[0].typed_config.value["
+                "envoy.extensions.filters.http.fault.v3.HTTPFault] "
+                "error:filter is not supported on servers]"));
 }
 
-TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
+TEST_F(HttpConnectionManagerOnServerTest,
        HttpFilterNotSupportedOnServerButOptional) {
   Listener listener;
   listener.set_name("foo");
@@ -878,7 +801,7 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -904,6 +827,20 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
 
 using ApiListenerTest = XdsListenerTest;
 
+TEST_F(ApiListenerTest, ApiListenerUnsetOnClient) {
+  Listener listener;
+  listener.set_name("foo");
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: "
+                "[field:api_listener error:field not present]"));
+}
+
 TEST_F(ApiListenerTest, InnerApiListenerNotSet) {
   Listener listener;
   listener.set_name("foo");
@@ -912,13 +849,11 @@ TEST_F(ApiListenerTest, InnerApiListenerNotSet) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating ApiListener: ["
-            "field:api_listener.api_listener error:field not present]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: ["
+                "field:api_listener.api_listener error:field not present]"));
 }
 
 TEST_F(ApiListenerTest, DoesNotContainHttpConnectionManager) {
@@ -929,15 +864,12 @@ TEST_F(ApiListenerTest, DoesNotContainHttpConnectionManager) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating ApiListener: ["
-            "field:api_listener.api_listener.value["
-            "envoy.config.listener.v3.Listener] "
-            "error:unsupported filter type]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError("errors validating Listener resource: ["
+                                       "field:api_listener.api_listener.value["
+                                       "envoy.config.listener.v3.Listener] "
+                                       "error:unsupported filter type]"));
 }
 
 TEST_F(ApiListenerTest, UnparsableHttpConnectionManagerConfig) {
@@ -950,23 +882,24 @@ TEST_F(ApiListenerTest, UnparsableHttpConnectionManagerConfig) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating ApiListener: ["
-            "field:api_listener.api_listener.value["
-            "envoy.extensions.filters.network.http_connection_manager.v3"
-            ".HttpConnectionManager] "
-            "error:could not parse HttpConnectionManager config]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: ["
+                "field:api_listener.api_listener.value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager] "
+                "error:could not parse HttpConnectionManager config]"));
 }
 
 //
 // TCP listener tests
 //
 
-using TcpListenerTest = XdsListenerTest;
+class TcpListenerTest : public XdsListenerTest {
+ protected:
+  TcpListenerTest() : XdsListenerTest(/*is_client=*/false) {}
+};
 
 TEST_F(TcpListenerTest, MinimumValidConfig) {
   Listener listener;
@@ -989,7 +922,7 @@ TEST_F(TcpListenerTest, MinimumValidConfig) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1049,7 +982,7 @@ TEST_F(TcpListenerTest, FilterChainMatchCriteria) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1121,14 +1054,37 @@ TEST_F(TcpListenerTest, InvalidConnectionSourceType) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:filter_chains[0].filter_chain_match.source_type "
-            "error:invalid value]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: ["
+                "field:filter_chains[0].filter_chain_match.source_type "
+                "error:invalid value]"));
+}
+
+TEST_F(TcpListenerTest, AddressNotPresent) {
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  listener.mutable_default_filter_chain()
+      ->add_filters()
+      ->mutable_typed_config()
+      ->PackFrom(hcm);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError("errors validating Listener resource: "
+                                 "[field:address error:field not present]"));
 }
 
 TEST_F(TcpListenerTest, SocketAddressNotPresent) {
@@ -1150,13 +1106,11 @@ TEST_F(TcpListenerTest, SocketAddressNotPresent) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:address.socket_address error:field not present]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: ["
+                "field:address.socket_address error:field not present]"));
 }
 
 TEST_F(TcpListenerTest, SocketAddressBadValues) {
@@ -1181,14 +1135,13 @@ TEST_F(TcpListenerTest, SocketAddressBadValues) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:address.socket_address.port_value error:invalid port; "
-            "field:address.socket_address.protocol error:value must be TCP]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:address.socket_address.port_value error:invalid port; "
+          "field:address.socket_address.protocol error:value must be TCP]"));
 }
 
 TEST_F(TcpListenerTest, UseOriginalDstNotSupported) {
@@ -1213,13 +1166,11 @@ TEST_F(TcpListenerTest, UseOriginalDstNotSupported) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:use_original_dst error:field not supported]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: ["
+                "field:use_original_dst error:field not supported]"));
 }
 
 TEST_F(TcpListenerTest, NoFilterChains) {
@@ -1232,17 +1183,15 @@ TEST_F(TcpListenerTest, NoFilterChains) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain "
-            "error:must be set if filter_chains is unset]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: ["
+                "field:default_filter_chain "
+                "error:must be set if filter_chains is unset]"));
 }
 
-TEST_F(TcpListenerTest, UnsupportedFilter) {
+TEST_F(TcpListenerTest, UnsupportedL4Filter) {
   Listener listener;
   listener.set_name("foo");
   HttpConnectionManager hcm;
@@ -1267,18 +1216,16 @@ TEST_F(TcpListenerTest, UnsupportedFilter) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.filters "
-            "error:must have exactly one filter (HttpConnectionManager -- "
-            "no other filter is supported at the moment); "
-            "field:default_filter_chain.filters[0].typed_config.value["
-            "envoy.config.listener.v3.Listener] "
-            "error:unsupported filter type]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(decode_result.resource.status(),
+            absl::InvalidArgumentError(
+                "errors validating Listener resource: ["
+                "field:default_filter_chain.filters "
+                "error:must have exactly one filter (HttpConnectionManager -- "
+                "no other filter is supported at the moment); "
+                "field:default_filter_chain.filters[0].typed_config.value["
+                "envoy.config.listener.v3.Listener] "
+                "error:unsupported filter type]"));
 }
 
 TEST_F(TcpListenerTest, BadCidrRanges) {
@@ -1309,16 +1256,15 @@ TEST_F(TcpListenerTest, BadCidrRanges) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:filter_chains[0].filter_chain_match.prefix_ranges[0]"
-            ".address_prefix error:Failed to parse address:foobar:0; "
-            "field:filter_chains[0].filter_chain_match.source_prefix_ranges[0]"
-            ".address_prefix error:Failed to parse address:invalid:0]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:filter_chains[0].filter_chain_match.prefix_ranges[0]"
+          ".address_prefix error:Failed to parse address:foobar:0; "
+          "field:filter_chains[0].filter_chain_match.source_prefix_ranges[0]"
+          ".address_prefix error:Failed to parse address:invalid:0]"));
 }
 
 TEST_F(TcpListenerTest, DuplicateMatchOnDestinationPrefixRanges) {
@@ -1356,15 +1302,14 @@ TEST_F(TcpListenerTest, DuplicateMatchOnDestinationPrefixRanges) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: [field:filter_chains "
-            "error:duplicate matching rules detected when adding filter chain: "
-            "{prefix_ranges={{address_prefix=1.2.3.0:0, prefix_len=24}, "
-            "{address_prefix=1.2.3.4:0, prefix_len=32}}}]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: [field:filter_chains "
+          "error:duplicate matching rules detected when adding filter chain: "
+          "{prefix_ranges={{address_prefix=1.2.3.0:0, prefix_len=24}, "
+          "{address_prefix=1.2.3.4:0, prefix_len=32}}}]"));
 }
 
 TEST_F(TcpListenerTest, DuplicateMatchOnTransportProtocol) {
@@ -1392,14 +1337,13 @@ TEST_F(TcpListenerTest, DuplicateMatchOnTransportProtocol) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: [field:filter_chains "
-            "error:duplicate matching rules detected when adding filter chain: "
-            "{transport_protocol=raw_buffer}]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: [field:filter_chains "
+          "error:duplicate matching rules detected when adding filter chain: "
+          "{transport_protocol=raw_buffer}]"));
 }
 
 TEST_F(TcpListenerTest, DuplicateMatchOnSourceType) {
@@ -1427,14 +1371,13 @@ TEST_F(TcpListenerTest, DuplicateMatchOnSourceType) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: [field:filter_chains "
-            "error:duplicate matching rules detected when adding filter chain: "
-            "{source_type=SAME_IP_OR_LOOPBACK}]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: [field:filter_chains "
+          "error:duplicate matching rules detected when adding filter chain: "
+          "{source_type=SAME_IP_OR_LOOPBACK}]"));
 }
 
 TEST_F(TcpListenerTest, DuplicateMatchOnSourcePrefixRanges) {
@@ -1472,15 +1415,14 @@ TEST_F(TcpListenerTest, DuplicateMatchOnSourcePrefixRanges) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: [field:filter_chains "
-            "error:duplicate matching rules detected when adding filter chain: "
-            "{source_prefix_ranges={{address_prefix=1.2.3.0:0, prefix_len=24}, "
-            "{address_prefix=1.2.3.4:0, prefix_len=32}}}]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: [field:filter_chains "
+          "error:duplicate matching rules detected when adding filter chain: "
+          "{source_prefix_ranges={{address_prefix=1.2.3.0:0, prefix_len=24}, "
+          "{address_prefix=1.2.3.4:0, prefix_len=32}}}]"));
 }
 
 TEST_F(TcpListenerTest, DuplicateMatchOnSourcePort) {
@@ -1506,14 +1448,13 @@ TEST_F(TcpListenerTest, DuplicateMatchOnSourcePort) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: [field:filter_chains "
-            "error:duplicate matching rules detected when adding filter chain: "
-            "{source_ports={8080}}]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: [field:filter_chains "
+          "error:duplicate matching rules detected when adding filter chain: "
+          "{source_ports={8080}}]"));
 }
 
 TEST_F(TcpListenerTest, DownstreamTlsContext) {
@@ -1545,7 +1486,7 @@ TEST_F(TcpListenerTest, DownstreamTlsContext) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1602,7 +1543,7 @@ TEST_F(TcpListenerTest, DownstreamTlsContextWithCaCertProviderInstance) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1661,16 +1602,15 @@ TEST_F(TcpListenerTest, SystemRootCerts) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
-            ".common_tls_context "
-            "error:system_root_certs not supported]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".common_tls_context "
+          "error:system_root_certs not supported]"));
 }
 
 TEST_F(TcpListenerTest, ClientCertificateRequired) {
@@ -1707,7 +1647,7 @@ TEST_F(TcpListenerTest, ClientCertificateRequired) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -1769,17 +1709,16 @@ TEST_F(TcpListenerTest, UnknownCertificateProviderInstance) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
-            ".common_tls_context.tls_certificate_provider_instance"
-            ".instance_name "
-            "error:unrecognized certificate provider instance name: fake]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".common_tls_context.tls_certificate_provider_instance"
+          ".instance_name "
+          "error:unrecognized certificate provider instance name: fake]"));
 }
 
 TEST_F(TcpListenerTest, UnknownTransportSocketType) {
@@ -1804,15 +1743,14 @@ TEST_F(TcpListenerTest, UnknownTransportSocketType) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "envoy.config.listener.v3.Listener].type_url "
-            "error:unsupported transport socket type]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.config.listener.v3.Listener].type_url "
+          "error:unsupported transport socket type]"));
 }
 
 TEST_F(TcpListenerTest, UnparsableDownstreamTlsContext) {
@@ -1839,15 +1777,14 @@ TEST_F(TcpListenerTest, UnparsableDownstreamTlsContext) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] "
-            "error:can't decode DownstreamTlsContext]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] "
+          "error:can't decode DownstreamTlsContext]"));
 }
 
 TEST_F(TcpListenerTest, DownstreamTlsContextInTypedStruct) {
@@ -1876,16 +1813,15 @@ TEST_F(TcpListenerTest, DownstreamTlsContextInTypedStruct) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "xds.type.v3.TypedStruct].value["
-            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] "
-            "error:can't decode DownstreamTlsContext]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "xds.type.v3.TypedStruct].value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] "
+          "error:can't decode DownstreamTlsContext]"));
 }
 
 TEST_F(TcpListenerTest, MatchSubjectAltNames) {
@@ -1920,16 +1856,15 @@ TEST_F(TcpListenerTest, MatchSubjectAltNames) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
-            ".common_tls_context "
-            "error:match_subject_alt_names not supported on servers]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".common_tls_context "
+          "error:match_subject_alt_names not supported on servers]"));
 }
 
 TEST_F(TcpListenerTest, NoTlsCertificateProvider) {
@@ -1954,16 +1889,15 @@ TEST_F(TcpListenerTest, NoTlsCertificateProvider) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] "
-            "error:TLS configuration provided but no "
-            "tls_certificate_provider_instance found]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] "
+          "error:TLS configuration provided but no "
+          "tls_certificate_provider_instance found]"));
 }
 
 TEST_F(TcpListenerTest, RequireClientCertWithoutCaCertProvider) {
@@ -1996,17 +1930,16 @@ TEST_F(TcpListenerTest, RequireClientCertWithoutCaCertProvider) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
-            ".require_client_certificate "
-            "error:client certificate required but no certificate "
-            "provider instance specified for validation]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".require_client_certificate "
+          "error:client certificate required but no certificate "
+          "provider instance specified for validation]"));
 }
 
 TEST_F(TcpListenerTest, UnsupportedFields) {
@@ -2041,20 +1974,19 @@ TEST_F(TcpListenerTest, UnsupportedFields) {
   ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(decode_result.resource.status().message(),
-            "errors validating server Listener: ["
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
-            ".ocsp_staple_policy "
-            "error:value must be LENIENT_STAPLING; "
-            "field:default_filter_chain.transport_socket.typed_config.value["
-            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
-            ".require_sni "
-            "error:field unsupported]")
-      << decode_result.resource.status();
+      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  EXPECT_EQ(
+      decode_result.resource.status(),
+      absl::InvalidArgumentError(
+          "errors validating Listener resource: ["
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".ocsp_staple_policy "
+          "error:value must be LENIENT_STAPLING; "
+          "field:default_filter_chain.transport_socket.typed_config.value["
+          "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+          ".require_sni "
+          "error:field unsupported]"));
 }
 
 }  // namespace

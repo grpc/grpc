@@ -326,20 +326,21 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
   auto listener = default_server_listener_;
   listener.clear_address();
   listener.set_name(GetServerListenerName(backends_[0]->port()));
+  auto hcm = ServerHcmAccessor().Unpack(listener);
+  *hcm.mutable_route_config() = default_server_route_config_;
+  ServerHcmAccessor().Pack(hcm, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   backends_[0]->Start();
   auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(
-      response_state->error_message,
-      absl::StrFormat(
-          "xDS response validation errors: ["
-          "resource index 0: "
-          "grpc/server?xds.resource.listening_address=127.0.0.1:%lu: "
-          "INVALID_ARGUMENT: Listener has neither address nor ApiListener]",
-          backends_[0]->port()));
-  listener = default_server_listener_;
-  listener.clear_address();
+  EXPECT_EQ(response_state->error_message,
+            absl::StrFormat(
+                "xDS response validation errors: ["
+                "resource index 0: "
+                "grpc/server?xds.resource.listening_address=127.0.0.1:%lu: "
+                "INVALID_ARGUMENT: errors validating Listener resource: ["
+                "field:address error:field not present]]",
+                backends_[0]->port()));
   listener.set_name(GetServerListenerName(backends_[1]->port()));
   balancer_->ads_service()->SetLdsResource(listener);
   backends_[1]->Start();
@@ -347,12 +348,12 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
       "xDS response validation errors: ["
       "resource index 0: "
       "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
-      "INVALID_ARGUMENT: Listener has neither address nor "
-      "ApiListener; "
+      "INVALID_ARGUMENT: errors validating Listener resource: ["
+      "field:address error:field not present]; "
       "resource index 1: "
       "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
-      "INVALID_ARGUMENT: Listener has neither address nor "
-      "ApiListener"
+      "INVALID_ARGUMENT: errors validating Listener resource: ["
+      "field:address error:field not present]"
       "]";
   const std::string expected_message1 = absl::StrFormat(
       kMessageFormat, backends_[0]->port(), backends_[1]->port());
@@ -393,7 +394,8 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
   EXPECT_EQ(response_state->error_message,
             "xDS response validation errors: ["
             "resource index 0: server.example.com: "
-            "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
+            "INVALID_ARGUMENT: errors validating Listener resource: ["
+            "field:api_listener error:field not present]]");
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 

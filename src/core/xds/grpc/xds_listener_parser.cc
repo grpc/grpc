@@ -47,6 +47,7 @@
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
@@ -188,8 +189,8 @@ void MaybeLogHttpConnectionManager(
 }
 
 XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
-    bool is_client, const XdsResourceType::DecodeContext& context,
-    XdsExtension extension, ValidationErrors* errors) {
+    const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    ValidationErrors* errors) {
   if (extension.type !=
       "envoy.extensions.filters.network.http_connection_manager.v3"
       ".HttpConnectionManager") {
@@ -247,6 +248,9 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     }
   }
   // http_filters
+  const bool is_client =
+      DownCast<GrpcXdsClient*>(context.client)->component() ==
+      GrpcXdsClient::Component::kClient;
   {
     ValidationErrors::ScopedField field(errors, ".http_filters");
     const auto& http_filter_registry =
@@ -387,25 +391,22 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   return http_connection_manager;
 }
 
-absl::StatusOr<std::shared_ptr<const XdsListenerResource>>
-LdsResourceParseClient(
+XdsListenerResource::HttpConnectionManager LdsResourceParseClient(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_ApiListener* api_listener) {
-  auto lds_update = std::make_shared<XdsListenerResource>();
-  ValidationErrors errors;
-  ValidationErrors::ScopedField field(&errors, "api_listener.api_listener");
+    const envoy_config_listener_v3_ApiListener* api_listener,
+    ValidationErrors* errors) {
+  if (api_listener == nullptr) {
+    errors->AddError("field not present");
+    return XdsListenerResource::HttpConnectionManager();
+  }
+  ValidationErrors::ScopedField field(errors, ".api_listener");
   auto* api_listener_field =
       envoy_config_listener_v3_ApiListener_api_listener(api_listener);
-  auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
-  if (extension.has_value()) {
-    lds_update->listener = HttpConnectionManagerParse(
-        /*is_client=*/true, context, std::move(*extension), &errors);
+  auto extension = ExtractXdsExtension(context, api_listener_field, errors);
+  if (!extension.has_value()) {
+    return XdsListenerResource::HttpConnectionManager();
   }
-  if (!errors.ok()) {
-    return errors.status(absl::StatusCode::kInvalidArgument,
-                         "errors validating ApiListener");
-  }
-  return std::move(lds_update);
+  return HttpConnectionManagerParse(context, std::move(*extension), errors);
 }
 
 XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
@@ -654,8 +655,7 @@ std::optional<FilterChain> FilterChainParse(
       auto extension = ExtractXdsExtension(context, typed_config, errors);
       if (extension.has_value()) {
         filter_chain.filter_chain_data->http_connection_manager =
-            HttpConnectionManagerParse(/*is_client=*/false, context,
-                                       std::move(*extension), errors);
+            HttpConnectionManagerParse(context, std::move(*extension), errors);
       }
     }
   }
@@ -912,50 +912,54 @@ XdsListenerResource::FilterChainMap BuildFilterChainMap(
   return BuildFromInternalFilterChainMap(&internal_filter_chain_map);
 }
 
-absl::StatusOr<std::shared_ptr<const XdsListenerResource>>
-LdsResourceParseServer(const XdsResourceType::DecodeContext& context,
-                       const envoy_config_listener_v3_Listener* listener) {
-  ValidationErrors errors;
+XdsListenerResource::TcpListener LdsResourceParseServer(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_listener_v3_Listener* listener,
+    ValidationErrors* errors) {
   XdsListenerResource::TcpListener tcp_listener;
   // address
   {
-    ValidationErrors::ScopedField field(&errors, "address");
-    auto address = AddressParse(
-        envoy_config_listener_v3_Listener_address(listener), &errors);
-    if (address.has_value()) tcp_listener.address = std::move(*address);
+    ValidationErrors::ScopedField field(errors, "address");
+    auto* address_proto = envoy_config_listener_v3_Listener_address(listener);
+    if (address_proto == nullptr) {
+      errors->AddError("field not present");
+    } else {
+      auto address = AddressParse(address_proto, errors);
+      if (address.has_value()) tcp_listener.address = std::move(*address);
+    }
   }
   // use_original_dst
   if (ParseBoolValue(
           envoy_config_listener_v3_Listener_use_original_dst(listener))) {
-    ValidationErrors::ScopedField field(&errors, "use_original_dst");
-    errors.AddError("field not supported");
+    ValidationErrors::ScopedField field(errors, "use_original_dst");
+    errors->AddError("field not supported");
   }
   // filter_chains
   size_t num_filter_chains = 0;
   {
-    ValidationErrors::ScopedField field(&errors, "filter_chains");
+    ValidationErrors::ScopedField field(errors, "filter_chains");
     auto* filter_chains = envoy_config_listener_v3_Listener_filter_chains(
         listener, &num_filter_chains);
     std::vector<FilterChain> parsed_filter_chains;
     parsed_filter_chains.reserve(num_filter_chains);
     for (size_t i = 0; i < num_filter_chains; i++) {
-      ValidationErrors::ScopedField field(&errors, absl::StrCat("[", i, "]"));
-      auto filter_chain = FilterChainParse(context, filter_chains[i], &errors);
+      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
+      auto filter_chain = FilterChainParse(context, filter_chains[i], errors);
       if (filter_chain.has_value()) {
         parsed_filter_chains.push_back(std::move(*filter_chain));
       }
     }
     tcp_listener.filter_chain_map =
-        BuildFilterChainMap(parsed_filter_chains, &errors);
+        BuildFilterChainMap(parsed_filter_chains, errors);
   }
   // default_filter_chain
   {
-    ValidationErrors::ScopedField field(&errors, "default_filter_chain");
+    ValidationErrors::ScopedField field(errors, "default_filter_chain");
     auto* default_filter_chain =
         envoy_config_listener_v3_Listener_default_filter_chain(listener);
     if (default_filter_chain != nullptr) {
       auto filter_chain =
-          FilterChainParse(context, default_filter_chain, &errors);
+          FilterChainParse(context, default_filter_chain, errors);
       if (filter_chain.has_value() &&
           filter_chain->filter_chain_data != nullptr) {
         tcp_listener.default_filter_chain =
@@ -963,43 +967,36 @@ LdsResourceParseServer(const XdsResourceType::DecodeContext& context,
       }
     } else if (num_filter_chains == 0) {
       // Make sure that there is at least one filter chain to use.
-      errors.AddError("must be set if filter_chains is unset");
+      errors->AddError("must be set if filter_chains is unset");
     }
   }
   // Return result.
-  if (!errors.ok()) {
-    return errors.status(absl::StatusCode::kInvalidArgument,
-                         "errors validating server Listener");
-  }
-  auto lds_update = std::make_shared<XdsListenerResource>();
-  lds_update->listener = std::move(tcp_listener);
-  return lds_update;
+  return tcp_listener;
 }
 
 absl::StatusOr<std::shared_ptr<const XdsListenerResource>> LdsResourceParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_Listener* listener) {
-  // Check whether it's a client or server listener.
-  const envoy_config_listener_v3_ApiListener* api_listener =
-      envoy_config_listener_v3_Listener_api_listener(listener);
-  const envoy_config_core_v3_Address* address =
-      envoy_config_listener_v3_Listener_address(listener);
-  // TODO(roth): Re-enable the following check once
-  // github.com/istio/istio/issues/38914 is resolved.
-  // if (api_listener != nullptr && address != nullptr) {
-  //   return absl::InvalidArgumentError(
-  //       "Listener has both address and ApiListener");
-  // }
-  if (api_listener == nullptr && address == nullptr) {
-    return absl::InvalidArgumentError(
-        "Listener has neither address nor ApiListener");
+  auto resource = std::make_shared<XdsListenerResource>();
+  ValidationErrors errors;
+  // On client side, expect an API listener; on server side, expect a
+  // TCP listener.
+  const bool is_client =
+      DownCast<GrpcXdsClient*>(context.client)->component() ==
+      GrpcXdsClient::Component::kClient;
+  if (is_client) {
+    ValidationErrors::ScopedField field(&errors, "api_listener");
+    const envoy_config_listener_v3_ApiListener* api_listener =
+        envoy_config_listener_v3_Listener_api_listener(listener);
+    resource->listener = LdsResourceParseClient(context, api_listener, &errors);
+  } else {
+    resource->listener = LdsResourceParseServer(context, listener, &errors);
   }
-  // If api_listener is present, it's for a client; otherwise, it's
-  // for a server.
-  if (api_listener != nullptr) {
-    return LdsResourceParseClient(context, api_listener);
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors validating Listener resource");
   }
-  return LdsResourceParseServer(context, listener);
+  return std::move(resource);
 }
 
 void MaybeLogListener(const XdsResourceType::DecodeContext& context,
