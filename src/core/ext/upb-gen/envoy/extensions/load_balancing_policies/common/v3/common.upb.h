@@ -15,6 +15,7 @@
 #include "envoy/config/route/v3/route_components.upb_minitable.h"
 #include "envoy/type/v3/percent.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
+#include "google/protobuf/struct.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
 #include "envoy/annotations/deprecation.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
@@ -50,10 +51,15 @@ typedef struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHash
   upb_Message UPB_PRIVATE(base);
 } envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig;
 
+typedef struct envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig {
+  upb_Message UPB_PRIVATE(base);
+} envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig;
+
 struct envoy_config_core_v3_RuntimeDouble;
 struct envoy_config_route_v3_RouteAction_HashPolicy;
 struct envoy_type_v3_Percent;
 struct google_protobuf_Duration;
+struct google_protobuf_Struct;
 struct google_protobuf_UInt32Value;
 struct google_protobuf_UInt64Value;
 
@@ -771,6 +777,109 @@ UPB_INLINE struct envoy_config_route_v3_RouteAction_HashPolicy* envoy_extensions
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
+  return sub;
+}
+
+/* envoy.extensions.load_balancing_policies.common.v3.OrcaOobReportingConfig */
+UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_new(upb_Arena* arena) {
+  return (envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig*)_upb_Message_New(&envoy__extensions__load_0balancing_0policies__common__v3__OrcaOobReportingConfig_msg_init, arena);
+}
+UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
+  envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* ret = envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__load_0balancing_0policies__common__v3__OrcaOobReportingConfig_msg_init, NULL, 0,
+                 arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* ret = envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__load_0balancing_0policies__common__v3__OrcaOobReportingConfig_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_serialize(const envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg,
+                                      upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__common__v3__OrcaOobReportingConfig_msg_init, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_serialize_ex(const envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__common__v3__OrcaOobReportingConfig_msg_init, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_clear_port_value(envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg) {
+  const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE uint32_t envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_port_value(const envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg) {
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_clear_authority(envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_StringView envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_authority(const envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg) {
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_clear_transport_socket_match_criteria(envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct google_protobuf_Struct* envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_transport_socket_match_criteria(const envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg) {
+  const struct google_protobuf_Struct* default_val = NULL;
+  const struct google_protobuf_Struct* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_has_transport_socket_match_criteria(const envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_set_port_value(envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg, uint32_t value) {
+  const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_set_authority(envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg, upb_StringView value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_set_transport_socket_match_criteria(envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg, struct google_protobuf_Struct* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_Struct* envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_mutable_transport_socket_match_criteria(
+    envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig* msg, upb_Arena* arena) {
+  struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_transport_socket_match_criteria(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Struct*)_upb_Message_New(&google__protobuf__Struct_msg_init, arena);
+    if (sub) envoy_extensions_load_balancing_policies_common_v3_OrcaOobReportingConfig_set_transport_socket_match_criteria(msg, sub);
+  }
   return sub;
 }
 

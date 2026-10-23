@@ -70,6 +70,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -125,26 +126,26 @@ RefCountedPtr<channelz::SocketNode> Http2ServerTransport::GetSocketNode()
       ->RefAsSubclass<channelz::SocketNode>();
 }
 
+RefCountedPtr<Party> Http2ServerTransport::GetTransportPartyIfNotShutdown() {
+  MutexLock lock(transport_mutex_);
+  if (GPR_UNLIKELY(shutdown_tracker_.IsShutdownInitiated(transport_mutex_))) {
+    return nullptr;
+  }
+  GRPC_DCHECK(transport_party_ != nullptr);
+  return transport_party_;
+}
+
 void Http2ServerTransport::AddData(channelz::DataSink sink) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::AddData Begin";
 
   event_engine_->Run([self = RefAsSubclass<Http2ServerTransport>(),
                       sink = std::move(sink)]() mutable {
-    RefCountedPtr<Party> party = nullptr;
-    {
-      MutexLock lock(self->transport_mutex_);
-      if (GPR_LIKELY(!self->shutdown_tracker_.IsShutdownInitiated(
-              self->transport_mutex_))) {
-        GRPC_DCHECK(self->transport_party_ != nullptr);
-        party = self->transport_party_;
-      } else {
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport::AddData Transport is closed.";
-      }
-    }
-
+    RefCountedPtr<Party> party = self->GetTransportPartyIfNotShutdown();
     ExecCtx exec_ctx;
-    if (party != nullptr) {
+    if (GPR_UNLIKELY(party == nullptr)) {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::AddData: Transport is closed.";
+    } else {
       self->SpawnAddChannelzData(std::move(party), std::move(sink));
     }
     self.reset();  // Cleanup with exec_ctx in scope
@@ -306,13 +307,17 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
   }
 
   if (stream == nullptr) {
-    // TODO(tjagtap) : [PH2][P2] : Implement the correct behaviour later.
     // RFC9113 : If a DATA frame is received whose stream is not in the "open"
     // or "half-closed (local)" state, the recipient MUST respond with a stream
     // error (Section 5.4.2) of type STREAM_CLOSED.
+    // However RFC9113 Section 5.1 also says that
+    // an endpoint MUST ignore frames received on a closed stream after it has
+    // sent RST_STREAM, because the peer may have already sent frames that
+    // cannot be withdrawn. We cannot distinguish between the two cases once
+    // the stream is cleaned up, so we ignore the frame. This matches CHTTP2.
     GRPC_HTTP2_SERVER_DLOG
         << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) { stream_id="
-        << frame.stream_id << "} Lookup Failed";
+        << frame.stream_id << "} Lookup Failed. Ignoring the frame.";
     return Http2Status::Ok();
   }
 
@@ -707,7 +712,7 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata";
   if (assembler.IsReady()) {
-    ValueOrHttp2Status<ServerMetadataHandle> read_result =
+    ValueOrHttp2Status<ClientMetadataHandle> read_result =
         assembler.ReadMetadata(read_context_.parser(),
                                !read_context_.HeaderHasEndStream(),
                                /*max_header_list_size_soft_limit=*/
@@ -715,7 +720,7 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
                                /*max_header_list_size_hard_limit=*/
                                settings_->acked().max_header_list_size());
     if (read_result.IsOk()) {
-      ServerMetadataHandle metadata = TakeValue(std::move(read_result));
+      ClientMetadataHandle metadata = TakeValue(std::move(read_result));
       // TODO(tjagtap): [PH2][P0] : Might be worth differentiating between
       // initial and trailing metadata based on the number of header frames
       // received.
@@ -742,6 +747,8 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
         GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata "
                                   "SpawnPushServerInitialMetadata";
         metadata->Set(PeerString(), read_context_.peer_string());
+        metadata->Set(LocalAddressString(),
+                      read_context_.local_address_string());
         return IncomingStream(std::move(metadata), read_context_.GetStreamId());
       }
       return Http2Status::Ok();
@@ -879,8 +886,10 @@ absl::Status Http2ServerTransport::PrepareControlFrames() {
   }
 
   if (apply_settings_result.should_spawn_security_frame_loop) {
+    EventEngine::Endpoint* const endpoint =
+        endpoint_.GetEventEngineEndpoint().get();
     const SecurityFrameHandler::EndpointExtensionState state =
-        security_frame_handler_->Initialize(event_engine_);
+        security_frame_handler_->Initialize(endpoint, event_engine_);
     if (state.is_set) {
       SpawnInfallibleTransportParty("SecurityFrameLoop",
                                     UntilTransportClosed(SecurityFrameLoop()));
@@ -1382,7 +1391,8 @@ auto Http2ServerTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
 
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
-      Seq(Map(HandleMetadataAndMessages(stream),
+      Seq(
+          Map(HandleMetadataAndMessages(stream),
               [stream = stream.get()](absl::Status&& status) {
                 GRPC_HTTP2_SERVER_DLOG
                     << "Http2ServerTransport::CallOutboundLoop "
@@ -1401,7 +1411,16 @@ auto Http2ServerTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
                          "Received Server Trailing Metadata";
                   return send_trailing_metadata(std::move(metadata));
                 });
-          }));
+          },
+          // Do not remove this no-op step. When a Seq step resolves, its
+          // promise, along with everything it captures, is destroyed only when
+          // the Seq moves on to the next step.
+          // Without this step, the previous step's promise, which holds a ref
+          // to `stream` through send_trailing_metadata, would stay alive until
+          // the CallOutboundLoop participant is destroyed, which can race with
+          // ~Http2ServerTransport. With this step, the stream ref is dropped as
+          // soon as send_trailing_metadata resolves.
+          [](absl::Status status) { return status; }));
 }
 
 absl::Status Http2ServerTransport::InitializeStream(
@@ -1675,14 +1694,17 @@ absl::Status Http2ServerTransport::UpdateAllStreamsWritability() {
 // Ping Keepalive and Goaway
 
 void Http2ServerTransport::MaybeSpawnPingTimeout(
-    std::optional<uint64_t> opaque_data) {
-  if (opaque_data.has_value()) {
-    SpawnGuardedTransportParty(
-        "PingTimeout", [self = RefAsSubclass<Http2ServerTransport>(),
-                        opaque_data = *opaque_data]() {
-          return self->ping_manager_->TimeoutPromise(opaque_data);
-        });
+    std::optional<PingManager::PingTimeoutArgs> ping_timeout_args) {
+  if (!ping_timeout_args.has_value()) {
+    return;
   }
+  SpawnGuardedTransportParty(
+      "PingTimeout",
+      [self = RefAsSubclass<Http2ServerTransport>(),
+       ping_timeout_args = std::move(*ping_timeout_args)]() mutable {
+        return self->ping_manager_->TimeoutPromise(
+            std::move(ping_timeout_args));
+      });
 }
 void Http2ServerTransport::MaybeSpawnDelayedPing(
     std::optional<Duration> delayed_ping_wait) {
@@ -1724,34 +1746,48 @@ void Http2ServerTransport::MaybeSpawnKeepaliveLoop() {
   }
 }
 
-auto Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
-  SpawnGuardedTransportParty(
-      "GracefulGoaway",
-      [self = RefAsSubclass<Http2ServerTransport>(),
-       debug_data = std::forward<Slice>(debug_data)]() mutable {
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport::SpawnGracefulGoawayPromise: "
-               "Initiated graceful GOAWAY";
-        return self->UntilTransportClosed(Map(
-            self->goaway_manager_.RequestGoaway(
-                Http2ErrorCode::kNoError, std::move(debug_data),
-                self->GetLastStreamId(), /*immediate=*/false),
-            [self](absl::Status status) {
-              bool should_close = false;
-              {
-                MutexLock lock(self->transport_mutex_);
-                if (self->GetActiveStreamCountLocked() == 0) {
-                  should_close = true;
-                }
-              }
-              if (should_close) {
-                self->MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
-                    absl::StatusCode::kUnavailable,
-                    "Graceful shutdown complete."));
-              }
-              return status;
-            }));
-      });
+void Http2ServerTransport::SpawnGracefulGoawayPromise(Slice&& debug_data) {
+  event_engine_->Run([self = RefAsSubclass<Http2ServerTransport>(),
+                      debug_data = std::move(debug_data)]() mutable {
+    RefCountedPtr<Party> party = self->GetTransportPartyIfNotShutdown();
+    ExecCtx exec_ctx;
+    if (GPR_UNLIKELY(party == nullptr)) {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::SpawnGracefulGoawayPromise: Transport is "
+             "closed.";
+    } else {
+      self->SpawnGuarded(
+          party, "GracefulGoaway",
+          [self, debug_data = std::move(debug_data)]() mutable {
+            GRPC_HTTP2_SERVER_DLOG
+                << "Http2ServerTransport::SpawnGracefulGoawayPromise: "
+                   "Initiated graceful GOAWAY";
+            return self->UntilTransportClosed(
+                Map(self->goaway_manager_.RequestGoaway(
+                        Http2ErrorCode::kNoError, std::move(debug_data),
+                        self->GetLastStreamId(), /*immediate=*/false),
+                    [self](absl::Status status) {
+                      bool should_close = false;
+                      {
+                        MutexLock lock(self->transport_mutex_);
+                        if (self->GetActiveStreamCountLocked() == 0) {
+                          should_close = true;
+                        }
+                      }
+                      if (should_close) {
+                        self->MaybeSpawnCloseTransport(
+                            Http2Status::AbslConnectionError(
+                                absl::StatusCode::kUnavailable,
+                                "Graceful shutdown complete."));
+                      }
+                      return status;
+                    }));
+          });
+    }
+    // Cleanup with exec_ctx in scope.
+    party.reset();
+    self.reset();
+  });
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2126,9 +2162,11 @@ Http2ServerTransport::Http2ServerTransport(
       is_goaway_received_(false),
       should_reset_ping_clock_(false),
       max_concurrent_streams_overload_protection_(false),
+      http2_transport_stats_(channel_args),
       read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient,
                     GetMaxSecurityFrameSize(channel_args),
-                    GetPingOnRstStreamPercent(channel_args, kIsClient)),
+                    GetPingOnRstStreamPercent(channel_args, kIsClient),
+                    http2_transport_stats_),
       transport_write_context_(kIsClient),
       last_incoming_stream_id_(0u),
       last_accepted_stream_id_(0u),
@@ -2203,6 +2241,10 @@ void Http2ServerTransport::SetCallDestination(
   InitializeAndSpawnTransportLoops();
 }
 
+// PerformOp() can be invoked on any thread. So all processing in this function
+// must be synchronous and must not block. Any work that may block or run the
+// transport party must be deferred off the caller's thread (e.g.
+// SpawnGracefulGoawayPromise() hops to the EventEngine).
 void Http2ServerTransport::PerformOp(grpc_transport_op* op) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp Begin";
   bool did_stuff = false;

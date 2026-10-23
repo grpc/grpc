@@ -32,6 +32,7 @@
 #include "src/core/util/sync.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -362,12 +363,14 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   // Helper for handling the client half-close event, which races with the
   // events on the response path and can therefore show up at any point once
-  // the request body has been processed.
+  // the request body has been processed.  On the client side, the test fails
+  // if the half-close is not seen by the time this object is destroyed.
   class ClientHalfCloseHandler {
    public:
     explicit ClientHalfCloseHandler(FakeExtProcService::Stream* stream)
         : stream_(stream) {}
 
+    ~ClientHalfCloseHandler();
     void Handle(const ProcessingRequest& request);
 
     // Wrapper for GetNextRequest() that handles the client half-close event
@@ -489,11 +492,27 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void SetUp() override {
+    if (GetParam().filter_on_server() &&
+        !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+      GTEST_SKIP()
+          << "test requires xds_server_filter_chain_per_route experiment";
+    }
+    // TODO(rishesh): [PH2] Server-side ext_proc crashes with PH2 server, and
+    // client-side ext_proc tests are flaky with PH2 server due to a data race
+    // in ServerCall::failed_before_recv_message().
+    SKIP_TEST_FOR_PH2_SERVER("[PH2] ext_proc is not yet supported with PH2");
+    env_var_.emplace(GetParam().filter_on_server()
+                         ? "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER"
+                         : "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
     InitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
                /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/nullptr);
-    CreateAndStartBackends(1);
+    // The backend is not started until StartBackendServer() is called.
+    // For server-side tests, this ensures the server does not accept a
+    // connection using the default listener (without the ext_proc filter)
+    // before it receives the updated listener with the ext_proc filter.
+    CreateBackends(1, /*xds_enabled=*/GetParam().filter_on_server());
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     })));
@@ -502,18 +521,27 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void TearDown() override {
-    ext_proc_server_->Shutdown();
+    if (ext_proc_server_ != nullptr) ext_proc_server_->Shutdown();
     XdsEnd2endTest::TearDown();
   }
 
-  Listener BuildListenerWithExtProcFilter(const ExternalProcessor& ext_proc) {
-    Listener listener = default_listener_;
-    HttpConnectionManager hcm = ClientHcmAccessor().Unpack(listener);
+  Listener BuildListenerWithExtProcFilter(
+      const ExternalProcessor& ext_proc) const {
+    Listener listener;
+    std::unique_ptr<HcmAccessor> hcm_accessor;
+    if (GetParam().filter_on_server()) {
+      listener = default_server_listener_;
+      hcm_accessor = std::make_unique<ServerHcmAccessor>();
+    } else {
+      listener = default_listener_;
+      hcm_accessor = std::make_unique<ClientHcmAccessor>();
+    }
+    HttpConnectionManager hcm = hcm_accessor->Unpack(listener);
     HttpFilter* filter0 = hcm.mutable_http_filters(0);
     *hcm.add_http_filters() = *filter0;
     filter0->set_name(kFilterInstanceName);
     filter0->mutable_typed_config()->PackFrom(ext_proc);
-    ClientHcmAccessor().Pack(hcm, &listener);
+    hcm_accessor->Pack(hcm, &listener);
     return listener;
   }
 
@@ -533,12 +561,26 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     *overrides->mutable_response_attributes() = ext_proc.response_attributes();
     google::protobuf::Any filter_config;
     filter_config.PackFrom(per_route);
-    RouteConfiguration new_route_config = default_route_config_;
+    RouteConfiguration new_route_config = GetParam().filter_on_server()
+                                              ? default_server_route_config_
+                                              : default_route_config_;
     auto* config_map = new_route_config.mutable_virtual_hosts(0)
                            ->mutable_routes(0)
                            ->mutable_typed_per_filter_config();
     (*config_map)[std::string(kFilterInstanceName)] = std::move(filter_config);
     return new_route_config;
+  }
+
+  void SetListenerAndRouteConfiguration(
+      BalancerServerThread* balancer, const Listener& listener,
+      const RouteConfiguration& route_config) {
+    if (GetParam().filter_on_server()) {
+      SetServerListenerNameAndRouteConfiguration(
+          balancer, listener, backends_[0]->port(), route_config);
+    } else {
+      XdsEnd2endTest::SetListenerAndRouteConfiguration(balancer, listener,
+                                                       route_config);
+    }
   }
 
   void SetFilterConfig(const ExternalProcessor& ext_proc) {
@@ -560,9 +602,19 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInListener: {
         Listener listener = BuildListenerWithExtProcFilter(ext_proc);
         SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                         default_route_config_);
+                                         GetParam().filter_on_server()
+                                             ? default_server_route_config_
+                                             : default_route_config_);
         break;
       }
+    }
+  }
+
+  void StartBackendServer() {
+    StartBackend(0);
+    if (GetParam().filter_on_server()) {
+      EXPECT_THAT(backends_[0]->GetNextStatus(),
+                  ::testing::Optional(absl::OkStatus()));
     }
   }
 
@@ -575,16 +627,19 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     return *ext_proc_server_->ext_proc_service();
   }
 
-  grpc_core::testing::ScopedExperimentalEnvVar env_var_{
-      "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT"};
+  std::optional<grpc_core::testing::ScopedExperimentalEnvVar> env_var_;
   std::unique_ptr<ExtProcServerThread> ext_proc_server_;
 };
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsExtProcEnd2endTest,
-    ::testing::Values(XdsTestType(),
-                      XdsTestType().set_filter_config_setup(
-                          XdsTestType::kHttpFilterConfigInRoute)),
+    ::testing::Values(
+        XdsTestType(),
+        XdsTestType().set_filter_config_setup(
+            XdsTestType::kHttpFilterConfigInRoute),
+        XdsTestType().set_filter_on_server(),
+        XdsTestType().set_filter_on_server().set_filter_config_setup(
+            XdsTestType::kHttpFilterConfigInRoute)),
     &XdsTestType::Name);
 
 MATCHER(IsStatusOk, "") {
@@ -633,6 +688,20 @@ MATCHER_P2(MatchesRequestBody, body_matcher, end_of_stream,
                                        result_listener);
 }
 
+MATCHER(MatchesRequestBodyDrainComplete,
+        "matches request_body with drain_complete = true") {
+  if (!arg.has_request_body()) {
+    *result_listener << "request does not have request_body";
+    return false;
+  }
+  const auto& request_body = arg.request_body();
+  if (!request_body.drain_complete()) {
+    *result_listener << "expected drain_complete to be true";
+    return false;
+  }
+  return true;
+}
+
 MATCHER_P2(MatchesResponseHeaders, headers_matcher, end_of_stream,
            "matches response_headers with given headers and end_of_stream") {
   if (!arg.has_response_headers()) {
@@ -672,6 +741,20 @@ MATCHER_P2(MatchesResponseBody, body_matcher, end_of_stream,
   }
   return ::testing::ExplainMatchResult(body_matcher, response_body.body(),
                                        result_listener);
+}
+
+MATCHER(MatchesResponseBodyDrainComplete,
+        "matches response_body with drain_complete = true") {
+  if (!arg.has_response_body()) {
+    *result_listener << "request does not have response_body";
+    return false;
+  }
+  const auto& response_body = arg.response_body();
+  if (!response_body.drain_complete()) {
+    *result_listener << "expected drain_complete to be true";
+    return false;
+  }
+  return true;
 }
 
 MATCHER_P(MatchesResponseTrailers, trailers_matcher,
@@ -716,6 +799,14 @@ MATCHER_P(EchoResponseMessageIs, message_matcher,
 // they use matchers defined above.
 //
 
+// TODO(rishesh): The server-side filter does not reliably observe client
+// half-close yet, so we only verify it on the client side.
+XdsExtProcEnd2endTest::ClientHalfCloseHandler::~ClientHalfCloseHandler() {
+  if (!GetParam().filter_on_server()) {
+    EXPECT_TRUE(seen_) << "client half-close not seen";
+  }
+}
+
 void XdsExtProcEnd2endTest::ClientHalfCloseHandler::Handle(
     const ProcessingRequest& request) {
   EXPECT_FALSE(seen_) << "duplicate client half-close event";
@@ -734,6 +825,9 @@ XdsExtProcEnd2endTest::ClientHalfCloseHandler::MaybeHandle(
 }
 
 void XdsExtProcEnd2endTest::ClientHalfCloseHandler::HandleIfNotYetSeen() {
+  // TODO(rishesh): The server-side filter does not observe client half-close
+  // yet, so don't wait for it.
+  if (GetParam().filter_on_server()) return;
   if (seen_) return;
   auto request = stream_->GetNextRequest();
   ASSERT_TRUE(request.has_value()) << "timed out waiting for client half-close";
@@ -753,6 +847,7 @@ TEST_P(XdsExtProcEnd2endTest, ProcessingModeAllEnabledSuccess) {
                              .SetResponseBodyMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   RpcOptions rpc_options;
   rpc_options.set_echo_metadata_initially(true);
   AsyncRpc rpc;
@@ -850,6 +945,7 @@ TEST_P(XdsExtProcEnd2endTest,
                              .SetResponseHeaderMode(true)
                              .Build();
   SetFilterConfig(ext_proc_config);
+  StartBackendServer();
   AsyncRpc rpc;
   rpc.StartRpc(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
