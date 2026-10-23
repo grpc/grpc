@@ -145,9 +145,13 @@ OrphanablePtr<ExternalAccountCredentials::FetchBody>
 UrlExternalAccountCredentials::RetrieveSubjectToken(
     Timestamp deadline,
     absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) {
+  // Take the path and the query from the parsed URL rather than passing a path
+  // that still contains the query string: the request target is built with
+  // URI::EncodedPathAndQueryParams(), so a query smuggled through the path
+  // argument has its delimiters percent-encoded and never reaches the server.
   auto url_for_request =
-      URI::Create(url_.scheme(), url_.user_info(), url_.host_port(),
-                  url_full_path_, {} /* query params */, "" /* fragment */);
+      URI::Create(url_.scheme(), url_.user_info(), url_.host_port(), url_.path(),
+                  url_.query_parameter_pairs(), "" /* fragment */);
   if (!url_for_request.ok()) {
     return MakeOrphanable<NoOpFetchBody>(event_engine(), std::move(on_done),
                                          url_for_request.status());
