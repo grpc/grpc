@@ -1561,6 +1561,74 @@ TEST_P(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
+TEST_P(StreamDataQueueTest,
+       PartialMessageFlowControlStallThenResetCountsOnlySentBytes) {
+  // Verify that when a large message is partially sent due to flow control
+  // limits and the stream is subsequently reset, outgoing_stats only counts the
+  // bytes actually emitted into DATA frames, not the unsent bytes remaining in
+  // the disassembler.
+  HPackCompressor encoder;
+  TransportWriteContext write_context(GetParam());
+  write_context.StartWriteCycle();
+  const uint32_t max_frame_length = 100u;
+  const uint32_t stream_fc_tokens = 75u;
+  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10u);
+  stream_data_queue->SetStreamId(/*stream_id=*/1u,
+                                 kAllowTrueBinaryMetadataSetting);
+
+  // Step 1: Enqueue initial metadata and a 100-byte message (total wire DATA
+  // payload = 5B gRPC header + 100B data = 105 bytes).
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(100u)), 0u),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+
+  // Step 2: Dequeue with max_fc_tokens = 75u. Flow control allows 5B gRPC
+  // header + 70B message data into one DATA frame; 30B remain stalled in
+  // message_disassembler_.
+  FrameSender frame_sender1 = write_context.GetWriteCycle().GetFrameSender();
+  const StreamDataQueue<ClientMetadataHandle>::DequeueResult result1 =
+      stream_data_queue->DequeueFrames(
+          /*max_fc_tokens=*/75u, max_frame_length, stream_fc_tokens, encoder,
+          frame_sender1, /*can_send_reset_stream=*/false);
+  EXPECT_EQ(result1.flow_control_tokens_consumed, 75u);
+  EXPECT_FALSE(result1.is_writable);
+  // Only the 70 bytes actually placed into the DATA frame must be counted in
+  // data_bytes (not 100 bytes).
+  EXPECT_EQ(result1.outgoing_stats.data_bytes, 70u);
+  EXPECT_EQ(result1.outgoing_stats.header_bytes, kPathDemoServiceStep.size());
+  // Framing bytes = 9B HEADERS frame header + 9B DATA frame header +
+  // 5B gRPC message prefix.
+  EXPECT_EQ(result1.outgoing_stats.framing_bytes,
+            kFrameHeaderSize + kFrameHeaderSize + kGrpcHeaderSizeInBytes);
+
+  // Step 3: Cancel/reset the stream while the remaining 30 bytes are still
+  // stalled in the disassembler.
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+  FrameSender frame_sender2 = write_context.GetWriteCycle().GetFrameSender();
+  const StreamDataQueue<ClientMetadataHandle>::DequeueResult result2 =
+      stream_data_queue->DequeueFrames(
+          /*max_fc_tokens=*/0u, max_frame_length, /*stream_fc_tokens=*/0u,
+          encoder, frame_sender2, /*can_send_reset_stream=*/true);
+  EXPECT_TRUE(result2.IsResetStreamDequeued());
+  // Resetting must only add the 13-byte RST_STREAM frame (9B header + 4B code)
+  // and 0 additional data_bytes.
+  EXPECT_EQ(result2.outgoing_stats.framing_bytes, kFrameHeaderSize + 4u);
+  EXPECT_EQ(result2.outgoing_stats.header_bytes, 0u);
+  EXPECT_EQ(result2.outgoing_stats.data_bytes, 0u);
+}
+
 INSTANTIATE_TEST_SUITE_P(StreamDataQueueTest, StreamDataQueueTest,
                          ::testing::Bool());
 

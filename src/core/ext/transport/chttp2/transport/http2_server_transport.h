@@ -66,6 +66,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
@@ -520,8 +521,9 @@ class Http2ServerTransport final : public ServerTransport,
   // creating the stream object.
   Http2Status ValidateIncomingStream(uint32_t stream_id);
 
-  Http2Status IncomingStream(ClientMetadataHandle&& metadata,
-                             uint32_t stream_id);
+  Http2Status IncomingStream(
+      ClientMetadataHandle&& metadata, uint32_t stream_id,
+      const grpc_transport_one_way_stats& initial_metadata_stats);
 
   // This MUST be called from the transport party only.
   // Recomputes the MAX_CONCURRENT_STREAMS that we advertise to the peer, based

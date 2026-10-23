@@ -490,6 +490,10 @@ void MaybeAddStreamWindowUpdateFrame(Stream& stream,
         << (increment == 0 ? ". The frame will NOT be sent for increment 0"
                            : "");
     if (increment > 0) {
+      // Account for the 9-byte frame header and 4-byte increment payload.
+      stream.AddOutgoingBytes({/*framing_bytes=*/kFrameHeaderSize + 4u,
+                               /*data_bytes=*/0u,
+                               /*header_bytes=*/0u});
       frame_sender.AddRegularFrame(
           Http2WindowUpdateFrame{stream.GetStreamId(), increment});
     }
