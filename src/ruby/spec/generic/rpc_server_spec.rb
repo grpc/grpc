@@ -13,12 +13,6 @@
 # limitations under the License.
 require 'spec_helper'
 
-def load_test_certs
-  test_root = File.join(File.dirname(File.dirname(__FILE__)), 'testdata')
-  files = ['ca.pem', 'server1.key', 'server1.pem']
-  files.map { |f| File.open(File.join(test_root, f)).read }
-end
-
 def check_md(wanted_md, received_md)
   wanted_md.zip(received_md).each do |w, r|
     w.each do |key, value|
