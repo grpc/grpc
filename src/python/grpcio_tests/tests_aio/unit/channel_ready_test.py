@@ -29,6 +29,8 @@ from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
+_SLEEP_FOR_CLEANUP_SEC = 0.001
+
 
 class TestChannelReady(AioTestBase):
     async def setUp(self):
@@ -36,10 +38,11 @@ class TestChannelReady(AioTestBase):
             listen=False, sock_options=(socket.SO_REUSEADDR,)
         )
         self._channel = aio.insecure_channel(f"{address}:{self._port}")
-        self._socket.close()
 
     async def tearDown(self):
+        self._socket.close()
         await self._channel.close()
+        await asyncio.sleep(_SLEEP_FOR_CLEANUP_SEC)
 
     async def test_channel_ready_success(self):
         # Start `channel_ready` as another Task
@@ -63,9 +66,6 @@ class TestChannelReady(AioTestBase):
             if server:
                 await server.stop(None)
 
-    @unittest.skip(
-        "skipping due to flake: https://github.com/grpc/grpc/issues/37949"
-    )
     async def test_channel_ready_blocked(self):
         with self.assertRaises(asyncio.TimeoutError):
             await asyncio.wait_for(
