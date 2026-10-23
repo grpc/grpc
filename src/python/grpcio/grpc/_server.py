@@ -400,6 +400,9 @@ class _Context(grpc.ServicerContext):
     def invocation_metadata(self) -> Optional[MetadataType]:
         return self._rpc_event.invocation_metadata
 
+    def experimental_authority(self) -> str:
+        return self._rpc_event.call_details.host.decode('utf-8')
+
     def peer(self) -> str:
         return _common.decode(self._rpc_event.call.peer())
 
