@@ -273,6 +273,37 @@ class CallSpine final : public Party, public channelz::DataSource {
         });
   }
 
+  // Variants of the above that invoke on_done(bool ok) on this party once the
+  // push completes. They are serialized with the other spawned operations in
+  // the same direction.
+  template <typename OnDone>
+  void SpawnPushServerToClientMessage(MessageHandle msg, OnDone on_done) {
+    server_to_client_serializer()->Spawn(
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>(),
+         on_done = std::move(on_done)]() mutable {
+          return Map(self->PushServerToClientMessage(std::move(msg)),
+                     [self, on_done = std::move(on_done)](auto r) mutable {
+                       self->CancelIfFailed(r);
+                       on_done(IsStatusOk(r));
+                       return Empty{};
+                     });
+        });
+  }
+
+  template <typename OnDone>
+  void SpawnPushClientToServerMessage(MessageHandle msg, OnDone on_done) {
+    client_to_server_serializer()->Spawn(
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>(),
+         on_done = std::move(on_done)]() mutable {
+          return Map(self->PushClientToServerMessage(std::move(msg)),
+                     [self, on_done = std::move(on_done)](auto r) mutable {
+                       self->CancelIfFailed(r);
+                       on_done(IsStatusOk(r));
+                       return Empty{};
+                     });
+        });
+  }
+
   void SpawnFinishSends() {
     client_to_server_serializer()->Spawn([self = RefAsSubclass<CallSpine>()]() {
       self->FinishSends();
@@ -404,6 +435,15 @@ class CallInitiator {
   void SpawnPushMessage(MessageHandle message) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnPushClientToServerMessage(std::move(message));
+  }
+
+  // As above, but invokes on_done(bool ok) on this call's party once the push
+  // completes.
+  template <typename OnDone>
+  void SpawnPushMessage(MessageHandle message, OnDone on_done) {
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
+    spine_->SpawnPushClientToServerMessage(std::move(message),
+                                           std::move(on_done));
   }
 
   void FinishSends() {
@@ -556,6 +596,14 @@ class CallHandler {
 
   void SpawnPushMessage(MessageHandle message) {
     spine_->SpawnPushServerToClientMessage(std::move(message));
+  }
+
+  // As above, but invokes on_done(bool ok) on this call's party once the push
+  // completes.
+  template <typename OnDone>
+  void SpawnPushMessage(MessageHandle message, OnDone on_done) {
+    spine_->SpawnPushServerToClientMessage(std::move(message),
+                                           std::move(on_done));
   }
 
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
