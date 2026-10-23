@@ -218,7 +218,11 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
   if (service.size > MAX_SERVICE_NAME_LENGTH) {
     return false;
   }
-  service_name->assign(service.data, service.size);
+  if (service.data != nullptr) {
+    service_name->assign(service.data, service.size);
+  } else {
+    service_name->clear();
+  }
   return true;
 }
 
