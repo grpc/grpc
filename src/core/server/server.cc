@@ -1804,6 +1804,8 @@ grpc_call_error Server::RequestRegisteredCall(
 // Server::ChannelData::ConnectivityWatcher
 //
 
+// TODO(roth): Remove this as part of removing the
+// server_connection_management experiment.
 class Server::ChannelData::ConnectivityWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
