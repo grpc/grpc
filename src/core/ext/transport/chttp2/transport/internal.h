@@ -769,6 +769,10 @@ struct grpc_chttp2_stream {
 
   bool parsed_trailers_only = false;
 
+  // The server returned an HTTP error with a non-gRPC content type. Its DATA
+  // frames contain an HTTP error body, not gRPC messages.
+  bool discard_non_grpc_response_data = false;
+
   bool final_metadata_requested = false;
   bool received_last_frame = false;  // protected by t combiner
 
