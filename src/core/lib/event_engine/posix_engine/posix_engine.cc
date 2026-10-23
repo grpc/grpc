@@ -398,6 +398,13 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
 
 std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine(
     Options options) {
+  if (options.reserve_threads > static_cast<int>(Options::kMaxReserveThreads)) {
+    LOG(WARNING) << "PosixEventEngine reserve_threads ("
+                 << options.reserve_threads << ") is above the maximum of "
+                 << Options::kMaxReserveThreads << ". Using "
+                 << Options::kMaxReserveThreads << ".";
+    options.reserve_threads = Options::kMaxReserveThreads;
+  }
   // Can't use make_shared as ctor is private
   std::shared_ptr<PosixEventEngine> engine(new PosixEventEngine(options));
   RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
