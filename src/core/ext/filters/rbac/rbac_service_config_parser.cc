@@ -351,7 +351,9 @@ void RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonPostLoad(
   if (range_match.has_value()) {
     set_header_matcher(HeaderMatcher::Create(name, HeaderMatcher::Type::kRange,
                                              "", range_match->start,
-                                             range_match->end, invert_match));
+                                             range_match->end,
+                                             /*present_match=*/false,
+                                             invert_match));
     return;
   }
   auto string_match = LoadJsonObjectField<StringMatch>(

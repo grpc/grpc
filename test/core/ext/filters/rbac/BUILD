@@ -40,10 +40,12 @@ grpc_cc_test(
         "//:grpc_service_config_impl",
         "//:ref_counted_ptr",
         "//src/core:grpc_audit_logging",
+        "//src/core:grpc_rbac_engine",
         "//src/core:grpc_rbac_filter",
         "//src/core:grpc_service_config",
         "//src/core:json_writer",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )

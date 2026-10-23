@@ -23,10 +23,13 @@
 #include <string>
 
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/lib/security/authorization/authorization_engine.h"
+#include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "test/core/test_util/evaluate_args_test_util.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -521,6 +524,73 @@ TEST_F(RbacServiceConfigParsingTest, HeaderMatcherVariousTypes) {
   ASSERT_NE(parsed_rbac_config, nullptr);
   ASSERT_NE(parsed_rbac_config->authorization_engine(0), nullptr);
   EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->num_policies(), 1);
+}
+
+// Regression test: a rangeMatch header matcher with "invertMatch":true must
+// actually invert. The parser used to call HeaderMatcher::Create() for the
+// range case with the invert flag in the present_match argument slot, so the
+// real invert_match defaulted to false and the inversion was silently dropped
+// -- a request whose header fell inside the range matched a policy that was
+// written to match values *outside* the range, which can fail open for an
+// ALLOW rule.
+TEST_F(RbacServiceConfigParsingTest, HeaderRangeMatchInvertMatchIsApplied) {
+  // ALLOW only requests whose "range-header" is NOT in [100, 200).
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      {}\n"
+      "    ],\n"
+      "    \"rbacPolicy\": [{\n"
+      "      \"rules\":{\n"
+      "        \"action\":0,\n"
+      "        \"policies\":{\n"
+      "          \"policy\":{\n"
+      "            \"permissions\":[\n"
+      "              {\"header\":{\"name\":\"range-header\", \"rangeMatch\":{\n"
+      "                \"start\":100, \"end\":200}, \"invertMatch\":true}}\n"
+      "            ],\n"
+      "            \"principals\":[\n"
+      "              {\"any\":true}\n"
+      "            ]\n"
+      "          }\n"
+      "        }\n"
+      "      }\n"
+      "    } ]\n"
+      "  } ]\n"
+      "}";
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  const auto* vector_ptr =
+      (*service_config)->GetMethodParsedConfigVector(grpc_empty_slice());
+  ASSERT_NE(vector_ptr, nullptr);
+  auto* parsed_rbac_config = static_cast<RbacMethodParsedConfig*>(
+      ((*vector_ptr)[RbacServiceConfigParser::ParserIndex()]).get());
+  ASSERT_NE(parsed_rbac_config, nullptr);
+  const GrpcAuthorizationEngine* engine =
+      parsed_rbac_config->authorization_engine(0);
+  ASSERT_NE(engine, nullptr);
+
+  // Header value inside [100, 200): the inverted matcher must NOT match, so the
+  // ALLOW policy does not apply and the request is denied. Before the fix this
+  // returned kAllow because the inversion was dropped.
+  {
+    EvaluateArgsTestUtil util;
+    util.AddPairToMetadata("range-header", "150");
+    AuthorizationEngine::Decision decision =
+        engine->Evaluate(util.MakeEvaluateArgs());
+    EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
+  }
+  // Header value outside [100, 200): the inverted matcher matches, so the ALLOW
+  // policy applies and the request is allowed.
+  {
+    EvaluateArgsTestUtil util;
+    util.AddPairToMetadata("range-header", "250");
+    AuthorizationEngine::Decision decision =
+        engine->Evaluate(util.MakeEvaluateArgs());
+    EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
+  }
 }
 
 TEST_F(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
