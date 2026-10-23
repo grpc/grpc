@@ -19,6 +19,7 @@
 
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "test/core/test_util/fake_stats_plugin.h"
@@ -105,7 +106,7 @@ void BM_IncrementHistogramWithFakeStatsPlugin(benchmark::State& state) {
                        stats_plugin_group.get());
   }
 }
-BENCHMARK(BM_IncrementHistogramWithFakeStatsPlugin)->ThreadRange(1, 64);
+BENCHMARK(BM_IncrementHistogramWithFakeStatsPlugin);
 
 void BM_AddCounterWithOTelPlugin(benchmark::State& state) {
   grpc_core::GlobalStatsPluginRegistryTestPeer::
@@ -152,6 +153,7 @@ void BM_AddCounterWithLabelsWithOTelPlugin(benchmark::State& state) {
 BENCHMARK(BM_AddCounterWithLabelsWithOTelPlugin);
 
 void BM_IncrementHistogramWithOTelPlugin(benchmark::State& state) {
+  grpc_core::ForceEnableExperiment("otel_export_telemetry_domains", true);
   grpc_core::GlobalStatsPluginRegistryTestPeer::
       ResetGlobalStatsPluginRegistry();
   auto meter_provider =
@@ -173,7 +175,7 @@ void BM_IncrementHistogramWithOTelPlugin(benchmark::State& state) {
                        stats_plugin_group.get());
   }
 }
-BENCHMARK(BM_IncrementHistogramWithOTelPlugin)->ThreadRange(1, 64);
+BENCHMARK(BM_IncrementHistogramWithOTelPlugin);
 
 void BM_AddCounterWithNoPlugin(benchmark::State& state) {
   grpc_core::GlobalStatsPluginRegistryTestPeer::
