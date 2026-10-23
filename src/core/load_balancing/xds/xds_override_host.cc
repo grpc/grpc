@@ -432,8 +432,9 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
   if (cookie_address_list.empty()) return std::nullopt;
   // The cookie has an address list, so look through the addresses in order.
   absl::string_view address_with_no_subchannel;
+  absl::string_view connecting_subchannel_address;
+  absl::string_view idle_address;
   RefCountedPtr<SubchannelWrapper> idle_subchannel;
-  bool found_connecting = false;
   {
     MutexLock lock(policy_->mu_);
     for (absl::string_view address : absl::StrSplit(cookie_address_list, ',')) {
@@ -467,9 +468,14 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
             subchannel_entry->address_list());
         return PickResult::Complete(subchannel->wrapped_subchannel());
       } else if (connectivity_state == GRPC_CHANNEL_IDLE) {
-        if (idle_subchannel == nullptr) idle_subchannel = std::move(subchannel);
+        if (idle_subchannel == nullptr) {
+          idle_subchannel = std::move(subchannel);
+          idle_address = address;
+        }
       } else if (connectivity_state == GRPC_CHANNEL_CONNECTING) {
-        found_connecting = true;
+        if (connecting_subchannel_address.empty()) {
+          connecting_subchannel_address = address;
+        }
       }
     }
   }
@@ -483,14 +489,20 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
         [subchannel = std::move(idle_subchannel)]() {
           subchannel->RequestConnection();
         });
-    return PickResult::Queue();
+    return PickResult::Queue(
+        kDelayTypeConnecting,
+        absl::StrCat("xds_override_host: subchannel for ", idle_address,
+                     " was IDLE, connection requested"));
   }
   // No READY or IDLE subchannels.  If we found a CONNECTING subchannel,
   // queue the pick and wait for the connection attempt to complete.
-  if (found_connecting) {
+  if (!connecting_subchannel_address.empty()) {
     GRPC_TRACE_LOG(xds_override_host_lb, INFO)
         << "Picker override found CONNECTING subchannel";
-    return PickResult::Queue();
+    return PickResult::Queue(
+        kDelayTypeConnecting,
+        absl::StrCat("xds_override_host: waiting for subchannel ",
+                     connecting_subchannel_address, " to connect"));
   }
   // No READY, IDLE, or CONNECTING subchannels found.  If we found an
   // entry that has no subchannel, then queue the pick and trigger
@@ -503,7 +515,10 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
          address = std::string(address_with_no_subchannel)]() {
           policy->CreateSubchannelForAddress(address);
         });
-    return PickResult::Queue();
+    return PickResult::Queue(
+        kDelayTypeConnecting,
+        absl::StrCat("xds_override_host: creating subchannel for ",
+                     address_with_no_subchannel));
   }
   // No entry found that was not in TRANSIENT_FAILURE.
   return std::nullopt;
