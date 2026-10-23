@@ -1,0 +1,38 @@
+steps:
+- id: 'fetch_submodules'
+  # TODO: for pull requests, the "as-if-merged" version or the PR should be tested first
+  name: 'gcr.io/cloud-builders/git'
+  args: ['submodule', 'update', '--init']
+- id: 'run_tests_py'
+  name: 'grpctesting/cloud_build_base:9937b7c086937fb5ed5fc987ab445efd193984e1'  # modified version of gcr.io/cloud-builders/docker with some extra dependencies.
+
+  # TODO: setup mirroring of dockerhub images
+  # # 2. Use container registry mirror for pulling docker images (should make downloads faster)
+  #    See https://cloud.google.com/container-registry/docs/using-dockerhub-mirroring
+  #GRPC_DOCKER_OPTS="--data-root=/tmpfs/docker --registry-mirror=https://mirror.gcr.io"
+
+  # run docker inside docker
+  #name: 'grpctesting/csharp_stretch_x64:c53aee62cc5feb5358c5a8bb21e154711794aa96'
+  # note that this does docker-in-docker, but seems that's not a problem.
+  # also docker-in-docker is needed to enable IPv6 networking
+  
+  #args: ['python', 'tools/run_tests/run_tests.py', '-l', 'csharp', '-c', 'opt', '-j8', '-x', 'sponge_log.xml', '--use_docker', '-t']
+
+  args: ['python', 'tools/run_tests/run_tests_matrix.py', '-f', 'basictests', 'linux', 'csharp', '--inner_jobs', '16', '-j', '2', '--internal_ci']
+  
+  # run script: grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh
+  #key: "RUN_TESTS_FLAGS"
+  #value: "-f basictests linux csharp --inner_jobs 16 -j 2 --internal_ci --bq_result_table aggregate_results"
+  env:
+    - 'DOCKERHUB_ORGANIZATION=grpctesting'  # needed to prevent re-building images
+timeout: 1800s
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: GCS_ONLY
+#tags: ['basictests', 'csharp', 'linux', 'opt']
+artifacts:
+  objects:
+    location: 'gs://grpc-testing-cloudbuild-public-logs/experimental_build_artifacts/artifacts-$BUILD_ID'
+    # note: the directory path of the artifacts is not preserved
+    paths: ['**/**/sponge_log.*']
+logsBucket: 'grpc-testing-cloudbuild-public-logs/experimental_build_logs'
