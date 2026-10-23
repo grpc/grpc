@@ -218,6 +218,8 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
           self->connection_->listener_state_->event_engine()->Cancel(
               *self->timer_handle_);
           self->timer_handle_.reset();
+          self->connection_->listener_state_->OnHandshakeDone(
+              self->connection_.get());
         }
       },
       DEBUG_LOCATION);
@@ -239,8 +241,9 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
                                        std::move((*result)->endpoint), false)
               ->Ref();
       grpc_error_handle channel_init_err =
-          connection_->listener_state_->server()->SetupTransport(
-              transport.get(), accepting_pollset_, (*result)->args);
+          connection_->listener_state_->SetupTransport(
+              connection_.get(), transport.get(), accepting_pollset_,
+              (*result)->args);
       if (channel_init_err.ok()) {
         // Use notify_on_receive_settings callback to enforce the
         // handshake deadline.
@@ -298,8 +301,9 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
             on_close);
         // SetupTransport will spawn the initial transport promises.
         grpc_error_handle channel_init_err =
-            connection_->listener_state_->server()->SetupTransport(
-                ph2_transport, accepting_pollset_, (*result)->args);
+            connection_->listener_state_->SetupTransport(
+                connection_.get(), ph2_transport, accepting_pollset_,
+                (*result)->args);
         if (GPR_LIKELY(channel_init_err.ok())) {
           ph2_transport->Ref().release();
           connection_->state_ =
@@ -326,7 +330,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
   // Since the handshake manager is done, the connection no longer needs to
   // shutdown the handshake when the listener needs to stop serving.
   handshake_mgr_.reset();
-  connection_->listener_state_->OnHandshakeDone(connection_.get());
   // Clean up if we don't have a transport
   if (!std::holds_alternative<RefCountedPtr<grpc_chttp2_transport>>(
           connection_->state_) &&

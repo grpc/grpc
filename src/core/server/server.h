@@ -172,6 +172,7 @@ class Server : public ServerInterface,
     // transport.
     // Implementations are responsible for informing ListenerState about the
     // following stages of a connection -
+// FIXME: update comment
     // 1) Invoke AddLogicalConnection() on accepting a new connection. Do not
     // invoke if the connection is going to be closed immediately.
     // 2) Invoke OnHandshakeDone() (irrespective of error) once handshake is
@@ -179,6 +180,7 @@ class Server : public ServerInterface,
     // invoked.
     // 3) Invoke RemoveLogicalConnection() when the connection is closed. Do not
     // invoke if the connection was never added.
+// FIXME: remove this TODO
     // TODO(yashykt): In the case where there is no config fetcher, we remove
     // the connection from our map and instead use `ChannelData` to keep track
     // of the connections. This is much cheaper (8 bytes per connection) as
@@ -224,18 +226,23 @@ class Server : public ServerInterface,
   // Note that an alternative implementation would have been to combine the
   // ListenerInterface and ListenerState into a single parent class, but
   // they are being separated to make code simpler to understand.
-  class ListenerState : public RefCounted<ListenerState> {
+  class ListenerState final : public RefCounted<ListenerState> {
    public:
     explicit ListenerState(RefCountedPtr<Server> server,
                            OrphanablePtr<ListenerInterface> l);
 
     void Start();
 
-    void Stop();
+    void Stop(bool send_goaways, Duration grace_period);
+
+    void SendGoAways();
+    void DisconnectImmediately();
 
     ListenerInterface* listener() { return listener_.get(); }
 
     Server* server() const { return server_.get(); }
+
+    bool HasOpenConnections();
 
     // Adds a LogicalConnection to the listener and updates the channel args if
     // needed, and returns ChannelArgs if successful.
@@ -244,6 +251,15 @@ class Server : public ServerInterface,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
 
+    // Called to set up the transport.  Note that this may happen prior
+    // to handshaking completing (e.g., for HTTP/2, it happens before
+    // receiving the initial SETTINGS frame from the peer).
+    absl::Status SetupTransport(
+        ListenerInterface::LogicalConnection* connection, Transport* transport,
+        grpc_pollset* accepting_pollset, const ChannelArgs& args);
+
+    // Called when handshaking is complete and the connection will start
+    // accepting RPCs.
     void OnHandshakeDone(ListenerInterface::LogicalConnection* connection);
 
     // Removes the logical connection from being tracked. This could happen for
@@ -252,6 +268,8 @@ class Server : public ServerInterface,
     // fetcher.
     void RemoveLogicalConnection(
         ListenerInterface::LogicalConnection* connection);
+
+    void DrainConnections(Duration grace_period);
 
     const MemoryQuotaRefPtr& memory_quota() const { return memory_quota_; }
 
@@ -283,20 +301,24 @@ class Server : public ServerInterface,
       ListenerState* const listener_state_;
     };
 
-    struct ConnectionsToBeDrained {
+    struct DrainingConnections {
       absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
           connections;
       grpc_core::Timestamp timestamp;
     };
 
-    void DrainConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+    void DrainConnectionsDueToConfigChangeLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+    void DrainConnectionsLocked(Duration grace_period)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     void OnDrainGraceTimer();
 
     void MaybeStartNewGraceTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-    void RemoveConnectionsToBeDrainedOnEmptyLocked(
-        std::deque<ConnectionsToBeDrained>::iterator it)
+    void RemoveDrainingConnectionsOnEmptyLocked(
+        std::deque<DrainingConnections>::iterator it)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     RefCountedPtr<Server> const server_;
@@ -315,7 +337,7 @@ class Server : public ServerInterface,
     bool started_ ABSL_GUARDED_BY(mu_) = false;
     absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
         connections_ ABSL_GUARDED_BY(mu_);
-    std::deque<ConnectionsToBeDrained> connections_to_be_drained_list_
+    std::deque<DrainingConnections> draining_connections_list_
         ABSL_GUARDED_BY(mu_);
     grpc_event_engine::experimental::EventEngine::TaskHandle
         drain_grace_timer_handle_ ABSL_GUARDED_BY(mu_) =
@@ -345,7 +367,7 @@ class Server : public ServerInterface,
     return server_call_tracer_factory_;
   }
 
-  bool HasOpenConnections() ABSL_LOCKS_EXCLUDED(mu_global_);
+  bool HasOpenConnections();
 
   // Adds a listener to the server.  When the server starts, it will call
   // the listener's Start() method, and when it shuts down, it will orphan
@@ -369,6 +391,12 @@ class Server : public ServerInterface,
                                    grpc_pollset* accepting_pollset,
                                    const ChannelArgs& args,
                                    grpc_channel_stack_type channel_stack_type)
+      ABSL_LOCKS_EXCLUDED(mu_global_);
+
+  grpc_error_handle SetupTransport(
+      ListenerInterface::LogicalConnection* connection, Transport* transport,
+      grpc_pollset* accepting_pollset, const ChannelArgs& args,
+      grpc_channel_stack_type channel_stack_type)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
@@ -399,13 +427,24 @@ class Server : public ServerInterface,
       grpc_completion_queue* cq_bound_to_call,
       grpc_completion_queue* cq_for_notification, void* tag_new);
 
-  void ShutdownAndNotify(grpc_completion_queue* cq, void* tag)
+  void ShutdownAndNotify(Duration grace_period, grpc_completion_queue* cq,
+                         void* tag)
       ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
-
-  void StopListening();
 
   void CancelAllCalls() ABSL_LOCKS_EXCLUDED(mu_global_);
 
+  // Stops listening.
+  //
+  // If send_goaways is true, also sends GOAWAYs on all existing connections
+  // and, if grace_period is non-zero, starts a timer to close those
+  // connections when the timer fires.
+  //
+  // Exposed for testing purposes.
+  void StopListening(bool send_goaways, Duration grace_period);
+
+  // Sends GOAWAYs on all existing connections.
+  //
+  // Exposed for testing purposes.
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
   grpc_compression_options compression_options() const override {
