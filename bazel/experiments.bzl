@@ -38,6 +38,7 @@ EXPERIMENT_ENABLES = {
     "internal_fix": "internal_fix",
     "internal_fix1": "internal_fix1",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
+    "lame_channel_v3": "lame_channel_v3",
     "local_connector_secure": "local_connector_secure",
     "map_host_header_to_authority": "map_host_header_to_authority",
     "memory_optimization_01": "memory_optimization_01",
@@ -174,6 +175,9 @@ EXPERIMENTS = {
             ],
             "hpack_test": [
                 "map_host_header_to_authority",
+            ],
+            "lame_client_test": [
+                "lame_channel_v3",
             ],
             "lb_unit_test": [
                 "ring_hash_update_cleanup",
