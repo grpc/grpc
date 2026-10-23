@@ -4975,6 +4975,7 @@ grpc_cc_library(
         "stats",
         "//src/core:decode_huff",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:match",

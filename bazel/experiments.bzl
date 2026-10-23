@@ -200,6 +200,9 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
+            "xds_end2end_test": [
+                "map_host_header_to_authority",
+            ],
         },
         "on": {
             "core_end2end_test": [
