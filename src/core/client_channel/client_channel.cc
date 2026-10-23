@@ -870,16 +870,20 @@ grpc_call* ClientChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
     Slice path, std::optional<Slice> authority, Timestamp deadline,
-    bool /*registered_method*/,
+    bool registered_method,
     std::optional<absl::FunctionRef<void(Arena*)>> arena_init_function) {
-  auto arena = call_arena_allocator()->MakeArena();
+  RefCountedPtr<Arena> arena = call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine());
+  if (stats_plugin_group_ != nullptr) {
+    arena->SetContext<GlobalStatsPluginRegistry::StatsPluginGroup>(
+        stats_plugin_group_.get());
+  }
   if (arena_init_function.has_value()) {
     (*arena_init_function)(arena.get());
   }
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
-                        std::move(authority), false, deadline,
+                        std::move(authority), registered_method, deadline,
                         compression_options(), std::move(arena), Ref());
 }
 

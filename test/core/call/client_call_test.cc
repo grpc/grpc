@@ -19,6 +19,7 @@
 
 #include "src/core/call/metadata.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
@@ -52,6 +53,16 @@ class ClientCallTest : public YodelTest {
       return *this;
     }
 
+    CallOptions& SetRegisteredMethod(bool registered_method) {
+      registered_method_ = registered_method;
+      return *this;
+    }
+
+    CallOptions& SetPath(Slice path) {
+      path_ = std::move(path);
+      return *this;
+    }
+
    private:
     Slice path_ = Slice::FromCopiedString(kDefaultPath);
     std::optional<Slice> authority_;
@@ -64,16 +75,21 @@ class ClientCallTest : public YodelTest {
     };
   };
 
-  grpc_call* InitCall(const CallOptions& options) {
+  grpc_call* InitCallWithArena(const CallOptions& options,
+                               RefCountedPtr<Arena> arena) {
     CHECK_EQ(call_, nullptr);
-    auto arena = SimpleArenaAllocator()->MakeArena();
-    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-        event_engine().get());
     call_ = MakeClientCall(
-        nullptr, 0, cq_, options.path(), options.authority(),
+        nullptr, 0u, cq_, options.path(), options.authority(),
         options.registered_method(), options.timeout() + Timestamp::Now(),
         options.compression_options(), std::move(arena), destination_);
     return call_;
+  }
+
+  grpc_call* InitCall(const CallOptions& options) {
+    RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    return InitCallWithArena(options, std::move(arena));
   }
 
   BatchBuilder NewBatch(int tag) {
@@ -277,6 +293,151 @@ CLIENT_CALL_TEST(NegativeDeadline) {
   EXPECT_LE(now - start, Duration::Milliseconds(100))
       << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
+}
+
+namespace {
+
+class SpyStatsPlugin final : public StatsPlugin {
+ public:
+  class ScopeConfig final : public StatsPlugin::ScopeConfig {
+   public:
+    int Compare(const StatsPlugin::ScopeConfig& /*other*/) const override {
+      return 0;
+    }
+  };
+
+  SpyStatsPlugin() = default;
+  ~SpyStatsPlugin() override = default;
+  SpyStatsPlugin(const SpyStatsPlugin&) = delete;
+  SpyStatsPlugin& operator=(const SpyStatsPlugin&) = delete;
+
+  std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>>
+  IsEnabledForChannel(
+      const experimental::StatsPluginChannelScope& /*scope*/) const override {
+    return {true, std::make_shared<ScopeConfig>()};
+  }
+
+  std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>> IsEnabledForServer(
+      const ChannelArgs& /*args*/) const override {
+    return {false, nullptr};
+  }
+
+  std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
+      const experimental::StatsPluginChannelScope& /*scope*/) const override {
+    return std::make_shared<ScopeConfig>();
+  }
+
+  std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
+      const ChannelArgs& /*args*/) const override {
+    return nullptr;
+  }
+
+  RefCountedPtr<CollectionScope> GetCollectionScope() const override {
+    return nullptr;
+  }
+
+  void AddCounter(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle /*handle*/,
+      uint64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_label_values*/) override {}
+
+  void AddCounter(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle /*handle*/,
+      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_label_values*/) override {}
+
+  void RecordHistogram(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle /*handle*/,
+      uint64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_label_values*/) override {}
+
+  void RecordHistogram(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle /*handle*/,
+      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_label_values*/) override {}
+
+  void AddCallback(RegisteredMetricCallback* /*callback*/) override {}
+  void RemoveCallback(RegisteredMetricCallback* /*callback*/) override {}
+
+  bool IsInstrumentEnabled(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle /*handle*/)
+      const override {
+    return false;
+  }
+
+  ClientCallTracerInterface* GetClientCallTracer(
+      const Slice& path, bool registered_method,
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    get_client_call_tracer_called = true;
+    last_path = std::string(path.as_string_view());
+    last_registered_method = registered_method;
+    return nullptr;
+  }
+
+  ServerCallTracerInterface* GetServerCallTracer(
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    return nullptr;
+  }
+
+  bool get_client_call_tracer_called = false;
+  std::string last_path;
+  bool last_registered_method = false;
+};
+
+}  // namespace
+
+// Verifies that when StatsPluginGroup is present in the Arena, ClientCall
+// queries it directly and invokes AddClientCallTracers.
+CLIENT_CALL_TEST(StatsPluginGroupQueriedFromArena) {
+  // 1. Create a StatsPluginGroup containing our SpyStatsPlugin.
+  const std::shared_ptr<SpyStatsPlugin> plugin =
+      std::make_shared<SpyStatsPlugin>();
+  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group;
+  stats_plugin_group.AddStatsPlugin(
+      plugin, std::make_shared<SpyStatsPlugin::ScopeConfig>());
+
+  // 2. Allocate an Arena and set StatsPluginGroup in its context.
+  RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine().get());
+  arena->SetContext<GlobalStatsPluginRegistry::StatsPluginGroup>(
+      &stats_plugin_group);
+
+  // 3. Create the ClientCall with this Arena.
+  InitCallWithArena(
+      CallOptions()
+          .SetPath(Slice::FromCopiedString("/test/service/method"))
+          .SetRegisteredMethod(true),
+      std::move(arena));
+
+  // 4. Assert that ClientCall queried StatsPluginGroup and called
+  // GetClientCallTracer with the matching method path and registration.
+  EXPECT_TRUE(plugin->get_client_call_tracer_called);
+  EXPECT_EQ(plugin->last_path, "/test/service/method");
+  EXPECT_TRUE(plugin->last_registered_method);
+}
+
+// Verifies that when StatsPluginGroup is not set in the Arena, ClientCall
+// initializes cleanly without invoking any stats plugin tracers.
+CLIENT_CALL_TEST(NoStatsPluginGroupInArena) {
+  // 1. Create a SpyStatsPlugin instance not attached to the Arena.
+  const std::shared_ptr<SpyStatsPlugin> plugin =
+      std::make_shared<SpyStatsPlugin>();
+
+  // 2. Allocate an Arena without setting StatsPluginGroup.
+  RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine().get());
+
+  // 3. Create the ClientCall with this Arena.
+  InitCallWithArena(
+      CallOptions()
+          .SetPath(Slice::FromCopiedString("/test/service/method"))
+          .SetRegisteredMethod(false),
+      std::move(arena));
+
+  // 4. Assert that no call tracer was requested.
+  EXPECT_FALSE(plugin->get_client_call_tracer_called);
 }
 
 TEST(ClientCallTest, NoOpRegression1) {

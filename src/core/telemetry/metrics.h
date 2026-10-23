@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/instrument.h"
@@ -605,6 +606,11 @@ GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
       std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{args...},
       min_interval);
 }
+
+template <>
+struct ArenaContextType<GlobalStatsPluginRegistry::StatsPluginGroup> {
+  static void Destroy(GlobalStatsPluginRegistry::StatsPluginGroup*) {}
+};
 
 }  // namespace grpc_core
 

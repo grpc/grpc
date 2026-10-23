@@ -69,6 +69,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -803,6 +804,10 @@ class Http2ServerTransport final : public ServerTransport,
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
   TarpitManager tarpit_manager_;
+
+  // Holds the stats plugins configured for the server.
+  const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
 };
 
 // TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two

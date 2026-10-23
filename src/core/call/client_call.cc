@@ -48,6 +48,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/bitset.h"
@@ -114,6 +115,13 @@ ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
       call_destination_(std::move(destination)),
       compression_options_(compression_options) {
   global_stats().IncrementClientCallsCreated();
+  GlobalStatsPluginRegistry::StatsPluginGroup* const stats_plugin_group =
+      this->arena()->GetContext<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  if (stats_plugin_group != nullptr) {
+    stats_plugin_group->AddClientCallTracers(path, registered_method,
+                                             this->arena());
+  }
+
   send_initial_metadata_->Set(HttpPathMetadata(), std::move(path));
   if (authority.has_value()) {
     send_initial_metadata_->Set(HttpAuthorityMetadata(), std::move(*authority));

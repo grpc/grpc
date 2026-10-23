@@ -49,6 +49,7 @@ grpc_fuzz_test(
         "//:grpc_base",
         "//src/core:arena",
         "//src/core:metadata",
+        "//src/core:metrics",
         "//test/core/call/yodel:yodel_test",
     ],
 )

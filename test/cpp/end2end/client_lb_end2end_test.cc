@@ -4147,7 +4147,6 @@ class ClientLbSubchannelMetricsTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port = servers_[0]->port_;
   std::string target = grpc_core::LocalIpAndPort(port);
@@ -4213,8 +4212,6 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
-  // Flake rate is less than once in 3 days.
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix flake");
   ConnectionAttemptInjector injector;
   const int port = grpc_pick_unused_port_or_die();
   std::string target = grpc_core::LocalIpAndPort(port);
@@ -4238,8 +4235,6 @@ TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   ConnectionAttemptInjector injector;
   const int port1 = grpc_pick_unused_port_or_die();
   const int port2 = grpc_pick_unused_port_or_die();
@@ -4317,8 +4312,6 @@ TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, DisconnectionOnSubchannelShutdown) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix bug");
   StartServers(1, {}, grpc::InsecureServerCredentials());
   const int port1 = servers_[0]->port_;
   const int port2 = grpc_pick_unused_port_or_die();

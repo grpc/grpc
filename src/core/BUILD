@@ -9771,6 +9771,7 @@ grpc_cc_library(
         "closure",
         "connectivity_state",
         "context",
+        "experiments",
         "flow_control_manager",
         "for_each",
         "goaway",
@@ -9800,6 +9801,7 @@ grpc_cc_library(
         "metadata",
         "metadata_batch",
         "metadata_info",
+        "metrics",
         "mpsc",
         "ph2_reclaimer",
         "ph2_stream",
@@ -11978,6 +11980,7 @@ grpc_cc_library(
         "absl/types:span",
     ],
     deps = [
+        "arena",
         "channel_args",
         "grpc_check",
         "instrument",
