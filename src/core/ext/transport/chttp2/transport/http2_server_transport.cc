@@ -79,6 +79,7 @@
 #include "src/core/lib/resource_quota/telemetry.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
@@ -341,6 +342,10 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
            "AppendNewDataFrame Failed";
     return status;
   }
+  // Account for the 9-byte DATA frame header.
+  stream->AddIncomingBytes({/*framing_bytes=*/kFrameHeaderSize,
+                            /*data_bytes=*/0u,
+                            /*header_bytes=*/0u});
 
   // Pass the messages up the stack if it is ready.
   while (true) {
@@ -356,6 +361,10 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     }
     MessageHandle message = TakeValue(std::move(result));
     if (message != nullptr) {
+      // Account for the 5-byte gRPC message header and message payload bytes.
+      stream->AddIncomingBytes({/*framing_bytes=*/kGrpcHeaderSizeInBytes,
+                                /*data_bytes=*/message->payload()->Length(),
+                                /*header_bytes=*/0u});
       GRPC_HTTP2_SERVER_DLOG
           << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
              "SpawnPushMessage ";
@@ -402,12 +411,21 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(
     }
   }
 
+  const uint64_t payload_length = frame.payload.Length();
   Http2Status append_result =
       read_context_.header_assembler().AppendFrame(frame);
   if (GPR_UNLIKELY(!append_result.IsOk())) {
     return read_context_.ParseAndDiscardHeaders(
         std::move(frame.payload), frame.end_headers, std::move(append_result),
         settings_->acked().max_header_list_size());
+  }
+  if (stream != nullptr) {
+    // For an existing stream, account for the 9-byte frame header and
+    // HPACK payload bytes directly on the stream. Initial metadata frames for
+    // new streams (stream == nullptr) are accounted in IncomingStream().
+    stream->AddIncomingBytes({/*framing_bytes=*/kFrameHeaderSize,
+                              /*data_bytes=*/0u,
+                              /*header_bytes=*/payload_length});
   }
 
   Http2Status status = ProcessMetadata();
@@ -529,6 +547,9 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
         << "Http2ServerTransport::ProcessIncomingFrame(ResetStreamFrame) "
            "closing stream_id="
         << frame.stream_id << " is_tarpitted=" << stream->IsTarpitted();
+    stream->AddIncomingBytes({/*framing_bytes=*/kFrameHeaderSize + 4u,
+                              /*data_bytes=*/0u,
+                              /*header_bytes=*/0u});
     HandleStreamStateChange(*stream,
                             stream->OnResetReceived(std::move(status)));
   }
@@ -649,8 +670,14 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << frame.stream_id << ", increment=" << frame.increment << "}";
 
   RefCountedPtr<Stream> stream = nullptr;
-  if (frame.stream_id != 0) {
+  if (frame.stream_id != 0u) {
     stream = LookupStream(frame.stream_id);
+    if (stream != nullptr) {
+      // Account for the 9-byte frame header and 4-byte window increment payload
+      stream->AddIncomingBytes({/*framing_bytes=*/kFrameHeaderSize + 4u,
+                                /*data_bytes=*/0u,
+                                /*header_bytes=*/0u});
+    }
   }
 
   const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
@@ -712,6 +739,13 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata";
   if (assembler.IsReady()) {
+    // Capture buffered HEADERS/CONTINUATION byte counts before ReadMetadata
+    // clears the assembler so newly created streams receive their
+    // initial metadata framing and header byte stats
+    const grpc_transport_one_way_stats initial_metadata_stats{
+        /*framing_bytes=*/assembler.GetBufferedFrameCount() * kFrameHeaderSize,
+        /*data_bytes=*/0u,
+        /*header_bytes=*/assembler.GetBufferedHeadersLength()};
     ValueOrHttp2Status<ClientMetadataHandle> read_result =
         assembler.ReadMetadata(read_context_.parser(),
                                !read_context_.HeaderHasEndStream(),
@@ -749,7 +783,8 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
         metadata->Set(PeerString(), read_context_.peer_string());
         metadata->Set(LocalAddressString(),
                       read_context_.local_address_string());
-        return IncomingStream(std::move(metadata), read_context_.GetStreamId());
+        return IncomingStream(std::move(metadata), read_context_.GetStreamId(),
+                              initial_metadata_stats);
       }
       return Http2Status::Ok();
     }
@@ -1516,7 +1551,8 @@ Http2Status Http2ServerTransport::ValidateIncomingStream(
 }
 
 Http2Status Http2ServerTransport::IncomingStream(
-    ClientMetadataHandle&& metadata, const uint32_t stream_id) {
+    ClientMetadataHandle&& metadata, const uint32_t stream_id,
+    const grpc_transport_one_way_stats& initial_metadata_stats) {
   GRPC_DCHECK(LookupStream(stream_id) == nullptr);
 
   RefCountedPtr<Arena> arena = call_arena_allocator_->MakeArena();
@@ -1534,6 +1570,7 @@ Http2Status Http2ServerTransport::IncomingStream(
         std::string(GrpcErrors::kStreamCreationFailed));
   }
   RefCountedPtr<Stream> stream = std::move(result.value());
+  stream->AddIncomingBytes(initial_metadata_stats);
   AddToStreamList(stream);
   UpdateMaxConcurrentStreamsFromStreamQuota();
   stream->SetInitialMetadataReceived();

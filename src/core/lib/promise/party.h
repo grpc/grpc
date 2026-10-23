@@ -416,6 +416,13 @@ class Party : public Activity, private Wakeable {
   }
   ~Party() override;
 
+  // Called exactly once in PartyIsOver() after all remaining participants are
+  // cancelled and immediately before ~Party() is invoked.
+  // Runs with Context<Arena> established and Party object valid. The party
+  // refcount is zero, so implementations MUST not ref, wake, or spawn on the
+  // party.
+  virtual void OnPartyOver() {}
+
   // Main run loop. Must be locked.
   // Polls participants and drains the add queue until there is no work left to
   // be done.

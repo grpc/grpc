@@ -42,6 +42,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -206,6 +207,7 @@ void ServerLoadReportingFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md, ServerLoadReportingFilter* filter) {
   GRPC_LATENT_SEE_SCOPE(
       "ServerLoadReportingFilter::Call::OnServerTrailingMetadata");
+  final_status_ = md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   const auto& costs = md.Take(LbCostBinMetadata());
   for (const auto& cost : costs) {
     opencensus::stats::Record(
@@ -225,16 +227,25 @@ void ServerLoadReportingFilter::Call::OnFinalize(
     const grpc_call_final_info* final_info, ServerLoadReportingFilter* filter) {
   GRPC_LATENT_SEE_SCOPE("ServerLoadReportingFilter::Call::OnFinalize");
   if (final_info == nullptr) return;
+  const bool is_ph2_enabled =
+      IsPh2ServerEnabled() || IsPh2ClientServerEnabled();
+  const grpc_status_code final_status =
+      is_ph2_enabled ? final_status_ : final_info->final_status;
+  const uint64_t send_bytes =
+      final_info->stats.transport_stream_stats.outgoing.data_bytes;
+  const uint64_t recv_bytes =
+      final_info->stats.transport_stream_stats.incoming.data_bytes;
+  const gpr_timespec latency =
+      is_ph2_enabled ? gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_time_)
+                     : final_info->stats.latency;
   // After the last bytes have been placed on the wire we record
   // final measurements
   opencensus::stats::Record(
       {{::grpc::load_reporter::MeasureEndCount(), 1},
-       {::grpc::load_reporter::MeasureEndBytesSent(),
-        final_info->stats.transport_stream_stats.outgoing.data_bytes},
-       {::grpc::load_reporter::MeasureEndBytesReceived(),
-        final_info->stats.transport_stream_stats.incoming.data_bytes},
+       {::grpc::load_reporter::MeasureEndBytesSent(), send_bytes},
+       {::grpc::load_reporter::MeasureEndBytesReceived(), recv_bytes},
        {::grpc::load_reporter::MeasureEndLatencyMs(),
-        gpr_time_to_millis(final_info->stats.latency)}},
+        gpr_time_to_millis(latency)}},
       {{::grpc::load_reporter::TagKeyToken(),
         {client_ip_and_lr_token_.data(), client_ip_and_lr_token_.length()}},
        {::grpc::load_reporter::TagKeyHost(),
@@ -242,7 +253,7 @@ void ServerLoadReportingFilter::Call::OnFinalize(
        {::grpc::load_reporter::TagKeyUserId(),
         {filter->peer_identity_.data(), filter->peer_identity_.length()}},
        {::grpc::load_reporter::TagKeyStatus(),
-        GetStatusTagForStatus(final_info->final_status)}});
+        GetStatusTagForStatus(final_status)}});
 }
 
 const grpc_channel_filter ServerLoadReportingFilter::kFilter =
