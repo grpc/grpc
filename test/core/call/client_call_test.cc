@@ -279,6 +279,112 @@ CLIENT_CALL_TEST(NegativeDeadline) {
   WaitForAllPendingWork();
 }
 
+CLIENT_CALL_TEST(DoubleSendInitialMetadata) {
+  InitCall(CallOptions());
+  NewBatch(1).SendInitialMetadata({});
+  Expect(1, true);
+  TickThroughCqExpectations();
+
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  grpc_call_error err =
+      grpc_call_start_batch(call_, &op, 1, CqVerifier::tag(2), nullptr);
+  EXPECT_EQ(err, GRPC_CALL_ERROR_TOO_MANY_OPERATIONS);
+}
+
+CLIENT_CALL_TEST(DoubleSendCloseFromClient) {
+  InitCall(CallOptions());
+  NewBatch(1).SendInitialMetadata({}).SendCloseFromClient();
+  Expect(1, true);
+  TickThroughCqExpectations();
+
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  grpc_call_error err =
+      grpc_call_start_batch(call_, &op, 1, CqVerifier::tag(2), nullptr);
+  EXPECT_EQ(err, GRPC_CALL_ERROR_TOO_MANY_OPERATIONS);
+}
+
+CLIENT_CALL_TEST(SendMessageAfterSendCloseFromClient) {
+  InitCall(CallOptions());
+  NewBatch(1).SendInitialMetadata({}).SendCloseFromClient();
+  Expect(1, true);
+  TickThroughCqExpectations();
+
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_MESSAGE;
+  grpc_slice payload_slice = grpc_slice_from_static_string("hello");
+  grpc_byte_buffer* payload = grpc_raw_byte_buffer_create(&payload_slice, 1);
+  op.data.send_message.send_message = payload;
+  grpc_call_error err =
+      grpc_call_start_batch(call_, &op, 1, CqVerifier::tag(2), nullptr);
+  EXPECT_EQ(err, GRPC_CALL_ERROR_TOO_MANY_OPERATIONS);
+  grpc_byte_buffer_destroy(payload);
+}
+
+CLIENT_CALL_TEST(DoubleRecvInitialMetadata) {
+  InitCall(CallOptions());
+  IncomingMetadata md1;
+  NewBatch(1).SendInitialMetadata({}).RecvInitialMetadata(md1);
+  Expect(1, true);
+  SpawnTestSeq(
+      handler(), "pull-initial-metadata-and-push",
+      [this]() { return handler().PullClientInitialMetadata(); },
+      [this](ValueOrFailure<ClientMetadataHandle> md) {
+        CHECK(md.ok());
+        handler().PushServerInitialMetadata(
+            Arena::MakePooledForOverwrite<ServerMetadata>());
+        return Immediate(Empty{});
+      });
+  TickThroughCqExpectations();
+
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_INITIAL_METADATA;
+  grpc_metadata_array recv_initial_metadata;
+  grpc_metadata_array_init(&recv_initial_metadata);
+  op.data.recv_initial_metadata.recv_initial_metadata = &recv_initial_metadata;
+  grpc_call_error err =
+      grpc_call_start_batch(call_, &op, 1, CqVerifier::tag(2), nullptr);
+  EXPECT_EQ(err, GRPC_CALL_ERROR_TOO_MANY_OPERATIONS);
+  grpc_metadata_array_destroy(&recv_initial_metadata);
+}
+
+CLIENT_CALL_TEST(DoubleRecvStatusOnClient) {
+  InitCall(CallOptions());
+  IncomingStatusOnClient status1;
+  NewBatch(1).SendInitialMetadata({}).RecvStatusOnClient(status1);
+  Expect(1, true);
+  SpawnTestSeq(
+      handler(), "pull-initial-metadata-and-push-trailing",
+      [this]() { return handler().PullClientInitialMetadata(); },
+      [this](ValueOrFailure<ClientMetadataHandle> md) {
+        CHECK(md.ok());
+        handler().PushServerTrailingMetadata(
+            ServerMetadataFromStatus(GRPC_STATUS_OK, ""));
+        return Immediate(Empty{});
+      });
+  TickThroughCqExpectations();
+
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  grpc_status_code status;
+  grpc_slice status_details;
+  grpc_metadata_array trailing_metadata;
+  grpc_metadata_array_init(&trailing_metadata);
+  op.data.recv_status_on_client.status = &status;
+  op.data.recv_status_on_client.status_details = &status_details;
+  op.data.recv_status_on_client.trailing_metadata = &trailing_metadata;
+  grpc_call_error err =
+      grpc_call_start_batch(call_, &op, 1, CqVerifier::tag(2), nullptr);
+  EXPECT_EQ(err, GRPC_CALL_ERROR_TOO_MANY_OPERATIONS);
+  grpc_metadata_array_destroy(&trailing_metadata);
+}
+
 TEST(ClientCallTest, NoOpRegression1) {
   NoOp(ParseTestProto(
       R"pb(event_engine_actions {
