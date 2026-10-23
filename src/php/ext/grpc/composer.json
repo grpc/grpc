@@ -1,5 +1,5 @@
 {
-    "name": "grpc/grpc-php-ext",
+    "name": "grpc/grpc-ext",
     "description": "gRPC PHP Extension",
     "type": "php-ext",
     "require": {
