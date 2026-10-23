@@ -8,6 +8,7 @@
   "tests_aio.observability.open_telemetry_observability_test.OpenTelemetryObservabilityRegisteredMethodsTest",
   "tests_aio.reflection.reflection_servicer_test.ReflectionServicerTest",
   "tests_aio.status.grpc_status_test.StatusTest",
+  "tests_aio.unit._interceptor_test.TestMultiTypeClientInterceptor",
   "tests_aio.unit._metadata_test.TestMetadataWithServer",
   "tests_aio.unit._metadata_test.TestTypeMetadata",
   "tests_aio.unit.abort_test.TestAbort",
