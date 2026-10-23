@@ -64,7 +64,10 @@ def py_grpc_logging_threshold_test(
     py_test(
         name = name + ".logging_threshold",
         args = ["$(location //bazel:_single_module_tester)", name],
-        data = data + ["//bazel:_single_module_tester"],
+        data = data + [
+            "//bazel:_single_module_tester",
+            "//bazel:_single_loader",
+        ],
         deps = augmented_deps,
         srcs = [copied_main_filename],
         main = copied_main_filename,
