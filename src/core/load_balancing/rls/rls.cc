@@ -1904,7 +1904,8 @@ bool EndpointsEqual(
     size_t i = 0;
     bool different = false;
     (*endpoints2)->ForEach([&](const EndpointAddresses& endpoint) {
-      if (endpoint != e1_list[i++]) different = true;
+      if (i >= e1_list.size() || endpoint != e1_list[i]) different = true;
+      ++i;
     });
     if (different) return false;
     if (i != e1_list.size()) return false;
