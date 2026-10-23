@@ -32,9 +32,15 @@ cd /var/local/git/grpc
 mkdir -p /usr/local/share/grpc
 cp etc/roots.pem /usr/local/share/grpc/roots.pem
 
-# build C++ interop client, interop server and http2 interop client
+# Build C++ interop client, server, http2 client, and OTLP collector using Bazel.
+# Bazel is required because OpenTelemetry C++ dependencies and otlp_collector
+# are managed hermetically via Bazel/Bzlmod, whereas CMake does not vendor OTel.
+tools/bazel build //test/cpp/interop:interop_client //test/cpp/interop:interop_server //test/cpp/interop:http2_client //test/cpp/interop:otlp_collector
+
+# Place binaries in cmake/build/ to preserve the path contract expected by
+# run_interop_tests.py (CXXLanguage) and historical interop test harnesses.
 mkdir -p cmake/build
-cd cmake/build
-cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ../..
-make interop_client interop_server -j4
-make http2_client -j4
+cp -f bazel-bin/test/cpp/interop/interop_client cmake/build/interop_client
+cp -f bazel-bin/test/cpp/interop/interop_server cmake/build/interop_server
+cp -f bazel-bin/test/cpp/interop/http2_client cmake/build/http2_client
+
