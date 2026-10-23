@@ -24,6 +24,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <map>
+#include <ostream>
+#include <string>
+#include <utility>
+
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
@@ -128,6 +133,35 @@ class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 };
+
+// The watch status that a distributor last reported to its provider for a cert
+// name.
+struct WatchStatus {
+  bool root_being_watched = false;
+  bool identity_being_watched = false;
+
+  bool operator==(const WatchStatus& other) const {
+    return root_being_watched == other.root_being_watched &&
+           identity_being_watched == other.identity_being_watched;
+  }
+  friend void PrintTo(const WatchStatus& status, std::ostream* os) {
+    *os << "{root_being_watched=" << status.root_being_watched
+        << ", identity_being_watched=" << status.identity_being_watched << "}";
+  }
+};
+
+// Records into `watch_status` the watch status that `distributor` reports to
+// its provider for each cert name. `watch_status` must outlive all watchers
+// registered with `distributor`.
+void RecordWatchStatus(grpc_tls_certificate_distributor* distributor,
+                       std::map<std::string, WatchStatus>* watch_status) {
+  distributor->SetWatchStatusCallback(
+      [watch_status](std::string cert_name, bool root_being_watched,
+                     bool identity_being_watched) {
+        (*watch_status)[std::move(cert_name)] =
+            WatchStatus{root_being_watched, identity_being_watched};
+      });
+}
 
 //
 // Tests for Certificate Providers in ChannelSecurityConnector.
@@ -309,6 +343,60 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       SeparateRootAndIdentityProvidersOnlyWatchOwnCertsForChannelConnector) {
+  std::map<std::string, WatchStatus> root_watch_status;
+  std::map<std::string, WatchStatus> identity_watch_status;
+  RefCountedPtr<grpc_tls_certificate_distributor> root_distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  RecordWatchStatus(root_distributor.get(), &root_watch_status);
+  root_distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  RefCountedPtr<grpc_tls_certificate_distributor> identity_distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  RecordWatchStatus(identity_distributor.get(), &identity_watch_status);
+  identity_distributor->SetKeyMaterials(kIdentityCertName, nullptr,
+                                        identity_pairs_0_);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(
+      MakeRefCounted<TlsTestCertificateProvider>(root_distributor));
+  options->set_identity_certificate_provider(
+      MakeRefCounted<TlsTestCertificateProvider>(identity_distributor));
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs new_args;
+  RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  // Each provider is only asked for the certs that it provides. Otherwise, a
+  // provider that only provides identity certs reports a root cert error to
+  // the connector every time its identity certs change (and vice versa).
+  EXPECT_THAT(
+      root_watch_status,
+      ::testing::ElementsAre(::testing::Pair(
+          kRootCertName, WatchStatus{/*root_being_watched=*/true,
+                                     /*identity_being_watched=*/false})));
+  EXPECT_THAT(
+      identity_watch_status,
+      ::testing::ElementsAre(::testing::Pair(
+          kIdentityCertName, WatchStatus{/*root_being_watched=*/false,
+                                         /*identity_being_watched=*/true})));
+  // Updates from either provider still reach the connector.
+  root_distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  identity_distributor->SetKeyMaterials(kIdentityCertName, nullptr,
+                                        identity_pairs_1_);
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_1_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -886,6 +974,57 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       SeparateRootAndIdentityProvidersOnlyWatchOwnCertsForServerConnector) {
+  std::map<std::string, WatchStatus> root_watch_status;
+  std::map<std::string, WatchStatus> identity_watch_status;
+  RefCountedPtr<grpc_tls_certificate_distributor> root_distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  RecordWatchStatus(root_distributor.get(), &root_watch_status);
+  root_distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  RefCountedPtr<grpc_tls_certificate_distributor> identity_distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  RecordWatchStatus(identity_distributor.get(), &identity_watch_status);
+  identity_distributor->SetKeyMaterials(kIdentityCertName, nullptr,
+                                        identity_pairs_0_);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(
+      MakeRefCounted<TlsTestCertificateProvider>(root_distributor));
+  options->set_identity_certificate_provider(
+      MakeRefCounted<TlsTestCertificateProvider>(identity_distributor));
+  options->set_root_cert_name(kRootCertName);
+  options->set_identity_cert_name(kIdentityCertName);
+  RefCountedPtr<TlsServerCredentials> credential =
+      MakeRefCounted<TlsServerCredentials>(options);
+  RefCountedPtr<grpc_server_security_connector> connector =
+      credential->create_security_connector(ChannelArgs());
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  // Each provider is only asked for the certs that it provides.
+  EXPECT_THAT(
+      root_watch_status,
+      ::testing::ElementsAre(::testing::Pair(
+          kRootCertName, WatchStatus{/*root_being_watched=*/true,
+                                     /*identity_being_watched=*/false})));
+  EXPECT_THAT(
+      identity_watch_status,
+      ::testing::ElementsAre(::testing::Pair(
+          kIdentityCertName, WatchStatus{/*root_being_watched=*/false,
+                                         /*identity_being_watched=*/true})));
+  // Updates from either provider still reach the connector.
+  root_distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  identity_distributor->SetKeyMaterials(kIdentityCertName, nullptr,
+                                        identity_pairs_1_);
+  EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_1_);
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
 TEST_F(TlsSecurityConnectorTest,
