@@ -426,6 +426,13 @@ class InstrumentMetadata {
 class MetricsQuery;
 class MetricsSink;
 
+// Interface for dispatching push-based metrics to stats plugins that
+// manage their own instrument instances, such as OpenTelemetry histograms.
+//
+// All non-per-call metrics are accumulated in DomainStorage and pulled
+// asynchronously by MetricsQuery. This interface is passed to
+// Storage::Increment() when updates must also be pushed to plugins
+// that manage their own instruments.
 class InstrumentRecorder {
  public:
   virtual ~InstrumentRecorder() = default;
@@ -443,13 +450,9 @@ class InstrumentRecorder {
 // metrics collected in this scope are aggregated into the parent scope.
 class CollectionScope : public RefCounted<CollectionScope> {
  public:
-  // `instrument_recorder` is an optional weak pointer to a StatsPluginGroup
-  // that has stats plugins with push-based instruments that cannot pull from
-  // the MetricsSink.
   CollectionScope(std::vector<RefCountedPtr<CollectionScope>> parents,
                   InstrumentLabelSet labels_of_interest,
-                  size_t child_shards_count, size_t storage_shards_count,
-                  std::weak_ptr<InstrumentRecorder> instrument_recorder = {});
+                  size_t child_shards_count, size_t storage_shards_count);
   ~CollectionScope() override;
 
   size_t TestOnlyCountStorageHeld() const;
@@ -462,10 +465,6 @@ class CollectionScope : public RefCounted<CollectionScope> {
   }
 
   bool IsRoot() const { return parents_.empty(); }
-
-  const std::weak_ptr<InstrumentRecorder>& instrument_recorder() const {
-    return instrument_recorder_;
-  }
 
  private:
   friend class GlobalCollectionScopeManager;
@@ -493,7 +492,6 @@ class CollectionScope : public RefCounted<CollectionScope> {
   InstrumentLabelSet labels_of_interest_;
   std::vector<ChildShard> child_shards_;
   std::vector<StorageShard> storage_shards_;
-  std::weak_ptr<InstrumentRecorder> instrument_recorder_;
 
   void ForEachUniqueStorage(
       absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb,
@@ -543,8 +541,7 @@ class GaugeStorage {
 class DomainStorage : public DualRefCounted<DomainStorage>,
                       public channelz::DataSource {
  public:
-  DomainStorage(QueryableDomain* domain, std::vector<std::string> label,
-                std::weak_ptr<InstrumentRecorder> instrument_recorder = {});
+  DomainStorage(QueryableDomain* domain, std::vector<std::string> label);
 
   void Orphaned() override;
 
@@ -558,16 +555,11 @@ class DomainStorage : public DualRefCounted<DomainStorage>,
   absl::Span<const std::string> label() const { return label_; }
   QueryableDomain* domain() const { return domain_; }
 
-  const std::weak_ptr<InstrumentRecorder>& instrument_recorder() const {
-    return instrument_recorder_;
-  }
-
   void AddData(channelz::DataSink sink) override;
 
  private:
   QueryableDomain* domain_;
   const std::vector<std::string> label_;
-  const std::weak_ptr<InstrumentRecorder> instrument_recorder_;
 };
 
 // A registry of metrics.
@@ -709,8 +701,7 @@ class QueryableDomain {
   };
 
   virtual RefCountedPtr<DomainStorage> CreateDomainStorage(
-      std::vector<std::string> label,
-      std::weak_ptr<InstrumentRecorder> instrument_recorder) = 0;
+      std::vector<std::string> label) = 0;
   void DomainStorageOrphaned(DomainStorage* storage);
   MapShard& GetMapShard(absl::Span<const std::string> label);
 
@@ -1033,11 +1024,19 @@ class InstrumentDomainImpl final : public QueryableDomain {
       }
     }
 
+    // Records a measurement of `value` into the histogram specified by `handle`.
+    //
+    // `recorder` is a pointer to an InstrumentRecorder (typically obtained via
+    // `stats_plugin_group.get()`) to push metric updates to stats plugins like
+    // OpenTelemetry that manage their own Histogram storage. If the histogram is
+    // not used by any such plugin, recorder can be set to nullptr and external
+    // pushes will be skipped.
     template <typename Shape, typename T>
-    void Increment(const HistogramHandle<Shape>& handle, T value) {
+    void Increment(const HistogramHandle<Shape>& handle, T value,
+                   InstrumentRecorder* recorder) {
       GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
       backend_.Add(handle.offset_ + handle.shape_->BucketFor(value), 1);
-      if (auto recorder = instrument_recorder().lock()) {
+      if (recorder != nullptr) {
         if constexpr (std::is_same_v<Shape, LinearDoubleHistogramShape> ||
                       std::is_same_v<Shape, ExponentialDoubleHistogramShape>) {
           recorder->RecordHistogram(handle.description_,
@@ -1063,10 +1062,8 @@ class InstrumentDomainImpl final : public QueryableDomain {
     friend class GaugeProvider;
 
     explicit Storage(InstrumentDomainImpl* instrument_domain,
-                     std::vector<std::string> labels,
-                     std::weak_ptr<InstrumentRecorder> instrument_recorder = {})
-        : DomainStorage(instrument_domain, std::move(labels),
-                        std::move(instrument_recorder)),
+                     std::vector<std::string> labels)
+        : DomainStorage(instrument_domain, std::move(labels)),
           backend_(instrument_domain->allocated_counter_slots()) {}
 
     void RegisterGaugeProvider(GaugeProvider* provider) {
@@ -1171,10 +1168,8 @@ class InstrumentDomainImpl final : public QueryableDomain {
   }
 
   RefCountedPtr<DomainStorage> CreateDomainStorage(
-      std::vector<std::string> labels,
-      std::weak_ptr<InstrumentRecorder> instrument_recorder) override {
-    return RefCountedPtr<Storage>(
-        new Storage(this, std::move(labels), std::move(instrument_recorder)));
+      std::vector<std::string> labels) override {
+    return RefCountedPtr<Storage>(new Storage(this, std::move(labels)));
   }
 
  private:
@@ -1328,14 +1323,10 @@ void TestOnlyResetInstruments();
 // labels.
 // `child_shards_count` and `storage_shards_count` are performance tuning
 // parameters for sharding internal data structures.
-// `instrument_recorder` is an optional weak pointer to a StatsPluginGroup that
-// has stats plugins with push-based instruments that cannot pull from the
-// MetricsSink.
 RefCountedPtr<CollectionScope> CreateCollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
     InstrumentLabelSet labels, size_t child_shards_count = 1,
-    size_t storage_shards_count = 1,
-    std::weak_ptr<InstrumentRecorder> instrument_recorder = {});
+    size_t storage_shards_count = 1);
 
 RefCountedPtr<CollectionScope> CreateRootCollectionScope(
     InstrumentLabelSet labels, size_t child_shards_count = 1,

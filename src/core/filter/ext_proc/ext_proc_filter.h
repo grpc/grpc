@@ -173,6 +173,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     event_engine_.reset();
     config_.reset();
     telemetry_storage_.reset();
+    stats_plugin_group_.reset();
   }
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
@@ -181,6 +182,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   Slice default_authority_;
   InstrumentStorageRefPtr<TelemetryDomain> telemetry_storage_;
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
 };
 
 }  // namespace grpc_core

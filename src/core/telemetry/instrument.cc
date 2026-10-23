@@ -132,13 +132,11 @@ std::vector<std::string> FilterLabels(
 CollectionScope::CollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
     InstrumentLabelSet labels_of_interest, size_t child_shards_count,
-    size_t storage_shards_count,
-    std::weak_ptr<InstrumentRecorder> instrument_recorder)
+    size_t storage_shards_count)
     : parents_(std::move(parents)),
       labels_of_interest_(labels_of_interest),
       child_shards_(child_shards_count),
-      storage_shards_(storage_shards_count),
-      instrument_recorder_(std::move(instrument_recorder)) {
+      storage_shards_(storage_shards_count) {
   // Sort parents (by address) and then remove any duplicates.
   std::sort(parents_.begin(), parents_.end());
   parents_.erase(std::unique(parents_.begin(), parents_.end()), parents_.end());
@@ -225,11 +223,9 @@ void CollectionScope::TestOnlyReset() {
 RefCountedPtr<CollectionScope> CreateCollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
     InstrumentLabelSet labels, size_t child_shards_count,
-    size_t storage_shards_count,
-    std::weak_ptr<InstrumentRecorder> instrument_recorder) {
+    size_t storage_shards_count) {
   return MakeRefCounted<CollectionScope>(
-      std::move(parents), labels, child_shards_count, storage_shards_count,
-      std::move(instrument_recorder));
+      std::move(parents), labels, child_shards_count, storage_shards_count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -681,14 +677,12 @@ const InstrumentMetadata::Description* InstrumentIndex::Find(
 ////////////////////////////////////////////////////////////////////////////////
 // DomainStorage
 
-DomainStorage::DomainStorage(
-    QueryableDomain* domain, std::vector<std::string> label,
-    std::weak_ptr<InstrumentRecorder> instrument_recorder)
+DomainStorage::DomainStorage(QueryableDomain* domain,
+                             std::vector<std::string> label)
     : DataSource(MakeRefCounted<channelz::MetricsDomainStorageNode>(
           absl::StrCat(domain->name(), ":", absl::StrJoin(label, ",")))),
       domain_(domain),
-      label_(std::move(label)),
-      instrument_recorder_(std::move(instrument_recorder)) {
+      label_(std::move(label)) {
   channelz_node()->AddParent(domain->channelz_node().get());
   SourceConstructed();
 }
@@ -971,7 +965,7 @@ RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
   if (it != shard.storage.end()) {
     return it->second;
   }
-  auto storage = CreateDomainStorage(key_labels, scope->instrument_recorder());
+  auto storage = CreateDomainStorage(key_labels);
   shard.storage.emplace(std::pair(this, key_labels), storage);
   return storage;
 }

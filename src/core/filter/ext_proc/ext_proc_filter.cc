@@ -1709,11 +1709,11 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                       .resolver_registry()
                       .GetDefaultAuthority(
                           args.GetString(GRPC_ARG_SERVER_URI).value_or(""))))),
+      stats_plugin_group_(
+          args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
       telemetry_storage_([&]() -> InstrumentStorageRefPtr<TelemetryDomain> {
-        auto stats_plugin_group =
-            args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
-        if (stats_plugin_group == nullptr) return nullptr;
-        auto scope = stats_plugin_group->GetCollectionScope();
+        if (stats_plugin_group_ == nullptr) return nullptr;
+        auto scope = stats_plugin_group_->GetCollectionScope();
         if (scope == nullptr) return nullptr;
         return TelemetryDomain::GetStorage(
             std::move(scope), args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
@@ -1732,7 +1732,7 @@ ExtProcFilter::~ExtProcFilter() {
 void ExtProcFilter::RecordClientHeadersDuration(double duration_seconds) const {
   if (telemetry_storage_ != nullptr) {
     telemetry_storage_->Increment(TelemetryDomain::kClientHeadersDuration,
-                                  duration_seconds);
+                                  duration_seconds, stats_plugin_group_.get());
   }
 }
 
@@ -1740,14 +1740,14 @@ void ExtProcFilter::RecordClientHalfCloseDuration(
     double duration_seconds) const {
   if (telemetry_storage_ != nullptr) {
     telemetry_storage_->Increment(TelemetryDomain::kClientHalfCloseDuration,
-                                  duration_seconds);
+                                  duration_seconds, stats_plugin_group_.get());
   }
 }
 
 void ExtProcFilter::RecordServerHeadersDuration(double duration_seconds) const {
   if (telemetry_storage_ != nullptr) {
     telemetry_storage_->Increment(TelemetryDomain::kServerHeadersDuration,
-                                  duration_seconds);
+                                  duration_seconds, stats_plugin_group_.get());
   }
 }
 
@@ -1755,7 +1755,7 @@ void ExtProcFilter::RecordServerTrailersDuration(
     double duration_seconds) const {
   if (telemetry_storage_ != nullptr) {
     telemetry_storage_->Increment(TelemetryDomain::kServerTrailersDuration,
-                                  duration_seconds);
+                                  duration_seconds, stats_plugin_group_.get());
   }
 }
 

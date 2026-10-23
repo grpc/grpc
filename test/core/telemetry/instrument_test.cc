@@ -16,7 +16,6 @@
 
 #include <thread>
 
-#include "test/core/test_util/fake_stats_plugin.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/random/random.h"
@@ -45,6 +44,19 @@ using InstrumentLabelListTest = InstrumentTest;
 using InstrumentIndexTest = InstrumentTest;
 using DomainStorageTest = InstrumentTest;
 using CollectionScopeTest = InstrumentTest;
+
+class MockInstrumentRecorder : public InstrumentRecorder {
+ public:
+  virtual ~MockInstrumentRecorder() = default;
+  MOCK_METHOD(void, RecordHistogram,
+              (const InstrumentMetadata::Description* description, int64_t value,
+               absl::Span<const std::string> label_values),
+              (override));
+  MOCK_METHOD(void, RecordHistogram,
+              (const InstrumentMetadata::Description* description, double value,
+               absl::Span<const std::string> label_values),
+              (override));
+};
 
 class MockMetricsSink : public MetricsSink {
  public:
@@ -364,7 +376,7 @@ TEST_F(MetricsQueryTest, LowContentionHistogram) {
   ASSERT_FALSE(value_before.empty());
   std::vector<uint64_t> expect_value = value_before;
   expect_value[0] += 1;
-  storage->Increment(LowContentionDomain::kExponentialHistogram, 0);
+  storage->Increment(LowContentionDomain::kExponentialHistogram, 0, nullptr);
   EXPECT_CALL(
       sink, Int64Histogram(InstrumentLabelListElementsAreArray(label_keys),
                            absl::MakeConstSpan(label), "exponential_histogram",
@@ -400,7 +412,8 @@ TEST_F(MetricsQueryTest, LowContentionDoubleHistogram) {
   ASSERT_FALSE(value_before.empty());
   std::vector<uint64_t> expect_value = value_before;
   expect_value[0] += 1;
-  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5);
+  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5,
+                     nullptr);
   EXPECT_CALL(sink,
               DoubleHistogram(InstrumentLabelListElementsAreArray(label_keys),
                               absl::MakeConstSpan(label),
@@ -755,7 +768,7 @@ TEST_F(MetricsQueryTest, ThreadStress) {
       absl::BitGen gen;
       while (!done.load(std::memory_order_relaxed)) {
         storage->Increment(LowContentionDomain::kExponentialHistogram,
-                           absl::Uniform(gen, 0, 1024));
+                           absl::Uniform(gen, 0, 1024), nullptr);
       }
     });
     threads.emplace_back([&]() {
@@ -818,205 +831,22 @@ TEST_F(MetricsQueryTest, ThreadStress) {
   }
 }
 
-class TestRecorderStatsPlugin : public FakeStatsPlugin {
- public:
-  using FakeStatsPlugin::RecordHistogram;
-  bool UsesInstrumentRecorder() const override { return true; }
-  void RecordHistogram(const InstrumentMetadata::Description* description,
-                       int64_t value,
-                       absl::Span<const std::string> label_values) override {
-    int64_histograms_.push_back(
-        {description, value,
-         std::vector<std::string>(label_values.begin(), label_values.end())});
-  }
-
-  void RecordHistogram(const InstrumentMetadata::Description* description,
-                       double value,
-                       absl::Span<const std::string> label_values) override {
-    double_histograms_.push_back(
-        {description, value,
-         std::vector<std::string>(label_values.begin(), label_values.end())});
-  }
-
-  const std::vector<FakeInstrumentRecorder::Int64Histogram>& int64_histograms()
-      const {
-    return int64_histograms_;
-  }
-
-  const std::vector<FakeInstrumentRecorder::DoubleHistogram>&
-  double_histograms() const {
-    return double_histograms_;
-  }
-
- private:
-  std::vector<FakeInstrumentRecorder::Int64Histogram> int64_histograms_;
-  std::vector<FakeInstrumentRecorder::DoubleHistogram> double_histograms_;
-};
-
-class TestNoRecorderStatsPlugin : public FakeStatsPlugin {
- public:
-  using FakeStatsPlugin::RecordHistogram;
-  int record_histogram_call_count() const {
-    return record_histogram_call_count_;
-  }
-
-  void RecordHistogram(const InstrumentMetadata::Description* description,
-                       int64_t value,
-                       absl::Span<const std::string> label_values) override {
-    ++record_histogram_call_count_;
-    // Invokes base StatsPlugin default no-op behavior (no push-based histogram
-    // recording).
-    FakeStatsPlugin::RecordHistogram(description, value, label_values);
-  }
-
-  void RecordHistogram(const InstrumentMetadata::Description* description,
-                       double value,
-                       absl::Span<const std::string> label_values) override {
-    ++record_histogram_call_count_;
-    // Invokes base StatsPlugin default no-op behavior (no push-based histogram
-    // recording).
-    FakeStatsPlugin::RecordHistogram(description, value, label_values);
-  }
-
- private:
-  int record_histogram_call_count_ = 0;
-};
-
-TEST_F(InstrumentTest, InstrumentRecorderInt64) {
-  auto plugin1 = std::make_shared<TestRecorderStatsPlugin>();
-  auto plugin2 = std::make_shared<TestRecorderStatsPlugin>();
-  auto plugin3 = std::make_shared<TestNoRecorderStatsPlugin>();
-
-  auto stats_plugin_group =
-      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
-  stats_plugin_group->AddStatsPlugin(plugin1, nullptr);
-  stats_plugin_group->AddStatsPlugin(plugin2, nullptr);
-  stats_plugin_group->AddStatsPlugin(plugin3, nullptr);
-  stats_plugin_group->Finish();
-
-  auto scope = stats_plugin_group->GetCollectionScope();
+TEST_F(InstrumentTest, InstrumentRecorder) {
+  auto scope = CreateCollectionScope({}, {"grpc.target"});
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label_keys = {"grpc.target"};
-  std::vector<std::string> label = {"example.com"};
-  FakeStatsPlugin::DomainMetricsSink<std::vector<uint64_t>> sink_before(
-      "exponential_histogram", label_keys, label);
-  MetricsQuery().OnlyMetrics({"exponential_histogram"}).Run(scope, sink_before);
-  ASSERT_TRUE(sink_before.captured_value().has_value());
-  std::vector<uint64_t> counts_before = *sink_before.captured_value();
-  ASSERT_FALSE(counts_before.empty());
-  const auto* desc = InstrumentIndex::Get().Find(
-      LowContentionDomain::kExponentialHistogram.name());
-  ASSERT_NE(desc, nullptr);
+  ::testing::StrictMock<MockInstrumentRecorder> recorder;
 
-  storage->Increment(LowContentionDomain::kExponentialHistogram, 0);
+  EXPECT_CALL(recorder, RecordHistogram(
+      InstrumentIndex::Get().Find(LowContentionDomain::kExponentialHistogram.name()),
+      ::testing::Matcher<int64_t>(int64_t{0}), ::testing::ElementsAre("example.com")));
+  storage->Increment(LowContentionDomain::kExponentialHistogram, 0, &recorder);
 
-  // Verify plugin1 (recorder) received the push notification.
-  ASSERT_EQ(plugin1->int64_histograms().size(), 1);
-  EXPECT_EQ(plugin1->int64_histograms()[0].description, desc);
-  EXPECT_EQ(plugin1->int64_histograms()[0].value, 0);
-  EXPECT_EQ(plugin1->int64_histograms()[0].label_values, label);
+  EXPECT_CALL(recorder, RecordHistogram(
+      InstrumentIndex::Get().Find(LowContentionDomain::kExponentialDoubleHistogram.name()),
+      ::testing::Matcher<double>(0.5), ::testing::ElementsAre("example.com")));
+  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5, &recorder);
 
-  // Verify plugin2 (recorder) received the push notification.
-  ASSERT_EQ(plugin2->int64_histograms().size(), 1);
-  EXPECT_EQ(plugin2->int64_histograms()[0].description, desc);
-  EXPECT_EQ(plugin2->int64_histograms()[0].value, 0);
-  EXPECT_EQ(plugin2->int64_histograms()[0].label_values, label);
-
-  // Verify plugin3 (no recorder) had the call dispatched to it through the
-  // group, but performed no push-based recording (no-op).
-  EXPECT_EQ(plugin3->record_histogram_call_count(), 1);
-
-  // Verify the lock-free backend is properly incremented.
-  std::vector<uint64_t> expected_counts = counts_before;
-  expected_counts[0] += 1;
-  FakeStatsPlugin::DomainMetricsSink<std::vector<uint64_t>> sink_after(
-      "exponential_histogram", label_keys, label);
-  MetricsQuery().OnlyMetrics({"exponential_histogram"}).Run(scope, sink_after);
-  EXPECT_EQ(sink_after.captured_value(), expected_counts);
-
-  // Verify a group with only non-push plugins does not attach an
-  // instrument_recorder at all.
-  auto no_recorder_group =
-      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
-  no_recorder_group->AddStatsPlugin(plugin3, nullptr);
-  no_recorder_group->Finish();
-  auto no_recorder_scope = no_recorder_group->GetCollectionScope();
-  EXPECT_TRUE(no_recorder_scope->instrument_recorder().expired());
-  auto no_recorder_storage =
-      LowContentionDomain::GetStorage(no_recorder_scope, "example.com");
-  no_recorder_storage->Increment(LowContentionDomain::kExponentialHistogram, 0);
-  EXPECT_EQ(plugin3->record_histogram_call_count(), 1);
-}
-
-TEST_F(InstrumentTest, InstrumentRecorderDouble) {
-  auto plugin1 = std::make_shared<TestRecorderStatsPlugin>();
-  auto plugin2 = std::make_shared<TestRecorderStatsPlugin>();
-  auto plugin3 = std::make_shared<TestNoRecorderStatsPlugin>();
-
-  auto stats_plugin_group =
-      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
-  stats_plugin_group->AddStatsPlugin(plugin1, nullptr);
-  stats_plugin_group->AddStatsPlugin(plugin2, nullptr);
-  stats_plugin_group->AddStatsPlugin(plugin3, nullptr);
-  stats_plugin_group->Finish();
-
-  auto scope = stats_plugin_group->GetCollectionScope();
-  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label_keys = {"grpc.target"};
-  std::vector<std::string> label = {"example.com"};
-  FakeStatsPlugin::DomainMetricsSink<std::vector<uint64_t>> sink_before(
-      "exponential_double_histogram", label_keys, label);
-  MetricsQuery()
-      .OnlyMetrics({"exponential_double_histogram"})
-      .Run(scope, sink_before);
-  ASSERT_TRUE(sink_before.captured_value().has_value());
-  std::vector<uint64_t> counts_before = *sink_before.captured_value();
-  ASSERT_FALSE(counts_before.empty());
-  const auto* desc = InstrumentIndex::Get().Find(
-      LowContentionDomain::kExponentialDoubleHistogram.name());
-  ASSERT_NE(desc, nullptr);
-
-  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5);
-
-  // Verify plugin1 (recorder) received the push notification.
-  ASSERT_EQ(plugin1->double_histograms().size(), 1);
-  EXPECT_EQ(plugin1->double_histograms()[0].description, desc);
-  EXPECT_EQ(plugin1->double_histograms()[0].value, 0.5);
-  EXPECT_EQ(plugin1->double_histograms()[0].label_values, label);
-
-  // Verify plugin2 (recorder) received the push notification.
-  ASSERT_EQ(plugin2->double_histograms().size(), 1);
-  EXPECT_EQ(plugin2->double_histograms()[0].description, desc);
-  EXPECT_EQ(plugin2->double_histograms()[0].value, 0.5);
-  EXPECT_EQ(plugin2->double_histograms()[0].label_values, label);
-
-  // Verify plugin3 (no recorder) had the call dispatched to it through the
-  // group, but performed no push-based recording (no-op).
-  EXPECT_EQ(plugin3->record_histogram_call_count(), 1);
-
-  // Verify the lock-free backend is properly incremented.
-  std::vector<uint64_t> expected_counts = counts_before;
-  expected_counts[0] += 1;
-  FakeStatsPlugin::DomainMetricsSink<std::vector<uint64_t>> sink_after(
-      "exponential_double_histogram", label_keys, label);
-  MetricsQuery()
-      .OnlyMetrics({"exponential_double_histogram"})
-      .Run(scope, sink_after);
-  EXPECT_EQ(sink_after.captured_value(), expected_counts);
-
-  // Verify a group with only non-push plugins does not attach an
-  // instrument_recorder at all.
-  auto no_recorder_group =
-      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
-  no_recorder_group->AddStatsPlugin(plugin3, nullptr);
-  no_recorder_group->Finish();
-  auto no_recorder_scope = no_recorder_group->GetCollectionScope();
-  EXPECT_TRUE(no_recorder_scope->instrument_recorder().expired());
-  auto no_recorder_storage =
-      LowContentionDomain::GetStorage(no_recorder_scope, "example.com");
-  no_recorder_storage->Increment(
-      LowContentionDomain::kExponentialDoubleHistogram, 0.5);
-  EXPECT_EQ(plugin3->record_histogram_call_count(), 1);
+  storage->Increment(LowContentionDomain::kExponentialHistogram, 0, nullptr);
 }
 
 TEST_F(InstrumentLabelListTest, FixedToList) {

@@ -66,7 +66,7 @@ BENCHMARK(BM_IncrementHighContentionInstrument)->ThreadRange(1, 64);
 void BM_IncrementLowContentionHistogram(benchmark::State& state) {
   auto storage = LowContentionDomain::GetStorage(CreateCollectionScope({}, {}));
   for (auto _ : state) {
-    storage->Increment(LowContentionDomain::kHistogram, 100);
+    storage->Increment(LowContentionDomain::kHistogram, 100, nullptr);
   }
 }
 BENCHMARK(BM_IncrementLowContentionHistogram)->ThreadRange(1, 64);
@@ -75,7 +75,7 @@ void BM_IncrementHighContentionHistogram(benchmark::State& state) {
   auto storage =
       HighContentionDomain::GetStorage(CreateCollectionScope({}, {}));
   for (auto _ : state) {
-    storage->Increment(HighContentionDomain::kHistogram, 100);
+    storage->Increment(HighContentionDomain::kHistogram, 100, nullptr);
   }
 }
 BENCHMARK(BM_IncrementHighContentionHistogram)->ThreadRange(1, 64);

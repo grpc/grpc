@@ -118,7 +118,6 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:histogram",
         "//src/core:instrument",
-        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
     ],
 )
