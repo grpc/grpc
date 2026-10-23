@@ -253,6 +253,25 @@ grpc_cc_test(
 )
 
 grpc_fuzz_test(
+    name = "server_call_hook_filter_test",
+    srcs = ["server_call_hook_filter_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        ":filter_matchers",
+        ":filter_test",
+        "//:grpc_public_hdrs",
+        "//src/core:channel_args",
+        "//src/core:server_call_tracer_filter",
+    ],
+)
+
+grpc_fuzz_test(
     name = "client_authority_filter_test",
     srcs = ["client_authority_filter_test.cc"],
     external_deps = [
