@@ -61,6 +61,7 @@ EXPERIMENT_ENABLES = {
     "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
+    "python_single_copy_recv": "python_single_copy_recv",
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
