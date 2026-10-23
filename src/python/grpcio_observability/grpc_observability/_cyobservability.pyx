@@ -330,14 +330,24 @@ cdef void _export_census_data(object exporter):
 cdef void _flush_census_data(object exporter):
   exporter: _observability.Exporter
 
-  lk = new unique_lock[mutex](g_census_data_buffer_mutex)
-  if g_census_data_buffer.empty():
+  # Move the pending census data out of the shared buffer and release the
+  # buffer mutex before touching any Python object. Converting the data and
+  # calling the exporter requires the GIL, while the threads recording census
+  # data take the buffer mutex (AddCensusDataToBuffer) possibly while already
+  # holding the GIL, e.g. the asyncio event loop thread. Holding the mutex
+  # while running Python code could therefore deadlock the process.
+  cdef queue[NativeCensusData] census_data_batch
+  with nogil:
+    lk = new unique_lock[mutex](g_census_data_buffer_mutex)
+    g_census_data_buffer.swap(census_data_batch)
     del lk
+
+  if census_data_batch.empty():
     return
   py_metrics_batch = []
   py_spans_batch = []
-  while not g_census_data_buffer.empty():
-    c_census_data = g_census_data_buffer.front()
+  while not census_data_batch.empty():
+    c_census_data = census_data_batch.front()
     if c_census_data.type == kMetricData:
       py_labels = _c_label_to_labels(c_census_data.labels)
       py_identifier = _decode(c_census_data.identifier)
@@ -348,9 +358,8 @@ cdef void _flush_census_data(object exporter):
       py_span = _get_tracing_data(c_census_data.span_data, c_census_data.span_data.span_labels,
                                   c_census_data.span_data.span_annotations)
       py_spans_batch.append(py_span)
-    g_census_data_buffer.pop()
+    census_data_batch.pop()
 
-  del lk
   exporter.export_stats_data(py_metrics_batch)
   exporter.export_tracing_data(py_spans_batch)
 
