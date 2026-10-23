@@ -957,7 +957,7 @@ grpc_cc_test(
         "gtest",
     ],
     linkstatic = True,
-    shard_count = 2,
+    shard_count = 4,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -973,6 +973,8 @@ grpc_cc_test(
         "//src/core:client_channel_backup_poller",
         "//src/core:experiments",
         "//src/core:sync",
+        "//test/core/filters:ext_proc_test_util",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/end2end:end2end_test_utils",

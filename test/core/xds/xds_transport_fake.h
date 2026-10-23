@@ -94,6 +94,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool WaitForReadsStarted(size_t expected);
 
+    // Ticks the EventEngine until the client half-closes the stream.
+    // Returns false if the EventEngine goes idle first.
+    bool WaitForHalfClose();
+
     bool half_closed() const {
       MutexLock lock(mu_);
       return half_closed_;

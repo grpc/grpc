@@ -210,6 +210,17 @@ bool FakeXdsTransportFactory::FakeStreamingCall::WaitForReadsStarted(
   }
 }
 
+bool FakeXdsTransportFactory::FakeStreamingCall::WaitForHalfClose() {
+  while (true) {
+    {
+      MutexLock lock(mu_);
+      if (half_closed_) return true;
+      if (event_engine_->IsIdle()) return false;
+    }
+    event_engine_->Tick();
+  }
+}
+
 bool FakeXdsTransportFactory::FakeStreamingCall::IsOrphaned() {
   MutexLock lock(mu_);
   return orphaned_;

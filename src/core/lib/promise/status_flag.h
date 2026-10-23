@@ -19,6 +19,7 @@
 
 #include <optional>
 #include <ostream>
+#include <utility>
 
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/util/grpc_check.h"
@@ -286,7 +287,9 @@ class ValueOrFailure {
   std::optional<T> value_;
 };
 
-template <typename T>
+// Only participates in overload resolution if T itself is streamable.
+template <typename T, typename = decltype(std::declval<std::ostream&>()
+                                          << std::declval<const T&>())>
 inline std::ostream& operator<<(std::ostream& os,
                                 const ValueOrFailure<T>& value) {
   if (value.ok()) {
