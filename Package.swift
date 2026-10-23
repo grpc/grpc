@@ -439,6 +439,8 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/http2_server_transport.h",
         "src/core/ext/transport/chttp2/transport/http2_settings.cc",
         "src/core/ext/transport/chttp2/transport/http2_settings.h",
+        "src/core/ext/transport/chttp2/transport/http2_settings_handshaker.cc",
+        "src/core/ext/transport/chttp2/transport/http2_settings_handshaker.h",
         "src/core/ext/transport/chttp2/transport/http2_settings_manager.cc",
         "src/core/ext/transport/chttp2/transport/http2_settings_manager.h",
         "src/core/ext/transport/chttp2/transport/http2_settings_promises.h",

@@ -427,6 +427,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_server_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings_handshaker.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings_promises.h" role="src" />
