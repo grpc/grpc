@@ -24,9 +24,11 @@
 #include <cstddef>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -146,6 +148,7 @@ class WriteBufferTracker {
 
   struct SerializeStats {
     bool& should_reset_ping_clock;
+    Http2TransportStats& http2_transport_stats;
   };
 
   SliceBuffer SerializeRegularFrames(SerializeStats stats) {
@@ -161,6 +164,10 @@ class WriteBufferTracker {
  private:
   template <typename FrameContainer>
   SliceBuffer SerializeFrames(FrameContainer& frames, SerializeStats stats) {
+    const WriteFrameStatsVisitor visitor(stats.http2_transport_stats);
+    for (const Http2Frame& frame : frames) {
+      std::visit(visitor, frame);
+    }
     SliceBuffer output_buf;
     if (GPR_UNLIKELY(is_first_write_)) {
       // https://www.rfc-editor.org/rfc/rfc9113.html#name-http-2-connection-preface
@@ -178,7 +185,7 @@ class WriteBufferTracker {
       }
       is_first_write_ = false;
     }
-    SerializeReturn result =
+    const SerializeReturn result =
         Serialize(absl::Span<Http2Frame>(frames), output_buf);
     frames.clear();
     stats.should_reset_ping_clock = result.should_reset_ping_clock;
@@ -238,7 +245,7 @@ class FrameSender {
 class WriteCycle {
  public:
   WriteCycle(Chttp2WriteSizePolicy* write_size_policy, bool& is_first_write,
-             const bool& is_client,
+             const bool is_client,
              std::vector<Http2RstStreamFrame>&& rst_streams)
       : write_buffer_tracker_(is_first_write, is_client),
         write_quota_(write_size_policy->WriteTargetSize()),
@@ -269,6 +276,10 @@ class WriteCycle {
   // Wrappers for WriteQuota
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION size_t GetWriteBytesRemaining() const {
     return write_quota_.GetWriteBytesRemaining();
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION size_t GetTargetWriteSize() const {
+    return write_quota_.GetTargetWriteSize();
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SliceBuffer

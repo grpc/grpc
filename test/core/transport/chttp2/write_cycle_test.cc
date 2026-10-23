@@ -19,6 +19,7 @@
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 
 #include <climits>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <tuple>
@@ -26,11 +27,14 @@
 #include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
 
@@ -151,7 +155,9 @@ TEST_P(WriteBufferTrackerTest, SerializeRegularFrames) {
   tracker.AddRegularFrame(std::move(frame));
 
   bool reset_ping_clock = false;
-  SliceBuffer result = tracker.SerializeRegularFrames({reset_ping_clock});
+  Http2TransportStats stats{ChannelArgs()};
+  SliceBuffer result =
+      tracker.SerializeRegularFrames({reset_ping_clock, stats});
   EXPECT_GT(result.Length(), 0u);
   EXPECT_EQ(tracker.GetRegularFrameCount(), 0u);
   EXPECT_FALSE(tracker.CanSerializeRegularFrames());
@@ -170,7 +176,8 @@ TEST_P(WriteBufferTrackerTest, SerializeUrgentFrames) {
   tracker.AddUrgentFrame(std::move(frame));
 
   bool reset_ping_clock = false;
-  SliceBuffer result = tracker.SerializeUrgentFrames({reset_ping_clock});
+  Http2TransportStats stats{ChannelArgs()};
+  SliceBuffer result = tracker.SerializeUrgentFrames({reset_ping_clock, stats});
   EXPECT_GT(result.Length(), 0u);
   EXPECT_EQ(tracker.GetUrgentFrameCount(), 0u);
   EXPECT_FALSE(tracker.CanSerializeUrgentFrames());
@@ -182,6 +189,7 @@ TEST_P(WriteBufferTrackerTest, SerializeUrgentFrames) {
 // - is_first_write is true initially.
 // - is_first_write is false after SerializeRegularFrames.
 TEST(WriteBufferTrackerTest, FirstWriteTransition) {
+  Http2TransportStats stats{ChannelArgs()};
   for (bool is_client : {false, true}) {
     {
       bool is_first_write = true;
@@ -191,7 +199,7 @@ TEST(WriteBufferTrackerTest, FirstWriteTransition) {
           1, false, SliceBuffer(Slice::FromCopiedString(kData))});
       bool reset = false;
       // SerializeRegularFrames will set is_first_write to false
-      tracker.SerializeRegularFrames({reset});
+      tracker.SerializeRegularFrames({reset, stats});
       EXPECT_FALSE(is_first_write);
     }
 
@@ -202,7 +210,7 @@ TEST(WriteBufferTrackerTest, FirstWriteTransition) {
       tracker.AddUrgentFrame(Http2PingFrame{/*ack=*/false, 1234});
       bool reset = false;
       // SerializeUrgentFrames will set is_first_write to false
-      tracker.SerializeUrgentFrames({reset});
+      tracker.SerializeUrgentFrames({reset, stats});
       EXPECT_FALSE(is_first_write);
     }
   }
@@ -224,6 +232,7 @@ TEST_P(WriteCycleTest, Delegation) {
   bool is_client = GetParam();
   Chttp2WriteSizePolicy policy;
   bool is_first_write = true;
+  Http2TransportStats stats{ChannelArgs()};
   WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{});
 
   EXPECT_EQ(cycle.GetWriteBytesRemaining(), policy.WriteTargetSize());
@@ -243,11 +252,11 @@ TEST_P(WriteCycleTest, Delegation) {
   EXPECT_TRUE(cycle.CanSerializeUrgentFrames());
 
   bool reset = false;
-  SliceBuffer urgent_serialized = cycle.SerializeUrgentFrames({reset});
+  SliceBuffer urgent_serialized = cycle.SerializeUrgentFrames({reset, stats});
   EXPECT_GT(urgent_serialized.Length(), 0u);
   EXPECT_EQ(cycle.GetUrgentFrameCount(), 0u);
 
-  SliceBuffer serialized = cycle.SerializeRegularFrames({reset});
+  SliceBuffer serialized = cycle.SerializeRegularFrames({reset, stats});
   EXPECT_GT(serialized.Length(), 0u);
   EXPECT_EQ(cycle.GetRegularFrameCount(), 0u);
 
@@ -290,10 +299,11 @@ TEST_P(WriteCycleTest, SerializationSideEffects) {
   bool is_client = GetParam();
   Chttp2WriteSizePolicy policy;
   bool is_first_write = true;
+  Http2TransportStats stats{ChannelArgs()};
   WriteCycle cycle(&policy, is_first_write, is_client, /*rst_streams=*/{});
 
   bool reset = false;
-  const SliceBuffer serialized = cycle.SerializeRegularFrames({reset});
+  const SliceBuffer serialized = cycle.SerializeRegularFrames({reset, stats});
   EXPECT_FALSE(is_first_write);
 }
 
@@ -301,6 +311,7 @@ TEST_P(WriteCycleTest, RstStreamAddedAndFlushed) {
   const bool is_client = GetParam();
   Chttp2WriteSizePolicy policy;
   bool is_first_write = true;
+  Http2TransportStats stats{ChannelArgs()};
 
   std::vector<Http2RstStreamFrame> rst_streams = {
       Http2RstStreamFrame{/*stream_id=*/1u, /*error_code=*/2u}};
@@ -311,7 +322,7 @@ TEST_P(WriteCycleTest, RstStreamAddedAndFlushed) {
   EXPECT_EQ(cycle.GetRegularFrameCount(), 1u);
 
   bool reset = false;
-  const SliceBuffer serialized = cycle.SerializeRegularFrames({reset});
+  const SliceBuffer serialized = cycle.SerializeRegularFrames({reset, stats});
   EXPECT_EQ(serialized.Length(),
             is_client
                 ? (GRPC_CHTTP2_CLIENT_CONNECT_STRLEN + kRstStreamFrameSize)
@@ -332,12 +343,15 @@ class TransportWriteContextTest : public ::testing::TestWithParam<bool> {
   TransportWriteContext& GetTransportWriteContext() {
     return transport_write_context_;
   }
+  Http2TransportStats& GetStats() { return http2_transport_stats_; }
 
   void StartWriteCycle() { transport_write_context_.StartWriteCycle(); }
+
   void EndWriteCycle() { transport_write_context_.EndWriteCycle(); }
 
  private:
   TransportWriteContext transport_write_context_;
+  Http2TransportStats http2_transport_stats_{ChannelArgs()};
 };
 
 // This test verifies the initial state and DebugString of
@@ -455,7 +469,8 @@ TEST_P(TransportWriteContextTest, QueuesAndSerializesRstStreams) {
 
   // Step 4: Serialize the regular frames and verify byte count.
   bool reset = false;
-  const SliceBuffer serialized = write_cycle.SerializeRegularFrames({reset});
+  const SliceBuffer serialized =
+      write_cycle.SerializeRegularFrames({reset, GetStats()});
   EXPECT_EQ(serialized.Length(),
             is_client
                 ? (GRPC_CHTTP2_CLIENT_CONNECT_STRLEN + kRstStreamFrameSize)
@@ -481,13 +496,94 @@ TEST_P(TransportWriteContextTest, QueuesAndSerializesRstStreams) {
   // Step 9: Serialize regular frames. Since is_first_write is now false,
   // no client connect string is prepended.
   const SliceBuffer multiple_serialized =
-      write_cycle2.SerializeRegularFrames({reset});
+      write_cycle2.SerializeRegularFrames({reset, GetStats()});
   EXPECT_EQ(multiple_serialized.Length(), 3u * kRstStreamFrameSize);
 
   // Step 10: Verify the buffer is flushed and end the write cycle.
   EXPECT_EQ(write_cycle2.GetRegularFrameCount(), 0u);
   write_cycle2.EndWrite(/*success=*/true);
   EndWriteCycle();
+}
+
+// This test verifies that a full write cycle through TransportWriteContext and
+// WriteCycle accurately records all 5 write-cycle HTTP/2 telemetry stats
+// (writes begun, write target size, write data frame size, settings writes,
+// and pings sent).
+// Assertions:
+// - BeginWrite increments http2_writes_begun by 1 and records
+//   GetTargetWriteSize() in http2_write_target_size (both per-transport and
+//   globally).
+// - SerializeRegularFrames and SerializeUrgentFrames increment
+//   http2_settings_writes and http2_pings_sent only for non-ACK frames, and
+//   record each Http2DataFrame's payload length in http2_write_data_frame_size.
+TEST_P(TransportWriteContextTest, RecordsAllWriteCycleStatsEndToEnd) {
+  Http2TransportStats http2_transport_stats((ChannelArgs()));
+  const testing::Http2GlobalStatsTestHelper stats_helper;
+
+  // Step 1: Start the write cycle with http2_transport_stats, matching
+  // MultiplexerLoop.
+  StartWriteCycle();
+  WriteCycle& write_cycle = GetWriteCycle();
+  const size_t target_write_size = write_cycle.GetTargetWriteSize();
+  http2_transport_stats.BeginWrite(target_write_size);
+
+  // Verify per-transport Http2Stats view for writes_begun and
+  // write_target_size.
+  const Http2Stats& transport_stats =
+      http2_transport_stats.GetStatsCollector()->View();
+  EXPECT_EQ(transport_stats.http2_writes_begun, 1u);
+  const int local_target_bucket =
+      transport_stats.http2_write_target_size.BucketFor(
+          static_cast<int>(target_write_size));
+  EXPECT_EQ(
+      transport_stats.http2_write_target_size.buckets()[local_target_bucket],
+      1u);
+
+  // Step 2: Queue DATA, SETTINGS (non-ACK and ACK), and PING (non-ACK and ACK)
+  // frames into the write cycle.
+  FrameSender frame_sender = write_cycle.GetFrameSender();
+  frame_sender.AddRegularFrame(
+      Http2DataFrame{/*stream_id=*/1u, /*end_stream=*/false,
+                     SliceBuffer(Slice::FromCopiedString(kData1))});
+  frame_sender.AddRegularFrame(
+      Http2DataFrame{/*stream_id=*/1u, /*end_stream=*/true, SliceBuffer()});
+  frame_sender.AddRegularFrame(Http2SettingsFrame{/*ack=*/false, {}});
+  frame_sender.AddRegularFrame(Http2SettingsFrame{/*ack=*/true, {}});
+  frame_sender.AddRegularFrame(Http2PingFrame{/*ack=*/false, 1111u});
+  frame_sender.AddRegularFrame(Http2PingFrame{/*ack=*/true, 2222u});
+  frame_sender.AddUrgentFrame(Http2PingFrame{/*ack=*/false, 3333u});
+
+  // Verify that frame serialization stats have not been recorded before
+  // SerializeUrgentFrames / SerializeRegularFrames is called.
+  stats_helper.ExpectWritesBegun(/*expected_count=*/1u);
+  stats_helper.ExpectSettingsWrites(/*expected_count=*/0u);
+  stats_helper.ExpectPingsSent(/*expected_count=*/0u);
+
+  // Step 3: Serialize both urgent and regular frames, matching
+  // MaybeWriteUrgentFrames and SerializeAndWrite in transport.
+  bool reset_ping_clock = false;
+  const SliceBuffer urgent_serialized = write_cycle.SerializeUrgentFrames(
+      WriteCycle::SerializeStats{reset_ping_clock, http2_transport_stats});
+  EXPECT_GT(urgent_serialized.Length(), 0u);
+
+  const SliceBuffer regular_serialized = write_cycle.SerializeRegularFrames(
+      WriteCycle::SerializeStats{reset_ping_clock, http2_transport_stats});
+  EXPECT_GT(regular_serialized.Length(), 0u);
+
+  // Step 4: Complete the write cycle.
+  write_cycle.BeginWrite(regular_serialized.Length());
+  write_cycle.EndWrite(/*success=*/true);
+  EndWriteCycle();
+
+  // Step 5: Verify all 5 write-cycle metrics in global stats.
+  stats_helper.ExpectWritesBegun(/*expected_count=*/1u);
+  stats_helper.ExpectWriteTargetSize(
+      /*value=*/static_cast<int>(target_write_size), /*expected_count=*/1u);
+  stats_helper.ExpectWriteDataFrameSize(
+      /*value=*/static_cast<int>(kData1.size()), /*expected_count=*/1u);
+  stats_helper.ExpectWriteDataFrameSize(/*value=*/0, /*expected_count=*/1u);
+  stats_helper.ExpectSettingsWrites(/*expected_count=*/1u);
+  stats_helper.ExpectPingsSent(/*expected_count=*/2u);
 }
 
 INSTANTIATE_TEST_SUITE_P(TransportWriteContextTest, TransportWriteContextTest,
