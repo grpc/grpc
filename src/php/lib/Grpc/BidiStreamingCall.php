@@ -41,7 +41,8 @@ class BidiStreamingCall extends AbstractCall
     /**
      * Reads the next value from the server.
      *
-     * @return mixed The next value from the server, or null if there is none
+     * @return object|null An instance of the configured response class,
+     *                     or null when no message is available
      */
     public function read()
     {
@@ -61,9 +62,14 @@ class BidiStreamingCall extends AbstractCall
      * Write a single message to the server. This cannot be called after
      * writesDone is called.
      *
-     * @param ByteBuffer $data    The data to write
-     * @param array      $options An array of options, possible keys:
-     *                            'flags' => a number (optional)
+     * @param object $data    The message object, whose serializeToString()
+     *                        method returns the serialized message string
+     * @param array  $options An array of options, possible keys:
+     *                        'flags' => an integer (optional)
+     *
+     * @phpstan-param array{flags?: int} $options
+     *
+     * @return void
      */
     public function write($data, array $options = [])
     {
@@ -91,6 +97,11 @@ class BidiStreamingCall extends AbstractCall
      *
      * @return \stdClass The status object, with integer $code, string
      *                   $details, and array $metadata members
+     * @phpstan-return \stdClass&object{
+     *     code: int,
+     *     details: string,
+     *     metadata: array<array-key, list<string>>
+     * }
      */
     public function getStatus()
     {

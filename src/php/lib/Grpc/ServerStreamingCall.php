@@ -28,11 +28,14 @@ class ServerStreamingCall extends AbstractCall
     /**
      * Start the call.
      *
-     * @param mixed $data     The data to send
-     * @param array $metadata Metadata to send with the call, if applicable
-     *                        (optional)
-     * @param array $options  An array of options, possible keys:
-     *                        'flags' => a number (optional)
+     * @param object $data     The message object, whose serializeToString()
+     *                         method returns the serialized message string
+     * @param array  $metadata Metadata to send with the call, if applicable
+     *                         (optional)
+     * @param array  $options  An array of options, possible keys:
+     *                         'flags' => an integer (optional)
+     *
+     * @phpstan-param array{flags?: int} $options
      */
     public function start($data, array $metadata = [], array $options = [])
     {
@@ -48,7 +51,8 @@ class ServerStreamingCall extends AbstractCall
     }
 
     /**
-     * @return mixed An iterator of response values
+     * @return \Generator An iterator of response objects
+     * @phpstan-return \Generator<int, object>
      */
     public function responses()
     {
@@ -74,6 +78,11 @@ class ServerStreamingCall extends AbstractCall
      *
      * @return \stdClass The status object, with integer $code, string
      *                   $details, and array $metadata members
+     * @phpstan-return \stdClass&object{
+     *     code: int,
+     *     details: string,
+     *     metadata: array<array-key, list<string>>
+     * }
      */
     public function getStatus()
     {
