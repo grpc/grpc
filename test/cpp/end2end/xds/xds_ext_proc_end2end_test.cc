@@ -2985,7 +2985,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyNotDrainedFails) {
   ASSERT_THAT(req2, ::testing::Optional(MatchesResponseBody(
                         EchoResponseMessageIs(kMessage2), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::OkStatus());
-  stream.StartWritesDone();
+  // Don't half-close here: the side-stream status fails the call, which can
+  // complete all outstanding ops and destroy the call before WritesDone is
+  // started.
   EXPECT_THAT(
       stream.WaitForStatus(),
       ::testing::Optional(GrpcStatusIs(StatusCode::INTERNAL,
@@ -3067,7 +3069,9 @@ TEST_P(XdsExtProcEnd2endTest,
   ASSERT_THAT(drain_req,
               ::testing::Optional(MatchesResponseBodyDrainComplete()));
   ext_proc_stream->SendStatus(absl::OkStatus());
-  stream.StartWritesDone();
+  // Don't half-close here: the side-stream status fails the call, which can
+  // complete all outstanding ops and destroy the call before WritesDone is
+  // started.
   EXPECT_THAT(
       stream.WaitForStatus(),
       ::testing::Optional(GrpcStatusIs(StatusCode::INTERNAL,
