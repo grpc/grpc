@@ -115,9 +115,6 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseExtProcHeaderMutation(
 
 absl::Status ValidateCommonResponse(
     const envoy_service_ext_proc_v3_CommonResponse* common_response) {
-  if (common_response == nullptr) {
-    return absl::InternalError("common_response is not set");
-  }
   int32_t status =
       envoy_service_ext_proc_v3_CommonResponse_status(common_response);
   if (status == envoy_service_ext_proc_v3_CommonResponse_CONTINUE_AND_REPLACE) {
@@ -128,6 +125,9 @@ absl::Status ValidateCommonResponse(
 
 absl::StatusOr<ExtProcResponse::HeaderMutation> ParseExtProcHeaders(
     const envoy_service_ext_proc_v3_CommonResponse* common_response) {
+  // An unset CommonResponse is equivalent to the default one (CONTINUE with
+  // no mutations), which is what Envoy does.
+  if (common_response == nullptr) return ExtProcResponse::HeaderMutation{};
   auto status = ValidateCommonResponse(common_response);
   if (!status.ok()) return status;
   const envoy_service_ext_proc_v3_HeaderMutation* header_mutation =
@@ -137,10 +137,15 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseExtProcHeaders(
 
 absl::StatusOr<ExtProcResponse::BodyMutation> ParseExtProcBodyMutation(
     const envoy_service_ext_proc_v3_CommonResponse* common_response) {
-  auto status = ValidateCommonResponse(common_response);
-  if (!status.ok()) return status;
-  const envoy_service_ext_proc_v3_BodyMutation* body_mutation =
-      envoy_service_ext_proc_v3_CommonResponse_body_mutation(common_response);
+  // An unset CommonResponse is equivalent to the default one, which has no
+  // body_mutation.
+  const envoy_service_ext_proc_v3_BodyMutation* body_mutation = nullptr;
+  if (common_response != nullptr) {
+    auto status = ValidateCommonResponse(common_response);
+    if (!status.ok()) return status;
+    body_mutation =
+        envoy_service_ext_proc_v3_CommonResponse_body_mutation(common_response);
+  }
   if (body_mutation == nullptr) {
     return absl::InternalError("body_mutation is not set");
   }
