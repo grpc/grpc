@@ -3269,7 +3269,7 @@
       "posix",
       "windows"
     ],
-    "uses_polling": true
+    "uses_polling": false
   },
   {
     "args": [],
@@ -11427,7 +11427,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "xds_ext_proc_end2end_test",
+    "name": "xds_ext_authz_end2end_test",
     "platforms": [
       "linux",
       "mac",
@@ -11449,7 +11449,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "xds_ext_authz_end2end_test",
+    "name": "xds_ext_proc_end2end_test",
     "platforms": [
       "linux",
       "mac",

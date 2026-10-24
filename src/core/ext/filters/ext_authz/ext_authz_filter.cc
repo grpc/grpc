@@ -229,7 +229,8 @@ absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(
       "/envoy.service.auth.v3.Authorization/Check",
       std::make_unique<ExtAuthzCallEventHandler>(&notification, &result,
                                                  &status),
-      /*start_upon_send_message=*/true);
+      XdsTransportFactory::XdsTransport::CallOptions()
+          .set_start_upon_send_message(true));
   if (call == nullptr) {
     return handle_failure("Failed to create ext_authz unary call");
   }

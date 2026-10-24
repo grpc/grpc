@@ -123,10 +123,7 @@ class ExtAuthzFilterTest : public FilterTest {
         MakeRefCounted<FakeXdsTransportFactory>([]() {}, event_engine());
   }
 
-  void Shutdown() override {
-    FilterTest::Shutdown();
-    transport_factory_.reset();
-  }
+  void Cleanup() override { transport_factory_.reset(); }
 
   ClientMetadataHandle MakeClientMetadata(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
