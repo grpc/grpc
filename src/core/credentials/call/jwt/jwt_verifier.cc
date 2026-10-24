@@ -268,6 +268,14 @@ grpc_jwt_claims* grpc_jwt_claims_from_json(Json json) {
   claims->nbf = gpr_inf_past(GPR_CLOCK_REALTIME);
   claims->exp = gpr_inf_future(GPR_CLOCK_REALTIME);
 
+  // The payload must be a JSON object. A valid but non-object payload (string,
+  // number, boolean, or array) would make the object() call below throw
+  // std::bad_variant_access and abort the process in the no-exceptions build,
+  // so reject it here, as jose_header_from_json() does for the header.
+  if (claims->json->type() != Json::Type::kObject) {
+    goto error;
+  }
+
   // Per the spec, all fields are optional.
   for (const auto& p : claims->json->object()) {
     if (p.first == "sub") {
