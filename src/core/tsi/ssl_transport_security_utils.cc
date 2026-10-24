@@ -31,6 +31,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -512,88 +513,54 @@ absl::StatusOr<std::string> X509SubjectRfc2253(X509* cert) {
 
 namespace {
 
-// Returns the first non-empty SAN of \a san_type (GEN_URI or GEN_DNS) in
-// \a cert.  SANs that cannot be decoded, or that contain an embedded null
-// byte, are skipped.
-absl::StatusOr<std::string> FirstSanOfType(X509* cert, int san_type) {
+// Returns the value of \a subject_alt_name, which must be a URI or DNS SAN, if
+// it can be used as a principal: it decodes, is non-empty and contains no
+// embedded null byte.
+std::optional<std::string> UsableSanValue(GENERAL_NAME* subject_alt_name) {
+  absl::StatusOr<std::string> parsed = subject_alt_name->type == GEN_URI
+                                           ? ParseUriString(subject_alt_name)
+                                           : ParseDnsString(subject_alt_name);
+  if (!parsed.ok()) {
+    LOG(ERROR) << "Could not parse SAN: " << parsed.status();
+    return std::nullopt;
+  }
+  if (parsed->empty()) return std::nullopt;
+  if (absl::StrContains(*parsed, '\0')) {
+    LOG(ERROR) << "SAN contains embedded null byte.";
+    return std::nullopt;
+  }
+  return *std::move(parsed);
+}
+
+}  // namespace
+
+absl::StatusOr<std::string> X509Principal(X509* cert) {
   GRPC_DCHECK_NE(cert, nullptr);
-  GRPC_DCHECK(san_type == GEN_URI || san_type == GEN_DNS);
   GENERAL_NAMES* subject_alt_names = static_cast<GENERAL_NAMES*>(
       X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
-  if (subject_alt_names == nullptr) {
-    return absl::NotFoundError("Certificate has no subjectAltName extension.");
+  if (subject_alt_names != nullptr) {
+    // A single pass finds both the first usable URI SAN and the first usable
+    // DNS SAN; a URI SAN wins wherever it appears in the list.
+    std::optional<std::string> uri_san;
+    std::optional<std::string> dns_san;
+    const size_t subject_alt_name_count =
+        sk_GENERAL_NAME_num(subject_alt_names);
+    for (size_t i = 0; i < subject_alt_name_count; ++i) {
+      GENERAL_NAME* subject_alt_name =
+          sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
+      if (subject_alt_name == nullptr) continue;
+      if (subject_alt_name->type == GEN_URI) {
+        uri_san = UsableSanValue(subject_alt_name);
+        if (uri_san.has_value()) break;
+      } else if (subject_alt_name->type == GEN_DNS && !dns_san.has_value()) {
+        dns_san = UsableSanValue(subject_alt_name);
+      }
+    }
+    sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
+    if (uri_san.has_value()) return *std::move(uri_san);
+    if (dns_san.has_value()) return *std::move(dns_san);
   }
-  absl::StatusOr<std::string> result =
-      absl::NotFoundError("Certificate has no usable SAN of this type.");
-  const size_t subject_alt_name_count = sk_GENERAL_NAME_num(subject_alt_names);
-  for (size_t i = 0; i < subject_alt_name_count; ++i) {
-    GENERAL_NAME* subject_alt_name =
-        sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
-    if (subject_alt_name == nullptr || subject_alt_name->type != san_type) {
-      continue;
-    }
-    absl::StatusOr<std::string> parsed = san_type == GEN_URI
-                                             ? ParseUriString(subject_alt_name)
-                                             : ParseDnsString(subject_alt_name);
-    if (!parsed.ok()) {
-      LOG(ERROR) << "Could not parse SAN: " << parsed.status();
-      continue;
-    }
-    // Skip empty SANs.
-    if (parsed->empty()) continue;
-    if (absl::StrContains(*parsed, '\0')) {
-      LOG(ERROR) << "SAN contains embedded null byte.";
-      continue;
-    }
-    result = std::move(parsed);
-    break;
-  }
-  sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
-  return result;
-}
-
-}  // namespace
-
-absl::StatusOr<std::string> FirstUriSanFromX509(X509* cert) {
-  return FirstSanOfType(cert, GEN_URI);
-}
-
-absl::StatusOr<std::string> FirstDnsSanFromX509(X509* cert) {
-  return FirstSanOfType(cert, GEN_DNS);
-}
-
-LocalCertificateInfo::LocalCertificateInfo(X509* cert) : cert_(cert) {
-  GRPC_DCHECK_NE(cert_, nullptr);
-  // Released in the destructor.  X509 reference counts are atomic, so this is
-  // independent of the SSL object's (and SSL_CTX's) own references.
-  X509_up_ref(cert_);
-}
-
-LocalCertificateInfo::~LocalCertificateInfo() { X509_free(cert_); }
-
-namespace {
-
-// Returns the first URI SAN, else the first DNS SAN, else the subject of
-// \a cert; later values are only computed if the earlier ones are absent.
-absl::StatusOr<std::string> ComputePrincipal(X509* cert) {
-  // NotFound means the certificate has no usable SAN of that type, so fall
-  // through to the next one; any other result (success or a real error) is
-  // returned as is.  SANs that fail to decode are logged and skipped by the
-  // helpers.
-  absl::StatusOr<std::string> uri_san = FirstUriSanFromX509(cert);
-  if (!absl::IsNotFound(uri_san.status())) return uri_san;
-  absl::StatusOr<std::string> dns_san = FirstDnsSanFromX509(cert);
-  if (!absl::IsNotFound(dns_san.status())) return dns_san;
   return X509SubjectRfc2253(cert);
-}
-
-}  // namespace
-
-const absl::StatusOr<std::string>& LocalCertificateInfo::principal() {
-  grpc_core::MutexLock lock(mu_);
-  if (!principal_.has_value()) principal_ = ComputePrincipal(cert_);
-  // Safe to return after unlocking: the value is never modified once set.
-  return *principal_;
 }
 
 absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(

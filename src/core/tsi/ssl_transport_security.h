@@ -67,6 +67,9 @@
   "ssl_negotiated_key_exchange_group"
 #define TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY "ssl_requested_server_name"
 #define TSI_SSL_TLS_VERSION_PEER_PROPERTY "ssl_tls_version"
+// Principal of the certificate that *this* endpoint presented (see
+// tsi::X509Principal()).  Set on the server side only.
+#define TSI_X509_LOCAL_PRINCIPAL_PEER_PROPERTY "x509_local_principal"
 
 namespace tsi {
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
