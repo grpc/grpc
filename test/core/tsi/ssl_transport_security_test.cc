@@ -644,64 +644,39 @@ class SslTransportSecurityTest
              ssl_fixture->server_name_indication_ != kSslTsiTestInvalidSni;
     }
 
-    // Checks the properties describing the server's own certificate, which
-    // extract_peer() adds on the server side only, and adds them to
-    // \a expected_property_count.  \a peer must be a peer extracted from a
-    // server handshaker result.
+    // Checks the principal of the server's own certificate, which the server
+    // handshaker result reports as a peer property.
     //
     // These assertions are deliberately exact: they must distinguish the
     // certificate that the server actually presented on this connection
     // (which SNI can change) from the default one, because reporting the
     // wrong one would misreport the server's identity to an authorization
     // service.
-    static void CheckLocalCertProperties(SslTsiTestFixture* ssl_fixture,
-                                         const tsi_peer* peer,
-                                         size_t* expected_property_count) {
-      const tsi_peer_property* local_uri =
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_URI_PROPERTY);
-      const tsi_peer_property* local_dns =
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_DNS_PROPERTY);
-      const tsi_peer_property* local_subject =
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_SUBJECT_PROPERTY);
-      ASSERT_NE(local_subject, nullptr);
-      ++*expected_property_count;
+    static void CheckLocalPrincipal(SslTsiTestFixture* ssl_fixture,
+                                    const tsi_peer* peer) {
+      const tsi_peer_property* local_principal = tsi_peer_get_property_by_name(
+          peer, TSI_X509_LOCAL_PRINCIPAL_PEER_PROPERTY);
+      ASSERT_NE(local_principal, nullptr);
+      const std::string principal(local_principal->value.data,
+                                  local_principal->value.length);
       if (ssl_fixture->use_multi_domain_server_cert_) {
-        // multi-domain.pem has three URI SANs and two DNS SANs; only the first
-        // of each is reported.
-        ASSERT_NE(local_uri, nullptr);
-        EXPECT_EQ(std::string(local_uri->value.data, local_uri->value.length),
-                  "https://foo.test.domain.com/test");
-        ++*expected_property_count;
-        ASSERT_NE(local_dns, nullptr);
-        EXPECT_EQ(std::string(local_dns->value.data, local_dns->value.length),
-                  "foo.test.domain.com");
-        ++*expected_property_count;
-        EXPECT_EQ(
-            std::string(local_subject->value.data, local_subject->value.length),
-            "CN=xpigors,OU=Google,L=SF,ST=CA,C=US");
+        // multi-domain.pem has three URI SANs; the first one wins.
+        EXPECT_EQ(principal, "https://foo.test.domain.com/test");
         return;
       }
-      const bool is_server1 = ServerPresentsServer1Cert(ssl_fixture);
-      // Neither server0.pem nor server1.pem has a URI SAN.
-      ASSERT_EQ(local_uri, nullptr);
-      // server0.pem has no SAN extension at all; server1.pem's first DNS SAN
-      // is *.test.google.fr.
-      if (is_server1) {
-        ASSERT_NE(local_dns, nullptr);
-        EXPECT_EQ(std::string(local_dns->value.data, local_dns->value.length),
-                  "*.test.google.fr");
-        ++*expected_property_count;
-      } else {
-        ASSERT_EQ(local_dns, nullptr);
-      }
-      // The subject is the server's own, in RFC 2253 form, and never the
-      // subject of the client that this peer describes.
-      EXPECT_EQ(
-          std::string(local_subject->value.data, local_subject->value.length),
-          is_server1 ? "CN=*.test.google.com,O=Example\\, "
-                       "Co.,L=Chicago,ST=Illinois,C=US"
-                     : "CN=*.test.google.com.au,O=Internet Widgits Pty "
-                       "Ltd,ST=Some-State,C=AU");
+      // Neither server0.pem nor server1.pem has a URI SAN.  server1.pem's
+      // first DNS SAN is *.test.google.fr; server0.pem has no SAN extension
+      // at all, so its subject is used.
+      EXPECT_EQ(principal, ServerPresentsServer1Cert(ssl_fixture)
+                               ? "*.test.google.fr"
+                               : "CN=*.test.google.com.au,O=Internet Widgits "
+                                 "Pty Ltd,ST=Some-State,C=AU");
+    }
+
+    static void CheckLocalPrincipalUnset(const tsi_peer* peer) {
+      EXPECT_EQ(tsi_peer_get_property_by_name(
+                    peer, TSI_X509_LOCAL_PRINCIPAL_PEER_PROPERTY),
+                nullptr);
     }
 
     static void CheckClientPeer(SslTsiTestFixture* ssl_fixture,
@@ -714,6 +689,10 @@ class SslTransportSecurityTest
             (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 3 : 2);
         if (tsi_peer_get_property_by_name(
                 peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) != nullptr) {
+          expected_property_count++;
+        }
+        if (tsi_peer_get_property_by_name(
+                peer, TSI_X509_LOCAL_PRINCIPAL_PEER_PROPERTY) != nullptr) {
           expected_property_count++;
         }
         const tsi_peer_property* server_name_prop =
@@ -826,10 +805,11 @@ class SslTransportSecurityTest
             CheckVerifiedRootCertSubjectUnset(&peer);
           }
         }
+        // The local principal is reported on the server side only.
+        CheckLocalPrincipalUnset(&peer);
         if (ssl_fixture->use_multi_domain_server_cert_) {
-          // Not server0.pem or server1.pem; the server-side peer check below
-          // is what this configuration exists for.
-          CheckNoLocalCertProperties(&peer);
+          // Not server0.pem or server1.pem; the server-side check below is
+          // what this configuration exists for.
           tsi_peer_destruct(&peer);
         } else if (ssl_fixture->server_name_indication_.empty() ||
                    ssl_fixture->server_name_indication_ ==
@@ -858,6 +838,7 @@ class SslTransportSecurityTest
         } else {
           CheckVerifiedRootCertSubjectUnset(&peer);
         }
+        CheckLocalPrincipal(ssl_fixture, &peer);
         CheckClientPeer(ssl_fixture, &peer);
       } else {
         ASSERT_EQ(ssl_fixture->base_.server_result, nullptr);
@@ -980,12 +961,11 @@ TEST_P(SslTransportSecurityTest, DoHandshake) {
   DoHandshake();
 }
 
-// Covers the properties describing the server's own certificate when that
-// certificate has URI SANs: the first URI SAN and the first DNS SAN are
-// reported, and the rest are not.  These back
+// Covers the principal of the server's own certificate when that certificate
+// has URI SANs: the first URI SAN is reported.  This backs
 // AttributeContext.destination.principal in the ext_authz filter, whose
 // precedence rule prefers the URI SAN.
-TEST_P(SslTransportSecurityTest, LocalCertificatePropertiesWithUriSan) {
+TEST_P(SslTransportSecurityTest, LocalPrincipalWithUriSan) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->UseMultiDomainServerCert();
