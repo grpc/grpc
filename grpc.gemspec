@@ -209,6 +209,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/client_channel/dynamic_filters.h )
   s.files += %w( src/core/client_channel/global_subchannel_pool.cc )
   s.files += %w( src/core/client_channel/global_subchannel_pool.h )
+  s.files += %w( src/core/client_channel/lame_channel.cc )
+  s.files += %w( src/core/client_channel/lame_channel.h )
   s.files += %w( src/core/client_channel/lb_metadata.cc )
   s.files += %w( src/core/client_channel/lb_metadata.h )
   s.files += %w( src/core/client_channel/load_balanced_call_destination.cc )

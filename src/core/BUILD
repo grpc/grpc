@@ -11763,6 +11763,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lame_channel",
+    srcs = [
+        "client_channel/lame_channel.cc",
+    ],
+    hdrs = [
+        "client_channel/lame_channel.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "event_engine_context",
+        "//:channel",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "metadata_batch",
     srcs = [
         "call/metadata_batch.cc",

@@ -105,6 +105,9 @@ const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_lame_channel_v3 =
+    "Use v3 lame channel implementation.";
+const char* const additional_constraints_lame_channel_v3 = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -331,6 +334,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
+    {"lame_channel_v3", description_lame_channel_v3,
+     additional_constraints_lame_channel_v3, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"map_host_header_to_authority", description_map_host_header_to_authority,
@@ -540,6 +545,9 @@ const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_lame_channel_v3 =
+    "Use v3 lame channel implementation.";
+const char* const additional_constraints_lame_channel_v3 = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -766,6 +774,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
+    {"lame_channel_v3", description_lame_channel_v3,
+     additional_constraints_lame_channel_v3, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"map_host_header_to_authority", description_map_host_header_to_authority,
@@ -975,6 +985,9 @@ const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_lame_channel_v3 =
+    "Use v3 lame channel implementation.";
+const char* const additional_constraints_lame_channel_v3 = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -1201,6 +1214,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
+    {"lame_channel_v3", description_lame_channel_v3,
+     additional_constraints_lame_channel_v3, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"map_host_header_to_authority", description_map_host_header_to_authority,
