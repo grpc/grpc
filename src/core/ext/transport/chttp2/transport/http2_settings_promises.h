@@ -71,8 +71,7 @@ struct ApplySettingsResult {
   bool should_spawn_security_frame_loop = false;
 };
 
-// This class can only be used only from a promise based HTTP2 transports
-// general_party_ .
+// This class can only be used only from a promise based HTTP2 transports party.
 // This class is designed with the assumption that only 1 SETTINGS frame will be
 // in flight at a time. And we do not send a second SETTINGS frame till we
 // receive and process the SETTINGS ACK and resolve the ACK promise.
@@ -394,7 +393,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
 
   inline bool HasReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsPromiseManager::DidReceiveAck did_register_waker_ "
+        << "SettingsPromiseManager::HasReceivedAck did_register_waker_ "
         << did_register_ack_timeout_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     return number_of_acks_unprocessed_ > 0;
@@ -430,7 +429,8 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   }
   inline void MarkReceivedAckAsProcessed() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsPromiseManager::RemoveReceivedAck did_register_waker_ "
+        << "SettingsPromiseManager::MarkReceivedAckAsProcessed "
+           "did_register_waker_ "
         << did_register_ack_timeout_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     --number_of_acks_unprocessed_;

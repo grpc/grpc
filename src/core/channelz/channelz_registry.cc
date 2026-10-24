@@ -70,7 +70,7 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
   DCHECK_EQ(node->uuid_, -1);
   const size_t node_shard_index = NodeShardIndex(node);
   NodeShard& node_shard = node_shards_[node_shard_index];
-  MutexLock lock(&node_shard.mu);
+  MutexLock lock(node_shard.mu);
   node_shard.nursery.AddToHead(node);
 }
 
@@ -87,7 +87,7 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
     // if necessary, then exit out.
     node_shard.mu.Unlock();
     if (uuid != -1) {
-      MutexLock lock(&index_mu_);
+      MutexLock lock(index_mu_);
       index_.erase(uuid);
     }
     return;
@@ -128,7 +128,7 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   WeakRefCountedPtr<BaseNode> gcd_node(n);
   node_shard.mu.Unlock();
   if (gc_list == &node_shard.orphaned_numbered) {
-    MutexLock lock(&index_mu_);
+    MutexLock lock(index_mu_);
     intptr_t uuid = n->uuid_.load(std::memory_order_relaxed);
     index_.erase(uuid);
   }
@@ -164,7 +164,7 @@ ChannelzRegistry::QueryNodes(
   // after releasing the lock.
   WeakRefCountedPtr<BaseNode> node_after_end;
   std::vector<WeakRefCountedPtr<BaseNode>> result;
-  MutexLock index_lock(&index_mu_);
+  MutexLock index_lock(index_mu_);
   for (auto it = index_.lower_bound(start_node); it != index_.end(); ++it) {
     BaseNode* node = it->second;
     if (!discriminator(node)) continue;
@@ -178,7 +178,7 @@ ChannelzRegistry::QueryNodes(
   }
   for (auto nursery_index : nursery_visitation_order) {
     NodeShard& node_shard = node_shards_[nursery_index];
-    MutexLock shard_lock(&node_shard.mu);
+    MutexLock shard_lock(node_shard.mu);
     for (auto [nursery, numbered] :
          {std::pair(&node_shard.nursery, &node_shard.numbered),
           std::pair(&node_shard.orphaned, &node_shard.orphaned_numbered)}) {
@@ -216,7 +216,7 @@ ChannelzRegistry::QueryNodes(
 }
 
 WeakRefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
-  MutexLock index_lock(&index_mu_);
+  MutexLock index_lock(index_mu_);
   auto it = index_.find(uuid);
   if (it == index_.end()) return nullptr;
   BaseNode* node = it->second;
@@ -229,8 +229,8 @@ intptr_t ChannelzRegistry::InternalNumberNode(BaseNode* node) {
   if (strong_node == nullptr) return 0;
   const size_t node_shard_index = NodeShardIndex(node);
   NodeShard& node_shard = node_shards_[node_shard_index];
-  MutexLock index_lock(&index_mu_);
-  MutexLock lock(&node_shard.mu);
+  MutexLock index_lock(index_mu_);
+  MutexLock lock(node_shard.mu);
   intptr_t uuid = node->uuid_.load(std::memory_order_relaxed);
   if (uuid != -1) return uuid;
   uuid = uuid_generator_;
@@ -295,7 +295,7 @@ void ChannelzRegistry::TestOnlyReset() {
   p->LoadConfig();
   std::vector<WeakRefCountedPtr<BaseNode>> free_nodes;
   for (size_t i = 0; i < kNodeShards; i++) {
-    MutexLock lock(&p->node_shards_[i].mu);
+    MutexLock lock(p->node_shards_[i].mu);
     CHECK(p->node_shards_[i].nursery.head == nullptr);
     CHECK(p->node_shards_[i].numbered.head == nullptr);
     while (p->node_shards_[i].orphaned.head != nullptr) {
@@ -310,7 +310,7 @@ void ChannelzRegistry::TestOnlyReset() {
   }
   std::vector<NodeShard> replace_node_shards(kNodeShards);
   replace_node_shards.swap(p->node_shards_);
-  MutexLock lock(&p->index_mu_);
+  MutexLock lock(p->index_mu_);
   p->index_.clear();
 }
 

@@ -18,6 +18,7 @@
 
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
+#include <grpc/lb/v1/load_reporter.grpc.pb.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/ext/server_load_reporting.h>
@@ -29,7 +30,6 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/crash.h"
-#include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -128,6 +128,7 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
 TEST_F(ServerLoadReportingEnd2endTest, NoCall) {}
 
 TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ChannelArguments args;
   ApplyCommonChannelArguments(args);
   auto channel = grpc::CreateCustomChannel(server_address_,

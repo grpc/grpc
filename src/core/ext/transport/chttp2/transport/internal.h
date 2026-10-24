@@ -294,7 +294,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void PerformOp(grpc_transport_op* op) override;
   // Callback for transport framing endpoint extension to send security frames
   // received directly from the endpoint on wire.
-  void WriteSecurityFrame(grpc_core::SliceBuffer* data);
+  void WriteSecurityFrame(grpc_core::SliceBuffer data);
   void WriteSecurityFrameLocked(grpc_core::SliceBuffer* data);
 
   void StartWatch(grpc_core::RefCountedPtr<StateWatcher> watcher) override;
@@ -317,6 +317,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
 
   grpc_core::Slice peer_string;
+  grpc_core::Slice local_address_string;
 
   grpc_core::TransportFramingEndpointExtension*
       transport_framing_endpoint_extension = nullptr;
@@ -467,6 +468,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // parser for secure frames
   uint32_t max_security_frame_size;
   grpc_chttp2_security_frame_parser security_frame_parser;
+  // Buffered security frame if written before peer's SETTINGS are deframed.
+  std::unique_ptr<grpc_core::SliceBuffer> pending_security_frame;
+  bool peer_settings_applied = false;
 
   grpc_core::chttp2::TransportFlowControl flow_control;
   /// initial window change. This is tracked as we parse settings frames from
@@ -629,7 +633,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 
-  // Current mitigation engine, retrieved once per connection.
+  std::optional<uint32_t> max_recv_message_length;
+
+  grpc_auth_context* auth_context = nullptr;
   grpc_core::RefCountedPtr<grpc_core::MitigationEngine> mitigation_engine;
 };
 
@@ -718,6 +724,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch trailing_metadata_buffer;
 
   grpc_slice_buffer frame_storage;  // protected by t combiner
+  size_t num_frames = 0;            // protected by t combiner
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
@@ -777,6 +784,9 @@ struct grpc_chttp2_stream {
   // The last time a stream window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
+
+  bool message_size_limit_exceeded = false;
+  std::optional<uint32_t> max_recv_message_length;
 };
 
 /// Transport writing call flow:

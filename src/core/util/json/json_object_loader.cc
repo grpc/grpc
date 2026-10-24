@@ -46,6 +46,13 @@ void LoadString::LoadInto(const std::string& value, void* dst,
   *static_cast<std::string*>(dst) = value;
 }
 
+bool LoadRefCountedString::IsNumber() const { return false; }
+
+void LoadRefCountedString::LoadInto(const std::string& value, void* dst,
+                                    ValidationErrors*) const {
+  *static_cast<RefCountedStringValue*>(dst) = RefCountedStringValue(value);
+}
+
 bool LoadDuration::IsNumber() const { return false; }
 
 void LoadDuration::LoadInto(const std::string& value, void* dst,

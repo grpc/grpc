@@ -73,9 +73,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
-#define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
-  "grpc.server.max_pending_requests_hard_limit"
 #define GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA \
   "grpc.internal.parent_call_arena"
 
@@ -100,7 +97,7 @@ class ServerConfigFetcher
     virtual void UpdateConnectionManager(
         RefCountedPtr<ConnectionManager> manager) = 0;
     // Implementations should stop serving when this is called. Serving should
-    // only resume when UpdateConfig() is invoked.
+    // only resume when UpdateConnectionManager() is invoked.
     virtual void StopServing() = 0;
   };
 
@@ -619,7 +616,8 @@ class Server : public ServerInterface,
       size_t* cq_idx, grpc_completion_queue* cq_for_notification, void* tag,
       grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
 
-  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const;
+  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has not been called.
@@ -633,7 +631,7 @@ class Server : public ServerInterface,
   // appropriate.
   void ShutdownUnrefOnRequest() ABSL_LOCKS_EXCLUDED(mu_global_) {
     if (shutdown_refs_.fetch_sub(2, std::memory_order_acq_rel) == 2) {
-      MutexLock lock(&mu_global_);
+      MutexLock lock(mu_global_);
       MaybeFinishShutdown();
     }
   }
@@ -720,7 +718,7 @@ class Server : public ServerInterface,
               .value_or(3000)))};
   const Duration max_time_in_pending_queue_;
 
-  std::list<ChannelData*> channels_;
+  std::list<ChannelData*> channels_ ABSL_GUARDED_BY(mu_global_);
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
       ABSL_GUARDED_BY(mu_global_);
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_

@@ -15,12 +15,15 @@
 
 set -eux
 
+# change to root directory
+cd "$(dirname "${0}")/../.."
+
 VIRTUALENV=".venv-ci-pytype"
-python3.11 -m virtualenv "${VIRTUALENV}"
+python3.11 -m venv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
 python -VV
 
 pip install pytype==2024.10.11
 pip list
 
-pytype --output=~/.cache/pytype --config=grpc-style-config.toml
+pytype --output=~/.cache/pytype

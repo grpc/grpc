@@ -109,6 +109,13 @@ class XdsCredentialsTest(unittest.TestCase):
         # No exceptions thrown. A more comprehensive suite of tests will be
         # provided by the interop tests.
 
+    def test_xds_server_credentials_with_none_fallback(self):
+        # Regression test for https://github.com/grpc/grpc/issues/43480:
+        # a wrapper with no underlying credential must raise instead of
+        # crashing the interpreter.
+        with self.assertRaises(ValueError):
+            grpc.xds_server_credentials(grpc.ServerCredentials(None))
+
 
 if __name__ == "__main__":
     logging.basicConfig()

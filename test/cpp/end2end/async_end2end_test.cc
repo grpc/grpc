@@ -17,6 +17,7 @@
 //
 
 #include <grpc/grpc.h>
+#include <grpc/health/v1/health.grpc.pb.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -39,7 +40,6 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
-#include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/build.h"
@@ -51,6 +51,7 @@
 #include "test/cpp/util/test_credentials_provider.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -493,6 +494,49 @@ TEST_P(AsyncEnd2endTest, SimpleRpcWithExpectedError) {
 TEST_P(AsyncEnd2endTest, SequentialRpcs) {
   ResetStub();
   SendRpc(10);
+}
+
+TEST_P(AsyncEnd2endTest, LocalAddress) {
+  SKIP_IF_VIRTUAL();
+  ResetStub();
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  // No call is bound to the context yet.
+  EXPECT_EQ(srv_ctx.local_address(), "");
+
+  EchoRequest send_request;
+  send_request.set_message(GetParam().message_content);
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
+      stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+  EchoRequest recv_request;
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
+                        cq_.get(), tag(2));
+  EchoResponse recv_response;
+  Status recv_status;
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
+  Verifier().Expect(2, true).Verify(cq_.get());
+
+  const std::string local_address = srv_ctx.local_address();
+  if (GetParam().inproc) {
+    // The inproc transport has no socket addresses.
+    EXPECT_EQ(local_address, "unknown");
+  } else {
+    EXPECT_TRUE(absl::StartsWith(local_address, "ipv4:") ||
+                absl::StartsWith(local_address, "ipv6:"))
+        << local_address;
+    EXPECT_TRUE(absl::EndsWith(local_address, absl::StrCat(":", port_)))
+        << local_address;
+    EXPECT_NE(local_address, srv_ctx.peer());
+  }
+
+  EchoResponse send_response;
+  send_response.set_message(recv_request.message());
+  response_writer.Finish(send_response, Status::OK, tag(3));
+  Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 TEST_P(AsyncEnd2endTest, ReconnectChannel) {
@@ -1948,6 +1992,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelBefore) {
   // TODO(akshitpatel) [PH2][P3][Client] Fix bug.
   SKIP_TEST_FOR_PH2_CLIENT("WIP `Check failed` for PH2");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestClientStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
 }
 
@@ -1955,34 +2000,42 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelDuring) {
   // TODO(akshitpatel) [PH2][P3][Client] Fix bug. Likley same bug as
   // ClientStreamingServerTryCancelBefore.
   SKIP_TEST_FOR_PH2_CLIENT("WIP `Check failed` for PH2");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestClientStreamingServerCancel(CANCEL_DURING_PROCESSING);
 }
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelAfter) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestClientStreamingServerCancel(CANCEL_AFTER_PROCESSING);
 }
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ServerStreamingServerTryCancelBefore) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestServerStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
 }
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ServerStreamingServerTryCancelDuring) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestServerStreamingServerCancel(CANCEL_DURING_PROCESSING);
 }
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ServerStreamingServerTryCancelAfter) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestServerStreamingServerCancel(CANCEL_AFTER_PROCESSING);
 }
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelBefore) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestBidiStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
 }
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelDuring) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestBidiStreamingServerCancel(CANCEL_DURING_PROCESSING);
 }
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestBidiStreamingServerCancel(CANCEL_AFTER_PROCESSING);
 }
 

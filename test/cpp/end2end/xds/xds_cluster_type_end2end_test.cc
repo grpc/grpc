@@ -537,10 +537,10 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   ConnectionAttemptInjector injector;
   auto hold0 = injector.AddHold(backends_[0]->port());
   auto hold1 = injector.AddHold(backends_[1]->port());
-  // Start long-running RPC in the background.
+  // Start an RPC in the background.
   // This will trigger the channel to start connecting.
   // Increase timeout to account for subchannel connection delays.
-  LongRunningRpc rpc;
+  AsyncRpc rpc;
   rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(2000));
   // Tell channel to start connecting.
   channel_->GetState(/*try_to_connect=*/true);

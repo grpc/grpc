@@ -44,33 +44,35 @@ namespace grpc_core {
 absl::Status RbacFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
                                                        RbacFilter* filter) {
   GRPC_LATENT_SEE_SCOPE("RbacFilter::Call::OnClientInitialMetadata");
-  // Fetch and apply the rbac policy from the service config.
-  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
-  auto* method_params = static_cast<RbacMethodParsedConfig*>(
-      service_config_call_data->GetMethodParsedConfig(
-          filter->service_config_parser_index_));
-  if (method_params == nullptr) {
-    return absl::PermissionDeniedError("No RBAC policy found.");
-  } else {
-    auto* authorization_engine =
-        method_params->authorization_engine(filter->index_);
-    if (authorization_engine
-            ->Evaluate(EvaluateArgs(&md, &filter->per_channel_evaluate_args_))
-            .type == AuthorizationEngine::Decision::Type::kDeny) {
-      return absl::PermissionDeniedError("Unauthorized RPC rejected");
+  if (!IsXdsServerFilterChainPerRouteEnabled()) {
+    // Fetch and apply the rbac policy from the service config.
+    auto* service_config_call_data = GetContext<ServiceConfigCallData>();
+    auto* method_params = static_cast<RbacMethodParsedConfig*>(
+        service_config_call_data->GetMethodParsedConfig(
+            filter->service_config_parser_index_));
+    if (method_params == nullptr) {
+      return absl::PermissionDeniedError("No RBAC policy found.");
+    } else {
+      auto* authorization_engine =
+          method_params->authorization_engine(filter->index_);
+      if (authorization_engine
+              ->Evaluate(EvaluateArgs(&md, &filter->per_channel_evaluate_args_))
+              .type == AuthorizationEngine::Decision::Type::kDeny) {
+        return absl::PermissionDeniedError("Unauthorized RPC rejected");
+      }
     }
+    return absl::OkStatus();
+  }
+  auto decision = filter->authorization_engine_.Evaluate(
+      EvaluateArgs(&md, &filter->per_channel_evaluate_args_));
+  if (decision.type == AuthorizationEngine::Decision::Type::kDeny) {
+    return absl::PermissionDeniedError("Unauthorized RPC rejected");
   }
   return absl::OkStatus();
 }
 
 const grpc_channel_filter RbacFilter::kFilterVtable =
     MakePromiseBasedFilter<RbacFilter, FilterEndpoint::kServer>();
-
-RbacFilter::RbacFilter(size_t index,
-                       EvaluateArgs::PerChannelArgs per_channel_evaluate_args)
-    : index_(index),
-      service_config_parser_index_(RbacServiceConfigParser::ParserIndex()),
-      per_channel_evaluate_args_(std::move(per_channel_evaluate_args)) {}
 
 absl::StatusOr<std::unique_ptr<RbacFilter>> RbacFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
@@ -84,10 +86,30 @@ absl::StatusOr<std::unique_ptr<RbacFilter>> RbacFilter::Create(
     // side.
     return GRPC_ERROR_CREATE("No transport configured");
   }
+  if (!IsXdsServerFilterChainPerRouteEnabled()) {
+    return std::make_unique<RbacFilter>(
+        filter_args.instance_id(), Rbac(),
+        EvaluateArgs::PerChannelArgs(auth_context, args));
+  }
+  if (filter_args.config() == nullptr) {
+    return absl::InternalError("no config passed to RBAC filter");
+  }
+  if (filter_args.config()->type() != Config::Type()) {
+    return absl::InternalError(
+        absl::StrCat("wrong config type passed to RBAC filter: ",
+                     filter_args.config()->type().name()));
+  }
   return std::make_unique<RbacFilter>(
-      filter_args.instance_id(),
+      /*instance_id=*/0, DownCast<const Config&>(*filter_args.config()).rbac,
       EvaluateArgs::PerChannelArgs(auth_context, args));
 }
+
+RbacFilter::RbacFilter(size_t index, const Rbac& rbac,
+                       EvaluateArgs::PerChannelArgs per_channel_evaluate_args)
+    : index_(index),
+      service_config_parser_index_(RbacServiceConfigParser::ParserIndex()),
+      authorization_engine_(rbac),
+      per_channel_evaluate_args_(std::move(per_channel_evaluate_args)) {}
 
 void RbacFilterRegister(CoreConfiguration::Builder* builder) {
   RbacServiceConfigParser::Register(builder);

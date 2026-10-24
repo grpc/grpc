@@ -564,7 +564,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
                                       /*required=*/false);
   if (not_rule.has_value()) {
     permission = std::make_unique<Rbac::Permission>(
-        Rbac::Permission::MakeNotPermission(std::move(*not_rule->permission)));
+        Rbac::Permission::MakeNotPermission(std::move(not_rule->permission)));
     return;
   }
   if (errors->size() == original_error_size) {
@@ -719,7 +719,7 @@ void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
                                      /*required=*/false);
   if (not_rule.has_value()) {
     principal = std::make_unique<Rbac::Principal>(
-        Rbac::Principal::MakeNotPrincipal(std::move(*not_rule->principal)));
+        Rbac::Principal::MakeNotPrincipal(std::move(not_rule->principal)));
     return;
   }
   if (errors->size() == original_error_size) {

@@ -40,9 +40,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusNone) {
 }
 
 TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
-  grpc_error_handle error = grpc_error_set_int(
-      GRPC_ERROR_CREATE("Msg"), grpc_core::StatusIntProperty::kRpcStatus,
-      GRPC_STATUS_CANCELLED);
+  grpc_error_handle error = absl::CancelledError("Msg");
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
@@ -53,10 +51,8 @@ TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
 
 TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   std::vector<grpc_error_handle> children = {
-      GRPC_ERROR_CREATE("Child1"),
-      grpc_error_set_int(GRPC_ERROR_CREATE("Child2"),
-                         grpc_core::StatusIntProperty::kRpcStatus,
-                         GRPC_STATUS_RESOURCE_EXHAUSTED),
+      absl::UnknownError("Child1"),
+      absl::ResourceExhaustedError("Child2"),
   };
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR("Parent", &children);
   grpc_status_code code;
@@ -64,71 +60,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
                         nullptr);
   ASSERT_EQ(code, GRPC_STATUS_RESOURCE_EXHAUSTED);
-  ASSERT_EQ(message, grpc_core::IsErrorFlattenEnabled()
-                         ? "Parent (Child1) (Child2)"
-                         : "Child2");
-}
-
-// ---- Ok Status ----
-TEST(ErrorUtilsTest, AbslOkToGrpcError) {
-  grpc_error_handle error = absl_status_to_grpc_error(absl::OkStatus());
-  ASSERT_EQ(absl::OkStatus(), error);
-}
-
-TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
-  absl::Status status = grpc_error_to_absl_status(absl::OkStatus());
-  ASSERT_TRUE(status.ok());
-  ASSERT_EQ(status.message(), "");
-}
-
-// ---- Asymmetry of conversions of "Special" errors ----
-TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
-  grpc_error_handle error =
-      absl_status_to_grpc_error(absl::CancelledError("CANCELLED"));
-  ASSERT_NE(error, absl::CancelledError());
-}
-
-TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
-  if (grpc_core::IsErrorFlattenEnabled()) {
-    GTEST_SKIP() << "This functionality not available with this experiment";
-  }
-  absl::Status status = grpc_error_to_absl_status(absl::CancelledError());
-  ASSERT_TRUE(absl::IsCancelled(status));
-  ASSERT_EQ(status.message(), "CANCELLED");
-}
-
-TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
-  if (grpc_core::IsErrorFlattenEnabled()) {
-    GTEST_SKIP() << "This functionality not available with this experiment";
-  }
-  absl::Status status =
-      grpc_error_to_absl_status(absl::ResourceExhaustedError(""));
-  ASSERT_TRUE(absl::IsResourceExhausted(status));
-  ASSERT_EQ(status.message(), "RESOURCE_EXHAUSTED");
-}
-
-// ---- Ordinary statuses ----
-TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
-  grpc_error_handle error =
-      absl_status_to_grpc_error(absl::UnavailableError("Making tea"));
-  // Status code checks
-  intptr_t code;
-  ASSERT_TRUE(grpc_error_get_int(
-      error, grpc_core::StatusIntProperty::kRpcStatus, &code));
-  ASSERT_EQ(static_cast<grpc_status_code>(code), GRPC_STATUS_UNAVAILABLE);
-  // Status message checks
-  ASSERT_EQ(error.message(), "Making tea");
-}
-
-TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
-  grpc_error_handle error = grpc_error_set_int(
-      GRPC_ERROR_CREATE(
-          "weighted_target: all children report state TRANSIENT_FAILURE"),
-      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
-  absl::Status status = grpc_error_to_absl_status(error);
-  ASSERT_TRUE(absl::IsUnavailable(status));
-  ASSERT_EQ(status.message(),
-            "weighted_target: all children report state TRANSIENT_FAILURE");
+  ASSERT_EQ(message, "Parent (Child1) (Child2)");
 }
 
 }  // namespace

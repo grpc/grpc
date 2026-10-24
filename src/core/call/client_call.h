@@ -101,6 +101,7 @@ class ClientCall final
   grpc_call_stack* call_stack() override { return nullptr; }
 
   char* GetPeer() override;
+  char* GetLocalAddress() override;
 
   bool Completed() final { Crash("unimplemented"); }
   bool failed_before_recv_message() const final {
@@ -132,6 +133,9 @@ class ClientCall final
     absl::AnyInvocable<void()> start_pending_batch;
     UnorderedStart* next;
   };
+
+  template <typename T>
+  friend class PrimaryOpsCleanup;
 
   void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                    bool is_notify_tag_closure);
@@ -178,6 +182,7 @@ class ClientCall final
   // otherwise the server trailing metadata from started_call_initiator_ is
   // authoritative.
   SingleSetPtr<absl::Status> cancel_status_;
+  CallOpInvariantsValidator call_op_invariants_validator_;
   MessageReceiver message_receiver_;
   grpc_completion_queue* const cq_;
   const RefCountedPtr<UnstartedCallDestination> call_destination_;

@@ -143,11 +143,12 @@ void Call::AddData(channelz::DataSink sink) {
       .Set("encodings_accepted_by_peer",
            encodings_accepted_by_peer_.ToString());
   {
-    MutexLock lock(&peer_mu_);
-    properties.Set("peer_string", peer_string_.as_string_view());
+    MutexLock lock(address_mu_);
+    properties.Set("peer_string", peer_string_.as_string_view())
+        .Set("local_address_string", local_address_string_.as_string_view());
   }
   {
-    MutexLock lock(&deadline_mu_);
+    MutexLock lock(deadline_mu_);
     properties.Set("deadline", deadline_);
   }
   sink.AddData("call", properties);
@@ -213,7 +214,7 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
 void Call::PublishToParent(Call* parent) {
   ChildCall* cc = child_;
   ParentCall* pc = parent->GetOrCreateParentCall();
-  MutexLock lock(&pc->child_list_mu);
+  MutexLock lock(pc->child_list_mu);
   if (pc->first_child == nullptr) {
     pc->first_child = this;
     cc->sibling_next = cc->sibling_prev = this;
@@ -234,7 +235,7 @@ void Call::MaybeUnpublishFromParent() {
 
   ParentCall* pc = cc->parent->parent_call();
   {
-    MutexLock lock(&pc->child_list_mu);
+    MutexLock lock(pc->child_list_mu);
     if (this == pc->first_child) {
       pc->first_child = cc->sibling_next;
       if (this == pc->first_child) {
@@ -248,14 +249,6 @@ void Call::MaybeUnpublishFromParent() {
 }
 
 void Call::CancelWithStatus(grpc_status_code status, const char* description) {
-  if (!IsErrorFlattenEnabled()) {
-    CancelWithError(grpc_error_set_int(
-        grpc_error_set_str(
-            absl::Status(static_cast<absl::StatusCode>(status), description),
-            StatusStrProperty::kGrpcMessage, description),
-        StatusIntProperty::kRpcStatus, status));
-    return;
-  }
   if (status == GRPC_STATUS_OK) {
     VLOG(2) << "CancelWithStatus() called with OK status, using UNKNOWN";
     status = GRPC_STATUS_UNKNOWN;
@@ -268,7 +261,7 @@ void Call::PropagateCancellationToChildren() {
   ParentCall* pc = parent_call();
   if (pc != nullptr) {
     Call* child;
-    MutexLock lock(&pc->child_list_mu);
+    MutexLock lock(pc->child_list_mu);
     child = pc->first_child;
     if (child != nullptr) {
       do {
@@ -324,6 +317,11 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
   Slice* peer_string = md.get_pointer(PeerString());
   if (peer_string != nullptr) SetPeerString(peer_string->Ref());
 
+  Slice* local_address_string = md.get_pointer(LocalAddressString());
+  if (local_address_string != nullptr) {
+    SetLocalAddressString(local_address_string->Ref());
+  }
+
   SetIncomingCompressionAlgorithm(
       md.Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE));
   encodings_accepted_by_peer_ =
@@ -364,9 +362,8 @@ void Call::HandleCompressionAlgorithmDisabled(
   std::string error_msg =
       absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
   LOG(ERROR) << error_msg;
-  CancelWithError(grpc_error_set_int(absl::UnimplementedError(error_msg),
-                                     StatusIntProperty::kRpcStatus,
-                                     GRPC_STATUS_UNIMPLEMENTED));
+  CancelWithError(is_client() ? absl::InternalError(error_msg)
+                              : absl::UnimplementedError(error_msg));
 }
 
 grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
@@ -377,9 +374,7 @@ grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
   if (deadline >= deadline_) return absl::OkStatus();
   if (deadline < Timestamp::Now()) {
     lock.Release();
-    grpc_error_handle error = grpc_error_set_int(
-        absl::DeadlineExceededError("Deadline Exceeded"),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED);
+    grpc_error_handle error = absl::DeadlineExceededError("Deadline Exceeded");
     CancelWithError(error);
     return error;
   }
@@ -397,7 +392,7 @@ grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
 
 void Call::ResetDeadline() {
   {
-    MutexLock lock(&deadline_mu_);
+    MutexLock lock(deadline_mu_);
     if (deadline_ == Timestamp::InfFuture()) return;
     if (!arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
              ->Cancel(deadline_task_)) {
@@ -413,9 +408,7 @@ void Call::Run() {
   GRPC_TRACE_LOG(call, INFO)
       << "call deadline expired "
       << GRPC_DUMP_ARGS(Timestamp::Now(), send_deadline_);
-  CancelWithError(grpc_error_set_int(
-      absl::DeadlineExceededError("Deadline Exceeded"),
-      StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
+  CancelWithError(absl::DeadlineExceededError("Deadline Exceeded"));
   InternalUnref("deadline[run]");
 }
 
@@ -443,6 +436,10 @@ void grpc_call_unref(grpc_call* c) {
 
 char* grpc_call_get_peer(grpc_call* call) {
   return grpc_core::Call::FromC(call)->GetPeer();
+}
+
+char* grpc_call_get_local_address(grpc_call* call) {
+  return grpc_core::Call::FromC(call)->GetLocalAddress();
 }
 
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {

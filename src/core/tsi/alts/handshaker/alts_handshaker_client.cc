@@ -154,7 +154,7 @@ static void maybe_complete_tsi_next(
     recv_message_result* pending_recv_message_result) {
   recv_message_result* r;
   {
-    grpc_core::MutexLock lock(&client->mu);
+    grpc_core::MutexLock lock(client->mu);
     client->receive_status_finished |= receive_status_finished;
     if (pending_recv_message_result != nullptr) {
       GRPC_CHECK_EQ(client->pending_recv_message_result, nullptr);
@@ -374,7 +374,7 @@ class HandshakeQueue {
 
   void RequestHandshake(alts_grpc_handshaker_client* client) {
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       if (outstanding_handshakes_ == max_outstanding_handshakes_) {
         // Max number already running, add to queue.
         queued_handshakes_.push_back(client);
@@ -389,7 +389,7 @@ class HandshakeQueue {
   void HandshakeDone() {
     alts_grpc_handshaker_client* client = nullptr;
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(mu_);
       if (queued_handshakes_.empty()) {
         // Nothing more in queue.  Decrement count and return immediately.
         --outstanding_handshakes_;
@@ -809,7 +809,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                 /*cq=*/nullptr, interested_parties,
                 grpc_core::Slice::FromStaticString(ALTS_SERVICE_METHOD),
                 /*authority=*/std::nullopt, grpc_core::Timestamp::InfFuture(),
-                /*registered_method=*/true);
+                /*registered_method=*/true, std::nullopt);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,

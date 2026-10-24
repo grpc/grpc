@@ -36,9 +36,9 @@
 #include <utility>
 
 #include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
@@ -312,6 +312,8 @@ TEST_F(HttpRequestTest, Post) {
             AbslDeadlineSeconds(60));
 }
 
+#if GRPC_ARES == 1
+
 int g_fake_non_responsive_dns_server_port;
 
 void InjectNonResponsiveDNSServer(ares_channel* channel) {
@@ -338,8 +340,8 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   g_fake_non_responsive_dns_server_port = fake_dns_server.port();
   void (*prev_test_only_inject_config)(ares_channel* channel) =
-      grpc_ares_test_only_inject_config;
-  grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
+      event_engine_grpc_ares_test_only_inject_config;
+  event_engine_grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
   int kNumThreads = 10;
@@ -381,8 +383,10 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
   for (auto& t : threads) {
     t.join();
   }
-  grpc_ares_test_only_inject_config = prev_test_only_inject_config;
+  event_engine_grpc_ares_test_only_inject_config = prev_test_only_inject_config;
 }
+
+#endif  // GRPC_ARES == 1
 
 TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
   // Start up a fake HTTP server which just accepts connections

@@ -107,7 +107,6 @@ class ChannelCompression {
  private:
   // Max receive message length, if set.
   std::optional<uint32_t> max_recv_size_;
-  size_t message_size_service_config_parser_index_;
   // The default, channel-level, compression algorithm.
   grpc_compression_algorithm default_compression_algorithm_;
   // Enabled compression algorithms.

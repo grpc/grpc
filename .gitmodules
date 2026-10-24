@@ -53,3 +53,12 @@
 [submodule "third_party/cel-spec"]
 	path = third_party/cel-spec
 	url = https://github.com/google/cel-spec
+[submodule "third_party/grpc-proto"]
+	path = third_party/grpc-proto
+	url = https://github.com/grpc/grpc-proto.git
+[submodule "third_party/autosharding"]
+	path = third_party/autosharding
+	url = https://github.com/GoogleCloudPlatform/autosharding
+[submodule "third_party/cel-c"]
+	path = third_party/cel-c
+	url = https://github.com/cel-expr/cel-c.git

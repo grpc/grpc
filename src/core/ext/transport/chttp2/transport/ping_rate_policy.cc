@@ -43,10 +43,9 @@ Chttp2PingRatePolicy::Chttp2PingRatePolicy(const ChannelArgs& args,
               : 0),
       // Configuration via channel arg dominates, otherwise if the multiping
       // experiment is enabled we use 100, otherwise 1.
-      max_inflight_pings_(
-          std::max(0, args.GetInt(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS)
-                          .value_or(g_default_max_inflight_pings.value_or(
-                              IsMultipingEnabled() ? 100 : 1)))) {}
+      max_inflight_pings_(std::max(
+          0, args.GetInt(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS)
+                 .value_or(g_default_max_inflight_pings.value_or(1)))) {}
 
 void Chttp2PingRatePolicy::SetDefaults(const ChannelArgs& args) {
   g_default_max_pings_without_data_sent =
@@ -58,17 +57,11 @@ void Chttp2PingRatePolicy::SetDefaults(const ChannelArgs& args) {
 Chttp2PingRatePolicy::RequestSendPingResult
 Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval,
                                       size_t inflight_pings) const {
-  if (max_inflight_pings_ > 0) {
-    if (!IsMaxInflightPingsStrictLimitEnabled()) {
-      if (inflight_pings > static_cast<size_t>(max_inflight_pings_)) {
-        return TooManyRecentPings{};
-      }
-    } else {
-      if (inflight_pings >= static_cast<size_t>(max_inflight_pings_)) {
-        return TooManyRecentPings{};
-      }
-    }
+  if (max_inflight_pings_ > 0 &&
+      inflight_pings >= static_cast<size_t>(max_inflight_pings_)) {
+    return TooManyRecentPings{};
   }
+
   const Timestamp next_allowed_ping =
       last_ping_sent_time_ + next_allowed_ping_interval;
   const Timestamp now = Timestamp::Now();

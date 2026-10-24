@@ -142,7 +142,7 @@ class CrlSslTransportSecurityTest
                 TSI_OK);
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
-      server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
+      server_options.key_cert_pairs_or_selector = server_pem_key_cert_pairs_;
       server_options.root_cert_info =
           std::make_shared<tsi::RootCertInfo>(root_cert_.c_str());
       server_options.crl_directory = crl_directory_;
@@ -160,7 +160,9 @@ class CrlSslTransportSecurityTest
       EXPECT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                     client_handshaker_factory_, nullptr, 0, 0,
                     /*alpn_preferred_protocol_list=*/std::nullopt,
-                    /*collection_scope=*/nullptr, &base_.client_handshaker),
+                    /*collection_scope=*/nullptr, /*target=*/"",
+                    /*locality=*/"", /*backend_service=*/"",
+                    &base_.client_handshaker),
                 TSI_OK);
       EXPECT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     server_handshaker_factory_, 0, 0,
@@ -249,8 +251,8 @@ class CrlSslTransportSecurityTest
     bool expect_server_success_;
     bool expect_client_success_1_2_;
     bool expect_client_success_1_3_;
-    std::vector<tsi_ssl_pem_key_cert_pair> client_pem_key_cert_pairs_;
-    std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_;
+    grpc_core::PemKeyCertPairList client_pem_key_cert_pairs_;
+    grpc_core::PemKeyCertPairList server_pem_key_cert_pairs_;
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   };
 };

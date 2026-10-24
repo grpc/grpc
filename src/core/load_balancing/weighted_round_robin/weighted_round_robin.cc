@@ -36,6 +36,7 @@
 
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -55,7 +56,6 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -64,7 +64,6 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
-#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
@@ -81,21 +80,9 @@
 
 namespace grpc_core {
 
-bool WrrCustomMetricsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 namespace {
 
 constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
-
-constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
-constexpr absl::string_view kMetricLabelBackendService =
-    "grpc.lb.backend_service";
 
 const auto kMetricRrFallback =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -225,41 +212,40 @@ void WeightedRoundRobinConfig::JsonPostLoad(const Json& json,
     ValidationErrors::ScopedField field(errors, ".errorUtilizationPenalty");
     errors->AddError("must be non-negative");
   }
-  if (WrrCustomMetricsEnabled()) {
-    std::optional<std::vector<std::string>>
-        metric_names_for_computing_utilization =
-            LoadJsonObjectField<std::vector<std::string>>(
-                json.object(), args, "metricNamesForComputingUtilization",
-                errors, /*required=*/false);
-    if (metric_names_for_computing_utilization.has_value()) {
-      size_t i = 0;
-      for (const auto& metric_name : *metric_names_for_computing_utilization) {
-        if (metric_name == "cpu_utilization") {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kCpu, ""});
-        } else if (metric_name == "mem_utilization") {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kMem, ""});
-        } else if (metric_name == "application_utilization") {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kApplication, ""});
-        } else if (absl::StartsWith(metric_name, "named_metrics.")) {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kNamedMetric,
-               std::string(absl::StripPrefix(metric_name, "named_metrics."))});
-        } else if (absl::StartsWith(metric_name, "utilization.")) {
-          parsed_custom_metrics_.push_back(
-              {WeightedRoundRobinConfig::ParsedMetric::Type::kUtilization,
-               std::string(absl::StripPrefix(metric_name, "utilization."))});
-        } else {
-          ValidationErrors::ScopedField field(
-              errors,
-              absl::StrCat(".metricNamesForComputingUtilization[", i, "]"));
-          errors->AddError(
-              absl::StrCat("unsupported metric name \"", metric_name, "\""));
-        }
-        ++i;
+  // Handle metricNamesForComputingUtilization.
+  std::optional<std::vector<std::string>>
+      metric_names_for_computing_utilization =
+          LoadJsonObjectField<std::vector<std::string>>(
+              json.object(), args, "metricNamesForComputingUtilization", errors,
+              /*required=*/false);
+  if (metric_names_for_computing_utilization.has_value()) {
+    size_t i = 0;
+    for (const auto& metric_name : *metric_names_for_computing_utilization) {
+      if (metric_name == "cpu_utilization") {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kCpu, ""});
+      } else if (metric_name == "mem_utilization") {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kMem, ""});
+      } else if (metric_name == "application_utilization") {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kApplication, ""});
+      } else if (absl::StartsWith(metric_name, "named_metrics.")) {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kNamedMetric,
+             std::string(absl::StripPrefix(metric_name, "named_metrics."))});
+      } else if (absl::StartsWith(metric_name, "utilization.")) {
+        parsed_custom_metrics_.push_back(
+            {WeightedRoundRobinConfig::ParsedMetric::Type::kUtilization,
+             std::string(absl::StripPrefix(metric_name, "utilization."))});
+      } else {
+        ValidationErrors::ScopedField field(
+            errors,
+            absl::StrCat(".metricNamesForComputingUtilization[", i, "]"));
+        errors->AddError(
+            absl::StrCat("unsupported metric name \"", metric_name, "\""));
       }
+      ++i;
     }
   }
 }
@@ -503,7 +489,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
 //
 
 WeightedRoundRobin::EndpointWeight::~EndpointWeight() {
-  MutexLock lock(&wrr_->endpoint_weight_map_mu_);
+  MutexLock lock(wrr_->endpoint_weight_map_mu_);
   auto it = wrr_->endpoint_weight_map_.find(key_);
   if (it != wrr_->endpoint_weight_map_.end() && it->second == this) {
     wrr_->endpoint_weight_map_.erase(it);
@@ -532,7 +518,7 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
   }
   Timestamp now = Timestamp::Now();
   // Grab the lock and update the data.
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
       << ": qps=" << qps << ", eps=" << eps << ", utilization=" << utilization
@@ -549,7 +535,7 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
 float WeightedRoundRobin::EndpointWeight::GetWeight(
     Timestamp now, Duration weight_expiration_period, Duration blackout_period,
     uint64_t* num_not_yet_usable, uint64_t* num_stale) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
       << ": getting weight: now=" << now.ToString()
@@ -577,7 +563,7 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
 }
 
 void WeightedRoundRobin::EndpointWeight::ResetNonEmptySince() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   non_empty_since_ = Timestamp::InfFuture();
 }
 
@@ -626,7 +612,7 @@ WeightedRoundRobin::Picker::Picker(RefCountedPtr<WeightedRoundRobin> wrr,
       << endpoints_.size() << " subchannels";
   // Note: BuildSchedulerAndStartTimerLocked() passes out pointers to `this`,
   // so we need to ensure that we really hold timer_mu_.
-  MutexLock lock(&timer_mu_);
+  MutexLock lock(timer_mu_);
   BuildSchedulerAndStartTimerLocked();
 }
 
@@ -636,7 +622,7 @@ WeightedRoundRobin::Picker::~Picker() {
 }
 
 void WeightedRoundRobin::Picker::Orphaned() {
-  MutexLock lock(&timer_mu_);
+  MutexLock lock(timer_mu_);
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << wrr_.get() << " picker " << this << "] cancelling timer";
   wrr_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
@@ -669,7 +655,7 @@ size_t WeightedRoundRobin::Picker::PickIndex() {
   // Grab a ref to the scheduler.
   std::shared_ptr<StaticStrideScheduler> scheduler;
   {
-    MutexLock lock(&scheduler_mu_);
+    MutexLock lock(scheduler_mu_);
     scheduler = scheduler_;
   }
   // If we have a scheduler, use it to do a WRR pick.
@@ -725,7 +711,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
         {wrr_->locality_name_, wrr_->backend_service_name_});
   }
   {
-    MutexLock lock(&scheduler_mu_);
+    MutexLock lock(scheduler_mu_);
     scheduler_ = std::move(scheduler);
   }
   // Start timer.
@@ -743,7 +729,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
        work_serializer = wrr_->work_serializer()]() mutable {
         ExecCtx exec_ctx;
         {
-          MutexLock lock(&self->timer_mu_);
+          MutexLock lock(self->timer_mu_);
           if (self->timer_handle_.has_value()) {
             GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
                 << "[WRR " << self->wrr_.get() << " picker " << self.get()
@@ -874,7 +860,7 @@ RefCountedPtr<WeightedRoundRobin::EndpointWeight>
 WeightedRoundRobin::GetOrCreateWeight(
     const std::vector<grpc_resolved_address>& addresses) {
   EndpointAddressSet key(addresses);
-  MutexLock lock(&endpoint_weight_map_mu_);
+  MutexLock lock(endpoint_weight_map_mu_);
   auto it = endpoint_weight_map_.find(key);
   if (it != endpoint_weight_map_.end()) {
     auto weight = it->second->RefIfNonZero();

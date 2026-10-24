@@ -22,7 +22,7 @@ namespace {
 
 void BM_BucketForExponentialHistogram(benchmark::State& state) {
   constexpr int64_t kMax = 1000000;
-  ExponentialHistogramShape shape(kMax, state.range(0));
+  ExponentialInt64HistogramShape shape(kMax, state.range(0));
   std::vector<int64_t> values;
   values.reserve(kMax);
   auto gen = absl::BitGen();
@@ -40,7 +40,7 @@ BENCHMARK(BM_BucketForExponentialHistogram)->RangeMultiplier(2)->Range(2, 512);
 
 void BM_BucketForLinearHistogram(benchmark::State& state) {
   const int64_t kMax = state.range(0);
-  LinearHistogramShape shape(0, kMax);
+  LinearInt64HistogramShape shape(0, kMax);
   std::vector<int64_t> values;
   values.reserve(kMax);
   auto gen = absl::BitGen();

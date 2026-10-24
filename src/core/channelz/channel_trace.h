@@ -291,7 +291,7 @@ class ChannelTrace {
 
   std::string creation_timestamp() const;
   uint64_t num_events_logged() const {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     return num_events_logged_;
   }
 

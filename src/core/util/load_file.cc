@@ -28,13 +28,11 @@
 
 namespace grpc_core {
 
-// Loads the content of a file into a slice. add_null_terminator will add a NULL
-// terminator if true.
+// Loads the content of a file into a slice.
 // This API is NOT thread-safe and requires proper synchronization when used by
 // multiple threads, especially when they can happen to be reading from the same
 // file.
-absl::StatusOr<Slice> LoadFile(const std::string& filename,
-                               bool add_null_terminator) {
+absl::StatusOr<Slice> LoadFile(const std::string& filename) {
   unsigned char* contents = nullptr;
   long contents_size = 0;
   FILE* file;
@@ -66,8 +64,7 @@ absl::StatusOr<Slice> LoadFile(const std::string& filename,
         absl::StrCat("Failed to load file: ", filename,
                      " due to error(fseek): ", StrError(errno)));
   }
-  contents = static_cast<unsigned char*>(
-      gpr_malloc(contents_size + (add_null_terminator ? 1 : 0)));
+  contents = static_cast<unsigned char*>(gpr_malloc(contents_size));
   bytes_read = fread(contents, 1, contents_size, file);
   static_assert(LONG_MAX <= SIZE_MAX,
                 "size_t max should be more than long max");
@@ -76,9 +73,6 @@ absl::StatusOr<Slice> LoadFile(const std::string& filename,
     return absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
                      " due to error(fread): ", StrError(errno)));
-  }
-  if (add_null_terminator) {
-    contents[contents_size++] = 0;
   }
   return Slice(
       grpc_slice_new(contents, static_cast<size_t>(contents_size), gpr_free));

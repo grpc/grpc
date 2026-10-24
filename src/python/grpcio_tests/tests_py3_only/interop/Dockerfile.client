@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bookworm
+FROM python:3.10-slim-bookworm
 
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
 
@@ -26,7 +26,7 @@ ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 
-FROM python:3.9-slim-bookworm
+FROM python:3.10-slim-bookworm
 
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb,ring_hash_lb,outlier_detection_lb"

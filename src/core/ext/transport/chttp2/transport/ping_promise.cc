@@ -60,13 +60,40 @@ Promise<absl::Status> PingManager::PingPromiseCallbacks::WaitForPingAck() {
   return Map(latch->Wait(), [latch](Empty) { return absl::OkStatus(); });
 }
 
+std::optional<PingManager::PingTimeoutArgs>
+PingManager::PingPromiseCallbacks::ArmPingTimeout(const uint64_t opaque_data,
+                                                  const Duration ping_timeout) {
+  std::shared_ptr<InterActivityLatch<void>> timeout_latch =
+      std::make_shared<InterActivityLatch<void>>();
+  const std::optional<uint64_t> id = ping_callbacks_.OnPingTimeout(
+      ping_timeout, event_engine_.get(),
+      [timeout_latch]() { timeout_latch->Set(); });
+  if (!id.has_value()) {
+    // No inflight ping, e.g. the ack for this ping was received before the
+    // timeout could be armed. There is nothing to wait for.
+    GRPC_HTTP2_PING_LOG << "No inflight ping for id=" << opaque_data
+                        << ". Not waiting for ping timeout.";
+    return std::nullopt;
+  }
+  GRPC_DCHECK_EQ(*id, opaque_data);
+  GRPC_HTTP2_PING_LOG << "Ping timeout of duration: " << ping_timeout
+                      << " armed for ping id=" << opaque_data;
+  // Register the ack callback only after confirming the ping is still in
+  // flight. Otherwise it would attach to the next ping instead.
+  std::shared_ptr<Latch<void>> ack_latch = std::make_shared<Latch<void>>();
+  ping_callbacks_.OnPingAck([ack_latch]() { ack_latch->Set(); });
+  return PingTimeoutArgs{opaque_data, std::move(timeout_latch),
+                         std::move(ack_latch)};
+}
+
 // Ping System implementation
-PingManager::PingManager(const ChannelArgs& channel_args, Duration ping_timeout,
+PingManager::PingManager(const ChannelArgs& channel_args, const bool is_client,
+                         Duration ping_timeout,
                          std::unique_ptr<PingInterface> ping_interface,
                          std::shared_ptr<EventEngine> event_engine)
     : ping_callbacks_(event_engine),
       ping_abuse_policy_(channel_args),
-      ping_rate_policy_(channel_args, /*is_client=*/true),
+      ping_rate_policy_(channel_args, is_client),
       ping_interface_(std::move(ping_interface)),
       ping_timeout_(ping_timeout) {}
 
@@ -81,20 +108,18 @@ PingManager::TriggerPingArgs PingManager::NeedToPing(
                                         ping_callbacks_.CountPingInflight()),
       [this](Chttp2PingRatePolicy::SendGranted) {
         // TODO(akshitpatel) : [PH2][P1] : Update some keepalive flags.
-        GRPC_HTTP2_PING_LOG << "CLIENT" << "[" << "PH2"
-                            << "]: Ping sent"
+        GRPC_HTTP2_PING_LOG << "[PH2]: Ping sent: "
                             << ping_rate_policy_.GetDebugString();
         return TriggerPingArgs(std::nullopt, /*need_to_ping=*/true);
       },
       [this](Chttp2PingRatePolicy::TooManyRecentPings) {
-        GRPC_HTTP2_PING_LOG << "CLIENT" << "[" << "PH2"
-                            << "]: Ping delayed too many recent pings: "
+        GRPC_HTTP2_PING_LOG << "[PH2]: Ping delayed too many recent pings: "
                             << ping_rate_policy_.GetDebugString();
         return TriggerPingArgs(std::nullopt, /*need_to_ping=*/false);
       },
       [this](Chttp2PingRatePolicy::TooSoon too_soon) mutable {
         GRPC_HTTP2_PING_LOG
-            << "]: Ping delayed not enough time elapsed since last "
+            << "[PH2]: Ping delayed not enough time elapsed since last "
                "ping. Last ping:"
             << too_soon.last_ping
             << ", minimum wait:" << too_soon.next_allowed_ping_interval
@@ -115,7 +140,7 @@ std::optional<Duration> PingManager::MaybeGetSerializedPingFrames(
                       << " next_allowed_ping_interval: "
                       << next_allowed_ping_interval;
   GRPC_DCHECK(!opaque_data_.has_value());
-  frame_sender.ReserveRegularFrames(pending_ping_acks_.size() + 1);
+  frame_sender.ReserveRegularFrames(pending_ping_acks_.size());
 
   // Get the serialized ping acks if needed.
   for (uint64_t opaque_data : pending_ping_acks_) {
@@ -135,13 +160,13 @@ std::optional<Duration> PingManager::MaybeGetSerializedPingFrames(
   return trigger_ping_args.delayed_ping_wait;
 }
 
-std::optional<uint64_t> PingManager::NotifyPingSent() {
-  if (opaque_data_.has_value()) {
-    SentPing();
-    return std::exchange(opaque_data_, std::nullopt);
+std::optional<PingManager::PingTimeoutArgs> PingManager::NotifyPingSent() {
+  if (!opaque_data_.has_value()) {
+    return std::nullopt;
   }
-
-  return std::nullopt;
+  SentPing();
+  return ping_callbacks_.ArmPingTimeout(
+      *std::exchange(opaque_data_, std::nullopt), ping_timeout_);
 }
 
 void PingManager::AddPendingPingAck(const uint64_t opaque_data) {

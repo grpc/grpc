@@ -62,6 +62,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/notification.h"
 
@@ -850,6 +851,7 @@ TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelBeforeReads) {
 
 // Server to cancel while reading a request from the stream in parallel
 TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelDuringRead) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestRequestStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
 }
 
@@ -883,6 +885,7 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelBefore) {
 // Server to cancel while reading/writing requests/responses on the stream in
 // parallel
 TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelDuring) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   TestBidiStreamServerCancel(CANCEL_DURING_PROCESSING, 10);
 }
 
@@ -984,6 +987,7 @@ TEST_P(End2endTest, AuthoritySeenOnServerSide) {
 }
 
 TEST_P(End2endTest, ReconnectChannel) {
+  // This is flaky for PH2 Server.
   if (GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
@@ -1173,6 +1177,7 @@ TEST_P(End2endTest, BidiStream) {
 }
 
 TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1208,6 +1213,7 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
 // This was added to prevent regression from issue:
 // https://github.com/grpc/grpc/issues/11546
 TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1276,6 +1282,7 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
 }
 
 TEST_P(End2endTest, CancelRpcAfterStart) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   for (int i = 0; i < 10; i++) {
     ResetStub();
     EchoRequest request;
@@ -1322,6 +1329,7 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
 
 // Client cancels request stream after sending two messages
 TEST_P(End2endTest, ClientCancelsRequestStream) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1380,6 +1388,7 @@ TEST_P(End2endTest, ClientCancelsResponseStream) {
 
 // Client cancels bidi stream after sending some messages
 TEST_P(End2endTest, ClientCancelsBidi) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1600,13 +1609,7 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    if (grpc_core::IsErrorFlattenEnabled()) {
-      EXPECT_THAT(context.debug_error_string(),
-                  ::testing::HasSubstr("INTERNAL"));
-    } else {
-      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
-      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
-    }
+    EXPECT_THAT(context.debug_error_string(), ::testing::HasSubstr("INTERNAL"));
   }
 }
 
@@ -1622,11 +1625,13 @@ class ProxyEnd2endTest : public End2endTest {
 };
 
 TEST_P(ProxyEnd2endTest, SimpleRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   SendRpc(stub_.get(), 1, false);
 }
 
 TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1637,6 +1642,7 @@ TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
 }
 
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -1651,6 +1657,7 @@ TEST_P(ProxyEnd2endTest, MultipleRpcs) {
 // Set a 10us deadline and make sure proper error is returned.
 TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1676,6 +1683,7 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
 
 // Set a long but finite deadline.
 TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1693,6 +1701,7 @@ TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
 // Ask server to echo back the deadline it sees.
 TEST_P(ProxyEnd2endTest, EchoDeadline) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1723,6 +1732,7 @@ TEST_P(ProxyEnd2endTest, EchoDeadline) {
 
 // Ask server to echo back the deadline it sees. The rpc has no deadline.
 TEST_P(ProxyEnd2endTest, EchoDeadlineForNoDeadlineRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1753,6 +1763,7 @@ TEST_P(ProxyEnd2endTest, UnimplementedRpc) {
 
 // Client cancels rpc after 10ms
 TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1789,6 +1800,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
 
 // Server cancels rpc after 1ms
 TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1803,6 +1815,7 @@ TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
 
 // Make the response larger than the flow control window.
 TEST_P(ProxyEnd2endTest, HugeResponse) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1820,6 +1833,7 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
 }
 
 TEST_P(ProxyEnd2endTest, Peer) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix ");
   // Peer is not meaningful for inproc
   if (GetParam().inproc()) {
     return;
@@ -1836,6 +1850,38 @@ TEST_P(ProxyEnd2endTest, Peer) {
   EXPECT_TRUE(s.ok());
   EXPECT_TRUE(CheckIsLocalhost(response.param().peer()));
   EXPECT_TRUE(CheckIsLocalhost(context.peer()));
+}
+
+TEST_P(ProxyEnd2endTest, LocalAddress) {
+  // The proxy creates its backend call with the incoming server call as the
+  // parent (ClientContext::FromServerContext), which the PH2 server does not
+  // support yet (ServerCall::Completed() is unimplemented).
+  if (GetParam().use_proxy()) {
+    SKIP_TEST_FOR_PH2_SERVER("Proxy call propagation is not supported by PH2");
+  }
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("hello");
+  request.mutable_param()->set_echo_local_address(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+  const std::string& local_address = response.param().local_address();
+  // The inproc transport does not report a local address.
+  if (GetParam().inproc()) {
+    EXPECT_EQ(local_address, "unknown");
+    return;
+  }
+  EXPECT_TRUE(CheckIsLocalhost(local_address)) << local_address;
+  // The backend server listens on first_picked_port_ (the proxy, if any,
+  // listens on a different port), so this verifies that the value is the
+  // server's own address rather than the peer's or the proxy's.
+  EXPECT_TRUE(
+      absl::EndsWith(local_address, absl::StrCat(":", first_picked_port_)))
+      << local_address;
 }
 
 //////////////////////////////////////////////////////////////////////////

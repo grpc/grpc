@@ -24,10 +24,14 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -44,6 +48,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/cleanup/cleanup.h"
+#include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -847,14 +852,18 @@ INSTANTIATE_TEST_SUITE_P(
 class MockMitigationEngine : public MitigationEngine {
  public:
   enum class Behavior { kNone, kRejectRpc, kCloseConnection };
-  explicit MockMitigationEngine(Behavior behavior) : behavior_(behavior) {}
+  explicit MockMitigationEngine(Behavior behavior = Behavior::kNone)
+      : behavior_(behavior) {}
 
-  std::optional<Action> EvaluateIncomingConnection(absl::string_view) override {
+  std::optional<Action> EvaluateIncomingConnection(
+      const EvaluateArgs& /*args*/) override {
     return std::nullopt;
   }
 
-  std::optional<Action> EvaluateIncomingMetadata(absl::string_view key,
-                                                 absl::string_view) override {
+  std::optional<Action> EvaluateIncomingMetadata(
+      absl::string_view key, absl::string_view,
+      const EvaluateArgs& args) override {
+    last_incoming_peer_address_ = std::string(args.peer_address);
     if (behavior_ == Behavior::kRejectRpc && key == "custom-key") {
       return Action::kRejectRpc;
     }
@@ -862,15 +871,25 @@ class MockMitigationEngine : public MitigationEngine {
   }
 
   std::optional<Action> EvaluateAllIncomingMetadata(
-      const grpc_metadata_batch&) override {
+      const grpc_metadata_batch&, const EvaluateArgs& args) override {
+    last_all_incoming_peer_address_ = std::string(args.peer_address);
     if (behavior_ == Behavior::kCloseConnection) {
       return Action::kCloseConnection;
     }
     return std::nullopt;
   }
 
+  absl::string_view last_incoming_peer_address() const {
+    return last_incoming_peer_address_;
+  }
+  absl::string_view last_all_incoming_peer_address() const {
+    return last_all_incoming_peer_address_;
+  }
+
  private:
   Behavior behavior_;
+  std::string last_incoming_peer_address_;
+  std::string last_all_incoming_peer_address_;
 };
 
 class MitigationEngineParseTest : public ::testing::Test {
@@ -950,6 +969,397 @@ TEST_F(MitigationEngineParseTest, CloseConnection) {
   EXPECT_THAT(message,
               ::testing::HasSubstr(
                   "Mitigation engine triggered action Close Connection"));
+}
+
+TEST_F(MitigationEngineParseTest, PeerAddressPassedCorrectly) {
+  ExecCtx exec_ctx;
+  auto engine = MakeRefCounted<MockMitigationEngine>();
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      engine.get(), "ipv4:127.0.0.1:12345");
+
+  auto input =
+      ParseHexstring("400a637573746f6d2d6b65790d637573746f6d2d686561646572");
+
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+
+  EXPECT_TRUE(err.ok());
+  EXPECT_EQ(engine->last_incoming_peer_address(), "ipv4:127.0.0.1:12345");
+  EXPECT_EQ(engine->last_all_incoming_peer_address(), "ipv4:127.0.0.1:12345");
+}
+
+class HostAuthorityParseTest : public ::testing::Test {
+ public:
+  HostAuthorityParseTest() { grpc_init(); }
+  ~HostAuthorityParseTest() override {
+    {
+      ExecCtx exec_ctx;
+      parser_.reset();
+    }
+    grpc_shutdown();
+  }
+
+  void SetUp() override { parser_ = std::make_unique<HPackParser>(); }
+
+ protected:
+  std::unique_ptr<HPackParser> parser_;
+};
+
+TEST_F(HostAuthorityParseTest, AuthorityOnly) {
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  // :authority: foo
+  auto input = ParseHexstring("4103666f6f");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok());
+  ASSERT_NE(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata())->as_string_view(), "foo");
+  EXPECT_EQ(b.get_pointer(HostMetadata()), nullptr);
+}
+
+TEST_F(HostAuthorityParseTest, HostOnlyCopiedToAuthority) {
+  if (!IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority experiment";
+  }
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  // host: bar
+  auto input = ParseHexstring("6603626172");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok());
+  ASSERT_NE(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata())->as_string_view(), "bar");
+  ASSERT_NE(b.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HostMetadata())->as_string_view(), "bar");
+}
+
+TEST_F(HostAuthorityParseTest, AuthorityThenHostPreservesBoth) {
+  if (!IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority experiment";
+  }
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  // :authority: foo, host: bar
+  auto input = ParseHexstring("4103666f6f6603626172");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok());
+  ASSERT_NE(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata())->as_string_view(), "foo");
+  ASSERT_NE(b.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HostMetadata())->as_string_view(), "bar");
+}
+
+TEST_F(HostAuthorityParseTest, HostThenAuthorityPreservesBoth) {
+  if (!IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority experiment";
+  }
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  // host: bar, :authority: foo
+  auto input = ParseHexstring("66036261724103666f6f");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok());
+  ASSERT_NE(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata())->as_string_view(), "foo");
+  ASSERT_NE(b.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HostMetadata())->as_string_view(), "bar");
+}
+
+TEST_F(HostAuthorityParseTest, DuplicateAuthorityRejected) {
+  if (!IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority experiment";
+  }
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  // :authority: foo, :authority: baz
+  auto input = ParseHexstring("4103666f6f410362617a");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_FALSE(err.ok());
+  intptr_t stream_id;
+  EXPECT_TRUE(
+      grpc_error_get_int(err, StatusIntProperty::kStreamId, &stream_id));
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  EXPECT_EQ(code, GRPC_STATUS_INTERNAL);
+  EXPECT_THAT(message,
+              ::testing::HasSubstr("Duplicate ':authority' header received"));
+}
+
+TEST_F(HostAuthorityParseTest, DuplicateHostRejected) {
+  if (!IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority experiment";
+  }
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  // host: bar, host: baz
+  auto input = ParseHexstring("6603626172660362617a");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_FALSE(err.ok());
+  intptr_t stream_id;
+  EXPECT_TRUE(
+      grpc_error_get_int(err, StatusIntProperty::kStreamId, &stream_id));
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  EXPECT_EQ(code, GRPC_STATUS_INTERNAL);
+  EXPECT_THAT(message,
+              ::testing::HasSubstr("Duplicate 'host' header received"));
+}
+
+TEST_F(HostAuthorityParseTest, DynamicTableHostPreservedAcrossStreams) {
+  if (!IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority experiment";
+  }
+  ExecCtx exec_ctx;
+  absl::BitGen bitgen;
+  // Stream 1: sends literal with indexing "host: bar" (added to dynamic table
+  // at index 62)
+  grpc_metadata_batch b1;
+  parser_->BeginFrame(
+      &b1, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  auto input1 = ParseHexstring("6603626172");
+  auto err1 =
+      parser_->Parse(input1.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err1.ok());
+  ASSERT_NE(b1.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(b1.get_pointer(HttpAuthorityMetadata())->as_string_view(), "bar");
+  ASSERT_NE(b1.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b1.get_pointer(HostMetadata())->as_string_view(), "bar");
+  // Stream 2: references dynamic table index 62 (0xbe)
+  grpc_metadata_batch b2;
+  parser_->BeginFrame(
+      &b2, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false});
+  auto input2 = ParseHexstring("be");
+  auto err2 =
+      parser_->Parse(input2.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err2.ok());
+  ASSERT_NE(b2.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(b2.get_pointer(HttpAuthorityMetadata())->as_string_view(), "bar");
+  ASSERT_NE(b2.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b2.get_pointer(HostMetadata())->as_string_view(), "bar");
+}
+
+// "host" arrives in the HEADERS frame and ":authority" in the CONTINUATION
+// frame. Canonicalization runs only once the whole header block is parsed, so
+// ":authority" is not overwritten by "host", and both are preserved.
+TEST_F(HostAuthorityParseTest, HostAndAuthorityAcrossContinuation) {
+  if (!IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority experiment";
+  }
+  ExecCtx exec_ctx;
+  absl::BitGen bitgen;
+  grpc_metadata_batch b;
+  // HEADERS: host: bar
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::None, HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  auto input1 = ParseHexstring("6603626172");
+  EXPECT_TRUE(
+      parser_->Parse(input1.c_slice(), true, absl::BitGenRef(bitgen), nullptr)
+          .ok());
+  // CONTINUATION: :authority: foo
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  auto input2 = ParseHexstring("4103666f6f");
+  EXPECT_TRUE(
+      parser_->Parse(input2.c_slice(), true, absl::BitGenRef(bitgen), nullptr)
+          .ok());
+  ASSERT_NE(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata())->as_string_view(), "foo");
+  ASSERT_NE(b.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HostMetadata())->as_string_view(), "bar");
+}
+
+// "host" arrives in both the HEADERS and CONTINUATION frames of one header
+// block, which is rejected as a duplicate.
+TEST_F(HostAuthorityParseTest, DuplicateHostAcrossContinuationRejected) {
+  if (!IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority experiment";
+  }
+  ExecCtx exec_ctx;
+  absl::BitGen bitgen;
+  grpc_metadata_batch b;
+  // HEADERS: host: bar
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::None, HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  auto input1 = ParseHexstring("6603626172");
+  EXPECT_TRUE(
+      parser_->Parse(input1.c_slice(), true, absl::BitGenRef(bitgen), nullptr)
+          .ok());
+  // CONTINUATION: host: baz
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  auto input2 = ParseHexstring("660362617a");
+  auto err =
+      parser_->Parse(input2.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_FALSE(err.ok());
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(err, Timestamp::InfFuture(), &code, &message, nullptr,
+                        nullptr);
+  EXPECT_EQ(code, GRPC_STATUS_INTERNAL);
+  EXPECT_THAT(message,
+              ::testing::HasSubstr("Duplicate 'host' header received"));
+}
+
+TEST_F(HostAuthorityParseTest, HostOnlyNotRenamedOnClient) {
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, true});
+  // host: bar
+  auto input = ParseHexstring("6603626172");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok());
+  ASSERT_NE(b.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HostMetadata())->as_string_view(), "bar");
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+}
+
+TEST_F(HostAuthorityParseTest, HostOnlyNotRenamedInTrailers) {
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kTrailers, false});
+  // host: bar
+  auto input = ParseHexstring("6603626172");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok());
+  ASSERT_NE(b.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HostMetadata())->as_string_view(), "bar");
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+}
+
+// With the experiment disabled, the parser keeps both ":authority" and "host"
+// as received.
+TEST_F(HostAuthorityParseTest, ExperimentDisabledAuthorityAndHostPreserved) {
+  if (IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority to be disabled";
+  }
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  // :authority: foo, host: bar
+  auto input = ParseHexstring("4103666f6f6603626172");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok());
+  ASSERT_NE(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata())->as_string_view(), "foo");
+  ASSERT_NE(b.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HostMetadata())->as_string_view(), "bar");
+}
+
+// With the experiment disabled, the parser does not rename "host" to
+// ":authority" (the HTTP server filter does that later).
+TEST_F(HostAuthorityParseTest, ExperimentDisabledHostOnlyNotRenamed) {
+  if (IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority to be disabled";
+  }
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  // host: bar
+  auto input = ParseHexstring("6603626172");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok());
+  ASSERT_NE(b.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HostMetadata())->as_string_view(), "bar");
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+}
+
+// With the experiment disabled, duplicate ":authority" and "host" headers are
+// accepted and the last value wins.
+TEST_F(HostAuthorityParseTest, ExperimentDisabledDuplicatesAccepted) {
+  if (IsMapHostHeaderToAuthorityEnabled()) {
+    GTEST_SKIP() << "Requires map_host_header_to_authority to be disabled";
+  }
+  ExecCtx exec_ctx;
+  grpc_metadata_batch b;
+  parser_->BeginFrame(
+      &b, 4096, 4096, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+  // :authority: foo, :authority: baz, host: bar, host: baz
+  auto input = ParseHexstring("4103666f6f410362617a6603626172660362617a");
+  absl::BitGen bitgen;
+  auto err =
+      parser_->Parse(input.c_slice(), true, absl::BitGenRef(bitgen), nullptr);
+  EXPECT_TRUE(err.ok());
+  ASSERT_NE(b.get_pointer(HttpAuthorityMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HttpAuthorityMetadata())->as_string_view(), "baz");
+  ASSERT_NE(b.get_pointer(HostMetadata()), nullptr);
+  EXPECT_EQ(b.get_pointer(HostMetadata())->as_string_view(), "baz");
 }
 
 }  // namespace

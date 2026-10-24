@@ -46,6 +46,11 @@ _RELEASES = sorted(
     )
 )
 
+# Force Git to use the traditional "files" reference storage format to ensure compatibility
+# with older Git versions inside docker images used for interop testing.
+# See https://git-scm.com/docs/git-init for details on init.defaultRefFormat.
+_GIT_INIT_EXTRA_ARGS = ["-c", "init.defaultRefFormat=files"]
+
 # Destination directory inside docker image to keep extra info from build time.
 _BUILD_INFO = "/var/local/build_info"
 
@@ -351,7 +356,7 @@ def checkout_grpc_stack(lang, release):
 
     if not os.path.exists(stack_base):
         subprocess.check_call(
-            ["git", "clone", "--recursive", repo],
+            ["git"] + _GIT_INIT_EXTRA_ARGS + ["clone", "--recursive", repo],
             cwd=os.path.dirname(stack_base),
         )
 
@@ -382,7 +387,7 @@ def checkout_grpc_stack(lang, release):
         do_newline=True,
     )
     subprocess.check_call(
-        ["git", "submodule", "update", "--init"],
+        ["git"] + _GIT_INIT_EXTRA_ARGS + ["submodule", "update", "--init"],
         cwd=stack_base,
         stderr=subprocess.STDOUT,
     )

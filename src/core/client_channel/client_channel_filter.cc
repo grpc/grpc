@@ -465,20 +465,18 @@ class ClientChannelFilter::SubchannelWrapper final
             }
             chand_->subchannel_map_.erase(it);
           }
-          if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
-            // We need to make sure that the internal subchannel gets unreffed
-            // inside of the WorkSerializer, so that updates to the local
-            // subchannel pool are properly synchronized.  To that end, we
-            // drop our ref to the internal subchannel here.  We also cancel
-            // any watchers that were not properly cancelled, in case any of
-            // them are holding a ref to the internal subchannel.
-            for (const auto& [_, watcher] : watcher_map_) {
-              subchannel_->CancelConnectivityStateWatch(watcher);
-            }
-            watcher_map_.clear();
-            data_watchers_.clear();
-            subchannel_.reset();
+          // We need to make sure that the internal subchannel gets unreffed
+          // inside of the WorkSerializer, so that updates to the local
+          // subchannel pool are properly synchronized.  To that end, we
+          // drop our ref to the internal subchannel here.  We also cancel
+          // any watchers that were not properly cancelled, in case any of
+          // them are holding a ref to the internal subchannel.
+          for (const auto& [_, watcher] : watcher_map_) {
+            subchannel_->CancelConnectivityStateWatch(watcher);
           }
+          watcher_map_.clear();
+          data_watchers_.clear();
+          subchannel_.reset();
           WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
         });
   }
@@ -604,35 +602,6 @@ class ClientChannelFilter::SubchannelWrapper final
           << parent_.get() << " subchannel " << parent_->subchannel_.get()
           << " watcher=" << watcher_.get()
           << " state=" << ConnectivityStateName(state) << " status=" << status;
-      if (!IsSubchannelConnectionScalingEnabled()) {
-        auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
-        if (keepalive_throttling.has_value()) {
-          int new_keepalive_time_ms = -1;
-          if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                               &new_keepalive_time_ms)) {
-            Duration new_keepalive_time =
-                Duration::Milliseconds(new_keepalive_time_ms);
-            if (new_keepalive_time > parent_->chand_->keepalive_time_) {
-              parent_->chand_->keepalive_time_ = new_keepalive_time;
-              GRPC_TRACE_LOG(client_channel, INFO)
-                  << "chand=" << parent_->chand_
-                  << ": throttling keepalive time to "
-                  << parent_->chand_->keepalive_time_;
-              // Propagate the new keepalive time to all subchannels. This is
-              // so that new transports created by any subchannel (and not
-              // just the subchannel that received the GOAWAY), use the new
-              // keepalive time.
-              for (auto& [subchannel, _] : parent_->chand_->subchannel_map_) {
-                subchannel->ThrottleKeepaliveTime(new_keepalive_time);
-              }
-            }
-          } else {
-            LOG(ERROR) << "chand=" << parent_->chand_
-                       << ": Illegal keepalive throttling value "
-                       << std::string(keepalive_throttling.value());
-          }
-        }
-      }
       // Propagate status only in state TF.
       // We specifically want to avoid propagating the status for
       // state IDLE that the real subchannel gave us only for the
@@ -714,7 +683,7 @@ ClientChannelFilter::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
                                          chand_->interested_parties_);
   GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalConnectivityWatcher");
   {
-    MutexLock lock(&chand_->external_watchers_mu_);
+    MutexLock lock(chand_->external_watchers_mu_);
     // Will be deleted when the watch is complete.
     GRPC_CHECK(chand->external_watchers_[on_complete] == nullptr);
     // Store a ref to the watcher in the external_watchers_ map.
@@ -744,7 +713,7 @@ void ClientChannelFilter::ExternalConnectivityWatcher::
                                          bool cancel) {
   RefCountedPtr<ExternalConnectivityWatcher> watcher;
   {
-    MutexLock lock(&chand->external_watchers_mu_);
+    MutexLock lock(chand->external_watchers_mu_);
     auto it = chand->external_watchers_.find(on_complete);
     if (it != chand->external_watchers_.end()) {
       watcher = std::move(it->second);
@@ -1045,7 +1014,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   auto service_config =
       ServiceConfigImpl::Create(channel_args_, *service_config_json);
   if (!service_config.ok()) {
-    *error = absl_status_to_grpc_error(service_config.status());
+    *error = service_config.status();
     return;
   }
   default_service_config_ = std::move(*service_config);
@@ -1330,7 +1299,7 @@ void ClientChannelFilter::OnResolverErrorLocked(absl::Status status) {
     UpdateStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                       "resolver failure");
     {
-      MutexLock lock(&resolution_mu_);
+      MutexLock lock(resolution_mu_);
       // Update resolver transient failure.
       resolver_transient_failure_error_ =
           MaybeRewriteIllegalStatusCode(status, "resolver");
@@ -1406,7 +1375,7 @@ void ClientChannelFilter::UpdateServiceConfigInControlPlaneLocked(
   saved_service_config_ = std::move(service_config);
   // Swap out the data used by GetChannelInfo().
   {
-    MutexLock lock(&info_mu_);
+    MutexLock lock(info_mu_);
     info_lb_policy_name_ = std::move(lb_policy_name);
     info_service_config_json_ = std::move(service_config_json);
   }
@@ -1482,7 +1451,7 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
   // We defer unreffing the old values (and deallocating memory) until
   // after releasing the lock to keep the critical section small.
   {
-    MutexLock lock(&resolution_mu_);
+    MutexLock lock(resolution_mu_);
     resolver_transient_failure_error_ = absl::OkStatus();
     // Update service config.
     received_service_config_data_ = true;
@@ -1527,7 +1496,7 @@ void ClientChannelFilter::DestroyResolverAndLbPolicyLocked() {
     RefCountedPtr<ServiceConfig> service_config_to_unref;
     RefCountedPtr<ConfigSelector> config_selector_to_unref;
     {
-      MutexLock lock(&resolution_mu_);
+      MutexLock lock(resolution_mu_);
       received_service_config_data_ = false;
       service_config_to_unref = std::move(service_config_);
       config_selector_to_unref = std::move(config_selector_);
@@ -1557,12 +1526,12 @@ void ClientChannelFilter::UpdateStateLocked(grpc_connectivity_state state,
     if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       GRPC_CHANNELZ_LOG(channelz_node_)
           << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                 state);
+                 state)
+          << " status: " << status.ToString();
     } else {
       GRPC_CHANNELZ_LOG(channelz_node_)
           << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                 state)
-          << " status: " << status.ToString();
+                 state);
     }
   }
 }
@@ -1575,7 +1544,7 @@ void ClientChannelFilter::UpdateStateAndPickerLocked(
   // Grab the LB lock to update the picker and trigger reprocessing of the
   // queued picks.
   // Old picker will be unreffed after releasing the lock.
-  MutexLock lock(&lb_mu_);
+  MutexLock lock(lb_mu_);
   picker_.swap(picker);
   // Reprocess queued picks.
   for (auto& call : lb_queued_calls_) {
@@ -1625,7 +1594,7 @@ grpc_error_handle ClientChannelFilter::DoPingLocked(grpc_transport_op* op) {
   }
   LoadBalancingPolicy::PickResult result;
   {
-    MutexLock lock(&lb_mu_);
+    MutexLock lock(lb_mu_);
     result = picker_->Pick(LoadBalancingPolicy::PickArgs());
   }
   return HandlePickResult<grpc_error_handle>(
@@ -1645,11 +1614,11 @@ grpc_error_handle ClientChannelFilter::DoPingLocked(grpc_transport_op* op) {
       },
       // Fail pick.
       [](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
-        return absl_status_to_grpc_error(fail_pick->status);
+        return fail_pick->status;
       },
       // Drop pick.
       [](LoadBalancingPolicy::PickResult::Drop* drop_pick) {
-        return absl_status_to_grpc_error(drop_pick->status);
+        return drop_pick->status;
       });
 }
 
@@ -1685,11 +1654,7 @@ void ClientChannelFilter::StartTransportOpLocked(grpc_transport_op* op) {
         << "chand=" << this << ": disconnect_with_error: "
         << StatusToString(op->disconnect_with_error);
     DestroyResolverAndLbPolicyLocked();
-    intptr_t value;
-    if (grpc_error_get_int(op->disconnect_with_error,
-                           StatusIntProperty::ChannelConnectivityState,
-                           &value) &&
-        static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
+    if (op->go_idle) {
       if (disconnect_error_.ok()) {  // Ignore if we're shutting down.
         // Enter IDLE state.
         UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::Status(),
@@ -1705,7 +1670,7 @@ void ClientChannelFilter::StartTransportOpLocked(grpc_transport_op* op) {
       UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
           MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(
-              grpc_error_to_absl_status(op->disconnect_with_error)));
+              op->disconnect_with_error));
       // TODO(roth): If this happens when we're still waiting for a
       // resolver result, we need to trigger failures for all calls in
       // the resolver queue here.
@@ -1734,7 +1699,7 @@ void ClientChannelFilter::StartTransportOp(grpc_channel_element* elem,
 void ClientChannelFilter::GetChannelInfo(grpc_channel_element* elem,
                                          const grpc_channel_info* info) {
   auto* chand = static_cast<ClientChannelFilter*>(elem->channel_data);
-  MutexLock lock(&chand->info_mu_);
+  MutexLock lock(chand->info_mu_);
   if (info->lb_policy_name != nullptr) {
     *info->lb_policy_name = gpr_strdup(chand->info_lb_policy_name_.c_str());
   }
@@ -1802,7 +1767,7 @@ class ClientChannelFilter::CallData::ResolverQueuedCallCanceller final {
     auto* calld = self->calld_;
     auto* chand = calld->chand();
     {
-      MutexLock lock(&chand->resolution_mu_);
+      MutexLock lock(chand->resolution_mu_);
       GRPC_TRACE_LOG(client_channel_call, INFO)
           << "chand=" << chand << " calld=" << calld
           << ": cancelling resolver queued pick: "
@@ -1877,8 +1842,8 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
                           ->GetCallConfig({send_initial_metadata(), arena_,
                                            service_config_call_data});
   if (!filter_chain.ok()) {
-    return absl_status_to_grpc_error(
-        MaybeRewriteIllegalStatusCode(filter_chain.status(), "ConfigSelector"));
+    return MaybeRewriteIllegalStatusCode(filter_chain.status(),
+                                         "ConfigSelector");
   }
   dynamic_filters_ = filter_chain->TakeAsSubclass<const DynamicFilters>();
   // Apply our own method params to the call.
@@ -1908,7 +1873,7 @@ std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
   // Check if we have a resolver result to use.
   absl::StatusOr<RefCountedPtr<ConfigSelector>> config_selector;
   {
-    MutexLock lock(&chand()->resolution_mu_);
+    MutexLock lock(chand()->resolution_mu_);
     bool result_ready = CheckResolutionLocked(&config_selector);
     // If no result is available, queue the call.
     if (!result_ready) {
@@ -1948,7 +1913,7 @@ bool ClientChannelFilter::CallData::CheckResolutionLocked(
       GRPC_TRACE_LOG(client_channel_call, INFO)
           << "chand=" << chand() << " calld=" << this
           << ": resolution failed, failing call";
-      *config_selector = absl_status_to_grpc_error(resolver_error);
+      *config_selector = resolver_error;
       return true;
     }
     // Either the resolver has not yet returned a result, or it has
@@ -2274,7 +2239,7 @@ class ClientChannelFilter::LoadBalancedCall::LbQueuedCallCanceller final {
     auto* lb_call = self->lb_call_.get();
     auto* chand = lb_call->chand_;
     {
-      MutexLock lock(&chand->lb_mu_);
+      MutexLock lock(chand->lb_mu_);
       GRPC_TRACE_LOG(client_channel_lb_call, INFO)
           << "chand=" << chand << " lb_call=" << lb_call
           << ": cancelling queued pick: error=" << StatusToString(error)
@@ -2428,7 +2393,7 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
       << "chand=" << chand_ << " lb_call=" << this
       << ": grabbing LB mutex to get picker";
   {
-    MutexLock lock(&chand_->lb_mu_);
+    MutexLock lock(chand_->lb_mu_);
     picker = chand_->picker_;
   }
   while (true) {
@@ -2448,7 +2413,7 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
     bool pick_complete = PickSubchannelImpl(picker.get(), &error);
     if (!pick_complete) {
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> old_picker;
-      MutexLock lock(&chand_->lb_mu_);
+      MutexLock lock(chand_->lb_mu_);
       // If picker has been swapped out since we grabbed it, try again.
       if (picker != chand_->picker_) {
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
@@ -2484,6 +2449,9 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
 bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
     LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
   GRPC_CHECK(subchannel_call_ == nullptr);
+  // Adding the call arena to TLS so that LB pickers can access call context
+  // from the arena.
+  promise_detail::Context<Arena> arena_ctx(arena_);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
@@ -2556,8 +2524,8 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         if (!send_initial_metadata()
                  ->GetOrCreatePointer(WaitForReady())
                  ->value) {
-          *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-              std::move(fail_pick->status), "LB pick"));
+          *error = MaybeRewriteIllegalStatusCode(std::move(fail_pick->status),
+                                                 "LB pick");
           return true;
         }
         // If wait_for_ready is true, then queue to retry when we get a new
@@ -2569,10 +2537,9 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "chand=" << chand_ << " lb_call=" << this
             << ": LB pick dropped: " << drop_pick->status;
-        *error = grpc_error_set_int(
-            absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-                std::move(drop_pick->status), "LB drop")),
-            StatusIntProperty::kLbPolicyDrop, 1);
+        is_drop_ = true;
+        *error = MaybeRewriteIllegalStatusCode(std::move(drop_pick->status),
+                                               "LB drop");
         return true;
       });
 }
@@ -2710,7 +2677,7 @@ void ClientChannelFilter::LoadBalancedCall::RecvTrailingMetadataReady(
       << " call_attempt_tracer_=" << self->call_attempt_tracer_
       << " lb_subchannel_call_tracker_="
       << self->lb_subchannel_call_tracker_.get()
-      << " failure_error_=" << StatusToString(self->failure_error_);
+      << " is_drop_=" << self->is_drop_;
   // Check if we have a tracer or an LB callback to invoke.
   if (self->call_attempt_tracer_ != nullptr ||
       self->lb_subchannel_call_tracker_ != nullptr) {
@@ -2744,11 +2711,9 @@ void ClientChannelFilter::LoadBalancedCall::RecvTrailingMetadataReady(
     self->RecordCallCompletion(status, self->recv_trailing_metadata_,
                                self->transport_stream_stats_, peer_string);
   }
+  // If we dropped the call, indicate that fact in the metadata.
+  if (self->is_drop_) self->recv_trailing_metadata_->Set(LbPolicyDrop(), true);
   // Chain to original callback.
-  if (!self->failure_error_.ok()) {
-    error = self->failure_error_;
-    self->failure_error_ = absl::OkStatus();
-  }
   Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
                error);
 }
