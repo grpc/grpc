@@ -22,6 +22,7 @@
 #include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/transport/auth_context.h"
 #include "test/core/test_util/evaluate_args_test_util.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
@@ -176,9 +177,7 @@ TEST_F(EvaluateArgsTest, EmptyAuthContext) {
   EXPECT_TRUE(args.GetCommonName().empty());
   EXPECT_TRUE(args.GetRequestedServerName().empty());
   EXPECT_TRUE(args.GetTlsVersion().empty());
-  EXPECT_TRUE(args.GetLocalUriSan().empty());
-  EXPECT_TRUE(args.GetLocalDnsSan().empty());
-  EXPECT_TRUE(args.GetLocalSubject().empty());
+  EXPECT_TRUE(args.GetLocalPrincipal().empty());
 }
 
 TEST_F(EvaluateArgsTest, GetTransportSecurityTypeSuccessOneProperty) {
@@ -282,21 +281,16 @@ TEST_F(EvaluateArgsTest, GetTlsVersionFailDuplicateProperty) {
   EXPECT_TRUE(args.GetTlsVersion().empty());
 }
 
-TEST_F(EvaluateArgsTest, GetLocalCertificateIdentitySuccess) {
-  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_URI_PROPERTY_NAME,
-  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
-                                 "server.example.com");
-  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
-                                 "CN=server,OU=Google");
+TEST_F(EvaluateArgsTest, GetLocalPrincipalSuccess) {
+  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
+                                 "spiffe://foo.com/server");
   EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_EQ(args.GetLocalUriSan(), "spiffe://foo.com/server");
-  EXPECT_EQ(args.GetLocalDnsSan(), "server.example.com");
-  EXPECT_EQ(args.GetLocalSubject(), "CN=server,OU=Google");
+  EXPECT_EQ(args.GetLocalPrincipal(), "spiffe://foo.com/server");
 }
 
 // The local identity is unrelated to the peer's: setting one must not affect
 // the other in either direction.
-TEST_F(EvaluateArgsTest, LocalCertificateIdentityIsSeparateFromPeer) {
+TEST_F(EvaluateArgsTest, LocalPrincipalIsSeparateFromPeer) {
   util_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
                                  "spiffe://foo.com/client");
   util_.AddPropertyToAuthContext(GRPC_PEER_DNS_PROPERTY_NAME,
@@ -306,16 +300,16 @@ TEST_F(EvaluateArgsTest, LocalCertificateIdentityIsSeparateFromPeer) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_THAT(args.GetUriSans(),
               ::testing::ElementsAre("spiffe://foo.com/client"));
-  EXPECT_TRUE(args.GetLocalUriSan().empty());
-  EXPECT_TRUE(args.GetLocalDnsSan().empty());
-  EXPECT_TRUE(args.GetLocalSubject().empty());
+  EXPECT_TRUE(args.GetLocalPrincipal().empty());
 }
 
-TEST_F(EvaluateArgsTest, GetLocalCertificateIdentityFailDuplicateProperty) {
-  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_URI_PROPERTY_NAME, "uri1");
-  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_URI_PROPERTY_NAME, "uri2");
+TEST_F(EvaluateArgsTest, GetLocalPrincipalFailDuplicateProperty) {
+  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
+                                 "uri1");
+  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
+                                 "uri2");
   EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_TRUE(args.GetLocalUriSan().empty());
+  EXPECT_TRUE(args.GetLocalPrincipal().empty());
 }
 
 }  // namespace grpc_core

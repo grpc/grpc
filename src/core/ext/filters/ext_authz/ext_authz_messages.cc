@@ -242,15 +242,12 @@ envoy_service_auth_v3_AttributeContext_Peer* CreateDestination(
                                                             address);
   }
   // destination.principal is the identity asserted by the certificate that
-  // this server presented on this connection, derived with exactly the same
-  // precedence rule as source.principal (which grpc-java and Envoy also
-  // share).  Unlike the peer, the local endpoint contributes at most one URI
-  // SAN and one DNS SAN, because carrying every local SAN would mean an
-  // unbounded number of per-connection auth context properties.  It is left
-  // unset when TLS is not in use or this server presented no certificate, in
-  // which case all three values are empty.
-  absl::string_view principal = GetPrincipal(
-      {args.GetLocalUriSan()}, {args.GetLocalDnsSan()}, args.GetLocalSubject());
+  // this server presented on this connection.  The TLS layer derives it with
+  // exactly the same precedence rule as source.principal (which grpc-java and
+  // Envoy also share): first URI SAN, else first DNS SAN, else subject.  It is
+  // left unset when TLS is not in use or this server presented no
+  // certificate.
+  absl::string_view principal = args.GetLocalPrincipal();
   if (!principal.empty()) {
     envoy_service_auth_v3_AttributeContext_Peer_set_principal(
         destination, CopyStdStringToUpbString(principal, arena));

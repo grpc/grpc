@@ -83,9 +83,7 @@ constexpr absl::string_view kProtocolHttp2 = "HTTP/2";
 constexpr char kUriSan[] = "spiffe://foo.com/bar/baz";
 constexpr char kDnsSan[] = "client.example.com";
 constexpr char kSubject[] = "CN=client,O=Example,C=US";
-constexpr char kLocalUriSan[] = "spiffe://foo.com/server";
-constexpr char kLocalDnsSan[] = "server.example.com";
-constexpr char kLocalSubject[] = "CN=server,O=Example,C=US";
+constexpr char kLocalPrincipal[] = "spiffe://foo.com/server";
 constexpr char kPeerAddressUri[] = "ipv4:192.168.1.100:54321";
 constexpr absl::string_view kPeerAddressHost = "192.168.1.100";
 constexpr int kPeerAddressPort = 54321;
@@ -167,12 +165,8 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestSourceAndDestination) {
   auth_context.add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
   auth_context.add_cstring_property(GRPC_PEER_DNS_PROPERTY_NAME, kDnsSan);
   auth_context.add_cstring_property(GRPC_X509_SUBJECT_PROPERTY_NAME, kSubject);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_URI_PROPERTY_NAME,
-                                    kLocalUriSan);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
-                                    kLocalDnsSan);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
-                                    kLocalSubject);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
+                                    kLocalPrincipal);
   EvaluateArgs::PerChannelArgs channel_args(
       &auth_context,
       ChannelArgs()
@@ -206,8 +200,9 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestSourceAndDestination) {
   EXPECT_EQ(attr.destination().address().socket_address().port_value(),
             kLocalAddressPort);
   // The destination principal comes from this endpoint's own certificate,
-  // with the same precedence rule, and is never the peer's identity.
-  EXPECT_THAT(attr.destination().principal(), ::testing::StrEq(kLocalUriSan));
+  // and is never the peer's identity.
+  EXPECT_THAT(attr.destination().principal(),
+              ::testing::StrEq(kLocalPrincipal));
 }
 
 // IPv6 addresses are reported without the surrounding brackets.
@@ -404,71 +399,6 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalDoesNotDangle) {
               ::testing::StrEq(long_san));
 }
 
-// The local URI SAN takes precedence over the local DNS SAN and subject, so
-// with no URI SAN we fall back to the DNS SAN.
-TEST_F(CreateExtAuthzRequestTest,
-       ServerRequestDestinationPrincipalFallsBackToLocalDnsSan) {
-  grpc_metadata_batch batch;
-  grpc_auth_context auth_context(nullptr);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
-                                    kLocalDnsSan);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
-                                    kLocalSubject);
-  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
-  EvaluateArgs args(&batch, &channel_args);
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = kPath;
-  params.args = &args;
-  std::string serialized = CreateExtAuthzRequest(params).value();
-  auto request = ParseRequest(serialized);
-  ASSERT_TRUE(request.attributes().has_destination());
-  EXPECT_THAT(request.attributes().destination().principal(),
-              ::testing::StrEq(kLocalDnsSan));
-}
-
-TEST_F(CreateExtAuthzRequestTest,
-       ServerRequestDestinationPrincipalFallsBackToLocalSubject) {
-  grpc_metadata_batch batch;
-  grpc_auth_context auth_context(nullptr);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
-                                    kLocalSubject);
-  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
-  EvaluateArgs args(&batch, &channel_args);
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = kPath;
-  params.args = &args;
-  std::string serialized = CreateExtAuthzRequest(params).value();
-  auto request = ParseRequest(serialized);
-  ASSERT_TRUE(request.attributes().has_destination());
-  EXPECT_THAT(request.attributes().destination().principal(),
-              ::testing::StrEq(kLocalSubject));
-}
-
-// Empty local SAN values are skipped rather than being reported as the
-// principal, exactly as for the source side.
-TEST_F(CreateExtAuthzRequestTest,
-       ServerRequestDestinationPrincipalSkipsEmptyLocalSans) {
-  grpc_metadata_batch batch;
-  grpc_auth_context auth_context(nullptr);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_URI_PROPERTY_NAME, "");
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_DNS_PROPERTY_NAME, "");
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
-                                    kLocalSubject);
-  EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
-  EvaluateArgs args(&batch, &channel_args);
-  ExtAuthzRequest params;
-  params.is_client_call = false;
-  params.path = kPath;
-  params.args = &args;
-  std::string serialized = CreateExtAuthzRequest(params).value();
-  auto request = ParseRequest(serialized);
-  ASSERT_TRUE(request.attributes().has_destination());
-  EXPECT_THAT(request.attributes().destination().principal(),
-              ::testing::StrEq(kLocalSubject));
-}
-
 // The peer's identity must never leak into destination.principal, and this
 // endpoint's identity must never leak into source.principal.
 TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalsAreNotInterchanged) {
@@ -494,15 +424,11 @@ TEST_F(CreateExtAuthzRequestTest, ServerRequestPrincipalsAreNotInterchanged) {
 }
 
 TEST_F(CreateExtAuthzRequestTest,
-       ServerRequestSourcePrincipalIgnoresLocalProperties) {
+       ServerRequestSourcePrincipalIgnoresLocalPrincipal) {
   grpc_metadata_batch batch;
   grpc_auth_context auth_context(nullptr);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_URI_PROPERTY_NAME,
-                                    kLocalUriSan);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_DNS_PROPERTY_NAME,
-                                    kLocalDnsSan);
-  auth_context.add_cstring_property(GRPC_X509_LOCAL_SUBJECT_PROPERTY_NAME,
-                                    kLocalSubject);
+  auth_context.add_cstring_property(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
+                                    kLocalPrincipal);
   EvaluateArgs::PerChannelArgs channel_args(&auth_context, ChannelArgs());
   EvaluateArgs args(&batch, &channel_args);
   ExtAuthzRequest params;
@@ -515,7 +441,8 @@ TEST_F(CreateExtAuthzRequestTest,
   ASSERT_TRUE(attr.has_source());
   EXPECT_THAT(attr.source().principal(), ::testing::IsEmpty());
   ASSERT_TRUE(attr.has_destination());
-  EXPECT_THAT(attr.destination().principal(), ::testing::StrEq(kLocalUriSan));
+  EXPECT_THAT(attr.destination().principal(),
+              ::testing::StrEq(kLocalPrincipal));
 }
 
 // With no TLS credentials and no endpoint addresses, source and destination

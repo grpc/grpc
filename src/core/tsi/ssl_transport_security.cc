@@ -2250,21 +2250,6 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
   return result;
 }
 
-// Appends \a value to \a peer under the property name \a name, unless \a value
-// is empty, in which case this is a no-op.  The caller must have reserved
-// space for the property.
-static tsi_result maybe_add_string_peer_property(tsi_peer* peer,
-                                                 const char* name,
-                                                 const std::string& value) {
-  if (value.empty()) return TSI_OK;
-  tsi_result result = tsi_construct_string_peer_property(
-      name, value.data(), value.size(),
-      &peer->properties[peer->property_count]);
-  if (result != TSI_OK) return result;
-  peer->property_count++;
-  return TSI_OK;
-}
-
 // --- tsi_handshaker_result methods implementation. ---
 static tsi_result ssl_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
@@ -2401,20 +2386,6 @@ static tsi_result ssl_handshaker_result_extract_peer(
     if (result != TSI_OK) return result;
     peer->property_count++;
   }
-  // Properties describing the local endpoint's own certificate.  These are
-  // deliberately named differently from the peer properties above so that no
-  // consumer can confuse them with the peer's identity.  Note that these must
-  // not overwrite `result`, which is what this function returns and which may
-  // already carry an error from the verified-root-cert block above.
-  tsi_result local_result = maybe_add_string_peer_property(
-      peer, TSI_X509_LOCAL_URI_PROPERTY, local_uri_san);
-  if (local_result != TSI_OK) return local_result;
-  local_result = maybe_add_string_peer_property(
-      peer, TSI_X509_LOCAL_DNS_PROPERTY, local_dns_san);
-  if (local_result != TSI_OK) return local_result;
-  local_result = maybe_add_string_peer_property(
-      peer, TSI_X509_LOCAL_SUBJECT_PROPERTY, local_subject);
-  if (local_result != TSI_OK) return local_result;
 
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   if (negotiated_group_name != nullptr) {

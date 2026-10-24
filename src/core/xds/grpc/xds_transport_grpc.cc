@@ -197,7 +197,6 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::StartBatch(
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     ~GrpcStreamingCall() {
-  grpc_metadata_array_destroy(&initial_metadata_recv_);
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);

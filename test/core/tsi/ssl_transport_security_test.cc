@@ -572,24 +572,8 @@ class SslTransportSecurityTest
       }
     }
 
-    // The local-certificate properties are emitted on the server side only,
-    // so a peer extracted from a client handshaker result must not have any
-    // of them.
-    static void CheckNoLocalCertProperties(const tsi_peer* peer) {
-      EXPECT_EQ(
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_URI_PROPERTY),
-          nullptr);
-      EXPECT_EQ(
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_DNS_PROPERTY),
-          nullptr);
-      EXPECT_EQ(
-          tsi_peer_get_property_by_name(peer, TSI_X509_LOCAL_SUBJECT_PROPERTY),
-          nullptr);
-    }
-
     // This is tied specifically to server0.pem loaded by the fixture.
     static void CheckServer0Peer(tsi_peer* peer) {
-      CheckNoLocalCertProperties(peer);
       const tsi_peer_property* property =
           CheckBasicAuthenticatedPeerAndGetCommonName(peer);
       std::string expected_match = "*.test.google.com.au";
@@ -612,7 +596,6 @@ class SslTransportSecurityTest
 
     // This is tied specifically to server1.pem loaded by the fixture.
     static void CheckServer1Peer(tsi_peer* peer) {
-      CheckNoLocalCertProperties(peer);
       const tsi_peer_property* property =
           CheckBasicAuthenticatedPeerAndGetCommonName(peer);
       std::string expected_match = "*.test.google.com";
@@ -724,7 +707,6 @@ class SslTransportSecurityTest
                                 tls_version_prop->value.length),
                     expected_tls_version);
         }
-        CheckLocalCertProperties(ssl_fixture, peer, &expected_property_count);
         ASSERT_EQ(peer->property_count, expected_property_count);
 
       } else {
@@ -733,10 +715,6 @@ class SslTransportSecurityTest
         std::string expected_match = "testclient";
         ASSERT_EQ(expected_match,
                   std::string(property->value.data, property->value.length));
-        // The client's identity above must not have been taken from the
-        // server's own certificate.
-        size_t ignored_count = 0;
-        CheckLocalCertProperties(ssl_fixture, peer, &ignored_count);
       }
       tsi_peer_destruct(peer);
     }

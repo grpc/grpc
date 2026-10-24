@@ -71,23 +71,6 @@
 // tsi::X509Principal()).  Set on the server side only.
 #define TSI_X509_LOCAL_PRINCIPAL_PEER_PROPERTY "x509_local_principal"
 
-// Properties describing the X.509 certificate that *this* endpoint presented
-// on the connection.  Note that, unlike every other property above, these
-// describe the local endpoint rather than the peer.  They are emitted only on
-// the server side, and only if this endpoint presented a certificate; each of
-// them is emitted at most once, and only if the corresponding value is
-// non-empty.  These properties are deliberately named differently from the
-// peer ones so that they cannot be mistaken for the peer's identity (see
-// grpc_ssl_peer_to_auth_context(), which derives the peer identity by property
-// name).
-// These properties are of type TSI_PEER_PROPERTY_STRING.
-// First URI SAN of the local leaf certificate.
-#define TSI_X509_LOCAL_URI_PROPERTY "x509_local_uri"
-// First DNS SAN of the local leaf certificate.
-#define TSI_X509_LOCAL_DNS_PROPERTY "x509_local_dns"
-// Subject of the local leaf certificate, in RFC 2253 form.
-#define TSI_X509_LOCAL_SUBJECT_PROPERTY "x509_local_subject"
-
 namespace tsi {
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 }  // namespace tsi

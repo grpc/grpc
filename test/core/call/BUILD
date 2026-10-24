@@ -105,6 +105,7 @@ grpc_cc_test(
         "//:grpc_credentials_util",
         "//:grpc_security_constants",
         "//:sockaddr_utils",
+        "//:transport_auth_context",
         "//src/core:evaluate_args",
         "//src/core:grpc_authorization_base",
         "//src/core:resolved_address",

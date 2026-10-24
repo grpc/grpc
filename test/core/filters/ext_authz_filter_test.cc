@@ -96,7 +96,7 @@ constexpr absl::string_view kForbiddenHeaderRemovalErrorMessage =
 constexpr absl::string_view kTransportErrorMessage = "transport failure";
 // Connection attributes used by the server-side tests.
 constexpr char kUriSan[] = "spiffe://foo.com/bar/baz";
-constexpr char kLocalUriSan[] = "spiffe://foo.com/server";
+constexpr char kLocalPrincipal[] = "spiffe://foo.com/server";
 constexpr char kPeerAddressUri[] = "ipv4:1.2.3.4:1234";
 constexpr absl::string_view kPeerAddressHost = "1.2.3.4";
 constexpr int kPeerAddressPort = 1234;
@@ -179,8 +179,8 @@ class ExtAuthzFilterTest : public FilterTest {
   RefCountedPtr<grpc_auth_context> MakeAuthContext() {
     auto auth_context = MakeRefCounted<grpc_auth_context>(nullptr);
     auth_context->add_cstring_property(GRPC_PEER_URI_PROPERTY_NAME, kUriSan);
-    auth_context->add_cstring_property(GRPC_X509_LOCAL_URI_PROPERTY_NAME,
-                                       kLocalUriSan);
+    auth_context->add_cstring_property(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
+                                       kLocalPrincipal);
     return auth_context;
   }
 
@@ -1285,7 +1285,8 @@ FILTER_TEST(ExtAuthzFilterTest, ServerCallPopulatesSourceAndDestination) {
             kPeerAddressPort);
   ASSERT_TRUE(attr.has_destination());
   // The destination principal comes from this endpoint's own certificate.
-  EXPECT_THAT(attr.destination().principal(), ::testing::StrEq(kLocalUriSan));
+  EXPECT_THAT(attr.destination().principal(),
+              ::testing::StrEq(kLocalPrincipal));
   ASSERT_TRUE(attr.destination().address().has_socket_address());
   EXPECT_THAT(attr.destination().address().socket_address().address(),
               ::testing::StrEq(kLocalAddressHost));
@@ -1383,7 +1384,8 @@ FILTER_TEST(ExtAuthzFilterTest, ServerCallWithoutEndpointAddressArgs) {
   ASSERT_TRUE(attr.has_source());
   ASSERT_TRUE(attr.has_destination());
   EXPECT_THAT(attr.source().principal(), ::testing::StrEq(kUriSan));
-  EXPECT_THAT(attr.destination().principal(), ::testing::StrEq(kLocalUriSan));
+  EXPECT_THAT(attr.destination().principal(),
+              ::testing::StrEq(kLocalPrincipal));
   EXPECT_FALSE(attr.source().has_address());
   EXPECT_FALSE(attr.destination().has_address());
 }

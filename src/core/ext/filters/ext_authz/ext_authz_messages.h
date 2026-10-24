@@ -142,9 +142,8 @@ struct ExtAuthzRequest {
   // - AttributeContext.destination.principal: the identity asserted by the
   //   certificate that this server presented on this connection: its first
   //   URI SAN if set, otherwise its first DNS SAN if set, otherwise its
-  //   subject in RFC 2253 format (EvaluateArgs::GetLocalUriSan(),
-  //   GetLocalDnsSan(), GetLocalSubject()).  Unset if TLS is not used or this
-  //   server presented no certificate.
+  //   subject in RFC 2253 format (EvaluateArgs::GetLocalPrincipal()).  Unset
+  //   if TLS is not used or this server presented no certificate.
   // Addresses that EvaluateArgs cannot resolve (e.g., unix domain sockets) are
   // omitted.
   // If null, source and destination are omitted from the AttributeContext.
