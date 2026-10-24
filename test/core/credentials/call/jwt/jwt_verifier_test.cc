@@ -604,6 +604,51 @@ TEST(JwtVerifierTest, JwtVerifierBadFormat) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+// Regression test for the pre-signature abort on a non-object JWT payload.
+//
+// grpc_jwt_claims_from_json() iterated the payload with object() without first
+// checking the JSON type. A valid but non-object payload (string, number,
+// boolean, or array) made object() throw std::bad_variant_access, which aborts
+// the process in gRPC's no-exceptions build. With the fix the function returns
+// null for every non-object payload instead of aborting.
+TEST(JwtVerifierTest, ClaimsFromNonObjectJsonReturnsNullInsteadOfAborting) {
+  grpc_core::ExecCtx exec_ctx;
+  const char* non_object_payloads[] = {
+      "\"a-string\"", "12345", "true", "null", "[\"an\",\"array\"]"};
+  for (const char* payload : non_object_payloads) {
+    auto json = grpc_core::JsonParse(payload);
+    ASSERT_TRUE(json.ok()) << payload << ": " << json.status();
+    ASSERT_NE(json->type(), Json::Type::kObject) << payload;
+    // Without the fix this call aborts the process; with it, it returns null.
+    ASSERT_EQ(grpc_jwt_claims_from_json(*json), nullptr) << payload;
+  }
+}
+
+// End-to-end reachability: an unauthenticated peer reaches the abort through the
+// public verify entry point, before any key is fetched or signature checked.
+// The crafted token has a well-formed RS256 header and a non-object payload; its
+// signature is never examined because the crash (pre-fix) happens during payload
+// parsing. The key-fetch override asserts no key retrieval is attempted, proving
+// the trigger is pre-signature. With the fix, verification fails cleanly with
+// GRPC_JWT_VERIFIER_BAD_FORMAT.
+TEST(JwtVerifierTest, NonObjectPayloadIsRejectedBeforeSignatureCheck) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
+  grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
+  std::string header = absl::WebSafeBase64Escape("{\"alg\":\"RS256\"}");
+  std::string payload = absl::WebSafeBase64Escape("\"not-an-object\"");
+  std::string signature = absl::WebSafeBase64Escape("ignored-signature");
+  std::string jwt = header + "." + payload + "." + signature;
+  grpc_jwt_verifier_verify(verifier, nullptr, jwt.c_str(), expected_audience,
+                           on_verification_bad_format,
+                           const_cast<char*>(expected_user_data));
+  grpc_jwt_verifier_destroy(verifier);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 // find verification key: bad jks, cannot find key in jks
 // bad signature custom provided email
 // bad key
