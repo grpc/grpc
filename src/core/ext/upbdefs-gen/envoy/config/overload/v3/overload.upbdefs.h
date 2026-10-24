@@ -52,6 +52,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_overload_v3_ScaleTimersOverloadAct
   return upb_DefPool_FindMessageByName(s, "envoy.config.overload.v3.ScaleTimersOverloadActionConfig.ScaleTimer");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_overload_v3_ShrinkHeapConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_overload_v3_overload_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.overload.v3.ShrinkHeapConfig");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_overload_v3_OverloadAction_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_overload_v3_overload_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.overload.v3.OverloadAction");

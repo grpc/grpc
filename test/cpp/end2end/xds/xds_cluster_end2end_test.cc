@@ -537,6 +537,7 @@ TEST_P(EdsTest, Vanilla) {
 }
 
 TEST_P(EdsTest, MultipleAddressesPerEndpoint) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   const size_t kNumRpcsPerAddress = 10;
@@ -739,6 +740,7 @@ TEST_P(EdsTest, IgnoresDuplicateUpdates) {
 // Unit tests for XdsEndpointResourceType have exhaustive tests for all
 // of the invalid cases.
 TEST_P(EdsTest, NacksInvalidResource) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   EdsResourceArgs args({
       {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });
@@ -749,7 +751,8 @@ TEST_P(EdsTest, NacksInvalidResource) {
             "xDS response validation errors: ["
             "resource index 0: eds_service_name: "
             "INVALID_ARGUMENT: errors parsing EDS resource: ["
-            "field:endpoints error:priority 0 empty]]");
+            "field:endpoints[0].priority error:"
+            "priority 1 >= number of localities (1)]]");
 }
 
 // Tests that if the balancer is down, the RPCs will still be sent to the

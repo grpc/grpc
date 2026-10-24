@@ -17,16 +17,21 @@
 #ifndef GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_FILTER_H
 #define GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_FILTER_H
 
+#include <grpc/event_engine/event_engine.h>
+
 #include <memory>
 #include <optional>
 #include <string>
 #include <variant>
 #include <vector>
 
+#include "src/core/call/call_spine.h"
+#include "src/core/call/evaluate_args.h"
 #include "src/core/filter/ext_proc/ext_proc_messages.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
@@ -34,12 +39,30 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
  public:
-  class ExtProcChannel;
+  class ExtProcChannel final : public Blackboard::Entry {
+   public:
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE("ext_proc_channel");
+    }
+    ExtProcChannel(GrpcXdsServerTarget server,
+                   RefCountedPtr<XdsTransportFactory::XdsTransport> transport);
+    ~ExtProcChannel() override;
+    const GrpcXdsServerTarget& server() const { return server_; }
+
+    RefCountedPtr<XdsTransportFactory::XdsTransport> transport() const {
+      return transport_;
+    }
+
+   private:
+    GrpcXdsServerTarget server_;
+    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+  };
 
   using ProcessingMode = ExtProcProcessingMode;
 
@@ -117,37 +140,82 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   ExtProcFilter(const ChannelArgs& args, RefCountedPtr<const Config> config);
-
-  RefCountedPtr<const Config> config() const { return config_; }
-  RefCountedPtr<ExtProcChannel> channel() const { return config_->channel(); }
-
-  class ExtProcChannel final : public Blackboard::Entry {
-   public:
-    static UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE("ext_proc_channel");
-    }
-    ExtProcChannel(std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
-                   RefCountedPtr<XdsTransportFactory> transport_factory);
-    ~ExtProcChannel() override;
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server() const {
-      return server_;
-    }
-
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport() const {
-      return transport_;
-    }
-
-   private:
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server_;
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
-  };
+  ~ExtProcFilter() override;
 
  private:
-  void Orphaned() override {}
+  class ExtProcCall;
+
+  class ClientTelemetryDomain final
+      : public InstrumentDomain<ClientTelemetryDomain> {
+   public:
+    using Backend = HighContentionBackend;
+    static constexpr absl::string_view kName = "client_ext_proc";
+    GRPC_INSTRUMENT_DOMAIN_LABELS("target");
+
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kClientHeadersDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kClientHalfCloseDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kServerHeadersDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kServerTrailersDuration;
+  };
+
+  class ServerTelemetryDomain final
+      : public InstrumentDomain<ServerTelemetryDomain> {
+   public:
+    using Backend = HighContentionBackend;
+    static constexpr absl::string_view kName = "server_ext_proc";
+    GRPC_EMPTY_INSTRUMENT_DOMAIN_LABELS();
+
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kClientHeadersDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kClientHalfCloseDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kServerHeadersDuration;
+    static DoubleHistogramHandle<ExponentialDoubleHistogramShape>
+        kServerTrailersDuration;
+  };
+
+  using TelemetryStorage =
+      std::variant<std::monostate,
+                   InstrumentStorageRefPtr<ClientTelemetryDomain>,
+                   InstrumentStorageRefPtr<ServerTelemetryDomain>>;
+
+  RefCountedPtr<ExtProcChannel> channel() const { return config_->channel(); }
+
+  const EvaluateArgs::PerChannelArgs* per_channel_evaluate_args() const {
+    return per_channel_evaluate_args_.has_value() ? &*per_channel_evaluate_args_
+                                                  : nullptr;
+  }
+
+  void RecordDuration(ClientTelemetryDomain::DoubleHistogramHandle<
+                          ExponentialDoubleHistogramShape>
+                          client_metric,
+                      ServerTelemetryDomain::DoubleHistogramHandle<
+                          ExponentialDoubleHistogramShape>
+                          server_metric,
+                      double duration_seconds) const;
+
+  void RecordClientHeadersDuration(double duration_seconds) const;
+  void RecordClientHalfCloseDuration(double duration_seconds) const;
+  void RecordServerHeadersDuration(double duration_seconds) const;
+  void RecordServerTrailersDuration(double duration_seconds) const;
+
+  void Orphaned() override;
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
+  const bool is_server_;
   RefCountedPtr<const Config> config_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  Slice default_authority_;
+  RefCountedPtr<grpc_auth_context> auth_context_;
+  std::optional<EvaluateArgs::PerChannelArgs> per_channel_evaluate_args_;
+  std::string sha256_peer_certificate_digest_;
+  TelemetryStorage telemetry_storage_;
 };
 
 }  // namespace grpc_core

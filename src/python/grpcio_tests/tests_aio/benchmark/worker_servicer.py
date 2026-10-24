@@ -19,7 +19,14 @@ import multiprocessing
 import os
 import sys
 import time
-from typing import Tuple
+from typing import Optional, Tuple
+
+try:
+    # The resource module is not available on Windows. While this server only
+    # supports Linux, we must still be _importable_ on Windows.
+    import resource
+except ImportError:
+    resource = None
 
 import grpc
 from grpc.experimental import aio
@@ -57,18 +64,60 @@ class _SubWorker(
         return self._repr()
 
 
+class _Snapshotter:
+    def __init__(self):
+        self._start_time = 0.0
+        self._end_time = 0.0
+        self._last_utime = 0.0
+        self._utime = 0.0
+        self._last_stime = 0.0
+        self._stime = 0.0
+
+    def get_time_elapsed(self):
+        return self._end_time - self._start_time
+
+    def get_utime(self):
+        return self._utime - self._last_utime
+
+    def get_stime(self):
+        return self._stime - self._last_stime
+
+    def snapshot(self):
+        self._end_time = time.monotonic()
+
+        if resource is not None:
+            usage = resource.getrusage(resource.RUSAGE_SELF)
+            self._utime = usage.ru_utime
+            self._stime = usage.ru_stime
+
+    def reset(self):
+        self._start_time = self._end_time
+        self._last_utime = self._utime
+        self._last_stime = self._stime
+
+    def stats(self):
+        return {
+            "time_elapsed": self.get_time_elapsed(),
+            "time_user": self.get_utime(),
+            "time_system": self.get_stime(),
+        }
+
+
 def _get_server_status(
-    start_time: float, end_time: float, port: int
+    port: int,
+    snapshotter: Optional[_Snapshotter] = None,
+    stats: Optional[stats_pb2.ServerStats] = None,
 ) -> control_pb2.ServerStatus:
     """Creates ServerStatus proto message."""
-    end_time = time.monotonic()
-    elapsed_time = end_time - start_time
-    # TODO(lidiz) Collect accurate time system to compute QPS/core-second.
-    stats = stats_pb2.ServerStats(
-        time_elapsed=elapsed_time,
-        time_user=elapsed_time,
-        time_system=elapsed_time,
-    )
+    if stats is None:
+        if snapshotter is not None:
+            stats = stats_pb2.ServerStats(**snapshotter.stats())
+        else:
+            stats = stats_pb2.ServerStats(
+                time_elapsed=0.0,
+                time_user=0.0,
+                time_system=0.0,
+            )
     return control_pb2.ServerStatus(stats=stats, port=port, cores=_NUM_CORES)
 
 
@@ -123,19 +172,25 @@ def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
 
 
 def _get_client_status(
-    start_time: float, end_time: float, qps_data: histogram.Histogram
+    qps_data: histogram.Histogram,
+    snapshotter: Optional[_Snapshotter] = None,
+    stats: Optional[stats_pb2.ClientStats] = None,
 ) -> control_pb2.ClientStatus:
     """Creates ClientStatus proto message."""
-    latencies = qps_data.get_data()
-    end_time = time.monotonic()
-    elapsed_time = end_time - start_time
-    # TODO(lidiz) Collect accurate time system to compute QPS/core-second.
-    stats = stats_pb2.ClientStats(
-        latencies=latencies,
-        time_elapsed=elapsed_time,
-        time_user=elapsed_time,
-        time_system=elapsed_time,
-    )
+    if stats is None:
+        latencies = qps_data.get_data()
+        if snapshotter is not None:
+            stats = stats_pb2.ClientStats(
+                latencies=latencies,
+                **snapshotter.stats(),
+            )
+        else:
+            stats = stats_pb2.ClientStats(
+                latencies=latencies,
+                time_elapsed=0.0,
+                time_user=0.0,
+                time_system=0.0,
+            )
     return control_pb2.ClientStatus(stats=stats)
 
 
@@ -211,14 +266,16 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         await server.start()
         _LOGGER.info("Server started at port [%d]", port)
 
-        start_time = time.monotonic()
-        await context.write(_get_server_status(start_time, start_time, port))
+        snapshotter = _Snapshotter()
+        snapshotter.snapshot()
+        snapshotter.reset()
+        await context.write(_get_server_status(port, snapshotter=snapshotter))
 
         async for request in request_iterator:
-            end_time = time.monotonic()
-            status = _get_server_status(start_time, end_time, port)
+            snapshotter.snapshot()
+            status = _get_server_status(port, snapshotter=snapshotter)
             if request.mark.reset:
-                start_time = end_time
+                snapshotter.reset()
             await context.write(status)
         await server.stop(None)
 
@@ -253,32 +310,26 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
                 # An empty status indicates the peer is ready
                 await call.read()
 
-            start_time = time.monotonic()
-            await context.write(
-                _get_server_status(
-                    start_time,
-                    start_time,
-                    config.port,
-                )
-            )
+            await context.write(_get_server_status(config.port))
 
             _LOGGER.info("Servers are ready to serve.")
 
             async for request in request_iterator:
-                end_time = time.monotonic()
-
                 for call in calls:
                     await call.write(request)
-                    # Reports from sub workers doesn't matter
-                    await call.read()
+                sub_statuses = [await call.read() for call in calls]
 
-                status = _get_server_status(
-                    start_time,
-                    end_time,
-                    config.port,
+                time_elapsed = max(
+                    (s.stats.time_elapsed for s in sub_statuses), default=0.0
                 )
-                if request.mark.reset:
-                    start_time = end_time
+                time_user = sum(s.stats.time_user for s in sub_statuses)
+                time_system = sum(s.stats.time_system for s in sub_statuses)
+                stats = stats_pb2.ServerStats(
+                    time_elapsed=time_elapsed,
+                    time_user=time_user,
+                    time_system=time_system,
+                )
+                status = _get_server_status(config.port, stats=stats)
                 await context.write(status)
 
             for call in calls:
@@ -296,7 +347,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             config.histogram_params.resolution,
             config.histogram_params.max_possible,
         )
-        start_time = time.monotonic()
+        snapshotter = _Snapshotter()
 
         # Create a client for each channel as asyncio.Task
         for i in range(config.client_channels):
@@ -305,16 +356,19 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             _LOGGER.info("Client created against server [%s]", server)
             running_tasks.append(self._loop.create_task(client.run()))
 
-        end_time = time.monotonic()
-        await context.write(_get_client_status(start_time, end_time, qps_data))
+        snapshotter.snapshot()
+        snapshotter.reset()
+        await context.write(
+            _get_client_status(qps_data, snapshotter=snapshotter)
+        )
 
         # Respond to stat requests
         async for request in request_iterator:
-            end_time = time.monotonic()
-            status = _get_client_status(start_time, end_time, qps_data)
+            snapshotter.snapshot()
+            status = _get_client_status(qps_data, snapshotter=snapshotter)
             if request.mark.reset:
                 qps_data.reset()
-                start_time = time.monotonic()
+                snapshotter.reset()
             await context.write(status)
 
         # Cleanup the clients
@@ -351,33 +405,39 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
                 # An empty status indicates the peer is ready
                 await call.read()
 
-            start_time = time.monotonic()
             result = histogram.Histogram(
                 config.histogram_params.resolution,
                 config.histogram_params.max_possible,
             )
-            end_time = time.monotonic()
-            await context.write(
-                _get_client_status(start_time, end_time, result)
-            )
+            await context.write(_get_client_status(result))
 
             async for request in request_iterator:
-                end_time = time.monotonic()
-
                 for call in calls:
                     _LOGGER.debug("Fetching status...")
                     await call.write(request)
-                    sub_status = await call.read()
+                sub_statuses = [await call.read() for call in calls]
+
+                for sub_status in sub_statuses:
                     result.merge(sub_status.stats.latencies)
                     _LOGGER.debug(
                         "Update from sub worker count=[%d]",
                         sub_status.stats.latencies.count,
                     )
 
-                status = _get_client_status(start_time, end_time, result)
+                time_elapsed = max(
+                    (s.stats.time_elapsed for s in sub_statuses), default=0.0
+                )
+                time_user = sum(s.stats.time_user for s in sub_statuses)
+                time_system = sum(s.stats.time_system for s in sub_statuses)
+                stats = stats_pb2.ClientStats(
+                    latencies=result.get_data(),
+                    time_elapsed=time_elapsed,
+                    time_user=time_user,
+                    time_system=time_system,
+                )
+                status = _get_client_status(result, stats=stats)
                 if request.mark.reset:
                     result.reset()
-                    start_time = time.monotonic()
                 _LOGGER.debug(
                     "Reporting count=[%d]", status.stats.latencies.count
                 )

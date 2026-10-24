@@ -16,6 +16,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/utf8_range)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/xxhash)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/cel-c)
 
   LIBS="-lpthread $LIBS"
 

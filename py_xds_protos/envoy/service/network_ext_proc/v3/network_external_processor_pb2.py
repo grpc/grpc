@@ -28,7 +28,7 @@ from xds.annotations.v3 import status_pb2 as xds_dot_annotations_dot_v3_dot_stat
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nBenvoy/service/network_ext_proc/v3/network_external_processor.proto\x12!envoy.service.network_ext_proc.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\"+\n\x04\x44\x61ta\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x15\n\rend_of_stream\x18\x02 \x01(\x08\"\xbe\x01\n\x11ProcessingRequest\x12:\n\tread_data\x18\x01 \x01(\x0b\x32\'.envoy.service.network_ext_proc.v3.Data\x12;\n\nwrite_data\x18\x02 \x01(\x0b\x32\'.envoy.service.network_ext_proc.v3.Data\x12\x30\n\x08metadata\x18\x03 \x01(\x0b\x32\x1e.envoy.config.core.v3.Metadata\"\x8c\x04\n\x12ProcessingResponse\x12:\n\tread_data\x18\x01 \x01(\x0b\x32\'.envoy.service.network_ext_proc.v3.Data\x12;\n\nwrite_data\x18\x02 \x01(\x0b\x32\'.envoy.service.network_ext_proc.v3.Data\x12i\n\x16\x64\x61ta_processing_status\x18\x03 \x01(\x0e\x32I.envoy.service.network_ext_proc.v3.ProcessingResponse.DataProcessedStatus\x12\x61\n\x11\x63onnection_status\x18\x04 \x01(\x0e\x32\x46.envoy.service.network_ext_proc.v3.ProcessingResponse.ConnectionStatus\x12\x31\n\x10\x64ynamic_metadata\x18\x05 \x01(\x0b\x32\x17.google.protobuf.Struct\"@\n\x13\x44\x61taProcessedStatus\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0e\n\nUNMODIFIED\x10\x01\x12\x0c\n\x08MODIFIED\x10\x02\":\n\x10\x43onnectionStatus\x12\x0c\n\x08\x43ONTINUE\x10\x00\x12\t\n\x05\x43LOSE\x10\x01\x12\r\n\tCLOSE_RST\x10\x02\x32\x98\x01\n\x18NetworkExternalProcessor\x12|\n\x07Process\x12\x34.envoy.service.network_ext_proc.v3.ProcessingRequest\x1a\x35.envoy.service.network_ext_proc.v3.ProcessingResponse\"\x00(\x01\x30\x01\x42\xbf\x01\n/io.envoyproxy.envoy.service.network_ext_proc.v3B\x1dNetworkExternalProcessorProtoP\x01Z[github.com/envoyproxy/go-control-plane/envoy/service/network_ext_proc/v3;network_ext_procv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nBenvoy/service/network_ext_proc/v3/network_external_processor.proto\x12!envoy.service.network_ext_proc.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\"+\n\x04\x44\x61ta\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\x15\n\rend_of_stream\x18\x02 \x01(\x08\"\xe4\x02\n\x11ProcessingRequest\x12:\n\tread_data\x18\x01 \x01(\x0b\x32\'.envoy.service.network_ext_proc.v3.Data\x12;\n\nwrite_data\x18\x02 \x01(\x0b\x32\'.envoy.service.network_ext_proc.v3.Data\x12\x30\n\x08metadata\x18\x03 \x01(\x0b\x32\x1e.envoy.config.core.v3.Metadata\x12X\n\nattributes\x18\x04 \x03(\x0b\x32\x44.envoy.service.network_ext_proc.v3.ProcessingRequest.AttributesEntry\x1aJ\n\x0f\x41ttributesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.google.protobuf.Struct:\x02\x38\x01\"\xb5\x04\n\x12ProcessingResponse\x12:\n\tread_data\x18\x01 \x01(\x0b\x32\'.envoy.service.network_ext_proc.v3.Data\x12;\n\nwrite_data\x18\x02 \x01(\x0b\x32\'.envoy.service.network_ext_proc.v3.Data\x12i\n\x16\x64\x61ta_processing_status\x18\x03 \x01(\x0e\x32I.envoy.service.network_ext_proc.v3.ProcessingResponse.DataProcessedStatus\x12\x61\n\x11\x63onnection_status\x18\x04 \x01(\x0e\x32\x46.envoy.service.network_ext_proc.v3.ProcessingResponse.ConnectionStatus\x12\x31\n\x10\x64ynamic_metadata\x18\x05 \x01(\x0b\x32\x17.google.protobuf.Struct\x12\'\n\x1f\x63lose_stream_to_ext_proc_server\x18\x06 \x01(\x08\"@\n\x13\x44\x61taProcessedStatus\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0e\n\nUNMODIFIED\x10\x01\x12\x0c\n\x08MODIFIED\x10\x02\":\n\x10\x43onnectionStatus\x12\x0c\n\x08\x43ONTINUE\x10\x00\x12\t\n\x05\x43LOSE\x10\x01\x12\r\n\tCLOSE_RST\x10\x02\x32\x98\x01\n\x18NetworkExternalProcessor\x12|\n\x07Process\x12\x34.envoy.service.network_ext_proc.v3.ProcessingRequest\x1a\x35.envoy.service.network_ext_proc.v3.ProcessingResponse\"\x00(\x01\x30\x01\x42\xbf\x01\n/io.envoyproxy.envoy.service.network_ext_proc.v3B\x1dNetworkExternalProcessorProtoP\x01Z[github.com/envoyproxy/go-control-plane/envoy/service/network_ext_proc/v3;network_ext_procv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,16 +36,20 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.service.network_ext_p
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n/io.envoyproxy.envoy.service.network_ext_proc.v3B\035NetworkExternalProcessorProtoP\001Z[github.com/envoyproxy/go-control-plane/envoy/service/network_ext_proc/v3;network_ext_procv3\272\200\310\321\006\002\020\002\322\306\244\341\006\002\010\001'
+  _globals['_PROCESSINGREQUEST_ATTRIBUTESENTRY']._loaded_options = None
+  _globals['_PROCESSINGREQUEST_ATTRIBUTESENTRY']._serialized_options = b'8\001'
   _globals['_DATA']._serialized_start=232
   _globals['_DATA']._serialized_end=275
   _globals['_PROCESSINGREQUEST']._serialized_start=278
-  _globals['_PROCESSINGREQUEST']._serialized_end=468
-  _globals['_PROCESSINGRESPONSE']._serialized_start=471
-  _globals['_PROCESSINGRESPONSE']._serialized_end=995
-  _globals['_PROCESSINGRESPONSE_DATAPROCESSEDSTATUS']._serialized_start=871
-  _globals['_PROCESSINGRESPONSE_DATAPROCESSEDSTATUS']._serialized_end=935
-  _globals['_PROCESSINGRESPONSE_CONNECTIONSTATUS']._serialized_start=937
-  _globals['_PROCESSINGRESPONSE_CONNECTIONSTATUS']._serialized_end=995
-  _globals['_NETWORKEXTERNALPROCESSOR']._serialized_start=998
-  _globals['_NETWORKEXTERNALPROCESSOR']._serialized_end=1150
+  _globals['_PROCESSINGREQUEST']._serialized_end=634
+  _globals['_PROCESSINGREQUEST_ATTRIBUTESENTRY']._serialized_start=560
+  _globals['_PROCESSINGREQUEST_ATTRIBUTESENTRY']._serialized_end=634
+  _globals['_PROCESSINGRESPONSE']._serialized_start=637
+  _globals['_PROCESSINGRESPONSE']._serialized_end=1202
+  _globals['_PROCESSINGRESPONSE_DATAPROCESSEDSTATUS']._serialized_start=1078
+  _globals['_PROCESSINGRESPONSE_DATAPROCESSEDSTATUS']._serialized_end=1142
+  _globals['_PROCESSINGRESPONSE_CONNECTIONSTATUS']._serialized_start=1144
+  _globals['_PROCESSINGRESPONSE_CONNECTIONSTATUS']._serialized_end=1202
+  _globals['_NETWORKEXTERNALPROCESSOR']._serialized_start=1205
+  _globals['_NETWORKEXTERNALPROCESSOR']._serialized_end=1357
 # @@protoc_insertion_point(module_scope)

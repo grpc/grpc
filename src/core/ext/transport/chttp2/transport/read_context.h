@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/slice/slice.h"
@@ -209,15 +210,19 @@ class ReadContext {
   explicit ReadContext(const uint32_t max_new_streams_per_read_cycle,
                        const PromiseEndpoint& endpoint, const bool is_client,
                        const uint32_t max_security_frame_size,
-                       const uint8_t ping_on_rst_stream_percent)
+                       const uint8_t ping_on_rst_stream_percent,
+                       const Http2TransportStats& http2_transport_stats)
       : max_new_streams_per_read_cycle_(max_new_streams_per_read_cycle),
         peer_string_(GetPeerString(endpoint)),
+        local_address_string_(GetLocalAddressString(endpoint)),
         is_client_(is_client),
         ping_on_rst_stream_percent_(ping_on_rst_stream_percent),
         max_security_frame_size_(max_security_frame_size),
         header_assembler_(is_client) {
     GRPC_DCHECK(max_new_streams_per_read_cycle > 0u)
         << "0 is invalid, because we will never be able to create a stream.";
+    parser_.hpack_table()->SetHttp2StatsCollector(
+        http2_transport_stats.GetStatsCollector());
   }
   ~ReadContext() = default;
 
@@ -230,6 +235,7 @@ class ReadContext {
   // Peer String management.
 
   Slice peer_string() const { return peer_string_.Ref(); }
+  Slice local_address_string() const { return local_address_string_.Ref(); }
 
   //////////////////////////////////////////////////////////////////////////////
   // HPack Parser Parsing and Management.
@@ -309,7 +315,7 @@ class ReadContext {
                              const Http2FrameHeader& current_frame_header,
                              const uint32_t last_stream_id,
                              const bool is_first_settings_processed) {
-    GRPC_HTTP2_COMMON_DLOG << "ReadContext::ValidateFrameHeader "
+    GRPC_HTTP2_COMMON_DLOG << "ReadContext::ValidateHeader "
                            << current_frame_header.ToString();
     return ValidateFrameHeader(
         /*max_frame_size_setting=*/max_frame_size_setting,
@@ -532,6 +538,16 @@ class ReadContext {
     return Slice::FromCopiedString("unknown");
   }
 
+  static Slice GetLocalAddressString(const PromiseEndpoint& endpoint) {
+    absl::StatusOr<std::string> uri =
+        grpc_event_engine::experimental::ResolvedAddressToURI(
+            endpoint.GetLocalAddress());
+    if (uri.ok()) {
+      return Slice::FromCopiedString(*uri);
+    }
+    return Slice::FromCopiedString("unknown");
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Read Cycle Counter management.
   void ResetReadCycleCounters() {
@@ -589,6 +605,7 @@ class ReadContext {
   // Initialized only once at the time of transport creation.
   // Should remain constant for the lifetime of the transport.
   const Slice peer_string_;
+  const Slice local_address_string_;
   const bool is_client_;
 
   const uint8_t ping_on_rst_stream_percent_;

@@ -62,6 +62,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/notification.h"
 
@@ -1176,7 +1177,7 @@ TEST_P(End2endTest, BidiStream) {
 }
 
 TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1212,7 +1213,7 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
 // This was added to prevent regression from issue:
 // https://github.com/grpc/grpc/issues/11546
 TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Fix flake");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1849,6 +1850,38 @@ TEST_P(ProxyEnd2endTest, Peer) {
   EXPECT_TRUE(s.ok());
   EXPECT_TRUE(CheckIsLocalhost(response.param().peer()));
   EXPECT_TRUE(CheckIsLocalhost(context.peer()));
+}
+
+TEST_P(ProxyEnd2endTest, LocalAddress) {
+  // The proxy creates its backend call with the incoming server call as the
+  // parent (ClientContext::FromServerContext), which the PH2 server does not
+  // support yet (ServerCall::Completed() is unimplemented).
+  if (GetParam().use_proxy()) {
+    SKIP_TEST_FOR_PH2_SERVER("Proxy call propagation is not supported by PH2");
+  }
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("hello");
+  request.mutable_param()->set_echo_local_address(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+  const std::string& local_address = response.param().local_address();
+  // The inproc transport does not report a local address.
+  if (GetParam().inproc()) {
+    EXPECT_EQ(local_address, "unknown");
+    return;
+  }
+  EXPECT_TRUE(CheckIsLocalhost(local_address)) << local_address;
+  // The backend server listens on first_picked_port_ (the proxy, if any,
+  // listens on a different port), so this verifies that the value is the
+  // server's own address rather than the peer's or the proxy's.
+  EXPECT_TRUE(
+      absl::EndsWith(local_address, absl::StrCat(":", first_picked_port_)))
+      << local_address;
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -20,8 +20,11 @@
 #include <string>
 #include <vector>
 
+#include "src/core/call/metadata_batch.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/matchers.h"
+#include "src/core/xds/grpc/xds_matcher_context.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
@@ -640,6 +643,29 @@ TEST(XdsMatcherPrefixMapTest, OnNoMatchWithKeepMatching) {
   EXPECT_TRUE(matcher.FindMatches(context, result));
   EXPECT_THAT(result, ::testing::ElementsAre(IsTestAction("foo_action"),
                                              IsTestAction("no_match_action")));
+}
+
+//
+// RpcMatchContext tests
+//
+
+// The composite filter's matcher must resolve the authority the same way as
+// routing and RBAC.
+TEST(RpcMatchContextGetHeaderValueTest, MismatchedHeadersUseAuthority) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  RpcMatchContext context(&md);
+  EXPECT_EQ(context.GetHeaderValue("host"), "authority");
+  EXPECT_EQ(context.GetHeaderValue(":authority"), "authority");
+}
+
+TEST(RpcMatchContextGetHeaderValueTest, HostOnlyUsesHost) {
+  grpc_metadata_batch md;
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  RpcMatchContext context(&md);
+  EXPECT_EQ(context.GetHeaderValue("host"), "host");
+  EXPECT_EQ(context.GetHeaderValue(":authority"), "host");
 }
 
 }  // namespace

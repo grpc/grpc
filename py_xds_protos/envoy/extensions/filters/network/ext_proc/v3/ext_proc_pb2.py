@@ -29,7 +29,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;envoy/extensions/filters/network/ext_proc/v3/ext_proc.proto\x12,envoy.extensions.filters.network.ext_proc.v3\x1a\'envoy/config/core/v3/grpc_service.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x80\x03\n\x18NetworkExternalProcessor\x12\x37\n\x0cgrpc_service\x18\x01 \x01(\x0b\x32!.envoy.config.core.v3.GrpcService\x12\x1a\n\x12\x66\x61ilure_mode_allow\x18\x02 \x01(\x08\x12U\n\x0fprocessing_mode\x18\x03 \x01(\x0b\x32<.envoy.extensions.filters.network.ext_proc.v3.ProcessingMode\x12\x41\n\x0fmessage_timeout\x18\x04 \x01(\x0b\x32\x19.google.protobuf.DurationB\r\xfa\x42\n\xaa\x01\x07\"\x03\x08\x90\x1c\x32\x00\x12\x1c\n\x0bstat_prefix\x18\x05 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12W\n\x10metadata_options\x18\x06 \x01(\x0b\x32=.envoy.extensions.filters.network.ext_proc.v3.MetadataOptions\"\xfb\x01\n\x0eProcessingMode\x12_\n\x0cprocess_read\x18\x01 \x01(\x0e\x32I.envoy.extensions.filters.network.ext_proc.v3.ProcessingMode.DataSendMode\x12`\n\rprocess_write\x18\x02 \x01(\x0e\x32I.envoy.extensions.filters.network.ext_proc.v3.ProcessingMode.DataSendMode\"&\n\x0c\x44\x61taSendMode\x12\x0c\n\x08STREAMED\x10\x00\x12\x08\n\x04SKIP\x10\x01\"\xb8\x01\n\x0fMetadataOptions\x12o\n\x15\x66orwarding_namespaces\x18\x01 \x01(\x0b\x32P.envoy.extensions.filters.network.ext_proc.v3.MetadataOptions.MetadataNamespaces\x1a\x34\n\x12MetadataNamespaces\x12\x0f\n\x07untyped\x18\x01 \x03(\t\x12\r\n\x05typed\x18\x02 \x03(\tB\xbc\x01\n:io.envoyproxy.envoy.extensions.filters.network.ext_proc.v3B\x0c\x45xtProcProtoP\x01Z^github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/ext_proc/v3;ext_procv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;envoy/extensions/filters/network/ext_proc/v3/ext_proc.proto\x12,envoy.extensions.filters.network.ext_proc.v3\x1a\'envoy/config/core/v3/grpc_service.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x9f\x03\n\x18NetworkExternalProcessor\x12\x37\n\x0cgrpc_service\x18\x01 \x01(\x0b\x32!.envoy.config.core.v3.GrpcService\x12\x1a\n\x12\x66\x61ilure_mode_allow\x18\x02 \x01(\x08\x12U\n\x0fprocessing_mode\x18\x03 \x01(\x0b\x32<.envoy.extensions.filters.network.ext_proc.v3.ProcessingMode\x12\x41\n\x0fmessage_timeout\x18\x04 \x01(\x0b\x32\x19.google.protobuf.DurationB\r\xfa\x42\n\xaa\x01\x07\"\x03\x08\x90\x1c\x32\x00\x12\x1c\n\x0bstat_prefix\x18\x05 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12W\n\x10metadata_options\x18\x06 \x01(\x0b\x32=.envoy.extensions.filters.network.ext_proc.v3.MetadataOptions\x12\x1d\n\x15\x63onnection_attributes\x18\x07 \x03(\t\"\xfb\x01\n\x0eProcessingMode\x12_\n\x0cprocess_read\x18\x01 \x01(\x0e\x32I.envoy.extensions.filters.network.ext_proc.v3.ProcessingMode.DataSendMode\x12`\n\rprocess_write\x18\x02 \x01(\x0e\x32I.envoy.extensions.filters.network.ext_proc.v3.ProcessingMode.DataSendMode\"&\n\x0c\x44\x61taSendMode\x12\x0c\n\x08STREAMED\x10\x00\x12\x08\n\x04SKIP\x10\x01\"\xa8\x02\n\x0fMetadataOptions\x12o\n\x15\x66orwarding_namespaces\x18\x01 \x01(\x0b\x32P.envoy.extensions.filters.network.ext_proc.v3.MetadataOptions.MetadataNamespaces\x12n\n\x14receiving_namespaces\x18\x02 \x01(\x0b\x32P.envoy.extensions.filters.network.ext_proc.v3.MetadataOptions.MetadataNamespaces\x1a\x34\n\x12MetadataNamespaces\x12\x0f\n\x07untyped\x18\x01 \x03(\t\x12\r\n\x05typed\x18\x02 \x03(\tB\xbc\x01\n:io.envoyproxy.envoy.extensions.filters.network.ext_proc.v3B\x0c\x45xtProcProtoP\x01Z^github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/ext_proc/v3;ext_procv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -42,13 +42,13 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_NETWORKEXTERNALPROCESSOR'].fields_by_name['stat_prefix']._loaded_options = None
   _globals['_NETWORKEXTERNALPROCESSOR'].fields_by_name['stat_prefix']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_NETWORKEXTERNALPROCESSOR']._serialized_start=272
-  _globals['_NETWORKEXTERNALPROCESSOR']._serialized_end=656
-  _globals['_PROCESSINGMODE']._serialized_start=659
-  _globals['_PROCESSINGMODE']._serialized_end=910
-  _globals['_PROCESSINGMODE_DATASENDMODE']._serialized_start=872
-  _globals['_PROCESSINGMODE_DATASENDMODE']._serialized_end=910
-  _globals['_METADATAOPTIONS']._serialized_start=913
-  _globals['_METADATAOPTIONS']._serialized_end=1097
-  _globals['_METADATAOPTIONS_METADATANAMESPACES']._serialized_start=1045
-  _globals['_METADATAOPTIONS_METADATANAMESPACES']._serialized_end=1097
+  _globals['_NETWORKEXTERNALPROCESSOR']._serialized_end=687
+  _globals['_PROCESSINGMODE']._serialized_start=690
+  _globals['_PROCESSINGMODE']._serialized_end=941
+  _globals['_PROCESSINGMODE_DATASENDMODE']._serialized_start=903
+  _globals['_PROCESSINGMODE_DATASENDMODE']._serialized_end=941
+  _globals['_METADATAOPTIONS']._serialized_start=944
+  _globals['_METADATAOPTIONS']._serialized_end=1240
+  _globals['_METADATAOPTIONS_METADATANAMESPACES']._serialized_start=1188
+  _globals['_METADATAOPTIONS_METADATANAMESPACES']._serialized_end=1240
 # @@protoc_insertion_point(module_scope)

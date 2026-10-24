@@ -167,6 +167,7 @@ class UnaryUnaryMultiCallable(
         compression: Optional[grpc.Compression] = None,
     ) -> _base_call.UnaryUnaryCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
+
         if not self._interceptors:
             call = UnaryUnaryCall(
                 request,

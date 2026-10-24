@@ -234,7 +234,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
 
 void FakeXdsTransportFactory::FakeXdsTransport::Orphaned() {
   {
-    MutexLock lock(&factory_->mu_);
+    MutexLock lock(factory_->mu_);
     auto it = factory_->transport_map_.find(server_key_);
     if (it != factory_->transport_map_.end() && it->second == this) {
       factory_->transport_map_.erase(it);
@@ -268,7 +268,7 @@ FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(const char* method) {
 
 void FakeXdsTransportFactory::FakeXdsTransport::RegisterStream(
     const char* method, RefCountedPtr<FakeStreamingCall> call) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   active_calls_[method] = std::move(call);
 }
 
@@ -297,11 +297,11 @@ OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
-    bool start_upon_send_message) {
+    CallOptions options) {
   auto call = MakeOrphanable<FakeStreamingCall>(
       WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler),
-      start_upon_send_message);
-  if (!start_upon_send_message) {
+      options);
+  if (!options.start_upon_send_message) {
     RegisterStream(method, call->Ref().TakeAsSubclass<FakeStreamingCall>());
   }
   return call;

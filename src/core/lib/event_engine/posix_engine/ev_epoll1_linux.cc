@@ -459,11 +459,7 @@ void Epoll1Poller::Kick() {
 #ifdef GRPC_ENABLE_FORK_SUPPORT
 
 void Epoll1Poller::HandleForkInChild() {
-  // Experiment guards closing fds/incrementing the generation. epoll fd
-  // needs to be reset outside the experiment to support iomgr
-  if (grpc_core::IsEventEngineForkEnabled()) {
-    posix_interface().AdvanceGeneration();
-  }
+  posix_interface().AdvanceGeneration();
   {
     grpc_core::MutexLock lock(mu_);
     for (EventHandle* handle : fork_handles_set_) {

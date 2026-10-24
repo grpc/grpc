@@ -44,6 +44,11 @@ const char* const
 const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
+const char* const description_callv3_server_shutdown_broadcast =
+    "If enabled, broadcast the shutdown transport op to Call V3 server "
+    "transports.";
+const char* const additional_constraints_callv3_server_shutdown_broadcast =
+    "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -51,16 +56,9 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
-const char* const description_custom_frame_check =
-    "Adding checks to custom HTTP2 frame.";
-const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -99,17 +97,25 @@ const char* const additional_constraints_h2_max_deallocating_streams_headroom =
 const char* const description_header_data_frame =
     "Managing header and data memory better";
 const char* const additional_constraints_header_data_frame = "{}";
-const char* const description_inproc_cancel_stream =
-    "If set, cancel inproc stream inside the transport mutex.";
-const char* const additional_constraints_inproc_cancel_stream = "{}";
+const char* const description_internal_fix = "Gate for the internal fix.";
+const char* const additional_constraints_internal_fix = "{}";
+const char* const description_internal_fix1 = "Gate for the internal fix1.";
+const char* const additional_constraints_internal_fix1 = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_lame_channel_v3 =
+    "Use v3 lame channel implementation.";
+const char* const additional_constraints_lame_channel_v3 = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_map_host_header_to_authority =
+    "Map the HTTP host header directly to HttpAuthorityMetadata and reject "
+    "duplicate host/authority headers.";
+const char* const additional_constraints_map_host_header_to_authority = "{}";
 const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
@@ -127,10 +133,6 @@ const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
-const char* const description_optimization_01 = "Optimization";
-const char* const additional_constraints_optimization_01 = "{}";
-const char* const description_optimization_02 = "Optimization";
-const char* const additional_constraints_optimization_02 = "{}";
 const char* const description_optimization_03 = "Optimization";
 const char* const additional_constraints_optimization_03 = "{}";
 const char* const description_optimization_04 = "Optimization";
@@ -155,9 +157,6 @@ const char* const description_ph2_client_server =
     "out would be done using ph2_server and ph2_client. This experiment MUST "
     "be deleted when either ph2_server or ph2_client experiments are deleted.";
 const char* const additional_constraints_ph2_client_server = "{}";
-const char* const description_ph2_perf_01 =
-    "Different performance experiments for PH2 Transport";
-const char* const additional_constraints_ph2_perf_01 = "{}";
 const char* const description_ph2_server =
     "Use promises for the http2 server transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs. "
@@ -190,17 +189,6 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
-const char* const description_promise_filter_send_cancel_metadata =
-    "Enables sending all trailing metadata fields from server side "
-    "promise-based filters upon stream cancellation.";
-const char* const additional_constraints_promise_filter_send_cancel_metadata =
-    "{}";
-const char* const description_recv_message_cancelled_status_fix =
-    "Report the status from the received trailing metadata (instead of the "
-    "batch completion status) when a recv_message batch is completed after the "
-    "call has been cancelled.";
-const char* const additional_constraints_recv_message_cancelled_status_fix =
-    "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -299,6 +287,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"callv3_batch_validation", description_callv3_batch_validation,
      additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
+    {"callv3_server_shutdown_broadcast",
+     description_callv3_server_shutdown_broadcast,
+     additional_constraints_callv3_server_shutdown_broadcast, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -306,12 +298,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      true, true},
-    {"custom_frame_check", description_custom_frame_check,
-     additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -339,13 +327,20 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"header_data_frame", description_header_data_frame,
      additional_constraints_header_data_frame, nullptr, 0, true, true},
-    {"inproc_cancel_stream", description_inproc_cancel_stream,
-     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
+    {"internal_fix", description_internal_fix,
+     additional_constraints_internal_fix, nullptr, 0, false, true},
+    {"internal_fix1", description_internal_fix1,
+     additional_constraints_internal_fix1, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
+    {"lame_channel_v3", description_lame_channel_v3,
+     additional_constraints_lame_channel_v3, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"map_host_header_to_authority", description_map_host_header_to_authority,
+     additional_constraints_map_host_header_to_authority, nullptr, 0, false,
+     true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
@@ -361,10 +356,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
-    {"optimization_01", description_optimization_01,
-     additional_constraints_optimization_01, nullptr, 0, true, true},
-    {"optimization_02", description_optimization_02,
-     additional_constraints_optimization_02, nullptr, 0, true, true},
     {"optimization_03", description_optimization_03,
      additional_constraints_optimization_03, nullptr, 0, true, true},
     {"optimization_04", description_optimization_04,
@@ -380,8 +371,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"ph2_client_server", description_ph2_client_server,
      additional_constraints_ph2_client_server, nullptr, 0, false, true},
-    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
-     nullptr, 0, true, true},
     {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
@@ -406,14 +395,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
-    {"promise_filter_send_cancel_metadata",
-     description_promise_filter_send_cancel_metadata,
-     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
-     true, true},
-    {"recv_message_cancelled_status_fix",
-     description_recv_message_cancelled_status_fix,
-     additional_constraints_recv_message_cancelled_status_fix, nullptr, 0,
-     false, true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
@@ -503,6 +484,11 @@ const char* const
 const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
+const char* const description_callv3_server_shutdown_broadcast =
+    "If enabled, broadcast the shutdown transport op to Call V3 server "
+    "transports.";
+const char* const additional_constraints_callv3_server_shutdown_broadcast =
+    "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -510,16 +496,9 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
-const char* const description_custom_frame_check =
-    "Adding checks to custom HTTP2 frame.";
-const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -558,17 +537,25 @@ const char* const additional_constraints_h2_max_deallocating_streams_headroom =
 const char* const description_header_data_frame =
     "Managing header and data memory better";
 const char* const additional_constraints_header_data_frame = "{}";
-const char* const description_inproc_cancel_stream =
-    "If set, cancel inproc stream inside the transport mutex.";
-const char* const additional_constraints_inproc_cancel_stream = "{}";
+const char* const description_internal_fix = "Gate for the internal fix.";
+const char* const additional_constraints_internal_fix = "{}";
+const char* const description_internal_fix1 = "Gate for the internal fix1.";
+const char* const additional_constraints_internal_fix1 = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_lame_channel_v3 =
+    "Use v3 lame channel implementation.";
+const char* const additional_constraints_lame_channel_v3 = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_map_host_header_to_authority =
+    "Map the HTTP host header directly to HttpAuthorityMetadata and reject "
+    "duplicate host/authority headers.";
+const char* const additional_constraints_map_host_header_to_authority = "{}";
 const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
@@ -586,10 +573,6 @@ const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
-const char* const description_optimization_01 = "Optimization";
-const char* const additional_constraints_optimization_01 = "{}";
-const char* const description_optimization_02 = "Optimization";
-const char* const additional_constraints_optimization_02 = "{}";
 const char* const description_optimization_03 = "Optimization";
 const char* const additional_constraints_optimization_03 = "{}";
 const char* const description_optimization_04 = "Optimization";
@@ -614,9 +597,6 @@ const char* const description_ph2_client_server =
     "out would be done using ph2_server and ph2_client. This experiment MUST "
     "be deleted when either ph2_server or ph2_client experiments are deleted.";
 const char* const additional_constraints_ph2_client_server = "{}";
-const char* const description_ph2_perf_01 =
-    "Different performance experiments for PH2 Transport";
-const char* const additional_constraints_ph2_perf_01 = "{}";
 const char* const description_ph2_server =
     "Use promises for the http2 server transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs. "
@@ -649,17 +629,6 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
-const char* const description_promise_filter_send_cancel_metadata =
-    "Enables sending all trailing metadata fields from server side "
-    "promise-based filters upon stream cancellation.";
-const char* const additional_constraints_promise_filter_send_cancel_metadata =
-    "{}";
-const char* const description_recv_message_cancelled_status_fix =
-    "Report the status from the received trailing metadata (instead of the "
-    "batch completion status) when a recv_message batch is completed after the "
-    "call has been cancelled.";
-const char* const additional_constraints_recv_message_cancelled_status_fix =
-    "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -758,6 +727,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"callv3_batch_validation", description_callv3_batch_validation,
      additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
+    {"callv3_server_shutdown_broadcast",
+     description_callv3_server_shutdown_broadcast,
+     additional_constraints_callv3_server_shutdown_broadcast, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -765,12 +738,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      true, true},
-    {"custom_frame_check", description_custom_frame_check,
-     additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -798,13 +767,20 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"header_data_frame", description_header_data_frame,
      additional_constraints_header_data_frame, nullptr, 0, true, true},
-    {"inproc_cancel_stream", description_inproc_cancel_stream,
-     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
+    {"internal_fix", description_internal_fix,
+     additional_constraints_internal_fix, nullptr, 0, false, true},
+    {"internal_fix1", description_internal_fix1,
+     additional_constraints_internal_fix1, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
+    {"lame_channel_v3", description_lame_channel_v3,
+     additional_constraints_lame_channel_v3, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"map_host_header_to_authority", description_map_host_header_to_authority,
+     additional_constraints_map_host_header_to_authority, nullptr, 0, false,
+     true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
@@ -820,10 +796,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
-    {"optimization_01", description_optimization_01,
-     additional_constraints_optimization_01, nullptr, 0, true, true},
-    {"optimization_02", description_optimization_02,
-     additional_constraints_optimization_02, nullptr, 0, true, true},
     {"optimization_03", description_optimization_03,
      additional_constraints_optimization_03, nullptr, 0, true, true},
     {"optimization_04", description_optimization_04,
@@ -839,8 +811,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"ph2_client_server", description_ph2_client_server,
      additional_constraints_ph2_client_server, nullptr, 0, false, true},
-    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
-     nullptr, 0, true, true},
     {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
@@ -865,14 +835,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
-    {"promise_filter_send_cancel_metadata",
-     description_promise_filter_send_cancel_metadata,
-     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
-     true, true},
-    {"recv_message_cancelled_status_fix",
-     description_recv_message_cancelled_status_fix,
-     additional_constraints_recv_message_cancelled_status_fix, nullptr, 0,
-     false, true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
@@ -962,6 +924,11 @@ const char* const
 const char* const description_callv3_batch_validation =
     "If enabled, perform validations on receiving a new batch.";
 const char* const additional_constraints_callv3_batch_validation = "{}";
+const char* const description_callv3_server_shutdown_broadcast =
+    "If enabled, broadcast the shutdown transport op to Call V3 server "
+    "transports.";
+const char* const additional_constraints_callv3_server_shutdown_broadcast =
+    "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -969,16 +936,9 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
-const char* const description_custom_frame_check =
-    "Adding checks to custom HTTP2 frame.";
-const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -1017,17 +977,25 @@ const char* const additional_constraints_h2_max_deallocating_streams_headroom =
 const char* const description_header_data_frame =
     "Managing header and data memory better";
 const char* const additional_constraints_header_data_frame = "{}";
-const char* const description_inproc_cancel_stream =
-    "If set, cancel inproc stream inside the transport mutex.";
-const char* const additional_constraints_inproc_cancel_stream = "{}";
+const char* const description_internal_fix = "Gate for the internal fix.";
+const char* const additional_constraints_internal_fix = "{}";
+const char* const description_internal_fix1 = "Gate for the internal fix1.";
+const char* const additional_constraints_internal_fix1 = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_lame_channel_v3 =
+    "Use v3 lame channel implementation.";
+const char* const additional_constraints_lame_channel_v3 = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_map_host_header_to_authority =
+    "Map the HTTP host header directly to HttpAuthorityMetadata and reject "
+    "duplicate host/authority headers.";
+const char* const additional_constraints_map_host_header_to_authority = "{}";
 const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
@@ -1045,10 +1013,6 @@ const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
-const char* const description_optimization_01 = "Optimization";
-const char* const additional_constraints_optimization_01 = "{}";
-const char* const description_optimization_02 = "Optimization";
-const char* const additional_constraints_optimization_02 = "{}";
 const char* const description_optimization_03 = "Optimization";
 const char* const additional_constraints_optimization_03 = "{}";
 const char* const description_optimization_04 = "Optimization";
@@ -1073,9 +1037,6 @@ const char* const description_ph2_client_server =
     "out would be done using ph2_server and ph2_client. This experiment MUST "
     "be deleted when either ph2_server or ph2_client experiments are deleted.";
 const char* const additional_constraints_ph2_client_server = "{}";
-const char* const description_ph2_perf_01 =
-    "Different performance experiments for PH2 Transport";
-const char* const additional_constraints_ph2_perf_01 = "{}";
 const char* const description_ph2_server =
     "Use promises for the http2 server transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs. "
@@ -1108,17 +1069,6 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
-const char* const description_promise_filter_send_cancel_metadata =
-    "Enables sending all trailing metadata fields from server side "
-    "promise-based filters upon stream cancellation.";
-const char* const additional_constraints_promise_filter_send_cancel_metadata =
-    "{}";
-const char* const description_recv_message_cancelled_status_fix =
-    "Report the status from the received trailing metadata (instead of the "
-    "batch completion status) when a recv_message batch is completed after the "
-    "call has been cancelled.";
-const char* const additional_constraints_recv_message_cancelled_status_fix =
-    "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -1217,6 +1167,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"callv3_batch_validation", description_callv3_batch_validation,
      additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
+    {"callv3_server_shutdown_broadcast",
+     description_callv3_server_shutdown_broadcast,
+     additional_constraints_callv3_server_shutdown_broadcast, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -1224,12 +1178,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      true, true},
-    {"custom_frame_check", description_custom_frame_check,
-     additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -1257,13 +1207,20 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"header_data_frame", description_header_data_frame,
      additional_constraints_header_data_frame, nullptr, 0, true, true},
-    {"inproc_cancel_stream", description_inproc_cancel_stream,
-     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
+    {"internal_fix", description_internal_fix,
+     additional_constraints_internal_fix, nullptr, 0, false, true},
+    {"internal_fix1", description_internal_fix1,
+     additional_constraints_internal_fix1, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
+    {"lame_channel_v3", description_lame_channel_v3,
+     additional_constraints_lame_channel_v3, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"map_host_header_to_authority", description_map_host_header_to_authority,
+     additional_constraints_map_host_header_to_authority, nullptr, 0, false,
+     true},
     {"memory_optimization_01", description_memory_optimization_01,
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
@@ -1279,10 +1236,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
-    {"optimization_01", description_optimization_01,
-     additional_constraints_optimization_01, nullptr, 0, true, true},
-    {"optimization_02", description_optimization_02,
-     additional_constraints_optimization_02, nullptr, 0, true, true},
     {"optimization_03", description_optimization_03,
      additional_constraints_optimization_03, nullptr, 0, true, true},
     {"optimization_04", description_optimization_04,
@@ -1298,8 +1251,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"ph2_client_server", description_ph2_client_server,
      additional_constraints_ph2_client_server, nullptr, 0, false, true},
-    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
-     nullptr, 0, true, true},
     {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
@@ -1324,14 +1275,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
-    {"promise_filter_send_cancel_metadata",
-     description_promise_filter_send_cancel_metadata,
-     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
-     true, true},
-    {"recv_message_cancelled_status_fix",
-     description_recv_message_cancelled_status_fix,
-     additional_constraints_recv_message_cancelled_status_fix, nullptr, 0,
-     false, true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,

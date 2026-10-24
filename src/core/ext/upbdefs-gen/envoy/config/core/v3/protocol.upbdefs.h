@@ -37,6 +37,16 @@ UPB_INLINE const upb_MessageDef *envoy_config_core_v3_QuicProtocolOptions_getmsg
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.QuicProtocolOptions");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_QuicProtocolOptions_ConnectionMigrationSettings_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.QuicProtocolOptions.ConnectionMigrationSettings");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_QuicProtocolOptions_ConnectionMigrationSettings_MigrateIdleConnectionSettings_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.QuicProtocolOptions.ConnectionMigrationSettings.MigrateIdleConnectionSettings");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_UpstreamHttpProtocolOptions_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.UpstreamHttpProtocolOptions");

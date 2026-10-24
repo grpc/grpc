@@ -30,6 +30,7 @@
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/health_check.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/endpoint/v3/endpoint_components.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -908,7 +909,142 @@ TEST_F(XdsEndpointTest, SparsePriorityList) {
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
             "errors parsing EDS resource: ["
-            "field:endpoints errors:[priority 0 empty; priority 2 empty]]")
+            "field:endpoints error:priority 0 empty; "
+            "field:endpoints[1].priority error:"
+            "priority 3 >= number of localities (2)]")
+      << decode_result.resource.status();
+}
+
+TEST_F(XdsEndpointTest, PriorityExceedsNumberOfLocalities) {
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  envoy::config::endpoint::v3::LocalityLbEndpoints* locality_proto =
+      cla.add_endpoints();
+  locality_proto->mutable_load_balancing_weight()->set_value(1);
+  envoy::config::core::v3::Locality* locality_name =
+      locality_proto->mutable_locality();
+  locality_name->set_region("myregion");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  envoy::config::core::v3::SocketAddress* socket_address =
+      locality_proto->add_lb_endpoints()
+          ->mutable_endpoint()
+          ->mutable_address()
+          ->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(443);
+  locality_proto->set_priority(std::numeric_limits<uint32_t>::max());
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  const XdsResourceType* resource_type = XdsEndpointResourceType::Get();
+  XdsResourceType::DecodeResult decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors parsing EDS resource: ["
+            "field:endpoints[0].priority error:"
+            "priority 4294967295 >= number of localities (1)]")
+      << decode_result.resource.status();
+}
+
+TEST_F(XdsEndpointTest, PriorityEqualToNumberOfLocalities) {
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  envoy::config::endpoint::v3::LocalityLbEndpoints* locality_proto =
+      cla.add_endpoints();
+  locality_proto->mutable_load_balancing_weight()->set_value(1);
+  envoy::config::core::v3::Locality* locality_name =
+      locality_proto->mutable_locality();
+  locality_name->set_region("myregion");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  envoy::config::core::v3::SocketAddress* socket_address =
+      locality_proto->add_lb_endpoints()
+          ->mutable_endpoint()
+          ->mutable_address()
+          ->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(443);
+  locality_proto->set_priority(0);
+  locality_proto = cla.add_endpoints();
+  locality_proto->mutable_load_balancing_weight()->set_value(1);
+  locality_name = locality_proto->mutable_locality();
+  locality_name->set_region("myregion2");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  socket_address = locality_proto->add_lb_endpoints()
+                       ->mutable_endpoint()
+                       ->mutable_address()
+                       ->mutable_socket_address();
+  socket_address->set_address("127.0.0.2");
+  socket_address->set_port_value(443);
+  // With 2 localities, the highest valid priority is 1.
+  locality_proto->set_priority(2);
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  const XdsResourceType* resource_type = XdsEndpointResourceType::Get();
+  XdsResourceType::DecodeResult decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors parsing EDS resource: ["
+            "field:endpoints[1].priority error:"
+            "priority 2 >= number of localities (2)]")
+      << decode_result.resource.status();
+}
+
+// Priority 3 passes the per-locality bound (3 < 4 localities), but priorities
+// 1 and 2 are missing, so the later contiguity check must reject it.
+TEST_F(XdsEndpointTest, NonContiguousPriorityWithinLocalityCount) {
+  struct LocalitySpec {
+    const char* region;
+    const char* address;
+    uint32_t priority;
+  };
+  const LocalitySpec kLocalities[] = {
+      {"myregion0", "127.0.0.1", 0},
+      {"myregion1", "127.0.0.2", 0},
+      {"myregion2", "127.0.0.3", 0},
+      {"myregion3", "127.0.0.4", 3},
+  };
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  for (const LocalitySpec& spec : kLocalities) {
+    envoy::config::endpoint::v3::LocalityLbEndpoints* locality_proto =
+        cla.add_endpoints();
+    locality_proto->mutable_load_balancing_weight()->set_value(1);
+    envoy::config::core::v3::Locality* locality_name =
+        locality_proto->mutable_locality();
+    locality_name->set_region(spec.region);
+    locality_name->set_zone("myzone");
+    locality_name->set_sub_zone("mysubzone");
+    envoy::config::core::v3::SocketAddress* socket_address =
+        locality_proto->add_lb_endpoints()
+            ->mutable_endpoint()
+            ->mutable_address()
+            ->mutable_socket_address();
+    socket_address->set_address(spec.address);
+    socket_address->set_port_value(443);
+    locality_proto->set_priority(spec.priority);
+  }
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  const XdsResourceType* resource_type = XdsEndpointResourceType::Get();
+  XdsResourceType::DecodeResult decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors parsing EDS resource: ["
+            "field:endpoints errors:[priority 1 empty; priority 2 empty]]")
       << decode_result.resource.status();
 }
 

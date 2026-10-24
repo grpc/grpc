@@ -23,12 +23,6 @@ namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
 
-namespace {
-
-bool IsForkEnabled() { return grpc_core::IsEventEngineForkEnabled(); }
-
-}  // namespace
-
 FileDescriptorCollection::FileDescriptorCollection(int generation) noexcept
     : generation_(generation) {}
 
@@ -53,17 +47,12 @@ FileDescriptorCollection& FileDescriptorCollection::operator=(
 }
 
 FileDescriptor FileDescriptorCollection::Add(int fd) {
-  if (IsForkEnabled()) {
-    grpc_core::MutexLock lock(mu_);
-    file_descriptors_.emplace(fd);
-  }
+  grpc_core::MutexLock lock(mu_);
+  file_descriptors_.emplace(fd);
   return FileDescriptor(fd, generation_);
 }
 
 bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
-  if (!IsForkEnabled()) {
-    return true;
-  }
   if (fd.generation() == generation_) {
     grpc_core::MutexLock lock(mu_);
     return file_descriptors_.erase(fd.fd()) == 1;
@@ -73,9 +62,6 @@ bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
 
 absl::flat_hash_set<int>
 FileDescriptorCollection::ClearAndReturnRawDescriptors() {
-  if (!IsForkEnabled()) {
-    return {};
-  }
   grpc_core::MutexLock lock(mu_);
   absl::flat_hash_set<int> file_descriptors = std::move(file_descriptors_);
   // Should not be necessary, but standard is not clear if move would empty

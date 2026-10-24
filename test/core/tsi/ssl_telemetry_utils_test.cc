@@ -156,6 +156,11 @@ TEST(SslTelemetryUtilsTest,
                 TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_CERTIFICATE_VERIFY_FAILED),
                 X509_V_OK),
             TlsTelemetryHandshakeResult::kCertificateVerificationFailed);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                TSI_OK, SSL_ERROR_SSL,
+                TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_CERTIFICATE_VERIFY_FAILED),
+                X509_V_ERR_INVALID_CALL),
+            TlsTelemetryHandshakeResult::kCertificateVerificationFailed);
   // Client certificate required but missing
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
@@ -458,6 +463,19 @@ TEST(SslTelemetryUtilsTest, TsiResultMappingAndFallbackTest) {
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_OUT_OF_RESOURCES, SSL_ERROR_NONE, 0, X509_V_OK),
             TlsTelemetryHandshakeResult::kInternalSystemError);
+  // Test that X509_V_ERR_INVALID_CALL (returned when handshake fails before
+  // cert verification is attempted) does not override the tsi_result mapping.
+  EXPECT_EQ(
+      MapSslErrorToTlsTelemetryHandshakeResult(
+          TSI_HANDSHAKE_SHUTDOWN, SSL_ERROR_NONE, 0, X509_V_ERR_INVALID_CALL),
+      TlsTelemetryHandshakeResult::kCancelled);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                TSI_CLOSE_NOTIFY, SSL_ERROR_NONE, 0, X509_V_ERR_INVALID_CALL),
+            TlsTelemetryHandshakeResult::kPeerConnectionClosed);
+  EXPECT_EQ(
+      MapSslErrorToTlsTelemetryHandshakeResult(
+          TSI_OUT_OF_RESOURCES, SSL_ERROR_NONE, 0, X509_V_ERR_INVALID_CALL),
+      TlsTelemetryHandshakeResult::kInternalSystemError);
   // Test that a specific SSL error overrides the tsi_result
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 TSI_INTERNAL_ERROR, SSL_ERROR_SSL,

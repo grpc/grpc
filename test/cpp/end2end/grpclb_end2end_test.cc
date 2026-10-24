@@ -516,7 +516,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown(); }
 
   void SetUp() override {
-    SKIP_TEST_FOR_PH2_CLIENT("[PH2] A lot of tests are failing and flaking in");
+    SKIP_TEST_FOR_PH2_CLIENT(
+        "[PH2][P3] A lot of tests are failing and flaking in");
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     balancer_ = CreateAndStartBalancer();

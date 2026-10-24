@@ -16,9 +16,9 @@ settings:
   '#12': Protobuf Upgrade
   '#13': IMPORTANT! We need to update 'protobuf_version' manually when upgrading protobuf.
   '#14': The versions below can be retrieved from third_party/protobuf/version.json.
-  core_version: 57.0.0
+  core_version: 58.0.0
   csharp_major_version: 2
-  g_stands_for: gimbal
+  g_stands_for: googol
   protobuf_version:
     csharp: 3.35.1
     objectivec: 5.35.1
@@ -30,7 +30,7 @@ settings:
   - '3.13'
   - '3.14'
   - '3.15'
-  version: 1.85.0-dev
+  version: 1.86.0-dev
 configs:
   asan:
     CC: clang
@@ -161,7 +161,7 @@ defaults:
     CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2
       -Ithird_party/upb -Isrc/core/ext/upb-gen -Isrc/core/ext/upbdefs-gen -Ithird_party/utf8_range
       -Ithird_party/xxhash -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares
-      -Ithird_party/address_sorting/include
+      -Ithird_party/address_sorting/include -Ithird_party/cel-c
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden

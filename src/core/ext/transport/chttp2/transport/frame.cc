@@ -934,8 +934,6 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
     }
   }
 
-  // TODO(tjagtap) : [PH2][P2]:Consider validating MAX_CONCURRENT_STREAMS here
-  // for server.
   return Http2Status::Ok();
 }
 }  // namespace grpc_core

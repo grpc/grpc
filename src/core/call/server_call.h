@@ -139,6 +139,21 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
     return gpr_strdup("unknown");
   }
 
+  char* GetLocalAddress() override {
+    Slice local_address_slice = GetLocalAddressString();
+    if (!local_address_slice.empty()) {
+      absl::string_view local_address_string_view =
+          local_address_slice.as_string_view();
+      char* local_address_string =
+          static_cast<char*>(gpr_malloc(local_address_string_view.size() + 1));
+      memcpy(local_address_string, local_address_string_view.data(),
+             local_address_string_view.size());
+      local_address_string[local_address_string_view.size()] = '\0';
+      return local_address_string;
+    }
+    return gpr_strdup("unknown");
+  }
+
   bool Completed() final { Crash("unimplemented"); }
   bool failed_before_recv_message() const final {
     return call_handler_.WasCancelledPushed();

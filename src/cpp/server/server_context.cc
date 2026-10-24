@@ -528,6 +528,16 @@ std::string ServerContextBase::peer() const {
   return peer;
 }
 
+std::string ServerContextBase::local_address() const {
+  std::string local_address;
+  if (call_.call) {
+    char* c_local_address = grpc_call_get_local_address(call_.call);
+    local_address = c_local_address;
+    gpr_free(c_local_address);
+  }
+  return local_address;
+}
+
 const struct census_context* ServerContextBase::census_context() const {
   return call_.call == nullptr ? nullptr
                                : grpc_census_call_get_context(call_.call);

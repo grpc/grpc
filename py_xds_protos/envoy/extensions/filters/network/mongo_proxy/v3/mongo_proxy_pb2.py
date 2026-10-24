@@ -23,12 +23,13 @@ _sym_db = _symbol_database.Default()
 
 
 from envoy.extensions.filters.common.fault.v3 import fault_pb2 as envoy_dot_extensions_dot_filters_dot_common_dot_fault_dot_v3_dot_fault__pb2
+from google.protobuf import wrappers_pb2 as google_dot_protobuf_dot_wrappers__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioning__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nAenvoy/extensions/filters/network/mongo_proxy/v3/mongo_proxy.proto\x12/envoy.extensions.filters.network.mongo_proxy.v3\x1a\x34\x65nvoy/extensions/filters/common/fault/v3/fault.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xf2\x01\n\nMongoProxy\x12\x1c\n\x0bstat_prefix\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x12\n\naccess_log\x18\x02 \x01(\t\x12\x43\n\x05\x64\x65lay\x18\x03 \x01(\x0b\x32\x34.envoy.extensions.filters.common.fault.v3.FaultDelay\x12\x1d\n\x15\x65mit_dynamic_metadata\x18\x04 \x01(\x08\x12\x10\n\x08\x63ommands\x18\x05 \x03(\t:<\x9a\xc5\x88\x1e\x37\n5envoy.config.filter.network.mongo_proxy.v2.MongoProxyB\xc0\x01\n=io.envoyproxy.envoy.extensions.filters.network.mongo_proxy.v3B\x0fMongoProxyProtoP\x01Zdgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/mongo_proxy/v3;mongo_proxyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nAenvoy/extensions/filters/network/mongo_proxy/v3/mongo_proxy.proto\x12/envoy.extensions.filters.network.mongo_proxy.v3\x1a\x34\x65nvoy/extensions/filters/common/fault/v3/fault.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xb1\x02\n\nMongoProxy\x12\x1c\n\x0bstat_prefix\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x12\n\naccess_log\x18\x02 \x01(\t\x12\x43\n\x05\x64\x65lay\x18\x03 \x01(\x0b\x32\x34.envoy.extensions.filters.common.fault.v3.FaultDelay\x12\x1d\n\x15\x65mit_dynamic_metadata\x18\x04 \x01(\x08\x12\x10\n\x08\x63ommands\x18\x05 \x03(\t\x12=\n\x0emax_bson_depth\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.UInt32ValueB\x07\xfa\x42\x04*\x02 \x00:<\x9a\xc5\x88\x1e\x37\n5envoy.config.filter.network.mongo_proxy.v2.MongoProxyB\xc0\x01\n=io.envoyproxy.envoy.extensions.filters.network.mongo_proxy.v3B\x0fMongoProxyProtoP\x01Zdgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/mongo_proxy/v3;mongo_proxyv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -38,8 +39,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._serialized_options = b'\n=io.envoyproxy.envoy.extensions.filters.network.mongo_proxy.v3B\017MongoProxyProtoP\001Zdgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/mongo_proxy/v3;mongo_proxyv3\272\200\310\321\006\002\020\002'
   _globals['_MONGOPROXY'].fields_by_name['stat_prefix']._loaded_options = None
   _globals['_MONGOPROXY'].fields_by_name['stat_prefix']._serialized_options = b'\372B\004r\002\020\001'
+  _globals['_MONGOPROXY'].fields_by_name['max_bson_depth']._loaded_options = None
+  _globals['_MONGOPROXY'].fields_by_name['max_bson_depth']._serialized_options = b'\372B\004*\002 \000'
   _globals['_MONGOPROXY']._loaded_options = None
   _globals['_MONGOPROXY']._serialized_options = b'\232\305\210\0367\n5envoy.config.filter.network.mongo_proxy.v2.MongoProxy'
-  _globals['_MONGOPROXY']._serialized_start=264
-  _globals['_MONGOPROXY']._serialized_end=506
+  _globals['_MONGOPROXY']._serialized_start=296
+  _globals['_MONGOPROXY']._serialized_end=601
 # @@protoc_insertion_point(module_scope)

@@ -209,8 +209,8 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     } else {
       GRPC_HTTP2_CONNECTOR_DLOG
           << "Chttp2Connector::OnHandshakeDone creating PH2 transport";
-      // TODO(tjagtap) : [PH2][P2] : Validate this code block thoroughly once
-      // the ping pong test is in place.
+      // TODO(tjagtap) : [PH2][P2][Client] : Validate this code block thoroughly
+      // once the ping pong test is in place.
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           event_engine_endpoint = grpc_event_engine::experimental::
               grpc_take_wrapped_event_engine_endpoint(

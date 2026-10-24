@@ -379,6 +379,14 @@ class CoreEnd2endTest {
       return result;
     }
 
+    std::optional<std::string> GetLocalAddress() {
+      char* local_address = grpc_call_get_local_address(call_);
+      if (local_address == nullptr) return std::nullopt;
+      std::string result(local_address);
+      gpr_free(local_address);
+      return result;
+    }
+
     // Set call credentials.
     // Takes ownership of creds.
     void SetCredentials(grpc_call_credentials* creds) {
@@ -435,6 +443,11 @@ class CoreEnd2endTest {
 
     // Return the peer address.
     std::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
+
+    // Return the local address.
+    std::optional<std::string> GetLocalAddress() {
+      return impl_->call.GetLocalAddress();
+    }
 
     // Return the auth context.
     std::unique_ptr<grpc_auth_context, void (*)(grpc_auth_context*)>

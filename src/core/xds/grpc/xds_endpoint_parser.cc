@@ -63,11 +63,11 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(roth): Flip the default to false once this proves stable, then
-// remove it entirely at some point in the future.
+// TODO(roth): Remove this once the feature proves stable.  (Note: As
+// per gRFC A76, this started as true and then switched to false.)
 bool XdsEndpointHashKeyBackwardCompatEnabled() {
   return IsExperimentEnvVarEnabled("GRPC_XDS_ENDPOINT_HASH_KEY_BACKWARD_COMPAT",
-                                   /*default_value=*/true);
+                                   /*default_value=*/false);
 }
 
 void MaybeLogClusterLoadAssignment(
@@ -354,6 +354,17 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
           LocalityParse(context, endpoints[i], &address_set, &errors);
       if (parsed_locality.has_value()) {
         GRPC_CHECK_NE(parsed_locality->locality.lb_weight, 0u);
+        // Priorities must be contiguous starting from 0. That is fully
+        // validated below once all localities have been seen, since they may
+        // arrive in any order. Here we only reject priorities that can never
+        // satisfy it, which also bounds the size of the priorities list.
+        if (parsed_locality->priority >= locality_size) {
+          ValidationErrors::ScopedField field(&errors, ".priority");
+          errors.AddError(absl::StrCat("priority ", parsed_locality->priority,
+                                       " >= number of localities (",
+                                       locality_size, ")"));
+          continue;
+        }
         // Make sure priorities is big enough. Note that they might not
         // arrive in priority order.
         if (eds_resource->priorities.size() < parsed_locality->priority + 1) {

@@ -5769,6 +5769,109 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   EXPECT_TRUE(stream2->IsOrphaned());
 }
 
+TEST_F(XdsClientTest, FederationDoesNotAcceptResourceFromWrongServer) {
+  constexpr char kAuthority[] = "xds.example.com";
+  const std::string kXdstpResourceName = absl::StrCat(
+      "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
+  FakeXdsBootstrap::FakeXdsServer authority_server("other_xds_server");
+  FakeXdsBootstrap::FakeAuthority authority;
+  authority.set_server(authority_server);
+  InitXdsClient(
+      FakeXdsBootstrap::Builder().AddAuthority(kAuthority, authority));
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream to the top-level xDS server.
+  auto stream = WaitForAdsStream(*xds_client_->bootstrap().servers().front());
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Send a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Start a watch for the xdstp resource name.
+  auto watcher2 = StartFooWatch(kXdstpResourceName);
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher2->HasEvent());
+  // XdsClient will create a new stream to the server for this authority.
+  auto stream2 = WaitForAdsStream(authority_server);
+  ASSERT_TRUE(stream2 != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  // Note that version and nonce here do NOT use the values for Foo,
+  // since each authority has its own state.
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{kXdstpResourceName});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Send a response.
+  stream2->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("2")
+          .set_nonce("B")
+          .AddFooResource(XdsFooResource(kXdstpResourceName, 3))
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource2 = watcher2->WaitForNextResource();
+  ASSERT_NE(resource2, nullptr);
+  EXPECT_EQ(resource2->name, kXdstpResourceName);
+  EXPECT_EQ(resource2->value, 3);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"2", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{kXdstpResourceName});
+  // Now send an update for the authority resource on the stream for the
+  // top-level server.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("3")
+          .set_nonce("C")
+          .AddFooResource(XdsFooResource(kXdstpResourceName, 4))
+          .Serialize());
+  // The client should ACK.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"3", /*response_nonce=*/"C",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo1"});
+  // The update should be ignored by the client.
+  EXPECT_EQ(watcher2->WaitForNextResource(), nullptr);
+  // Cancel watch for "foo1".
+  CancelFooWatch(watcher.get(), "foo1");
+  EXPECT_TRUE(stream->IsOrphaned());
+  // Now cancel watch for xdstp resource name.
+  CancelFooWatch(watcher2.get(), kXdstpResourceName);
+  EXPECT_TRUE(stream2->IsOrphaned());
+}
+
 TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
   InitXdsClient();
   // Start watches for "foo1" and "foo2".
