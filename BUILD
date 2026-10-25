@@ -5581,6 +5581,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "cel_expr_checked_upb",
+    deps = ["@dev_cel//proto/cel/expr:checked_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "cel_expr_syntax_upb",
+    deps = ["@dev_cel//proto/cel/expr:syntax_proto"],
+)
+
+grpc_upb_proto_library(
     name = "xds_type_matcher_upb",
     deps = ["@com_github_cncf_xds//xds/type/matcher/v3:pkg"],
 )

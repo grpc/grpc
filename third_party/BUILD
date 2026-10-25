@@ -123,6 +123,60 @@ alias(
 )
 
 alias(
+    name = "cel_c_alloc",
+    actual = "@cel_c//cel-c:alloc",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_arena",
+    actual = "@cel_c//cel-c:arena",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_ast",
+    actual = "@cel_c//cel-c:ast",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_ast_proto",
+    actual = "@cel_c//cel-c:ast_proto",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_runtime",
+    actual = "@cel_c//cel-c:runtime",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_status",
+    actual = "@cel_c//cel-c:status",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_status_absl",
+    actual = "@cel_c//cel-c:status_absl",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_string_view_absl",
+    actual = "@cel_c//cel-c:string_view_absl",
+    tags = ["manual"],
+)
+
+alias(
+    name = "cel_c_value",
+    actual = "@cel_c//cel-c:value",
+    tags = ["manual"],
+)
+
+alias(
     name = "grpc_cpp_plugin",
     actual = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
     tags = ["manual"],
