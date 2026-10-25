@@ -664,7 +664,7 @@ TEST_F(MatcherTest, MatcherListEmptyPredicateList) {
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_list.matchers[0].predicate.and_matcher "
-            "error:predicate_list is empty]");
+            "error:predicate_list must contain at least 2 predicates]");
 }
 
 TEST_F(MatcherTest, MatcherListSinglePredicateEmpty) {

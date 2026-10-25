@@ -225,10 +225,6 @@ std::vector<std::unique_ptr<XdsMatcherList::Predicate>> ParsePredicateList(
   auto list =
       xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_predicate(
           predicate_list, &predicate_list_size);
-  if (predicate_list_size == 0) {
-    errors->AddError("predicate_list is empty");
-    return predicates;
-  }
   // gRFC A106: or_matcher and and_matcher must have at least 2 predicates.
   if (predicate_list_size < 2) {
     errors->AddError("predicate_list must contain at least 2 predicates");
