@@ -24,6 +24,9 @@ std::optional<absl::string_view> RpcMatchContext::GetHeaderValue(
     absl::string_view header_name) const {
   if (absl::EndsWith(header_name, "-bin")) {
     return std::nullopt;
+  } else if (header_name == "te") {
+    // As in RBAC (gRFC A41), te is hidden.
+    return std::nullopt;
   } else if (header_name == "content-type") {
     return "application/grpc";
   } else if (IsAuthorityHeaderName(header_name)) {

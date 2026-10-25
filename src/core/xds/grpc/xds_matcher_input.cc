@@ -15,9 +15,12 @@
 #include "src/core/xds/grpc/xds_matcher_input.h"
 
 #include "envoy/type/matcher/v3/http_inputs.upb.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 std::optional<absl::string_view> MetadataInput::GetValue(
@@ -38,9 +41,24 @@ MetadataInputFactory::ParseAndCreateInput(
     return nullptr;
   }
   // extract header name (Key for metadata match)
-  auto header_name = UpbStringToStdString(
+  absl::string_view header_name = UpbStringToAbsl(
       envoy_type_matcher_v3_HttpRequestHeaderMatchInput_header_name(
           http_header_input));
+  // gRFC A106: length must be in [1, 16384) and the name must be a valid
+  // HTTP/2 header name.  Pseudo-headers (e.g. ":path") are allowed.
+  {
+    ValidationErrors::ScopedField field(errors, ".header_name");
+    if (header_name.empty() || header_name.size() >= 16384) {
+      errors->AddError("length must be in the range [1, 16384)");
+      return nullptr;
+    }
+    absl::string_view name = header_name;
+    absl::ConsumePrefix(&name, ":");
+    if (ValidateHeaderKeyIsLegal(name) != ValidateMetadataResult::kOk) {
+      errors->AddError("not a valid HTTP/2 header name");
+      return nullptr;
+    }
+  }
   return std::make_unique<MetadataInput>(header_name);
 }
 

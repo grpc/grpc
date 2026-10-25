@@ -26,7 +26,9 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "xds/core/v3/extension.upb.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
+#include "xds/type/matcher/v3/regex.upb.h"
 #include "xds/type/matcher/v3/string.upb.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -150,6 +152,36 @@ absl::flat_hash_map<std::string, XdsMatcher::OnMatch> ParseMatchMap(
   return result;
 }
 
+// gRFC A106 requires prefix, suffix, contains and regex patterns to be
+// non-empty. This is checked here rather than in StringMatcherParse()
+// because its other callers (e.g. route and RBAC matchers) allow empty
+// patterns.
+void ValidateStringMatcherPatternNotEmpty(
+    const xds_type_matcher_v3_StringMatcher* proto, ValidationErrors* errors) {
+  absl::string_view field;
+  if (xds_type_matcher_v3_StringMatcher_has_prefix(proto)) {
+    if (xds_type_matcher_v3_StringMatcher_prefix(proto).size != 0) return;
+    field = ".prefix";
+  } else if (xds_type_matcher_v3_StringMatcher_has_suffix(proto)) {
+    if (xds_type_matcher_v3_StringMatcher_suffix(proto).size != 0) return;
+    field = ".suffix";
+  } else if (xds_type_matcher_v3_StringMatcher_has_contains(proto)) {
+    if (xds_type_matcher_v3_StringMatcher_contains(proto).size != 0) return;
+    field = ".contains";
+  } else if (xds_type_matcher_v3_StringMatcher_has_safe_regex(proto)) {
+    if (xds_type_matcher_v3_RegexMatcher_regex(
+            xds_type_matcher_v3_StringMatcher_safe_regex(proto))
+            .size != 0) {
+      return;
+    }
+    field = ".safe_regex.regex";
+  } else {
+    return;
+  }
+  ValidationErrors::ScopedField scoped_field(errors, field);
+  errors->AddError("must be non-empty");
+}
+
 // Parse SinglePredicate
 std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
     const XdsResourceType::DecodeContext& context,
@@ -164,6 +196,9 @@ std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
     const auto* value_match_proto =
         xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_value_match(
             single_predicate);
+    if (value_match_proto != nullptr) {
+      ValidateStringMatcherPatternNotEmpty(value_match_proto, errors);
+    }
     input_string_matcher = std::make_unique<XdsMatcherList::StringInputMatcher>(
         StringMatcherParse(context, value_match_proto, errors));
   }
@@ -192,6 +227,11 @@ std::vector<std::unique_ptr<XdsMatcherList::Predicate>> ParsePredicateList(
           predicate_list, &predicate_list_size);
   if (predicate_list_size == 0) {
     errors->AddError("predicate_list is empty");
+    return predicates;
+  }
+  // gRFC A106: or_matcher and and_matcher must have at least 2 predicates.
+  if (predicate_list_size < 2) {
+    errors->AddError("predicate_list must contain at least 2 predicates");
     return predicates;
   }
   ValidationErrors::ScopedField field(errors, ".predicate_list");

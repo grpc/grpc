@@ -7444,9 +7444,11 @@ grpc_cc_library(
     deps = [
         "envoy_type_matcher_upb",
         "upb_utils",
+        "validation_errors",
         "xds_common_types",
         "xds_matcher",
         "xds_matcher_context",
+        "//:grpc_base",
         "//:xds_client",
     ],
 )
