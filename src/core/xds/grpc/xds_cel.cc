@@ -303,27 +303,26 @@ const cel_Runtime* GetCelRuntime() {
 }
 
 // Activates and runs program, then passes the result to on_result.
-// Returns false if evaluation failed or the result is a CEL error or
-// unknown.
-bool Evaluate(const cel_Program* program, const cel_VariableResolver& resolver,
+// on_result is not called if evaluation failed or the result is a CEL
+// error or unknown.
+void Evaluate(const cel_Program* program, const cel_VariableResolver& resolver,
               absl::FunctionRef<void(const cel_Value&)> on_result) {
   ActivationPtr activation(
       cel_Program_Activate(program, &resolver, /*opts=*/nullptr));
-  if (activation == nullptr) return false;
+  if (activation == nullptr) return;
   ArenaPtr arena(cel_Arena_New(cel_DefaultAllocator));
-  if (arena == nullptr) return false;
+  if (arena == nullptr) return;
   cel_Value result;
   CelStatus status;
   if (!cel_Activation_Execute(activation.get(), &result, arena.get(),
                               status.get()) ||
       !status.ok()) {
-    return false;
+    return;
   }
-  if (cel_Value_IsError(&result) || cel_Value_IsUnknown(&result)) return false;
+  if (cel_Value_IsError(&result) || cel_Value_IsUnknown(&result)) return;
   // The result may reference memory in arena, so it must be consumed
   // before arena is destroyed.
   on_result(result);
-  return true;
 }
 
 }  // namespace
@@ -368,25 +367,20 @@ absl::StatusOr<std::unique_ptr<CelProgram>> CelProgram::Create(
 std::optional<bool> CelProgram::EvaluateBool(
     const cel_VariableResolver& resolver) const {
   std::optional<bool> result;
-  if (!Evaluate(program_.get(), resolver, [&](const cel_Value& value) {
-        if (cel_Value_IsBool(&value)) result = cel_Value_GetBool(&value);
-      })) {
-    return std::nullopt;
-  }
+  Evaluate(program_.get(), resolver, [&](const cel_Value& value) {
+    if (cel_Value_IsBool(&value)) result = cel_Value_GetBool(&value);
+  });
   return result;
 }
 
 std::optional<std::string> CelProgram::EvaluateString(
     const cel_VariableResolver& resolver) const {
   std::optional<std::string> result;
-  if (!Evaluate(program_.get(), resolver, [&](const cel_Value& value) {
-        if (cel_Value_IsString(&value)) {
-          result =
-              std::string(cel_StringView_ToAbsl(cel_Value_GetString(&value)));
-        }
-      })) {
-    return std::nullopt;
-  }
+  Evaluate(program_.get(), resolver, [&](const cel_Value& value) {
+    if (cel_Value_IsString(&value)) {
+      result = std::string(cel_StringView_ToAbsl(cel_Value_GetString(&value)));
+    }
+  });
   return result;
 }
 
