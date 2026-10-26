@@ -69,8 +69,7 @@ absl::Status ValidateResultType(const cel_expr_CheckedExpr* checked_expr,
                                 CelProgram::ResultType result_type) {
   cel_expr_Type* type;
   if (!cel_expr_CheckedExpr_type_map_get(checked_expr, root_id, &type)) {
-    return absl::InvalidArgumentError(
-        "CEL expression has no type for its result");
+    return absl::InternalError("CEL expression has no type for its result");
   }
   // A string extractor may also be typed dyn, e.g. `request['path']` when
   // the control plane declares `request` as dyn.  Its result is then
@@ -84,7 +83,7 @@ absl::Status ValidateResultType(const cel_expr_CheckedExpr* checked_expr,
                                : cel_expr_Type_STRING;
   if (!cel_expr_Type_has_primitive(type) ||
       cel_expr_Type_primitive(type) != expected) {
-    return absl::InvalidArgumentError(absl::StrCat(
+    return absl::InternalError(absl::StrCat(
         "CEL expression must evaluate to ",
         result_type == CelProgram::ResultType::kBool ? "bool" : "string"));
   }
@@ -94,17 +93,17 @@ absl::Status ValidateResultType(const cel_expr_CheckedExpr* checked_expr,
 absl::Status ValidateRegex(const cel_expr_Expr* pattern) {
   if (!cel_expr_Expr_has_const_expr(pattern) ||
       !cel_expr_Constant_has_string_value(cel_expr_Expr_const_expr(pattern))) {
-    return absl::InvalidArgumentError(
+    return absl::InternalError(
         "CEL matches() pattern must be a constant string");
   }
   RE2 re(UpbStringToAbsl(
       cel_expr_Constant_string_value(cel_expr_Expr_const_expr(pattern))));
   if (!re.ok()) {
-    return absl::InvalidArgumentError(
+    return absl::InternalError(
         absl::StrCat("CEL matches() pattern is invalid: ", re.error()));
   }
   if (re.ProgramSize() > kMaxRegexProgramSize) {
-    return absl::InvalidArgumentError(
+    return absl::InternalError(
         absl::StrCat("CEL matches() pattern program size ", re.ProgramSize(),
                      " exceeds the limit of ", kMaxRegexProgramSize));
   }
@@ -118,8 +117,7 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
   size_t num_args;
   const cel_expr_Expr* const* args = cel_expr_Expr_Call_args(call, &num_args);
   if (function == "string") {
-    return absl::InvalidArgumentError(
-        "CEL string() conversions are not supported");
+    return absl::InternalError("CEL string() conversions are not supported");
   }
   if (function == "_+_") {
     // Which overload of + this is can only be told from the type-checker's
@@ -131,12 +129,12 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
       overloads = cel_expr_Reference_overload_id(reference, &num_overloads);
     }
     if (num_overloads == 0) {
-      return absl::InvalidArgumentError("CEL expression has no overload for +");
+      return absl::InternalError("CEL expression has no overload for +");
     }
     for (size_t i = 0; i < num_overloads; ++i) {
       absl::string_view overload = UpbStringToAbsl(overloads[i]);
       if (overload == "add_string" || overload == "add_list") {
-        return absl::InvalidArgumentError(
+        return absl::InternalError(
             "CEL string and list concatenation are not supported");
       }
     }
@@ -156,11 +154,11 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
 absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
                              CelProgram::ResultType result_type) {
   if (checked_expr == nullptr) {
-    return absl::InvalidArgumentError("CEL expression not set");
+    return absl::InternalError("CEL expression not set");
   }
   const cel_expr_Expr* root = cel_expr_CheckedExpr_expr(checked_expr);
   if (root == nullptr) {
-    return absl::InvalidArgumentError("CEL expression not set");
+    return absl::InternalError("CEL expression not set");
   }
   absl::Status status =
       ValidateResultType(checked_expr, cel_expr_Expr_id(root), result_type);
@@ -175,7 +173,7 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
       absl::string_view name = UpbStringToAbsl(
           cel_expr_Expr_Ident_name(cel_expr_Expr_ident_expr(expr)));
       if (name != "request") {
-        return absl::InvalidArgumentError(
+        return absl::InternalError(
             absl::StrCat("CEL variable \"", name, "\" is not supported"));
       }
     } else if (cel_expr_Expr_has_select_expr(expr)) {
@@ -212,7 +210,7 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
         if (value != nullptr) stack.push_back(value);
       }
     } else if (cel_expr_Expr_has_comprehension_expr(expr)) {
-      return absl::InvalidArgumentError("CEL comprehensions are not supported");
+      return absl::InternalError("CEL comprehensions are not supported");
     }
   }
   return absl::OkStatus();
@@ -322,7 +320,7 @@ absl::StatusOr<std::unique_ptr<CelProgram>> CelProgram::Create(
   // comes from the control plane, so may be arbitrarily deep) or if
   // allocation fails.
   if (serialized == nullptr) {
-    return absl::InvalidArgumentError("failed to serialize CEL expression");
+    return absl::InternalError("failed to serialize CEL expression");
   }
   // Convert to a cel-c AST and compile it.  The compiled program copies
   // everything it needs, so the AST and its arena may be freed afterwards.
@@ -333,13 +331,13 @@ absl::StatusOr<std::unique_ptr<CelProgram>> CelProgram::Create(
   CelStatus status;
   AstPtr ast(cel_Ast_FromProto(checked_expr, arena.get(), status.get()));
   if (ast == nullptr || !status.ok()) {
-    return absl::InvalidArgumentError(absl::StrCat(
+    return absl::InternalError(absl::StrCat(
         "failed to convert CEL expression: ", status.ToAbsl().message()));
   }
   ProgramPtr program(cel_Runtime_Compile(GetCelRuntime(), ast.get(),
                                          /*opts=*/nullptr, status.get()));
   if (program == nullptr || !status.ok()) {
-    return absl::InvalidArgumentError(absl::StrCat(
+    return absl::InternalError(absl::StrCat(
         "failed to compile CEL expression: ", status.ToAbsl().message()));
   }
   return std::unique_ptr<CelProgram>(

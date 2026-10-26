@@ -194,7 +194,7 @@ class CelProgramTest : public ::testing::Test {
   void ExpectInvalid(const cel_expr_CheckedExpr* checked,
                      ResultType result_type, absl::string_view message) {
     auto program = CelProgram::Create(checked, result_type);
-    EXPECT_EQ(program.status(), absl::InvalidArgumentError(message));
+    EXPECT_EQ(program.status(), absl::InternalError(message));
   }
 
   upb::Arena arena_;
