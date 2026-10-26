@@ -377,7 +377,6 @@ TEST_P(XdsCompositeFilterEnd2endTest,
   StartBackendServer();
   // Send RPC with name=enterprise.
   LOG(INFO) << "Sending RPC with name=enterprise...";
-  std::multimap<std::string, std::string> server_initial_metadata;
   Status status = SendRpc(RpcOptions()
                               .set_metadata({{"name", "enterprise"}})
                               .set_echo_metadata_initially(true));

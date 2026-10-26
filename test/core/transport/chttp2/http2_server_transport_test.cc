@@ -237,8 +237,6 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
 }
 
 TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
-  const std::string data_payload(kString1);
-
   // 1. Initialize the transport and exchange settings.
   InitTransport(GetChannelArgs());
   SpawnTransportLoopsAndExchangeSettings();

@@ -84,7 +84,6 @@ TEST(GrpcTextMapCarrierTest, GrpcTraceBinSet) {
   GrpcTextMapCarrier carrier(&md);
   carrier.Set("grpc-trace-bin",
               AbslStringViewToNoStdStringView(absl::Base64Escape("value")));
-  std::string scratch;
   auto* slice = md.get_pointer(grpc_core::GrpcTraceBinMetadata());
   EXPECT_EQ(slice->as_string_view(), "value");
 }
