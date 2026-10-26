@@ -83,11 +83,6 @@ namespace http2 {
 
 constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
 
-struct CloseStreamArgs {
-  bool close_reads;
-  bool close_writes;
-};
-
 inline bool ShouldEnablePh2Client() {
   return IsPh2ClientEnabled() || IsPh2ClientServerEnabled();
 }

@@ -68,7 +68,7 @@
   test_tags: []
 - name: callv3_batch_validation
   description: If enabled, perform validations on receiving a new batch.
-  expiry: 2026/10/31
+  expiry: 2027/02/01
   owner: akshitpatel@google.com
   test_tags: [core_end2end_test]
 - name: callv3_server_shutdown_broadcast
@@ -78,21 +78,15 @@
   test_tags: []
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
-  expiry: 2026/10/01
+  expiry: 2027/02/01
   owner: pragunsaxena@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: chaotic_good_send_supported_features
   description: Send supported features in chaotic good settings frames.
-  expiry: 2026/10/01
+  expiry: 2027/02/01
   owner: pragunsaxena@google.com
   test_tags: []
-- name: custom_frame_check
-  description: Adding checks to custom HTTP2 frame.
-  expiry: 2026/10/30
-  owner: ritulb@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2027/02/01
@@ -136,7 +130,7 @@
   allow_in_fuzzing_config: false
 - name: fix_v3_filter_stack_server_side_ordering
   description: If set, reverse the server side ordering for v3 filter stack.
-  expiry: 2026/10/15
+  expiry: 2027/01/16
   owner: weizheyuan@google.com
   test_tags: ["core_end2end_test"]
   platforms: ["all"]
@@ -158,12 +152,7 @@
   test_tags: []
 - name: header_data_frame
   description: Managing header and data memory better
-  expiry: 2026/10/31
-  owner: ritulb@google.com
-  test_tags: []
-- name: inproc_cancel_stream
-  description: If set, cancel inproc stream inside the transport mutex.
-  expiry: 2026/10/30
+  expiry: 2027/02/01
   owner: ritulb@google.com
   test_tags: []
 - name: internal_fix
@@ -183,6 +172,11 @@
   expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: []
+- name: lame_channel_v3
+  description: Use v3 lame channel implementation.
+  expiry: 2027/02/01
+  owner: roth@google.com
+  test_tags: ["lame_client_test"]
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
   expiry: 2027/01/16
@@ -194,16 +188,16 @@
     duplicate host/authority headers.
   expiry: 2027/07/01
   owner: rishesh@google.com
-  test_tags: ["core_end2end_test", "hpack_test"]
+  test_tags: ["core_end2end_test", "hpack_test", "xds_end2end_test"]
 - name: memory_optimization_01
   description: Memory Optimization
-  expiry: 2026/10/30
+  expiry: 2027/02/01
   owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: memory_optimization_02
   description: Memory Optimization 02
-  expiry: 2026/10/30
+  expiry: 2027/02/01
   owner: ritulb@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -214,28 +208,18 @@
   test_tags: []
 - name: metadata_outstanding_token_refactor
   description: Refactor ClientInitialMetadataOutstandingToken.
-  expiry: 2026/10/30
+  expiry: 2027/02/01
   owner: akshitpatel@google.com
   test_tags: []
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
-  expiry: 2026/10/30
+  expiry: 2027/01/20
   owner: leonzz@google.com
   test_tags: []
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
   expiry: never-ever
   owner: vigneshbabu@google.com
-  test_tags: []
-- name: optimization_01
-  description: Optimization
-  expiry: 2026/10/30
-  owner: ritulb@google.com
-  test_tags: []
-- name: optimization_02
-  description: Optimization
-  expiry: 2026/10/30
-  owner: ritulb@google.com
   test_tags: []
 - name: optimization_03
   description: Optimization
@@ -254,7 +238,7 @@
   test_tags: []
 - name: optimization_06
   description: Optimization
-  expiry: 2026/10/30
+  expiry: 2027/02/01
   owner: ritulb@google.com
   test_tags: []
 - name: otel_export_telemetry_domains
@@ -281,11 +265,6 @@
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
   allow_in_fuzzing_config: true
-- name: ph2_perf_01
-  description: Different performance experiments for PH2 Transport
-  expiry: 2026/10/30
-  owner: ritulb@google.com
-  test_tags: []
 - name: ph2_server
   description:
     Use promises for the http2 server transport. We have kept client and
@@ -331,16 +310,9 @@
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
 - name: promise_batch_cleanup_on_cancel
   description: Fix completion queue tag handling during promise batch cancellation.
-  expiry: 2027/01/16
+  expiry: 2027/02/01
   owner: akshitpatel@google.com
   test_tags: []
-- name: promise_filter_send_cancel_metadata
-  description: Enables sending all trailing metadata fields from server side promise-based filters
-    upon stream cancellation.
-  expiry: 2026/10/30
-  owner: akshitpatel@google.com
-  test_tags: []
-  allow_in_fuzzing_config: true
 - name: recv_message_filter_bypass_fix
   description:
     Receive message bypass happen if trailing metadata is received while
@@ -350,12 +322,12 @@
   test_tags: [core_end2end_test]
 - name: retry_in_callv3
   description: Support retries with call-v3
-  expiry: 2027/01/16
+  expiry: 2027/02/01
   owner: akshitpatel@google.com
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
   description: Return errors that exist before the start of the call in RunHandler.
-  expiry: 2027/01/16
+  expiry: 2027/02/01
   owner: pragunsaxena@google.com
   test_tags: []
 - name: ring_hash_update_cleanup
@@ -399,6 +371,11 @@
       "event_engine_client",
       "event_engine_listener",
     ]
+- name: server_connection_management
+  description: Server connection management.
+  expiry: 2027/02/15
+  owner: roth@google.com
+  test_tags: ["core_end2end_test", "xds_end2end_test"]
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.
   expiry: 2027/01/16

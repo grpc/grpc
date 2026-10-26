@@ -7401,10 +7401,12 @@ grpc_cc_library(
     hdrs = [
         "xds/grpc/xds_matcher_context.h",
     ],
+    external_deps = ["absl/strings"],
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
     deps = [
         "metadata_batch",
+        "slice",
         "xds_matcher",
     ],
 )
@@ -7524,14 +7526,22 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
     deps = [
+        "blackboard",
         "channel_args",
+        "filter_args",
+        "filter_chain",
         "grpc_check",
         "grpc_matchers",
+        "json",
         "metadata_batch",
+        "slice",
         "xds_http_filter",
         "xds_http_filter_registry",
         "xds_listener",
         "xds_route_config",
+        "//:grpc_trace",
+        "//:ref_counted_ptr",
+        "//:xds_client",
     ],
 )
 
@@ -9505,6 +9515,7 @@ grpc_cc_library(
         ":header_assembler",
         ":http2_status",
         ":http2_transport",
+        ":http2_transport_stats",
         ":metadata_info",
         ":ph2_stream",
         ":shared_bit_gen",
@@ -9591,6 +9602,7 @@ grpc_cc_library(
         "metadata_batch",
         "ref_counted",
         "stream_data_queue",
+        "time",
         "write_cycle",
         ":chttp2_flow_control",
         "//:chttp2_frame",
@@ -9671,6 +9683,7 @@ grpc_cc_library(
         "http2_settings_promises",
         "http2_status",
         "http2_transport",
+        "http2_transport_stats",
         "http2_ztrace_collector",
         "if",
         "inter_activity_mutex",
@@ -9770,6 +9783,7 @@ grpc_cc_library(
         "http2_settings_promises",
         "http2_status",
         "http2_transport",
+        "http2_transport_stats",
         "http2_ztrace_collector",
         "if",
         "inter_activity_mutex",
@@ -9795,6 +9809,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "resource_quota_telemetry",
+        "seq",
         "sleep",
         "status_flag",
         "stream_data_queue",
@@ -9877,6 +9892,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "http2_transport_stats",
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_transport_stats.h",
+    ],
+    deps = [
+        "channel_args",
+        "http2_stats_collector",
+        "stats_data",
+        "time",
+        "//:chttp2_frame",
+        "//:gpr_platform",
+        "//:grpc_core_credentials_header",
+        "//:transport_auth_context",
+    ],
+)
+
+grpc_cc_library(
     name = "transport_common",
     srcs = [
         "ext/transport/chttp2/transport/transport_common.cc",
@@ -9920,6 +9952,7 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "http2_settings",
         "http2_status",
+        "http2_transport_stats",
         "slice",
         "slice_buffer",
         "transport_common",
@@ -9962,6 +9995,7 @@ grpc_cc_library(
         "http2_settings_manager",
         "http2_settings_promises",
         "http2_status",
+        "http2_transport_stats",
         "if",
         "internal_channel_arg_names",
         "latch",
@@ -11729,6 +11763,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lame_channel",
+    srcs = [
+        "client_channel/lame_channel.cc",
+    ],
+    hdrs = [
+        "client_channel/lame_channel.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "event_engine_context",
+        "//:channel",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "metadata_batch",
     srcs = [
         "call/metadata_batch.cc",
@@ -11794,6 +11847,7 @@ grpc_cc_library(
         "//:grpc_credentials_util",
         "//:grpc_security_base",
         "//:parse_address",
+        "//:transport_auth_context",
         "//:uri",
     ],
 )
@@ -12026,7 +12080,6 @@ grpc_cc_library(
         "1999",
         "channel_args",
         "grpc_check",
-        "if",
         "inter_activity_latch",
         "latch",
         "map",
@@ -12036,6 +12089,7 @@ grpc_cc_library(
         "ping_rate_policy",
         "poll",
         "race",
+        "seq",
         "shared_bit_gen",
         "sleep",
         "time",

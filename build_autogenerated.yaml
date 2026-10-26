@@ -237,6 +237,7 @@ libs:
   - src/core/client_channel/direct_channel.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
+  - src/core/client_channel/lame_channel.h
   - src/core/client_channel/lb_metadata.h
   - src/core/client_channel/load_balanced_call_destination.h
   - src/core/client_channel/local_subchannel_pool.h
@@ -355,6 +356,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/ext/transport/chttp2/transport/http2_transport_stats.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
@@ -1437,6 +1439,7 @@ libs:
   - src/core/client_channel/direct_channel.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
+  - src/core/client_channel/lame_channel.cc
   - src/core/client_channel/lb_metadata.cc
   - src/core/client_channel/load_balanced_call_destination.cc
   - src/core/client_channel/local_subchannel_pool.cc
@@ -2536,6 +2539,7 @@ libs:
   - src/core/client_channel/direct_channel.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
+  - src/core/client_channel/lame_channel.h
   - src/core/client_channel/lb_metadata.h
   - src/core/client_channel/load_balanced_call_destination.h
   - src/core/client_channel/local_subchannel_pool.h
@@ -2615,6 +2619,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/ext/transport/chttp2/transport/http2_transport_stats.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
@@ -3102,6 +3107,7 @@ libs:
   - src/core/client_channel/direct_channel.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
+  - src/core/client_channel/lame_channel.cc
   - src/core/client_channel/lb_metadata.cc
   - src/core/client_channel/load_balanced_call_destination.cc
   - src/core/client_channel/local_subchannel_pool.cc
@@ -9165,6 +9171,17 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: chttp2_security_frame_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/chttp2_security_frame_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: chttp2_server_listener_test
   gtest: true
   build: test
@@ -15886,6 +15903,27 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+- name: http2_transport_stats_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/postmortem.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
+  - test/core/transport/util/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chttp2/http2_transport_stats_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: http2_transport_test
   gtest: true
   build: test
@@ -23774,6 +23812,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
   - test/core/test_util/postmortem.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   - test/core/transport/util/transport_test.h
@@ -28395,11 +28434,21 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/postmortem.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
+  - test/core/transport/util/transport_test.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/write_cycle_test.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
 - name: write_size_policy_test
   gtest: true
@@ -33164,6 +33213,7 @@ targets:
   headers:
   - test/core/test_util/audit_logging_utils.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/raw_http2_client.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/end2end_test_utils.h
@@ -33309,6 +33359,7 @@ targets:
   - third_party/xds/xds/type/v3/typed_struct.proto
   - test/core/test_util/audit_logging_utils.cc
   - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/raw_http2_client.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_security_end2end_test.cc

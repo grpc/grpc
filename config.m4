@@ -76,6 +76,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_channel/direct_channel.cc \
     src/core/client_channel/dynamic_filters.cc \
     src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/lame_channel.cc \
     src/core/client_channel/lb_metadata.cc \
     src/core/client_channel/load_balanced_call_destination.cc \
     src/core/client_channel/local_subchannel_pool.cc \
@@ -1270,7 +1271,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/crypto/fuzzer_mode.cc \
     third_party/boringssl-with-bazel/crypto/hpke/hpke.cc \
     third_party/boringssl-with-bazel/crypto/hrss/hrss.cc \
-    third_party/boringssl-with-bazel/crypto/kyber/kyber.cc \
     third_party/boringssl-with-bazel/crypto/lhash/lhash.cc \
     third_party/boringssl-with-bazel/crypto/md4/md4.cc \
     third_party/boringssl-with-bazel/crypto/md5/md5.cc \
@@ -1370,6 +1370,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/crypto/x509/x509_def.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_ext.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_lu.cc \
+    third_party/boringssl-with-bazel/crypto/x509/x509_mtc.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_obj.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_req.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_set.cc \
@@ -1812,7 +1813,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/fipsmodule)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/hpke)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/hrss)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/kyber)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/lhash)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/md4)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/md5)

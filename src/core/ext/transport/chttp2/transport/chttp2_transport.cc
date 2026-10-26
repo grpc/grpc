@@ -681,7 +681,6 @@ grpc_chttp2_transport::ChannelzDataSource::GetZTrace(absl::string_view name) {
   return grpc_core::channelz::DataSource::GetZTrace(name);
 }
 
-// TODO(alishananda): add unit testing as part of chttp2 promise conversion work
 void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer data) {
   grpc_core::ExecCtx exec_ctx;
   combiner->Run(
@@ -697,7 +696,20 @@ void grpc_chttp2_transport::WriteSecurityFrameLocked(
   if (data == nullptr) {
     return;
   }
-  if (!closed_with_error.ok()) {
+  if (!closed_with_error.ok() || !close_transport_on_writes_finished.ok()) {
+    return;
+  }
+  if (!peer_settings_applied) {
+    // If a SECURITY frame is requested before the peer's initial SETTINGS
+    // frame is received, retain only the latest frame until settings are
+    // applied and we know whether the peer supports SECURITY frames.
+    if (pending_security_frame == nullptr) {
+      pending_security_frame = std::make_unique<grpc_core::SliceBuffer>();
+    } else {
+      pending_security_frame->Clear();
+    }
+    grpc_slice_buffer_move_into(data->c_slice_buffer(),
+                                pending_security_frame->c_slice_buffer());
     return;
   }
   if (!settings.peer().allow_security_frame()) {
@@ -719,6 +731,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     : ep(std::move(endpoint)),
       peer_string(
           grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep.get()))),
+      local_address_string(grpc_core::Slice::FromCopiedString(
+          grpc_endpoint_get_local_address(ep.get()))),
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner()),
@@ -768,19 +782,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                                /*trace_full_buffer=*/false);
       epte->SetTcpTracer(std::make_shared<grpc_core::DefaultTcpTracer>(
           std::move(stats_plugin_group)));
-    }
-  }
-
-  if (channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false)) {
-    transport_framing_endpoint_extension = QueryExtension<
-        grpc_core::TransportFramingEndpointExtension>(
-        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
-            ep.get()));
-    if (transport_framing_endpoint_extension != nullptr) {
-      transport_framing_endpoint_extension->SetSendFrameCallback(
-          [this](grpc_core::SliceBuffer data) {
-            WriteSecurityFrame(std::move(data));
-          });
     }
   }
 
@@ -864,6 +865,22 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   max_recv_message_length =
       grpc_core::GetMaxRecvSizeFromChannelArgs(channel_args);
+
+  if (channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false)) {
+    transport_framing_endpoint_extension = QueryExtension<
+        grpc_core::TransportFramingEndpointExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            ep.get()));
+    if (transport_framing_endpoint_extension != nullptr) {
+      // Register after transport initialization since the endpoint may
+      // synchronously deliver a frame it buffered before registration. The
+      // callback holds a transport ref until close_transport_locked clears it.
+      transport_framing_endpoint_extension->SetSendFrameCallback(
+          [self = Ref()](grpc_core::SliceBuffer data) {
+            self->WriteSecurityFrame(std::move(data));
+          });
+    }
+  }
 }
 
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
@@ -882,6 +899,7 @@ void grpc_chttp2_transport::Orphan() {
 
 static void close_transport_locked(grpc_chttp2_transport* t,
                                    grpc_error_handle error) {
+  t->pending_security_frame.reset();
   end_all_the_calls(t, error);
   cancel_pings(t, error);
   if (t->transport_framing_endpoint_extension != nullptr) {
@@ -2312,6 +2330,12 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
     s->recv_initial_metadata->Set(grpc_core::PeerString(),
                                   t->peer_string.Ref());
+    // The local address is currently only propagated on the server side.
+    // TODO(b/568493863): Propagate the local address on the client side too.
+    if (!t->is_client) {
+      s->recv_initial_metadata->Set(grpc_core::LocalAddressString(),
+                                    t->local_address_string.Ref());
+    }
     // If we didn't receive initial metadata from the wire and instead faked a
     // status (due to stream cancellations for example), let upper layers know
     // that trailing metadata is immediately available.
