@@ -69,6 +69,7 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
     "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
+    "server_connection_management": "server_connection_management",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -157,6 +158,7 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
                 "secure_endpoint_read_coalescing",
+                "server_connection_management",
                 "use_call_event_engine_in_completion_queue",
                 "wildcard_ip_expansion_restriction",
             ],
@@ -196,10 +198,12 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
+                "map_host_header_to_authority",
                 "ph2_client",
                 "ph2_client_server",
                 "ph2_server",
                 "ring_hash_update_cleanup",
+                "server_connection_management",
             ],
         },
         "on": {

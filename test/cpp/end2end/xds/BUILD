@@ -195,6 +195,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:certificate_provider_registry",
         "//src/core:env",
+        "//src/core:experiments",
         "//src/core:grpc_audit_logging",
         "//src/core:grpc_check",
         "//src/core:grpc_fake_credentials",
