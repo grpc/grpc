@@ -173,10 +173,10 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
       case cel_expr_Expr_expr_kind_ident_expr: {
         absl::string_view name = UpbStringToAbsl(
             cel_expr_Expr_Ident_name(cel_expr_Expr_ident_expr(expr)));
-        // gRFC A106 only supports the `request` variable; gRPC does not
-        // provide Envoy's other attributes (e.g. `response`, `connection`).
-        // Reject them here so the resource is NACKed, rather than
-        // failing on every evaluation.
+        // gRFC A106 only supports the `request` variable; gRPC does not provide
+        // Envoy's other attributes (e.g. `response`, `connection`). Reject them
+        // here so the resource is NACKed, rather than failing on every
+        // evaluation.
         if (name != "request") {
           return absl::InternalError(
               absl::StrCat("CEL variable \"", name, "\" is not supported"));
