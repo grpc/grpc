@@ -182,6 +182,7 @@ grpc_cc_test(
     name = "callback_common_test",
     srcs = ["callback_common_test.cc"],
     external_deps = [
+        "absl/functional:function_ref",
         "gtest",
     ],
     deps = [

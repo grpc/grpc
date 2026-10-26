@@ -222,9 +222,11 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   }
   void Proceed(bool ok) {
     void* ignored = ops_;
-    auto func = func_;
     grpc_call* call = call_;
     CompletionQueueTag* ops = ops_;
+    if (call != nullptr) {
+      grpc_call_ref(call);
+    }
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
     bool do_callback = ops->FinalizeResult(&ignored, &ok);
@@ -233,19 +235,25 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
 #endif
 
     if (do_callback) {
-      GetGlobalCallbackHook()->RunCallback(call, [func, ok]() {
+      auto func = func_;
+      if (func != nullptr) {
+        GetGlobalCallbackHook()->RunCallback(call, [func, ok]() {
 #if GRPC_ALLOW_EXCEPTIONS
-        try {
-          func(ok);
-        } catch (...) {
-          // nothing to return or change
-          // here, just don't crash the
-          // library
-        }
+          try {
+            func(ok);
+          } catch (...) {
+            // nothing to return or change
+            // here, just don't crash the
+            // library
+          }
 #else   // GRPC_ALLOW_EXCEPTIONS
-        func(ok);
+          func(ok);
 #endif  // GRPC_ALLOW_EXCEPTIONS
-      });
+        });
+      }
+    }
+    if (call != nullptr) {
+      grpc_call_unref(call);
     }
   }
 };
