@@ -374,7 +374,26 @@ TEST_P(XdsCompositeFilterEnd2endTest,
   RouteConfiguration route_config = BuildRouteConfigWithOverrideConfig(
       BuildMatcher("name", std::move(matcher_data)));
   SetListenerAndRouteConfig(listener, route_config);
-  StartBackendServer();
+  StartBackend(0);
+  if (GetParam().filter_on_server()) {
+    EXPECT_THAT(
+        backends_[0]->GetNextStatus(),
+        ::testing::Optional(absl::InvalidArgumentError(absl::StrCat(
+            "LDS resource grpc/server?xds.resource.listening_address=",
+            grpc_core::LocalIp(), ":", backends_[0]->port(),
+            ": invalid resource: errors validating Listener "
+            "resource: [field:default_filter_chain.filters[0].typed_config"
+            ".value[envoy.extensions.filters.network.http_connection_manager"
+            ".v3.HttpConnectionManager].route_config.virtual_hosts[0]."
+            "routes[0].typed_per_filter_config[composite_filter].value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute]"
+            ".xds_matcher.matcher_tree.exact_match_map.on_match.action.value["
+            "envoy.extensions.filters.http.composite.v3.ExecuteFilterAction]"
+            ".typed_config.typed_config.value[xds.type.v3.TypedStruct].value["
+            "io.grpc.test.AddHeaderFilter] "
+            "error:filter is not supported on servers] "
+            "(node ID:xds_end2end_test)"))));
+  }
   // Send RPC with name=enterprise.
   LOG(INFO) << "Sending RPC with name=enterprise...";
   std::multimap<std::string, std::string> server_initial_metadata;
@@ -382,11 +401,27 @@ TEST_P(XdsCompositeFilterEnd2endTest,
                               .set_metadata({{"name", "enterprise"}})
                               .set_echo_metadata_initially(true));
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_EQ(status.error_message(),
-            GetParam().filter_on_server()
-                ? "io.grpc.test.AddHeaderFilter filter not supported on servers"
-                : "io.grpc.test.ServerAddHeaderFilter filter "
-                  "not supported on clients");
+  if (GetParam().filter_on_server()) {
+    EXPECT_THAT(status.error_message(),
+                ::testing::MatchesRegex(MakeConnectionFailureRegex(
+                    "connections to all backends failing; last error: ")));
+  } else {
+    EXPECT_EQ(
+        status.error_message(),
+        "empty address list (LDS resource server.example.com: "
+        "invalid resource: errors validating Listener resource: ["
+        "field:api_listener.api_listener.value[envoy.extensions.filters"
+        ".network.http_connection_manager.v3.HttpConnectionManager]"
+        ".route_config.virtual_hosts[0].routes[0].typed_per_filter_config["
+        "composite_filter].value["
+        "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute]"
+        ".xds_matcher.matcher_tree.exact_match_map.on_match.action.value["
+        "envoy.extensions.filters.http.composite.v3.ExecuteFilterAction]"
+        ".typed_config.typed_config.value[xds.type.v3.TypedStruct].value["
+        "io.grpc.test.ServerAddHeaderFilter] "
+        "error:filter is not supported on clients] "
+        "(node ID:xds_end2end_test))");
+  }
 }
 
 TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {
