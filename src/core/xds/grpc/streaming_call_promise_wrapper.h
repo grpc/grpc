@@ -94,7 +94,8 @@ class XdsStreamingCallPromiseWrapper final
         start_recv = true;
       } else {
         // Must be kReceivedStatus. Don't actually need to start the
-        // recv_message op; we'll return nullopt on the first poll.
+        // recv_message op; we'll return any already-received message, or
+        // nullopt if there is none, on the first poll.
         GRPC_CHECK(recv_state_ == RecvState::kReceivedStatus);
       }
     }
