@@ -922,7 +922,8 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         }
 
         {
-          grpc_core::ReleasableMutexLock lock(*impl->frame_protector_.read_mu());
+          grpc_core::ReleasableMutexLock lock(
+              *impl->frame_protector_.read_mu());
           // Unprotect the bytes.
           GRPC_CHECK(read_buffer == nullptr);
           impl->frame_protector_.SetSourceBuffer(std::move(source_buffer));
