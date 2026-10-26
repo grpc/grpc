@@ -169,48 +169,67 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
   while (!stack.empty()) {
     const cel_expr_Expr* expr = stack.back();
     stack.pop_back();
-    if (cel_expr_Expr_has_ident_expr(expr)) {
-      absl::string_view name = UpbStringToAbsl(
-          cel_expr_Expr_Ident_name(cel_expr_Expr_ident_expr(expr)));
-      if (name != "request") {
-        return absl::InternalError(
-            absl::StrCat("CEL variable \"", name, "\" is not supported"));
+    switch (cel_expr_Expr_expr_kind_case(expr)) {
+      case cel_expr_Expr_expr_kind_ident_expr: {
+        absl::string_view name = UpbStringToAbsl(
+            cel_expr_Expr_Ident_name(cel_expr_Expr_ident_expr(expr)));
+        // gRFC A106 only supports the `request` variable; gRPC does not
+        // provide Envoy's other attributes (e.g. `response`, `connection`).
+        // Reject them here so the resource is NACKed, rather than
+        // failing on every evaluation.
+        if (name != "request") {
+          return absl::InternalError(
+              absl::StrCat("CEL variable \"", name, "\" is not supported"));
+        }
+        break;
       }
-    } else if (cel_expr_Expr_has_select_expr(expr)) {
-      const cel_expr_Expr* operand =
-          cel_expr_Expr_Select_operand(cel_expr_Expr_select_expr(expr));
-      if (operand != nullptr) stack.push_back(operand);
-    } else if (cel_expr_Expr_has_call_expr(expr)) {
-      const cel_expr_Expr_Call* call = cel_expr_Expr_call_expr(expr);
-      status = ValidateCall(checked_expr, cel_expr_Expr_id(expr), call);
-      if (!status.ok()) return status;
-      if (cel_expr_Expr_Call_has_target(call)) {
-        stack.push_back(cel_expr_Expr_Call_target(call));
+      case cel_expr_Expr_expr_kind_select_expr: {
+        const cel_expr_Expr* operand =
+            cel_expr_Expr_Select_operand(cel_expr_Expr_select_expr(expr));
+        if (operand != nullptr) stack.push_back(operand);
+        break;
       }
-      size_t num_args;
-      const cel_expr_Expr* const* args =
-          cel_expr_Expr_Call_args(call, &num_args);
-      stack.insert(stack.end(), args, args + num_args);
-    } else if (cel_expr_Expr_has_list_expr(expr)) {
-      size_t num_elements;
-      const cel_expr_Expr* const* elements = cel_expr_Expr_CreateList_elements(
-          cel_expr_Expr_list_expr(expr), &num_elements);
-      stack.insert(stack.end(), elements, elements + num_elements);
-    } else if (cel_expr_Expr_has_struct_expr(expr)) {
-      size_t num_entries;
-      const cel_expr_Expr_CreateStruct_Entry* const* entries =
-          cel_expr_Expr_CreateStruct_entries(cel_expr_Expr_struct_expr(expr),
-                                             &num_entries);
-      for (size_t i = 0; i < num_entries; ++i) {
-        const cel_expr_Expr* key =
-            cel_expr_Expr_CreateStruct_Entry_map_key(entries[i]);
-        const cel_expr_Expr* value =
-            cel_expr_Expr_CreateStruct_Entry_value(entries[i]);
-        if (key != nullptr) stack.push_back(key);
-        if (value != nullptr) stack.push_back(value);
+      case cel_expr_Expr_expr_kind_call_expr: {
+        const cel_expr_Expr_Call* call = cel_expr_Expr_call_expr(expr);
+        status = ValidateCall(checked_expr, cel_expr_Expr_id(expr), call);
+        if (!status.ok()) return status;
+        if (cel_expr_Expr_Call_has_target(call)) {
+          stack.push_back(cel_expr_Expr_Call_target(call));
+        }
+        size_t num_args;
+        const cel_expr_Expr* const* args =
+            cel_expr_Expr_Call_args(call, &num_args);
+        stack.insert(stack.end(), args, args + num_args);
+        break;
       }
-    } else if (cel_expr_Expr_has_comprehension_expr(expr)) {
-      return absl::InternalError("CEL comprehensions are not supported");
+      case cel_expr_Expr_expr_kind_list_expr: {
+        size_t num_elements;
+        const cel_expr_Expr* const* elements =
+            cel_expr_Expr_CreateList_elements(cel_expr_Expr_list_expr(expr),
+                                              &num_elements);
+        stack.insert(stack.end(), elements, elements + num_elements);
+        break;
+      }
+      case cel_expr_Expr_expr_kind_struct_expr: {
+        size_t num_entries;
+        const cel_expr_Expr_CreateStruct_Entry* const* entries =
+            cel_expr_Expr_CreateStruct_entries(cel_expr_Expr_struct_expr(expr),
+                                               &num_entries);
+        for (size_t i = 0; i < num_entries; ++i) {
+          const cel_expr_Expr* key =
+              cel_expr_Expr_CreateStruct_Entry_map_key(entries[i]);
+          const cel_expr_Expr* value =
+              cel_expr_Expr_CreateStruct_Entry_value(entries[i]);
+          if (key != nullptr) stack.push_back(key);
+          if (value != nullptr) stack.push_back(value);
+        }
+        break;
+      }
+      case cel_expr_Expr_expr_kind_comprehension_expr:
+        return absl::InternalError("CEL comprehensions are not supported");
+      case cel_expr_Expr_expr_kind_const_expr:
+      case cel_expr_Expr_expr_kind_NOT_SET:
+        break;
     }
   }
   return absl::OkStatus();
