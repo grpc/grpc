@@ -44,12 +44,12 @@ MetadataInputFactory::ParseAndCreateInput(
   absl::string_view header_name = UpbStringToAbsl(
       envoy_type_matcher_v3_HttpRequestHeaderMatchInput_header_name(
           http_header_input));
-  // gRFC A106: length must be in [1, 16384) and the name must be a valid
+  // gRFC A106: length must be in [1, 16384] and the name must be a valid
   // HTTP/2 header name.  Pseudo-headers (e.g. ":path") are allowed.
   {
     ValidationErrors::ScopedField field(errors, ".header_name");
-    if (header_name.empty() || header_name.size() >= 16384) {
-      errors->AddError("length must be in the range [1, 16384)");
+    if (header_name.empty() || header_name.size() > 16384) {
+      errors->AddError("length must be in the range [1, 16384]");
       return nullptr;
     }
     absl::string_view name = header_name;
