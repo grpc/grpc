@@ -1326,18 +1326,20 @@ struct StackData {
   // Finalizer interception adders
 
   template <typename FilterType>
-  void AddFinalizer(FilterType*, size_t, const NoInterceptor* p) {
+  void AddFinalizer(FilterType*, size_t, const NoInterceptor* const p) {
     GRPC_DCHECK(p == &FilterType::Call::OnFinalize);
   }
 
   template <typename FilterType>
-  void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*)) {
+  void AddFinalizer(
+      FilterType* const channel_data, const size_t call_offset,
+      void (FilterType::Call::* const p)(const grpc_call_final_info*)) {
     GRPC_DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
-        [](void* call_data, void*, const grpc_call_final_info* final_info) {
+        [](void* const call_data, void*,
+           const grpc_call_final_info* const final_info) {
           static_cast<typename FilterType::Call*>(call_data)->OnFinalize(
               final_info);
         },
@@ -1345,15 +1347,15 @@ struct StackData {
   }
 
   template <typename FilterType>
-  void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*,
-                                                FilterType*)) {
+  void AddFinalizer(FilterType* const channel_data, const size_t call_offset,
+                    void (FilterType::Call::* const p)(
+                        const grpc_call_final_info*, FilterType*)) {
     GRPC_DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
-        [](void* call_data, void* channel_data,
-           const grpc_call_final_info* final_info) {
+        [](void* const call_data, void* const channel_data,
+           const grpc_call_final_info* const final_info) {
           static_cast<typename FilterType::Call*>(call_data)->OnFinalize(
               final_info, static_cast<FilterType*>(channel_data));
         },
@@ -1812,7 +1814,7 @@ class CallFilters {
       }
       gpr_free_aligned(call_data_);
     }
-  };
+  }
 
   CallFilters(const CallFilters&) = delete;
   CallFilters& operator=(const CallFilters&) = delete;
@@ -2140,7 +2142,9 @@ class CallFilters {
     return call_state_.WasServerTrailingMetadataPulled();
   }
 
-  // Client & server: fill in final_info with the final status of the call.
+  // Client & server: invoke the OnFinalize hook of each registered filter with
+  // final_info.
+  // Precondition: final_info must be non-null.
   void Finalize(const grpc_call_final_info* final_info);
 
   std::string DebugString() const;

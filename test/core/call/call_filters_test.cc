@@ -1258,7 +1258,8 @@ TEST(CallFiltersTest, UnaryCall) {
   auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
   // Should be done
   EXPECT_THAT(pull_server_trailing_metadata(), IsReady());
-  filters.Finalize(nullptr);
+  const grpc_call_final_info final_info{};
+  filters.Finalize(&final_info);
   EXPECT_THAT(steps,
               ::testing::ElementsAre(
                   "f1:OnClientInitialMetadata", "f2:OnClientInitialMetadata",
@@ -1356,7 +1357,8 @@ TEST(CallFiltersTest, UnaryCallWithMultiStack) {
   auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
   // Should be done
   EXPECT_THAT(pull_server_trailing_metadata(), IsReady());
-  filters.Finalize(nullptr);
+  const grpc_call_final_info final_info{};
+  filters.Finalize(&final_info);
   EXPECT_THAT(steps,
               ::testing::ElementsAre(
                   "f1:OnClientInitialMetadata", "f2:OnClientInitialMetadata",

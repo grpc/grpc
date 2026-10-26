@@ -26,6 +26,8 @@
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -36,6 +38,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/grpc_check.h"
 
@@ -50,10 +53,16 @@ class CallSpine final : public Party, public channelz::DataSource {
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
       RefCountedPtr<Arena> arena) {
-    Arena* arena_ptr = arena.get();
+    Arena* const arena_ptr = arena.get();
     return RefCountedPtr<CallSpine>(arena_ptr->New<CallSpine>(
         std::move(client_initial_metadata), std::move(arena)));
   }
+
+  // CallSpine is neither copyable nor movable.
+  CallSpine(const CallSpine&) = delete;
+  CallSpine& operator=(const CallSpine&) = delete;
+  CallSpine(CallSpine&&) = delete;
+  CallSpine& operator=(CallSpine&&) = delete;
 
   ~CallSpine() override {
     CallOnDone(true);
@@ -338,13 +347,33 @@ class CallSpine final : public Party, public channelz::DataSource {
             RefCountedPtr<Arena> a)
       : Party(std::move(a)),
         channelz::DataSource([this]() -> RefCountedPtr<channelz::BaseNode> {
-          auto* p = arena()->GetContext<channelz::CallNode>();
+          channelz::CallNode* const p =
+              arena()->GetContext<channelz::CallNode>();
           if (p == nullptr) return nullptr;
           return p->Ref();
         }()),
         call_filters_(std::move(client_initial_metadata)) {
     GRPC_TRACE_LOG(call_state, INFO) << "[CallSpine " << this << "]: created";
     SourceConstructed();
+  }
+
+  // Invokes the OnFinalize hook of the registered filters. If
+  // grpc_call_final_info is set in the context, it will be used otherwise
+  // default value will be used. Invokes CallOnDone before filter finalization
+  // so that any registered onDone callbacks run prior to filter Finalize()
+  // hooks.
+  // TODO(akshitpatel): [PH2][P1] : Remove this once we have a good long term
+  // solution.
+  void OnPartyOver() override {
+    if (IsPh2ClientEnabled() || IsPh2ServerEnabled() ||
+        IsPh2ClientServerEnabled()) {
+      CallOnDone(/*cancelled=*/true);
+      const grpc_call_final_info default_info{};
+      const grpc_call_final_info* const final_info =
+          MaybeGetContext<grpc_call_final_info>();
+      call_filters().Finalize(final_info != nullptr ? final_info
+                                                    : &default_info);
+    }
   }
 
   SpawnSerializer* client_to_server_serializer() {

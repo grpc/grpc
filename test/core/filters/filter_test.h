@@ -131,6 +131,17 @@ class FilterTest : public YodelTest {
   bool WaitForHandler(grpc_event_engine::experimental::EventEngine::Duration
                           timeout = std::chrono::seconds(30));
 
+  void CloseCallHandles() {
+    initiator_.reset();
+    handler_.reset();
+  }
+
+  void CancelCall() {
+    if (initiator_.has_value()) {
+      initiator_->SpawnCancel();
+    }
+  }
+
   // Driving the six call operations.
   //
   // Push*() is asynchronous and serializes operations onto the call's party in
