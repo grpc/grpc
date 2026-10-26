@@ -522,12 +522,18 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
                 rpc_state.raise_for_termination()
 
                 await servicer_context.write(response_message)
-        finally:
-            # Close the generator here so its finally blocks run inside this
-            # RPC task's contextvars.Context. Otherwise CPython's asyncgen
-            # finalizer hook runs aclose() on a foreign Context, breaking
-            # ContextVar.Token.reset in interceptor wrappers.
-            await async_response_generator.aclose()
+        except BaseException:
+            # Close the generator in this RPC task (and its contextvars.Context)
+            # rather than leaving it to asyncio's asyncgen finalizer hook, which
+            # runs aclose() later in a new Task with a copied Context. Cleanup
+            # errors are logged so they don't mask the original exception.
+            try:
+                await async_response_generator.aclose()
+            except Exception:
+                _LOGGER.exception('Error closing the response generator of '
+                                  'servicer method [%s]',
+                                  _decode(rpc_state.method()))
+            raise
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()
