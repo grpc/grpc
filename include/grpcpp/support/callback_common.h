@@ -222,23 +222,29 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   }
   void Proceed(bool ok) {
     void* ignored = ops_;
+    grpc_call* call = call_;
+    CompletionQueueTag* ops = ops_;
+    // Hold a ref on call across FinalizeResult and RunCallback: this tag may
+    // hold the last ref on call_, and either FinalizeResult or the callback
+    // itself may destroy the arena-allocated owner (running
+    // ~CallbackWithSuccessTag() -> Clear() and dropping the tag's ref).
+    if (call != nullptr) {
+      grpc_call_ref(call);
+    }
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
-#ifndef NDEBUG
-    auto* ops = ops_;
-#endif
-    bool do_callback = ops_->FinalizeResult(&ignored, &ok);
+    bool do_callback = ops->FinalizeResult(&ignored, &ok);
 #ifndef NDEBUG
     ABSL_DCHECK(ignored == ops);
 #endif
 
-    if (do_callback) {
-      // The callback may destroy the object that holds this tag (calling
-      // Clear() and dropping the tag's ref on call_), so copy func_ and hold a
-      // ref on call across RunCallback.
+    if (do_callback && call_ != nullptr) {
+      // If FinalizeResult destroyed the owner, Clear() has already set call_
+      // and func_ to nullptr (while the ref on call above keeps the call arena
+      // backing this tag alive), so checking call_ != nullptr avoids invoking
+      // a callback whose captured owner is already destroyed. Otherwise, copy
+      // func_ before RunCallback in case the callback destroys the owner.
       auto func = func_;
-      grpc_call* call = call_;
-      grpc_call_ref(call);
       GetGlobalCallbackHook()->RunCallback(call, [func, ok]() {
 #if GRPC_ALLOW_EXCEPTIONS
         try {
@@ -250,6 +256,8 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
         func(ok);
 #endif  // GRPC_ALLOW_EXCEPTIONS
       });
+    }
+    if (call != nullptr) {
       grpc_call_unref(call);
     }
   }
