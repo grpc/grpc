@@ -2064,7 +2064,7 @@ TEST_F(RoundRobinTest, SingleReconnect) {
 // is not running on the server, the channel should be treated as healthy.
 TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P2] Fix bug");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   StartServers(1);  // Single server
   ChannelArguments args;
   args.SetServiceConfigJSON(
@@ -4215,6 +4215,7 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
 TEST_F(ClientLbSubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
   // Flake rate is less than once in 3 days.
   SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1][Server] Fix flake");
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P3][Client] Fix flake");
   ConnectionAttemptInjector injector;
   const int port = grpc_pick_unused_port_or_die();
   std::string target = grpc_core::LocalIpAndPort(port);

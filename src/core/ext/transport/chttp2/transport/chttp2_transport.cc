@@ -69,7 +69,6 @@
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/stream_lists.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
-#include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/extensions/channelz.h"
@@ -390,7 +389,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   context_list = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
-  grpc_chttp2_goaway_parser_destroy(&goaway_parser);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
     GRPC_CHECK_EQ(lists[i].head, nullptr);
@@ -683,7 +681,6 @@ grpc_chttp2_transport::ChannelzDataSource::GetZTrace(absl::string_view name) {
   return grpc_core::channelz::DataSource::GetZTrace(name);
 }
 
-// TODO(alishananda): add unit testing as part of chttp2 promise conversion work
 void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer data) {
   grpc_core::ExecCtx exec_ctx;
   combiner->Run(
@@ -699,7 +696,20 @@ void grpc_chttp2_transport::WriteSecurityFrameLocked(
   if (data == nullptr) {
     return;
   }
-  if (!closed_with_error.ok()) {
+  if (!closed_with_error.ok() || !close_transport_on_writes_finished.ok()) {
+    return;
+  }
+  if (!peer_settings_applied) {
+    // If a SECURITY frame is requested before the peer's initial SETTINGS
+    // frame is received, retain only the latest frame until settings are
+    // applied and we know whether the peer supports SECURITY frames.
+    if (pending_security_frame == nullptr) {
+      pending_security_frame = std::make_unique<grpc_core::SliceBuffer>();
+    } else {
+      pending_security_frame->Clear();
+    }
+    grpc_slice_buffer_move_into(data->c_slice_buffer(),
+                                pending_security_frame->c_slice_buffer());
     return;
   }
   if (!settings.peer().allow_security_frame()) {
@@ -721,6 +731,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     : ep(std::move(endpoint)),
       peer_string(
           grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep.get()))),
+      local_address_string(grpc_core::Slice::FromCopiedString(
+          grpc_endpoint_get_local_address(ep.get()))),
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner()),
@@ -773,19 +785,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     }
   }
 
-  if (channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false)) {
-    transport_framing_endpoint_extension = QueryExtension<
-        grpc_core::TransportFramingEndpointExtension>(
-        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
-            ep.get()));
-    if (transport_framing_endpoint_extension != nullptr) {
-      transport_framing_endpoint_extension->SetSendFrameCallback(
-          [this](grpc_core::SliceBuffer data) {
-            WriteSecurityFrame(std::move(data));
-          });
-    }
-  }
-
   GRPC_CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
@@ -796,7 +795,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
         grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
   }
   grpc_slice_buffer_init(&qbuf);
-  grpc_chttp2_goaway_parser_init(&goaway_parser);
 
   // configure http2 the way we like it
   if (is_client) {
@@ -867,6 +865,22 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   max_recv_message_length =
       grpc_core::GetMaxRecvSizeFromChannelArgs(channel_args);
+
+  if (channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false)) {
+    transport_framing_endpoint_extension = QueryExtension<
+        grpc_core::TransportFramingEndpointExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            ep.get()));
+    if (transport_framing_endpoint_extension != nullptr) {
+      // Register after transport initialization since the endpoint may
+      // synchronously deliver a frame it buffered before registration. The
+      // callback holds a transport ref until close_transport_locked clears it.
+      transport_framing_endpoint_extension->SetSendFrameCallback(
+          [self = Ref()](grpc_core::SliceBuffer data) {
+            self->WriteSecurityFrame(std::move(data));
+          });
+    }
+  }
 }
 
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
@@ -885,6 +899,7 @@ void grpc_chttp2_transport::Orphan() {
 
 static void close_transport_locked(grpc_chttp2_transport* t,
                                    grpc_error_handle error) {
+  t->pending_security_frame.reset();
   end_all_the_calls(t, error);
   cancel_pings(t, error);
   if (t->transport_framing_endpoint_extension != nullptr) {
@@ -2315,6 +2330,12 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
     s->recv_initial_metadata->Set(grpc_core::PeerString(),
                                   t->peer_string.Ref());
+    // The local address is currently only propagated on the server side.
+    // TODO(b/568493863): Propagate the local address on the client side too.
+    if (!t->is_client) {
+      s->recv_initial_metadata->Set(grpc_core::LocalAddressString(),
+                                    t->local_address_string.Ref());
+    }
     // If we didn't receive initial metadata from the wire and instead faked a
     // status (due to stream cancellations for example), let upper layers know
     // that trailing metadata is immediately available.
@@ -2531,9 +2552,7 @@ void grpc_chttp2_cancel_stream(
     return;
   }
 
-  if (grpc_core::IsPromiseFilterSendCancelMetadataEnabled()) {
-    send_trailing_metadata.reset();
-  }
+  send_trailing_metadata.reset();
   GRPC_DCHECK(send_trailing_metadata == nullptr);
 
   if (!due_to_error.ok() && !s->seen_error) {
@@ -2745,11 +2764,8 @@ static void close_from_api(
        remove_stream_handle =
            std::move(remove_stream_handle)](grpc_chttp2_transport* t) mutable {
         grpc_slice hdr;
-        grpc_slice status_hdr;
         grpc_slice http_status_hdr;
         grpc_slice content_type_hdr;
-        grpc_slice message_pfx;
-        size_t msg_len = message.length();
         grpc_core::Slice message_slice =
             grpc_core::Slice::FromCopiedString(std::move(message));
         uint8_t* p;
@@ -2820,67 +2836,13 @@ static void close_from_api(
 
         grpc_core::RawEncoder raw_encoder(
             t->settings.peer().allow_true_binary_metadata());
-
-        if (grpc_core::IsPromiseFilterSendCancelMetadataEnabled()) {
-          raw_encoder.Encode(grpc_core::GrpcStatusMetadata(), grpc_status);
-          raw_encoder.Encode(grpc_core::GrpcMessageMetadata(), message_slice);
-          if (send_trailing_metadata != nullptr) {
-            send_trailing_metadata->Encode(&raw_encoder);
-            send_trailing_metadata.reset();
-          }
-          len += raw_encoder.Length();
-        } else {
-          status_hdr = GRPC_SLICE_MALLOC(15 + (grpc_status >= 10));
-          p = GRPC_SLICE_START_PTR(status_hdr);
-          *p++ = 0x00;  // literal header, not indexed
-          *p++ = 11;    // len(grpc-status)
-          *p++ = 'g';
-          *p++ = 'r';
-          *p++ = 'p';
-          *p++ = 'c';
-          *p++ = '-';
-          *p++ = 's';
-          *p++ = 't';
-          *p++ = 'a';
-          *p++ = 't';
-          *p++ = 'u';
-          *p++ = 's';
-          if (grpc_status < 10) {
-            *p++ = 1;
-            *p++ = static_cast<uint8_t>('0' + grpc_status);
-          } else {
-            *p++ = 2;
-            *p++ = static_cast<uint8_t>('0' + (grpc_status / 10));
-            *p++ = static_cast<uint8_t>('0' + (grpc_status % 10));
-          }
-          GRPC_CHECK(p == GRPC_SLICE_END_PTR(status_hdr));
-          len += static_cast<uint32_t> GRPC_SLICE_LENGTH(status_hdr);
-
-          GRPC_CHECK(msg_len <= UINT32_MAX);
-          grpc_core::VarintWriter<1> msg_len_writer(
-              static_cast<uint32_t>(msg_len));
-          message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
-          p = GRPC_SLICE_START_PTR(message_pfx);
-          *p++ = 0x00;  // literal header, not indexed
-          *p++ = 12;    // len(grpc-message)
-          *p++ = 'g';
-          *p++ = 'r';
-          *p++ = 'p';
-          *p++ = 'c';
-          *p++ = '-';
-          *p++ = 'm';
-          *p++ = 'e';
-          *p++ = 's';
-          *p++ = 's';
-          *p++ = 'a';
-          *p++ = 'g';
-          *p++ = 'e';
-          msg_len_writer.Write(0, p);
-          p += msg_len_writer.length();
-          GRPC_CHECK(p == GRPC_SLICE_END_PTR(message_pfx));
-          len += static_cast<uint32_t> GRPC_SLICE_LENGTH(message_pfx);
-          len += static_cast<uint32_t>(msg_len);
+        raw_encoder.Encode(grpc_core::GrpcStatusMetadata(), grpc_status);
+        raw_encoder.Encode(grpc_core::GrpcMessageMetadata(), message_slice);
+        if (send_trailing_metadata != nullptr) {
+          send_trailing_metadata->Encode(&raw_encoder);
+          send_trailing_metadata.reset();
         }
+        len += raw_encoder.Length();
         GRPC_DCHECK(send_trailing_metadata == nullptr);
 
         hdr = GRPC_SLICE_MALLOC(9);
@@ -2902,13 +2864,7 @@ static void close_from_api(
           grpc_slice_buffer_add(&t->qbuf, http_status_hdr);
           grpc_slice_buffer_add(&t->qbuf, content_type_hdr);
         }
-        if (grpc_core::IsPromiseFilterSendCancelMetadataEnabled()) {
-          std::move(raw_encoder).Flush(&t->qbuf);
-        } else {
-          grpc_slice_buffer_add(&t->qbuf, status_hdr);
-          grpc_slice_buffer_add(&t->qbuf, message_pfx);
-          grpc_slice_buffer_add(&t->qbuf, message_slice.TakeCSlice());
-        }
+        std::move(raw_encoder).Flush(&t->qbuf);
         grpc_chttp2_reset_ping_clock(t);
         grpc_error_handle error = grpc_chttp2_add_rst_stream_to_next_write(
             t, id, static_cast<intptr_t>(Http2ErrorCode::kNoError), nullptr);

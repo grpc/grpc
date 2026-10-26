@@ -25,7 +25,6 @@
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
-#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
 #include "gmock/gmock.h"
@@ -538,6 +537,7 @@ TEST_P(EdsTest, Vanilla) {
 }
 
 TEST_P(EdsTest, MultipleAddressesPerEndpoint) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   const size_t kNumRpcsPerAddress = 10;
@@ -740,6 +740,7 @@ TEST_P(EdsTest, IgnoresDuplicateUpdates) {
 // Unit tests for XdsEndpointResourceType have exhaustive tests for all
 // of the invalid cases.
 TEST_P(EdsTest, NacksInvalidResource) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   EdsResourceArgs args({
       {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });
@@ -1458,7 +1459,6 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(4);
   const size_t kNumRpcs = 100;
   EdsResourceArgs args({

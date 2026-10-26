@@ -700,6 +700,7 @@ LIBGRPC_SRC = \
     src/core/client_channel/direct_channel.cc \
     src/core/client_channel/dynamic_filters.cc \
     src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/lame_channel.cc \
     src/core/client_channel/lb_metadata.cc \
     src/core/client_channel/load_balanced_call_destination.cc \
     src/core/client_channel/local_subchannel_pool.cc \
@@ -965,6 +966,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c \
     src/core/ext/upb-gen/google/api/annotations.upb_minitable.c \
@@ -1141,6 +1143,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c \
     src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.c \
@@ -1417,6 +1420,7 @@ LIBGRPC_SRC = \
     src/core/load_balancing/lb_policy_registry.cc \
     src/core/load_balancing/oob_backend_metric.cc \
     src/core/load_balancing/outlier_detection/outlier_detection.cc \
+    src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc \
     src/core/load_balancing/pick_first/pick_first.cc \
     src/core/load_balancing/priority/priority.cc \
     src/core/load_balancing/ring_hash/ring_hash.cc \
@@ -2073,7 +2077,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/crypto/fuzzer_mode.cc \
     third_party/boringssl-with-bazel/crypto/hpke/hpke.cc \
     third_party/boringssl-with-bazel/crypto/hrss/hrss.cc \
-    third_party/boringssl-with-bazel/crypto/kyber/kyber.cc \
     third_party/boringssl-with-bazel/crypto/lhash/lhash.cc \
     third_party/boringssl-with-bazel/crypto/md4/md4.cc \
     third_party/boringssl-with-bazel/crypto/md5/md5.cc \
@@ -2173,6 +2176,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/crypto/x509/x509_def.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_ext.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_lu.cc \
+    third_party/boringssl-with-bazel/crypto/x509/x509_mtc.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_obj.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_req.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_set.cc \

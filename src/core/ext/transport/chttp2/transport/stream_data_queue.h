@@ -822,7 +822,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     if (!is_writable_ && became_non_empty) {
       is_writable_ = true;
       GRPC_STREAM_DATA_QUEUE_DEBUG
-          << "UpdateWritableStateLocked became writable with priority: "
+          << "UpdateWritableStateAndPriorityEnqueueLocked became writable with "
+             "priority: "
           << GetWritableStreamPriorityString(priority_);
       return StreamWritabilityUpdate{/*became_writable=*/true, priority_};
     }
@@ -859,9 +860,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       is_writable_ = (available_stream_fc_tokens > 0);
     }
 
-    GRPC_STREAM_DATA_QUEUE_DEBUG << "UpdateWritableStateLocked with priority: "
-                                 << GetWritableStreamPriorityString(priority_)
-                                 << " is_writable: " << is_writable_;
+    GRPC_STREAM_DATA_QUEUE_DEBUG
+        << "UpdateWritableStateDequeueLocked with priority: "
+        << GetWritableStreamPriorityString(priority_)
+        << " is_writable: " << is_writable_;
     return is_writable_;
   }
 

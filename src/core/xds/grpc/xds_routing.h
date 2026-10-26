@@ -75,7 +75,8 @@ class XdsRouting final {
 
   // Returns the metadata value(s) for the specified key.
   // As special cases, binary headers return a value of std::nullopt, and
-  // "content-type" header returns "application/grpc".
+  // "content-type" header returns "application/grpc". "host" and
+  // ":authority" both return GetAuthorityOrHost().
   static std::optional<absl::string_view> GetHeaderValue(
       grpc_metadata_batch* initial_metadata, absl::string_view header_name,
       std::string* concatenated_value);
