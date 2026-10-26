@@ -646,8 +646,14 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   Latch<void> side_stream_closed_latch_;
   // Latch signaled when the child call has been started (i.e., initiator_
   // has been set). The read-from-client loop waits on this before reading
-  // client messages: in a v3 stack they can otherwise be read from handler_
-  // before the ext_proc server responds to the request headers.
+  // client messages. This matters only when request headers are sent to the
+  // ext_proc server and observability mode is off: in that case the child
+  // call is not started until the ext_proc server responds to the request
+  // headers, but in a v3 stack client messages can be read from handler_
+  // before then. Without this wait, if the request body mode is NONE, those
+  // messages would be forwarded to initiator_ before it is set; if the
+  // request body mode is SEND, they would be sent to the ext_proc server
+  // before it has responded to the request headers.
   // Synchronized by the handler_ activity.
   Latch<void> child_call_started_latch_;
 
