@@ -528,7 +528,12 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
             # runs aclose() later in a new Task with a copied Context. Cleanup
             # errors are logged so they don't mask the original exception.
             try:
-                await async_response_generator.aclose()
+                if hasattr(async_response_generator, 'aclose'):
+                    await async_response_generator.aclose()
+            except Exception:
+                _LOGGER.exception('Error closing the response generator of '
+                                  'servicer method [%s]',
+                                  _decode(rpc_state.method()))
             except Exception:
                 _LOGGER.exception('Error closing the response generator of '
                                   'servicer method [%s]',
