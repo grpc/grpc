@@ -29,6 +29,7 @@ This is a regression test for that path.
 import asyncio
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
+import gc
 import logging
 from typing import Awaitable, Callable
 import unittest
@@ -78,8 +79,7 @@ def _generic_handler() -> grpc.GenericRpcHandler:
 class _TokenResetInterceptor(aio.ServerInterceptor):
     """Sets a ContextVar on entry and resets it on exit via Token.reset.
 
-    ``reset_done`` resolves once the reset ran, or fails with the
-    ``ValueError`` raised when the reset runs in a different Context.
+    ``reset_done`` resolves once the reset has run, whether or not it raised.
     """
 
     def __init__(self, reset_done: asyncio.Future) -> None:
@@ -103,11 +103,7 @@ class _TokenResetInterceptor(aio.ServerInterceptor):
             finally:
                 try:
                     _TEST_VAR.reset(token)
-                except ValueError as error:
-                    if not reset_done.done():
-                        reset_done.set_exception(error)
-                    raise
-                if not reset_done.done():
+                finally:
                     reset_done.set_result(None)
 
         async def wrapped(request, context):
@@ -126,32 +122,55 @@ class TestStreamingTokenReset(AioTestBase):
     async def test_cancel_does_not_leak_cross_context_token_reset(self):
         loop = asyncio.get_event_loop()
         reset_done = loop.create_future()
-        server = aio.server(
-            interceptors=(_TokenResetInterceptor(reset_done),),
-            options=(("grpc.max_send_message_length", 1024 * 1024 * 1024),),
-        )
-        server.add_generic_rpc_handlers((_generic_handler(),))
-        port = server.add_insecure_port("[::]:0")
-        await server.start()
+        captured = []
+        previous_handler = loop.get_exception_handler()
+        loop.set_exception_handler(lambda _loop, ctx: captured.append(ctx))
         try:
-            async with aio.insecure_channel("localhost:%d" % port) as channel:
-                multicallable = channel.unary_stream(
-                    _FULL_METHOD,
-                    request_serializer=_identity,
-                    response_deserializer=_identity,
-                )
-                call = multicallable(b"req")
-                async for item in call:
-                    self.assertEqual(item, _CHUNK)
-                    call.cancel()
-                    break
-            # Wait for the interceptor's Token.reset. Without the fix, the
-            # generator is left to the asyncgen finalizer hook, which runs
-            # aclose() in a copied Context: the reset then raises ValueError,
-            # or does not run before the timeout.
-            await asyncio.wait_for(reset_done, test_constants.SHORT_TIMEOUT)
+            server = aio.server(
+                interceptors=(_TokenResetInterceptor(reset_done),),
+                options=(("grpc.max_send_message_length", 1024 * 1024 * 1024),),
+            )
+            server.add_generic_rpc_handlers((_generic_handler(),))
+            port = server.add_insecure_port("[::]:0")
+            await server.start()
+            try:
+                async with aio.insecure_channel(
+                    "localhost:%d" % port
+                ) as channel:
+                    multicallable = channel.unary_stream(
+                        _FULL_METHOD,
+                        request_serializer=_identity,
+                        response_deserializer=_identity,
+                    )
+                    call = multicallable(b"req")
+                    async for item in call:
+                        self.assertEqual(item, _CHUNK)
+                        call.cancel()
+                        break
+                # Wait for the interceptor's Token.reset. Without the fix, it
+                # runs in the aclose() Task created by the asyncgen finalizer
+                # hook, or not at all before the timeout.
+                await asyncio.wait_for(reset_done, test_constants.SHORT_TIMEOUT)
+            finally:
+                await server.stop(grace=0)
+
+            # Collect that Task, if any, so its unretrieved exception is
+            # reported to the exception handler.
+            gc.collect()
         finally:
-            await server.stop(grace=0)
+            loop.set_exception_handler(previous_handler)
+
+        cross_context = [
+            ctx
+            for ctx in captured
+            if isinstance(ctx.get("exception"), ValueError)
+            and "different Context" in str(ctx["exception"])
+        ]
+        self.assertFalse(
+            cross_context,
+            "Server-streaming cancel leaked a cross-Context Token.reset "
+            "ValueError: %r" % cross_context,
+        )
 
 
 if __name__ == "__main__":
