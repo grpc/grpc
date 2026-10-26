@@ -534,10 +534,6 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
                 _LOGGER.exception('Error closing the response generator of '
                                   'servicer method [%s]',
                                   _decode(rpc_state.method()))
-            except Exception:
-                _LOGGER.exception('Error closing the response generator of '
-                                  'servicer method [%s]',
-                                  _decode(rpc_state.method()))
             raise
 
     # Raises exception if aborted
