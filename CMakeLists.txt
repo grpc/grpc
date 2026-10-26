@@ -40801,6 +40801,14 @@ add_executable(xds_cel_test
   third_party/upb/upb/message/compare.c
   third_party/upb/upb/message/internal/compare_unknown.c
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_cel_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(xds_cel_test PUBLIC cxx_std_17)
 target_include_directories(xds_cel_test
   PRIVATE
@@ -40826,18 +40834,11 @@ target_link_libraries(xds_cel_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_reflection_lib
-  absl::config
-  absl::core_headers
   absl::function_ref
-  absl::check
-  absl::bits
   absl::int128
-  absl::status
   absl::statusor
-  absl::cord
-  absl::str_format
   absl::string_view
-  absl::time
+  gpr
 )
 
 

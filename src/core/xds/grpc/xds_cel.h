@@ -33,7 +33,7 @@ namespace grpc_core {
 //
 // Instances are immutable and may be evaluated concurrently from
 // multiple threads.
-class CelProgram {
+class CelProgram final {
  public:
   // The type that the expression must evaluate to.
   enum class ResultType { kBool, kString };
@@ -80,7 +80,7 @@ class CelProgram {
 
 // Extracts a string from a request using a CEL expression
 // (xds.type.v3.CelExtractString in gRFC A106).
-class CelStringExtractor {
+class CelStringExtractor final {
  public:
   CelStringExtractor(std::unique_ptr<CelProgram> program,
                      std::optional<std::string> default_value)

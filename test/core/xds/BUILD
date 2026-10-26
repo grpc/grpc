@@ -661,7 +661,6 @@ grpc_cc_test(
         "absl/functional:function_ref",
         "absl/status",
         "absl/strings",
-        "absl/time",
         "cel_c_runtime",
         "cel_c_string_view_absl",
         "cel_c_value",

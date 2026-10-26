@@ -7513,6 +7513,7 @@ grpc_cc_library(
         "protobuf_struct_upbdefs",
         "protobuf_timestamp_upbdefs",
         "protobuf_wrappers_upbdefs",
+        "upb_utils",
         "//:cel_expr_checked_upb",
         "//:cel_expr_syntax_upb",
         "@com_google_protobuf//upb/base",

@@ -17,7 +17,6 @@
 #include "test/core/xds/cel_expr_builder.h"
 
 #include <cstdint>
-#include <utility>
 #include <vector>
 
 #include "cel-c/string_view_absl.h"
@@ -28,6 +27,10 @@
 
 namespace grpc_core {
 namespace testing {
+
+//
+// CelExprBuilder
+//
 
 cel_expr_CheckedExpr* CelExprBuilder::NewCheckedExpr(cel_expr_Expr** root) {
   cel_expr_CheckedExpr* checked = cel_expr_CheckedExpr_new(arena_);
@@ -95,14 +98,16 @@ std::vector<cel_expr_Expr*> CelExprBuilder::SetCall(cel_expr_Expr* expr,
   return args;
 }
 
-std::pair<cel_expr_Expr*, cel_expr_Expr*> CelExprBuilder::SetReceiverCall(
-    cel_expr_Expr* expr, absl::string_view function) {
+std::vector<cel_expr_Expr*> CelExprBuilder::SetReceiverCall(
+    cel_expr_Expr* expr, absl::string_view function, int num_args) {
   cel_expr_Expr_Call* call = cel_expr_Expr_mutable_call_expr(expr, arena_);
   cel_expr_Expr_Call_set_function(call, cel_StringView_FromAbsl(function));
-  cel_expr_Expr* target =
-      NewExpr(cel_expr_Expr_Call_mutable_target(call, arena_));
-  cel_expr_Expr* arg = NewExpr(cel_expr_Expr_Call_add_args(call, arena_));
-  return {target, arg};
+  std::vector<cel_expr_Expr*> exprs = {
+      NewExpr(cel_expr_Expr_Call_mutable_target(call, arena_))};
+  for (int i = 0; i < num_args; ++i) {
+    exprs.push_back(NewExpr(cel_expr_Expr_Call_add_args(call, arena_)));
+  }
+  return exprs;
 }
 
 void CelExprBuilder::SetOverload(cel_expr_CheckedExpr* checked,

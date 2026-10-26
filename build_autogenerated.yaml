@@ -28803,8 +28803,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
-  - src/core/util/construct_destruct.h
-  - src/core/util/no_destruct.h
+  - src/core/util/upb_utils.h
   - src/core/xds/grpc/xds_cel.h
   - test/core/xds/cel_expr_builder.h
   - third_party/cel-c/cel-c/activation.h
@@ -28974,18 +28973,11 @@ targets:
   deps:
   - gtest
   - upb_reflection_lib
-  - absl/base:config
-  - absl/base:core_headers
   - absl/functional:function_ref
-  - absl/log:check
-  - absl/numeric:bits
   - absl/numeric:int128
-  - absl/status:status
   - absl/status:statusor
-  - absl/strings:cord
-  - absl/strings:str_format
   - absl/strings:string_view
-  - absl/time:time
+  - gpr
   uses_polling: false
 - name: xds_certificate_provider_test
   gtest: true

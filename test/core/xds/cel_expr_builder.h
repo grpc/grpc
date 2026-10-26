@@ -18,7 +18,6 @@
 #define GRPC_TEST_CORE_XDS_CEL_EXPR_BUILDER_H
 
 #include <cstdint>
-#include <utility>
 #include <vector>
 
 #include "cel/expr/checked.upb.h"
@@ -32,7 +31,10 @@ namespace testing {
 
 // Builds cel.expr.CheckedExpr protos by hand, standing in for the CEL
 // type-checker in tests.  All protos are allocated on the given arena.
-class CelExprBuilder {
+//
+// Strings passed to the setters are not copied, so they must outlive the
+// arena (string literals are fine).
+class CelExprBuilder final {
  public:
   explicit CelExprBuilder(upb_Arena* arena) : arena_(arena) {}
 
@@ -58,10 +60,11 @@ class CelExprBuilder {
   std::vector<cel_expr_Expr*> SetCall(cel_expr_Expr* expr,
                                       absl::string_view function, int num_args);
 
-  // Makes expr a receiver-style call target.function(arg), returning
-  // {target, arg}.
-  std::pair<cel_expr_Expr*, cel_expr_Expr*> SetReceiverCall(
-      cel_expr_Expr* expr, absl::string_view function);
+  // Makes expr a receiver-style call target.function(args...), returning
+  // the target expr followed by the num_args arg exprs.
+  std::vector<cel_expr_Expr*> SetReceiverCall(cel_expr_Expr* expr,
+                                              absl::string_view function,
+                                              int num_args);
 
   // Records the type-checker's overload resolution for expr.
   void SetOverload(cel_expr_CheckedExpr* checked, const cel_expr_Expr* expr,

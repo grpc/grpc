@@ -31,12 +31,10 @@
 #include "cel/expr/syntax.upb.h"
 #include "test/core/xds/cel_expr_builder.h"
 #include "upb/mem/arena.hpp"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 
 namespace grpc_core {
 namespace testing {
@@ -44,8 +42,12 @@ namespace {
 
 using ResultType = CelProgram::ResultType;
 
+//
+// MapResolver
+//
+
 // Variable resolver backed by a map of names to values.
-class MapResolver : public cel_VariableResolver {
+class MapResolver final : public cel_VariableResolver {
  public:
   MapResolver() { vtable = &kVTable; }
 
@@ -79,15 +81,19 @@ class MapResolver : public cel_VariableResolver {
   std::vector<std::unique_ptr<std::string>> strings_;
 };
 
+//
+// CelProgramTest fixture
+//
+
 class CelProgramTest : public ::testing::Test {
  protected:
   // Builds `request.matches(pattern)`.
   cel_expr_CheckedExpr* NewMatchesExpr(absl::string_view pattern) {
     cel_expr_Expr* root;
     auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-    auto [target, arg] = builder_.SetReceiverCall(root, "matches");
-    builder_.SetIdent(target, "request");
-    builder_.SetStringConst(arg, pattern);
+    auto exprs = builder_.SetReceiverCall(root, "matches", 1);
+    builder_.SetIdent(exprs[0], "request");
+    builder_.SetStringConst(exprs[1], pattern);
     return checked;
   }
 
@@ -107,21 +113,12 @@ class CelProgramTest : public ::testing::Test {
     return checked;
   }
 
-  // Makes expr a receiver-style call target.function(args...), returning
-  // the target followed by the args.
-  std::vector<cel_expr_Expr*> SetReceiverCall(cel_expr_Expr* expr,
-                                              absl::string_view function,
-                                              int num_args) {
-    cel_expr_Expr_Call* call =
-        cel_expr_Expr_mutable_call_expr(expr, arena_.ptr());
-    cel_expr_Expr_Call_set_function(call, cel_StringView_FromAbsl(function));
-    std::vector<cel_expr_Expr*> exprs = {builder_.NewExpr(
-        cel_expr_Expr_Call_mutable_target(call, arena_.ptr()))};
-    for (int i = 0; i < num_args; ++i) {
-      exprs.push_back(
-          builder_.NewExpr(cel_expr_Expr_Call_add_args(call, arena_.ptr())));
-    }
-    return exprs;
+  // Builds the string expression `request`, typed dyn.
+  cel_expr_CheckedExpr* NewDynRequestExpr() {
+    cel_expr_Expr* root;
+    auto* checked = builder_.NewDynCheckedExpr(&root);
+    builder_.SetIdent(root, "request");
+    return checked;
   }
 
   // Makes expr a list literal of string constants.
@@ -218,7 +215,14 @@ TEST_F(CelProgramTest, BoolConstant) {
   auto program = Compile(checked, ResultType::kBool);
   ASSERT_NE(program, nullptr);
   EXPECT_EQ(program->EvaluateBool(resolver_), true);
-  // Wrong result type.
+}
+
+TEST_F(CelProgramTest, EvaluateStringOnBoolResultReturnsNullopt) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  builder_.SetBoolConst(root, true);
+  auto program = Compile(checked, ResultType::kBool);
+  ASSERT_NE(program, nullptr);
   EXPECT_EQ(program->EvaluateString(resolver_), std::nullopt);
 }
 
@@ -229,7 +233,14 @@ TEST_F(CelProgramTest, StringConstant) {
   auto program = Compile(checked, ResultType::kString);
   ASSERT_NE(program, nullptr);
   EXPECT_EQ(program->EvaluateString(resolver_), "foo");
-  // Wrong result type.
+}
+
+TEST_F(CelProgramTest, EvaluateBoolOnStringResultReturnsNullopt) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
+  builder_.SetStringConst(root, "foo");
+  auto program = Compile(checked, ResultType::kString);
+  ASSERT_NE(program, nullptr);
   EXPECT_EQ(program->EvaluateBool(resolver_), std::nullopt);
 }
 
@@ -271,9 +282,9 @@ TEST_F(CelProgramTest, StringEquality) {
 TEST_F(CelProgramTest, StartsWith) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-  auto [target, arg] = builder_.SetReceiverCall(root, "startsWith");
-  builder_.SetIdent(target, "request");
-  builder_.SetStringConst(arg, "ba");
+  auto exprs = builder_.SetReceiverCall(root, "startsWith", 1);
+  builder_.SetIdent(exprs[0], "request");
+  builder_.SetStringConst(exprs[1], "ba");
   auto program = Compile(checked, ResultType::kBool);
   ASSERT_NE(program, nullptr);
   resolver_.SetString("request", "bar");
@@ -297,7 +308,18 @@ TEST_F(CelProgramTest, IntAddition) {
   EXPECT_EQ(program->EvaluateBool(resolver_), true);
 }
 
-TEST_F(CelProgramTest, Equality) {
+TEST_F(CelProgramTest, SameExpressionComparesEqual) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
+  builder_.SetStringConst(root, "foo");
+  auto program = Compile(checked, ResultType::kString);
+  auto program_copy = Compile(checked, ResultType::kString);
+  ASSERT_NE(program, nullptr);
+  ASSERT_NE(program_copy, nullptr);
+  EXPECT_EQ(*program, *program_copy);
+}
+
+TEST_F(CelProgramTest, DifferentExpressionsCompareNotEqual) {
   cel_expr_Expr* root1;
   auto* checked1 = builder_.NewCheckedExpr(&root1, ResultType::kString);
   builder_.SetStringConst(root1, "foo");
@@ -305,13 +327,19 @@ TEST_F(CelProgramTest, Equality) {
   auto* checked2 = builder_.NewCheckedExpr(&root2, ResultType::kString);
   builder_.SetStringConst(root2, "bar");
   auto program1 = Compile(checked1, ResultType::kString);
-  auto program1_copy = Compile(checked1, ResultType::kString);
   auto program2 = Compile(checked2, ResultType::kString);
   ASSERT_NE(program1, nullptr);
-  ASSERT_NE(program1_copy, nullptr);
   ASSERT_NE(program2, nullptr);
-  EXPECT_EQ(*program1, *program1_copy);
   EXPECT_NE(*program1, *program2);
+}
+
+TEST_F(CelProgramTest, ToString) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  builder_.SetBoolConst(root, true);
+  auto program = Compile(checked, ResultType::kBool);
+  ASSERT_NE(program, nullptr);
+  EXPECT_EQ(program->ToString(), "CelProgram{checked_expr_size=16}");
 }
 
 //
@@ -335,16 +363,19 @@ TEST_F(CelProgramTest, MissingResultType) {
                 "CEL expression has no type for its result");
 }
 
-TEST_F(CelProgramTest, WrongResultType) {
+TEST_F(CelProgramTest, StringResultRejectedForBool) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kString);
   builder_.SetStringConst(root, "foo");
   ExpectInvalid(checked, ResultType::kBool,
                 "CEL expression must evaluate to bool");
-  cel_expr_Expr* root2;
-  auto* checked2 = builder_.NewCheckedExpr(&root2, ResultType::kBool);
-  builder_.SetBoolConst(root2, true);
-  ExpectInvalid(checked2, ResultType::kString,
+}
+
+TEST_F(CelProgramTest, BoolResultRejectedForString) {
+  cel_expr_Expr* root;
+  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
+  builder_.SetBoolConst(root, true);
+  ExpectInvalid(checked, ResultType::kString,
                 "CEL expression must evaluate to string");
 }
 
@@ -418,9 +449,13 @@ TEST_F(CelProgramTest, InvalidRegex) {
                 "CEL matches() pattern is invalid: missing ): (unclosed");
 }
 
+TEST_F(CelProgramTest, RegexAtProgramSizeLimit) {
+  EXPECT_NE(Compile(NewMatchesExpr("a{96}"), ResultType::kBool), nullptr);
+}
+
 TEST_F(CelProgramTest, RegexTooLarge) {
-  ExpectInvalid(NewMatchesExpr("a{200}"), ResultType::kBool,
-                "CEL matches() pattern program size 204 exceeds the limit of "
+  ExpectInvalid(NewMatchesExpr("a{97}"), ResultType::kBool,
+                "CEL matches() pattern program size 101 exceeds the limit of "
                 "100");
 }
 
@@ -429,27 +464,89 @@ TEST_F(CelProgramTest, RegexTooLarge) {
 //
 
 TEST_F(CelProgramTest, DynResultAcceptedForString) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewDynCheckedExpr(&root);
-  builder_.SetIdent(root, "request");
-  auto program = Compile(checked, ResultType::kString);
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
   ASSERT_NE(program, nullptr);
   resolver_.SetString("request", "foo");
   EXPECT_EQ(program->EvaluateString(resolver_), "foo");
-  // A non-string value at runtime is not a result.
+}
+
+TEST_F(CelProgramTest, DynResultWithNonStringValueReturnsNullopt) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_NE(program, nullptr);
   resolver_.SetBool("request", true);
   EXPECT_EQ(program->EvaluateString(resolver_), std::nullopt);
-  // ...so CelStringExtractor falls back to its default.
-  CelStringExtractor extractor(std::move(program), "default");
-  EXPECT_EQ(extractor.Extract(resolver_), "default");
 }
 
 TEST_F(CelProgramTest, DynResultRejectedForBool) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewDynCheckedExpr(&root);
-  builder_.SetIdent(root, "request");
-  ExpectInvalid(checked, ResultType::kBool,
+  ExpectInvalid(NewDynRequestExpr(), ResultType::kBool,
                 "CEL expression must evaluate to bool");
+}
+
+//
+// CelStringExtractor
+//
+
+TEST_F(CelProgramTest, StringExtractorReturnsResult) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_NE(program, nullptr);
+  CelStringExtractor extractor(std::move(program), "default");
+  resolver_.SetString("request", "foo");
+  EXPECT_EQ(extractor.Extract(resolver_), "foo");
+}
+
+TEST_F(CelProgramTest, StringExtractorFallsBackToDefault) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_NE(program, nullptr);
+  CelStringExtractor extractor(std::move(program), "default");
+  resolver_.SetBool("request", true);
+  EXPECT_EQ(extractor.Extract(resolver_), "default");
+}
+
+TEST_F(CelProgramTest, StringExtractorWithoutDefaultReturnsNullopt) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_NE(program, nullptr);
+  CelStringExtractor extractor(std::move(program), std::nullopt);
+  resolver_.SetBool("request", true);
+  EXPECT_EQ(extractor.Extract(resolver_), std::nullopt);
+}
+
+TEST_F(CelProgramTest, StringExtractorsWithSameProgramAndDefaultAreEqual) {
+  const auto* checked = NewDynRequestExpr();
+  auto program1 = Compile(checked, ResultType::kString);
+  auto program2 = Compile(checked, ResultType::kString);
+  ASSERT_NE(program1, nullptr);
+  ASSERT_NE(program2, nullptr);
+  CelStringExtractor extractor1(std::move(program1), "default");
+  CelStringExtractor extractor2(std::move(program2), "default");
+  EXPECT_EQ(extractor1, extractor2);
+}
+
+TEST_F(CelProgramTest, StringExtractorsWithDifferentDefaultsAreNotEqual) {
+  const auto* checked = NewDynRequestExpr();
+  auto program1 = Compile(checked, ResultType::kString);
+  auto program2 = Compile(checked, ResultType::kString);
+  ASSERT_NE(program1, nullptr);
+  ASSERT_NE(program2, nullptr);
+  CelStringExtractor extractor1(std::move(program1), "default");
+  CelStringExtractor extractor2(std::move(program2), "other");
+  EXPECT_NE(extractor1, extractor2);
+}
+
+TEST_F(CelProgramTest, StringExtractorToStringWithDefault) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_NE(program, nullptr);
+  CelStringExtractor extractor(std::move(program), "default");
+  EXPECT_EQ(extractor.ToString(),
+            "CelStringExtractor{CelProgram{checked_expr_size=23}, "
+            "default_value=default}");
+}
+
+TEST_F(CelProgramTest, StringExtractorToStringWithoutDefault) {
+  auto program = Compile(NewDynRequestExpr(), ResultType::kString);
+  ASSERT_NE(program, nullptr);
+  CelStringExtractor extractor(std::move(program), std::nullopt);
+  EXPECT_EQ(extractor.ToString(),
+            "CelStringExtractor{CelProgram{checked_expr_size=23}}");
 }
 
 //
@@ -491,8 +588,8 @@ TEST_F(CelProgramTest, SizeOfString) {
             true);
 }
 
-TEST_F(CelProgramTest, SizeOfList) {
-  // Global style size(['a', 'b']).
+TEST_F(CelProgramTest, SizeOfListGlobalStyle) {
+  // size(['a', 'b'])
   EXPECT_EQ(EvaluateIntEquals(
                 [&](cel_expr_Expr* call) {
                   SetStringList(builder_.SetCall(call, "size", 1)[0],
@@ -500,10 +597,13 @@ TEST_F(CelProgramTest, SizeOfList) {
                 },
                 2),
             true);
-  // Receiver style ['a', 'b', 'c'].size().
+}
+
+TEST_F(CelProgramTest, SizeOfListReceiverStyle) {
+  // ['a', 'b', 'c'].size()
   EXPECT_EQ(EvaluateIntEquals(
                 [&](cel_expr_Expr* call) {
-                  SetStringList(SetReceiverCall(call, "size", 0)[0],
+                  SetStringList(builder_.SetReceiverCall(call, "size", 0)[0],
                                 {"a", "b", "c"});
                 },
                 3),
@@ -542,50 +642,134 @@ TEST_F(CelProgramTest, InvalidTimestampFailsEvaluation) {
             std::nullopt);
 }
 
-TEST_F(CelProgramTest, TimestampGetters) {
-  auto getter = [&](absl::string_view function,
-                    std::optional<absl::string_view> zone) {
-    return [this, function, zone](cel_expr_Expr* call) {
-      auto exprs = SetReceiverCall(call, function, zone.has_value() ? 1 : 0);
-      SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
-      if (zone.has_value()) builder_.SetStringConst(exprs[1], *zone);
-    };
-  };
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", std::nullopt), 10), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getMinutes", std::nullopt), 20), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getSeconds", std::nullopt), 30), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getMilliseconds", std::nullopt), 456),
+TEST_F(CelProgramTest, TimestampGetHours) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getHours", 0);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                },
+                10),
             true);
-  // UTC offset form.
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", "+05:30"), 15), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getMinutes", "+05:30"), 50), true);
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", "-05:30"), 4), true);
-  // IANA time zone form.  "UTC" is always available.
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", "UTC"), 10), true);
-  // Other zones need a zoneinfo database, which some platforms (e.g.
-  // Windows) do not have.
-  absl::TimeZone kolkata;
-  if (absl::LoadTimeZone("Asia/Kolkata", &kolkata)) {
-    EXPECT_EQ(EvaluateIntEquals(getter("getHours", "Asia/Kolkata"), 15), true);
-  }
-  // A zone that is neither an IANA name nor an offset is an evaluation
-  // error.
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours", "Not/AZone"), 10),
+}
+
+TEST_F(CelProgramTest, TimestampGetMinutes) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getMinutes", 0);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                },
+                20),
+            true);
+}
+
+TEST_F(CelProgramTest, TimestampGetSeconds) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getSeconds", 0);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                },
+                30),
+            true);
+}
+
+TEST_F(CelProgramTest, TimestampGetMilliseconds) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs =
+                      builder_.SetReceiverCall(call, "getMilliseconds", 0);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                },
+                456),
+            true);
+}
+
+TEST_F(CelProgramTest, TimestampGetHoursWithPositiveUtcOffset) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getHours", 1);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                  builder_.SetStringConst(exprs[1], "+05:30");
+                },
+                15),
+            true);
+}
+
+TEST_F(CelProgramTest, TimestampGetMinutesWithPositiveUtcOffset) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getMinutes", 1);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                  builder_.SetStringConst(exprs[1], "+05:30");
+                },
+                50),
+            true);
+}
+
+TEST_F(CelProgramTest, TimestampGetHoursWithNegativeUtcOffset) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getHours", 1);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                  builder_.SetStringConst(exprs[1], "-05:30");
+                },
+                4),
+            true);
+}
+
+TEST_F(CelProgramTest, TimestampGetHoursInUtcTimeZone) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getHours", 1);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                  builder_.SetStringConst(exprs[1], "UTC");
+                },
+                10),
+            true);
+}
+
+TEST_F(CelProgramTest, TimestampGetHoursWithZeroUtcOffset) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getHours", 1);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                  builder_.SetStringConst(exprs[1], "+00:00");
+                },
+                10),
+            true);
+}
+
+TEST_F(CelProgramTest, TimestampGetHoursWithInvalidTimeZoneFailsEvaluation) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getHours", 1);
+                  SetTimestamp(exprs[0], "2025-12-01T10:20:30.456Z");
+                  builder_.SetStringConst(exprs[1], "Not/AZone");
+                },
+                10),
             std::nullopt);
 }
 
-TEST_F(CelProgramTest, DurationGetters) {
-  auto getter = [&](absl::string_view function) {
-    return [this, function](cel_expr_Expr* call) {
-      builder_.SetStringConst(
-          builder_.SetCall(SetReceiverCall(call, function, 0)[0], "duration",
-                           1)[0],
-          "3h25m");
-    };
-  };
-  EXPECT_EQ(EvaluateIntEquals(getter("getHours"), 3), true);
-  // Duration getters return the total, not the component.
-  EXPECT_EQ(EvaluateIntEquals(getter("getMinutes"), 205), true);
+TEST_F(CelProgramTest, DurationGetHours) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getHours", 0);
+                  builder_.SetStringConst(
+                      builder_.SetCall(exprs[0], "duration", 1)[0], "3h25m");
+                },
+                3),
+            true);
+}
+
+// Duration getters return the total, not the component.
+TEST_F(CelProgramTest, DurationGetMinutesReturnsTotalMinutes) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getMinutes", 0);
+                  builder_.SetStringConst(
+                      builder_.SetCall(exprs[0], "duration", 1)[0], "3h25m");
+                },
+                205),
+            true);
 }
 
 // The date getters are not implemented by cel-c, so expressions using them
@@ -594,7 +778,7 @@ TEST_F(CelProgramTest, UnsupportedTimestampGetter) {
   cel_expr_Expr* root;
   auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
   auto eq_args = builder_.SetCall(root, "_==_", 2);
-  SetTimestamp(SetReceiverCall(eq_args[0], "getFullYear", 0)[0],
+  SetTimestamp(builder_.SetReceiverCall(eq_args[0], "getFullYear", 0)[0],
                "2025-12-01T10:20:30Z");
   builder_.SetIntConst(eq_args[1], 2025);
   ExpectInvalid(checked, ResultType::kBool,
@@ -603,53 +787,154 @@ TEST_F(CelProgramTest, UnsupportedTimestampGetter) {
 }
 
 //
-// List and map equality
+// List equality
 //
 
-TEST_F(CelProgramTest, ListEquality) {
-  auto list_op = [&](absl::string_view op, std::vector<absl::string_view> lhs,
-                     std::vector<absl::string_view> rhs) {
-    return EvaluateBoolExpr([&](cel_expr_Expr* root) {
-      auto args = builder_.SetCall(root, op, 2);
-      SetStringList(args[0], lhs);
-      SetStringList(args[1], rhs);
-    });
-  };
-  EXPECT_EQ(list_op("_==_", {"a", "x"}, {"a", "x"}), true);
-  EXPECT_EQ(list_op("_==_", {"a", "x"}, {"b", "x"}), false);
-  EXPECT_EQ(list_op("_==_", {"a", "x"}, {"a", "y"}), false);
-  EXPECT_EQ(list_op("_==_", {"a"}, {"a", "x"}), false);
-  EXPECT_EQ(list_op("_!=_", {"a", "x"}, {"b", "x"}), true);
-  EXPECT_EQ(list_op("_!=_", {"a", "x"}, {"a", "x"}), false);
+TEST_F(CelProgramTest, ListsWithSameElementsAreEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringList(args[0], {"a", "x"});
+              SetStringList(args[1], {"a", "x"});
+            }),
+            true);
 }
 
-TEST_F(CelProgramTest, MapEquality) {
-  auto map_op = [&](absl::string_view op, const std::vector<MapEntry>& lhs,
-                    const std::vector<MapEntry>& rhs) {
-    return EvaluateBoolExpr([&](cel_expr_Expr* root) {
-      auto args = builder_.SetCall(root, op, 2);
-      SetStringMap(args[0], lhs);
-      SetStringMap(args[1], rhs);
-    });
-  };
-  EXPECT_EQ(map_op("_==_", {{"k", "v"}}, {{"k", "v"}}), true);
-  EXPECT_EQ(map_op("_==_", {{"k", "v"}}, {{"k", "w"}}), false);
-  EXPECT_EQ(map_op("_!=_", {{"k", "v"}}, {{"k", "w"}}), true);
-  // Multiple entries: only the first, or only the last, value differs.
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}, {"b", "2"}}, {{"a", "9"}, {"b", "2"}}),
+TEST_F(CelProgramTest, ListsWithDifferentFirstElementAreNotEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringList(args[0], {"a", "x"});
+              SetStringList(args[1], {"b", "x"});
+            }),
             false);
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}, {"b", "2"}}, {{"a", "1"}, {"b", "9"}}),
+}
+
+TEST_F(CelProgramTest, ListsWithDifferentLastElementAreNotEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringList(args[0], {"a", "x"});
+              SetStringList(args[1], {"a", "y"});
+            }),
             false);
-  EXPECT_EQ(map_op("_!=_", {{"a", "1"}, {"b", "2"}}, {{"a", "9"}, {"b", "2"}}),
+}
+
+TEST_F(CelProgramTest, ListsWithDifferentSizesAreNotEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringList(args[0], {"a"});
+              SetStringList(args[1], {"a", "x"});
+            }),
+            false);
+}
+
+TEST_F(CelProgramTest, ListInequalityWithDifferentElements) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_!=_", 2);
+              SetStringList(args[0], {"a", "x"});
+              SetStringList(args[1], {"b", "x"});
+            }),
             true);
-  // A key differs, or the sizes differ.
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}, {"b", "2"}}, {{"a", "1"}, {"c", "2"}}),
+}
+
+TEST_F(CelProgramTest, ListInequalityWithSameElements) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_!=_", 2);
+              SetStringList(args[0], {"a", "x"});
+              SetStringList(args[1], {"a", "x"});
+            }),
             false);
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}}, {{"a", "1"}, {"b", "2"}}), false);
-  // Entry order does not matter.
-  EXPECT_EQ(map_op("_==_", {{"a", "1"}, {"b", "2"}}, {{"b", "2"}, {"a", "1"}}),
+}
+
+//
+// Map equality
+//
+
+TEST_F(CelProgramTest, MapsWithSameEntryAreEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringMap(args[0], {{"k", "v"}});
+              SetStringMap(args[1], {{"k", "v"}});
+            }),
             true);
-  EXPECT_EQ(map_op("_!=_", {{"a", "1"}, {"b", "2"}}, {{"b", "2"}, {"a", "1"}}),
+}
+
+TEST_F(CelProgramTest, MapsWithDifferentValueAreNotEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringMap(args[0], {{"k", "v"}});
+              SetStringMap(args[1], {{"k", "w"}});
+            }),
+            false);
+}
+
+TEST_F(CelProgramTest, MapInequalityWithDifferentValue) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_!=_", 2);
+              SetStringMap(args[0], {{"k", "v"}});
+              SetStringMap(args[1], {{"k", "w"}});
+            }),
+            true);
+}
+
+TEST_F(CelProgramTest, MapsWithDifferentFirstValueAreNotEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringMap(args[0], {{"a", "1"}, {"b", "2"}});
+              SetStringMap(args[1], {{"a", "9"}, {"b", "2"}});
+            }),
+            false);
+}
+
+TEST_F(CelProgramTest, MapsWithDifferentLastValueAreNotEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringMap(args[0], {{"a", "1"}, {"b", "2"}});
+              SetStringMap(args[1], {{"a", "1"}, {"b", "9"}});
+            }),
+            false);
+}
+
+TEST_F(CelProgramTest, MapInequalityWithDifferentFirstValue) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_!=_", 2);
+              SetStringMap(args[0], {{"a", "1"}, {"b", "2"}});
+              SetStringMap(args[1], {{"a", "9"}, {"b", "2"}});
+            }),
+            true);
+}
+
+TEST_F(CelProgramTest, MapsWithDifferentKeyAreNotEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringMap(args[0], {{"a", "1"}, {"b", "2"}});
+              SetStringMap(args[1], {{"a", "1"}, {"c", "2"}});
+            }),
+            false);
+}
+
+TEST_F(CelProgramTest, MapsWithDifferentSizesAreNotEqual) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringMap(args[0], {{"a", "1"}});
+              SetStringMap(args[1], {{"a", "1"}, {"b", "2"}});
+            }),
+            false);
+}
+
+TEST_F(CelProgramTest, MapEqualityIgnoresEntryOrder) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_==_", 2);
+              SetStringMap(args[0], {{"a", "1"}, {"b", "2"}});
+              SetStringMap(args[1], {{"b", "2"}, {"a", "1"}});
+            }),
+            true);
+}
+
+TEST_F(CelProgramTest, MapInequalityIgnoresEntryOrder) {
+  EXPECT_EQ(EvaluateBoolExpr([&](cel_expr_Expr* root) {
+              auto args = builder_.SetCall(root, "_!=_", 2);
+              SetStringMap(args[0], {{"a", "1"}, {"b", "2"}});
+              SetStringMap(args[1], {{"b", "2"}, {"a", "1"}});
+            }),
             false);
 }
 
