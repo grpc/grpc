@@ -133,8 +133,8 @@ class TlsCredentialsTest : public ::testing::Test {
   void RunServer(absl::Notification* notification,
                  const std::vector<grpc_tls_key_exchange_group>*
                      key_exchange_groups = nullptr,
-                 const std::string* ekm_label = nullptr, size_t ekm_length = 0,
-                 grpc::Service* service = nullptr) {
+                 const std::string* ekm_label = nullptr,
+                 size_t ekm_length = 0) {
     std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
     std::string server_key =
         grpc_core::testing::GetFileContents(kServerKeyPath);
@@ -165,7 +165,7 @@ class TlsCredentialsTest : public ::testing::Test {
     grpc::ServerBuilder builder;
     builder.AddListeningPort(
         server_addr_, grpc::experimental::TlsServerCredentials(server_options));
-    builder.RegisterService(service != nullptr ? service : &service_);
+    builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
     notification->Notify();
     server_->Wait();
@@ -179,7 +179,8 @@ class TlsCredentialsTest : public ::testing::Test {
     }
   }
 
-  TestServiceImpl service_;
+  // Declared before server_ so it outlives the server.
+  EkmCapturingService service_;
   std::unique_ptr<Server> server_ = nullptr;
   std::thread* server_thread_ = nullptr;
   std::string server_addr_;
@@ -267,13 +268,11 @@ TEST_F(TlsCredentialsTest, ExportedKeyingMaterial) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
-  // Configure server to capture the server side EKM.
-  EkmCapturingService service;
   const std::string kEkmLabel = "test_label";
   constexpr size_t kEkmLength = 32;
   server_thread_ = new std::thread([&]() {
     RunServer(&notification, /*key_exchange_groups=*/nullptr, &kEkmLabel,
-              kEkmLength, &service);
+              kEkmLength);
   });
   notification.WaitForNotification();
 
@@ -314,7 +313,7 @@ TEST_F(TlsCredentialsTest, ExportedKeyingMaterial) {
   EXPECT_FALSE(client_ekm.empty());
   // Ensure that implementation doesn't just derive a null-filled buffer.
   EXPECT_THAT(client_ekm, ::testing::Not(::testing::Each('\0')));
-  EXPECT_EQ(service.server_ekm(), client_ekm);
+  EXPECT_EQ(service_.server_ekm(), client_ekm);
 }
 
 // Both peers must configure the same label to derive the same value, so a
@@ -324,13 +323,12 @@ TEST_F(TlsCredentialsTest, ExportedKeyingMaterialWithDifferentLabelsDiffers) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
-  EkmCapturingService service;
   const std::string kServerEkmLabel = "server_label";
   const std::string kClientEkmLabel = "client_label";
   constexpr size_t kEkmLength = 32;
   server_thread_ = new std::thread([&]() {
     RunServer(&notification, /*key_exchange_groups=*/nullptr, &kServerEkmLabel,
-              kEkmLength, &service);
+              kEkmLength);
   });
   notification.WaitForNotification();
 
@@ -363,7 +361,7 @@ TEST_F(TlsCredentialsTest, ExportedKeyingMaterialWithDifferentLabelsDiffers) {
   ASSERT_EQ(client_properties.size(), 1u);
   std::string client_ekm(client_properties[0].data(),
                          client_properties[0].length());
-  std::string server_ekm = service.server_ekm();
+  std::string server_ekm = service_.server_ekm();
   ASSERT_EQ(client_ekm.length(), kEkmLength);
   ASSERT_EQ(server_ekm.length(), kEkmLength);
   EXPECT_NE(client_ekm, server_ekm);

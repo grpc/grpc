@@ -2398,7 +2398,10 @@ static tsi_result ssl_handshaker_result_extract_peer(
     result = tsi_construct_allocated_string_peer_property(
         TSI_SSL_EXPORTED_KEYING_MATERIAL, ekm_len,
         &peer->properties[peer->property_count]);
-    if (result != TSI_OK) return result;
+    if (result != TSI_OK) {
+      tsi_peer_destruct(peer);
+      return result;
+    }
     // The exporter context is not part of the public API, so the keying
     // material is derived without one.
     if (SSL_export_keying_material(
@@ -2410,6 +2413,8 @@ static tsi_result ssl_handshaker_result_extract_peer(
             /*context_len=*/0, /*use_context=*/0) != 1) {
       LOG(ERROR) << "Failed to export keying material.";
       tsi_peer_property_destruct(&peer->properties[peer->property_count]);
+      // Callers don't destruct the peer when extraction fails.
+      tsi_peer_destruct(peer);
       return TSI_INTERNAL_ERROR;
     }
     peer->property_count++;
