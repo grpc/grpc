@@ -181,7 +181,12 @@ void RegisterEventEngineForFork(
   fork_handlers->emplace_back(posix_engine, executor, timer_manager);
   static bool handlers_installed = false;
   if (!handlers_installed) {
-    pthread_atfork(PrepareFork, PostForkInParent, PostForkInChild);
+    auto custom_register_func = grpc_core::Fork::GetRegisterHandlersFunc();
+    if (custom_register_func != nullptr) {
+      custom_register_func(PrepareFork, PostForkInParent, PostForkInChild);
+    } else {
+      pthread_atfork(PrepareFork, PostForkInParent, PostForkInChild);
+    }
     handlers_installed = true;
   }
 }
