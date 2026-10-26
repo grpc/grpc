@@ -69,11 +69,6 @@ using ::xds::type::v3::TypedStruct;
 class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    if (GetParam().filter_on_server() &&
-        !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
-      GTEST_SKIP()
-          << "test requires xds_server_filter_chain_per_route experiment";
-    }
     if (GetParam().filter_on_server()) {
       SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
     }

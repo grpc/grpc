@@ -33,7 +33,7 @@
 namespace grpc_core {
 
 // Filter used when xDS server config fetcher provides a configuration with an
-// HTTP RBAC filter. Also serves as the type for channel data for the filter.
+// HTTP RBAC filter.
 class RbacFilter : public ImplementChannelFilter<RbacFilter> {
  public:
   struct Config final : public FilterConfig {
@@ -50,10 +50,6 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
     Rbac rbac;
   };
 
-  // This channel filter is intended to be used by connections on xDS enabled
-  // servers configured with RBAC. The RBAC filter fetches the RBAC policy from
-  // the method config of service config returned by the ServerConfigSelector,
-  // and enforces the RBAC policy.
   static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "rbac_filter"; }
@@ -61,7 +57,7 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   static absl::StatusOr<std::unique_ptr<RbacFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  RbacFilter(size_t index, const Rbac& rbac,
+  RbacFilter(const Rbac& rbac,
              EvaluateArgs::PerChannelArgs per_channel_evaluate_args);
 
   class Call {
@@ -80,11 +76,6 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   };
 
  private:
-  // TODO(roth): Remove these fields as part of removing the
-  // xds_server_filter_chain_per_route experiment.
-  size_t index_;
-  const size_t service_config_parser_index_;
-
   GrpcAuthorizationEngine authorization_engine_;
   // Per channel args used for authorization.
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;

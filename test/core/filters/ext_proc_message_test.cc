@@ -62,15 +62,17 @@ MATCHER_P2(IsHeaderMutation, set_headers_matcher, remove_headers_matcher, "") {
                                        arg.remove_headers, result_listener);
 }
 
-MATCHER_P3(IsBodyMutation, body_matcher, end_of_stream_matcher,
-           end_of_stream_without_message_matcher, "") {
+MATCHER_P4(IsBodyMutation, body_matcher, end_of_stream_matcher,
+           end_of_stream_without_message_matcher, drain_complete_matcher, "") {
   return ::testing::ExplainMatchResult(body_matcher, arg.body,
                                        result_listener) &&
          ::testing::ExplainMatchResult(end_of_stream_matcher, arg.end_of_stream,
                                        result_listener) &&
          ::testing::ExplainMatchResult(end_of_stream_without_message_matcher,
                                        arg.end_of_stream_without_message,
-                                       result_listener);
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(drain_complete_matcher,
+                                       arg.drain_complete, result_listener);
 }
 
 MATCHER_P2(IsRequestHeaders, set_headers_matcher, remove_headers_matcher, "") {
@@ -99,23 +101,25 @@ MATCHER_P2(IsResponseTrailers, set_headers_matcher, remove_headers_matcher,
       arg, result_listener);
 }
 
-MATCHER_P3(IsRequestBody, body_matcher, end_of_stream_matcher,
-           end_of_stream_without_message_matcher, "") {
+MATCHER_P4(IsRequestBody, body_matcher, end_of_stream_matcher,
+           end_of_stream_without_message_matcher, drain_complete_matcher, "") {
   return ::testing::ExplainMatchResult(
-      ::testing::VariantWith<ExtProcResponse::RequestBody>(::testing::Field(
-          &ExtProcResponse::RequestBody::mutation,
-          IsBodyMutation(body_matcher, end_of_stream_matcher,
-                         end_of_stream_without_message_matcher))),
+      ::testing::VariantWith<ExtProcResponse::RequestBody>(
+          ::testing::Field(&ExtProcResponse::RequestBody::mutation,
+                           IsBodyMutation(body_matcher, end_of_stream_matcher,
+                                          end_of_stream_without_message_matcher,
+                                          drain_complete_matcher))),
       arg, result_listener);
 }
 
-MATCHER_P3(IsResponseBody, body_matcher, end_of_stream_matcher,
-           end_of_stream_without_message_matcher, "") {
+MATCHER_P4(IsResponseBody, body_matcher, end_of_stream_matcher,
+           end_of_stream_without_message_matcher, drain_complete_matcher, "") {
   return ::testing::ExplainMatchResult(
-      ::testing::VariantWith<ExtProcResponse::ResponseBody>(::testing::Field(
-          &ExtProcResponse::ResponseBody::mutation,
-          IsBodyMutation(body_matcher, end_of_stream_matcher,
-                         end_of_stream_without_message_matcher))),
+      ::testing::VariantWith<ExtProcResponse::ResponseBody>(
+          ::testing::Field(&ExtProcResponse::ResponseBody::mutation,
+                           IsBodyMutation(body_matcher, end_of_stream_matcher,
+                                          end_of_stream_without_message_matcher,
+                                          drain_complete_matcher))),
       arg, result_listener);
 }
 
@@ -653,6 +657,21 @@ TEST_F(CreateExtProcRequestTest, RequestBodyProtocolConfig) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
 }
 
+TEST_F(CreateExtProcRequestTest, RequestBodyDrainComplete) {
+  upb::Arena arena;
+  std::string serialized =
+      CreateExtProcClientBodyRequest(arena.ptr(), "", {},
+                                     /*observability_mode=*/false,
+                                     /*processing_mode=*/std::nullopt,
+                                     /*end_of_stream=*/false,
+                                     /*end_of_stream_without_message=*/false,
+                                     /*drain_complete=*/true)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_request_body());
+  EXPECT_TRUE(parsed.request_body().drain_complete());
+}
+
 TEST_F(CreateExtProcRequestTest, ResponseBodyPayloadValid) {
   upb::Arena arena;
   constexpr absl::string_view kBodyData = "test response body data";
@@ -696,6 +715,19 @@ TEST_F(CreateExtProcRequestTest, ResponseBodyProtocolConfig) {
   EXPECT_EQ(
       parsed.protocol_config().response_body_mode(),
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+}
+
+TEST_F(CreateExtProcRequestTest, ResponseBodyDrainComplete) {
+  upb::Arena arena;
+  std::string serialized =
+      CreateExtProcServerBodyRequest(arena.ptr(), "", {},
+                                     /*observability_mode=*/false,
+                                     /*processing_mode=*/std::nullopt,
+                                     /*drain_complete=*/true)
+          .value();
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_response_body());
+  EXPECT_TRUE(parsed.response_body().drain_complete());
 }
 
 TEST_F(CreateExtProcRequestTest, AttributesPayload) {
@@ -971,13 +1003,24 @@ TEST_F(ParseExtProcResponseTest, ResponseInvalid) {
             absl::InternalError("Failed to parse ProcessingResponse"));
 }
 
-TEST_F(ParseExtProcResponseTest, RequestDrain) {
+TEST_F(ParseExtProcResponseTest, RequestDrainRequests) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse response;
-  response.set_request_drain(true);
+  response.set_request_drain_requests(true);
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_TRUE(parsed->request_drain);
+  EXPECT_TRUE(parsed->request_drain_requests);
+  EXPECT_FALSE(parsed->request_drain_responses);
+}
+
+TEST_F(ParseExtProcResponseTest, RequestDrainResponses) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.set_request_drain_responses(true);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_FALSE(parsed->request_drain_requests);
+  EXPECT_TRUE(parsed->request_drain_responses);
 }
 
 TEST_F(ParseExtProcResponseTest, UnsupportedResponseCaseRequestTrailers) {
@@ -1070,7 +1113,9 @@ TEST_F(ParseExtProcResponseTest, RequestHeadersCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_request_headers();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsRequestHeaders(::testing::IsEmpty(), ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseHeadersMutation) {
@@ -1130,7 +1175,9 @@ TEST_F(ParseExtProcResponseTest, ResponseHeadersCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_response_headers();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsResponseHeaders(::testing::IsEmpty(), ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtProcResponseTest, RequestBodyMutation) {
@@ -1148,7 +1195,22 @@ TEST_F(ParseExtProcResponseTest, RequestBodyMutation) {
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_THAT(parsed->response,
-              IsRequestBody("test request body", true, false));
+              IsRequestBody("test request body", true, false, false));
+}
+
+TEST_F(ParseExtProcResponseTest, RequestBodyDrainComplete) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_request_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* body_mutation = common_response->mutable_body_mutation();
+  auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_drain_complete(true);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response, IsRequestBody("", false, false, true));
 }
 
 TEST_F(ParseExtProcResponseTest, RequestBodyUnsupportedStatus) {
@@ -1184,7 +1246,7 @@ TEST_F(ParseExtProcResponseTest, RequestBodyCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_request_body();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  EXPECT_EQ(parsed.status(), absl::InternalError("body_mutation is not set"));
 }
 
 TEST_F(ParseExtProcResponseTest, RequestBodyBodyMutationNull) {
@@ -1226,7 +1288,22 @@ TEST_F(ParseExtProcResponseTest, ResponseBodyMutation) {
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_THAT(parsed->response,
-              IsResponseBody("test response body", false, false));
+              IsResponseBody("test response body", false, false, false));
+}
+
+TEST_F(ParseExtProcResponseTest, ResponseBodyDrainComplete) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_response_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* body_mutation = common_response->mutable_body_mutation();
+  auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_drain_complete(true);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response, IsResponseBody("", false, false, true));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseBodyEndOfStreamRejected) {
@@ -1280,7 +1357,7 @@ TEST_F(ParseExtProcResponseTest,
   auto parsed = ParseResponse(response);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_THAT(parsed->response,
-              IsRequestBody("test request body", false, false));
+              IsRequestBody("test request body", false, false, false));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseBodyUnsupportedStatus) {
@@ -1316,7 +1393,7 @@ TEST_F(ParseExtProcResponseTest, ResponseBodyCommonResponseNull) {
   envoy::service::ext_proc::v3::ProcessingResponse response;
   response.mutable_response_body();
   auto parsed = ParseResponse(response);
-  EXPECT_EQ(parsed.status(), absl::InternalError("common_response is not set"));
+  EXPECT_EQ(parsed.status(), absl::InternalError("body_mutation is not set"));
 }
 
 TEST_F(ParseExtProcResponseTest, ResponseBodyBodyMutationNull) {

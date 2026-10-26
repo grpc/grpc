@@ -855,8 +855,10 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
   }
 
   if (apply_settings_result.should_spawn_security_frame_loop) {
+    EventEngine::Endpoint* const endpoint =
+        endpoint_.GetEventEngineEndpoint().get();
     const SecurityFrameHandler::EndpointExtensionState state =
-        security_frame_handler_->Initialize(event_engine_);
+        security_frame_handler_->Initialize(endpoint, event_engine_);
     if (state.is_set) {
       SpawnInfallibleTransportParty("SecurityFrameLoop",
                                     UntilTransportClosed(SecurityFrameLoop()));
@@ -1826,7 +1828,16 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
                   }
                   return absl::OkStatus();
                 });
-          }));
+          },
+          // Do not remove this no-op step. When a TrySeq step resolves, its
+          // promise, along with everything it captures, is destroyed only when
+          // the TrySeq moves on to the next step.
+          // Without this step, the previous step's promise, which holds a ref
+          // to `stream`, would stay alive until the OutboundLoop participant is
+          // destroyed, which can race with ~Http2ClientTransport. With this
+          // step, the stream ref is dropped as soon as the previous step
+          // resolves.
+          []() { return absl::OkStatus(); }));
 }
 
 void Http2ClientTransport::StartCall(CallHandler call_handler) {
@@ -1869,14 +1880,17 @@ int64_t Http2ClientTransport::TestOnlyGetStreamFlowControlWindow(
 // Http2ClientTransport - Ping Helpers
 
 void Http2ClientTransport::MaybeSpawnPingTimeout(
-    std::optional<uint64_t> opaque_data) {
-  if (opaque_data.has_value()) {
-    SpawnGuardedTransportParty(
-        "PingTimeout", [self = RefAsSubclass<Http2ClientTransport>(),
-                        opaque_data = *opaque_data]() {
-          return self->ping_manager_->TimeoutPromise(opaque_data);
-        });
+    std::optional<PingManager::PingTimeoutArgs> ping_timeout_args) {
+  if (!ping_timeout_args.has_value()) {
+    return;
   }
+  SpawnGuardedTransportParty(
+      "PingTimeout",
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       ping_timeout_args = std::move(*ping_timeout_args)]() mutable {
+        return self->ping_manager_->TimeoutPromise(
+            std::move(ping_timeout_args));
+      });
 }
 void Http2ClientTransport::MaybeSpawnDelayedPing(
     std::optional<Duration> delayed_ping_wait) {

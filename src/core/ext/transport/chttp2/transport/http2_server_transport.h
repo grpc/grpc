@@ -104,7 +104,7 @@ class Http2ServerTransport final : public ServerTransport,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings,
-      grpc_closure* on_close_callback);
+      absl::AnyInvocable<void()> on_close_callback);
 
   Http2ServerTransport(const Http2ServerTransport&) = delete;
   Http2ServerTransport& operator=(const Http2ServerTransport&) = delete;
@@ -512,9 +512,7 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
 
-  absl::Status InitializeStream(Stream& stream);
-
-  // Runs on the call party.
+  // Runs on the transport party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, uint32_t stream_id);
 
@@ -571,7 +569,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
 
-  void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
+  void MaybeSpawnPingTimeout(
+      std::optional<PingManager::PingTimeoutArgs> ping_timeout_args);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
@@ -760,7 +759,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   HPackCompressor encoder_;
   TransportShutdownTracker shutdown_tracker_;
-  grpc_closure* on_close_callback_;
+  absl::AnyInvocable<void()> on_close_callback_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_server", GRPC_CHANNEL_READY};
@@ -785,7 +784,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
-  GRPC_UNUSED bool test_only_ack_pings_;
+  bool test_only_ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 

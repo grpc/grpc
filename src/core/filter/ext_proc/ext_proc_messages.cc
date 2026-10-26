@@ -115,9 +115,6 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseExtProcHeaderMutation(
 
 absl::Status ValidateCommonResponse(
     const envoy_service_ext_proc_v3_CommonResponse* common_response) {
-  if (common_response == nullptr) {
-    return absl::InternalError("common_response is not set");
-  }
   int32_t status =
       envoy_service_ext_proc_v3_CommonResponse_status(common_response);
   if (status == envoy_service_ext_proc_v3_CommonResponse_CONTINUE_AND_REPLACE) {
@@ -128,6 +125,9 @@ absl::Status ValidateCommonResponse(
 
 absl::StatusOr<ExtProcResponse::HeaderMutation> ParseExtProcHeaders(
     const envoy_service_ext_proc_v3_CommonResponse* common_response) {
+  // An unset CommonResponse is equivalent to the default one (CONTINUE with
+  // no mutations), which is what Envoy does.
+  if (common_response == nullptr) return ExtProcResponse::HeaderMutation{};
   auto status = ValidateCommonResponse(common_response);
   if (!status.ok()) return status;
   const envoy_service_ext_proc_v3_HeaderMutation* header_mutation =
@@ -137,10 +137,15 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseExtProcHeaders(
 
 absl::StatusOr<ExtProcResponse::BodyMutation> ParseExtProcBodyMutation(
     const envoy_service_ext_proc_v3_CommonResponse* common_response) {
-  auto status = ValidateCommonResponse(common_response);
-  if (!status.ok()) return status;
-  const envoy_service_ext_proc_v3_BodyMutation* body_mutation =
-      envoy_service_ext_proc_v3_CommonResponse_body_mutation(common_response);
+  // An unset CommonResponse is equivalent to the default one, which has no
+  // body_mutation.
+  const envoy_service_ext_proc_v3_BodyMutation* body_mutation = nullptr;
+  if (common_response != nullptr) {
+    auto status = ValidateCommonResponse(common_response);
+    if (!status.ok()) return status;
+    body_mutation =
+        envoy_service_ext_proc_v3_CommonResponse_body_mutation(common_response);
+  }
   if (body_mutation == nullptr) {
     return absl::InternalError("body_mutation is not set");
   }
@@ -162,8 +167,12 @@ absl::StatusOr<ExtProcResponse::BodyMutation> ParseExtProcBodyMutation(
       end_of_stream &&
       envoy_service_ext_proc_v3_StreamedBodyResponse_end_of_stream_without_message(
           streamed_response);
+  bool drain_complete =
+      envoy_service_ext_proc_v3_StreamedBodyResponse_drain_complete(
+          streamed_response);
   return ExtProcResponse::BodyMutation{
-      UpbStringToStdString(body), end_of_stream, end_of_stream_without_message};
+      UpbStringToStdString(body), end_of_stream, end_of_stream_without_message,
+      drain_complete};
 }
 }  // namespace
 
@@ -176,9 +185,13 @@ absl::StatusOr<ExtProcResponse> ExtProcResponse::Parse(
     return absl::InternalError("Failed to parse ProcessingResponse");
   }
   ExtProcResponse ext_proc_response;
-  // parse request_drain
-  ext_proc_response.request_drain =
-      envoy_service_ext_proc_v3_ProcessingResponse_request_drain(response);
+  // parse request_drain_requests and request_drain_responses
+  ext_proc_response.request_drain_requests =
+      envoy_service_ext_proc_v3_ProcessingResponse_request_drain_requests(
+          response);
+  ext_proc_response.request_drain_responses =
+      envoy_service_ext_proc_v3_ProcessingResponse_request_drain_responses(
+          response);
   switch (
       envoy_service_ext_proc_v3_ProcessingResponse_response_case(response)) {
     case envoy_service_ext_proc_v3_ProcessingResponse_response_request_headers: {
@@ -420,7 +433,7 @@ void SetExtProcResponseHeaders(
 
 void SetExtProcRequestBody(
     upb_Arena* arena, upb_StringView buf, bool end_of_stream,
-    bool end_of_stream_without_message,
+    bool end_of_stream_without_message, bool drain_complete,
     envoy_service_ext_proc_v3_ProcessingRequest* request) {
   envoy_service_ext_proc_v3_HttpBody* body =
       envoy_service_ext_proc_v3_HttpBody_new(arena);
@@ -432,15 +445,21 @@ void SetExtProcRequestBody(
           body, true);
     }
   }
+  if (drain_complete) {
+    envoy_service_ext_proc_v3_HttpBody_set_drain_complete(body, true);
+  }
   envoy_service_ext_proc_v3_ProcessingRequest_set_request_body(request, body);
 }
 
 void SetExtProcResponseBody(
-    upb_Arena* arena, upb_StringView buf,
+    upb_Arena* arena, upb_StringView buf, bool drain_complete,
     envoy_service_ext_proc_v3_ProcessingRequest* request) {
   envoy_service_ext_proc_v3_HttpBody* body =
       envoy_service_ext_proc_v3_HttpBody_new(arena);
   envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
+  if (drain_complete) {
+    envoy_service_ext_proc_v3_HttpBody_set_drain_complete(body, true);
+  }
   envoy_service_ext_proc_v3_ProcessingRequest_set_response_body(request, body);
 }
 
@@ -718,23 +737,25 @@ absl::StatusOr<std::string> CreateExtProcClientBodyRequest(
     upb_Arena* arena, absl::string_view body,
     ::google_protobuf_Struct* attributes, bool observability_mode,
     std::optional<ExtProcProcessingMode> processing_mode, bool end_of_stream,
-    bool end_of_stream_without_message) {
+    bool end_of_stream_without_message, bool drain_complete) {
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
         SetExtProcRequestBody(arena, StdStringToUpbString(body), end_of_stream,
-                              end_of_stream_without_message, request);
+                              end_of_stream_without_message, drain_complete,
+                              request);
       });
 }
 
 absl::StatusOr<std::string> CreateExtProcServerBodyRequest(
     upb_Arena* arena, absl::string_view body,
     ::google_protobuf_Struct* attributes, bool observability_mode,
-    std::optional<ExtProcProcessingMode> processing_mode) {
+    std::optional<ExtProcProcessingMode> processing_mode, bool drain_complete) {
   return CreateRequestAndSerialize(
       arena, attributes, observability_mode, processing_mode,
       [&](envoy_service_ext_proc_v3_ProcessingRequest* request) {
-        SetExtProcResponseBody(arena, StdStringToUpbString(body), request);
+        SetExtProcResponseBody(arena, StdStringToUpbString(body),
+                               drain_complete, request);
       });
 }
 
