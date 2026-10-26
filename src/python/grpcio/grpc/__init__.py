@@ -1755,12 +1755,17 @@ def xds_channel_credentials(fallback_credentials=None):
     )
 
 
-def metadata_call_credentials(metadata_plugin, name=None):
+def metadata_call_credentials(
+    metadata_plugin, name=None, propagate_context=False
+):
     """Construct CallCredentials from an AuthMetadataPlugin.
 
     Args:
       metadata_plugin: An AuthMetadataPlugin to use for authentication.
       name: An optional name for the plugin.
+      propagate_context: An optional bool indicating whether to propagate the
+        contextvars context from credentials creation to the plugin invocation.
+        Defaults to False.
 
     Returns:
       A CallCredentials.
@@ -1768,7 +1773,7 @@ def metadata_call_credentials(metadata_plugin, name=None):
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
 
     return _plugin_wrapping.metadata_plugin_call_credentials(
-        metadata_plugin, name
+        metadata_plugin, name, propagate_context=propagate_context
     )
 
 
