@@ -71,21 +71,23 @@ absl::Status ValidateResultType(const cel_expr_CheckedExpr* checked_expr,
   if (!cel_expr_CheckedExpr_type_map_get(checked_expr, root_id, &type)) {
     return absl::InternalError("CEL expression has no type for its result");
   }
-  // A string extractor may also be typed dyn, e.g. `request['path']` when
-  // the control plane declares `request` as dyn.  Its result is then
-  // checked at runtime, falling back to CelExtractString.default_value.
-  if (result_type == CelProgram::ResultType::kString &&
-      cel_expr_Type_has_dyn(type)) {
-    return absl::OkStatus();
-  }
-  const int32_t expected = result_type == CelProgram::ResultType::kBool
-                               ? cel_expr_Type_BOOL
-                               : cel_expr_Type_STRING;
-  if (!cel_expr_Type_has_primitive(type) ||
-      cel_expr_Type_primitive(type) != expected) {
-    return absl::InternalError(absl::StrCat(
-        "CEL expression must evaluate to ",
-        result_type == CelProgram::ResultType::kBool ? "bool" : "string"));
+  switch (result_type) {
+    case CelProgram::ResultType::kBool:
+      if (!cel_expr_Type_has_primitive(type) ||
+          cel_expr_Type_primitive(type) != cel_expr_Type_BOOL) {
+        return absl::InternalError("CEL expression must evaluate to bool");
+      }
+      break;
+    case CelProgram::ResultType::kString:
+      // A string extractor may also be typed dyn, e.g. `request['path']` when
+      // the control plane declares `request` as dyn.  Its result is then
+      // checked at runtime, falling back to CelExtractString.default_value.
+      if (cel_expr_Type_has_dyn(type)) break;
+      if (!cel_expr_Type_has_primitive(type) ||
+          cel_expr_Type_primitive(type) != cel_expr_Type_STRING) {
+        return absl::InternalError("CEL expression must evaluate to string");
+      }
+      break;
   }
   return absl::OkStatus();
 }
