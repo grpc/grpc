@@ -48,12 +48,12 @@ class SerializationTraits<
  public:
   static Status Serialize(const grpc::protobuf::MessageLite& msg,
                           ByteBuffer* bb, bool* own_buffer) {
-    return GenericSerialize<ProtoBufferWriter, T>(msg, bb, own_buffer);
+    return GenericSerialize<ProtoBufferWriter>(msg, bb, own_buffer);
   }
 
   static Status Deserialize(ByteBuffer* buffer,
                             grpc::protobuf::MessageLite* msg) {
-    return GenericDeserialize<ProtoBufferReader, T>(buffer, msg);
+    return GenericDeserialize<ProtoBufferReader>(buffer, msg);
   }
 };
 
