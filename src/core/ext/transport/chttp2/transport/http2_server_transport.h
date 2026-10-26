@@ -512,8 +512,6 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
 
-  absl::Status InitializeStream(Stream& stream);
-
   // Runs on the transport party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, uint32_t stream_id);
@@ -786,7 +784,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
-  GRPC_UNUSED bool test_only_ack_pings_;
+  bool test_only_ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 

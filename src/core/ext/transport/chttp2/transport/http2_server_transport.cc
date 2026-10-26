@@ -1393,7 +1393,7 @@ auto Http2ServerTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
       "Ph2CallOutboundLoop",
       Seq(
           Map(HandleMetadataAndMessages(stream),
-              [stream = stream.get()](absl::Status&& status) {
+              [](absl::Status&& status) {
                 GRPC_HTTP2_SERVER_DLOG
                     << "Http2ServerTransport::CallOutboundLoop "
                        "Completed initial metadata and messages with status: "
@@ -1421,12 +1421,6 @@ auto Http2ServerTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
           // ~Http2ServerTransport. With this step, the stream ref is dropped as
           // soon as send_trailing_metadata resolves.
           [](absl::Status status) { return status; }));
-}
-
-absl::Status Http2ServerTransport::InitializeStream(
-    GRPC_UNUSED Stream& stream) {
-  GRPC_DCHECK(false) << "Should not be called for server";
-  return absl::OkStatus();
 }
 
 std::optional<RefCountedPtr<Stream>> Http2ServerTransport::MakeStream(
