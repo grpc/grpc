@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -86,8 +86,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8c0e479a8df9bd24b4f74a153f88bf03"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#a8c0e479a8df9bd24b4f74a153f88bf03">OnDone</a> (const <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;) override</td></tr>
 <tr class="memdesc:a8c0e479a8df9bd24b4f74a153f88bf03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called by the library when all operations associated with this RPC have completed and all Holds have been removed.  <a href="classgrpc_1_1experimental_1_1_client_session_reactor.html#a8c0e479a8df9bd24b4f74a153f88bf03">More...</a><br /></td></tr>
 <tr class="separator:a8c0e479a8df9bd24b4f74a153f88bf03"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3846d7c808f1b467b5fbef5f32e65ded"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#a3846d7c808f1b467b5fbef5f32e65ded">OnSessionReady</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a> call)=0</td></tr>
-<tr class="separator:a3846d7c808f1b467b5fbef5f32e65ded"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9516b76c4871d5c6a0a220e68fcba129"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#a9516b76c4871d5c6a0a220e68fcba129">OnSessionReady</a> (std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt; virtual_channel)=0</td></tr>
+<tr class="separator:a9516b76c4871d5c6a0a220e68fcba129"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a383e0d89a2dfe0434067ebff9cfa8c70"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#a383e0d89a2dfe0434067ebff9cfa8c70">OnSessionAcknowledged</a> (bool)</td></tr>
 <tr class="separator:a383e0d89a2dfe0434067ebff9cfa8c70"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab5b30a4a6c9378b2e2df29c0bac5211d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#ab5b30a4a6c9378b2e2df29c0bac5211d">OnGracefulShutdown</a> ()</td></tr>
@@ -196,8 +196,8 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="a3846d7c808f1b467b5fbef5f32e65ded"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3846d7c808f1b467b5fbef5f32e65ded">&#9670;&nbsp;</a></span>OnSessionReady()</h2>
+<a id="a9516b76c4871d5c6a0a220e68fcba129"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9516b76c4871d5c6a0a220e68fcba129">&#9670;&nbsp;</a></span>OnSessionReady()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -208,8 +208,8 @@ Friends</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc::experimental::ClientSessionReactor::OnSessionReady </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a>&#160;</td>
-          <td class="paramname"><em>call</em></td><td>)</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td>
+          <td class="paramname"><em>virtual_channel</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -276,7 +276,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

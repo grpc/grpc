@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python Docs v1.83.0</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python Docs v1.85.0</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=0bacb3f8"></script>
+    <script src="_static/documentation_options.js?v=f422086f"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -62,7 +62,7 @@
     <link rel="prev" title="gRPC" href="grpc.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.83.0" />
+  <meta name="docsearch:version" content="1.85.0" />
   </head>
   
   
@@ -124,7 +124,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.85.0</p>
   
 </a></div>
     
@@ -336,6 +336,9 @@ any call executed with this channel.</p></li>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A Channel.</p>
 </dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.Channel" title="grpc.aio._base_channel.Channel"><em>Channel</em></a></p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -359,6 +362,9 @@ any call executed with this channel.</p></li>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An aio.Channel.</p>
 </dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.Channel" title="grpc.aio._base_channel.Channel"><em>Channel</em></a></p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -380,6 +386,9 @@ multiple times.</p>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Channel the channel that was instantiated.</p>
 </dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Self</em></p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -388,6 +397,18 @@ multiple times.</p>
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__aexit__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exc_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exc_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exc_tb</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#Channel.__aexit__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Channel.__aexit__" title="Link to this definition">#</a></dt>
 <dd><p>Finishes the asynchronous context manager by closing the channel.</p>
 <p>Still active RPCs will be cancelled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exc_type</strong> (<em>type</em><em>[</em><em>BaseException</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>exc_val</strong> (<em>BaseException</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>exc_tb</strong> (<em>TracebackType</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool | None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -448,9 +469,9 @@ connect to peer or not.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
+<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>RequestType</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
+<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>ResponseType</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 <li><p><strong>_registered_method</strong> (<em>bool</em><em> | </em><em>None</em>) – Implementation Private. Optional: A bool representing
@@ -461,7 +482,7 @@ whether the method is registered.</p></li>
 <dd class="field-even"><p>A StreamStreamMultiCallable value for the named stream-stream method.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.StreamStreamMultiCallable" title="grpc.aio._base_channel.StreamStreamMultiCallable"><em>StreamStreamMultiCallable</em></a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.StreamStreamMultiCallable" title="grpc.aio._base_channel.StreamStreamMultiCallable"><em>StreamStreamMultiCallable</em></a>[<em>RequestType</em>, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -474,9 +495,9 @@ whether the method is registered.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
+<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>RequestType</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
+<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>ResponseType</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 <li><p><strong>_registered_method</strong> (<em>bool</em><em> | </em><em>None</em>) – Implementation Private. Optional: A bool representing
@@ -487,7 +508,7 @@ whether the method is registered.</p></li>
 <dd class="field-even"><p>A StreamUnaryMultiCallable value for the named stream-unary method.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.StreamUnaryMultiCallable" title="grpc.aio._base_channel.StreamUnaryMultiCallable"><em>StreamUnaryMultiCallable</em></a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.StreamUnaryMultiCallable" title="grpc.aio._base_channel.StreamUnaryMultiCallable"><em>StreamUnaryMultiCallable</em></a>[<em>RequestType</em>, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -500,9 +521,9 @@ whether the method is registered.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
+<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>RequestType</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
+<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>ResponseType</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 <li><p><strong>_registered_method</strong> (<em>bool</em><em> | </em><em>None</em>) – Implementation Private. Optional: A bool representing
@@ -513,7 +534,7 @@ whether the method is registered.</p></li>
 <dd class="field-even"><p>A UnaryStreamMultiCallable value for the named unary-stream method.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.UnaryStreamMultiCallable" title="grpc.aio._base_channel.UnaryStreamMultiCallable"><em>UnaryStreamMultiCallable</em></a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.UnaryStreamMultiCallable" title="grpc.aio._base_channel.UnaryStreamMultiCallable"><em>UnaryStreamMultiCallable</em></a>[<em>RequestType</em>, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -526,9 +547,9 @@ whether the method is registered.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>str</em>) – The name of the RPC method.</p></li>
-<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
+<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>RequestType</em><em>]</em><em>, </em><em>bytes</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-serializer"><span class="xref std std-term">serializer</span></a> for serializing the request
 message. Request goes unserialized in case None is passed.</p></li>
-<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
+<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>ResponseType</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-deserializer"><span class="xref std std-term">deserializer</span></a> for deserializing the
 response message. Response goes undeserialized in case None
 is passed.</p></li>
 <li><p><strong>_registered_method</strong> (<em>bool</em><em> | </em><em>None</em>) – Implementation Private. Optional: A bool representing
@@ -539,7 +560,7 @@ whether the method is registered.</p></li>
 <dd class="field-even"><p>A UnaryUnaryMultiCallable value for the named unary-unary method.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.UnaryUnaryMultiCallable" title="grpc.aio._base_channel.UnaryUnaryMultiCallable"><em>UnaryUnaryMultiCallable</em></a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#grpc.aio.UnaryUnaryMultiCallable" title="grpc.aio._base_channel.UnaryUnaryMultiCallable"><em>UnaryUnaryMultiCallable</em></a>[<em>RequestType</em>, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -664,6 +685,9 @@ or not specified in the address, then the gRPC runtime will choose a port.</p>
 <li><p><strong>method_handlers</strong> – A dictionary that maps method names to corresponding
 RpcMethodHandler.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -992,7 +1016,7 @@ this would return all items under the desired &lt;key&gt;.</p>
 <dd class="field-odd"><p><strong>key</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>List</em>[str | bytes]</p>
+<dd class="field-even"><p>list[str | bytes]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1368,7 +1392,7 @@ ones.</p>
 It must not be StatusCode.OK.</p></li>
 <li><p><strong>details</strong> (<em>str</em>) – A UTF-8-encodable string to be sent to the client upon
 termination of the RPC.</p></li>
-<li><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>]</em>) – A sequence of tuple represents the trailing
+<li><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>]</em>) – A sequence of tuple represents the trailing
 <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p></li>
 </ul>
 </dd>
@@ -1459,6 +1483,9 @@ object as its only argument.</p>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The StatusCode value for the RPC.</p>
 </dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>StatusCode</em></a></p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -1512,7 +1539,7 @@ server creation or set on the call.</p>
 <dd class="field-odd"><p>The invocation <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a> | <em>Sequence</em>[<em>Tuple</em>[str, str | bytes]] | None</p>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata">Metadata</a> | <em>Sequence</em>[<em>Tuple</em>[str, str | bytes]] | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1592,7 +1619,7 @@ peer identity, or None if the call is not authenticated.</p>
 metadata to add to what the gRPC runtime will transmit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>initial_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>]</em>) – The initial <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+<dd class="field-odd"><p><strong>initial_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>]</em>) – The initial <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -1656,7 +1683,7 @@ termination of the RPC.</p>
 metadata to add to what the gRPC runtime will transmit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>]</em>) – The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
+<dd class="field-odd"><p><strong>trailing_metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>]</em>) – The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -1688,6 +1715,9 @@ timed out, or None if no deadline was specified for the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The trailing <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> for the RPC.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata">Metadata</a> | <em>Sequence</em>[<em>Tuple</em>[str, str | bytes]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1736,7 +1766,7 @@ the RPC.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.InterceptedUnaryUnaryCall">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">InterceptedUnaryUnaryCall</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interceptors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_for_ready</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_serializer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_deserializer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#InterceptedUnaryUnaryCall"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.InterceptedUnaryUnaryCall" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">InterceptedUnaryUnaryCall</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interceptors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">credentials</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_for_ready</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_serializer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_deserializer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_call_handle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#InterceptedUnaryUnaryCall"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.InterceptedUnaryUnaryCall" title="Link to this definition">#</a></dt>
 <dd><p>Used for running a <cite>UnaryUnaryCall</cite> wrapped by interceptors.</p>
 <p>For the <cite>__await__</cite> method is it is proxied to the intercepted call only when
 the interceptor task is finished.</p>
@@ -1754,6 +1784,7 @@ the interceptor task is finished.</p>
 <li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>SerializingFunction</em><em>]</em>)</p></li>
 <li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>DeserializingFunction</em><em>]</em>)</p></li>
 <li><p><strong>loop</strong> (<em>asyncio.AbstractEventLoop</em>)</p></li>
+<li><p><strong>registered_call_handle</strong> (<em>int</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1859,7 +1890,7 @@ outgoing RPC.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>AsyncIterable</em>[<em>Any</em>] | <em>UnaryStreamCall</em></p>
+<dd class="field-even"><p><em>AsyncIterable</em>[<em>ResponseType</em>] | <em>UnaryStreamCall</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1891,7 +1922,7 @@ to continue with the RPC. <cite>continuation</cite> returns the call to the
 RPC.</p></li>
 <li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a>) – A ClientCallDetails object describing the
 outgoing RPC.</p></li>
-<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em>) – The request iterator that will produce requests
+<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>RequestType</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>RequestType</em><em>]</em>) – The request iterator that will produce requests
 for the RPC.</p></li>
 </ul>
 </dd>
@@ -1940,7 +1971,7 @@ to continue with the RPC. <cite>continuation</cite> returns the call to the
 RPC.</p></li>
 <li><p><strong>client_call_details</strong> (<a class="reference internal" href="#grpc.aio.ClientCallDetails" title="grpc.aio._interceptor.ClientCallDetails"><em>ClientCallDetails</em></a>) – A ClientCallDetails object describing the
 outgoing RPC.</p></li>
-<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em>) – The request iterator that will produce requests
+<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>RequestType</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>RequestType</em><em>]</em>) – The request iterator that will produce requests
 for the RPC.</p></li>
 </ul>
 </dd>
@@ -1954,7 +1985,7 @@ for the RPC.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>AsyncIterable</em>[<em>Any</em>] | <em>StreamStreamCall</em></p>
+<dd class="field-even"><p><em>AsyncIterable</em>[<em>ResponseType</em>] | <em>StreamStreamCall</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2094,7 +2125,7 @@ grpc.Compression.Gzip.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>None</em>) – An optional async iterable or iterable of request
+<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>RequestType</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>RequestType</em><em>] </em><em>| </em><em>None</em>) – An optional async iterable or iterable of request
 messages for the RPC.</p></li>
 <li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
@@ -2116,7 +2147,7 @@ grpc.Compression.Gzip.</p></li>
     metadata, status code, and details.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.StreamUnaryCall" title="grpc.aio._base_call.StreamUnaryCall"><em>StreamUnaryCall</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.StreamUnaryCall" title="grpc.aio._base_call.StreamUnaryCall"><em>StreamUnaryCall</em></a>[<em>RequestType</em>, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2134,7 +2165,7 @@ grpc.Compression.Gzip.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>] </em><em>| </em><em>None</em>) – An optional async iterable or iterable of request
+<li><p><strong>request_iterator</strong> (<em>Iterable</em><em>[</em><em>RequestType</em><em>] </em><em>| </em><em>AsyncIterable</em><em>[</em><em>RequestType</em><em>] </em><em>| </em><em>None</em>) – An optional async iterable or iterable of request
 messages for the RPC.</p></li>
 <li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
@@ -2156,7 +2187,7 @@ grpc.Compression.Gzip.</p></li>
     metadata, status code, and details.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.StreamStreamCall" title="grpc.aio._base_call.StreamStreamCall"><em>StreamStreamCall</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.StreamStreamCall" title="grpc.aio._base_call.StreamStreamCall"><em>StreamStreamCall</em></a>[<em>RequestType</em>, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>

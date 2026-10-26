@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -87,14 +87,14 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85c3018b87b4110c98b9f7f91adbfcef"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#a85c3018b87b4110c98b9f7f91adbfcef">NextMessageSize</a> (uint32_t *sz) override</td></tr>
 <tr class="separator:a85c3018b87b4110c98b9f7f91adbfcef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8887778273bea6ad32ffea3a6105699"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#aa8887778273bea6ad32ffea3a6105699">Read</a> (R *msg) override</td></tr>
-<tr class="memdesc:aa8887778273bea6ad32ffea3a6105699"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em>ReaderInterface.Read</em> method for semantics.  <a href="classgrpc_1_1_client_reader_writer.html#aa8887778273bea6ad32ffea3a6105699">More...</a><br /></td></tr>
+<tr class="memdesc:aa8887778273bea6ad32ffea3a6105699"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the ReaderInterface::Read method for semantics.  <a href="classgrpc_1_1_client_reader_writer.html#aa8887778273bea6ad32ffea3a6105699">More...</a><br /></td></tr>
 <tr class="separator:aa8887778273bea6ad32ffea3a6105699"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a33069a93ec83956d1042ac12c28143b5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#a33069a93ec83956d1042ac12c28143b5">Write</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options) override</td></tr>
 <tr class="separator:a33069a93ec83956d1042ac12c28143b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a183f35c478b847e939c76cb20c69a359"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#a183f35c478b847e939c76cb20c69a359">WritesDone</a> () override</td></tr>
 <tr class="separator:a183f35c478b847e939c76cb20c69a359"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0fe28c9fa3d01f716c9e453245b69b17"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#a0fe28c9fa3d01f716c9e453245b69b17">Finish</a> () override</td></tr>
-<tr class="memdesc:a0fe28c9fa3d01f716c9e453245b69b17"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the ClientStreamingInterface.Finish method for semantics.  <a href="classgrpc_1_1_client_reader_writer.html#a0fe28c9fa3d01f716c9e453245b69b17">More...</a><br /></td></tr>
+<tr class="memdesc:a0fe28c9fa3d01f716c9e453245b69b17"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the ClientStreamingInterface::Finish method for semantics.  <a href="classgrpc_1_1_client_reader_writer.html#a0fe28c9fa3d01f716c9e453245b69b17">More...</a><br /></td></tr>
 <tr class="separator:a0fe28c9fa3d01f716c9e453245b69b17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
@@ -133,7 +133,7 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See the ClientStreamingInterface.Finish method for semantics. </p>
+<p>See the ClientStreamingInterface::Finish method for semantics. </p>
 <p>Side effect:</p><ul>
 <li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em> associated with this call is updated with possible trailing metadata sent from the server. </li>
 </ul>
@@ -194,7 +194,7 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See the <em>ReaderInterface.Read</em> method for semantics. </p>
+<p>See the ReaderInterface::Read method for semantics. </p>
 <p>Side effect: Also receives initial metadata if not already received (updates the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em> associated with this call in that case). </p>
 
 </div>
@@ -327,7 +327,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -81,6 +81,7 @@ $(function() {
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2channel__interface_8h_source.html">grpcpp/impl/channel_interface.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="p_2impl_2sync_8h_source.html">grpcpp/impl/sync.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="support_2callback__common_8h_source.html">grpcpp/support/callback_common.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="grpcpp_2support_2channel__arguments_8h_source.html">grpcpp/support/channel_arguments.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2support_2config_8h_source.html">grpcpp/support/config.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2support_2status_8h_source.html">grpcpp/support/status.h</a>&gt;</code><br />
 <code>#include &lt;atomic&gt;</code><br />
@@ -89,6 +90,7 @@ $(function() {
 <code>#include &lt;memory&gt;</code><br />
 <code>#include &lt;type_traits&gt;</code><br />
 <code>#include &lt;utility&gt;</code><br />
+<code>#include &quot;absl/functional/any_invocable.h&quot;</code><br />
 <code>#include &quot;absl/log/absl_check.h&quot;</code><br />
 </div>
 <p><a href="support_2client__callback_8h_source.html">Go to the source code of this file.</a></p>
@@ -157,6 +159,8 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_unary_factory.html">grpc::internal::ClientCallbackUnaryFactory</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1internal_1_1_session_reactor_tracker.html">grpc::experimental::internal::SessionReactorTracker</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1internal_1_1_client_callback_session_impl.html">grpc::experimental::internal::ClientCallbackSessionImpl</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1internal_1_1_client_callback_session_factory.html">grpc::experimental::internal::ClientCallbackSessionFactory</a></td></tr>
@@ -182,11 +186,13 @@ Functions</h2></td></tr>
 <tr class="memitem:abec5e1e0cf645c090b33ae78e17289e5"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#abec5e1e0cf645c090b33ae78e17289e5">grpc::internal::CallbackUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a> *context, const InputMessage *request, OutputMessage *result, std::function&lt; void(<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt; &amp;&amp;on_completion)</td></tr>
 <tr class="memdesc:abec5e1e0cf645c090b33ae78e17289e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Perform a callback-based unary call.  <a href="namespacegrpc_1_1internal.html#abec5e1e0cf645c090b33ae78e17289e5">More...</a><br /></td></tr>
 <tr class="separator:abec5e1e0cf645c090b33ae78e17289e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1b85637c897fcc25412359b8a402d6e"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Channel &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#aa1b85637c897fcc25412359b8a402d6e">grpc::internal::CreateVirtualChannel</a> (Call call, const ChannelArguments &amp;args, absl::AnyInvocable&lt; void()&gt; goaway_callback)</td></tr>
+<tr class="separator:aa1b85637c897fcc25412359b8a402d6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -85,10 +85,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa6bb324b380b1389e38f89f7a0b85c64"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader.html#aa6bb324b380b1389e38f89f7a0b85c64">StartCall</a> () override</td></tr>
 <tr class="separator:aa6bb324b380b1389e38f89f7a0b85c64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab45261c3dee4f7b34080593cc899b40d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader.html#ab45261c3dee4f7b34080593cc899b40d">ReadInitialMetadata</a> (void *tag) override</td></tr>
-<tr class="memdesc:ab45261c3dee4f7b34080593cc899b40d"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <em><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a676e3a03a61c49a82b630d85bbfd366c" title="Request notification of the reading of initial metadata.">ClientAsyncResponseReaderInterface::ReadInitialMetadata</a></em> for semantics.  <a href="classgrpc_1_1_client_async_response_reader.html#ab45261c3dee4f7b34080593cc899b40d">More...</a><br /></td></tr>
+<tr class="memdesc:ab45261c3dee4f7b34080593cc899b40d"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a676e3a03a61c49a82b630d85bbfd366c" title="Request notification of the reading of initial metadata.">ClientAsyncResponseReaderInterface::ReadInitialMetadata</a> for semantics.  <a href="classgrpc_1_1_client_async_response_reader.html#ab45261c3dee4f7b34080593cc899b40d">More...</a><br /></td></tr>
 <tr class="separator:ab45261c3dee4f7b34080593cc899b40d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a473a5629202803f869a605fda81d0196"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_response_reader.html#a473a5629202803f869a605fda81d0196">Finish</a> (R *msg, <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *status, void *tag) override</td></tr>
-<tr class="memdesc:a473a5629202803f869a605fda81d0196"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <em><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a1a1e9725babb56d88ebb3ce209c5eeb0" title="Request to receive the server&#39;s response msg and final status for the call, and to notify tag on this...">ClientAsyncResponseReaderInterface::Finish</a></em> for semantics.  <a href="classgrpc_1_1_client_async_response_reader.html#a473a5629202803f869a605fda81d0196">More...</a><br /></td></tr>
+<tr class="memdesc:a473a5629202803f869a605fda81d0196"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a1a1e9725babb56d88ebb3ce209c5eeb0" title="Request to receive the server&#39;s response msg and final status for the call, and to notify tag on this...">ClientAsyncResponseReaderInterface::Finish</a> for semantics.  <a href="classgrpc_1_1_client_async_response_reader.html#a473a5629202803f869a605fda81d0196">More...</a><br /></td></tr>
 <tr class="separator:a473a5629202803f869a605fda81d0196"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
@@ -151,7 +151,7 @@ template&lt;class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See <em><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a1a1e9725babb56d88ebb3ce209c5eeb0" title="Request to receive the server&#39;s response msg and final status for the call, and to notify tag on this...">ClientAsyncResponseReaderInterface::Finish</a></em> for semantics. </p>
+<p>See <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a1a1e9725babb56d88ebb3ce209c5eeb0" title="Request to receive the server&#39;s response msg and final status for the call, and to notify tag on this...">ClientAsyncResponseReaderInterface::Finish</a> for semantics. </p>
 <p>Side effect:</p><ul>
 <li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em> associated with this call is updated with possible initial and trailing metadata sent from the server. </li>
 </ul>
@@ -260,7 +260,7 @@ template&lt;class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See <em><a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a676e3a03a61c49a82b630d85bbfd366c" title="Request notification of the reading of initial metadata.">ClientAsyncResponseReaderInterface::ReadInitialMetadata</a></em> for semantics. </p>
+<p>See <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a676e3a03a61c49a82b630d85bbfd366c" title="Request notification of the reading of initial metadata.">ClientAsyncResponseReaderInterface::ReadInitialMetadata</a> for semantics. </p>
 <p>Side effect:</p><ul>
 <li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em> associated with this call is updated with possible initial and trailing metadata sent from the server. </li>
 </ul>
@@ -326,7 +326,7 @@ template&lt;class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

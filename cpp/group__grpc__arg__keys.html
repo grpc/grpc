@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -148,6 +148,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga532b979ac7d0488ad1e22be82b0413bd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga532b979ac7d0488ad1e22be82b0413bd">GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT</a>&#160;&#160;&#160;&quot;grpc.server.max_pending_requests_hard_limit&quot;</td></tr>
 <tr class="memdesc:ga532b979ac7d0488ad1e22be82b0413bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">The hard limit on the number of pending requests in the server.  <a href="group__grpc__arg__keys.html#ga532b979ac7d0488ad1e22be82b0413bd">More...</a><br /></td></tr>
 <tr class="separator:ga532b979ac7d0488ad1e22be82b0413bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6afb80ed34847f96397f262cd5d590a8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga6afb80ed34847f96397f262cd5d590a8">GRPC_ARG_CHILD_CHANNEL_ARGS</a>&#160;&#160;&#160;&quot;grpc.child_channel.args&quot;</td></tr>
+<tr class="memdesc:ga6afb80ed34847f96397f262cd5d590a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">A pointer argument key.  <a href="group__grpc__arg__keys.html#ga6afb80ed34847f96397f262cd5d590a8">More...</a><br /></td></tr>
+<tr class="separator:ga6afb80ed34847f96397f262cd5d590a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">GRPC_ARG_HTTP2_SCHEME</a>&#160;&#160;&#160;&quot;grpc.http2_scheme&quot;</td></tr>
 <tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br /></td></tr>
 <tr class="separator:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -258,6 +261,9 @@ Macros</h2></td></tr>
 <tr class="separator:gae55b7bd57a5344e0083eac4d06c2d51b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gadeaad8ae5b50ee8d2fb44d289aeb223d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gadeaad8ae5b50ee8d2fb44d289aeb223d">GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE</a>&#160;&#160;&#160;&quot;grpc.experimental.tcp_max_read_chunk_size&quot;</td></tr>
 <tr class="separator:gadeaad8ae5b50ee8d2fb44d289aeb223d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga71179e0727e5eb76371db4d0c946b6cd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga71179e0727e5eb76371db4d0c946b6cd">GRPC_ARG_TCP_MAX_READ_BUFFER_SIZE</a>&#160;&#160;&#160;&quot;grpc.experimental.tcp_max_read_buffer_size&quot;</td></tr>
+<tr class="memdesc:ga71179e0727e5eb76371db4d0c946b6cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg (integer) setting an opt-in upper bound, in bytes, on the adaptive read buffer size that a single TCP endpoint may preallocate for reads.  <a href="group__grpc__arg__keys.html#ga71179e0727e5eb76371db4d0c946b6cd">More...</a><br /></td></tr>
+<tr class="separator:ga71179e0727e5eb76371db4d0c946b6cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga1eb58c302eaf27a5d982b30402b8f84a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga1eb58c302eaf27a5d982b30402b8f84a">GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED</a>&#160;&#160;&#160;&quot;grpc.experimental.tcp_tx_zerocopy_enabled&quot;</td></tr>
 <tr class="separator:ga1eb58c302eaf27a5d982b30402b8f84a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga1014726da03b9715efd3638ca5f9c33a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga1014726da03b9715efd3638ca5f9c33a">GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD</a>&#160;&#160;&#160;&quot;grpc.experimental.tcp_tx_zerocopy_send_bytes_threshold&quot;</td></tr>
@@ -483,6 +489,23 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>gRPC Objective-C channel pooling domain string. </p>
+
+</div>
+</div>
+<a id="ga6afb80ed34847f96397f262cd5d590a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga6afb80ed34847f96397f262cd5d590a8">&#9670;&nbsp;</a></span>GRPC_ARG_CHILD_CHANNEL_ARGS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_CHILD_CHANNEL_ARGS&#160;&#160;&#160;&quot;grpc.child_channel.args&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>A pointer argument key. </p>
+<p>The value is a pointer to a <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around.">grpc_channel_args</a> struct containing the subset of options for child channels. </p>
 
 </div>
 </div>
@@ -1794,6 +1817,23 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga71179e0727e5eb76371db4d0c946b6cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga71179e0727e5eb76371db4d0c946b6cd">&#9670;&nbsp;</a></span>GRPC_ARG_TCP_MAX_READ_BUFFER_SIZE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_TCP_MAX_READ_BUFFER_SIZE&#160;&#160;&#160;&quot;grpc.experimental.tcp_max_read_buffer_size&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Channel arg (integer) setting an opt-in upper bound, in bytes, on the adaptive read buffer size that a single TCP endpoint may preallocate for reads. </p>
+<p>When unset (the default) the read buffer target grows as before, preserving historical behavior. When set, the adaptive read target is clamped to this value so occasional large reads do not leave a permanently high read-buffer high-watermark. Unlike GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE, this does not change per-socket slice sizing. </p>
+
+</div>
+</div>
 <a id="gadeaad8ae5b50ee8d2fb44d289aeb223d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gadeaad8ae5b50ee8d2fb44d289aeb223d">&#9670;&nbsp;</a></span>GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE</h2>
 
@@ -2051,7 +2091,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

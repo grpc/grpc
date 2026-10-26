@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -133,6 +133,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af8f0632b49b4e281f9f11fcfdda9c446"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#af8f0632b49b4e281f9f11fcfdda9c446">SetPointerWithVtable</a> (const std::string &amp;key, void *value, const <a class="el" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a> *vtable)</td></tr>
 <tr class="memdesc:af8f0632b49b4e281f9f11fcfdda9c446"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a pointer argument <em>value</em> under <em>key</em>, transferring ownership of <em>value</em> to the <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation.">ChannelArguments</a></em> object.  <a href="classgrpc_1_1_channel_arguments.html#af8f0632b49b4e281f9f11fcfdda9c446">More...</a><br /></td></tr>
 <tr class="separator:af8f0632b49b4e281f9f11fcfdda9c446"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d55c3006845ea8ad6d4ddcf9b4a809f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a5d55c3006845ea8ad6d4ddcf9b4a809f">SetChildChannelArgs</a> (const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args)</td></tr>
+<tr class="separator:a5d55c3006845ea8ad6d4ddcf9b4a809f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af353198d69aa6e9c04f3451f848d5ae7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#af353198d69aa6e9c04f3451f848d5ae7">SetString</a> (const std::string &amp;key, const std::string &amp;value)</td></tr>
 <tr class="memdesc:af353198d69aa6e9c04f3451f848d5ae7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a textual argument <em>value</em> under <em>key</em>.  <a href="classgrpc_1_1_channel_arguments.html#af353198d69aa6e9c04f3451f848d5ae7">More...</a><br /></td></tr>
 <tr class="separator:af353198d69aa6e9c04f3451f848d5ae7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -276,6 +278,24 @@ Friends</h2></td></tr>
 <p>Dump arguments in this instance to <em>channel_args</em>. </p>
 <p>Does not take ownership of <em>channel_args</em>.</p>
 <p>Note that the underlying arguments are shared. Changes made to either <em>channel_args</em> or this instance would be reflected on both. </p>
+
+</div>
+</div>
+<a id="a5d55c3006845ea8ad6d4ddcf9b4a809f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d55c3006845ea8ad6d4ddcf9b4a809f">&#9670;&nbsp;</a></span>SetChildChannelArgs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ChannelArguments::SetChildChannelArgs </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;&#160;</td>
+          <td class="paramname"><em>args</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -678,7 +698,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,8 @@ Macros</h2></td></tr>
 <tr class="separator:a4ea60d47d799302dc1b760bcfa78e5a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aacbb09bfff7ebda81d9d3d89f0597312"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#aacbb09bfff7ebda81d9d3d89f0597312">GRPC_SSL_SESSION_REUSED_PROPERTY</a>&#160;&#160;&#160;&quot;ssl_session_reused&quot;</td></tr>
 <tr class="separator:aacbb09bfff7ebda81d9d3d89f0597312"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acffde0609301e43dd9a044d0d02a69cc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#acffde0609301e43dd9a044d0d02a69cc">GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME</a>&#160;&#160;&#160;&quot;ssl_negotiated_key_exchange_group&quot;</td></tr>
+<tr class="separator:acffde0609301e43dd9a044d0d02a69cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab19cdead9b37b4818118403d4d3b4ebb"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#ab19cdead9b37b4818118403d4d3b4ebb">GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME</a>&#160;&#160;&#160;&quot;security_level&quot;</td></tr>
 <tr class="separator:ab19cdead9b37b4818118403d4d3b4ebb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f5d1fd6d796535d7ccef836c6a5208d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a2f5d1fd6d796535d7ccef836c6a5208d">GRPC_PEER_DNS_PROPERTY_NAME</a>&#160;&#160;&#160;&quot;peer_dns&quot;</td></tr>
@@ -165,7 +167,8 @@ Enumerations</h2></td></tr>
 <a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4a2d8861c5d80abf6a88a47f55ce0f6159">GRPC_TLS_GROUP_X25519</a>, 
 <a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4acee25b27e50b57e22ec0886e096bd3f7">GRPC_TLS_GROUP_X25519_MLKEM768</a>, 
 <br />
-&#160;&#160;<a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4a948f4197db82f52ea899a7ee00952bfa">GRPC_TLS_GROUP_SECP384R1</a>
+&#160;&#160;<a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4a948f4197db82f52ea899a7ee00952bfa">GRPC_TLS_GROUP_SECP384R1</a>, 
+<a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4a4db830f3378ec12c9171c4055c429aa1">GRPC_TLS_GROUP_MLKEM1024</a>
 <br />
  }</td></tr>
 <tr class="memdesc:a43497c36e19c115602cd4f763c77ffd4"><td class="mdescLeft">&#160;</td><td class="mdescRight">TLS key exchange groups.  <a href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4">More...</a><br /></td></tr>
@@ -271,6 +274,20 @@ Enumerations</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">#define GRPC_PEER_URI_PROPERTY_NAME&#160;&#160;&#160;&quot;peer_uri&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="acffde0609301e43dd9a044d0d02a69cc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acffde0609301e43dd9a044d0d02a69cc">&#9670;&nbsp;</a></span>GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP_PROPERTY_NAME&#160;&#160;&#160;&quot;ssl_negotiated_key_exchange_group&quot;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -563,6 +580,9 @@ Enumerations</h2></td></tr>
 </td></tr>
 <tr><td class="fieldname"><a id="a43497c36e19c115602cd4f763c77ffd4a948f4197db82f52ea899a7ee00952bfa"></a>GRPC_TLS_GROUP_SECP384R1&#160;</td><td class="fielddoc"><p>secp384r1 ECDH key exchange. </p>
 </td></tr>
+<tr><td class="fieldname"><a id="a43497c36e19c115602cd4f763c77ffd4a4db830f3378ec12c9171c4055c429aa1"></a>GRPC_TLS_GROUP_MLKEM1024&#160;</td><td class="fielddoc"><p>MLKEM1024 key exchange. </p>
+<p>Post-quantum cryptography. </p>
+</td></tr>
 </table>
 
 </div>
@@ -590,7 +610,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

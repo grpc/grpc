@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -401,7 +401,7 @@ $(function() {
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_reader_writer.html">ServerCallbackReaderWriter&lt;Request, Response&gt;</a>* stream =</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        stream_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;stream_mu_);</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(stream_mu_);</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;      stream = stream_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;      <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        backlog_.send_initial_metadata_wanted = <span class="keyword">true</span>;</div>
@@ -415,7 +415,7 @@ $(function() {
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_reader_writer.html">ServerCallbackReaderWriter&lt;Request, Response&gt;</a>* stream =</div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;        stream_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;stream_mu_);</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(stream_mu_);</div>
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;      stream = stream_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;      <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        backlog_.read_wanted = req;</div>
@@ -434,7 +434,7 @@ $(function() {
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_reader_writer.html">ServerCallbackReaderWriter&lt;Request, Response&gt;</a>* stream =</div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;        stream_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;    <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;stream_mu_);</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(stream_mu_);</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;      stream = stream_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;      <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;        backlog_.write_wanted = resp;</div>
@@ -450,7 +450,7 @@ $(function() {
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_reader_writer.html">ServerCallbackReaderWriter&lt;Request, Response&gt;</a>* stream =</div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;        stream_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;    <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;stream_mu_);</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(stream_mu_);</div>
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;      stream = stream_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;      <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;        backlog_.write_and_finish_wanted = <span class="keyword">true</span>;</div>
@@ -471,7 +471,7 @@ $(function() {
 <div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_reader_writer.html">ServerCallbackReaderWriter&lt;Request, Response&gt;</a>* stream =</div>
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        stream_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;stream_mu_);</div>
+<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(stream_mu_);</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;      stream = stream_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;      <span class="keywordflow">if</span> (stream == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;        backlog_.finish_wanted = <span class="keyword">true</span>;</div>
@@ -498,7 +498,7 @@ $(function() {
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;  <span class="comment">// customization point.</span></div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> InternalBindStream(</div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;      <a class="code" href="classgrpc_1_1_server_callback_reader_writer.html">ServerCallbackReaderWriter&lt;Request, Response&gt;</a>* stream) {</div>
-<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;stream_mu_);</div>
+<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(stream_mu_);</div>
 <div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160; </div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(backlog_.send_initial_metadata_wanted)) {</div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;      stream-&gt;<a class="code" href="classgrpc_1_1_server_callback_reader_writer.html#af04fc504f776c5dd73670c489fd2d324">SendInitialMetadata</a>();</div>
@@ -551,7 +551,7 @@ $(function() {
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_reader.html">ServerCallbackReader&lt;Request&gt;</a>* reader =</div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;        reader_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;    <span class="keywordflow">if</span> (reader == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;reader_mu_);</div>
+<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(reader_mu_);</div>
 <div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;      reader = reader_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;      <span class="keywordflow">if</span> (reader == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;        backlog_.send_initial_metadata_wanted = <span class="keyword">true</span>;</div>
@@ -564,7 +564,7 @@ $(function() {
 <div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_reader.html">ServerCallbackReader&lt;Request&gt;</a>* reader =</div>
 <div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;        reader_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;    <span class="keywordflow">if</span> (reader == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;reader_mu_);</div>
+<div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(reader_mu_);</div>
 <div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;      reader = reader_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;      <span class="keywordflow">if</span> (reader == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;        backlog_.read_wanted = req;</div>
@@ -577,7 +577,7 @@ $(function() {
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_reader.html">ServerCallbackReader&lt;Request&gt;</a>* reader =</div>
 <div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;        reader_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;    <span class="keywordflow">if</span> (reader == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;reader_mu_);</div>
+<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(reader_mu_);</div>
 <div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;      reader = reader_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;      <span class="keywordflow">if</span> (reader == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;        backlog_.finish_wanted = <span class="keyword">true</span>;</div>
@@ -600,7 +600,7 @@ $(function() {
 <div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;  <span class="comment">// customization point.</span></div>
 <div class="line"><a name="l00602"></a><span class="lineno">  602</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> InternalBindReader(<a class="code" href="classgrpc_1_1_server_callback_reader.html">ServerCallbackReader&lt;Request&gt;</a>* reader)</div>
 <div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;      ABSL_LOCKS_EXCLUDED(reader_mu_) {</div>
-<div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;reader_mu_);</div>
+<div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(reader_mu_);</div>
 <div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160; </div>
 <div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(backlog_.send_initial_metadata_wanted)) {</div>
 <div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;      reader-&gt;SendInitialMetadata();</div>
@@ -636,7 +636,7 @@ $(function() {
 <div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_writer.html">ServerCallbackWriter&lt;Response&gt;</a>* writer =</div>
 <div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;        writer_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;    <span class="keywordflow">if</span> (writer == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;writer_mu_);</div>
+<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(writer_mu_);</div>
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;      writer = writer_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;      <span class="keywordflow">if</span> (writer == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;        backlog_.send_initial_metadata_wanted = <span class="keyword">true</span>;</div>
@@ -653,7 +653,7 @@ $(function() {
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_writer.html">ServerCallbackWriter&lt;Response&gt;</a>* writer =</div>
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        writer_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;    <span class="keywordflow">if</span> (writer == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;writer_mu_);</div>
+<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(writer_mu_);</div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;      writer = writer_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;      <span class="keywordflow">if</span> (writer == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;        backlog_.write_wanted = resp;</div>
@@ -668,7 +668,7 @@ $(function() {
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_writer.html">ServerCallbackWriter&lt;Response&gt;</a>* writer =</div>
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;        writer_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;    <span class="keywordflow">if</span> (writer == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;writer_mu_);</div>
+<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(writer_mu_);</div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;      writer = writer_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;      <span class="keywordflow">if</span> (writer == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;        backlog_.write_and_finish_wanted = <span class="keyword">true</span>;</div>
@@ -687,7 +687,7 @@ $(function() {
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_writer.html">ServerCallbackWriter&lt;Response&gt;</a>* writer =</div>
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;        writer_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;    <span class="keywordflow">if</span> (writer == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;writer_mu_);</div>
+<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(writer_mu_);</div>
 <div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;      writer = writer_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;      <span class="keywordflow">if</span> (writer == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;        backlog_.finish_wanted = <span class="keyword">true</span>;</div>
@@ -709,7 +709,7 @@ $(function() {
 <div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;  <span class="comment">// customization point.</span></div>
 <div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> InternalBindWriter(<a class="code" href="classgrpc_1_1_server_callback_writer.html">ServerCallbackWriter&lt;Response&gt;</a>* writer)</div>
 <div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;      ABSL_LOCKS_EXCLUDED(writer_mu_) {</div>
-<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;writer_mu_);</div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(writer_mu_);</div>
 <div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160; </div>
 <div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(backlog_.send_initial_metadata_wanted)) {</div>
 <div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;      writer-&gt;SendInitialMetadata();</div>
@@ -752,7 +752,7 @@ $(function() {
 <div class="line"><a name="l00757"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_unary_reactor.html#a85bd17f22f5761bc12f6d0e177573785">  757</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_server_unary_reactor.html#a85bd17f22f5761bc12f6d0e177573785">StartSendInitialMetadata</a>() ABSL_LOCKS_EXCLUDED(call_mu_) {</div>
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_unary.html">ServerCallbackUnary</a>* call = call_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;    <span class="keywordflow">if</span> (call == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;call_mu_);</div>
+<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(call_mu_);</div>
 <div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;      call = call_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;      <span class="keywordflow">if</span> (call == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;        backlog_.send_initial_metadata_wanted = <span class="keyword">true</span>;</div>
@@ -764,7 +764,7 @@ $(function() {
 <div class="line"><a name="l00772"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_unary_reactor.html#a38c5487abe04278f3ac81ea9b1ff4e1e">  772</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_server_unary_reactor.html#a38c5487abe04278f3ac81ea9b1ff4e1e">Finish</a>(<a class="code" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(call_mu_) {</div>
 <div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;    <a class="code" href="classgrpc_1_1_server_callback_unary.html">ServerCallbackUnary</a>* call = call_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;    <span class="keywordflow">if</span> (call == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;call_mu_);</div>
+<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(call_mu_);</div>
 <div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;      call = call_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;      <span class="keywordflow">if</span> (call == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;        backlog_.finish_wanted = <span class="keyword">true</span>;</div>
@@ -785,7 +785,7 @@ $(function() {
 <div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;  <span class="comment">// customization point.</span></div>
 <div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> InternalBindCall(<a class="code" href="classgrpc_1_1_server_callback_unary.html">ServerCallbackUnary</a>* call)</div>
 <div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;      ABSL_LOCKS_EXCLUDED(call_mu_) {</div>
-<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;call_mu_);</div>
+<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(call_mu_);</div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160; </div>
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(backlog_.send_initial_metadata_wanted)) {</div>
 <div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;      call-&gt;SendInitialMetadata();</div>
@@ -816,7 +816,7 @@ $(function() {
 <div class="line"><a name="l00827"></a><span class="lineno"><a class="line" href="classgrpc_1_1experimental_1_1_server_session_reactor.html#a4ada0850baaacf6284ff9df1e1a07ec9">  827</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1experimental_1_1_server_session_reactor.html#a4ada0850baaacf6284ff9df1e1a07ec9">StartVirtualRPCs</a>() ABSL_LOCKS_EXCLUDED(session_mu_) {</div>
 <div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;    <a class="code" href="classgrpc_1_1experimental_1_1_server_callback_session.html">ServerCallbackSession</a>* session = session_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;    <span class="keywordflow">if</span> (session == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;session_mu_);</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(session_mu_);</div>
 <div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;      session = session_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;      <span class="keywordflow">if</span> (session == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;        backlog_.send_initial_metadata_wanted = <span class="keyword">true</span>;</div>
@@ -829,7 +829,7 @@ $(function() {
 <div class="line"><a name="l00843"></a><span class="lineno"><a class="line" href="classgrpc_1_1experimental_1_1_server_session_reactor.html#a9f5539ac2c43c58b5f75b967be237089">  843</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1experimental_1_1_server_session_reactor.html#a9f5539ac2c43c58b5f75b967be237089">Finish</a>(<a class="code" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(session_mu_) {</div>
 <div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;    <a class="code" href="classgrpc_1_1experimental_1_1_server_callback_session.html">ServerCallbackSession</a>* session = session_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    <span class="keywordflow">if</span> (session == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;session_mu_);</div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(session_mu_);</div>
 <div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;      session = session_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;      <span class="keywordflow">if</span> (session == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;        backlog_.finish_wanted = <span class="keyword">true</span>;</div>
@@ -845,7 +845,7 @@ $(function() {
 <div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;      ABSL_LOCKS_EXCLUDED(session_mu_) {</div>
 <div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;    <a class="code" href="classgrpc_1_1experimental_1_1_server_callback_session.html">ServerCallbackSession</a>* session = session_.load(std::memory_order_acquire);</div>
 <div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;    <span class="keywordflow">if</span> (session == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;session_mu_);</div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;      <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(session_mu_);</div>
 <div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;      session = session_.load(std::memory_order_relaxed);</div>
 <div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;      <span class="keywordflow">if</span> (session == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;        backlog_.graceful_shutdown_wanted_callback = std::move(on_shutdown);</div>
@@ -865,7 +865,7 @@ $(function() {
 <div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;  <span class="comment">// customization point.</span></div>
 <div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> InternalBindSession(<a class="code" href="classgrpc_1_1experimental_1_1_server_callback_session.html">ServerCallbackSession</a>* session)</div>
 <div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;      ABSL_LOCKS_EXCLUDED(session_mu_) {</div>
-<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(&amp;session_mu_);</div>
+<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_mutex_lock.html">grpc::internal::MutexLock</a> l(session_mu_);</div>
 <div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160; </div>
 <div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(backlog_.send_initial_metadata_wanted)) {</div>
 <div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;      session-&gt;SendInitialMetadata();</div>
@@ -1079,7 +1079,7 @@ $(function() {
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_adedd4841521e4fe210676d8387190cf1"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#adedd4841521e4fe210676d8387190cf1">grpc::experimental::ServerBidiReactor</a></div><div class="ttdeci">::grpc::ServerBidiReactor&lt; Request, Response &gt; ServerBidiReactor</div><div class="ttdef"><b>Definition:</b> server_callback.h:955</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

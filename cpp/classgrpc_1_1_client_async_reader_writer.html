@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -85,7 +85,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae72f68c240ac2cbca98b524e723bd05b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#ae72f68c240ac2cbca98b524e723bd05b">StartCall</a> (void *tag) override</td></tr>
 <tr class="separator:ae72f68c240ac2cbca98b524e723bd05b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a169a2eb8bedfd7281b37c79fdd307eb2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a169a2eb8bedfd7281b37c79fdd307eb2">ReadInitialMetadata</a> (void *tag) override</td></tr>
-<tr class="memdesc:a169a2eb8bedfd7281b37c79fdd307eb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em>ClientAsyncStreamingInterface.ReadInitialMetadata</em> method for semantics of this method.  <a href="classgrpc_1_1_client_async_reader_writer.html#a169a2eb8bedfd7281b37c79fdd307eb2">More...</a><br /></td></tr>
+<tr class="memdesc:a169a2eb8bedfd7281b37c79fdd307eb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the ClientAsyncStreamingInterface::ReadInitialMetadata method for semantics of this method.  <a href="classgrpc_1_1_client_async_reader_writer.html#a169a2eb8bedfd7281b37c79fdd307eb2">More...</a><br /></td></tr>
 <tr class="separator:a169a2eb8bedfd7281b37c79fdd307eb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f2c91734a7de5affdd427fb88ee6167"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a2f2c91734a7de5affdd427fb88ee6167">Read</a> (R *msg, void *tag) override</td></tr>
 <tr class="separator:a2f2c91734a7de5affdd427fb88ee6167"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -96,7 +96,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af3e090a0801f6bc524f959cd93e4cddc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#af3e090a0801f6bc524f959cd93e4cddc">WritesDone</a> (void *tag) override</td></tr>
 <tr class="separator:af3e090a0801f6bc524f959cd93e4cddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb288c3e106a091b6f18f84fd9f6941c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#abb288c3e106a091b6f18f84fd9f6941c">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *status, void *tag) override</td></tr>
-<tr class="memdesc:abb288c3e106a091b6f18f84fd9f6941c"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em>ClientAsyncStreamingInterface.Finish</em> method for semantics.  <a href="classgrpc_1_1_client_async_reader_writer.html#abb288c3e106a091b6f18f84fd9f6941c">More...</a><br /></td></tr>
+<tr class="memdesc:abb288c3e106a091b6f18f84fd9f6941c"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the ClientAsyncStreamingInterface::Finish method for semantics.  <a href="classgrpc_1_1_client_async_reader_writer.html#abb288c3e106a091b6f18f84fd9f6941c">More...</a><br /></td></tr>
 <tr class="separator:abb288c3e106a091b6f18f84fd9f6941c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
@@ -153,7 +153,7 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See the <em>ClientAsyncStreamingInterface.Finish</em> method for semantics. </p>
+<p>See the ClientAsyncStreamingInterface::Finish method for semantics. </p>
 <p>Side effect</p><ul>
 <li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em> associated with this call is updated with possible initial and trailing metadata sent from the server. </li>
 </ul>
@@ -300,7 +300,7 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See the <em>ClientAsyncStreamingInterface.ReadInitialMetadata</em> method for semantics of this method. </p>
+<p>See the ClientAsyncStreamingInterface::ReadInitialMetadata method for semantics of this method. </p>
 <p>Side effect:</p><ul>
 <li>upon receiving initial metadata from the server, the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em> is updated with it, and then the receiving initial metadata can be accessed through this <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em>. </li>
 </ul>
@@ -477,7 +477,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

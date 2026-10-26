@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_health.v1.health &#8212; gRPC Python Docs v1.83.0</title>
+    <title>grpc_health.v1.health &#8212; gRPC Python Docs v1.85.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=0bacb3f8"></script>
+    <script src="../../../_static/documentation_options.js?v=f422086f"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.83.0" />
+  <meta name="docsearch:version" content="1.85.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.85.0</p>
   
 </a></div>
     
@@ -261,18 +261,18 @@
   <h1>Source code for grpc_health.v1.health</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2015 gRPC authors.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
-<span class="sd">&quot;&quot;&quot;Reference implementation for health checking in gRPC Python.&quot;&quot;&quot;</span>
+<span class="sd">"""Reference implementation for health checking in gRPC Python."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
@@ -285,9 +285,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">_async</span> <span class="k">as</span> <span class="n">aio</span>  <span class="c1"># pylint: disable=unused-import</span>
 
 <span class="c1"># The service name of the health checking servicer.</span>
-<span class="n">SERVICE_NAME</span> <span class="o">=</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">DESCRIPTOR</span><span class="o">.</span><span class="n">services_by_name</span><span class="p">[</span><span class="s2">&quot;Health&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">full_name</span>
+<span class="n">SERVICE_NAME</span> <span class="o">=</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">DESCRIPTOR</span><span class="o">.</span><span class="n">services_by_name</span><span class="p">[</span><span class="s2">"Health"</span><span class="p">]</span><span class="o">.</span><span class="n">full_name</span>
 <span class="c1"># The entry of overall health for the entire server.</span>
-<span class="n">OVERALL_HEALTH</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="n">OVERALL_HEALTH</span> <span class="o">=</span> <span class="s2">""</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_Watcher</span><span class="p">:</span>
@@ -337,13 +337,13 @@
 <div class="viewcode-block" id="HealthServicer">
 <a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">HealthServicer</span><span class="p">(</span><span class="n">_health_pb2_grpc</span><span class="o">.</span><span class="n">HealthServicer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Servicer handling RPCs for service statuses.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Servicer handling RPCs for service statuses."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">experimental_non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">experimental_thread_pool</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_server_status</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="o">.</span><span class="n">SERVING</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_server_status</span> <span class="o">=</span> <span class="p">{</span><span class="s2">""</span><span class="p">:</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="o">.</span><span class="n">SERVING</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_send_response_callbacks</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Watch</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="n">experimental_non_blocking</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">experimental_non_blocking</span>
@@ -407,13 +407,13 @@
 <div class="viewcode-block" id="HealthServicer.set">
 <a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.set">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the status of a service.</span>
+<span class="w">        </span><span class="sd">"""Sets the status of a service.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">          service: string, the name of the service.</span>
 <span class="sd">          status: HealthCheckResponse.status enum value indicating the status of</span>
 <span class="sd">            the service</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gracefully_shutting_down</span><span class="p">:</span>
                 <span class="k">return</span>
@@ -430,14 +430,14 @@
 <div class="viewcode-block" id="HealthServicer.enter_graceful_shutdown">
 <a class="viewcode-back" href="../../../grpc_health_checking.html#grpc_health.v1.health.HealthServicer.enter_graceful_shutdown">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">enter_graceful_shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Permanently sets the status of all services to NOT_SERVING.</span>
+<span class="w">        </span><span class="sd">"""Permanently sets the status of all services to NOT_SERVING.</span>
 
 <span class="sd">        This should be invoked when the server is entering a graceful shutdown</span>
 <span class="sd">        period. After this method is invoked, future attempts to set the status</span>
 <span class="sd">        of a service will be ignored.</span>
 
 <span class="sd">        This is an EXPERIMENTAL API.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gracefully_shutting_down</span><span class="p">:</span>
                 <span class="k">return</span>

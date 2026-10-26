@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_reflection.v1alpha.proto_reflection_descriptor_database &#8212; gRPC Python Docs v1.83.0</title>
+    <title>grpc_reflection.v1alpha.proto_reflection_descriptor_database &#8212; gRPC Python Docs v1.85.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=0bacb3f8"></script>
+    <script src="../../../_static/documentation_options.js?v=f422086f"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.83.0" />
+  <meta name="docsearch:version" content="1.85.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.85.0</p>
   
 </a></div>
     
@@ -261,22 +261,22 @@
   <h1>Source code for grpc_reflection.v1alpha.proto_reflection_descriptor_database</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2022 gRPC authors.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
-<span class="sd">&quot;&quot;&quot;Reference implementation for reflection client in gRPC Python.</span>
+<span class="sd">"""Reference implementation for reflection client in gRPC Python.</span>
 
 <span class="sd">For usage instructions, see the Python Reflection documentation at</span>
 <span class="sd">``doc/python/server_reflection.md``.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span>
@@ -297,8 +297,8 @@
 <div class="viewcode-block" id="ProtoReflectionDescriptorDatabase">
 <a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ProtoReflectionDescriptorDatabase</span><span class="p">(</span><span class="n">DescriptorDatabase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A container and interface for receiving descriptors from a server&#39;s</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    A container and interface for receiving descriptors from a server's</span>
 <span class="sd">    Reflection service.</span>
 
 <span class="sd">    ProtoReflectionDescriptorDatabase takes a channel to a server with</span>
@@ -306,7 +306,7 @@
 <span class="sd">    information. It implements the DescriptorDatabase interface.</span>
 
 <span class="sd">    It is typically used to feed a DescriptorPool instance.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Implementation based on C++ version found here (version tag 1.39.1):</span>
     <span class="c1">#   grpc/test/cpp/util/proto_reflection_descriptor_database.cc</span>
@@ -323,14 +323,14 @@
 <div class="viewcode-block" id="ProtoReflectionDescriptorDatabase.get_services">
 <a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.get_services">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_services</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get list of full names of the registered services.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A list of strings corresponding to the names of the services.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">request</span> <span class="o">=</span> <span class="n">ServerReflectionRequest</span><span class="p">(</span><span class="n">list_services</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_one_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">ServerReflectionRequest</span><span class="p">(</span><span class="n">list_services</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_one_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
         <span class="n">list_services</span><span class="p">:</span> <span class="n">ListServiceResponse</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">list_services_response</span>
         <span class="n">services</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ServiceResponse</span><span class="p">]</span> <span class="o">=</span> <span class="n">list_services</span><span class="o">.</span><span class="n">service</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">service</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="n">services</span><span class="p">]</span></div>
@@ -339,21 +339,21 @@
 <div class="viewcode-block" id="ProtoReflectionDescriptorDatabase.FindFileByName">
 <a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileByName">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">FindFileByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileDescriptorProto</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a file descriptor by file name.</span>
 
 <span class="sd">        This function implements a DescriptorDatabase interface, and is</span>
 <span class="sd">        typically not called directly; prefer using a DescriptorPool instead.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name: The name of the file. Typically this is a relative path ending in &quot;.proto&quot;.</span>
+<span class="sd">            name: The name of the file. Typically this is a relative path ending in ".proto".</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A FileDescriptorProto for the file.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            KeyError: the file was not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">FindFileByName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
@@ -368,15 +368,15 @@
 <div class="viewcode-block" id="ProtoReflectionDescriptorDatabase.FindFileContainingSymbol">
 <a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingSymbol">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">FindFileContainingSymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileDescriptorProto</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find the file containing the symbol, and return its file descriptor.</span>
 
 <span class="sd">        The symbol should be a fully qualified name including the file</span>
-<span class="sd">        descriptor&#39;s package and any containing messages. Some examples:</span>
+<span class="sd">        descriptor's package and any containing messages. Some examples:</span>
 
-<span class="sd">            * &quot;some.package.name.Message&quot;</span>
-<span class="sd">            * &quot;some.package.name.Message.NestedEnum&quot;</span>
-<span class="sd">            * &quot;some.package.name.Message.some_field&quot;</span>
+<span class="sd">            * "some.package.name.Message"</span>
+<span class="sd">            * "some.package.name.Message.NestedEnum"</span>
+<span class="sd">            * "some.package.name.Message.some_field"</span>
 
 <span class="sd">        This function implements a DescriptorDatabase interface, and is</span>
 <span class="sd">        typically not called directly; prefer using a DescriptorPool instead.</span>
@@ -389,7 +389,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            KeyError: the symbol was not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">FindFileContainingSymbol</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
@@ -404,7 +404,7 @@
 <div class="viewcode-block" id="ProtoReflectionDescriptorDatabase.FindAllExtensionNumbers">
 <a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindAllExtensionNumbers">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">FindAllExtensionNumbers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">extendee_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find the field numbers used by all known extensions of `extendee_name`.</span>
 
 <span class="sd">        This function implements a DescriptorDatabase interface, and is</span>
@@ -418,7 +418,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            KeyError: The message type `extendee_name` was not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">extendee_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_extension_numbers</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_extension_numbers</span><span class="p">[</span><span class="n">extendee_name</span><span class="p">]</span>
         <span class="n">request</span> <span class="o">=</span> <span class="n">ServerReflectionRequest</span><span class="p">(</span>
@@ -438,7 +438,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">FindFileContainingExtension</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">extendee_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">extension_number</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileDescriptorProto</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find the file which defines an extension for the given message type</span>
 <span class="sd">        and field number.</span>
 
@@ -454,7 +454,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            KeyError: The message or the extension number were not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">FindFileContainingExtension</span><span class="p">(</span>
                 <span class="n">extendee_name</span><span class="p">,</span> <span class="n">extension_number</span>
@@ -481,12 +481,12 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ServerReflectionResponse</span><span class="p">:</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">ServerReflectionInfo</span><span class="p">(</span><span class="nb">iter</span><span class="p">([</span><span class="n">request</span><span class="p">]))</span>
         <span class="n">res</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">WhichOneof</span><span class="p">(</span><span class="s2">&quot;message_response&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;error_response&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">WhichOneof</span><span class="p">(</span><span class="s2">"message_response"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"error_response"</span><span class="p">:</span>
             <span class="c1"># Only NOT_FOUND errors are expected at this layer</span>
             <span class="n">error_code</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">error_response</span><span class="o">.</span><span class="n">error_code</span>
             <span class="k">assert</span> <span class="p">(</span>
                 <span class="n">error_code</span> <span class="o">==</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="p">),</span> <span class="s2">&quot;unexpected error response: &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">error_response</span><span class="p">)</span>
+            <span class="p">),</span> <span class="s2">"unexpected error response: "</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">error_response</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">res</span>
 
@@ -499,7 +499,7 @@
             <span class="n">desc</span><span class="o">.</span><span class="n">ParseFromString</span><span class="p">(</span><span class="n">proto</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">desc</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_known_files</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="s2">&quot;Loading descriptors from file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">name</span>
+                    <span class="s2">"Loading descriptors from file: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">name</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_known_files</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">desc</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">desc</span><span class="p">)</span></div>

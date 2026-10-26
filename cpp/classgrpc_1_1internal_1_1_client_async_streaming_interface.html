@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -158,8 +158,8 @@ Public Member Functions</h2></td></tr>
 <p>Indicate that the stream is to be finished and request notification for when the call has been ended. </p>
 <p>Should not be used concurrently with other operations.</p>
 <p>It is appropriate to call this method exactly once when both:</p><ul>
-<li>the client side has no more message to send (this can be declared implicitly by calling this method, or explicitly through an earlier call to the <em>WritesDone</em> method of the class in use, e.g. <em><a class="el" href="classgrpc_1_1_client_async_writer_interface.html#a488d42d85f8e34902401e013572ff822" title="Signal the client is done with the writes (half-close the client stream).">ClientAsyncWriterInterface::WritesDone</a></em> or <em><a class="el" href="classgrpc_1_1_client_async_reader_writer_interface.html#a878193880df68ab969b697f1fcd7dbc3" title="Signal the client is done with the writes (half-close the client stream).">ClientAsyncReaderWriterInterface::WritesDone</a></em>).</li>
-<li>there are no more messages to be received from the server (this can be known implicitly by the calling code, or explicitly from an earlier call to <em><a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#adf87c602036d69158950b7299d0aae70" title="Read a message of type R into msg.">AsyncReaderInterface::Read</a></em> that yielded a failed result, e.g. cq-&gt;Next(&amp;read_tag, &amp;ok) filled in 'ok' with 'false').</li>
+<li>the client side has no more message to send (this can be declared implicitly by calling this method, or explicitly through an earlier call to the <em>WritesDone</em> method of the class in use, e.g. <a class="el" href="classgrpc_1_1_client_async_writer_interface.html#a488d42d85f8e34902401e013572ff822" title="Signal the client is done with the writes (half-close the client stream).">ClientAsyncWriterInterface::WritesDone</a> or <a class="el" href="classgrpc_1_1_client_async_reader_writer_interface.html#a878193880df68ab969b697f1fcd7dbc3" title="Signal the client is done with the writes (half-close the client stream).">ClientAsyncReaderWriterInterface::WritesDone</a>).</li>
+<li>there are no more messages to be received from the server (this can be known implicitly by the calling code, or explicitly from an earlier call to <a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#adf87c602036d69158950b7299d0aae70" title="Read a message of type R into msg.">AsyncReaderInterface::Read</a> that yielded a failed result, e.g. cq-&gt;Next(&amp;read_tag, &amp;ok) filled in 'ok' with 'false').</li>
 </ul>
 <p>The tag will be returned when either:</p><ul>
 <li>all incoming messages have been read and the server has returned a status.</li>
@@ -202,7 +202,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Request notification of the reading of the initial metadata. </p>
-<p>Completion will be notified by <em>tag</em> on the associated completion queue. This call is optional, but if it is used, it cannot be used concurrently with or after the <em><a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#adf87c602036d69158950b7299d0aae70" title="Read a message of type R into msg.">AsyncReaderInterface::Read</a></em> method.</p>
+<p>Completion will be notified by <em>tag</em> on the associated completion queue. This call is optional, but if it is used, it cannot be used concurrently with or after the <a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#adf87c602036d69158950b7299d0aae70" title="Read a message of type R into msg.">AsyncReaderInterface::Read</a> method.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>Tag identifying this request. </td></tr>
@@ -247,7 +247,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
