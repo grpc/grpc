@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -308,6 +308,8 @@ Functions</h2></td></tr>
 <tr class="memitem:abec5e1e0cf645c090b33ae78e17289e5"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#abec5e1e0cf645c090b33ae78e17289e5">CallbackUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a> *context, const InputMessage *request, OutputMessage *result, std::function&lt; void(<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt; &amp;&amp;on_completion)</td></tr>
 <tr class="memdesc:abec5e1e0cf645c090b33ae78e17289e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Perform a callback-based unary call.  <a href="namespacegrpc_1_1internal.html#abec5e1e0cf645c090b33ae78e17289e5">More...</a><br /></td></tr>
 <tr class="separator:abec5e1e0cf645c090b33ae78e17289e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1b85637c897fcc25412359b8a402d6e"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#aa1b85637c897fcc25412359b8a402d6e">CreateVirtualChannel</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">Call</a> call, const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args, absl::AnyInvocable&lt; void()&gt; goaway_callback)</td></tr>
+<tr class="separator:aa1b85637c897fcc25412359b8a402d6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad4821faf2ca99439a11458d52ce9717d"><td class="memTemplParams" colspan="2">template&lt;class Callable &gt; </td></tr>
 <tr class="memitem:ad4821faf2ca99439a11458d52ce9717d"><td class="memTemplItemLeft" align="right" valign="top">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#ad4821faf2ca99439a11458d52ce9717d">CatchingFunctionHandler</a> (Callable &amp;&amp;handler)</td></tr>
 <tr class="separator:ad4821faf2ca99439a11458d52ce9717d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -609,6 +611,40 @@ template&lt;class Reactor , class Func , class... Args&gt; </div>
 
 </div>
 </div>
+<a id="aa1b85637c897fcc25412359b8a402d6e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa1b85637c897fcc25412359b8a402d6e">&#9670;&nbsp;</a></span>CreateVirtualChannel()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel.html">Channel</a>&gt; grpc::internal::CreateVirtualChannel </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_call.html">Call</a>&#160;</td>
+          <td class="paramname"><em>call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;&#160;</td>
+          <td class="paramname"><em>args</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">absl::AnyInvocable&lt; void()&gt;&#160;</td>
+          <td class="paramname"><em>goaway_callback</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="afe335baaab1295b3bcab679d94cc3b1f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afe335baaab1295b3bcab679d94cc3b1f">&#9670;&nbsp;</a></span>FillMetadataArray()</h2>
 
@@ -783,6 +819,7 @@ template&lt;class RequestType &gt; </div>
 </div><div class="memdoc">
 
 <p>A helper function with reduced templating to do deserializing. </p>
+<p>If the deserialization fails, the request object will not be destroyed. It is the responsibility of the caller to destroy the request object. </p>
 
 </div>
 </div>
@@ -871,7 +908,7 @@ template&lt;class ResponseType &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

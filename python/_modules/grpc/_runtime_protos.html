@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc._runtime_protos &#8212; gRPC Python Docs v1.83.0</title>
+    <title>grpc._runtime_protos &#8212; gRPC Python Docs v1.85.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=0bacb3f8"></script>
+    <script src="../../_static/documentation_options.js?v=f422086f"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.83.0" />
+  <meta name="docsearch:version" content="1.85.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.85.0</p>
   
 </a></div>
     
@@ -264,14 +264,14 @@
   <h1>Source code for grpc._runtime_protos</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2020 The gRPC authors.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
@@ -280,14 +280,14 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">types</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="n">_REQUIRED_SYMBOLS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_protos&quot;</span><span class="p">,</span> <span class="s2">&quot;_services&quot;</span><span class="p">,</span> <span class="s2">&quot;_protos_and_services&quot;</span><span class="p">)</span>
+<span class="n">_REQUIRED_SYMBOLS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"_protos"</span><span class="p">,</span> <span class="s2">"_services"</span><span class="p">,</span> <span class="s2">"_protos_and_services"</span><span class="p">)</span>
 <span class="n">_MINIMUM_VERSION</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
 <span class="n">_UNINSTALLED_TEMPLATE</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;Install the grpcio-tools package (1.32.0+) to use the </span><span class="si">{}</span><span class="s2"> function.&quot;</span>
+    <span class="s2">"Install the grpcio-tools package (1.32.0+) to use the </span><span class="si">{}</span><span class="s2"> function."</span>
 <span class="p">)</span>
 <span class="n">_VERSION_ERROR_TEMPLATE</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;The </span><span class="si">{}</span><span class="s2"> function is only on available on Python 3.X interpreters.&quot;</span>
+    <span class="s2">"The </span><span class="si">{}</span><span class="s2"> function is only on available on Python 3.X interpreters."</span>
 <span class="p">)</span>
 
 
@@ -301,9 +301,9 @@
 
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="c1"># NOTE: It&#39;s possible that we&#39;re encountering a transitive ImportError, so</span>
+        <span class="c1"># NOTE: It's possible that we're encountering a transitive ImportError, so</span>
         <span class="c1"># we check for that and re-raise if so.</span>
-        <span class="k">if</span> <span class="s2">&quot;grpc_tools&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s2">"grpc_tools"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
             <span class="k">raise</span>
         <span class="k">return</span> <span class="kc">False</span>
 
@@ -311,7 +311,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_call_with_lazy_import</span><span class="p">(</span>
     <span class="n">fn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">protobuf_path</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">types</span><span class="o">.</span><span class="n">ModuleType</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">types</span><span class="o">.</span><span class="n">ModuleType</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">ModuleType</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calls one of the three functions, lazily importing grpc_tools.</span>
+<span class="w">    </span><span class="sd">"""Calls one of the three functions, lazily importing grpc_tools.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      fn_name: The name of the function to import from grpc_tools.protoc.</span>
@@ -319,7 +319,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">      The appropriate module object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&lt;</span> <span class="n">_MINIMUM_VERSION</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">_VERSION_ERROR_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fn_name</span><span class="p">))</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_grpc_tools_importable</span><span class="p">():</span>
@@ -327,7 +327,7 @@
     <span class="kn">import</span><span class="w"> </span><span class="nn">grpc_tools.protoc</span>  <span class="c1"># pytype: disable=import-error</span>
 
     <span class="k">if</span> <span class="n">_has_runtime_proto_symbols</span><span class="p">(</span><span class="n">grpc_tools</span><span class="o">.</span><span class="n">protoc</span><span class="p">):</span>
-        <span class="n">fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">grpc_tools</span><span class="o">.</span><span class="n">protoc</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">fn_name</span><span class="p">)</span>
+        <span class="n">fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">grpc_tools</span><span class="o">.</span><span class="n">protoc</span><span class="p">,</span> <span class="s2">"_"</span> <span class="o">+</span> <span class="n">fn_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">protobuf_path</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">_UNINSTALLED_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fn_name</span><span class="p">))</span>
 
@@ -335,7 +335,7 @@
 <div class="viewcode-block" id="protos">
 <a class="viewcode-back" href="../../grpc.html#grpc.protos">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">protos</span><span class="p">(</span><span class="n">protobuf_path</span><span class="p">):</span>  <span class="c1"># pylint: disable=unused-argument</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a module generated by the indicated .proto file.</span>
+<span class="w">    </span><span class="sd">"""Returns a module generated by the indicated .proto file.</span>
 
 <span class="sd">    THIS IS AN EXPERIMENTAL API.</span>
 
@@ -346,7 +346,7 @@
 <span class="sd">    For example:</span>
 
 <span class="sd">    ```</span>
-<span class="sd">    protos = grpc.protos(&quot;foo.proto&quot;)</span>
+<span class="sd">    protos = grpc.protos("foo.proto")</span>
 <span class="sd">    print(dir(protos))</span>
 <span class="sd">    ```</span>
 
@@ -356,7 +356,7 @@
 <span class="sd">    from an entry on sys.path.</span>
 
 <span class="sd">    To completely disable the machinery behind this function, set the</span>
-<span class="sd">    GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to &quot;true&quot;.</span>
+<span class="sd">    GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to "true".</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      protobuf_path: The path to the .proto file on the filesystem. This path</span>
@@ -366,15 +366,15 @@
 <span class="sd">    Returns:</span>
 <span class="sd">      A module object corresponding to the message code for the indicated</span>
 <span class="sd">      .proto file. Equivalent to a generated _pb2.py file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_call_with_lazy_import</span><span class="p">(</span><span class="s2">&quot;protos&quot;</span><span class="p">,</span> <span class="n">protobuf_path</span><span class="p">)</span></div>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">_call_with_lazy_import</span><span class="p">(</span><span class="s2">"protos"</span><span class="p">,</span> <span class="n">protobuf_path</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="services">
 <a class="viewcode-back" href="../../grpc.html#grpc.services">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">services</span><span class="p">(</span><span class="n">protobuf_path</span><span class="p">):</span>  <span class="c1"># pylint: disable=unused-argument</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a module generated by the indicated .proto file.</span>
+<span class="w">    </span><span class="sd">"""Returns a module generated by the indicated .proto file.</span>
 
 <span class="sd">    THIS IS AN EXPERIMENTAL API.</span>
 
@@ -386,7 +386,7 @@
 <span class="sd">    For example:</span>
 
 <span class="sd">    ```</span>
-<span class="sd">    services = grpc.services(&quot;foo.proto&quot;)</span>
+<span class="sd">    services = grpc.services("foo.proto")</span>
 <span class="sd">    print(dir(services))</span>
 <span class="sd">    ```</span>
 
@@ -396,7 +396,7 @@
 <span class="sd">    from an entry on sys.path.</span>
 
 <span class="sd">    To completely disable the machinery behind this function, set the</span>
-<span class="sd">    GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to &quot;true&quot;.</span>
+<span class="sd">    GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to "true".</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      protobuf_path: The path to the .proto file on the filesystem. This path</span>
@@ -406,15 +406,15 @@
 <span class="sd">    Returns:</span>
 <span class="sd">      A module object corresponding to the stub/service code for the indicated</span>
 <span class="sd">      .proto file. Equivalent to a generated _pb2_grpc.py file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_call_with_lazy_import</span><span class="p">(</span><span class="s2">&quot;services&quot;</span><span class="p">,</span> <span class="n">protobuf_path</span><span class="p">)</span></div>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">_call_with_lazy_import</span><span class="p">(</span><span class="s2">"services"</span><span class="p">,</span> <span class="n">protobuf_path</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="protos_and_services">
 <a class="viewcode-back" href="../../grpc.html#grpc.protos_and_services">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">protos_and_services</span><span class="p">(</span><span class="n">protobuf_path</span><span class="p">):</span>  <span class="c1"># pylint: disable=unused-argument</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a 2-tuple of modules corresponding to protos and services.</span>
+<span class="w">    </span><span class="sd">"""Returns a 2-tuple of modules corresponding to protos and services.</span>
 
 <span class="sd">    THIS IS AN EXPERIMENTAL API.</span>
 
@@ -422,7 +422,7 @@
 <span class="sd">    call to services.</span>
 
 <span class="sd">    To completely disable the machinery behind this function, set the</span>
-<span class="sd">    GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to &quot;true&quot;.</span>
+<span class="sd">    GRPC_PYTHON_DISABLE_DYNAMIC_STUBS environment variable to "true".</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      protobuf_path: The path to the .proto file on the filesystem. This path</span>
@@ -431,8 +431,8 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A 2-tuple of module objects corresponding to (protos(path), services(path)).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_call_with_lazy_import</span><span class="p">(</span><span class="s2">&quot;protos_and_services&quot;</span><span class="p">,</span> <span class="n">protobuf_path</span><span class="p">)</span></div>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">_call_with_lazy_import</span><span class="p">(</span><span class="s2">"protos_and_services"</span><span class="p">,</span> <span class="n">protobuf_path</span><span class="p">)</span></div>
 
 </pre></div>
 

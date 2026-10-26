@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aac6b08c8e1ff71c55a95963ccbbd493a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader_writer.html#aac6b08c8e1ff71c55a95963ccbbd493a">SendInitialMetadata</a> () override</td></tr>
-<tr class="memdesc:aac6b08c8e1ff71c55a95963ccbbd493a"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em>ServerStreamingInterface.SendInitialMetadata</em> method for semantics.  <a href="classgrpc_1_1_server_reader_writer.html#aac6b08c8e1ff71c55a95963ccbbd493a">More...</a><br /></td></tr>
+<tr class="memdesc:aac6b08c8e1ff71c55a95963ccbbd493a"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the ServerStreamingInterface::SendInitialMetadata method for semantics.  <a href="classgrpc_1_1_server_reader_writer.html#aac6b08c8e1ff71c55a95963ccbbd493a">More...</a><br /></td></tr>
 <tr class="separator:aac6b08c8e1ff71c55a95963ccbbd493a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a647d6e58b7720113db0357d1c4b7750f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_reader_writer.html#a647d6e58b7720113db0357d1c4b7750f">NextMessageSize</a> (uint32_t *sz) override</td></tr>
 <tr class="memdesc:a647d6e58b7720113db0357d1c4b7750f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get an upper bound on the next message size available for reading on this stream.  <a href="classgrpc_1_1_server_reader_writer.html#a647d6e58b7720113db0357d1c4b7750f">More...</a><br /></td></tr>
@@ -217,7 +217,7 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See the <em>ServerStreamingInterface.SendInitialMetadata</em> method for semantics. </p>
+<p>See the ServerStreamingInterface::SendInitialMetadata method for semantics. </p>
 <p>Note that initial metadata will be affected by the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a></em> associated with this call. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_interface.html#a45ab1e968a08b6c905ffac9a41e894d4">grpc::internal::ServerStreamingInterface</a>.</p>
@@ -261,7 +261,7 @@ template&lt;class W , class R &gt; </div>
 </div><div class="memdoc">
 
 <p>Block to write <em>msg</em> to the stream with <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options.">WriteOptions</a> <em>options</em>. </p>
-<p>This is thread-safe with respect to <em>ReaderInterface::Read</em> </p>
+<p>This is thread-safe with respect to ReaderInterface::Read</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">msg</td><td>The message to be written to the stream. </td></tr>
@@ -306,7 +306,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -140,7 +140,7 @@ Public Member Functions</h2></td></tr>
 
 <p>Block waiting until the stream finishes and a final status of the call is available. </p>
 <p>It is appropriate to call this method exactly once when both:</p><ul>
-<li>the calling code (client-side) has no more message to send (this can be declared implicitly by calling this method, or explicitly through an earlier call to <em>WritesDone</em> method of the class in use, e.g. <em><a class="el" href="classgrpc_1_1_client_writer_interface.html#aff19574252338e9ac1b5446e82ed8ac5" title="Half close writing from the client.">ClientWriterInterface::WritesDone</a></em> or <em><a class="el" href="classgrpc_1_1_client_reader_writer_interface.html#a52f4e5d5ac7fe0e4995cb337aa0ecfc8" title="Half close writing from the client.">ClientReaderWriterInterface::WritesDone</a></em>).</li>
+<li>the calling code (client-side) has no more message to send (this can be declared implicitly by calling this method, or explicitly through an earlier call to <em>WritesDone</em> method of the class in use, e.g. <a class="el" href="classgrpc_1_1_client_writer_interface.html#aff19574252338e9ac1b5446e82ed8ac5" title="Half close writing from the client.">ClientWriterInterface::WritesDone</a> or <a class="el" href="classgrpc_1_1_client_reader_writer_interface.html#a52f4e5d5ac7fe0e4995cb337aa0ecfc8" title="Half close writing from the client.">ClientReaderWriterInterface::WritesDone</a>).</li>
 <li>there are no more messages to be received from the server (which can be known implicitly, or explicitly from an earlier call to <em><a class="el" href="classgrpc_1_1internal_1_1_reader_interface.html#adfb50ace59b4b9666a46548d3f732ee8" title="Block to read a message and parse to msg.">ReaderInterface::Read</a></em> that returned "false").</li>
 </ul>
 <p>This function will return either:</p><ul>
@@ -161,7 +161,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._channel &#8212; gRPC Python Docs v1.83.0</title>
+    <title>grpc.aio._channel &#8212; gRPC Python Docs v1.85.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=0bacb3f8"></script>
+    <script src="../../../_static/documentation_options.js?v=f422086f"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.83.0" />
+  <meta name="docsearch:version" content="1.85.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.85.0</p>
   
 </a></div>
     
@@ -264,21 +264,23 @@
   <h1>Source code for grpc.aio._channel</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2019 gRPC authors.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
-<span class="sd">&quot;&quot;&quot;Invocation-side implementation of gRPC Asyncio Python.&quot;&quot;&quot;</span>
+<span class="sd">"""Invocation-side implementation of gRPC Asyncio Python."""</span>
+<span class="c1"># pyright: reportPrivateUsage = false</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TypeVar</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">weakref</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">grpc</span>
@@ -286,6 +288,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">grpc</span><span class="w"> </span><span class="kn">import</span> <span class="n">_compression</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">grpc</span><span class="w"> </span><span class="kn">import</span> <span class="n">_grpcio_metadata</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">grpc._cython</span><span class="w"> </span><span class="kn">import</span> <span class="n">cygrpc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">_base_call</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">_base_channel</span>
@@ -312,18 +315,20 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">._typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">SerializingFunction</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_timeout_to_deadline</span>
 
-<span class="n">_USER_AGENT</span> <span class="o">=</span> <span class="s2">&quot;grpc-python-asyncio/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_grpcio_metadata</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<span class="n">ClientInterceptorT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">"ClientInterceptorT"</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">ClientInterceptor</span><span class="p">)</span>
+
+<span class="n">_USER_AGENT</span> <span class="o">=</span> <span class="s2">"grpc-python-asyncio/</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_grpcio_metadata</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_augment_channel_arguments</span><span class="p">(</span>
     <span class="n">base_options</span><span class="p">:</span> <span class="n">ChannelArgumentType</span><span class="p">,</span> <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChannelArgumentType</span><span class="p">:</span>
     <span class="n">compression_channel_argument</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">create_channel_option</span><span class="p">(</span>
         <span class="n">compression</span>
     <span class="p">)</span>
     <span class="n">user_agent_channel_argument</span> <span class="o">=</span> <span class="p">(</span>
         <span class="p">(</span>
-            <span class="n">cygrpc</span><span class="o">.</span><span class="n">ChannelArgKey</span><span class="o">.</span><span class="n">primary_user_agent_string</span><span class="p">,</span>
+            <span class="n">cygrpc</span><span class="o">.</span><span class="n">ChannelArgKey</span><span class="o">.</span><span class="n">primary_user_agent_string</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
             <span class="n">_USER_AGENT</span><span class="p">,</span>
         <span class="p">),</span>
     <span class="p">)</span>
@@ -334,31 +339,34 @@
     <span class="p">)</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">_BaseMultiCallable</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class of all multi callable objects.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_BaseMultiCallable</span><span class="p">(</span>
+    <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">,</span> <span class="n">ClientInterceptorT</span><span class="p">]</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Base class of all multi callable objects.</span>
 
 <span class="sd">    Handles the initialization logic and stores common attributes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span>
     <span class="n">_channel</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span>
     <span class="n">_method</span><span class="p">:</span> <span class="nb">bytes</span>
-    <span class="n">_request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span>
-    <span class="n">_response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span>
-    <span class="n">_interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]]</span>
+    <span class="n">_request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]]</span>
+    <span class="n">_response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]]</span>
+    <span class="n">_interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptorT</span><span class="p">]]</span>
     <span class="n">_references</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
-    <span class="n">_loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span>
+    <span class="n">_registered_call_handle</span><span class="p">:</span> <span class="nb">int</span>
 
     <span class="c1"># pylint: disable=too-many-arguments</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">channel</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">],</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">],</span>
-        <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]],</span>
+        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]],</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]],</span>
+        <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptorT</span><span class="p">]],</span>
         <span class="n">references</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
         <span class="n">loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span><span class="p">,</span>
+        <span class="n">_registered_call_handle</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">loop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
@@ -367,17 +375,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span> <span class="o">=</span> <span class="n">response_deserializer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span> <span class="o">=</span> <span class="n">interceptors</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_references</span> <span class="o">=</span> <span class="n">references</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registered_call_handle</span> <span class="o">=</span> <span class="n">_registered_call_handle</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_references</span><span class="p">:</span>
             <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s2">&quot;MultiCallable must be attached to a Channel, unexpectedly&quot;</span>
-                <span class="s2">&quot; found no references.&quot;</span>
+                <span class="s2">"MultiCallable must be attached to a Channel, unexpectedly"</span>
+                <span class="s2">" found no references."</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_references</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Channel</span><span class="p">):</span>
             <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s2">&quot;Invalid reference type. MultiCallable must be attached to a&quot;</span>
-                <span class="s2">&quot; Channel.&quot;</span>
+                <span class="s2">"Invalid reference type. MultiCallable must be attached to a"</span>
+                <span class="s2">" Channel."</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
 
@@ -388,23 +397,28 @@
         <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Based on the provided values for &lt;metadata&gt; or &lt;compression&gt; initialise the final</span>
+<span class="w">        </span><span class="sd">"""Based on the provided values for &lt;metadata&gt; or &lt;compression&gt; initialise the final</span>
 <span class="sd">        metadata, as it should be used for the current call.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span> <span class="ow">or</span> <span class="n">Metadata</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">Metadata</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">metadata</span><span class="p">,</span> <span class="n">Metadata</span>
+        <span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>  <span class="c1"># pyright: ignore[reportUnnecessaryIsInstance]</span>
             <span class="n">metadata</span><span class="p">,</span> <span class="n">Sequence</span>
         <span class="p">):</span>
             <span class="n">metadata</span> <span class="o">=</span> <span class="n">Metadata</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">metadata</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">compression</span><span class="p">:</span>
-            <span class="n">metadata</span> <span class="o">=</span> <span class="n">Metadata</span><span class="p">(</span>
-                <span class="o">*</span><span class="n">_compression</span><span class="o">.</span><span class="n">augment_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
+            <span class="n">augmented_metadata</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">augment_metadata</span><span class="p">(</span>
+                <span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span>
             <span class="p">)</span>
+            <span class="k">if</span> <span class="n">augmented_metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">metadata</span> <span class="o">=</span> <span class="n">Metadata</span><span class="p">(</span><span class="o">*</span><span class="n">augmented_metadata</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">metadata</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span>
-    <span class="n">_BaseMultiCallable</span><span class="p">,</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">UnaryUnaryMultiCallable</span>
+    <span class="n">_BaseMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">,</span> <span class="n">UnaryUnaryClientInterceptor</span><span class="p">],</span>
+    <span class="n">_base_channel</span><span class="o">.</span><span class="n">UnaryUnaryMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
 <span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -429,6 +443,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_registered_call_handle</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedUnaryUnaryCall</span><span class="p">(</span>
@@ -443,6 +458,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_registered_call_handle</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_python_channel</span><span class="o">.</span><span class="n">_register_call</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
@@ -451,7 +467,8 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">UnaryStreamMultiCallable</span><span class="p">(</span>
-    <span class="n">_BaseMultiCallable</span><span class="p">,</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">UnaryStreamMultiCallable</span>
+    <span class="n">_BaseMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">,</span> <span class="n">UnaryStreamClientInterceptor</span><span class="p">],</span>
+    <span class="n">_base_channel</span><span class="o">.</span><span class="n">UnaryStreamMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
 <span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -477,6 +494,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_registered_call_handle</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedUnaryStreamCall</span><span class="p">(</span>
@@ -491,6 +509,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_registered_call_handle</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_python_channel</span><span class="o">.</span><span class="n">_register_call</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
@@ -499,17 +518,18 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">StreamUnaryMultiCallable</span><span class="p">(</span>
-    <span class="n">_BaseMultiCallable</span><span class="p">,</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamUnaryMultiCallable</span>
+    <span class="n">_BaseMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">,</span> <span class="n">StreamUnaryClientInterceptor</span><span class="p">],</span>
+    <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamUnaryMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
 <span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamUnaryCall</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamUnaryCall</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">:</span>
@@ -524,6 +544,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_registered_call_handle</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedStreamUnaryCall</span><span class="p">(</span>
@@ -538,6 +559,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_registered_call_handle</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_python_channel</span><span class="o">.</span><span class="n">_register_call</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
@@ -546,17 +568,20 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">StreamStreamMultiCallable</span><span class="p">(</span>
-    <span class="n">_BaseMultiCallable</span><span class="p">,</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamStreamMultiCallable</span>
+    <span class="n">_BaseMultiCallable</span><span class="p">[</span>
+        <span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">,</span> <span class="n">StreamStreamClientInterceptor</span>
+    <span class="p">],</span>
+    <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamStreamMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
 <span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">:</span>
@@ -571,6 +596,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_registered_call_handle</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedStreamStreamCall</span><span class="p">(</span>
@@ -585,6 +611,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_registered_call_handle</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_python_channel</span><span class="o">.</span><span class="n">_register_call</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
@@ -599,6 +626,7 @@
     <span class="n">_unary_stream_interceptors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">UnaryStreamClientInterceptor</span><span class="p">]</span>
     <span class="n">_stream_unary_interceptors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">StreamUnaryClientInterceptor</span><span class="p">]</span>
     <span class="n">_stream_stream_interceptors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">StreamStreamClientInterceptor</span><span class="p">]</span>
+    <span class="n">_active_calls</span><span class="p">:</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakSet</span><span class="p">[</span><span class="n">_base_call</span><span class="o">.</span><span class="n">Call</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -608,7 +636,7 @@
         <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">],</span>
         <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]],</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="w">        </span><span class="sd">"""Constructor.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">          target: The target to which to connect.</span>
@@ -618,7 +646,7 @@
 <span class="sd">            used over the lifetime of the channel.</span>
 <span class="sd">          interceptors: An optional list of interceptors that would be used for</span>
 <span class="sd">            intercepting any RPC executed with that channel.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_unary_unary_interceptors</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_unary_stream_interceptors</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stream_unary_interceptors</span> <span class="o">=</span> <span class="p">[]</span>
@@ -636,11 +664,11 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_stream_stream_interceptors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interceptor</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>  <span class="c1"># noqa: TRY004</span>
-                        <span class="s2">&quot;Interceptor </span><span class="si">{}</span><span class="s2"> must be &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interceptor</span><span class="p">)</span>
-                        <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> or &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">UnaryUnaryClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-                        <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> or &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">UnaryStreamClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-                        <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> or &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">StreamUnaryClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-                        <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">. &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">StreamStreamClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                        <span class="s2">"Interceptor </span><span class="si">{}</span><span class="s2"> must be "</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interceptor</span><span class="p">)</span>
+                        <span class="o">+</span> <span class="s2">"</span><span class="si">{}</span><span class="s2"> or "</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">UnaryUnaryClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                        <span class="o">+</span> <span class="s2">"</span><span class="si">{}</span><span class="s2"> or "</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">UnaryStreamClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                        <span class="o">+</span> <span class="s2">"</span><span class="si">{}</span><span class="s2"> or "</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">StreamUnaryClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                        <span class="o">+</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">. "</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">StreamStreamClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
                     <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">get_working_loop</span><span class="p">()</span>
@@ -653,28 +681,35 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_calls</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakSet</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_register_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call</span><span class="p">:</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">Call</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a call to be tracked by the channel.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Register a call to be tracked by the channel."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_calls</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
         <span class="n">call</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_active_calls</span><span class="o">.</span><span class="n">discard</span><span class="p">)</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aexit__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">exc_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="ne">BaseException</span><span class="p">]],</span>
+        <span class="n">exc_val</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="ne">BaseException</span><span class="p">],</span>
+        <span class="n">exc_tb</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">types</span><span class="o">.</span><span class="n">TracebackType</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">):</span>  <span class="c1"># pylint: disable=too-many-branches</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_close</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pylint: disable=too-many-branches</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">closed</span><span class="p">():</span>
             <span class="k">return</span>
 
         <span class="k">if</span> <span class="n">grace</span> <span class="ow">and</span> <span class="n">grace</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;grace must be non-negative, got </span><span class="si">{</span><span class="n">grace</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"grace must be non-negative, got </span><span class="si">{</span><span class="n">grace</span><span class="si">}</span><span class="s2">."</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
 
         <span class="c1"># No new calls will be accepted by the Cython channel.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">closing</span><span class="p">()</span>
 
-        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_wait_for_call_to_complete</span><span class="p">(</span><span class="n">call</span><span class="p">):</span>
+        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_wait_for_call_to_complete</span><span class="p">(</span><span class="n">call</span><span class="p">:</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">Call</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">await</span> <span class="n">call</span><span class="o">.</span><span class="n">code</span><span class="p">()</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># pylint: disable=broad-except</span>
@@ -704,11 +739,11 @@
         <span class="c1"># Destroy the channel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">(</span><span class="n">grace</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_channel&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">closed</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_channel"</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">closed</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_state</span><span class="p">(</span>
@@ -724,7 +759,7 @@
         <span class="c1"># We raise a RuntimeError if watch_connectivity_state returns False.</span>
         <span class="c1">#</span>
         <span class="c1"># The watch_connectivity_state method returns True when it observes a state change</span>
-        <span class="c1"># and False when it times out (which shouldn&#39;t happen since no timeout is specified).</span>
+        <span class="c1"># and False when it times out (which shouldn't happen since no timeout is specified).</span>
         <span class="c1"># A channel close triggers a transition to SHUTDOWN, which resolves all pending watch</span>
         <span class="c1"># calls and makes them return True. Thus, watch_connectivity_state should only return</span>
         <span class="c1"># True under normal operation; returning False indicates an implementation issue.</span>
@@ -737,7 +772,7 @@
         <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved</span><span class="p">:</span>
             <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s2">&quot;gRPC channel connectivity state watch failed unexpectedly.&quot;</span>
+                <span class="s2">"gRPC channel connectivity state watch failed unexpectedly."</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
 
@@ -747,21 +782,39 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_state_change</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
             <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">try_to_connect</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="c1"># TODO(xuanwn): Implement this method after we have</span>
-    <span class="c1"># observability for Asyncio.</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_registered_call_handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">pass</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_registered_call_handle</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get the registered call handle for a registered method or None.</span>
 
-    <span class="c1"># TODO(xuanwn): Implement _registered_method after we have</span>
-    <span class="c1"># observability for Asyncio.</span>
-    <span class="c1"># pylint: disable=arguments-differ,unused-argument</span>
+<span class="sd">        This is a semi-private method. It is intended for use only by gRPC generated code.</span>
+
+<span class="sd">        This method is not thread-safe. It is acceptable since method is only called</span>
+<span class="sd">        during multicallable construction, not during RPC exeution. Moreover there</span>
+<span class="sd">        are no `await` suspension points, which can interleave.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method: Required, the method name for the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          The registered call handle pointer in the form of a Python Long.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_registered_method</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">get_registered_call_handle</span><span class="p">(</span><span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
+
+    <span class="c1"># pylint: disable=arguments-differ</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="n">DeserializingFunction</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
         <span class="k">return</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
             <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
@@ -770,18 +823,19 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_unary_unary_interceptors</span><span class="p">,</span>
             <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_registered_call_handle</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">_registered_method</span><span class="p">),</span>
         <span class="p">)</span>
 
-    <span class="c1"># TODO(xuanwn): Implement _registered_method after we have</span>
-    <span class="c1"># observability for Asyncio.</span>
-    <span class="c1"># pylint: disable=arguments-differ,unused-argument</span>
+    <span class="c1"># pylint: disable=arguments-differ</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">unary_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="n">DeserializingFunction</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
         <span class="k">return</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
             <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
@@ -790,18 +844,19 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_unary_stream_interceptors</span><span class="p">,</span>
             <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_registered_call_handle</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">_registered_method</span><span class="p">),</span>
         <span class="p">)</span>
 
-    <span class="c1"># TODO(xuanwn): Implement _registered_method after we have</span>
-    <span class="c1"># observability for Asyncio.</span>
-    <span class="c1"># pylint: disable=arguments-differ,unused-argument</span>
+    <span class="c1"># pylint: disable=arguments-differ</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="n">DeserializingFunction</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
         <span class="k">return</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
             <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
@@ -810,18 +865,19 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_stream_unary_interceptors</span><span class="p">,</span>
             <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_registered_call_handle</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">_registered_method</span><span class="p">),</span>
         <span class="p">)</span>
 
-    <span class="c1"># TODO(xuanwn): Implement _registered_method after we have</span>
-    <span class="c1"># observability for Asyncio.</span>
-    <span class="c1"># pylint: disable=arguments-differ,unused-argument</span>
+    <span class="c1"># pylint: disable=arguments-differ</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">stream_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="n">DeserializingFunction</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamStreamMultiCallable</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamStreamMultiCallable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
         <span class="k">return</span> <span class="n">StreamStreamMultiCallable</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
             <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
@@ -830,6 +886,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_stream_stream_interceptors</span><span class="p">,</span>
             <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_registered_call_handle</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">_registered_method</span><span class="p">),</span>
         <span class="p">)</span>
 
 
@@ -840,8 +897,8 @@
     <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChannelArgumentType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates an insecure asynchronous Channel to a server.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Creates an insecure asynchronous Channel to a server.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      target: The server address</span>
@@ -854,7 +911,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A Channel.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span>
         <span class="n">target</span><span class="p">,</span>
         <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
@@ -873,8 +930,8 @@
     <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChannelArgumentType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a secure asynchronous Channel to a server.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Creates a secure asynchronous Channel to a server.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      target: The server address.</span>
@@ -888,7 +945,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">      An aio.Channel.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span>
         <span class="n">target</span><span class="p">,</span>
         <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>

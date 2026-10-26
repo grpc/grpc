@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_admin &#8212; gRPC Python Docs v1.83.0</title>
+    <title>grpc_admin &#8212; gRPC Python Docs v1.85.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=0bacb3f8"></script>
+    <script src="../_static/documentation_options.js?v=f422086f"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.83.0" />
+  <meta name="docsearch:version" content="1.85.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.85.0</p>
   
 </a></div>
     
@@ -261,18 +261,18 @@
   <h1>Source code for grpc_admin</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2021 The gRPC Authors</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
-<span class="sd">&quot;&quot;&quot;gRPC Python&#39;s Admin interface.&quot;&quot;&quot;</span>
+<span class="sd">"""gRPC Python's Admin interface."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">grpc_channelz.v1</span><span class="w"> </span><span class="kn">import</span> <span class="n">channelz</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">grpc_csds</span>
@@ -281,10 +281,10 @@
 <div class="viewcode-block" id="add_admin_servicers">
 <a class="viewcode-back" href="../grpc_admin.html#grpc_admin.add_admin_servicers">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">add_admin_servicers</span><span class="p">(</span><span class="n">server</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Register admin servicers to a server.</span>
+<span class="w">    </span><span class="sd">"""Register admin servicers to a server.</span>
 
 <span class="sd">    gRPC provides some predefined admin services to make debugging easier by</span>
-<span class="sd">    exposing gRPC&#39;s internal states. Each existing admin service is packaged as</span>
+<span class="sd">    exposing gRPC's internal states. Each existing admin service is packaged as</span>
 <span class="sd">    a separate library, and the documentation of the predefined admin services</span>
 <span class="sd">    is usually scattered. It can be time consuming to get the dependency</span>
 <span class="sd">    management, module initialization, and library import right for each one of</span>
@@ -297,13 +297,13 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        server: A gRPC server to which all admin services will be added.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">channelz</span><span class="o">.</span><span class="n">add_channelz_servicer</span><span class="p">(</span><span class="n">server</span><span class="p">)</span>
     <span class="n">grpc_csds</span><span class="o">.</span><span class="n">add_csds_servicer</span><span class="p">(</span><span class="n">server</span><span class="p">)</span></div>
 
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;add_admin_servicers&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"add_admin_servicers"</span><span class="p">]</span>
 </pre></div>
 
                 </article>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">56.0.0</span>
+   &#160;<span id="projectnumber">58.0.0</span>
    </div>
   </td>
  </tr>
@@ -81,16 +81,27 @@ Enabling the HTTP Proxy</h2>
 <li><code>http_proxy</code> environment variable</li>
 </ol>
 <p>If none of the above are set, then no HTTP proxy will be used.</p>
-<p>The allowed format is an <a href="https://www.rfc-editor.org/rfc/rfc3986">RFC3986</a> URI string where the scheme is expected to be "http" and the authority portion is used to determine the proxy to be used. For example, for an HTTP proxy setting of <code><a href="http://username:password">http://username:password</a>@proxy.google.com:443</code>, <code>username:password</code> would be used as user credentials for proxy authentication as per <a href="https://www.rfc-editor.org/rfc/rfc7617">RFC7617</a> and <code>proxy.google.com:443</code> would be the host:port HTTP proxy target. If the port part of the authority is omitted, a default port of 443 is used. Note that user credential can also be omitted if the proxy does not need authentication.</p>
+<p>The allowed format is an <a href="https://www.rfc-editor.org/rfc/rfc3986">RFC3986</a> URI string where the scheme is expected to be <code>http</code> and the authority portion is used to determine the proxy to be used. For example, for an HTTP proxy setting of <code><a href="http://username:password">http://username:password</a>@proxy.google.com:443</code>, <code>username:password</code> would be used as user credentials for proxy authentication as per <a href="https://www.rfc-editor.org/rfc/rfc7617">RFC7617</a> and <code>proxy.google.com:443</code> would be the host:port HTTP proxy target. If the port part of the authority is omitted, a default port of 443 is used. Note that user credential can also be omitted if the proxy does not need authentication.</p>
 <h2><a class="anchor" id="autotoc_md90"></a>
 Disabling HTTP Proxy</h2>
 <p>If an HTTP proxy is set, C-Core then checks the following places to exclude traffic destined to listed hosts from going through the proxy determined above, again stopping at the first one that is set:</p>
 <ol type="1">
 <li><code>no_grpc_proxy</code> environment variable</li>
-<li><code>no_proxy</code>environment variable</li>
+<li><code>no_proxy</code> environment variable</li>
 </ol>
 <p>If none of the above are set, then the previously found HTTP proxy is used.</p>
-<p>The format takes a comma-separated list of names, and if any of these names matches as a suffix of the server host (provided in the channel target), then the proxy will not be used for that target. For example, with a <code>grpc_proxy</code> setting of <code>proxy.google.com</code> and a <code>no_grpc_proxy</code> setting of <code>example.com, google.com</code>, channel targets such as <code>dns:///foo.google.com:50051</code> and <code>bar.example.com:1234</code> will not use the proxy, but <code>baz.googleapis.com:443</code> would still use the configured proxy <code>proxy.google.com</code>.</p>
+<p>As of <a href="https://github.com/grpc/grpc/pull/41915">PR#41915</a>, the matching behavior was changed from naive suffix matching to boundary-aware domain validation. An entry matches if the host is an exact match OR a proper subdomain (separated by a dot boundary). A leading dot on an entry is optional and treated identically to the same entry without a dot.</p>
+<ul>
+<li><code>example.com</code> and <code>.example.com</code> both match <code>example.com</code> (exact) and <code>foo.example.com</code>, <code>bar.baz.example.com</code> (subdomains).</li>
+<li><code>notexample.com</code> does <b>not</b> match <code>example.com</code> because there is no dot boundary before the suffix.</li>
+</ul>
+<p>For example, with a <code>grpc_proxy</code> setting of <code>proxy.google.com</code> and a <code>no_grpc_proxy</code> setting of <code>google.com</code>:</p>
+<ul>
+<li><code>dns:///foo.google.com:50051</code> - no proxy (subdomain of <code>google.com</code>)</li>
+<li><code>google.com:1234</code> - no proxy (exact match)</li>
+<li><code>notgoogle.com:443</code> - uses proxy (no dot boundary before <code>google.com</code>)</li>
+<li><code>baz.googleapis.com:443</code> - uses proxy (not under <code>google.com</code>)</li>
+</ul>
 <p>As of <a href="https://github.com/grpc/grpc/pull/31119">PR#31119</a>, CIDR blocks are also supported in the list of names. For example, a <code>no_proxy</code> setting of <code>10.10.0.0/24</code> would not use the proxy for channel targets that mention IP addresses as the host between the range <code>10.10.0.0</code> to <code>10.10.0.255</code>.</p>
 <h2><a class="anchor" id="autotoc_md91"></a>
 Disabling HTTP Proxy Channel-wide</h2>
@@ -109,7 +120,7 @@ Address Proxy</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

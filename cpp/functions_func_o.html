@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,7 @@ $(function() {
 </li>
 <li>OnGracefulShutdown()
 : <a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#ab5b30a4a6c9378b2e2df29c0bac5211d">grpc::experimental::ClientSessionReactor</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1internal_1_1_session_reactor_tracker.html#a7978b6e3d6c7af0d42a023e92fd64a31">grpc::experimental::internal::SessionReactorTracker</a>
 </li>
 <li>OnReadDone()
 : <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#ad77148d32093f38daeb755e820b70c61">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
@@ -123,7 +124,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#a383e0d89a2dfe0434067ebff9cfa8c70">grpc::experimental::ClientSessionReactor</a>
 </li>
 <li>OnSessionReady()
-: <a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#a3846d7c808f1b467b5fbef5f32e65ded">grpc::experimental::ClientSessionReactor</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#a9516b76c4871d5c6a0a220e68fcba129">grpc::experimental::ClientSessionReactor</a>
 </li>
 <li>OnWriteDone()
 : <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#ad7673b2c6cfb2dbb77655ef6fee6ebc7">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
@@ -164,7 +165,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_auth_property_iterator.html#aa73939627db5aa1f2117ef9d0b550c73">grpc::AuthPropertyIterator</a>
 </li>
 <li>operator++()
-: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#ac4a895110475c25b9bdce9b72eb19cd6">grpc::AuthPropertyIterator</a>
+: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#a76dd5ef5047b10f889d85ce2bb33b84b">grpc::AuthPropertyIterator</a>
 </li>
 <li>operator=()
 : <a class="el" href="classgrpc_1_1_alarm.html#a4c46dacfd26561470f0901cec2686f49">grpc::Alarm</a>
@@ -185,12 +186,12 @@ $(function() {
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#a07eff104aa185eaf58e59d8a5294e44f">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#a2804ba22b83ef1f2d85651f077d2c251">grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a89a118fa4c2c8863f7339841a3d5bbf1">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aab258d5b2457dabe345b0aa302a7a731">grpc_event_engine::experimental::MemoryAllocator</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a0f4739d241b0a83d36c4c3f649d13305">grpc_event_engine::experimental::MemoryAllocator</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html#af7ffb35a42dddb03f8f8dc49317af61a">grpc_event_engine::experimental::MemoryAllocator::Reservation</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_mutable_slice.html#ae8d13f1c0012913c0ba20495ef59c6dd">grpc_event_engine::experimental::MutableSlice</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#a786d0b682e5b7adf6f3924da95a3dee2">grpc_event_engine::experimental::Slice</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#ab516745b1a7e5e499dfb003620b1453c">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#ac5ba6ea93b21f1e543e980748f04a126">grpc_event_engine::experimental::SliceBuffer</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1slice__detail_1_1_base_slice.html#acb81f419621acc44518311dbc66e2ed2">grpc_event_engine::experimental::slice_detail::BaseSlice</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#abf41faf44ae5b4f04c3383f25f9087a9">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
 <li>operator==()
 : <a class="el" href="classgrpc_1_1_auth_property_iterator.html#a15e66ce56801c275502cd60805f68499">grpc::AuthPropertyIterator</a>
@@ -212,7 +213,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

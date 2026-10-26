@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -258,12 +258,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a23266f0eb239c210337ee42d83c021aa"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a23266f0eb239c210337ee42d83c021aa">ValidateServiceConfigJSON</a> (const std::string &amp;service_config_json)</td></tr>
 <tr class="memdesc:a23266f0eb239c210337ee42d83c021aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validates <em>service_config_json</em>.  <a href="namespacegrpc_1_1experimental.html#a23266f0eb239c210337ee42d83c021aa">More...</a><br /></td></tr>
 <tr class="separator:a23266f0eb239c210337ee42d83c021aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a059e5f2b7916fde797b4c13251cb1a6b"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a059e5f2b7916fde797b4c13251cb1a6b">CreateVirtualChannel</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a> call)</td></tr>
-<tr class="memdesc:a059e5f2b7916fde797b4c13251cb1a6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> virtual <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> using <em>call</em>.  <a href="namespacegrpc_1_1experimental.html#a059e5f2b7916fde797b4c13251cb1a6b">More...</a><br /></td></tr>
-<tr class="separator:a059e5f2b7916fde797b4c13251cb1a6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c51f24ca722e967e209d121eb25531e"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a2c51f24ca722e967e209d121eb25531e">CreateVirtualChannel</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a> call, const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args, absl::AnyInvocable&lt; void()&gt; goaway_callback=nullptr)</td></tr>
-<tr class="memdesc:a2c51f24ca722e967e209d121eb25531e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> virtual <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> using <em>call</em>.  <a href="namespacegrpc_1_1experimental.html#a2c51f24ca722e967e209d121eb25531e">More...</a><br /></td></tr>
-<tr class="separator:a2c51f24ca722e967e209d121eb25531e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html">ClientRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor. </p>
@@ -552,78 +546,6 @@ template&lt;class Request , class Response &gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-
-</div>
-</div>
-<a id="a059e5f2b7916fde797b4c13251cb1a6b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a059e5f2b7916fde797b4c13251cb1a6b">&#9670;&nbsp;</a></span>CreateVirtualChannel() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel.html">Channel</a>&gt; grpc::experimental::CreateVirtualChannel </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a>&#160;</td>
-          <td class="paramname"><em>call</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Create a new <em>custom</em> virtual <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> using <em>call</em>. </p>
-<dl class="section warning"><dt>Warning</dt><dd>For internal gRPC use ONLY.</dd></dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">call</td><td>The call object to create the virtual channel from. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="a2c51f24ca722e967e209d121eb25531e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c51f24ca722e967e209d121eb25531e">&#9670;&nbsp;</a></span>CreateVirtualChannel() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel.html">Channel</a>&gt; grpc::experimental::CreateVirtualChannel </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a>&#160;</td>
-          <td class="paramname"><em>call</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;&#160;</td>
-          <td class="paramname"><em>args</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">absl::AnyInvocable&lt; void()&gt;&#160;</td>
-          <td class="paramname"><em>goaway_callback</em> = <code>nullptr</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Create a new <em>custom</em> virtual <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> using <em>call</em>. </p>
-<dl class="section warning"><dt>Warning</dt><dd>For internal gRPC use ONLY. Override default channel arguments only if necessary.</dd></dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">call</td><td>The call object to create the virtual channel from. </td></tr>
-    <tr><td class="paramname">args</td><td>Options for channel creation. </td></tr>
-    <tr><td class="paramname">goaway_callback</td><td>Callback to be invoked when the channel receives a GOAWAY. </td></tr>
-  </table>
-  </dd>
-</dl>
 
 </div>
 </div>
@@ -970,7 +892,7 @@ template&lt;typename T &gt; </div>
 <div class="ttc" id="anamespacegrpc_1_1experimental_html_a4f2459dbfc9db3a8a53129d1aba1d8d3"><div class="ttname"><a href="namespacegrpc_1_1experimental.html#a4f2459dbfc9db3a8a53129d1aba1d8d3">grpc::experimental::SetSessionContext</a></div><div class="ttdeci">void SetSessionContext(ServerContextBase *context, std::shared_ptr&lt; T &gt; session_context)</div><div class="ttdoc">Set the session context.</div><div class="ttdef"><b>Definition:</b> server_context.h:803</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

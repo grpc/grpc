@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_observability._open_telemetry_plugin &#8212; gRPC Python Docs v1.83.0</title>
+    <title>grpc_observability._open_telemetry_plugin &#8212; gRPC Python Docs v1.85.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../_static/documentation_options.js?v=0bacb3f8"></script>
+    <script src="../../_static/documentation_options.js?v=f422086f"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.83.0" />
+  <meta name="docsearch:version" content="1.85.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.85.0</p>
   
 </a></div>
     
@@ -261,14 +261,14 @@
   <h1>Source code for grpc_observability._open_telemetry_plugin</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2023 gRPC authors.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
@@ -279,31 +279,31 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">grpc_observability._observability</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptionalLabelType</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">opentelemetry.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">MeterProvider</span>
 
-<span class="n">GRPC_METHOD_LABEL</span> <span class="o">=</span> <span class="s2">&quot;grpc.method&quot;</span>
-<span class="n">GRPC_TARGET_LABEL</span> <span class="o">=</span> <span class="s2">&quot;grpc.target&quot;</span>
-<span class="n">GRPC_CLIENT_METRIC_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;grpc.client&quot;</span>
-<span class="n">GRPC_OTHER_LABEL_VALUE</span> <span class="o">=</span> <span class="s2">&quot;other&quot;</span>
+<span class="n">GRPC_METHOD_LABEL</span> <span class="o">=</span> <span class="s2">"grpc.method"</span>
+<span class="n">GRPC_TARGET_LABEL</span> <span class="o">=</span> <span class="s2">"grpc.target"</span>
+<span class="n">GRPC_CLIENT_METRIC_PREFIX</span> <span class="o">=</span> <span class="s2">"grpc.client"</span>
+<span class="n">GRPC_OTHER_LABEL_VALUE</span> <span class="o">=</span> <span class="s2">"other"</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">OpenTelemetryLabelInjector</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    An interface that allows you to add additional labels on the calls traced.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_labels_for_exchange</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AnyStr</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get labels used for metadata exchange.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A dict of labels, with a string as key representing label name, string or bytes</span>
 <span class="sd">        as value representing label value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_additional_labels</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">include_exchange_labels</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get additional labels added by this injector.</span>
 
 <span class="sd">        The return value from this method will be added directly to metric data.</span>
@@ -313,14 +313,14 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A dict of labels.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="c1"># pylint: disable=no-self-use</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">deserialize_labels</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AnyStr</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AnyStr</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Deserialize the labels if required.</span>
 
 <span class="sd">        If this injector added labels for metadata exchange, this method will be called to</span>
@@ -328,30 +328,30 @@
 
 <span class="sd">        For example, if this injector added xds_peer_metadata_label for exchange:</span>
 
-<span class="sd">            labels: {&quot;labelA&quot;: b&quot;valueA&quot;, &quot;xds_peer_metadata_label&quot;: b&quot;exchanged_bytes&quot;}</span>
+<span class="sd">            labels: {"labelA": b"valueA", "xds_peer_metadata_label": b"exchanged_bytes"}</span>
 
 <span class="sd">        This method should deserialize xds_peer_metadata_label and return labels as:</span>
 
-<span class="sd">            labels: {&quot;labelA&quot;: b&quot;valueA&quot;, &quot;xds_label_A&quot;: &quot;xds_label_A&quot;,</span>
-<span class="sd">                     &quot;xds_label_B&quot;: &quot;xds_label_B&quot;}</span>
+<span class="sd">            labels: {"labelA": b"valueA", "xds_label_A": "xds_label_A",</span>
+<span class="sd">                     "xds_label_B": "xds_label_B"}</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A dict of deserialized labels.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">labels</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">OpenTelemetryPluginOption</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    An interface that allows you to add additional function to OpenTelemetryPlugin.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 
 <span class="c1"># pylint: disable=no-self-use</span>
 <div class="viewcode-block" id="OpenTelemetryPlugin">
 <a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OpenTelemetryPlugin</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Describes a Plugin for OpenTelemetry observability.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Describes a Plugin for OpenTelemetry observability."""</span>
 
     <span class="n">plugin_options</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPluginOption</span><span class="p">]</span>
     <span class="n">meter_provider</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeterProvider</span><span class="p">]</span>
@@ -367,7 +367,7 @@
         <span class="n">target_attribute_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">generic_method_attribute_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">          plugin_options: An Iterable of OpenTelemetryPluginOption which will be</span>
 <span class="sd">        enabled for this OpenTelemetryPlugin.</span>
@@ -376,19 +376,19 @@
 <span class="sd">          target_attribute_filter: [DEPRECATED] This attribute is deprecated and should</span>
 <span class="sd">        not be used.</span>
 <span class="sd">        Once provided, this will be called per channel to decide whether to record the</span>
-<span class="sd">        target attribute on client or to replace it with &quot;other&quot;.</span>
+<span class="sd">        target attribute on client or to replace it with "other".</span>
 <span class="sd">        This helps reduce the cardinality on metrics in cases where many channels</span>
 <span class="sd">        are created with different targets in the same binary (which might happen</span>
 <span class="sd">        for example, if the channel target string uses IP addresses directly).</span>
 <span class="sd">        Return True means the original target string will be used, False means target string</span>
-<span class="sd">        will be replaced with &quot;other&quot;.</span>
+<span class="sd">        will be replaced with "other".</span>
 <span class="sd">          generic_method_attribute_filter: Once provided, this will be called with a generic</span>
 <span class="sd">        method type to decide whether to record the method name or to replace it with</span>
-<span class="sd">        &quot;other&quot;. Note that pre-registered methods will always be recorded no matter what</span>
+<span class="sd">        "other". Note that pre-registered methods will always be recorded no matter what</span>
 <span class="sd">        this function returns.</span>
 <span class="sd">        Return True means the original method name will be used, False means method name will</span>
-<span class="sd">        be replaced with &quot;other&quot;.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        be replaced with "other".</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">plugin_options</span> <span class="o">=</span> <span class="n">plugin_options</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">meter_provider</span> <span class="o">=</span> <span class="n">meter_provider</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_attribute_filter</span> <span class="o">=</span> <span class="n">target_attribute_filter</span> <span class="ow">or</span> <span class="p">(</span>
@@ -404,12 +404,12 @@
 <div class="viewcode-block" id="OpenTelemetryPlugin.register_global">
 <a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.register_global">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">register_global</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Registers a global plugin that acts on all channels and servers running on the process.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            RuntimeError: If a global plugin was already registered.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">start_open_telemetry_observability</span><span class="p">(</span>
             <span class="n">plugins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_plugins</span>
         <span class="p">)</span></div>
@@ -418,12 +418,12 @@
 <div class="viewcode-block" id="OpenTelemetryPlugin.deregister_global">
 <a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.deregister_global">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">deregister_global</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        De-register the global plugin that acts on all channels and servers running on the process.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            RuntimeError: If no global plugin was registered.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">end_open_telemetry_observability</span><span class="p">()</span></div>
 
 

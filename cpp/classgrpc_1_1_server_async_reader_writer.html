@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.83.0</span>
+   &#160;<span id="projectnumber">1.85.0</span>
    </div>
   </td>
  </tr>
@@ -84,7 +84,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a617d8aa6fc75504a2a6dadd93549b6d9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a617d8aa6fc75504a2a6dadd93549b6d9">ServerAsyncReaderWriter</a> (<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *ctx)</td></tr>
 <tr class="separator:a617d8aa6fc75504a2a6dadd93549b6d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1c8e237a99a177ef68c37ad0de100499"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a1c8e237a99a177ef68c37ad0de100499">SendInitialMetadata</a> (void *tag) override</td></tr>
-<tr class="memdesc:a1c8e237a99a177ef68c37ad0de100499"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <em>ServerAsyncStreamingInterface::SendInitialMetadata</em> for semantics.  <a href="classgrpc_1_1_server_async_reader_writer.html#a1c8e237a99a177ef68c37ad0de100499">More...</a><br /></td></tr>
+<tr class="memdesc:a1c8e237a99a177ef68c37ad0de100499"><td class="mdescLeft">&#160;</td><td class="mdescRight">See ServerAsyncStreamingInterface::SendInitialMetadata for semantics.  <a href="classgrpc_1_1_server_async_reader_writer.html#a1c8e237a99a177ef68c37ad0de100499">More...</a><br /></td></tr>
 <tr class="separator:a1c8e237a99a177ef68c37ad0de100499"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a911d41783f644e170c017bb3032ca5c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a911d41783f644e170c017bb3032ca5c8">Read</a> (R *msg, void *tag) override</td></tr>
 <tr class="separator:a911d41783f644e170c017bb3032ca5c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -93,10 +93,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aed023e1acec29eadcc44c83f28e6dd72"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader_writer.html#aed023e1acec29eadcc44c83f28e6dd72">Write</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, void *tag) override</td></tr>
 <tr class="separator:aed023e1acec29eadcc44c83f28e6dd72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2fb95e4a199481fbe8ede8bb5ab0e63a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a2fb95e4a199481fbe8ede8bb5ab0e63a">WriteAndFinish</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, const <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;status, void *tag) override</td></tr>
-<tr class="memdesc:a2fb95e4a199481fbe8ede8bb5ab0e63a"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em><a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#a174e5314d443a9282438badf9bb21244" title="Request the writing of msg and coalesce it with trailing metadata which contains status,...">ServerAsyncReaderWriterInterface.WriteAndFinish</a></em> method for semantics.  <a href="classgrpc_1_1_server_async_reader_writer.html#a2fb95e4a199481fbe8ede8bb5ab0e63a">More...</a><br /></td></tr>
+<tr class="memdesc:a2fb95e4a199481fbe8ede8bb5ab0e63a"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#a174e5314d443a9282438badf9bb21244" title="Request the writing of msg and coalesce it with trailing metadata which contains status,...">ServerAsyncReaderWriterInterface::WriteAndFinish</a> method for semantics.  <a href="classgrpc_1_1_server_async_reader_writer.html#a2fb95e4a199481fbe8ede8bb5ab0e63a">More...</a><br /></td></tr>
 <tr class="separator:a2fb95e4a199481fbe8ede8bb5ab0e63a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a59b558feb5a47c7869843ec031692394"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a59b558feb5a47c7869843ec031692394">Finish</a> (const <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;status, void *tag) override</td></tr>
-<tr class="memdesc:a59b558feb5a47c7869843ec031692394"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em><a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#ae63d347d413c401b1e976f165efde50b" title="Indicate that the stream is to be finished with a certain status code.">ServerAsyncReaderWriterInterface.Finish</a></em> method for semantics.  <a href="classgrpc_1_1_server_async_reader_writer.html#a59b558feb5a47c7869843ec031692394">More...</a><br /></td></tr>
+<tr class="memdesc:a59b558feb5a47c7869843ec031692394"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#ae63d347d413c401b1e976f165efde50b" title="Indicate that the stream is to be finished with a certain status code.">ServerAsyncReaderWriterInterface::Finish</a> method for semantics.  <a href="classgrpc_1_1_server_async_reader_writer.html#a59b558feb5a47c7869843ec031692394">More...</a><br /></td></tr>
 <tr class="separator:a59b558feb5a47c7869843ec031692394"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
@@ -175,7 +175,7 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See the <em><a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#ae63d347d413c401b1e976f165efde50b" title="Indicate that the stream is to be finished with a certain status code.">ServerAsyncReaderWriterInterface.Finish</a></em> method for semantics. </p>
+<p>See the <a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#ae63d347d413c401b1e976f165efde50b" title="Indicate that the stream is to be finished with a certain status code.">ServerAsyncReaderWriterInterface::Finish</a> method for semantics. </p>
 <p>Implicit input parameter:</p><ul>
 <li>the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a></em> associated with this call is used for sending trailing (and initial if not already sent) metadata to the client.</li>
 </ul>
@@ -247,7 +247,7 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See <em>ServerAsyncStreamingInterface::SendInitialMetadata</em> for semantics. </p>
+<p>See ServerAsyncStreamingInterface::SendInitialMetadata for semantics. </p>
 <p>Implicit input parameter:</p><ul>
 <li>The initial metadata that will be sent to the client from this op will be taken from the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a></em> associated with the call.</li>
 </ul>
@@ -390,7 +390,7 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>See the <em><a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#a174e5314d443a9282438badf9bb21244" title="Request the writing of msg and coalesce it with trailing metadata which contains status,...">ServerAsyncReaderWriterInterface.WriteAndFinish</a></em> method for semantics. </p>
+<p>See the <a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#a174e5314d443a9282438badf9bb21244" title="Request the writing of msg and coalesce it with trailing metadata which contains status,...">ServerAsyncReaderWriterInterface::WriteAndFinish</a> method for semantics. </p>
 <p>Implicit input parameter:</p><ul>
 <li>the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a></em> associated with this call is used for sending trailing (and initial) metadata to the client.</li>
 </ul>
@@ -430,7 +430,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 27 2026 05:43:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 26 2026 05:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

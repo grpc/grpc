@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC Health Checking &#8212; gRPC Python Docs v1.83.0</title>
+    <title>gRPC Health Checking &#8212; gRPC Python Docs v1.85.0</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=0bacb3f8"></script>
+    <script src="_static/documentation_options.js?v=f422086f"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -62,7 +62,7 @@
     <link rel="prev" title="gRPC CSDS" href="grpc_csds.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.83.0" />
+  <meta name="docsearch:version" content="1.85.0" />
   </head>
   
   
@@ -124,7 +124,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.85.0</p>
   
 </a></div>
     
@@ -296,8 +296,12 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_health.v1.health.HealthServicer.Check">
 <span class="sig-name descname"><span class="pre">Check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.Check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.Check" title="Link to this definition">#</a></dt>
-<dd><p>If the requested service is unknown, the call will fail with status
-NOT_FOUND.</p>
+<dd><p>Check gets the health of the specified service. If the requested service
+is unknown, the call will fail with status NOT_FOUND. If the caller does
+not specify a service name, the server should respond with its overall
+health status.</p>
+<p>Clients should set a deadline when calling Check, and can declare the
+server unhealthy if they do not receive a timely response.</p>
 </dd></dl>
 
 <dl class="py method">

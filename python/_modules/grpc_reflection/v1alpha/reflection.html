@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_reflection.v1alpha.reflection &#8212; gRPC Python Docs v1.83.0</title>
+    <title>grpc_reflection.v1alpha.reflection &#8212; gRPC Python Docs v1.85.0</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../_static/documentation_options.js?v=0bacb3f8"></script>
+    <script src="../../../_static/documentation_options.js?v=f422086f"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -59,7 +59,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.83.0" />
+  <meta name="docsearch:version" content="1.85.0" />
   </head>
   
   
@@ -121,7 +121,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.83.0</p>
+    <p class="title logo__title">gRPC Python Docs v1.85.0</p>
   
 </a></div>
     
@@ -261,18 +261,18 @@
   <h1>Source code for grpc_reflection.v1alpha.reflection</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2016 gRPC authors.</span>
 <span class="c1">#</span>
-<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="c1"># you may not use this file except in compliance with the License.</span>
 <span class="c1"># You may obtain a copy of the License at</span>
 <span class="c1">#</span>
 <span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
 <span class="c1">#</span>
 <span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
-<span class="sd">&quot;&quot;&quot;Reference implementation for reflection in gRPC Python.&quot;&quot;&quot;</span>
+<span class="sd">"""Reference implementation for reflection in gRPC Python."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
@@ -282,37 +282,37 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">grpc_reflection.v1alpha._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseReflectionServicer</span>
 
 <span class="n">SERVICE_NAME</span> <span class="o">=</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">DESCRIPTOR</span><span class="o">.</span><span class="n">services_by_name</span><span class="p">[</span>
-    <span class="s2">&quot;ServerReflection&quot;</span>
+    <span class="s2">"ServerReflection"</span>
 <span class="p">]</span><span class="o">.</span><span class="n">full_name</span>
 
 
 <div class="viewcode-block" id="ReflectionServicer">
 <a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.ReflectionServicer">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ReflectionServicer</span><span class="p">(</span><span class="n">BaseReflectionServicer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Servicer handling RPCs for service statuses.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Servicer handling RPCs for service statuses."""</span>
 
 <div class="viewcode-block" id="ReflectionServicer.ServerReflectionInfo">
 <a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">ServerReflectionInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="c1"># pylint: disable=unused-argument</span>
         <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;file_by_filename&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">"file_by_filename"</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_by_filename</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">file_by_filename</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;file_containing_symbol&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">"file_containing_symbol"</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_containing_symbol</span><span class="p">(</span>
                     <span class="n">request</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">file_containing_symbol</span>
                 <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;file_containing_extension&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">"file_containing_extension"</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_containing_extension</span><span class="p">(</span>
                     <span class="n">request</span><span class="p">,</span>
                     <span class="n">request</span><span class="o">.</span><span class="n">file_containing_extension</span><span class="o">.</span><span class="n">containing_type</span><span class="p">,</span>
                     <span class="n">request</span><span class="o">.</span><span class="n">file_containing_extension</span><span class="o">.</span><span class="n">extension_number</span><span class="p">,</span>
                 <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;all_extension_numbers_of_type&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">"all_extension_numbers_of_type"</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_extension_numbers_of_type</span><span class="p">(</span>
                     <span class="n">request</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">all_extension_numbers_of_type</span>
                 <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;list_services&quot;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">"list_services"</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_services</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServerReflectionResponse</span><span class="p">(</span>
@@ -328,13 +328,13 @@
 
 
 
-<span class="n">_enable_server_reflection_doc</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Enables server reflection on a server.</span>
+<span class="n">_enable_server_reflection_doc</span> <span class="o">=</span> <span class="s2">"""Enables server reflection on a server.</span>
 
 <span class="s2">Args:</span>
 <span class="s2">    service_names: Iterable of fully-qualified service names available.</span>
 <span class="s2">    server: grpc.Server to which reflection service will be added.</span>
 <span class="s2">    pool: DescriptorPool object to use (descriptor_pool.Default() if None).</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">"""</span>
 
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
     <span class="c1"># Exposes AsyncReflectionServicer as public API.</span>
@@ -357,10 +357,10 @@
     <span class="n">enable_server_reflection</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_enable_server_reflection_doc</span>
 
     <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;SERVICE_NAME&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ReflectionServicer&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;aio&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;enable_server_reflection&quot;</span><span class="p">,</span>
+        <span class="s2">"SERVICE_NAME"</span><span class="p">,</span>
+        <span class="s2">"ReflectionServicer"</span><span class="p">,</span>
+        <span class="s2">"aio"</span><span class="p">,</span>
+        <span class="s2">"enable_server_reflection"</span><span class="p">,</span>
     <span class="p">]</span>
 <span class="k">else</span><span class="p">:</span>
 
@@ -375,9 +375,9 @@
     <span class="n">enable_server_reflection</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_enable_server_reflection_doc</span>
 
     <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;SERVICE_NAME&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ReflectionServicer&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;enable_server_reflection&quot;</span><span class="p">,</span>
+        <span class="s2">"SERVICE_NAME"</span><span class="p">,</span>
+        <span class="s2">"ReflectionServicer"</span><span class="p">,</span>
+        <span class="s2">"enable_server_reflection"</span><span class="p">,</span>
     <span class="p">]</span>
 </pre></div>
 
