@@ -222,37 +222,34 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   }
   void Proceed(bool ok) {
     void* ignored = ops_;
-    grpc_call* call = call_;
-    CompletionQueueTag* ops = ops_;
-    if (call != nullptr) {
-      grpc_call_ref(call);
-    }
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
-    bool do_callback = ops->FinalizeResult(&ignored, &ok);
+#ifndef NDEBUG
+    auto* ops = ops_;
+#endif
+    bool do_callback = ops_->FinalizeResult(&ignored, &ok);
 #ifndef NDEBUG
     ABSL_DCHECK(ignored == ops);
 #endif
 
     if (do_callback) {
+      // The callback may destroy the object that holds this tag (calling
+      // Clear() and dropping the tag's ref on call_), so copy func_ and hold a
+      // ref on call across RunCallback.
       auto func = func_;
-      if (func != nullptr) {
-        GetGlobalCallbackHook()->RunCallback(call, [func, ok]() {
+      grpc_call* call = call_;
+      grpc_call_ref(call);
+      GetGlobalCallbackHook()->RunCallback(call, [func, ok]() {
 #if GRPC_ALLOW_EXCEPTIONS
-          try {
-            func(ok);
-          } catch (...) {
-            // nothing to return or change
-            // here, just don't crash the
-            // library
-          }
-#else   // GRPC_ALLOW_EXCEPTIONS
+        try {
           func(ok);
+        } catch (...) {
+          // nothing to return or change here, just don't crash the library
+        }
+#else   // GRPC_ALLOW_EXCEPTIONS
+        func(ok);
 #endif  // GRPC_ALLOW_EXCEPTIONS
-        });
-      }
-    }
-    if (call != nullptr) {
+      });
       grpc_call_unref(call);
     }
   }
