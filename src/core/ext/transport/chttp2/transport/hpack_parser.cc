@@ -37,9 +37,11 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -727,6 +729,20 @@ class HPackParser::Parser {
       input_->SetErrorAndContinueParsing(*md.parse_status);
     }
     if (GPR_LIKELY(metadata_buffer_ != nullptr)) {
+      if (IsMapHostHeaderToAuthorityEnabled()) {
+        if (GPR_UNLIKELY(metadata_buffer_->get_pointer(
+                             HttpAuthorityMetadata()) != nullptr &&
+                         md.md.key() == HttpAuthorityMetadata::key())) {
+          input_->SetErrorAndContinueParsing(
+              HpackParseResult::DuplicateHeaderError(
+                  HttpAuthorityMetadata::key()));
+        } else if (GPR_UNLIKELY(metadata_buffer_->get_pointer(HostMetadata()) !=
+                                    nullptr &&
+                                md.md.key() == HostMetadata::key())) {
+          input_->SetErrorAndContinueParsing(
+              HpackParseResult::DuplicateHeaderError(HostMetadata::key()));
+        }
+      }
       metadata_buffer_->Set(md.md);
     }
     if (state_.metadata_early_detection.MustReject(state_.frame_length)) {
@@ -995,8 +1011,34 @@ class HPackParser::Parser {
       }
     }
     auto value_slice = value.value.Take();
+    if (IsOptimization05Enabled() && !state_.is_binary_header &&
+        state_.field_error.ok()) {
+      auto r =
+          ValidateNonBinaryHeaderValueIsLegal(value_slice.as_string_view());
+      if (r != ValidateMetadataResult::kOk) {
+        input_->SetErrorAndContinueParsing(
+            HpackParseResult::InvalidMetadataError(r, key_string));
+      }
+    }
     const auto transport_size =
         key_string.size() + value.wire_size + hpack_constants::kEntryOverhead;
+    if (state_.mitigation_engine != nullptr) {
+      auto action = state_.mitigation_engine->EvaluateIncomingMetadata(
+          key_string, value_slice.as_string_view(),
+          MitigationEngine::EvaluateArgs(
+              state_.peer_address, /*endpoint=*/nullptr, state_.auth_context));
+      if (action.has_value()) {
+        if (action.value() == MitigationEngine::Action::kCloseConnection) {
+          input_->SetErrorAndStopParsing(
+              HpackParseResult::MitigationEngineError(
+                  key_string, MitigationEngine::Action::kCloseConnection));
+        } else if (action.value() == MitigationEngine::Action::kRejectRpc) {
+          input_->SetErrorAndContinueParsing(
+              HpackParseResult::MitigationEngineError(
+                  key_string, MitigationEngine::Action::kRejectRpc));
+        }
+      }
+    }
     auto md = grpc_metadata_batch::Parse(
         key_string, std::move(value_slice), state_.add_to_table, transport_size,
         [key_string, this](absl::string_view message, const Slice&) {
@@ -1088,17 +1130,20 @@ HPackParser::HPackParser() = default;
 
 HPackParser::~HPackParser() = default;
 
-void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
-                             uint32_t metadata_size_soft_limit,
-                             uint32_t metadata_size_hard_limit,
-                             Boundary boundary, Priority priority,
-                             LogInfo log_info) {
+void HPackParser::BeginFrame(
+    grpc_metadata_batch* metadata_buffer, uint32_t metadata_size_soft_limit,
+    uint32_t metadata_size_hard_limit, Boundary boundary, Priority priority,
+    LogInfo log_info, MitigationEngine* mitigation_engine,
+    absl::string_view peer_address, grpc_auth_context* auth_context) {
   metadata_buffer_ = metadata_buffer;
   if (metadata_buffer != nullptr) {
     metadata_buffer->Set(GrpcStatusFromWire(), true);
   }
   boundary_ = boundary;
   priority_ = priority;
+  state_.mitigation_engine = mitigation_engine;
+  state_.peer_address = peer_address;
+  state_.auth_context = auth_context;
   state_.dynamic_table_updates_allowed = 2;
   state_.metadata_early_detection.SetLimits(
       /*soft_limit=*/metadata_size_soft_limit,
@@ -1133,6 +1178,40 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last,
                                           CallSpan* call_tracer) {
   ParseInputInner(&input);
   if (is_last && is_boundary()) {
+    if (IsMapHostHeaderToAuthorityEnabled() && metadata_buffer_ != nullptr &&
+        !log_info_.is_client && log_info_.type == LogInfo::kHeaders) {
+      // Note: HostMetadata cannot be removed completely from
+      // grpc_metadata_batch or parsed directly as HttpAuthorityMetadata because
+      // "host" is stored at index 38 in the HPACK static table (and may be
+      // added to the dynamic table). HPackTable::Memento preserves HostMetadata
+      // so that indexed key lookups return "host" (4 bytes) rather than
+      // ":authority" (10 bytes), preventing HPACK dynamic table size
+      // desynchronization (RFC 7541). Once a server has fully parsed the
+      // request headers, if "host" is present and ":authority" is missing, we
+      // copy "host" into HttpAuthorityMetadata so that downstream layers are
+      // guaranteed to see HttpAuthorityMetadata. HostMetadata is left as-is.
+      const Slice* host = metadata_buffer_->get_pointer(HostMetadata());
+      if (host != nullptr &&
+          metadata_buffer_->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+        metadata_buffer_->Set(HttpAuthorityMetadata(), host->Ref());
+      }
+    }
+    if (state_.mitigation_engine != nullptr && metadata_buffer_ != nullptr) {
+      auto action = state_.mitigation_engine->EvaluateAllIncomingMetadata(
+          *metadata_buffer_,
+          MitigationEngine::EvaluateArgs(
+              state_.peer_address, /*endpoint=*/nullptr, state_.auth_context));
+      if (action.has_value()) {
+        if (action.value() == MitigationEngine::Action::kCloseConnection) {
+          input.SetErrorAndStopParsing(HpackParseResult::MitigationEngineError(
+              /*key=*/"", MitigationEngine::Action::kCloseConnection));
+        } else if (action.value() == MitigationEngine::Action::kRejectRpc) {
+          input.SetErrorAndContinueParsing(
+              HpackParseResult::MitigationEngineError(
+                  /*key=*/"", MitigationEngine::Action::kRejectRpc));
+        }
+      }
+    }
     if (state_.metadata_early_detection.Reject(state_.frame_length,
                                                input.bitsrc())) {
       HandleMetadataSoftSizeLimitExceeded(&input);

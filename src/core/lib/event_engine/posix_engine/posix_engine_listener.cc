@@ -70,7 +70,7 @@ PosixEngineListenerImpl::PosixEngineListenerImpl(
 absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr,
     PosixListenerWithFdSupport::OnPosixBindNewFdCallback on_bind_new_fd) {
-  grpc_core::MutexLock lock(&this->mu_);
+  grpc_core::MutexLock lock(this->mu_);
   if (this->started_) {
     return absl::FailedPreconditionError(
         "Listener is already started, ports can no longer be bound");
@@ -198,7 +198,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       auto peer_address = posix_interface.PeerAddress(fd.value());
       if (!peer_address.ok()) {
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
-        LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
+        LOG(ERROR) << "Failed getpeername: " << peer_address.status()
                    << ". Dropping the connection, and continuing "
                       "to listen on "
                    << (listener_addr_uri.ok() ? *listener_addr_uri
@@ -307,7 +307,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
 }
 
 absl::Status PosixEngineListenerImpl::Start() {
-  grpc_core::MutexLock lock(&this->mu_);
+  grpc_core::MutexLock lock(this->mu_);
   // Start each asynchronous acceptor.
   GRPC_CHECK(!this->started_);
   this->started_ = true;
@@ -320,7 +320,7 @@ absl::Status PosixEngineListenerImpl::Start() {
 void PosixEngineListenerImpl::TriggerShutdown() {
   // This would get invoked from the destructor of the parent
   // PosixEngineListener object.
-  grpc_core::MutexLock lock(&this->mu_);
+  grpc_core::MutexLock lock(this->mu_);
   for (auto it = acceptors_.begin(); it != acceptors_.end(); it++) {
     // Trigger shutdown of each asynchronous acceptor. This in-turn calls
     // ShutdownHandle on the associated poller event handle. It may also

@@ -194,8 +194,9 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidOneHeaderFrame) {
   const uint32_t stream_id = 0x7fffffff;
   HPackParser parser;
   HeaderAssembler assembler(test_param_is_client());
-  assembler.InitializeStream(stream_id,
-                             test_param_allow_true_binary_metadata());
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(
+      test_param_allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
 
@@ -205,8 +206,9 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady1) {
   const uint32_t stream_id = 0x12345678;
   HPackParser parser;
   HeaderAssembler assembler(test_param_is_client());
-  assembler.InitializeStream(stream_id,
-                             test_param_allow_true_binary_metadata());
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(
+      test_param_allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
       /*end_stream=*/false);
@@ -291,8 +293,9 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidOneHeaderTwoContinuationFrame) {
   const uint32_t stream_id = 0x78654321;
   HPackParser parser;
   HeaderAssembler assembler(test_param_is_client());
-  assembler.InitializeStream(stream_id,
-                             test_param_allow_true_binary_metadata());
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(
+      test_param_allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
 }
@@ -303,8 +306,9 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady2) {
   const uint32_t stream_id = 1111;
   HPackParser parser;
   HeaderAssembler assembler(test_param_is_client());
-  assembler.InitializeStream(stream_id,
-                             test_param_allow_true_binary_metadata());
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(
+      test_param_allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   Http2HeaderFrame header =
       GenerateHeaderFrame(kSimpleRequestEncodedPart1, stream_id,
                           /*end_headers=*/false, /*end_stream=*/false);
@@ -354,9 +358,11 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidTwoHeaderFrames) {
   const uint32_t stream_id = 1111;
   HPackParser parser;
   HeaderAssembler assembler(test_param_is_client());
-  assembler.InitializeStream(stream_id,
-                             test_param_allow_true_binary_metadata());
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(
+      test_param_allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
+  assembler.SetStreamId(stream_id);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
 
@@ -370,12 +376,37 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidMultipleHeadersAndContinuations) {
   const uint32_t stream_id = 1111;
   HPackParser parser;
   HeaderAssembler assembler(test_param_is_client());
-  assembler.InitializeStream(stream_id,
-                             test_param_allow_true_binary_metadata());
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(
+      test_param_allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
+  assembler.SetStreamId(stream_id);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/true);
+}
+
+TEST_P(HeaderAssemblerDisassemblerTest, ReusableForDifferentStreams) {
+  // Ensure that HeaderAssembler can be correctly re-used multiple times
+  // for different streams.
+  // 1. Correctly read and parse Header and Continuation frames for stream 1.
+  // 2. Re-initialize the same assembler for stream 2.
+  // 3. Correctly read and parse Header and Continuation frames for stream 2.
+  const uint32_t stream_id_1 = 1112;
+  const uint32_t stream_id_2 = 2222;
+  HPackParser parser;
+  HeaderAssembler assembler(test_param_is_client());
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(
+      test_param_allow_true_binary_metadata());
+
+  assembler.SetStreamId(stream_id_1);
+  ValidateOneHeaderTwoContinuation(stream_id_1, parser, assembler,
+                                   /*end_stream=*/false);
+
+  // Initialize for a different stream
+  assembler.SetStreamId(stream_id_2);
+  ValidateOneHeaderTwoContinuation(stream_id_2, parser, assembler,
+                                   /*end_stream=*/false);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -387,7 +418,8 @@ Arena::PoolPtr<grpc_metadata_batch> GenerateMetadata(
     const uint32_t stream_id, bool is_trailing_metadata, HPackParser& parser,
     const bool allow_true_binary_metadata, const bool is_client) {
   HeaderAssembler assembler(is_client);
-  assembler.InitializeStream(stream_id, allow_true_binary_metadata);
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(allow_true_binary_metadata);
+  assembler.SetStreamId(stream_id);
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
       /*end_stream=*/is_trailing_metadata);
@@ -628,8 +660,9 @@ TEST_P(HeaderAssemblerDisassemblerTest, Reversibility) {
 
     // Give the frame back to the assembler
     HeaderAssembler assembler(test_param_is_client());
-    assembler.InitializeStream(stream_id,
-                               test_param_allow_true_binary_metadata());
+    assembler.MaybeSetAllowTrueBinaryMetadataAcked(
+        test_param_allow_true_binary_metadata());
+    assembler.SetStreamId(stream_id);
     Http2HeaderFrame& header = std::get<Http2HeaderFrame>(frame);
     Http2Status status = assembler.AppendFrame(header);
     Http2Settings default_settings;
@@ -644,6 +677,24 @@ TEST_P(HeaderAssemblerDisassemblerTest, Reversibility) {
         TakeValue(std::move(result));
     EXPECT_TRUE(ValidateMetadataContents(metadata_new.get()));
   }
+}
+
+TEST(HeaderAssemblerTest, MaybeSetAllowTrueBinaryMetadataAcked) {
+  HeaderAssembler assembler(/*is_client=*/false);
+  EXPECT_FALSE(assembler.TestOnlyAllowTrueBinaryMetadataAcked().has_value());
+
+  // First set should succeed.
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(true);
+  EXPECT_TRUE(assembler.TestOnlyAllowTrueBinaryMetadataAcked().has_value());
+  EXPECT_TRUE(*assembler.TestOnlyAllowTrueBinaryMetadataAcked());
+
+  // Second set with SAME value should succeed (no-op).
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(true);
+  EXPECT_TRUE(*assembler.TestOnlyAllowTrueBinaryMetadataAcked());
+
+  // Third set with DIFFERENT value should also be ignored (value remains true).
+  assembler.MaybeSetAllowTrueBinaryMetadataAcked(false);
+  EXPECT_TRUE(*assembler.TestOnlyAllowTrueBinaryMetadataAcked());
 }
 
 INSTANTIATE_TEST_SUITE_P(HeaderAssemblerTest, HeaderAssemblerDisassemblerTest,

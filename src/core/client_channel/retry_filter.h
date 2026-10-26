@@ -45,10 +45,6 @@ class RetryFilter final {
  public:
   static const grpc_channel_filter kFilterVtable;
 
-  static void UpdateBlackboard(const ServiceConfig& service_config,
-                               const Blackboard* old_blackboard,
-                               Blackboard* blackboard);
-
  private:
   // Old filter-stack style call implementation, in
   // retry_filter_legacy_call_data.{h,cc}
@@ -62,9 +58,9 @@ class RetryFilter final {
   // any even moderately compelling reason to do so.
   static double BackoffJitter() { return 0.2; }
 
-  const internal::RetryMethodConfig* GetRetryPolicy(Arena* arena);
+  const RetryMethodConfig* GetRetryPolicy(Arena* arena);
 
-  RefCountedPtr<internal::RetryThrottler> retry_throttler() const {
+  RefCountedPtr<RetryThrottler> retry_throttler() const {
     return retry_throttler_;
   }
 
@@ -108,7 +104,7 @@ class RetryFilter final {
   ClientChannelFilter* client_channel_;
   grpc_event_engine::experimental::EventEngine* const event_engine_;
   size_t per_rpc_retry_buffer_size_;
-  RefCountedPtr<internal::RetryThrottler> retry_throttler_;
+  RefCountedPtr<RetryThrottler> retry_throttler_;
   const size_t service_config_parser_index_;
 };
 

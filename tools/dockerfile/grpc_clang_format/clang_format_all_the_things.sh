@@ -16,7 +16,7 @@
 set -e
 
 # directories to run against
-DIRS="examples/cpp src/core src/cpp test/core test/cpp include src/compiler src/ruby src/objective-c tools/distrib/python src/python/grpcio_observability"
+DIRS="examples/cpp src/core src/cpp test/core test/cpp include src/compiler src/ruby src/objective-c tools/distrib/python src/python/grpcio_observability tools/artifact_gen"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc *.m *.mm"

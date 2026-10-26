@@ -1361,6 +1361,102 @@ bool InteropClient::DoLongLivedChannelTest(int32_t soak_iterations,
   }
 }
 
+bool InteropClient::DoMcsConnectionScaling() {
+  VLOG(2) << "Sending Mcs connection scaling streaming rpc1 ...";
+
+  ClientContext context1;
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream1(serviceStub_.Get()->FullDuplexCall(&context1));
+
+  StreamingOutputCallRequest request;
+  ResponseParameters* response_parameter = request.add_response_parameters();
+  response_parameter->mutable_fill_peer_socket_address()->set_value(true);
+  StreamingOutputCallResponse response1;
+
+  if (!stream1->Write(request)) {
+    LOG(ERROR) << "DoMcsConnectionScaling(): stream1->Write() failed.";
+    return TransientFailureOrAbort();
+  }
+
+  if (!stream1->Read(&response1)) {
+    LOG(ERROR) << "DoMcsConnectionScaling(): stream1->Read() failed.";
+    return TransientFailureOrAbort();
+  }
+  std::string peerSocketAddressInCall1 = response1.peer_socket_address();
+  GRPC_CHECK(!peerSocketAddressInCall1.empty());
+
+  VLOG(2) << "Sending Mcs connection scaling streaming rpc2 ...";
+
+  ClientContext context2;
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream2(serviceStub_.Get()->FullDuplexCall(&context2));
+
+  StreamingOutputCallResponse response2;
+
+  if (!stream2->Write(request)) {
+    LOG(ERROR) << "DoMcsConnectionScaling(): stream2->Write() failed.";
+    return TransientFailureOrAbort();
+  }
+  if (!stream2->Read(&response2)) {
+    LOG(ERROR) << "DoMcsConnectionScaling(): stream2->Read() failed.";
+    return TransientFailureOrAbort();
+  }
+  std::string peerSocketAddressInCall2 = response2.peer_socket_address();
+
+  // The same connection should have been used for both streams.
+  GRPC_CHECK(peerSocketAddressInCall1 == peerSocketAddressInCall2);
+
+  VLOG(2) << "Sending Mcs connection scaling streaming rpc3 ...";
+
+  ClientContext context3;
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream3(serviceStub_.Get()->FullDuplexCall(&context3));
+
+  StreamingOutputCallResponse response3;
+
+  if (!stream3->Write(request)) {
+    LOG(ERROR) << "DoMcsConnectionScaling(): stream3->Write() failed.";
+    return TransientFailureOrAbort();
+  }
+  if (!stream3->Read(&response3)) {
+    LOG(ERROR) << "DoMcsConnectionScaling(): stream3->Read() failed.";
+    return TransientFailureOrAbort();
+  }
+  std::string peerSocketAddressInCall3 = response3.peer_socket_address();
+  GRPC_CHECK(!peerSocketAddressInCall3.empty());
+
+  // A new connection should have been used for the 3rd stream.
+  GRPC_CHECK(peerSocketAddressInCall3 != peerSocketAddressInCall1);
+
+  stream1->WritesDone();
+  stream2->WritesDone();
+  stream3->WritesDone();
+
+  GRPC_CHECK(!stream1->Read(&response1));
+  Status s = stream1->Finish();
+  if (!AssertStatusOk(s, context1.debug_error_string())) {
+    return false;
+  }
+
+  GRPC_CHECK(!stream2->Read(&response2));
+  s = stream2->Finish();
+  if (!AssertStatusOk(s, context2.debug_error_string())) {
+    return false;
+  }
+
+  GRPC_CHECK(!stream3->Read(&response3));
+  s = stream3->Finish();
+  if (!AssertStatusOk(s, context3.debug_error_string())) {
+    return false;
+  }
+
+  VLOG(2) << "Mcs connection scaling done.";
+  return true;
+}
+
 bool InteropClient::DoUnimplementedService() {
   VLOG(2) << "Sending a request for an unimplemented service...";
 

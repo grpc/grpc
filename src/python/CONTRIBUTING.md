@@ -56,11 +56,11 @@ Ready to dive in?  We'll walk you through the entire process of making your firs
    * **Using Bazel (Recommended):**
      * To run a single unit test:
        ```bash
-       bazel test --cache_test_results=no "//src/python/grpcio_tests/tests/unit:_abort_test" 
+       bazel test --config=python --cache_test_results=no "//src/python/grpcio_tests/tests/unit:_abort_test"
        ```
      * To execute all unit tests for Python:
        ```bash
-       bazel test --cache_test_results=no "//src/python/..." 
+       bazel test --config=python --cache_test_results=no "//src/python/..."
        ```
    * **Using Provided Scripts (Alternative):**
      * Install Python Modules:

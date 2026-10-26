@@ -98,14 +98,16 @@ class GsecKey : public GsecKeyInterface {
 
 }  // namespace grpc_core
 
-#ifndef _STRUCT_IOVEC
+#if !defined(_STRUCT_IOVEC) && !defined(__DEFINED_struct_iovec)
 #if !defined(GRPC_EVENT_ENGINE_POSIX)
+#define _STRUCT_IOVEC
+#define __DEFINED_struct_iovec
 struct iovec {
   void* iov_base;
   size_t iov_len;
 };
 #endif  // GRPC_EVENT_ENGINE_POSIX
-#endif  // _STRUCT_IOVEC
+#endif  // !defined(_STRUCT_IOVEC) && !defined(__DEFINED_struct_iovec)
 
 //
 // A gsec interface for AEAD encryption schemes. The API is thread-compatible.

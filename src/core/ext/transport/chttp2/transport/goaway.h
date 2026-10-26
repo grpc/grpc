@@ -64,6 +64,8 @@ enum class GoawayState : uint8_t {
   // Initial graceful GOAWAY is scheduled to be sent in the next transport write
   // cycle.
   kInitialGracefulGoawayScheduled,
+  // Initial graceful GOAWAY has been written on the wire.
+  kInitialGracefulGoawaySent,
   // Final graceful GOAWAY is scheduled to be sent in the next transport write
   // cycle. Sending this GOAWAY frame completes the graceful GOAWAY process and
   // transitions the state to kDone.
@@ -139,11 +141,6 @@ class GoawayManager {
           /*debug_data=*/std::move(goaway_args.debug_data)};
     }
 
-    void AddWaker(Waker&& waker) {
-      wakers.AddPending(std::move(waker));
-      GRPC_HTTP2_GOAWAY_LOG << "AddWaker: " << wakers.ToString();
-    }
-
     void SetGoawayArgs(const uint32_t error_code, Slice&& debug_data,
                        const uint32_t last_good_stream_id) {
       GRPC_HTTP2_GOAWAY_LOG << "SetGoawayArgs: "
@@ -161,6 +158,7 @@ class GoawayManager {
     absl::Status TriggerWriteCycle();
 
     GoawayState goaway_state = GoawayState::kIdle;
+    bool was_immediate = false;
     std::unique_ptr<GoawayInterface> goaway_interface;
     // TODO(akshitpatel) : [PH2][P4] : There is scope to make this
     // IntractivityWaker.
@@ -222,6 +220,7 @@ class GoawayManager {
                             << " -> "
                                "kImmediateGoawayRequested.";
 
+      ctx->was_immediate = true;
       ctx->goaway_state = GoawayState::kImmediateGoawayRequested;
       ctx->SetGoawayArgs(
           /*error_code=*/static_cast<uint32_t>(error_code),
@@ -275,6 +274,7 @@ class GoawayManager {
                                 << " -> "
                                    "kInitialGracefulGoawayScheduled.";
           GRPC_DCHECK(error_code == Http2ErrorCode::kNoError);
+          ctx->was_immediate = false;
           ctx->goaway_state = GoawayState::kInitialGracefulGoawayScheduled;
           ctx->SetGoawayArgs(
               /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError),
@@ -290,7 +290,7 @@ class GoawayManager {
                               << "Ping resolved. Current state: "
                               << ctx->GoawayStateToString(ctx->goaway_state);
                           if (ctx->goaway_state ==
-                              GoawayState::kInitialGracefulGoawayScheduled) {
+                              GoawayState::kInitialGracefulGoawaySent) {
                             GRPC_HTTP2_GOAWAY_LOG
                                 << " [Graceful GOAWAY] state change "
                                 << ctx->GoawayStateToString(ctx->goaway_state)
@@ -347,6 +347,24 @@ class GoawayManager {
 
   bool IsImmediateGoAway() const {
     return context_->goaway_state == GoawayState::kImmediateGoawayRequested;
+  }
+
+  bool IsFinalGracefulGoawayScheduledOrSent() const {
+    return (context_->goaway_state ==
+            GoawayState::kFinalGracefulGoawayScheduled) ||
+           IsFinalGracefulGoawaySent();
+  }
+
+  bool IsFinalGracefulGoawaySent() const {
+    return context_->goaway_state == GoawayState::kDone &&
+           !context_->was_immediate;
+  }
+
+  bool IsGracefulGoawayInProgress() const {
+    return context_->goaway_state ==
+               GoawayState::kInitialGracefulGoawayScheduled ||
+           context_->goaway_state == GoawayState::kInitialGracefulGoawaySent ||
+           context_->goaway_state == GoawayState::kFinalGracefulGoawayScheduled;
   }
 
   // Called from the transport write cycle to notify the GOAWAY manager that a

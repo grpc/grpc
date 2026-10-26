@@ -25,6 +25,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 
 namespace grpc_core {
@@ -32,8 +33,9 @@ namespace grpc_core {
 // A channel that is backed by a stream on another channel.
 class VirtualChannel : public Channel {
  public:
-  static absl::StatusOr<RefCountedPtr<Channel>> Create(grpc_call* call,
-                                                       ChannelArgs args);
+  static absl::StatusOr<RefCountedPtr<Channel>> Create(
+      grpc_call* call, ChannelArgs args,
+      absl::AnyInvocable<void()> goaway_callback = nullptr);
 };
 
 }  // namespace grpc_core

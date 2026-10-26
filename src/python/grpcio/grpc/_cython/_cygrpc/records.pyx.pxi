@@ -13,7 +13,6 @@
 # limitations under the License.
 import enum
 
-
 cdef bytes _slice_bytes(grpc_slice slice):
   cdef void *start = grpc_slice_start_ptr(slice)
   cdef size_t length = grpc_slice_length(slice)
@@ -59,7 +58,7 @@ class WriteFlag:
   no_compress = GRPC_WRITE_NO_COMPRESS
 
 
-class StatusCode:
+class StatusCode(enum.IntEnum):
   ok = GRPC_STATUS_OK
   cancelled = GRPC_STATUS_CANCELLED
   unknown = GRPC_STATUS_UNKNOWN
@@ -110,7 +109,7 @@ class OperationType(enum.IntEnum):
   receive_close_on_server = GRPC_OP_RECV_CLOSE_ON_SERVER
 
 GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM= (
-  _GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)
+  _GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM).decode()
 
 GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY = (
   _GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY).decode()

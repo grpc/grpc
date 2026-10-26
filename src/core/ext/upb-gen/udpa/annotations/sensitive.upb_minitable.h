@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-extern const upb_MiniTableExtension udpa_annotations_sensitive_ext;
+extern const upb_MiniTableExtension* udpa_annotations_sensitive_ext;
 
 extern const upb_MiniTableFile udpa_annotations_sensitive_proto_upb_file_layout;
 

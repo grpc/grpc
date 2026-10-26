@@ -21,6 +21,7 @@
 #include <set>
 #include <vector>
 
+#include "utils.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/escaping.h"
@@ -29,7 +30,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
-#include "utils.h"
 
 namespace {
 void AddCApis(nlohmann::json& config) {
@@ -85,7 +85,8 @@ void AddCApis(nlohmann::json& config) {
 }
 
 auto MakePhpConfig(const nlohmann::json& config,
-                   std::initializer_list<std::string> remove_libs) {
+                   std::initializer_list<std::string> remove_libs,
+                   bool include_windows = false) {
   std::set<std::string> srcs;
   for (const auto& src : config["php_config_m4"]["src"]) {
     srcs.insert(src);
@@ -114,6 +115,10 @@ auto MakePhpConfig(const nlohmann::json& config,
       const nlohmann::json* lib = it->second;
       std::vector<std::string> src = (*lib)["src"];
       srcs.insert(src.begin(), src.end());
+      if (include_windows && lib->contains("src_windows")) {
+        std::vector<std::string> win_src = (*lib)["src_windows"];
+        srcs.insert(win_src.begin(), win_src.end());
+      }
     }
   }
   std::set<std::string> dirs;
@@ -124,8 +129,9 @@ auto MakePhpConfig(const nlohmann::json& config,
 }
 
 void AddPhpConfig(nlohmann::json& config) {
-  auto [srcs, dirs] = MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"});
-  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"});
+  auto [srcs, dirs] =
+      MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"}, false);
+  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"}, true);
 
   config["php_config_m4"]["srcs"] = srcs;
   config["php_config_m4"]["dirs"] = dirs;
@@ -244,7 +250,7 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
   auto sources = nlohmann::json::parse(sources_in);
   auto file_list = [&sources](std::initializer_list<std::string> paths) {
     std::vector<std::string> ret;
-    for (const std::string& p: paths) {
+    for (const std::string& p : paths) {
       nlohmann::json::json_pointer ptr{p};
       for (const auto& file : sources[ptr]) {
         std::string file_str = file;
@@ -256,10 +262,10 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
     return ret;
   };
   std::vector<std::string> asm_srcs;
-  for (auto kv: sources.items()) {
+  for (auto kv : sources.items()) {
     const auto& lib = kv.value();
-    if (auto asm_it = lib.find("asm"); asm_it != lib.end()){
-      for (const auto& file: asm_it.value().items()){
+    if (auto asm_it = lib.find("asm"); asm_it != lib.end()) {
+      for (const auto& file : asm_it.value().items()) {
         asm_srcs.push_back(file.value());
       }
     }
@@ -274,9 +280,8 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
        {"secure", false},
        {"src", file_list({"/ssl/srcs", "/crypto/srcs", "/bcm/srcs"})},
        {"asm_src", asm_srcs},
-       {"headers",
-        file_list({"/ssl/hdrs", "/ssl/internal_hdrs", "/crypto/hdrs",
-                   "/crypto/internal_hdrs", "/bcm/internal_hdrs"})},
+       {"headers", file_list({"/ssl/hdrs", "/ssl/internal_hdrs", "/crypto/hdrs",
+                              "/crypto/internal_hdrs", "/bcm/internal_hdrs"})},
        {"boringssl", true},
        {"defaults", "boringssl"}});
   metadata["libs"].push_back({{"name", "boringssl_test_util"},

@@ -430,29 +430,29 @@ class ArtifactGen {
   }
 
   // TODO: Remove this protobuf 33.x specific logic.
-  // As of protobuf 33.x certain upb experimental features are 
+  // As of protobuf 33.x certain upb experimental features are
   // gated behind config flag such as //upb:fasttable_enabled_setting.
   //
-  // Our codegen tooling uses bazel query which doesn't resolve such conditional dependencies
-  // properly, so we do manual pruning here as a temporary fix.
+  // Our codegen tooling uses bazel query which doesn't resolve such conditional
+  // dependencies properly, so we do manual pruning here as a temporary fix.
   //
-  // Better solutions would be using more accurate resolution with `bazel cquery`,
-  // and/or use protobuf's official cmake/libupb.cmake for our cmake builds.
+  // Better solutions would be using more accurate resolution with `bazel
+  // cquery`, and/or use protobuf's official cmake/libupb.cmake for our cmake
+  // builds.
   void PruneUpbExperimentalFeatures() {
     constexpr char kUpbExcludedTargetsPattern[] = "//upb/wire/decode_fast";
     // These targets are needed by upb_generator.
     std::vector<std::string> kUpbExcludedTargetsExceptions = {
-      "@com_google_protobuf//upb/wire/decode_fast:select",
-      "@com_google_protobuf//upb/wire/decode_fast:combinations",
-      "@com_google_protobuf//upb/wire/decode_fast:data",
+        "@com_google_protobuf//upb/wire/decode_fast:select",
+        "@com_google_protobuf//upb/wire/decode_fast:combinations",
+        "@com_google_protobuf//upb/wire/decode_fast:data",
     };
     auto should_include = [&](absl::string_view rule) {
-
-      if(!absl::StrContains(rule, kUpbExcludedTargetsPattern)) {
+      if (!absl::StrContains(rule, kUpbExcludedTargetsPattern)) {
         return true;
       }
       LOG(INFO) << "checking experimental target: " << rule;
-      for (const std::string& e: kUpbExcludedTargetsExceptions) {
+      for (const std::string& e : kUpbExcludedTargetsExceptions) {
         if (absl::EndsWith(rule, e)) {
           return true;
         }
@@ -467,7 +467,7 @@ class ArtifactGen {
         continue;
       }
       // Use index to avoid iterator invalidation.
-      for (int i = 0; i < rule.deps.size(); ) {
+      for (int i = 0; i < rule.deps.size();) {
         if (!should_include(rule.deps[i])) {
           rule.deps.erase(rule.deps.begin() + i);
         } else {
@@ -488,6 +488,8 @@ class ArtifactGen {
         {"@@protoc-gen-validate+", "@com_envoyproxy_protoc_gen_validate"},
         {"@@opencensus-proto+", "opencensus_proto"},
         {"@@envoy_api+", "@envoy_api"},
+        {"@@grpc-proto+", "@grpc_proto"},
+        {"@@autosharding+", "@autosharding"},
     };
     const std::map<std::string, std::string> kExternalLinks{
         {"@com_google_protobuf//", "src/"},
@@ -497,11 +499,17 @@ class ArtifactGen {
         {"@dev_cel//", "proto/"},
         {"@envoy_api//", ""},
         {"@opencensus_proto//", ""},
+        {"@grpc_proto//", ""},
+        {"@autosharding//", ""},
     };
     for (auto& [name, bazel_rule] : rules_) {
+      const bool is_dev_cel_upb = bazel_rule.clazz == "upb_c_proto_library" &&
+                                  (absl::StartsWith(name, "@dev_cel//") ||
+                                   absl::StartsWith(name, "@@cel-spec+"));
       if (bazel_rule.generator_function != "grpc_upb_proto_library" &&
           bazel_rule.generator_function !=
-              "grpc_upb_proto_reflection_library") {
+              "grpc_upb_proto_reflection_library" &&
+          !is_dev_cel_upb) {
         continue;
       }
       CHECK_EQ(bazel_rule.deps.size(), 1u) << bazel_rule;
@@ -555,7 +563,8 @@ class ArtifactGen {
             TryExtractSourceFilePath(proto_src).value();
         std::vector<std::string> extensions;
         std::string root;
-        if (bazel_rule.generator_function == "grpc_upb_proto_library") {
+        if (bazel_rule.generator_function == "grpc_upb_proto_library" ||
+            is_dev_cel_upb) {
           extensions = {".upb.h", ".upb_minitable.h", ".upb_minitable.c"};
           root = kGenUpbRoot;
         } else {
@@ -763,18 +772,17 @@ class ArtifactGen {
     std::ifstream fs(filename);
     nlohmann::json http_archives = nlohmann::json::parse(fs);
     // Make a copy for each element
-    for (nlohmann::json http_archive: http_archives["http_archives"]){
-        const std::string name = http_archive["name"].get<std::string>();
-        if (external_proto_libraries_.count(name) == 0) {
-          // If this http archive is not one of the external proto libraries,
-          // we don't want to include it as a CMake target
-          continue;
-        }
-        const auto& extlib =
-            external_proto_libraries_.find(name)->second;
-        http_archive["destination"] = extlib.destination;
-        http_archive["proto_prefix"] = extlib.proto_prefix;
-        external_proto_libraries.push_back(http_archive);
+    for (nlohmann::json http_archive : http_archives["http_archives"]) {
+      const std::string name = http_archive["name"].get<std::string>();
+      if (external_proto_libraries_.count(name) == 0) {
+        // If this http archive is not one of the external proto libraries,
+        // we don't want to include it as a CMake target
+        continue;
+      }
+      const auto& extlib = external_proto_libraries_.find(name)->second;
+      http_archive["destination"] = extlib.destination;
+      http_archive["proto_prefix"] = extlib.proto_prefix;
+      external_proto_libraries.push_back(http_archive);
     }
 
     build_yaml_like_["external_proto_libraries"] = external_proto_libraries;
@@ -1216,6 +1224,8 @@ class ArtifactGen {
           "@zlib//",
           "third_party/zlib",
       },
+      {"@cel_c//cel-c", "third_party/cel-c/cel-c"},
+      {"@@cel-c+//cel-c", "third_party/cel-c/cel-c"},
   };
   const std::map<std::string, ExternalProtoLibrary> external_proto_libraries_ =
       {{"envoy_api",
@@ -1239,6 +1249,20 @@ class ArtifactGen {
            {
                "third_party/opencensus-proto/src",
                "third_party/opencensus-proto/src/",
+           },
+       },
+       {
+           "grpc_proto",
+           {
+               "third_party/grpc-proto",
+               "third_party/grpc-proto/",
+           },
+       },
+       {
+           "autosharding",
+           {
+               "third_party/autosharding",
+               "third_party/autosharding/",
            },
        }};
 };

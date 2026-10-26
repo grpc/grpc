@@ -50,6 +50,7 @@ ABSL_FLAG(std::string, custom_credentials_type, "",
           "User provided credentials type.");
 ABSL_FLAG(int32_t, port, 0, "Server port.");
 ABSL_FLAG(int32_t, max_send_message_size, -1, "The maximum send message size.");
+ABSL_FLAG(bool, ack_pings, true, "Whether to acknowledge HTTP/2 pings.");
 
 using grpc::Server;
 using grpc::ServerContext;
@@ -320,7 +321,7 @@ class TestServiceImpl : public TestService::Service {
       if (request.has_orca_oob_report()) {
         if (orca_oob_lock == nullptr) {
           orca_oob_lock =
-              std::make_unique<grpc_core::MutexLock>(&orca_oob_server_mu_);
+              std::make_unique<grpc_core::MutexLock>(orca_oob_server_mu_);
           server_metric_recorder_->ClearCpuUtilization();
           server_metric_recorder_->ClearEps();
           server_metric_recorder_->ClearMemoryUtilization();
@@ -378,7 +379,7 @@ class TestServiceImpl : public TestService::Service {
       server_metric_recorder_->SetMemoryUtilization(
           request_metrics.memory_utilization());
     }
-    grpc_core::MutexLock lock(&retained_utilization_names_mu_);
+    grpc_core::MutexLock lock(retained_utilization_names_mu_);
     std::map<grpc::string_ref, double> named_utilizations;
     for (const auto& p : request_metrics.utilization()) {
       const auto& key = *retained_utilization_names_.insert(p.first).first;
@@ -440,6 +441,9 @@ void grpc::testing::interop::RunServer(
   }
   if (absl::GetFlag(FLAGS_max_send_message_size) >= 0) {
     builder.SetMaxSendMessageSize(absl::GetFlag(FLAGS_max_send_message_size));
+  }
+  if (!absl::GetFlag(FLAGS_ack_pings)) {
+    builder.AddChannelArgument("grpc.http2.ack_pings", 0);
   }
   grpc::ServerBuilder::experimental_type(&builder).EnableCallMetricRecording(
       nullptr);

@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__listener__v3__ApiListener_msg_init;
-extern const upb_MiniTable* envoy__config__listener__v3__ApiListener_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_listener_v3_api_listener_proto_upb_file_layout;
 

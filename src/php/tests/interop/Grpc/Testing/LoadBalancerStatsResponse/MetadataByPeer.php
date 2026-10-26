@@ -54,7 +54,7 @@ class MetadataByPeer extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\LoadBalancerStatsResponse\RpcMetadata[] $var
      * @return $this
      */
-    public function setRpcMetadata($var)
+    public function setRpcMetadata(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \Grpc\Testing\LoadBalancerStatsResponse\RpcMetadata::class);
         $this->rpc_metadata = $arr;

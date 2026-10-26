@@ -49,7 +49,7 @@ namespace channelz {
 Json ChannelTrace::RenderJson() const {
   if (max_memory_ == 0) return Json();
   Json::Array array;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   ForEachTraceEventLocked([&array](gpr_timespec timestamp, std::string line) {
     Json::Object object = {
         {"severity", Json::FromString("CT_INFO")},
@@ -77,7 +77,7 @@ std::string ChannelTrace::creation_timestamp() const {
 ChannelTrace::EntryRef ChannelTrace::AppendEntry(
     EntryRef parent, std::unique_ptr<Renderer> renderer) {
   if (max_memory_ == 0) return EntryRef::Sentinel();
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   ++num_events_logged_;
   const auto ref = NewEntry(parent, std::move(renderer));
   while (current_memory_ > max_memory_ && first_entry_ != kSentinelId) {
@@ -148,7 +148,7 @@ ChannelTrace::EntryRef ChannelTrace::NewEntry(
 
 void ChannelTrace::DropEntry(EntryRef entry) {
   if (entry.id == kSentinelId) return;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (entry.id >= entries_.size()) return;
   Entry& e = entries_[entry.id];
   if (e.salt != entry.salt) return;
@@ -205,7 +205,7 @@ void ChannelTrace::DropEntryId(uint16_t id) {
 
 void ChannelTrace::ForEachTraceEvent(
     absl::FunctionRef<void(gpr_timespec, std::string)> callback) const {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   ForEachTraceEventLocked(callback);
 }
 
@@ -242,7 +242,7 @@ void ChannelTrace::RenderEntry(
 
 void ChannelTrace::Render(grpc_channelz_v2_Entity* entity,
                           upb_Arena* arena) const {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   uint16_t id = first_entry_;
   while (id != kSentinelId) {
     const Entry& e = entries_[id];
@@ -269,7 +269,9 @@ void ChannelTrace::RenderEntry(const Entry& entry,
     RenderEntry(entries_[id], child, arena);
     size_t length;
     auto* bytes = grpc_channelz_v2_TraceEvent_serialize(child, arena, &length);
-    auto* data = grpc_channelz_v2_Data_new(arena);
+    // Allocate and attach the Data object directly to the trace_event
+    auto* data = grpc_channelz_v2_TraceEvent_add_data(trace_event, arena);
+    // Set the name and value of the fields in the Data object
     grpc_channelz_v2_Data_set_name(data, StdStringToUpbString("child_trace"));
     auto* any = grpc_channelz_v2_Data_mutable_value(data, arena);
     google_protobuf_Any_set_value(

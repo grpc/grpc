@@ -558,22 +558,12 @@ class CLanguage:
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc8":
-            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10.2":
-            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc10.2_openssl102":
+            return ("debian12", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc11":
+            return ("gcc_11", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc14.2_openssl111":
             return (
-                "debian11_openssl102",
-                [
-                    "-DgRPC_SSL_PROVIDER=package",
-                    "-DCMAKE_CXX_STANDARD=17",
-                ],
-            )
-        elif compiler == "gcc10.2_openssl111":
-            return (
-                "debian11_openssl111",
+                "debian13_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
                     "-DCMAKE_CXX_STANDARD=17",
@@ -591,9 +581,9 @@ class CLanguage:
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "clang11":
+        elif compiler == "clang14":
             return (
-                "clang_11",
+                "clang_14",
                 self._clang_cmake_configure_extra_args()
                 + [
                     "-DCMAKE_CXX_STANDARD=17",
@@ -757,7 +747,7 @@ class PythonLanguage:
         if self.args.compiler == "python_alpine":
             return "alpine"
         else:
-            return "debian11_default"
+            return "debian13_default"
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -843,6 +833,13 @@ class PythonLanguage:
             bits=bits,
             config_vars=config_vars,
         )
+        python315_config = _python_config_generator(
+            name="py315",
+            major="3",
+            minor="15",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -859,7 +856,7 @@ class PythonLanguage:
                 # tested.
                 return (python310_config,)
             elif platform.machine() == "aarch64":
-                # Currently the python_debian11_default_arm64 docker image
+                # Currently the python_debian13_default_arm64 docker image
                 # only has python3.10 installed (and that seems sufficient
                 # for arm64 testing)
                 return (python310_config,)
@@ -867,8 +864,8 @@ class PythonLanguage:
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python310_config,
-                    python312_config,
                     python314_config,
+                    python315_config,
                 )
         elif args.compiler == "python3.10":
             return (python310_config,)
@@ -880,6 +877,8 @@ class PythonLanguage:
             return (python313_config,)
         elif args.compiler == "python3.14":
             return (python314_config,)
+        elif args.compiler == "python3.15":
+            return (python315_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -893,6 +892,7 @@ class PythonLanguage:
                 python312_config,
                 python313_config,
                 python314_config,
+                python315_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -1023,7 +1023,7 @@ class RubyLanguage:
         return [["tools/run_tests/helper_scripts/post_tests_ruby.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/ruby_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/ruby_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
@@ -1063,7 +1063,7 @@ class CSharpLanguage:
         for test_runtime in self.test_runtimes:
             if test_runtime == "coreclr":
                 assembly_extension = ".dll"
-                assembly_subdir = "bin/%s/netcoreapp3.1" % msbuild_config
+                assembly_subdir = "bin/%s/net6.0" % msbuild_config
                 runtime_cmd = ["dotnet", "exec"]
             elif test_runtime == "mono":
                 assembly_extension = ".exe"
@@ -1274,7 +1274,7 @@ class Sanity:
             return [
                 self.config.job_spec(
                     cmd["script"].split() + self.args.script_args,
-                    timeout_seconds=80 * 60,
+                    timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
                 )
@@ -1718,14 +1718,13 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        "gcc8",
-        "gcc10.2",
-        "gcc10.2_openssl102",
-        "gcc10.2_openssl111",
+        # Gcc from ubuntu:22.04 LTS
+        "gcc11",
+        "gcc14.2_openssl111",
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
-        "clang11",
+        "clang14",
         "clang19",
         # TODO: Automatically populate from supported version
         "python3.10",
@@ -1733,6 +1732,7 @@ argp.add_argument(
         "python3.12",
         "python3.13",
         "python3.14",
+        "python3.15",
         "pypy",
         "pypy3",
         "python_alpine",

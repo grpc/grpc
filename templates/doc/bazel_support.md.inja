@@ -46,5 +46,3 @@ following list:
 ## for version in supported_bazel_versions
 - [`{{version}}`](https://github.com/bazelbuild/bazel/releases/tag/{{version}})
 ## endfor
-
-NOTE: gRPC doesn't support bzlmod yet.

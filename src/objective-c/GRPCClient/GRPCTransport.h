@@ -54,7 +54,7 @@ NSUInteger TransportIDHash(GRPCTransportID);
 /** Create a transport implementation instance. */
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager;
 
-/** Get a list of factories for transport inteceptors. */
+/** Get a list of factories for transport interceptors. */
 @property(nonatomic, readonly) NSArray<id<GRPCInterceptorFactory>> *transportInterceptorFactories;
 
 @end

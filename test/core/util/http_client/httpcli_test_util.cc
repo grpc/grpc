@@ -93,7 +93,7 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   gpr_subprocess* server = gpr_subprocess_create(args.size(), args.data());
   GRPC_CHECK(server);
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_seconds(5, GPR_TIMESPAN)));
+                               gpr_time_from_seconds(15, GPR_TIMESPAN)));
   return {server, server_port};
 }
 

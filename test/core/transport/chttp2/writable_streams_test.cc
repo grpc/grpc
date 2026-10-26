@@ -153,7 +153,7 @@ TEST_F(WritableStreamsTest, MultipleEnqueueTest) {
 // Dequeue tests
 TEST_F(WritableStreamsTest, EnqueueDequeueTest) {
   // Simple test to ensure that enqueue and dequeue works.
-  // TODO(akshitpatel) : [PH2][P2] - Make this parameterized.
+  // TODO(akshitpatel) : [PH2][P4] - Make this parameterized.
   WritableStreams writable_streams(/*max_queue_size=*/1);
   EnqueueAndCheckSuccess(writable_streams,
                          /*stream=*/MakeRefCounted<Stream>(1),
@@ -168,7 +168,7 @@ TEST_F(WritableStreamsTest, MultipleEnqueueDequeueTest) {
   // Test to ensure that multiple enqueues and dequeues works. This test also
   // simulates the case where the queue is full and the producer is blocked on
   // the queue.
-  // TODO(akshitpatel) : [PH2][P2] - Make this parameterized.
+  // TODO(akshitpatel) : [PH2][P4] - Make this parameterized.
   WritableStreams writable_streams(/*max_queue_size=*/1);
   uint32_t dequeue_count = 0;
   std::vector<uint32_t> expected_stream_ids = {1, 3, 5};

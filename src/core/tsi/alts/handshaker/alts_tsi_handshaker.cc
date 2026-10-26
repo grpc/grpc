@@ -488,7 +488,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
       return TSI_FAILED_PRECONDITION;
     }
     {
-      grpc_core::MutexLock lock(&handshaker->mu);
+      grpc_core::MutexLock lock(handshaker->mu);
       GRPC_CHECK_EQ(handshaker->client, nullptr);
       handshaker->client = client;
       if (handshaker->shutdown) {
@@ -592,7 +592,7 @@ static tsi_result handshaker_next(
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   {
-    grpc_core::MutexLock lock(&handshaker->mu);
+    grpc_core::MutexLock lock(handshaker->mu);
     if (handshaker->shutdown) {
       LOG(INFO) << "TSI handshake shutdown";
       if (error != nullptr) *error = "handshake shutdown";
@@ -652,11 +652,11 @@ static tsi_result handshaker_next_dedicated(
                          user_data, error);
 }
 
-static void handshaker_shutdown(tsi_handshaker* self) {
+static void handshaker_shutdown(tsi_handshaker* self, bool /*peer_closed*/) {
   GRPC_CHECK_NE(self, nullptr);
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  grpc_core::MutexLock lock(&handshaker->mu);
+  grpc_core::MutexLock lock(handshaker->mu);
   if (handshaker->shutdown) {
     return;
   }
@@ -700,7 +700,7 @@ static const tsi_handshaker_vtable handshaker_vtable_dedicated = {
 
 bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker) {
   GRPC_CHECK_NE(handshaker, nullptr);
-  grpc_core::MutexLock lock(&handshaker->mu);
+  grpc_core::MutexLock lock(handshaker->mu);
   return handshaker->shutdown;
 }
 
@@ -741,7 +741,7 @@ void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
                                                  size_t bytes_consumed) {
   GRPC_CHECK(recv_bytes != nullptr);
   GRPC_CHECK_NE(result, nullptr);
-  if (GRPC_SLICE_LENGTH(*recv_bytes) == bytes_consumed) {
+  if (GRPC_SLICE_LENGTH(*recv_bytes) <= bytes_consumed) {
     return;
   }
   alts_tsi_handshaker_result* sresult =

@@ -178,7 +178,7 @@ class PythonPackage:
         )
         shell_command = "tools/run_tests/artifacts/package_python.sh"
         environ = {
-            "PYTHON": "/opt/python/cp39-cp39/bin/python",
+            "PYTHON": "/opt/python/cp310-cp310/bin/python",
             "ARTIFACT_PREFIX": "python_",
             "EXCLUDE_PATTERNS": "python_musllinux_1_2_aarch64_* python_manylinux2014_aarch64_*",
         }

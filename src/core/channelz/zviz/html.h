@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "src/core/util/grpc_check.h"
-#include "absl/container/flat_hash_map.h"
+#include "absl/container/node_hash_map.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 namespace grpc_zviz::html {
@@ -106,7 +106,7 @@ class Table final : public Item {
   int num_header_rows_ = 0;
   int num_columns_ = 0;
   int num_rows_ = 0;
-  absl::flat_hash_map<Address, Container> cells_;
+  absl::node_hash_map<Address, Container> cells_;
 };
 
 }  // namespace grpc_zviz::html

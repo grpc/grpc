@@ -18,6 +18,8 @@ import contextlib
 import enum
 import logging
 import sys
+import typing
+from typing import Any, Protocol
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -260,35 +262,41 @@ class StatusCode(enum.Enum):
       DATA_LOSS: Unrecoverable data loss or corruption.
     """
 
-    OK = (_cygrpc.StatusCode.ok, "ok")
-    CANCELLED = (_cygrpc.StatusCode.cancelled, "cancelled")
-    UNKNOWN = (_cygrpc.StatusCode.unknown, "unknown")
-    INVALID_ARGUMENT = (_cygrpc.StatusCode.invalid_argument, "invalid argument")
+    OK = (int(_cygrpc.StatusCode.ok), "ok")
+    CANCELLED = (int(_cygrpc.StatusCode.cancelled), "cancelled")
+    UNKNOWN = (int(_cygrpc.StatusCode.unknown), "unknown")
+    INVALID_ARGUMENT = (
+        int(_cygrpc.StatusCode.invalid_argument),
+        "invalid argument",
+    )
     DEADLINE_EXCEEDED = (
-        _cygrpc.StatusCode.deadline_exceeded,
+        int(_cygrpc.StatusCode.deadline_exceeded),
         "deadline exceeded",
     )
-    NOT_FOUND = (_cygrpc.StatusCode.not_found, "not found")
-    ALREADY_EXISTS = (_cygrpc.StatusCode.already_exists, "already exists")
+    NOT_FOUND = (int(_cygrpc.StatusCode.not_found), "not found")
+    ALREADY_EXISTS = (int(_cygrpc.StatusCode.already_exists), "already exists")
     PERMISSION_DENIED = (
-        _cygrpc.StatusCode.permission_denied,
+        int(_cygrpc.StatusCode.permission_denied),
         "permission denied",
     )
     RESOURCE_EXHAUSTED = (
-        _cygrpc.StatusCode.resource_exhausted,
+        int(_cygrpc.StatusCode.resource_exhausted),
         "resource exhausted",
     )
     FAILED_PRECONDITION = (
-        _cygrpc.StatusCode.failed_precondition,
+        int(_cygrpc.StatusCode.failed_precondition),
         "failed precondition",
     )
-    ABORTED = (_cygrpc.StatusCode.aborted, "aborted")
-    OUT_OF_RANGE = (_cygrpc.StatusCode.out_of_range, "out of range")
-    UNIMPLEMENTED = (_cygrpc.StatusCode.unimplemented, "unimplemented")
-    INTERNAL = (_cygrpc.StatusCode.internal, "internal")
-    UNAVAILABLE = (_cygrpc.StatusCode.unavailable, "unavailable")
-    DATA_LOSS = (_cygrpc.StatusCode.data_loss, "data loss")
-    UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, "unauthenticated")
+    ABORTED = (int(_cygrpc.StatusCode.aborted), "aborted")
+    OUT_OF_RANGE = (int(_cygrpc.StatusCode.out_of_range), "out of range")
+    UNIMPLEMENTED = (int(_cygrpc.StatusCode.unimplemented), "unimplemented")
+    INTERNAL = (int(_cygrpc.StatusCode.internal), "internal")
+    UNAVAILABLE = (int(_cygrpc.StatusCode.unavailable), "unavailable")
+    DATA_LOSS = (int(_cygrpc.StatusCode.data_loss), "data loss")
+    UNAUTHENTICATED = (
+        int(_cygrpc.StatusCode.unauthenticated),
+        "unauthenticated",
+    )
 
 
 #############################  gRPC Status  ################################
@@ -583,6 +591,8 @@ class ChannelCredentials:
     example, ssl_channel_credentials returns an instance of this class and
     secure_channel requires an instance of this class.
     """
+
+    _credentials: _cygrpc.ChannelCredentials
 
     def __init__(self, credentials):
         self._credentials = credentials
@@ -1358,13 +1368,17 @@ class RpcMethodHandler(abc.ABC):
     """
 
 
-class HandlerCallDetails(abc.ABC):
+@typing.runtime_checkable
+class HandlerCallDetails(Protocol):
     """Describes an RPC that has just arrived for service.
 
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
     """
+
+    method: str
+    invocation_metadata: Any
 
 
 class GenericRpcHandler(abc.ABC):

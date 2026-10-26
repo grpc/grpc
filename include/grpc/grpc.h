@@ -251,6 +251,13 @@ GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call* call,
     functionality. Instead, use grpc_auth_context. */
 GRPCAPI char* grpc_call_get_peer(grpc_call* call);
 
+/** Returns a newly allocated string containing the local address of the
+    connection that this call is using.
+    Currently only guaranteed to be populated for server calls; client calls
+    may return "unknown".
+    The returned string should be disposed of with gpr_free(). */
+GRPCAPI char* grpc_call_get_local_address(grpc_call* call);
+
 struct census_context;
 
 /** Set census context for a call; Must be called before first call to
@@ -319,6 +326,9 @@ GRPCAPI grpc_channel* grpc_lame_client_channel_create(
 
 /** Close and destroy a grpc channel */
 GRPCAPI void grpc_channel_destroy(grpc_channel* channel);
+
+/** Returns a vtable for storing grpc_channel_args in a channel arg. */
+GRPCAPI const grpc_arg_pointer_vtable* grpc_channel_args_arg_vtable(void);
 
 /** Error handling for grpc_call
    Most grpc_call functions return a grpc_error. If the error is not GRPC_OK
@@ -446,18 +456,17 @@ typedef struct {
 
 typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
 
+/** EXPERIMENTAL.  Channel arg vtable for server config fetcher. */
+GRPCAPI const grpc_arg_pointer_vtable* grpc_server_config_fetcher_arg_vtable(
+    void);
+
 /** EXPERIMENTAL.  Creates an xDS config fetcher. */
 GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
 
-/** EXPERIMENTAL.  Destroys a config fetcher. */
-GRPCAPI void grpc_server_config_fetcher_destroy(
+/** EXPERIMENTAL.  Unrefs a config fetcher. */
+GRPCAPI void grpc_server_config_fetcher_unref(
     grpc_server_config_fetcher* config_fetcher);
-
-/** EXPERIMENTAL.  Sets the server's config fetcher.  Takes ownership.
-    Must be called before adding ports */
-GRPCAPI void grpc_server_set_config_fetcher(
-    grpc_server* server, grpc_server_config_fetcher* config_fetcher);
 
 /** Add a HTTP2 over an encrypted link over tcp listener.
    Returns bound port number on success, 0 on failure.

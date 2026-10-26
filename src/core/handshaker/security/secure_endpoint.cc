@@ -39,6 +39,8 @@
 #include <vector>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/extensions/receive_coalescing_extension.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -575,6 +577,17 @@ class FrameProtector : public RefCounted<FrameProtector> {
     }
   }
 
+  // Resets the read staging buffer.
+  // Per the contract of EnableRpcReceiveCoalescing(), this is only
+  // called when there are no outstanding Read() operations on the endpoint.
+  // Therefore, any valid plaintext has already been fully delivered, and
+  // read_staging_buffer_ contains only unused, leftover memory capacity.
+  void ResetReadStagingBuffer() {
+    MutexLock lock(read_mu_);
+    CSliceUnref(read_staging_buffer_);
+    read_staging_buffer_ = grpc_empty_slice();
+  }
+
  private:
   struct tsi_frame_protector* const protector_;
   struct tsi_zero_copy_grpc_protector* const zero_copy_protector_;
@@ -685,7 +698,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(user_data);
 
   {
-    grpc_core::MutexLock lock(ep->frame_protector.read_mu());
+    grpc_core::MutexLock lock(*ep->frame_protector.read_mu());
     // If we were shut down after this callback was scheduled with OK
     // status but before it was invoked, we need to treat that as an error.
     if (ep->wrapped_ep == nullptr && error.ok()) {
@@ -739,7 +752,7 @@ static void endpoint_write(
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   tsi_result result;
   {
-    grpc_core::MutexLock lock(ep->frame_protector.write_mu());
+    grpc_core::MutexLock lock(*ep->frame_protector.write_mu());
     result = ep->frame_protector.Protect(slices, args.max_frame_size());
   }
 
@@ -821,7 +834,8 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
 namespace grpc_event_engine::experimental {
 namespace {
 
-class SecureEndpoint final : public EventEngine::Endpoint {
+class SecureEndpoint final : public EventEngine::Endpoint,
+                             public ReceiveCoalescingExtension {
  public:
   SecureEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
@@ -855,7 +869,18 @@ class SecureEndpoint final : public EventEngine::Endpoint {
   }
 
   void* QueryExtension(absl::string_view id) override {
+    if (id == ReceiveCoalescingExtension::EndpointExtensionName()) {
+      return static_cast<ReceiveCoalescingExtension*>(this);
+    }
     return impl_->QueryExtension(id);
+  }
+
+  void EnableRpcReceiveCoalescing() override {
+    impl_->EnableRpcReceiveCoalescing();
+  }
+
+  void DisableRpcReceiveCoalescing() override {
+    impl_->DisableRpcReceiveCoalescing();
   }
 
   std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
@@ -940,11 +965,20 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       // TODO(aananthv): Evaluate if we need to add a channel_arg to enable this
       // selectively.
       if (grpc_core::IsSecureEndpointReadCoalescingEnabled()) {
+        {
+          // This mutex should not have any contention since we can only have
+          // one outstanding Read() at a time.
+          grpc_core::MutexLock lock(read_settings_mu_);
+          if (rpc_receive_coalescing_enabled_) {
+            // TODO(aananthv): Make required_read_bytes_ a separate field in
+            // ReadArgs to avoid confusion between min_progress_size and
+            // read_hint_bytes, especially if we enable coalescing by default.
+            required_read_bytes_ = std::max<int64_t>(0, args.read_hint_bytes());
+          } else {
+            required_read_bytes_ = 0;
+          }
+        }
         read_buffer_ = buffer;
-        // TODO(aananthv): Make required_read_bytes_ a separate field in
-        // ReadArgs to avoid confusion between min_progress_size and
-        // read_hint_bytes, especially if we enable coalescing by default.
-        required_read_bytes_ = std::max<int64_t>(0, args.read_hint_bytes());
         read_args_ = args;
         frame_protector_.BeginRead(buffer->c_slice_buffer(),
                                    required_read_bytes_);
@@ -981,7 +1015,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         // If we get a zero length frame, just complete without looking at
         // anything further
         if (data->Length() == 0) return true;
-        grpc_core::MutexLock lock(&write_queue_mu_);
+        grpc_core::MutexLock lock(write_queue_mu_);
         // If there's been a failure observed asynchronously, then fail out with
         // that error.
         if (!writing_.ok()) {
@@ -1020,7 +1054,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       }
       // A small write: encrypt inline and write to the socket.
       {
-        grpc_core::MutexLock lock(frame_protector_.write_mu());
+        grpc_core::MutexLock lock(*frame_protector_.write_mu());
         result = frame_protector_.Protect(data->c_slice_buffer(),
                                           args.max_frame_size());
       }
@@ -1052,14 +1086,32 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       return wrapped_ep_->GetLocalAddress();
     }
 
+    void EnableRpcReceiveCoalescing() {
+      {
+        grpc_core::MutexLock lock(read_settings_mu_);
+        rpc_receive_coalescing_enabled_ = true;
+      }
+      frame_protector_.ResetReadStagingBuffer();
+      // We do not need to enable this in the underlying endpoint since we only
+      // benefit from coalescing the user-facing buffer.
+      // TODO(aananthv): Should we disable it explicitly?
+    }
+
+    void DisableRpcReceiveCoalescing() {
+      {
+        grpc_core::MutexLock lock(read_settings_mu_);
+        rpc_receive_coalescing_enabled_ = false;
+      }
+    }
+
     void* QueryExtension(absl::string_view id) {
       return wrapped_ep_->QueryExtension(id);
     }
 
     void Shutdown() {
       std::unique_ptr<EventEngine::Endpoint> wrapped_ep;
-      grpc_core::MutexLock write_lock(frame_protector_.write_mu());
-      grpc_core::MutexLock read_lock(frame_protector_.read_mu());
+      grpc_core::MutexLock write_lock(*frame_protector_.write_mu());
+      grpc_core::MutexLock read_lock(*frame_protector_.read_mu());
       wrapped_ep = std::move(wrapped_ep_);
       frame_protector_.Shutdown();
       GRPC_TRACE_LOG(secure_endpoint, INFO)
@@ -1074,7 +1126,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
    private:
     bool MaybeFinishReadImmediately() {
       GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure_endpoint maybe finish read");
-      grpc_core::MutexLock lock(frame_protector_.read_mu());
+      grpc_core::MutexLock lock(*frame_protector_.read_mu());
       // If the read is large, since we got the bytes whilst still calling read,
       // offload the decryption to event engine.
       // That way we can do the decryption off this thread (which is usually
@@ -1107,7 +1159,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                                 absl::Status status) {
       GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure endpoint finish async read");
       {
-        grpc_core::MutexLock lock(impl->frame_protector_.read_mu());
+        grpc_core::MutexLock lock(*impl->frame_protector_.read_mu());
         if (status.ok() && impl->wrapped_ep_ == nullptr) {
           status = absl::CancelledError("secure endpoint shutdown");
         }
@@ -1139,7 +1191,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
         bool had_source_data = false;
         {
-          grpc_core::MutexLock lock(frame_protector_.read_mu());
+          grpc_core::MutexLock lock(*frame_protector_.read_mu());
           if (status.ok() && wrapped_ep_ == nullptr) {
             status = absl::CancelledError("secure endpoint shutdown");
           } else {
@@ -1306,6 +1358,9 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     const size_t large_read_threshold_;
     const size_t large_write_threshold_;
     const size_t max_buffered_writes_;
+    grpc_core::Mutex read_settings_mu_;
+    bool rpc_receive_coalescing_enabled_ ABSL_GUARDED_BY(read_settings_mu_) =
+        false;
   };
 
   grpc_core::RefCountedPtr<Impl> impl_;

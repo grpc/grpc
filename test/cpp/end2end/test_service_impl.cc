@@ -48,6 +48,11 @@ void MaybeEchoDeadline(ServerContextBase* context, const EchoRequest* request,
     if (context->deadline() != system_clock::time_point::max()) {
       Timepoint2Timespec(context->deadline(), &deadline);
     }
+    LOG(INFO) << "MaybeEchoDeadline context->deadline(): " << deadline.tv_sec
+              << "." << deadline.tv_nsec;
+    const gpr_timespec raw_deadline = context->raw_deadline();
+    LOG(INFO) << "MaybeEchoDeadline context->raw_deadline(): "
+              << raw_deadline.tv_sec << "." << raw_deadline.tv_nsec;
     response->mutable_param()->set_request_deadline(deadline.tv_sec);
   }
 }
@@ -306,6 +311,9 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       if (req_->has_param() && req_->param().echo_peer()) {
         resp_->mutable_param()->set_peer(ctx_->peer());
+      }
+      if (req_->has_param() && req_->param().echo_local_address()) {
+        resp_->mutable_param()->set_local_address(ctx_->local_address());
       }
       Finish(Status::OK);
     }

@@ -302,9 +302,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
     if (buffer_->Length() == 0) {
       // Only send an error if there is no more data to consume. If the endpoint
       // or socket is shut down, the next read will discover that.
-      status = absl::InternalError("End of TCP stream");
-      grpc_core::StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
-                              GRPC_STATUS_UNAVAILABLE);
+      status = absl::UnavailableError("End of TCP stream");
     }
     return ResetAndReturnCallback()(status);
   }

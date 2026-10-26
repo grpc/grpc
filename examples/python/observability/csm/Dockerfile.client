@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bookworm
+FROM python:3.10-slim-bookworm
 
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
 
@@ -11,10 +11,9 @@ COPY . .
 RUN tools/bazel build -c dbg //examples/python/observability/csm:csm_greeter_client
 RUN cp -rL /workdir/bazel-bin/examples/python/observability/csm/csm_greeter_client* /artifacts/
 
-FROM python:3.9-slim-bookworm
+FROM python:3.10-slim-bookworm
 
-RUN apt-get update -y \
-  && apt-get install -y python3 \
+RUN apt-get update -y \  
   && apt-get -y autoremove \
   && apt-get install -y curl \
   && rm -rf /var/lib/apt/lists/*

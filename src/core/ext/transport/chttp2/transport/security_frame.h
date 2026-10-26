@@ -67,12 +67,12 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   auto SendFrameCallbackFactory(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine) {
-    return [self = this->Ref(), event_engine](SliceBuffer* data) {
-      event_engine->Run([self, data = std::move(*data)]() mutable {
+    return [self = this->Ref(), event_engine](SliceBuffer data) {
+      event_engine->Run([self, data = std::move(data)]() mutable {
         GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::Callback";
         bool call_wakeup = false;
         {
-          MutexLock lock(&self->mutex_);
+          MutexLock lock(self->mutex_);
           // In the rare possibility that we receive 2 quick callbacks in
           // succession before the transport is able to read the payload_
           // then we will apply the latest key and discard the old key.
@@ -96,19 +96,20 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   };
 
   // Only run on the Transport Party
-  GRPC_MUST_USE_RESULT EndpointExtensionState Initialize(
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine) {
+  GRPC_MUST_USE_RESULT EndpointExtensionState
+  Initialize(grpc_event_engine::experimental::EventEngine::Endpoint* endpoint,
+             std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                 event_engine) {
     GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::Initialize";
     endpoint_extension_ = grpc_event_engine::experimental::QueryExtension<
-        TransportFramingEndpointExtension>(event_engine.get());
+        TransportFramingEndpointExtension>(endpoint);
     if (endpoint_extension_ != nullptr) {
       endpoint_extension_->SetSendFrameCallback(
           SendFrameCallbackFactory(event_engine));
       return EndpointExtensionState{true};
     }
-    LOG(ERROR) << "SecurityFrameHandler::Initialize could not initialize "
-                  "TransportFramingEndpointExtension";
+    LOG(INFO) << "SecurityFrameHandler::Initialize could not initialize "
+                 "TransportFramingEndpointExtension";
     return EndpointExtensionState{false};
   }
 
@@ -118,9 +119,18 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   // Only run on the Transport Party
   void ProcessPayload(SliceBuffer&& payload) {
     GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::ProcessPayload";
-    if (endpoint_extension_ != nullptr) {
-      MutexLock lock(&mutex_);
-      if (!transport_closed_) {
+    if (endpoint_extension_ != nullptr && payload.Length() > 0) {
+      bool should_receive = false;
+      {
+        MutexLock lock(mutex_);
+        should_receive = !transport_closed_;
+      }
+      // Since transport_closed_ is only changed from the transport party, we
+      // can safely assume that the value of transport_closed_ will not change
+      // between the above check and endpoint_extension_->ReceiveFrame.
+      if (should_receive) {
+        GRPC_HTTP2_SECURITY_FRAME_DLOG
+            << "SecurityFrameHandler::ProcessPayload ReceiveFrame";
         endpoint_extension_->ReceiveFrame(std::move(payload));
       }
     }
@@ -145,7 +155,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
       if (self->sleep_state_ == SleepState::kTransportClosed) {
         return Empty{};
       } else if (self->sleep_state_ == SleepState::kWaitingForFrame) {
-        MutexLock lock(&self->mutex_);
+        MutexLock lock(self->mutex_);
         if (self->payload_.Length() > 0) {
           self->sleep_state_ = SleepState::kWriteOneFrame;
           return Empty{};
@@ -186,8 +196,9 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
         endpoint_extension_ != nullptr) {
       Http2Frame frame = Http2SecurityFrame();
       {
-        MutexLock lock(&mutex_);
+        MutexLock lock(mutex_);
         GRPC_DCHECK(payload_.Length() != 0);
+        GRPC_DCHECK(payload_.Length() <= GrpcErrors::kMaxSecurityFrameSize);
         GRPC_HTTP2_SECURITY_FRAME_DLOG
             << "SecurityFrameHandler::MaybeAppendSecurityFrame Write Frame "
                "Length "
@@ -206,7 +217,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   // Only run on the Transport Party
   void OnTransportClosed() {
     GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::OnTransportClosed";
-    MutexLock lock(&mutex_);
+    MutexLock lock(mutex_);
     transport_closed_ = true;
     sleep_state_ = SleepState::kTransportClosed;
     payload_.Clear();
@@ -231,11 +242,11 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
         sleep_state_str = "kTransportClosed";
         break;
     }
-    MutexLock lock(&mutex_);
+    MutexLock lock(mutex_);
     // Do not ever LOG the payload. It has a security key.
     return absl::StrFormat(
         "SecurityFrameHandler{endpoint_extension_=%s, sleep_state_=%s, "
-        "payload_length=%d, transport_closed_=%s}",
+        "payload_length=%zu, transport_closed_=%s}",
         endpoint_extension_ == nullptr ? "null" : "non-null", sleep_state_str,
         payload_.Length(), transport_closed_ ? "true" : "false");
   }

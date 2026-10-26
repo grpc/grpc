@@ -13,8 +13,6 @@
 # limitations under the License.
 """Helpers to run docker instances as jobs."""
 
-from __future__ import print_function
-
 import json
 import os
 import subprocess

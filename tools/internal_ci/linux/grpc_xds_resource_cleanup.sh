@@ -108,6 +108,14 @@ cleanup::job::cleanup_cluster_dualstack() {
 }
 
 #######################################
+# The Fleet cluster is used by the spiffe test suites.
+#######################################
+cleanup::job::cleanup_cluster_fleet() {
+  cleanup::activate_cluster GKE_CLUSTER_PSM_INTEROP_FLEET
+  cleanup::run_clean "$1" --mode=k8s
+}
+
+#######################################
 # Set common variables for the cleanup script.
 # Globals:
 #   TEST_DRIVER_FLAGFILE: Relative path to test driver flagfile
@@ -164,6 +172,7 @@ main() {
     "cleanup_cluster_url_map"
     "cleanup_cluster_gamma"
     "cleanup_cluster_dualstack"
+    "cleanup_cluster_fleet"
   )
   for job_name in "${cleanup_jobs[@]}"; do
     echo "-------------------- Starting job ${job_name} --------------------"

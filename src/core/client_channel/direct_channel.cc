@@ -24,7 +24,13 @@
 namespace grpc_core {
 
 absl::StatusOr<RefCountedPtr<DirectChannel>> DirectChannel::Create(
-    std::string target, const ChannelArgs& args) {
+    std::string target, ChannelArgs args) {
+  auto channel_args_mutator =
+      grpc_channel_args_get_client_channel_creation_mutator();
+  if (channel_args_mutator != nullptr) {
+    args =
+        channel_args_mutator(target.c_str(), args, GRPC_CLIENT_DIRECT_CHANNEL);
+  }
   auto* transport = args.GetObject<Transport>();
   if (transport == nullptr) {
     return absl::InvalidArgumentError("Transport not set in ChannelArgs");
@@ -71,10 +77,14 @@ grpc_call* DirectChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
     Slice path, std::optional<Slice> authority, Timestamp deadline,
-    bool /*registered_method*/) {
+    bool /*registered_method*/,
+    std::optional<absl::FunctionRef<void(Arena*)>> arena_init_function) {
   auto arena = call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
+  if (arena_init_function.has_value()) {
+    (*arena_init_function)(arena.get());
+  }
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
                         compression_options(), std::move(arena), Ref());

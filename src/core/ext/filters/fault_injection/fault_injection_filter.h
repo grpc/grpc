@@ -102,14 +102,6 @@ class FaultInjectionFilter
   InjectionDecision MakeInjectionDecision(
       const ClientMetadata& initial_metadata);
 
-  // TODO(roth): Remove this method and these data members as part of
-  // removing the xds_channel_filter_chain_per_route experiment.
-  template <typename T>
-  InjectionDecision MakeInjectionDecision(
-      const ClientMetadata& initial_metadata, const T& config);
-  size_t index_;  // The relative index of instances of the same filter.
-  const size_t service_config_parser_index_;
-
   const RefCountedPtr<const Config> config_;
 
   Mutex mu_;

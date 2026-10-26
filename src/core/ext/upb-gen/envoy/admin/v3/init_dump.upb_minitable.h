@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__admin__v3__UnreadyTargetsDumps_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__UnreadyTargetsDumps_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__UnreadyTargetsDumps__UnreadyTargetsDump_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__UnreadyTargetsDumps__UnreadyTargetsDump_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_admin_v3_init_dump_proto_upb_file_layout;
 

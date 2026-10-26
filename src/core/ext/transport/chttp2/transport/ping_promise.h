@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -31,12 +32,13 @@
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -46,6 +48,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -91,6 +94,18 @@ class PingInterface {
 // single thread. This guarantee is achieved by spawning all the promises
 // returned by this class on the same transport party.
 class PingManager {
+ public:
+  // Arguments for the ping timeout promise of a ping that was just sent.
+  // Returned by NotifyPingSent() and consumed by TimeoutPromise().
+  struct PingTimeoutArgs {
+    // Opaque data of the ping frame that was sent.
+    uint64_t opaque_data;
+    // Set by the EventEngine timer when the ping timeout fires.
+    std::shared_ptr<InterActivityLatch<void>> timeout;
+    // Set by AckPing() on the transport party when the ping ack is received.
+    std::shared_ptr<Latch<void>> ack;
+  };
+
  private:
   struct TriggerPingArgs {
     TriggerPingArgs(std::optional<Duration> delayed_ping_wait,
@@ -120,39 +135,21 @@ class PingManager {
       important_ping_requested_ = false;
       return ping_callbacks_.StartPing(SharedBitGen());
     }
-    bool PingRequested() { return ping_callbacks_.ping_requested(); }
+    bool PingRequested() const { return ping_callbacks_.ping_requested(); }
     bool ImportantPingRequested() const { return important_ping_requested_; }
     bool AckPing(uint64_t id) {
       return ping_callbacks_.AckPing(id, event_engine_.get());
     }
-    size_t CountPingInflight() { return ping_callbacks_.pings_inflight(); }
-
-    auto PingTimeout(Duration ping_timeout) {
-      std::shared_ptr<InterActivityLatch<void>> latch =
-          std::make_shared<InterActivityLatch<void>>();
-      auto timeout_cb = [latch]() { latch->Set(); };
-      std::optional<uint64_t> id = ping_callbacks_.OnPingTimeout(
-          ping_timeout, event_engine_.get(), std::move(timeout_cb));
-
-      return AssertResultType<bool>(If(
-          // The scenario where OnPingTimeout returns an invalid id is when
-          // the ping ack is received before spawning the ping timeout.
-          // In such a case, we don't wait for the ping timeout.
-          id.has_value(),
-          [latch, id, ping_timeout]() {
-            VLOG(2) << "Ping timeout of duration: " << ping_timeout
-                    << " initiated for ping id: " << *id;
-            return Map(latch->Wait(), [latch](Empty) {
-              return /*trigger_ping_timeout*/ true;
-            });
-          },
-          []() {
-            // This happens if for some reason the ping ack is received before
-            // the timeout timer is spawned.
-            VLOG(2) << "Ping ack received. Not waiting for ping timeout.";
-            return /*trigger_ping_timeout*/ false;
-          }));
+    size_t CountPingInflight() const {
+      return ping_callbacks_.pings_inflight();
     }
+
+    // Arms the ping timeout timer and registers the ack callback for the most
+    // recently started ping. Returns std::nullopt if there is no inflight ping
+    // present (e.g. its ack has already been received), in which case there is
+    // nothing to wait for.
+    std::optional<PingTimeoutArgs> ArmPingTimeout(uint64_t opaque_data,
+                                                  Duration ping_timeout);
 
    private:
     Chttp2PingCallbacks ping_callbacks_;
@@ -184,7 +181,8 @@ class PingManager {
   void SentPing() { ping_rate_policy_.SentPing(); }
 
  public:
-  PingManager(const ChannelArgs& channel_args, Duration ping_timeout,
+  PingManager(const ChannelArgs& channel_args, bool is_client,
+              Duration ping_timeout,
               std::unique_ptr<PingInterface> ping_interface,
               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                   event_engine);
@@ -195,11 +193,21 @@ class PingManager {
   std::optional<Duration> MaybeGetSerializedPingFrames(
       FrameSender& frame_sender, Duration next_allowed_ping_interval);
 
-  // Notify the ping system that a ping has been sent. Returns the opaque data
-  // of the ping frame if a new ping was sent. The caller is expected to
-  // spawn a ping timeout promise using TimeoutPromise() for this returned
-  // value.
-  std::optional<uint64_t> NotifyPingSent();
+  // Notify the ping system that a ping has been sent. If a new ping was sent,
+  // this arms the ping timeout timer and registers the ping ack callback for
+  // it, and returns latches for both. The caller must spawn the promise using
+  // TimeoutPromise() with the returned latches.
+  //
+  // Returns std::nullopt if no new ping was sent, or if there is no inflight
+  // ping to wait on (e.g. its ack has already been received).
+  //
+  // Arming happens here, synchronously with the ping send, because:
+  //  - Chttp2PingCallbacks::OnPingTimeout binds the timer to the most recently
+  //    started ping and GRPC_CHECKs that exactly one timeout is armed per
+  //    StartPing(). Arming late may attach the timer to the wrong ping.
+  //  - OnPingAck must be registered before the ack can arrive, otherwise the
+  //    ack is missed and the ping can only ever resolve via timeout.
+  GRPC_MUST_USE_RESULT std::optional<PingTimeoutArgs> NotifyPingSent();
 
   // Ping Rate policy wrapper
   void ReceivedDataFrame() { ping_rate_policy_.ReceivedDataFrame(); }
@@ -207,6 +215,19 @@ class PingManager {
   // Ping abuse policy wrapper
   bool NotifyPingAbusePolicy(const bool transport_idle) {
     return ping_abuse_policy_.ReceivedOnePing(transport_idle);
+  }
+
+  std::string GetDebugString(const bool transport_idle) const {
+    return absl::StrCat(
+        "delayed_ping_spawned: ", delayed_ping_spawned_, ", opaque_data: ",
+        opaque_data_.has_value() ? absl::StrCat(opaque_data_.value()) : "none",
+        ", pending_ping_acks: ", pending_ping_acks_.size(),
+        ", ping_timeout: ", ping_timeout_.ToString(),
+        ", ping_requested: ", PingRequested(),
+        ", important_ping_requested: ", ImportantPingRequested(),
+        ", pings_inflight: ", CountPingInflight(), ", ping_rate_policy: { ",
+        ping_rate_policy_.GetDebugString(), " }, ping_abuse_policy: { ",
+        ping_abuse_policy_.GetDebugString(transport_idle), " }");
   }
 
   void ResetPingClock(bool is_client) {
@@ -235,12 +256,14 @@ class PingManager {
   void CancelCallbacks() { ping_callbacks_.CancelCallbacks(); }
 
   uint64_t StartPing() { return ping_callbacks_.StartPing(); }
-  bool PingRequested() { return ping_callbacks_.PingRequested(); }
+  bool PingRequested() const { return ping_callbacks_.PingRequested(); }
   bool ImportantPingRequested() const {
     return ping_callbacks_.ImportantPingRequested();
   }
   bool AckPing(uint64_t id) { return ping_callbacks_.AckPing(id); }
-  size_t CountPingInflight() { return ping_callbacks_.CountPingInflight(); }
+  size_t CountPingInflight() const {
+    return ping_callbacks_.CountPingInflight();
+  }
 
   Http2Frame GetHttp2PingFrame(uint64_t opaque_data) {
     return Http2PingFrame{/*ack=*/false, opaque_data};
@@ -248,22 +271,24 @@ class PingManager {
 
   void AddPendingPingAck(uint64_t opaque_data);
 
-  auto TimeoutPromise(const uint64_t opaque_data) {
+  // Returns a promise that resolves when either the ping ack arrives or the
+  // ping timeout fires, triggering PingInterface::PingTimeout() in the latter
+  // case.
+  auto TimeoutPromise(PingTimeoutArgs args) {
+    InterActivityLatch<void>* const timeout_latch = args.timeout.get();
+    Latch<void>* const ack_latch = args.ack.get();
     return AssertResultType<absl::Status>(Race(
-        TrySeq(ping_callbacks_.PingTimeout(ping_timeout_),
-               [this, opaque_data](bool trigger_ping_timeout) mutable {
-                 return If(
-                     trigger_ping_timeout,
-                     [this, opaque_data]() {
-                       GRPC_HTTP2_PING_LOG
-                           << " Ping ack not received for id=" << opaque_data
-                           << ". Ping timeout triggered.";
-                       return ping_interface_->PingTimeout();
-                     },
-                     []() { return absl::OkStatus(); });
-               }),
-        ping_callbacks_.WaitForPingAck()));
-  };
+        Seq(timeout_latch->Wait(),
+            [this, timeout = std::move(args.timeout),
+             opaque_data = args.opaque_data](Empty) {
+              GRPC_HTTP2_PING_LOG
+                  << " Ping ack not received for id=" << opaque_data
+                  << ". Ping timeout triggered.";
+              return ping_interface_->PingTimeout();
+            }),
+        Map(ack_latch->Wait(),
+            [ack = std::move(args.ack)](Empty) { return absl::OkStatus(); })));
+  }
 
   auto DelayedPingPromise(const Duration wait) {
     return TrySeq(

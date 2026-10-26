@@ -20,12 +20,12 @@
 #include <grpc/status.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/impl/call.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
-#include <grpcpp/virtual_channel.h>
 
 #include <memory>
 #include <string>
@@ -35,6 +35,7 @@
 #include "src/core/client_channel/virtual_channel.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/cpp/client/create_channel_internal.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc {
 std::shared_ptr<grpc::Channel> CreateChannel(
@@ -54,24 +55,22 @@ std::shared_ptr<grpc::Channel> CreateCustomChannel(
                      "",
                      grpc_lame_client_channel_create(
                          nullptr, GRPC_STATUS_INVALID_ARGUMENT,
-                         "Invalid credentials."),
+                         "grpc::ChannelCredentials argument is null."),
                      std::vector<std::unique_ptr<
                          grpc::experimental::
                              ClientInterceptorFactoryInterface>>());
 }
 
-namespace experimental {
-std::shared_ptr<grpc::Channel> CreateVirtualChannel(grpc::internal::Call call) {
-  return CreateVirtualChannel(call, grpc::ChannelArguments());
-}
-
+namespace internal {
 std::shared_ptr<grpc::Channel> CreateVirtualChannel(
-    grpc::internal::Call call, const grpc::ChannelArguments& args) {
+    Call call, const grpc::ChannelArguments& args,
+    absl::AnyInvocable<void()> goaway_callback) {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ChannelArgs core_args =
       grpc_core::ChannelArgs::FromC(args.c_channel_args());
 
-  auto core_channel = grpc_core::VirtualChannel::Create(call.call(), core_args);
+  auto core_channel = grpc_core::VirtualChannel::Create(
+      call.call(), core_args, std::move(goaway_callback));
   GRPC_CHECK(core_channel.ok());
 
   return grpc::CreateChannelInternal(
@@ -79,6 +78,9 @@ std::shared_ptr<grpc::Channel> CreateVirtualChannel(
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>());
 }
+}  // namespace internal
+
+namespace experimental {
 
 /// Create a new \em custom \a Channel pointing to \a target with \a
 /// interceptors being invoked per call.
@@ -106,7 +108,7 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
                      "",
                      grpc_lame_client_channel_create(
                          nullptr, GRPC_STATUS_INVALID_ARGUMENT,
-                         "Invalid credentials."),
+                         "grpc::ChannelCredentials argument is null."),
                      std::move(interceptor_creators));
 }
 }  // namespace experimental

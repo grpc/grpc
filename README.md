@@ -55,7 +55,8 @@ Contributions are welcome!
 
 Please read [How to contribute](CONTRIBUTING.md) which will guide you through
 the entire workflow of how to build the source code, how to run the tests, and
-how to contribute changes to the gRPC codebase. The "How to contribute" document
+how to contribute changes to the gRPC codebase. For detailed C++ build instructions,
+see [Building from source](BUILDING.md). The "How to contribute" document
 also contains info on how the contribution process works and contains best
 practices for creating contributions.
 

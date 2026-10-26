@@ -37,7 +37,6 @@ class ClientReaderWriter;
 namespace internal {
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl;
-class ClientCallbackSessionImpl;
 template <class R>
 class ClientAsyncReaderFactory;
 template <class W>
@@ -52,17 +51,19 @@ class ClientCallbackReaderFactory;
 template <class W>
 class ClientCallbackWriterFactory;
 class ClientCallbackUnaryFactory;
-class ClientCallbackSessionFactory;
 }  // namespace internal
 
 class ChannelInterface;
 class ClientContext;
 
-class ClientSessionReactor;
-
 namespace experimental {
 class DelegatingChannel;
-}
+class ClientSessionReactor;
+namespace internal {
+class ClientCallbackSessionImpl;
+class ClientCallbackSessionFactory;
+}  // namespace internal
+}  // namespace experimental
 
 namespace internal {
 class Call;
@@ -71,10 +72,7 @@ class RpcMethod;
 class InterceptedChannel;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
-template <class InputMessage, class BaseInputMessage>
-void CallbackSessionCall(ChannelInterface*, const internal::RpcMethod&,
-                         ClientContext*, const InputMessage*,
-                         ClientSessionReactor*, std::function<void(Status)>&&);
+
 }  // namespace internal
 
 /// Codegen interface for \a grpc::Channel.
@@ -138,18 +136,13 @@ class ChannelInterface {
   template <class W>
   friend class grpc::internal::ClientCallbackWriterFactory;
   friend class grpc::internal::ClientCallbackUnaryFactory;
-  friend class grpc::internal::ClientCallbackSessionFactory;
+  friend class grpc::experimental::internal::ClientCallbackSessionFactory;
   template <class InputMessage, class OutputMessage>
   friend class grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
   friend class grpc::internal::CallbackUnaryCallImpl;
-  friend class grpc::internal::ClientCallbackSessionImpl;
-  template <class InputMessage, class BaseInputMessage>
-  friend void internal::CallbackSessionCall(ChannelInterface*,
-                                            const internal::RpcMethod&,
-                                            ClientContext*, const InputMessage*,
-                                            ClientSessionReactor*,
-                                            std::function<void(Status)>&&);
+  friend class grpc::experimental::internal::ClientCallbackSessionImpl;
+
   friend class grpc::internal::RpcMethod;
   friend class grpc::experimental::DelegatingChannel;
   friend class grpc::internal::InterceptedChannel;

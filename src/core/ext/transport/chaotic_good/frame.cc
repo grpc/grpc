@@ -36,6 +36,7 @@
 #include "src/core/util/status_helper.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -299,7 +300,11 @@ absl::StatusOr<Frame> DeserializeFrame(const FrameHeader& header,
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
       << absl::CEscape(payload.JoinIntoString());
-  GRPC_CHECK_EQ(header.payload_length, payload.Length());
+  if (header.payload_length != payload.Length()) {
+    return absl::InternalError(absl::StrCat(
+        "Invalid payload length for frame type ", FrameTypeString(header.type),
+        ": expected ", header.payload_length, ", got ", payload.Length()));
+  }
   auto s = frame.Deserialize(header, std::move(payload));
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: DeserializeFrame "

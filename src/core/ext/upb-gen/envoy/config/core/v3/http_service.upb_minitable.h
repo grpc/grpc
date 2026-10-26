@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__core__v3__HttpService_msg_init;
-extern const upb_MiniTable* envoy__config__core__v3__HttpService_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_core_v3_http_service_proto_upb_file_layout;
 

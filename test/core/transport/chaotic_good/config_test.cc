@@ -14,6 +14,9 @@
 
 #include "src/core/ext/transport/chaotic_good/config.h"
 
+#include <cstdint>
+#include <limits>
+#include <optional>
 #include <vector>
 
 #include "fuzztest/fuzztest.h"
@@ -66,8 +69,8 @@ void ConfigTest(FuzzerChannelArgs client_args_input,
   const auto client_args = client_args_input.MakeChannelArgs();
   const auto server_args = server_args_input.MakeChannelArgs();
   // Initialize configs
-  chaotic_good::Config client_config(client_args);
-  chaotic_good::Config server_config(server_args);
+  chaotic_good::Config client_config(client_args, /*is_server=*/false);
+  chaotic_good::Config server_config(server_args, /*is_server=*/true);
   VLOG(2) << "client_config: " << client_config;
   VLOG(2) << "server_config: " << server_config;
   // Perform handshake
@@ -134,8 +137,8 @@ TEST(ConfigTest, ChunkingDisabledByDefault) {
   SetExperiments("-chaotic_good_send_supported_features");
 
   ChannelArgs args;
-  chaotic_good::Config client_config(args);
-  chaotic_good::Config server_config(args);
+  chaotic_good::Config client_config(args, /*is_server=*/false);
+  chaotic_good::Config server_config(args, /*is_server=*/true);
 
   chaotic_good_frame::Settings client_settings;
   client_config.PrepareClientOutgoingSettings(client_settings);
@@ -173,8 +176,8 @@ TEST(ConfigTest, ChunkingEnabledWithExperiment) {
   SetExperiments("chaotic_good_send_supported_features");
 
   ChannelArgs args;
-  chaotic_good::Config client_config(args);
-  chaotic_good::Config server_config(args);
+  chaotic_good::Config client_config(args, /*is_server=*/false);
+  chaotic_good::Config server_config(args, /*is_server=*/true);
 
   chaotic_good_frame::Settings client_settings;
   client_config.PrepareClientOutgoingSettings(client_settings);
@@ -206,6 +209,115 @@ TEST(ConfigTest, ChunkingEnabledWithExperiment) {
   EXPECT_NE(server_config.max_recv_chunk_size(), 0u);
   EXPECT_NE(server_config.max_send_chunk_size(), 0u);
 }
+
+// Helper function to simulate client-server dynamic handshaking negotiation.
+// Returns the settled Resolved data connections count settled on the server,
+// and symmetrically asserts that the prepared outgoing Server settings packages
+// the exact same settled value.
+int32_t NegotiateConnectionLimit(std::optional<int> server_cap,
+                                 std::optional<int> client_limit) {
+  ChannelArgs server_args;
+  if (server_cap.has_value()) {
+    server_args =
+        server_args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, *server_cap);
+  }
+  chaotic_good::Config server_config(server_args, /*is_server=*/true);
+
+  chaotic_good_frame::Settings client_settings;
+  if (client_limit.has_value()) {
+    client_settings.set_num_data_connections(*client_limit);
+  }
+
+  EXPECT_TRUE(
+      server_config.ReceiveClientIncomingSettings(client_settings).ok());
+
+  // Symmetrical validation: Verify that the prepared server settings frame
+  // response contains the actual finalized dynamic negotiated count!
+  chaotic_good_frame::Settings server_settings;
+  server_config.PrepareServerOutgoingSettings(server_settings);
+  EXPECT_TRUE(server_settings.has_num_data_connections());
+  EXPECT_EQ(server_settings.num_data_connections(),
+            server_config.num_data_connections());
+
+  return server_config.num_data_connections();
+}
+
+struct ConstructorTestCase {
+  std::optional<int> options_val;
+  bool is_server;
+  int32_t expected_settled_connections;
+};
+
+class ConfigConstructorModeTest
+    : public ::testing::TestWithParam<ConstructorTestCase> {};
+
+TEST_P(ConfigConstructorModeTest, OptionExtractionAsserts) {
+  const auto& test_case = GetParam();
+  ChannelArgs args;
+  if (test_case.options_val.has_value()) {
+    args = args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS,
+                    *test_case.options_val);
+  }
+  chaotic_good::Config config(args, test_case.is_server);
+  EXPECT_EQ(config.num_data_connections(),
+            test_case.expected_settled_connections);
+}
+
+INSTANTIATE_TEST_SUITE_P(ConfigConstructorModeTestInstantiation,
+                         ConfigConstructorModeTest,
+                         ::testing::ValuesIn(std::vector<ConstructorTestCase>{
+                             // 1. Client Mode (is_server = false)
+                             {5, /*is_server=*/false, 5},
+                             {0, /*is_server=*/false, 0},
+                             {-5, /*is_server=*/false, 0},
+                             {std::nullopt, /*is_server=*/false,
+                              std::numeric_limits<int32_t>::max()},
+                             // 2. Server Mode (is_server = true)
+                             {4, /*is_server=*/true, 4},
+                             {-3, /*is_server=*/true, 0},
+                             {std::nullopt, /*is_server=*/true, 1},
+                         }));
+
+TEST(ConfigTest, SerializedSettingsPacksNumDataConnections) {
+  ChannelArgs args =
+      ChannelArgs().Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, 8);
+  chaotic_good::Config config(args, /*is_server=*/false);
+  chaotic_good_frame::Settings settings;
+  config.PrepareClientOutgoingSettings(settings);
+
+  EXPECT_TRUE(settings.has_num_data_connections());
+  EXPECT_EQ(settings.num_data_connections(), 8);
+}
+
+struct NegotiationTestCase {
+  std::optional<int> server_cap;
+  std::optional<int> client_limit;
+  int32_t expected_negotiated_resolved;
+};
+
+class ServerNegotiationLimitTest
+    : public ::testing::TestWithParam<NegotiationTestCase> {};
+
+TEST_P(ServerNegotiationLimitTest, NegotiationPermutationsAsserts) {
+  const auto& test_case = GetParam();
+  EXPECT_EQ(
+      NegotiateConnectionLimit(test_case.server_cap, test_case.client_limit),
+      test_case.expected_negotiated_resolved);
+}
+
+INSTANTIATE_TEST_SUITE_P(ServerNegotiationLimitTestInstantiation,
+                         ServerNegotiationLimitTest,
+                         ::testing::ValuesIn(std::vector<NegotiationTestCase>{
+                             {4, 2, 2},
+                             {3, 3, 3},
+                             {2, 5, 2},
+                             {4, 0, 0},
+                             {4, std::nullopt, 4},
+                             {std::nullopt, 2, 1},
+                             {-1, std::nullopt, 0},
+                             {-5, 3, 0},
+                             {4, -3, 0},
+                         }));
 
 }  // namespace
 }  // namespace grpc_core
