@@ -285,7 +285,7 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gimbal"  # @unused
+g_stands_for = "googol"  # @unused
 
 core_version = "58.0.0"  # @unused
 
