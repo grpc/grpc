@@ -239,11 +239,19 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
 #endif
 
     if (do_callback && call_ != nullptr) {
-      // If FinalizeResult destroyed the owner, Clear() has already set call_
-      // and func_ to nullptr (while the ref on call above keeps the call arena
-      // backing this tag alive), so checking call_ != nullptr avoids invoking
-      // a callback whose captured owner is already destroyed. Otherwise, copy
-      // func_ before RunCallback in case the callback destroys the owner.
+      // Check call_ != nullptr after FinalizeResult before reading func_:
+      // - In normal ClientCallback*Impl / ServerCallback*Impl wiring,
+      //   callbacks_outstanding_ keeps the owner alive until all active tag
+      //   callbacks have run, and Clear() has no callers outside
+      //   ~CallbackWithSuccessTag(). Thus call_ is only nullptr here if the
+      //   owner's destructor has already run (or the tag was explicitly
+      //   cleared), in which case invoking func_ would call into an
+      //   already-destroyed owner.
+      // - Note that if FinalizeResult destroyed the owner, reading call_ here
+      //   relies on this tag residing in call's arena (kept alive by the
+      //   grpc_call_ref above) and on Clear() nulling call_ before
+      //   ~CallbackWithSuccessTag() completes.
+      // Copy func_ before RunCallback in case the callback destroys the owner.
       auto func = func_;
       GetGlobalCallbackHook()->RunCallback(call, [func, ok]() {
 #if GRPC_ALLOW_EXCEPTIONS

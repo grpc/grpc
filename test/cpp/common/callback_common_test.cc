@@ -20,10 +20,13 @@
 #include <grpcpp/support/callback_common.h>
 #include <grpcpp/support/global_callback_hook.h>
 
+#include <cstdint>
 #include <functional>
 #include <new>
 #include <utility>
 
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
@@ -52,42 +55,69 @@ class TestCompletionQueueTag : public CompletionQueueTag {
 };
 
 struct Holder {
-  int magic = 0xCAFEBABE;
+  uint32_t magic = 0xCAFEBABEu;
   CallbackWithSuccessTag tag;
-  ~Holder() { magic = 0; }
+  ~Holder() { magic = 0u; }
+};
+
+// Managed on the call's Arena via Arena::ManagedNew so its destructor runs
+// inside Arena::~Arena() when the final reference to `grpc_call` is dropped.
+struct CallDestructionNotifier {
+  explicit CallDestructionNotifier(grpc_core::Notification* destroyed)
+      : destroyed(destroyed) {}
+  ~CallDestructionNotifier() { destroyed->Notify(); }
+  grpc_core::Notification* destroyed;
+};
+
+class ScopedGlobalCallbackHook {
+ public:
+  explicit ScopedGlobalCallbackHook(GlobalCallbackHook* hook) {
+    SetGlobalCallbackHook(hook);
+  }
+  ~ScopedGlobalCallbackHook() {
+    SetGlobalCallbackHook(new DefaultGlobalCallbackHook());
+  }
+
+  ScopedGlobalCallbackHook(const ScopedGlobalCallbackHook&) = delete;
+  ScopedGlobalCallbackHook& operator=(const ScopedGlobalCallbackHook&) = delete;
 };
 
 class ArenaCheckingCallbackHook final : public GlobalCallbackHook {
  public:
-  explicit ArenaCheckingCallbackHook(grpc_core::Notification* done)
-      : done_(done) {}
+  ArenaCheckingCallbackHook(grpc_core::Notification* call_destroyed,
+                            grpc_core::Notification* hook_done)
+      : call_destroyed_(call_destroyed), hook_done_(hook_done) {}
 
   void RunCallback(grpc_call* call,
                    absl::FunctionRef<void()> callback) override {
     ASSERT_NE(call, nullptr);
-    int* pre_marker =
-        static_cast<int*>(grpc_call_arena_alloc(call, sizeof(int)));
+    uint32_t* pre_marker =
+        static_cast<uint32_t*>(grpc_call_arena_alloc(call, sizeof(uint32_t)));
     ASSERT_NE(pre_marker, nullptr);
-    *pre_marker = 0x12345678;
+    *pre_marker = 0x12345678u;
+    EXPECT_FALSE(call_destroyed_->HasBeenNotified());
 
     CatchingCallback(callback);
 
-    // Verify that `call` and its arena remain valid after `callback()` has
+    // Verify that `call` and its arena remain alive after `callback()` has
     // destroyed the owning object and cleared the tag.
-    EXPECT_EQ(*pre_marker, 0x12345678);
-    int* post_marker =
-        static_cast<int*>(grpc_call_arena_alloc(call, sizeof(int)));
+    EXPECT_FALSE(call_destroyed_->HasBeenNotified());
+    EXPECT_EQ(*pre_marker, 0x12345678u);
+    uint32_t* post_marker =
+        static_cast<uint32_t*>(grpc_call_arena_alloc(call, sizeof(uint32_t)));
     ASSERT_NE(post_marker, nullptr);
-    *post_marker = 0x87654321;
-    done_->Notify();
+    *post_marker = 0x87654321u;
+    hook_done_->Notify();
   }
 
  private:
-  grpc_core::Notification* done_;
+  grpc_core::Notification* call_destroyed_;
+  grpc_core::Notification* hook_done_;
 };
 
 TEST(CallbackCommonTest,
      CallbackWithSuccessTagDestructionInsideCallbackKeepsCallAliveForHook) {
+  ScopedGlobalCallbackHook default_hook_guard(new DefaultGlobalCallbackHook());
   grpc_init();
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel* channel = grpc_lame_client_channel_create(
@@ -98,8 +128,13 @@ TEST(CallbackCommonTest,
       grpc_slice_from_static_string("/service/method"), &host,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
+  grpc_core::Notification call_destroyed;
+  grpc_core::Call::FromC(call)->arena()->ManagedNew<CallDestructionNotifier>(
+      &call_destroyed);
+
   grpc_core::Notification hook_done;
-  SetGlobalCallbackHook(new ArenaCheckingCallbackHook(&hook_done));
+  ScopedGlobalCallbackHook custom_hook_guard(
+      new ArenaCheckingCallbackHook(&call_destroyed, &hook_done));
 
   bool callback_ran = false;
   auto* holder = new (grpc_call_arena_alloc(call, sizeof(Holder))) Holder();
@@ -112,7 +147,7 @@ TEST(CallbackCommonTest,
       call,
       [holder, &callback_ran](bool ok) {
         EXPECT_TRUE(ok);
-        EXPECT_EQ(holder->magic, 0xCAFEBABE);
+        EXPECT_EQ(holder->magic, 0xCAFEBABEu);
         callback_ran = true;
         holder->~Holder();
       },
@@ -125,9 +160,9 @@ TEST(CallbackCommonTest,
   holder->tag.force_run(true);
 
   hook_done.WaitForNotification();
+  call_destroyed.WaitForNotification();
   EXPECT_TRUE(callback_ran);
 
-  SetGlobalCallbackHook(new DefaultGlobalCallbackHook());
   grpc_channel_destroy(channel);
   grpc_completion_queue_destroy(cq);
   grpc_shutdown();
@@ -135,6 +170,7 @@ TEST(CallbackCommonTest,
 
 TEST(CallbackCommonTest,
      CallbackWithSuccessTagClearedDuringFinalizeResultSkipsCallback) {
+  ScopedGlobalCallbackHook default_hook_guard(new DefaultGlobalCallbackHook());
   grpc_init();
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel* channel = grpc_lame_client_channel_create(
@@ -145,15 +181,19 @@ TEST(CallbackCommonTest,
       grpc_slice_from_static_string("/service/method"), &host,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
+  grpc_core::Notification call_destroyed;
+  grpc_core::Call::FromC(call)->arena()->ManagedNew<CallDestructionNotifier>(
+      &call_destroyed);
+
   grpc_core::Notification finalize_done;
   bool callback_ran = false;
   auto* holder = new (grpc_call_arena_alloc(call, sizeof(Holder))) Holder();
-  TestCompletionQueueTag test_ops([holder, &finalize_done]() {
+  TestCompletionQueueTag test_ops([holder, &call_destroyed, &finalize_done]() {
     // Destroy the owner (which calls ~CallbackWithSuccessTag() -> Clear())
-    // during FinalizeResult. Since the owner is already destroyed when
-    // FinalizeResult returns, Proceed must not invoke the callback on the
-    // destroyed owner or dereference a freed call.
+    // during FinalizeResult. Proceed's pre-FinalizeResult ref must keep `call`
+    // and its arena alive until Proceed finishes its own unref.
     holder->~Holder();
+    EXPECT_FALSE(call_destroyed.HasBeenNotified());
     finalize_done.Notify();
   });
 
@@ -161,7 +201,7 @@ TEST(CallbackCommonTest,
       call,
       [holder, &callback_ran](bool /*ok*/) {
         callback_ran = true;
-        EXPECT_EQ(holder->magic, 0xCAFEBABE);
+        EXPECT_EQ(holder->magic, 0xCAFEBABEu);
       },
       &test_ops, /*can_inline=*/false);
 
@@ -172,10 +212,14 @@ TEST(CallbackCommonTest,
   holder->tag.force_run(true);
 
   finalize_done.WaitForNotification();
+  // Wait for Proceed's final grpc_call_unref(call) to destroy the call and its
+  // arena before tearing down the channel, completion queue, and gRPC.
+  call_destroyed.WaitForNotification();
+  EXPECT_FALSE(callback_ran);
+
   grpc_channel_destroy(channel);
   grpc_completion_queue_destroy(cq);
   grpc_shutdown();
-  EXPECT_FALSE(callback_ran);
 }
 
 }  // namespace
