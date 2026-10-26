@@ -165,11 +165,11 @@ class FakeResolverResponseGeneratorWrapper {
     grpc_core::Resolver::Result result;
     if (!backend_ports.empty()) {
       grpc_core::EndpointAddressesList endpoints;
-      for (const int port : backend_ports) {
+      for (int port : backend_ports) {
         auto uri = grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-        EXPECT_TRUE(uri.ok()) << uri.status();
+        GRPC_CHECK_OK(uri);
         grpc_resolved_address address;
-        EXPECT_TRUE(grpc_parse_uri(*uri, &address));
+        GRPC_CHECK(grpc_parse_uri(*uri, &address));
         endpoints.emplace_back(address, grpc_core::ChannelArgs());
       }
       result.addresses = std::move(endpoints);
@@ -549,7 +549,7 @@ TEST_F(RlsEnd2endTest, Basic) {
 // update. When the new list is longer than the old one, the comparison used to
 // read past the end of the old list. Deliver a one-endpoint list and then a
 // two-endpoint list; ASan reports the out-of-bounds read on the second update
-// without the fix.
+// without the fix. Note that this only fails under ASan.
 TEST_F(RlsEnd2endTest, LongerResolverAddressListDoesNotReadOutOfBounds) {
   StartBackends(2);
   const std::string service_config =
