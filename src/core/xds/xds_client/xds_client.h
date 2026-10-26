@@ -362,6 +362,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
         type_map;
   };
 
+  // May be overridden by subclasses to provide their own subclass of
+  // DecodeContext that has additional fields.  The fields in the base
+  // class will be populated after this returns.
+  virtual std::unique_ptr<XdsResourceType::DecodeContext> CreateDecodeContext(
+      const XdsBootstrap::XdsServer& server, upb_DefPool* def_pool,
+      upb_Arena* arena);
+
   absl::Status AppendNodeToStatus(const absl::Status& status) const;
 
   // Sends an OnResourceChanged() notification to a specific set of watchers.

@@ -2206,6 +2206,7 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/grpc_xds_decode_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/streaming_call_promise_wrapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/streaming_call_promise_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.cc" role="src" />

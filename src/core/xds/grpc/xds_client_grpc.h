@@ -89,13 +89,6 @@ class GrpcXdsClient final : public XdsClient {
 
   absl::string_view key() const { return key_; }
 
-  // Determines if this XdsClient is being used in a gRPC client or
-  // server.  Used to affect resource validation behavior.
-  enum class Component { kClient, kServer };
-  Component component() const {
-    return key_ == kServerKey ? Component::kServer : Component::kClient;
-  }
-
   LrsClient& lrs_client() { return *lrs_client_; }
 
   // Builds ClientStatusResponse containing all resources from all XdsClients
@@ -103,6 +96,10 @@ class GrpcXdsClient final : public XdsClient {
 
  private:
   class MetricsReporter;
+
+  std::unique_ptr<XdsResourceType::DecodeContext> CreateDecodeContext(
+      const XdsBootstrap::XdsServer& server, upb_DefPool* def_pool,
+      upb_Arena* arena) override;
 
   void ReportCallbackMetrics(CallbackMetricReporter& reporter);
   void Orphaned() override;

@@ -16,7 +16,6 @@
 
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_H
-#include <grpc/support/port_platform.h>
 
 #include <memory>
 #include <optional>
@@ -39,6 +38,11 @@ class XdsResourceType {
  public:
   // Context passed into Decode().
   struct DecodeContext {
+    DecodeContext(XdsClient* client, const XdsBootstrap::XdsServer& server,
+                  upb_DefPool* symtab, upb_Arena* arena)
+        : client(client), server(server), symtab(symtab), arena(arena) {}
+    virtual ~DecodeContext() = default;
+
     XdsClient* client;
     const XdsBootstrap::XdsServer& server;
     upb_DefPool* symtab;

@@ -6567,6 +6567,7 @@ grpc_cc_library(
         "envoy_extensions_filters_common_matcher_action_upbdefs",
         "envoy_extensions_filters_http_composite_upb",
         "envoy_extensions_filters_http_composite_upbdefs",
+        "grpc_xds_decode_context",
         "validation_errors",
         "xds_bootstrap_grpc",
         "xds_common_types",
@@ -6818,6 +6819,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_matchers",
         "grpc_xds_client",
+        "grpc_xds_decode_context",
         "json",
         "json_writer",
         "lb_policy_registry",
@@ -6900,6 +6902,7 @@ grpc_cc_library(
         "envoy_extensions_transport_sockets_tls_upb",
         "grpc_check",
         "grpc_xds_client",
+        "grpc_xds_decode_context",
         "match",
         "protobuf_any_upb",
         "protobuf_duration_upb",
@@ -6987,6 +6990,17 @@ grpc_cc_library(
         "xds_server_grpc_interface",
         "//:config",
         "//:ref_counted_ptr",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_decode_context",
+    hdrs = [
+        "xds/grpc/grpc_xds_decode_context.h",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
         "//:xds_client",
     ],
 )
@@ -7559,6 +7573,7 @@ grpc_cc_library(
         "channel_args_endpoint_config",
         "env",
         "envoy_service_status_upb",
+        "grpc_xds_decode_context",
         "iomgr_fwd",
         "load_file",
         "metrics",

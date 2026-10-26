@@ -46,9 +46,9 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "src/core/xds/grpc/grpc_xds_decode_context.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
-#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_listener_parser.h"
@@ -81,7 +81,7 @@ namespace {
 
 class XdsListenerTest : public ::testing::Test {
  protected:
-  explicit XdsListenerTest(bool is_client = true) {
+  XdsListenerTest() {
     auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         "{\n"
         "  \"xds_servers\": [\n"
@@ -106,16 +106,18 @@ class XdsListenerTest : public ::testing::Test {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
     }
-    xds_client_ = MakeRefCounted<GrpcXdsClient>(
-        /*key=*/(is_client ? "" : GrpcXdsClient::kServerKey),
-        std::move(*bootstrap), ChannelArgs(), /*transport_factory=*/nullptr,
-        /*certificate_provider_store=*/nullptr, /*stats_plugin_group=*/nullptr);
+    xds_client_ = MakeRefCounted<XdsClient>(
+        std::move(*bootstrap), /*transport_factory=*/nullptr,
+        /*event_engine=*/nullptr, /*metrics_reporter=*/nullptr, "foo agent",
+        "foo version");
   }
 
-  XdsResourceType::DecodeContext MakeDecodeContext() {
-    return XdsResourceType::DecodeContext{
+  GrpcXdsDecodeContext MakeDecodeContext(bool is_client = true) {
+    return GrpcXdsDecodeContext(
         xds_client_.get(), *xds_client_->bootstrap().servers().front(),
-        upb_def_pool_.ptr(), upb_arena_.ptr()};
+        upb_def_pool_.ptr(), upb_arena_.ptr(),
+        is_client ? GrpcXdsDecodeContext::Component::kClient
+                  : GrpcXdsDecodeContext::Component::kServer);
   }
 
   RefCountedPtr<XdsClient> xds_client_;
@@ -162,8 +164,10 @@ class HttpConnectionManagerTest
     : public XdsListenerTest,
       public ::testing::WithParamInterface<HttpConnectionManagerLocation> {
  protected:
-  HttpConnectionManagerTest()
-      : XdsListenerTest(/*is_client=*/GetParam().in_api_listener) {}
+  GrpcXdsDecodeContext MakeDecodeContext() {
+    return XdsListenerTest::MakeDecodeContext(
+        /*is_client=*/GetParam().in_api_listener);
+  }
 
   static Listener MakeListener(HttpConnectionManager hcm) {
     Listener listener;
@@ -735,7 +739,9 @@ TEST_F(HttpConnectionManagerOnClientTest,
 
 class HttpConnectionManagerOnServerTest : public XdsListenerTest {
  protected:
-  HttpConnectionManagerOnServerTest() : XdsListenerTest(/*is_client=*/false) {}
+  GrpcXdsDecodeContext MakeDecodeContext() {
+    return XdsListenerTest::MakeDecodeContext(/*is_client=*/false);
+  }
 };
 
 TEST_F(HttpConnectionManagerOnServerTest, HttpFilterNotSupportedOnServer) {
@@ -898,7 +904,9 @@ TEST_F(ApiListenerTest, UnparsableHttpConnectionManagerConfig) {
 
 class TcpListenerTest : public XdsListenerTest {
  protected:
-  TcpListenerTest() : XdsListenerTest(/*is_client=*/false) {}
+  GrpcXdsDecodeContext MakeDecodeContext() {
+    return XdsListenerTest::MakeDecodeContext(/*is_client=*/false);
+  }
 };
 
 TEST_F(TcpListenerTest, MinimumValidConfig) {

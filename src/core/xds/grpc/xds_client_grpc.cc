@@ -45,6 +45,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/grpc_xds_decode_context.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_transport_grpc.h"
@@ -395,6 +396,15 @@ void GrpcXdsClient::ResetBackoff() {
 grpc_pollset_set* GrpcXdsClient::interested_parties() const {
   return reinterpret_cast<GrpcXdsTransportFactory*>(transport_factory())
       ->interested_parties();
+}
+
+std::unique_ptr<XdsResourceType::DecodeContext>
+GrpcXdsClient::CreateDecodeContext(const XdsBootstrap::XdsServer& server,
+                                   upb_DefPool* def_pool, upb_Arena* arena) {
+  return std::make_unique<GrpcXdsDecodeContext>(
+      this, server, def_pool, arena,
+      key_ == kServerKey ? GrpcXdsDecodeContext::Component::kServer
+                         : GrpcXdsDecodeContext::Component::kClient);
 }
 
 namespace {

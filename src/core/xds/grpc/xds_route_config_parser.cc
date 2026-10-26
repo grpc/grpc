@@ -56,7 +56,7 @@
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
-#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/grpc/grpc_xds_decode_context.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
@@ -290,8 +290,8 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
                           const struct google_protobuf_Any**, size_t* iter),
     ValidationErrors* errors) {
   const bool is_client =
-      DownCast<GrpcXdsClient*>(context.client)->component() ==
-      GrpcXdsClient::Component::kClient;
+      DownCast<const GrpcXdsDecodeContext&>(context).component ==
+      GrpcXdsDecodeContext::Component::kClient;
   const auto& http_filter_registry =
       DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .http_filter_registry();
@@ -674,8 +674,8 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
   }
   // Parse route action.
   const bool is_client =
-      DownCast<GrpcXdsClient*>(context.client)->component() ==
-      GrpcXdsClient::Component::kClient;
+      DownCast<const GrpcXdsDecodeContext&>(context).component ==
+      GrpcXdsDecodeContext::Component::kClient;
   const envoy_config_route_v3_RouteAction* route_action_proto =
       envoy_config_route_v3_Route_route(route_proto);
   if (route_action_proto != nullptr) {

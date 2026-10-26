@@ -47,7 +47,7 @@
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/grpc/grpc_xds_decode_context.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
@@ -249,8 +249,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   }
   // http_filters
   const bool is_client =
-      DownCast<GrpcXdsClient*>(context.client)->component() ==
-      GrpcXdsClient::Component::kClient;
+      DownCast<const GrpcXdsDecodeContext&>(context).component ==
+      GrpcXdsDecodeContext::Component::kClient;
   {
     ValidationErrors::ScopedField field(errors, ".http_filters");
     const auto& http_filter_registry =
@@ -982,8 +982,8 @@ absl::StatusOr<std::shared_ptr<const XdsListenerResource>> LdsResourceParse(
   // On client side, expect an API listener; on server side, expect a
   // TCP listener.
   const bool is_client =
-      DownCast<GrpcXdsClient*>(context.client)->component() ==
-      GrpcXdsClient::Component::kClient;
+      DownCast<const GrpcXdsDecodeContext&>(context).component ==
+      GrpcXdsDecodeContext::Component::kClient;
   if (is_client) {
     ValidationErrors::ScopedField field(&errors, "api_listener");
     const envoy_config_listener_v3_ApiListener* api_listener =

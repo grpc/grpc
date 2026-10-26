@@ -49,9 +49,9 @@
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "src/core/xds/grpc/grpc_xds_decode_context.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
-#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -79,12 +79,11 @@ namespace {
 
 class XdsRouteConfigTest : public ::testing::Test {
  protected:
-  explicit XdsRouteConfigTest(bool trusted_xds_server = false,
-                              bool is_client = true) {
-    ResetXdsClient(trusted_xds_server, is_client);
+  explicit XdsRouteConfigTest(bool trusted_xds_server = false) {
+    ResetXdsClient(trusted_xds_server);
   }
 
-  void ResetXdsClient(bool trusted_xds_server, bool is_client) {
+  void ResetXdsClient(bool trusted_xds_server) {
     auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         absl::StrCat("{\n"
                      "  \"xds_servers\": [\n"
@@ -103,16 +102,18 @@ class XdsRouteConfigTest : public ::testing::Test {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
     }
-    xds_client_ = MakeRefCounted<GrpcXdsClient>(
-        /*key=*/(is_client ? "" : GrpcXdsClient::kServerKey),
-        std::move(*bootstrap), ChannelArgs(), /*transport_factory=*/nullptr,
-        /*certificate_provider_store=*/nullptr, /*stats_plugin_group=*/nullptr);
+    xds_client_ = MakeRefCounted<XdsClient>(
+        std::move(*bootstrap), /*transport_factory=*/nullptr,
+        /*event_engine=*/nullptr, /*metrics_reporter=*/nullptr, "foo agent",
+        "foo version");
   }
 
-  XdsResourceType::DecodeContext MakeDecodeContext() {
-    return XdsResourceType::DecodeContext{
+  GrpcXdsDecodeContext MakeDecodeContext(bool is_client = true) {
+    return GrpcXdsDecodeContext(
         xds_client_.get(), *xds_client_->bootstrap().servers().front(),
-        upb_def_pool_.ptr(), upb_arena_.ptr()};
+        upb_def_pool_.ptr(), upb_arena_.ptr(),
+        is_client ? GrpcXdsDecodeContext::Component::kClient
+                  : GrpcXdsDecodeContext::Component::kServer);
   }
 
   RefCountedPtr<XdsClient> xds_client_;
@@ -202,7 +203,7 @@ TEST_F(XdsRouteConfigTest, RejectsNonForwardingActionOnClientSide) {
 }
 
 TEST_F(XdsRouteConfigTest, AllowsNonForwardingActionOnServerSide) {
-  ResetXdsClient(/*trusted_xds_server=*/true, /*is_client=*/false);
+  ResetXdsClient(/*trusted_xds_server=*/true);
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -213,8 +214,8 @@ TEST_F(XdsRouteConfigTest, AllowsNonForwardingActionOnServerSide) {
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  auto decode_result = resource_type->Decode(
+      MakeDecodeContext(/*is_client=*/false), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
@@ -239,7 +240,7 @@ TEST_F(XdsRouteConfigTest, AllowsNonForwardingActionOnServerSide) {
 }
 
 TEST_F(XdsRouteConfigTest, RejectsRouteActionOnServerSide) {
-  ResetXdsClient(/*trusted_xds_server=*/true, /*is_client=*/false);
+  ResetXdsClient(/*trusted_xds_server=*/true);
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -250,8 +251,8 @@ TEST_F(XdsRouteConfigTest, RejectsRouteActionOnServerSide) {
   std::string serialized_resource;
   ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  auto decode_result = resource_type->Decode(
+      MakeDecodeContext(/*is_client=*/false), serialized_resource);
   EXPECT_EQ(decode_result.resource.status(),
             absl::InvalidArgumentError(
                 "errors validating RouteConfiguration resource: ["
@@ -596,7 +597,7 @@ TEST_P(TypedPerFilterConfigTest, FilterTypeNotSupportedOnServer) {
   if (GetParam().scope() == TypedPerFilterConfigScope::kWeightedCluster) {
     GTEST_SKIP() << "WeightedClusters not supported on server side";
   }
-  ResetXdsClient(/*trusted_xds_server=*/false, /*is_client=*/false);
+  ResetXdsClient(/*trusted_xds_server=*/false);
   auto* typed_per_filter_config_proto =
       GetTypedPerFilterConfigProto(&route_config_);
   (*typed_per_filter_config_proto)["fault"].PackFrom(
@@ -607,8 +608,8 @@ TEST_P(TypedPerFilterConfigTest, FilterTypeNotSupportedOnServer) {
   std::string serialized_resource;
   ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  auto decode_result = resource_type->Decode(
+      MakeDecodeContext(/*is_client=*/false), serialized_resource);
   EXPECT_EQ(
       decode_result.resource.status(),
       absl::InvalidArgumentError(absl::StrCat(
@@ -621,7 +622,7 @@ TEST_P(TypedPerFilterConfigTest, FilterTypeNotSupportedOnServerButOptional) {
   if (GetParam().scope() == TypedPerFilterConfigScope::kWeightedCluster) {
     GTEST_SKIP() << "WeightedClusters not supported on server side";
   }
-  ResetXdsClient(/*trusted_xds_server=*/false, /*is_client=*/false);
+  ResetXdsClient(/*trusted_xds_server=*/false);
   envoy::config::route::v3::FilterConfig filter_config_wrapper;
   filter_config_wrapper.mutable_config()->PackFrom(
       envoy::extensions::filters::http::fault::v3::HTTPFault());
@@ -635,8 +636,8 @@ TEST_P(TypedPerFilterConfigTest, FilterTypeNotSupportedOnServerButOptional) {
   std::string serialized_resource;
   ASSERT_TRUE(route_config_.SerializeToString(&serialized_resource));
   auto* resource_type = XdsRouteConfigResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(MakeDecodeContext(), serialized_resource);
+  auto decode_result = resource_type->Decode(
+      MakeDecodeContext(/*is_client=*/false), serialized_resource);
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
