@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from concurrent import futures
+import functools
 from typing import Tuple
 
 import grpc
@@ -29,22 +30,32 @@ _STREAM_STREAM = "StreamStream"
 STREAM_LENGTH = 5
 TRIGGER_RPC_METADATA = ("control", "trigger_rpc")
 TRIGGER_RPC_TO_NEW_SERVER_METADATA = ("to_new_server", "")
+APPLICATION_SPAN_NAME = "TestApp"
 
 
-def handle_unary_unary(request, servicer_context):
+def _call_new_server():
+    second_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    generic_handler = grpc.method_handlers_generic_handler(
+        _SERVICE_NAME, _rpc_method_handlers()
+    )
+    second_server.add_generic_rpc_handlers((generic_handler,))
+    second_server_port = second_server.add_insecure_port("[::]:0")
+    second_server.start()
+    unary_unary_call(port=second_server_port)
+    second_server.stop(0)
+
+
+def handle_unary_unary(request, servicer_context, tracer=None):
     if TRIGGER_RPC_METADATA in servicer_context.invocation_metadata():
         for k, v in servicer_context.invocation_metadata():
             if "port" in k:
                 unary_unary_call(port=int(v))
             if "to_new_server" in k:
-                second_server = grpc.server(
-                    futures.ThreadPoolExecutor(max_workers=10)
-                )
-                second_server.add_generic_rpc_handlers((_GenericHandler(),))
-                second_server_port = second_server.add_insecure_port("[::]:0")
-                second_server.start()
-                unary_unary_call(port=second_server_port)
-                second_server.stop(0)
+                if tracer is not None:
+                    with tracer.start_as_current_span(APPLICATION_SPAN_NAME):
+                        _call_new_server()
+                else:
+                    _call_new_server()
     return _RESPONSE
 
 
@@ -54,6 +65,9 @@ def handle_unary_stream(request, servicer_context):
 
 
 def handle_stream_unary(request_iterator, servicer_context):
+    # we need to read requests to produce otel traces
+    for request in request_iterator:
+        pass
     return _RESPONSE
 
 
@@ -63,7 +77,7 @@ def handle_stream_stream(request_iterator, servicer_context):
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
-    def __init__(self, request_streaming, response_streaming):
+    def __init__(self, request_streaming, response_streaming, tracer=None):
         self.request_streaming = request_streaming
         self.response_streaming = response_streaming
         self.request_deserializer = None
@@ -79,44 +93,23 @@ class _MethodHandler(grpc.RpcMethodHandler):
         elif self.response_streaming:
             self.unary_stream = handle_unary_stream
         else:
-            self.unary_unary = handle_unary_unary
+            self.unary_unary = functools.partial(
+                handle_unary_unary, tracer=tracer
+            )
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(False, False)
-        if handler_call_details.method == _UNARY_UNARY_FILTERED:
-            return _MethodHandler(False, False)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(False, True)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(True, False)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(True, True)
-        else:
-            return None
-
-
-RPC_METHOD_HANDLERS = {
-    _UNARY_UNARY_FILTERED: _MethodHandler(False, False),
-    _UNARY_UNARY: _MethodHandler(False, False),
-    _UNARY_STREAM: _MethodHandler(False, True),
-    _STREAM_UNARY: _MethodHandler(True, False),
-    _STREAM_STREAM: _MethodHandler(True, True),
-}
-
-REGISTERED_RPC_METHOD_HANDLERS = {
-    _UNARY_UNARY_FILTERED: _MethodHandler(False, False),
-    _UNARY_UNARY: _MethodHandler(False, False),
-    _UNARY_STREAM: _MethodHandler(False, True),
-    _STREAM_UNARY: _MethodHandler(True, False),
-    _STREAM_STREAM: _MethodHandler(True, True),
-}
+def _rpc_method_handlers(tracer=None):
+    return {
+        _UNARY_UNARY_FILTERED: _MethodHandler(False, False),
+        _UNARY_UNARY: _MethodHandler(False, False, tracer),
+        _UNARY_STREAM: _MethodHandler(False, True),
+        _STREAM_UNARY: _MethodHandler(True, False),
+        _STREAM_STREAM: _MethodHandler(True, True),
+    }
 
 
 def start_server(
-    interceptors=None, register_method=True
+    interceptors=None, register_method=True, tracer=None
 ) -> Tuple[grpc.Server, int]:
     if interceptors:
         server = grpc.server(
@@ -126,12 +119,12 @@ def start_server(
     else:
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     generic_handler = grpc.method_handlers_generic_handler(
-        _SERVICE_NAME, RPC_METHOD_HANDLERS
+        _SERVICE_NAME, _rpc_method_handlers(tracer)
     )
     server.add_generic_rpc_handlers((generic_handler,))
     if register_method:
         server.add_registered_method_handlers(
-            _SERVICE_NAME, REGISTERED_RPC_METHOD_HANDLERS
+            _SERVICE_NAME, _rpc_method_handlers(tracer)
         )
     port = server.add_insecure_port("[::]:0")
     server.start()
