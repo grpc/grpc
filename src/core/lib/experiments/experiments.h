@@ -93,6 +93,7 @@ inline bool IsHeaderDataFrameEnabled() { return true; }
 inline bool IsInternalFixEnabled() { return false; }
 inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
+inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
@@ -129,6 +130,7 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
+inline bool IsServerConnectionManagementEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -179,6 +181,7 @@ inline bool IsHeaderDataFrameEnabled() { return true; }
 inline bool IsInternalFixEnabled() { return false; }
 inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
+inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
@@ -215,6 +218,7 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
+inline bool IsServerConnectionManagementEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -265,6 +269,7 @@ inline bool IsHeaderDataFrameEnabled() { return true; }
 inline bool IsInternalFixEnabled() { return false; }
 inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
+inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
@@ -301,6 +306,7 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
+inline bool IsServerConnectionManagementEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -338,6 +344,7 @@ enum ExperimentIds {
   kExperimentIdInternalFix,
   kExperimentIdInternalFix1,
   kExperimentIdKeepAlivePingTimerBatch,
+  kExperimentIdLameChannelV3,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMapHostHeaderToAuthority,
   kExperimentIdMemoryOptimization01,
@@ -368,6 +375,7 @@ enum ExperimentIds {
   kExperimentIdSecureEndpointOffloadLargeReads,
   kExperimentIdSecureEndpointOffloadLargeWrites,
   kExperimentIdSecureEndpointReadCoalescing,
+  kExperimentIdServerConnectionManagement,
   kExperimentIdSkipClearPeerOnCancellation,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -465,6 +473,10 @@ inline bool IsInternalFix1Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {
   return IsExperimentEnabled<kExperimentIdKeepAlivePingTimerBatch>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_LAME_CHANNEL_V3
+inline bool IsLameChannelV3Enabled() {
+  return IsExperimentEnabled<kExperimentIdLameChannelV3>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
 inline bool IsLocalConnectorSecureEnabled() {
@@ -585,6 +597,10 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SECURE_ENDPOINT_READ_COALESCING
 inline bool IsSecureEndpointReadCoalescingEnabled() {
   return IsExperimentEnabled<kExperimentIdSecureEndpointReadCoalescing>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_CONNECTION_MANAGEMENT
+inline bool IsServerConnectionManagementEnabled() {
+  return IsExperimentEnabled<kExperimentIdServerConnectionManagement>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SKIP_CLEAR_PEER_ON_CANCELLATION
 inline bool IsSkipClearPeerOnCancellationEnabled() {

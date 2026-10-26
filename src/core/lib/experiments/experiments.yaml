@@ -172,6 +172,11 @@
   expiry: 2027/01/16
   owner: vigneshbabu@google.com
   test_tags: []
+- name: lame_channel_v3
+  description: Use v3 lame channel implementation.
+  expiry: 2027/02/01
+  owner: roth@google.com
+  test_tags: ["lame_client_test"]
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
   expiry: 2027/01/16
@@ -183,7 +188,7 @@
     duplicate host/authority headers.
   expiry: 2027/07/01
   owner: rishesh@google.com
-  test_tags: ["core_end2end_test", "hpack_test"]
+  test_tags: ["core_end2end_test", "hpack_test", "xds_end2end_test"]
 - name: memory_optimization_01
   description: Memory Optimization
   expiry: 2027/02/01
@@ -366,6 +371,11 @@
       "event_engine_client",
       "event_engine_listener",
     ]
+- name: server_connection_management
+  description: Server connection management.
+  expiry: 2027/02/15
+  owner: roth@google.com
+  test_tags: ["core_end2end_test", "xds_end2end_test"]
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.
   expiry: 2027/01/16

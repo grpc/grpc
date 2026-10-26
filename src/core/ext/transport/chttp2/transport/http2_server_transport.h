@@ -514,7 +514,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   absl::Status InitializeStream(Stream& stream);
 
-  // Runs on the call party.
+  // Runs on the transport party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, uint32_t stream_id);
 
@@ -571,7 +571,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
 
-  void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
+  void MaybeSpawnPingTimeout(
+      std::optional<PingManager::PingTimeoutArgs> ping_timeout_args);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
