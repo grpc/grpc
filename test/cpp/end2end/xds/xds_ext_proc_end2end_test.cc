@@ -725,6 +725,21 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     return response;
   }
 
+  // Returns a request body response that forwards a client half-close
+  // without a message.  Note that MakeRequestBodyMutationResponse("", true)
+  // instead forwards an empty message followed by a half-close.
+  static ::envoy::service::ext_proc::v3::ProcessingResponse
+  MakeRequestBodyHalfCloseResponse() {
+    ::envoy::service::ext_proc::v3::ProcessingResponse response;
+    auto* streamed_response = response.mutable_request_body()
+                                  ->mutable_response()
+                                  ->mutable_body_mutation()
+                                  ->mutable_streamed_response();
+    streamed_response->set_end_of_stream(true);
+    streamed_response->set_end_of_stream_without_message(true);
+    return response;
+  }
+
   static ::envoy::service::ext_proc::v3::ProcessingResponse
   MakeResponseBodyMutationResponse(absl::string_view body,
                                    bool end_of_stream = false) {
@@ -1137,8 +1152,7 @@ void XdsExtProcEnd2endTest::ClientHalfCloseHandler::Handle(
   seen_ = true;
   EXPECT_THAT(request, MatchesRequestBody(kEmptyBody, kEndOfStream));
   if (send_response_) {
-    stream_->SendResponse(
-        MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
+    stream_->SendResponse(MakeRequestBodyHalfCloseResponse());
   }
 }
 
@@ -1757,14 +1771,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
   ASSERT_THAT(eos_req, ::testing::Optional(
                            MatchesRequestBody(kEmptyBody, kEndOfStream)));
   EXPECT_TRUE(eos_req->request_body().end_of_stream_without_message());
-  ::envoy::service::ext_proc::v3::ProcessingResponse proc_response;
-  auto* common_response =
-      proc_response.mutable_request_body()->mutable_response();
-  auto* streamed_response =
-      common_response->mutable_body_mutation()->mutable_streamed_response();
-  streamed_response->set_end_of_stream(true);
-  streamed_response->set_end_of_stream_without_message(true);
-  ext_proc_stream->SendResponse(proc_response);
+  ext_proc_stream->SendResponse(MakeRequestBodyHalfCloseResponse());
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
@@ -2276,8 +2283,7 @@ TEST_P(XdsExtProcEnd2endTest, DrainResponsesStartedInRequestBodyResponse) {
   req = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(
       req, ::testing::Optional(MatchesRequestBody(kEmptyBody, kEndOfStream)));
-  ext_proc_stream->SendResponse(
-      MakeRequestBodyMutationResponse(kEmptyBody, kEndOfStream));
+  ext_proc_stream->SendResponse(MakeRequestBodyHalfCloseResponse());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
   EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
 }
@@ -2524,9 +2530,9 @@ TEST_P(XdsExtProcEnd2endTest, DrainIgnoredAfterHalfClose) {
   stream.StartWritesDone();
   auto req2 = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req2, ::testing::Optional(MatchesRequestBody("", kEndOfStream)));
-  ext_proc_stream->SendResponse(SetRequestDrains(
-      MakeRequestBodyMutationResponse("", /*end_of_stream=*/true),
-      /*drain_requests=*/true, /*drain_responses=*/false));
+  ext_proc_stream->SendResponse(
+      SetRequestDrains(MakeRequestBodyHalfCloseResponse(),
+                       /*drain_requests=*/true, /*drain_responses=*/false));
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
@@ -3363,8 +3369,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   req = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req.has_value());
   EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
-  ext_proc_stream->SendResponse(
-      MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
+  ext_proc_stream->SendResponse(MakeRequestBodyHalfCloseResponse());
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
