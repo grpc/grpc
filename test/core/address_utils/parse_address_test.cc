@@ -252,6 +252,11 @@ TEST(ParseAddressTest, VsockParsing) {
   test_grpc_parse_vsock_invalid("vsock:10");
   test_grpc_parse_vsock_invalid("vsock:10:20:30");
   test_grpc_parse_vsock_invalid("vsock:1x:20");
+  // Surrounding whitespace and a leading '+' sign are rejected, even when
+  // they arrive percent-encoded in the uri.
+  test_grpc_parse_vsock_invalid("vsock:%2010:20");
+  test_grpc_parse_vsock_invalid("vsock:10:%2020");
+  test_grpc_parse_vsock_invalid("vsock:%2B10:20");
   // -1 is the only negative cid or port that is accepted.
   test_grpc_parse_vsock_invalid("vsock:-2:20");
   test_grpc_parse_vsock_invalid("vsock:10:-2");
