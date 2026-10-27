@@ -206,7 +206,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.43'
+    ss.dependency 'BoringSSL-GRPC', '0.0.44'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -326,6 +326,8 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/dynamic_filters.h',
                       'src/core/client_channel/global_subchannel_pool.cc',
                       'src/core/client_channel/global_subchannel_pool.h',
+                      'src/core/client_channel/lame_channel.cc',
+                      'src/core/client_channel/lame_channel.h',
                       'src/core/client_channel/lb_metadata.cc',
                       'src/core/client_channel/lb_metadata.h',
                       'src/core/client_channel/load_balanced_call_destination.cc',
@@ -503,8 +505,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/rbac/rbac_filter.cc',
                       'src/core/ext/filters/rbac/rbac_filter.h',
-                      'src/core/ext/filters/rbac/rbac_service_config_parser.cc',
-                      'src/core/ext/filters/rbac/rbac_service_config_parser.h',
                       'src/core/ext/filters/stateful_session/stateful_session_filter.cc',
                       'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                       'src/core/ext/transport/chttp2/alpn/alpn.cc',
@@ -569,6 +569,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
                       'src/core/ext/transport/chttp2/transport/http2_transport.cc',
                       'src/core/ext/transport/chttp2/transport/http2_transport.h',
+                      'src/core/ext/transport/chttp2/transport/http2_transport_stats.h',
                       'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.cc',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
@@ -987,6 +988,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h',
                       'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/type/v3/scope.upb.h',
+                      'src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h',
                       'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h',
@@ -1398,6 +1402,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c',
@@ -1999,6 +2005,8 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/oob_backend_metric_internal.h',
                       'src/core/load_balancing/outlier_detection/outlier_detection.cc',
                       'src/core/load_balancing/outlier_detection/outlier_detection.h',
+                      'src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc',
+                      'src/core/load_balancing/outlier_detection/outlier_detection_metrics.h',
                       'src/core/load_balancing/pick_first/pick_first.cc',
                       'src/core/load_balancing/pick_first/pick_first.h',
                       'src/core/load_balancing/priority/priority.cc',
@@ -2062,11 +2070,8 @@ Pod::Spec.new do |s|
                       'src/core/server/server_config_selector_filter.cc',
                       'src/core/server/server_config_selector_filter.h',
                       'src/core/server/server_interface.h',
-                      'src/core/server/xds_channel_stack_modifier.cc',
-                      'src/core/server/xds_channel_stack_modifier.h',
                       'src/core/server/xds_server_config_fetcher.cc',
                       'src/core/server/xds_server_config_fetcher.h',
-                      'src/core/server/xds_server_config_fetcher_legacy.cc',
                       'src/core/service_config/service_config.h',
                       'src/core/service_config/service_config_call_data.h',
                       'src/core/service_config/service_config_channel_arg_filter.cc',
@@ -2728,6 +2733,7 @@ Pod::Spec.new do |s|
                               'src/core/client_channel/direct_channel.h',
                               'src/core/client_channel/dynamic_filters.h',
                               'src/core/client_channel/global_subchannel_pool.h',
+                              'src/core/client_channel/lame_channel.h',
                               'src/core/client_channel/lb_metadata.h',
                               'src/core/client_channel/load_balanced_call_destination.h',
                               'src/core/client_channel/local_subchannel_pool.h',
@@ -2813,7 +2819,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/http/server/http_server_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/rbac/rbac_filter.h',
-                              'src/core/ext/filters/rbac/rbac_service_config_parser.h',
                               'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                               'src/core/ext/transport/chttp2/alpn/alpn.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
@@ -2848,6 +2853,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_transport.h',
+                              'src/core/ext/transport/chttp2/transport/http2_transport_stats.h',
                               'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
@@ -3124,6 +3130,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h',
                               'src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/type/v3/scope.upb.h',
+                              'src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h',
                               'src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb.h',
@@ -3359,6 +3367,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.h',
@@ -3684,6 +3693,7 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/oob_backend_metric.h',
                               'src/core/load_balancing/oob_backend_metric_internal.h',
                               'src/core/load_balancing/outlier_detection/outlier_detection.h',
+                              'src/core/load_balancing/outlier_detection/outlier_detection_metrics.h',
                               'src/core/load_balancing/pick_first/pick_first.h',
                               'src/core/load_balancing/ring_hash/ring_hash.h',
                               'src/core/load_balancing/rls/rls.h',
@@ -3715,7 +3725,6 @@ Pod::Spec.new do |s|
                               'src/core/server/server_config_selector.h',
                               'src/core/server/server_config_selector_filter.h',
                               'src/core/server/server_interface.h',
-                              'src/core/server/xds_channel_stack_modifier.h',
                               'src/core/server/xds_server_config_fetcher.h',
                               'src/core/service_config/service_config.h',
                               'src/core/service_config/service_config_call_data.h',
@@ -4087,7 +4096,7 @@ Pod::Spec.new do |s|
     # excludes windows-only files.
     #
     # See also https://github.com/abseil/abseil-cpp/pull/2138
-    for abseil_dir in ../abseil $(find . -type d -path "*/Pods/abseil" 2>/dev/null); do
+    for abseil_dir in ../abseil ../../Release/abseil "$HOME/Library/Caches/CocoaPods/Pods/Release/abseil" ${TMPDIR%/}/CocoaPods-Lint-*/Pods/abseil /tmp/CocoaPods-Lint-*/Pods/abseil $(find . -type d -path "*/Pods/abseil" 2>/dev/null); do
       if [ -d "$abseil_dir" ]; then
         find "$abseil_dir" -name "time_zone_name_win.cc" -exec rm -f {} +
       fi

@@ -134,7 +134,7 @@ const upb_MiniTable envoy__admin__v3__HostStatus_msg_init = {
 };
 
 typedef struct {
-  upb_MiniTableField fields[8];
+  upb_MiniTableField fields[9];
 } envoy__admin__v3__HostHealthStatus_msg_init_Fields;
 
 static const envoy__admin__v3__HostHealthStatus_msg_init_Fields envoy_admin_v3_HostHealthStatus__fields = {{
@@ -146,11 +146,12 @@ static const envoy__admin__v3__HostHealthStatus_msg_init_Fields envoy_admin_v3_H
   {6, 12, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {7, 13, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {8, 14, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {9, 15, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 }};
 
 const upb_MiniTable envoy__admin__v3__HostHealthStatus_msg_init = {
   &envoy_admin_v3_HostHealthStatus__fields.fields[0],
-  24, 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+  24, 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.HostHealthStatus",
 #endif
@@ -164,7 +165,7 @@ const upb_MiniTable envoy__admin__v3__HostHealthStatus_msg_init = {
     {0x000c00003f000030, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000d00003f000038, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x000e00003f000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000f00003f000048, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
