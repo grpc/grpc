@@ -138,7 +138,7 @@ struct grpc_tls_certificate_distributor
   // are being watched.
   void SetWatchStatusCallback(
       std::function<void(std::string, bool, bool)> callback) {
-    grpc_core::MutexLock lock(&callback_mu_);
+    grpc_core::MutexLock lock(callback_mu_);
     watch_status_callback_ = std::move(callback);
   };
 

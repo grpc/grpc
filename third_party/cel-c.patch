@@ -1,0 +1,28 @@
+--- a/cel-c/internal/message_equality.cc
++++ b/cel-c/internal/message_equality.cc
+@@ -69,12 +69,15 @@
+   return arena;
+ }
+ 
++// Must be last.
++#include "upb/port/def.inc"
++
+ CEL_ATTRIBUTE_NODISCARD
+ static bool _cel_MessageEqualityState_UnknownEquals(
+     _cel_MessageEqualityState* cel_nonnull state,
+     const upb_Message* cel_nonnull lhs, const upb_Message* cel_nonnull rhs) {
+   upb_UnknownCompareResult result =
+-      _upb_Message_UnknownFieldsAreEqual(lhs, rhs, state->depth);
++      UPB_PRIVATE(_upb_Message_UnknownFieldsAreEqual)(lhs, rhs, state->depth);
+   switch (result) {
+     case kUpb_UnknownCompareResult_Equal:
+       return true;
+@@ -90,6 +93,8 @@
+   }
+ }
+ 
++#include "upb/port/undef.inc"
++
+ CEL_ATTRIBUTE_NODISCARD
+ static bool _cel_MessageEqualityState_FieldHomoEquals(
+     _cel_MessageEqualityState* cel_nonnull state, upb_MessageValue lhs_val,

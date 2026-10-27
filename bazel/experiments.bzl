@@ -22,11 +22,10 @@ EXPERIMENT_ENABLES = {
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
     "callv3_batch_validation": "callv3_batch_validation",
+    "callv3_server_shutdown_broadcast": "callv3_server_shutdown_broadcast",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
-    "custom_frame_check": "custom_frame_check",
     "event_engine_client": "event_engine_client",
-    "event_engine_fork": "event_engine_fork",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_for_all_other_endpoints,event_engine_listener",
@@ -36,17 +35,18 @@ EXPERIMENT_ENABLES = {
     "fuse_filters": "fuse_filters",
     "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
     "header_data_frame": "header_data_frame",
-    "inproc_cancel_stream": "inproc_cancel_stream",
+    "internal_fix": "internal_fix",
+    "internal_fix1": "internal_fix1",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
+    "lame_channel_v3": "lame_channel_v3",
     "local_connector_secure": "local_connector_secure",
+    "map_host_header_to_authority": "map_host_header_to_authority",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
     "metadata_outstanding_token_refactor": "metadata_outstanding_token_refactor",
     "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
-    "optimization_01": "optimization_01",
-    "optimization_02": "optimization_02",
     "optimization_03": "optimization_03",
     "optimization_04": "optimization_04",
     "optimization_05": "optimization_05",
@@ -54,7 +54,6 @@ EXPERIMENT_ENABLES = {
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "ph2_client": "ph2_client",
     "ph2_client_server": "ph2_client_server",
-    "ph2_perf_01": "ph2_perf_01",
     "ph2_server": "ph2_server",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
     "pipelined_read_secure_endpoint": "event_engine_client,event_engine_listener,pipelined_read_secure_endpoint",
@@ -62,7 +61,6 @@ EXPERIMENT_ENABLES = {
     "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
-    "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
@@ -71,21 +69,19 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
     "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
+    "server_connection_management": "server_connection_management",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
-    "v2_non_owning_waker_implementation": "v2_non_owning_waker_implementation",
     "verbose_channelz_connection_logging": "verbose_channelz_connection_logging",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
-    "xds_server_filter_chain_per_route": "v2_non_owning_waker_implementation,xds_server_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
     "event_engine_client",
-    "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
     "pipelined_read_secure_endpoint",
@@ -106,14 +102,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -134,14 +126,10 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -156,6 +144,7 @@ EXPERIMENTS = {
                 "buffer_list_deletion_prep",
                 "fix_v3_filter_stack_server_side_ordering",
                 "local_connector_secure",
+                "map_host_header_to_authority",
                 "otel_export_telemetry_domains",
                 "ph2_client",
                 "ph2_client_server",
@@ -167,6 +156,7 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
                 "secure_endpoint_read_coalescing",
+                "server_connection_management",
                 "use_call_event_engine_in_completion_queue",
                 "wildcard_ip_expansion_restriction",
             ],
@@ -182,6 +172,12 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "hpack_test": [
+                "map_host_header_to_authority",
+            ],
+            "lame_client_test": [
+                "lame_channel_v3",
             ],
             "lb_unit_test": [
                 "ring_hash_update_cleanup",
@@ -200,7 +196,12 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
+                "map_host_header_to_authority",
+                "ph2_client",
+                "ph2_client_server",
+                "ph2_server",
                 "ring_hash_update_cleanup",
+                "server_connection_management",
             ],
         },
         "on": {
@@ -208,24 +209,13 @@ EXPERIMENTS = {
                 "callv3_batch_validation",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
-                "event_engine_fork",
                 "event_engine_listener",
-                "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
-            ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "xds_end2end_test": [
-                "xds_server_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_server_filter_chain_per_route",
             ],
         },
     },

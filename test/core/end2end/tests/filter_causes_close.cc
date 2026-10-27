@@ -267,9 +267,7 @@ CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose) {
       });
 
   FilterCloseOnInitialMetadata(*this);
-  if (IsPromiseFilterSendCancelMetadataEnabled()) {
-    FilterCloseOnMessage(*this);
-  }
+  FilterCloseOnMessage(*this);
 }
 
 }  // namespace

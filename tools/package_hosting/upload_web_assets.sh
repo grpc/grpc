@@ -27,4 +27,4 @@ WEB_ASSETS=(
   style.css
 )
 
-gsutil -m cp "${WEB_ASSETS[@]}" "$GCS_WEB_ASSETS"
+gcloud storage cp "${WEB_ASSETS[@]}" "$GCS_WEB_ASSETS"

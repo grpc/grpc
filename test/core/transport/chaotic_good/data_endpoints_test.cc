@@ -202,7 +202,7 @@ MpscQueued<chaotic_good::OutgoingFrame> TestFrame(
   static MpscReceiver<chaotic_good::OutgoingFrame>* frames =
       new MpscReceiver<chaotic_good::OutgoingFrame>(1000000);
   static Mutex* mu = new Mutex();
-  MutexLock lock(mu);
+  MutexLock lock(*mu);
   chaotic_good::MessageFrame frame(
       1, Arena::MakePooled<Message>(
              SliceBuffer(Slice::FromCopiedString(payload)), 0));

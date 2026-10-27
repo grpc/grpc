@@ -65,7 +65,7 @@ class Observable {
 
     // Update the value and wake all observers.
     void Set(T value) {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu_);
       std::swap(value_, value);
       WakeAll();
     }
@@ -115,7 +115,7 @@ class Observable {
       // If we saw a pending at all then we *may* be in the set of observers.
       // If not we're definitely not and we can avoid taking the lock at all.
       if (!saw_pending_) return;
-      MutexLock lock(state_->mu());
+      MutexLock lock(*state_->mu());
       auto w = std::move(waker_);
       state_->Remove(this);
     }
@@ -134,7 +134,7 @@ class Observable {
     virtual bool ShouldReturn(const T& current) = 0;
 
     Poll<T> operator()() {
-      MutexLock lock(state_->mu());
+      MutexLock lock(*state_->mu());
       // Check if the value has changed yet.
       if (ShouldReturn(state_->current())) {
         if (saw_pending_ && !waker_.is_unwakeable()) state_->Remove(this);

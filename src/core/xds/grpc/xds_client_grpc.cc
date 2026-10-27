@@ -286,7 +286,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   }
   // Otherwise, check the global map to see if the XdsClient instance
   // for this key already exists.
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   auto it = g_xds_client_map->find(key);
   if (it != g_xds_client_map->end()) {
     auto xds_client = it->second->RefIfNonZero(DEBUG_LOCATION, reason);
@@ -370,7 +370,7 @@ void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
   XdsClient::Orphaned();
   lrs_client_.reset();
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   if (g_inhibit_map_removal) return;
   auto it = g_xds_client_map->find(key_);
   if (it != g_xds_client_map->end() && it->second == this) {
@@ -392,7 +392,7 @@ grpc_pollset_set* GrpcXdsClient::interested_parties() const {
 namespace {
 
 std::vector<RefCountedPtr<GrpcXdsClient>> GetAllXdsClients() {
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   std::vector<RefCountedPtr<GrpcXdsClient>> xds_clients;
   for (const auto& [_, client] : *g_xds_client_map) {
     auto xds_client =
@@ -421,7 +421,7 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
     auto client_config =
         envoy_service_status_v3_ClientStatusResponse_add_config(response,
                                                                 arena.ptr());
-    xds_client->mu()->Lock();
+    xds_client->mu()->lock();
     xds_client->DumpClientConfig(&string_pool, arena.ptr(), client_config);
     envoy_service_status_v3_ClientConfig_set_client_scope(
         client_config, StdStringToUpbString(xds_client->key()));
@@ -431,13 +431,13 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
   char* output = envoy_service_status_v3_ClientStatusResponse_serialize(
       response, arena.ptr(), &output_length);
   for (const auto& xds_client : xds_clients) {
-    xds_client->mu()->Unlock();
+    xds_client->mu()->unlock();
   }
   return grpc_slice_from_cpp_string(std::string(output, output_length));
 }
 
 void GrpcXdsClient::ReportCallbackMetrics(CallbackMetricReporter& reporter) {
-  MutexLock lock(mu());
+  MutexLock lock(*mu());
   ReportResourceCounts([&](const ResourceCountLabels& labels, uint64_t count) {
     reporter.Report(
         kMetricResources, count,
@@ -452,23 +452,23 @@ void GrpcXdsClient::ReportCallbackMetrics(CallbackMetricReporter& reporter) {
 namespace internal {
 
 void SetXdsChannelArgsForTest(grpc_channel_args* args) {
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   g_channel_args = args;
 }
 
 void SetInhibitXdsClientMapRemovalForTest(bool inhibit) {
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   g_inhibit_map_removal = inhibit;
 }
 
 void UnsetGlobalXdsClientsForTest() {
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   g_xds_client_map->clear();
   g_parsed_bootstrap->reset();
 }
 
 void SetXdsFallbackBootstrapConfig(const char* config) {
-  MutexLock lock(g_mu);
+  MutexLock lock(*g_mu);
   gpr_free(g_fallback_bootstrap_config);
   g_fallback_bootstrap_config = gpr_strdup(config);
 }

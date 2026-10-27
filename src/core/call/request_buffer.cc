@@ -28,7 +28,7 @@ RequestBuffer::RequestBuffer() : state_(absl::in_place_type_t<Buffering>()) {}
 
 ValueOrFailure<size_t> RequestBuffer::PushClientInitialMetadata(
     ClientMetadataHandle md) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (std::get_if<Cancelled>(&state_)) return Failure{};
   auto& buffering = std::get<Buffering>(state_);
   CHECK_EQ(buffering.initial_metadata.get(), nullptr);
@@ -40,7 +40,7 @@ ValueOrFailure<size_t> RequestBuffer::PushClientInitialMetadata(
 
 Poll<ValueOrFailure<size_t>> RequestBuffer::PollPushMessage(
     MessageHandle& message) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (std::get_if<Cancelled>(&state_)) return Failure{};
   size_t buffered = 0;
   if (auto* buffering = std::get_if<Buffering>(&state_)) {
@@ -61,7 +61,7 @@ Poll<ValueOrFailure<size_t>> RequestBuffer::PollPushMessage(
 }
 
 StatusFlag RequestBuffer::FinishSends() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (std::get_if<Cancelled>(&state_)) return Failure{};
   if (auto* buffering = std::get_if<Buffering>(&state_)) {
     Buffered buffered(std::move(buffering->initial_metadata),
@@ -77,14 +77,14 @@ StatusFlag RequestBuffer::FinishSends() {
 }
 
 void RequestBuffer::Cancel(absl::Status error) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (std::holds_alternative<Cancelled>(state_)) return;
   state_.emplace<Cancelled>(std::move(error));
   WakeupAsyncAllPullers();
 }
 
 void RequestBuffer::Commit(Reader* winner) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   CHECK_EQ(winner_, nullptr);
   winner_ = winner;
   if (auto* buffering = std::get_if<Buffering>(&state_)) {
@@ -111,7 +111,7 @@ void RequestBuffer::WakeupAsyncAllPullersExcept(Reader* except_reader) {
 
 Poll<ValueOrFailure<ClientMetadataHandle>>
 RequestBuffer::Reader::PollPullClientInitialMetadata() {
-  MutexLock lock(&buffer_->mu_);
+  MutexLock lock(buffer_->mu_);
   if (buffer_->winner_ != nullptr && buffer_->winner_ != this) {
     error_ = absl::CancelledError("Another call was chosen");
     return Failure{};
@@ -135,7 +135,7 @@ RequestBuffer::Reader::PollPullClientInitialMetadata() {
 
 Poll<ValueOrFailure<std::optional<MessageHandle>>>
 RequestBuffer::Reader::PollPullMessage() {
-  ReleasableMutexLock lock(&buffer_->mu_);
+  ReleasableMutexLock lock(buffer_->mu_);
   if (buffer_->winner_ != nullptr && buffer_->winner_ != this) {
     error_ = absl::CancelledError("Another call was chosen");
     return Failure{};
