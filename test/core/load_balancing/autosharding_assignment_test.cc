@@ -36,6 +36,7 @@ namespace {
 
 using ::testing::ElementsAre;
 using Outcome = AutoshardingAssignmentBuilder::Outcome;
+using Result = AutoshardingAssignmentBuilder::Result;
 
 // Matches an AutoshardingAssignment::Slice.
 auto SliceIs(std::string end_key, std::vector<size_t> endpoints,
@@ -101,8 +102,7 @@ class AutoshardingAssignmentBuilderTest : public ::testing::Test {
 
 TEST_F(AutoshardingAssignmentBuilderTest, SingleSliceCoversKeyspace) {
   AddChunk({{"", std::nullopt, {0, 1}}}, {"host0", "host1"});
-  auto result =
-      builder_.Build(/*generation=*/1, /*last_accepted_generation=*/0);
+  Result result = builder_.Build(/*generation=*/1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message, "");
   ASSERT_TRUE(result.assignment.has_value());
@@ -113,7 +113,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, SingleSliceCoversKeyspace) {
 
 TEST_F(AutoshardingAssignmentBuilderTest, MissingSliceCoversKeyspace) {
   AddChunk({{"", std::nullopt, {0}, /*has_slice=*/false}}, {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message, "");
   ASSERT_TRUE(result.assignment.has_value());
@@ -122,7 +122,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, MissingSliceCoversKeyspace) {
 
 TEST_F(AutoshardingAssignmentBuilderTest, SlicesAreSorted) {
   AddChunk({{"m", std::nullopt, {1}}, {"", "m", {0}}}, {"host0", "host1"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message, "");
   ASSERT_TRUE(result.assignment.has_value());
@@ -136,7 +136,7 @@ TEST_F(AutoshardingAssignmentBuilderTest,
   // chunks.
   AddChunk({{"", "m", {2}}}, {"host0"});
   AddChunk({{"m", std::nullopt, {0}}}, {"host1", "host2"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   ASSERT_TRUE(result.assignment.has_value());
   EXPECT_THAT(result.assignment->endpoint_names,
@@ -147,7 +147,7 @@ TEST_F(AutoshardingAssignmentBuilderTest,
 
 TEST_F(AutoshardingAssignmentBuilderTest, DuplicateEndpointIndicesAreKept) {
   AddChunk({{"", std::nullopt, {0, 0}}}, {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   ASSERT_TRUE(result.assignment.has_value());
   EXPECT_THAT(result.assignment->slices,
@@ -157,7 +157,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, DuplicateEndpointIndicesAreKept) {
 TEST_F(AutoshardingAssignmentBuilderTest, EmptyEndpointListDisablesFallback) {
   AddChunk({{"", "a", {}}, {"a", "b", {0}}, {"b", std::nullopt, {}}},
            {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message, "");
   ASSERT_TRUE(result.assignment.has_value());
@@ -169,7 +169,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, EmptyEndpointListDisablesFallback) {
 TEST_F(AutoshardingAssignmentBuilderTest, GapsAreFilled) {
   // Gaps at the start, in the middle, and at the end of the keyspace.
   AddChunk({{"b", "c", {0}}, {"d", "e", {0}}}, {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message, "encountered 3 gap(s) in the assignment");
   ASSERT_TRUE(result.assignment.has_value());
@@ -181,6 +181,8 @@ TEST_F(AutoshardingAssignmentBuilderTest, GapsAreFilled) {
 
 TEST_F(AutoshardingAssignmentBuilderTest, InvalidSlicesBecomeGaps) {
   AddChunk({{"", "b", {0}},
+            // Explicit empty end_key is not +infinity.
+            {"", "", {0}},
             // start_key not less than end_key.
             {"c", "c", {0}},
             // endpoint_index out of range.
@@ -189,10 +191,10 @@ TEST_F(AutoshardingAssignmentBuilderTest, InvalidSlicesBecomeGaps) {
             {"c", "d", {-1}},
             {"d", std::nullopt, {0}}},
            {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message,
-            "1 slice(s) with start_key >= end_key; "
+            "2 slice(s) with start_key >= end_key; "
             "2 slice(s) with invalid endpoint indices; "
             "encountered 1 gap(s) in the assignment");
   ASSERT_TRUE(result.assignment.has_value());
@@ -209,7 +211,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, LongKeysAreDropped) {
             {"", kLongEndKey, {0}},
             {kMaxLengthKey, std::nullopt, {0}}},
            {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message,
             "1 slice(s) with start_key longer than 512 bytes; "
@@ -225,13 +227,31 @@ TEST_F(AutoshardingAssignmentBuilderTest, OverlappingSlicesAreAllDropped) {
   // Both slices of the overlapping pair are dropped.
   AddChunk({{"", "m", {0}}, {"k", "z", {1}}, {"z", std::nullopt, {1}}},
            {"host0", "host1"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message,
             "2 overlapping slices; encountered 1 gap(s) in the assignment");
   ASSERT_TRUE(result.assignment.has_value());
   EXPECT_THAT(result.assignment->slices,
               ElementsAre(SliceIs("z", {}, false), SliceIs("", {1}, false)));
+}
+
+TEST_F(AutoshardingAssignmentBuilderTest,
+       ChainedOverlappingSlicesAreAllDropped) {
+  // The third slice overlaps the second slice, which overlaps the first
+  // slice, even though the third slice does not overlap the first slice.
+  AddChunk({{"a", "d", {0}},
+            {"c", "f", {0}},
+            {"e", "h", {0}},
+            {"h", std::nullopt, {0}}},
+           {"host0"});
+  Result result = builder_.Build(1);
+  EXPECT_EQ(result.outcome, Outcome::kAccepted);
+  EXPECT_EQ(result.error_message,
+            "3 overlapping slices; encountered 1 gap(s) in the assignment");
+  ASSERT_TRUE(result.assignment.has_value());
+  EXPECT_THAT(result.assignment->slices,
+              ElementsAre(SliceIs("h", {}, false), SliceIs("", {0}, false)));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, ContainedSlicesAreAllDropped) {
@@ -241,7 +261,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, ContainedSlicesAreAllDropped) {
             {"d", "e", {0}},
             {"z", std::nullopt, {0}}},
            {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message,
             "3 overlapping slices; encountered 1 gap(s) in the assignment");
@@ -252,11 +272,24 @@ TEST_F(AutoshardingAssignmentBuilderTest, ContainedSlicesAreAllDropped) {
 
 TEST_F(AutoshardingAssignmentBuilderTest, SlicesWithSameStartKeyOverlap) {
   AddChunk({{"", "m", {0}}, {"", std::nullopt, {0}}}, {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kRejected);
   EXPECT_EQ(result.error_message,
             "no valid slice assignments in generation 1: 2 overlapping slices");
   EXPECT_FALSE(result.assignment.has_value());
+}
+
+TEST_F(AutoshardingAssignmentBuilderTest,
+       InfiniteEndKeyBeforeLaterSliceOverlaps) {
+  AddChunk({{"", "d", {0}}, {"d", std::nullopt, {0}}, {"m", "z", {0}}},
+           {"host0"});
+  Result result = builder_.Build(1);
+  EXPECT_EQ(result.outcome, Outcome::kAccepted);
+  EXPECT_EQ(result.error_message,
+            "2 overlapping slices; encountered 1 gap(s) in the assignment");
+  ASSERT_TRUE(result.assignment.has_value());
+  EXPECT_THAT(result.assignment->slices,
+              ElementsAre(SliceIs("d", {0}, false), SliceIs("", {}, false)));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, InvalidSliceDoesNotCauseOverlap) {
@@ -264,7 +297,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, InvalidSliceDoesNotCauseOverlap) {
   // the overlap check, and the other slices are kept.
   AddChunk({{"", "m", {0}}, {"k", "z", {1}}, {"m", std::nullopt, {0}}},
            {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message, "1 slice(s) with invalid endpoint indices");
   ASSERT_TRUE(result.assignment.has_value());
@@ -273,7 +306,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, InvalidSliceDoesNotCauseOverlap) {
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, NoChunksIsRejected) {
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kRejected);
   EXPECT_EQ(result.error_message,
             "received metadata with generation 1, but no chunks were received");
@@ -282,7 +315,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, NoChunksIsRejected) {
 
 TEST_F(AutoshardingAssignmentBuilderTest, NoSlicesIsRejected) {
   AddChunk({}, {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kRejected);
   EXPECT_EQ(result.error_message,
             "no valid slice assignments in generation 1: no slice assignments "
@@ -292,7 +325,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, NoSlicesIsRejected) {
 
 TEST_F(AutoshardingAssignmentBuilderTest, AllSlicesInvalidIsRejected) {
   AddChunk({{"b", "a", {0}}}, {"host0"});
-  auto result = builder_.Build(1, 0);
+  Result result = builder_.Build(1);
   EXPECT_EQ(result.outcome, Outcome::kRejected);
   EXPECT_EQ(result.error_message,
             "no valid slice assignments in generation 1: 1 slice(s) with "
@@ -302,8 +335,9 @@ TEST_F(AutoshardingAssignmentBuilderTest, AllSlicesInvalidIsRejected) {
 
 TEST_F(AutoshardingAssignmentBuilderTest, StaleGeneration) {
   AddChunk({{"", std::nullopt, {0}}}, {"host0"});
-  auto result =
-      builder_.Build(/*generation=*/5, /*last_accepted_generation=*/5);
+  EXPECT_EQ(builder_.Build(5).outcome, Outcome::kAccepted);
+  AddChunk({{"", std::nullopt, {0}}}, {"host0"});
+  Result result = builder_.Build(5);
   EXPECT_EQ(result.outcome, Outcome::kStale);
   EXPECT_EQ(result.error_message,
             "received generation 5 is not greater than the latest generation "
@@ -313,36 +347,45 @@ TEST_F(AutoshardingAssignmentBuilderTest, StaleGeneration) {
 
 TEST_F(AutoshardingAssignmentBuilderTest, ZeroGenerationIsStale) {
   AddChunk({{"", std::nullopt, {0}}}, {"host0"});
-  auto result =
-      builder_.Build(/*generation=*/0, /*last_accepted_generation=*/0);
+  Result result = builder_.Build(0);
   EXPECT_EQ(result.outcome, Outcome::kStale);
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, BuildClearsChunks) {
   AddChunk({{"", std::nullopt, {0}}}, {"host0"});
-  EXPECT_EQ(builder_.Build(1, 0).outcome, Outcome::kAccepted);
-  // A second Build() with no new chunks sees no chunks.
-  auto result = builder_.Build(2, 1);
+  EXPECT_EQ(builder_.Build(1).outcome, Outcome::kAccepted);
+  // A second Build() with no new chunks sees no chunks and does not advance
+  // the last accepted generation.
+  Result result = builder_.Build(2);
   EXPECT_EQ(result.outcome, Outcome::kRejected);
   EXPECT_EQ(result.error_message,
             "received metadata with generation 2, but no chunks were received");
+  AddChunk({{"", std::nullopt, {0}}}, {"host0"});
+  EXPECT_EQ(builder_.Build(2).outcome, Outcome::kAccepted);
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, StaleBuildClearsChunks) {
   AddChunk({{"", std::nullopt, {0}}}, {"host0"});
-  EXPECT_EQ(builder_.Build(1, 1).outcome, Outcome::kStale);
+  EXPECT_EQ(builder_.Build(1).outcome, Outcome::kAccepted);
+  AddChunk({{"", std::nullopt, {0}}}, {"host0"});
+  EXPECT_EQ(builder_.Build(1).outcome, Outcome::kStale);
   AddChunk({{"", std::nullopt, {0}}}, {"host1"});
-  auto result = builder_.Build(2, 1);
+  Result result = builder_.Build(2);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   ASSERT_TRUE(result.assignment.has_value());
   EXPECT_THAT(result.assignment->endpoint_names, ElementsAre("host1"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, ResetDiscardsChunks) {
+  AddChunk({{"", std::nullopt, {0}}}, {"host0"});
+  EXPECT_EQ(builder_.Build(1).outcome, Outcome::kAccepted);
   AddChunk({{"b", "a", {0}}}, {"host0"});
   builder_.Reset();
+  // Reset() preserves the last accepted generation.
   AddChunk({{"", std::nullopt, {0}}}, {"host1"});
-  auto result = builder_.Build(1, 0);
+  EXPECT_EQ(builder_.Build(1).outcome, Outcome::kStale);
+  AddChunk({{"", std::nullopt, {0}}}, {"host1"});
+  Result result = builder_.Build(2);
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   // The issue in the discarded chunk is not reported.
   EXPECT_EQ(result.error_message, "");

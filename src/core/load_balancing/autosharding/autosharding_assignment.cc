@@ -31,30 +31,8 @@ namespace grpc_core {
 
 namespace {
 
-// Appends a slice that does not overlap any slice already in assignment.
-// cursor is the start of the key range that is not yet covered; it is not
-// set when the covered range already reaches +infinity.  If there is a gap
-// between cursor and start_key, fills it with a slice that has no endpoints
-// and increments num_gaps.  end_key must outlive cursor.
-void AppendSlice(std::string start_key,
-                 const std::optional<std::string>& end_key,
-                 std::vector<size_t> endpoints,
-                 std::optional<absl::string_view>* cursor, size_t* num_gaps,
-                 AutoshardingAssignment* assignment) {
-  if (start_key > **cursor) {
-    assignment->slices.push_back({std::move(start_key), {}, false});
-    ++*num_gaps;
-  }
-  // An explicitly empty endpoint list disables fallback for this slice.
-  const bool fallback_disabled = endpoints.empty();
-  assignment->slices.push_back({end_key.value_or(std::string()),
-                                std::move(endpoints), fallback_disabled});
-  if (end_key.has_value()) {
-    *cursor = *end_key;
-  } else {
-    cursor->reset();
-  }
-}
+// Maximum length of a slice key, as stated in the Slice message.
+constexpr size_t kMaxKeyLength = 512;
 
 }  // namespace
 
@@ -102,11 +80,17 @@ void AutoshardingAssignmentBuilder::AddChunk(
     const google_cloud_autosharding_v1_PerSliceEndpointState* const* endpoints =
         google_cloud_autosharding_v1_SliceAssignment_endpoints(
             slice_assignments[i], &num_endpoints);
-    pending.endpoint_indices.reserve(num_endpoints);
+    pending.endpoints.reserve(num_endpoints);
     for (size_t j = 0; j < num_endpoints; ++j) {
-      pending.endpoint_indices.push_back(
+      int32_t index =
           google_cloud_autosharding_v1_PerSliceEndpointState_endpoint_index(
-              endpoints[j]));
+              endpoints[j]);
+      if (index < 0) break;
+      pending.endpoints.push_back(static_cast<size_t>(index));
+    }
+    if (pending.endpoints.size() != num_endpoints) {
+      ++issue_counts_.invalid_endpoint_index;
+      continue;
     }
     slices_.push_back(std::move(pending));
   }
@@ -130,7 +114,7 @@ void AutoshardingAssignmentBuilder::Reset() {
   issue_counts_ = IssueCounts();
 }
 
-std::vector<std::string> AutoshardingAssignmentBuilder::IssueMessages(
+std::string AutoshardingAssignmentBuilder::IssueMessages(
     const IssueCounts& counts, size_t num_gaps) {
   std::vector<std::string> messages;
   if (counts.long_start_key > 0) {
@@ -158,11 +142,11 @@ std::vector<std::string> AutoshardingAssignmentBuilder::IssueMessages(
     messages.push_back(
         absl::StrCat("encountered ", num_gaps, " gap(s) in the assignment"));
   }
-  return messages;
+  return absl::StrJoin(messages, "; ");
 }
 
 AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
-    int64_t generation, int64_t last_accepted_generation) {
+    int64_t generation) {
   // Take the pending chunks, so that the builder is empty for the next
   // assignment, whatever the outcome.
   const size_t num_chunks = num_chunks_;
@@ -172,11 +156,11 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
   IssueCounts counts = issue_counts_;
   Reset();
   // Check the generation.
-  if (generation <= last_accepted_generation) {
+  if (generation <= last_accepted_generation_) {
     return {Outcome::kStale,
             absl::StrCat("received generation ", generation,
                          " is not greater than the latest generation ",
-                         last_accepted_generation),
+                         last_accepted_generation_),
             std::nullopt};
   }
   if (num_chunks == 0) {
@@ -186,10 +170,10 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
             std::nullopt};
   }
   // Sort the slices by start_key.  The server can send them in any order.
-  std::stable_sort(slices.begin(), slices.end(),
-                   [](const PendingSlice& a, const PendingSlice& b) {
-                     return a.start_key < b.start_key;
-                   });
+  std::sort(slices.begin(), slices.end(),
+            [](const PendingSlice& a, const PendingSlice& b) {
+              return a.start_key < b.start_key;
+            });
   // Walk the slices in key order.  Drop each slice with an invalid
   // endpoint index.  Drop every slice that overlaps another slice: a slice
   // overlaps an earlier slice if it starts before the largest end_key seen
@@ -197,31 +181,38 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
   // it ends.  So a slice is appended only when the next slice is known not
   // to overlap it; until then, it is held as the candidate.
   AutoshardingAssignment assignment;
-  // Start of the key range that is not yet covered.  Points into slices,
-  // which is not modified while the view is in use.
-  std::optional<absl::string_view> cursor = absl::string_view();
   size_t num_gaps = 0;
-  size_t num_usable_slices = 0;
   PendingSlice* candidate = nullptr;
-  std::vector<size_t> candidate_endpoints;
-  // Largest end_key seen so far, and whether any slice reaches +infinity.
-  // max_end_key points into slices, like cursor.
-  absl::string_view max_end_key;
-  bool seen_infinite_end_key = false;
+  auto append_candidate = [&]() {
+    absl::string_view prev_end_key = assignment.slices.empty()
+                                         ? absl::string_view()
+                                         : assignment.slices.back().end_key;
+    if (candidate->start_key > prev_end_key) {
+      assignment.slices.push_back({std::move(candidate->start_key), {}, false});
+      ++num_gaps;
+    }
+    // An explicitly empty endpoint list disables fallback for this slice.
+    const bool fallback_disabled = candidate->endpoints.empty();
+    assignment.slices.push_back(
+        {std::move(candidate->end_key).value_or(std::string()),
+         std::move(candidate->endpoints), fallback_disabled});
+  };
+  // Largest end_key seen so far; not set for +infinity.  Points into
+  // slices, which is not modified while the view is in use.
+  std::optional<absl::string_view> max_end_key = absl::string_view();
   for (PendingSlice& slice : slices) {
-    std::vector<size_t> endpoints;
-    endpoints.reserve(slice.endpoint_indices.size());
-    for (int32_t index : slice.endpoint_indices) {
-      if (index < 0 || static_cast<size_t>(index) >= endpoint_names.size()) {
+    bool has_invalid_endpoint = false;
+    for (size_t index : slice.endpoints) {
+      if (index >= endpoint_names.size()) {
+        has_invalid_endpoint = true;
         break;
       }
-      endpoints.push_back(static_cast<size_t>(index));
     }
-    if (endpoints.size() != slice.endpoint_indices.size()) {
+    if (has_invalid_endpoint) {
       ++counts.invalid_endpoint_index;
       continue;
     }
-    if (seen_infinite_end_key || slice.start_key < max_end_key) {
+    if (!max_end_key.has_value() || slice.start_key < *max_end_key) {
       ++counts.overlapping;
       // While there is a candidate, the largest end_key seen so far is the
       // candidate's end_key, so this slice overlaps the candidate too.
@@ -229,48 +220,38 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
         ++counts.overlapping;
         candidate = nullptr;
       }
+      if (!slice.end_key.has_value()) {
+        max_end_key.reset();
+      } else if (max_end_key.has_value() && *slice.end_key > *max_end_key) {
+        max_end_key = *slice.end_key;
+      }
     } else {
       if (candidate != nullptr) {
-        AppendSlice(std::move(candidate->start_key), candidate->end_key,
-                    std::move(candidate_endpoints), &cursor, &num_gaps,
-                    &assignment);
-        ++num_usable_slices;
+        append_candidate();
       }
       candidate = &slice;
-      candidate_endpoints = std::move(endpoints);
-    }
-    if (!slice.end_key.has_value()) {
-      seen_infinite_end_key = true;
-    } else if (*slice.end_key > max_end_key) {
-      max_end_key = *slice.end_key;
+      max_end_key = slice.end_key;
     }
   }
   if (candidate != nullptr) {
-    AppendSlice(std::move(candidate->start_key), candidate->end_key,
-                std::move(candidate_endpoints), &cursor, &num_gaps,
-                &assignment);
-    ++num_usable_slices;
+    append_candidate();
   }
-  if (num_usable_slices == 0) {
-    absl::string_view reason = "no slice assignments received";
-    std::string issues;
-    if (num_slice_assignments > 0) {
-      issues = absl::StrJoin(IssueMessages(counts, num_gaps), "; ");
-      reason = issues;
-    }
+  if (assignment.slices.empty()) {
     return {Outcome::kRejected,
-            absl::StrCat("no valid slice assignments in generation ",
-                         generation, ": ", reason),
+            absl::StrCat(
+                "no valid slice assignments in generation ", generation, ": ",
+                num_slice_assignments == 0 ? "no slice assignments received"
+                                           : IssueMessages(counts, num_gaps)),
             std::nullopt};
   }
   // Fill the gap at the end of the keyspace, if any.
-  if (cursor.has_value()) {
+  if (!assignment.slices.back().end_key.empty()) {
     assignment.slices.push_back({std::string(), {}, false});
     ++num_gaps;
   }
   assignment.endpoint_names = std::move(endpoint_names);
-  return {Outcome::kAccepted,
-          absl::StrJoin(IssueMessages(counts, num_gaps), "; "),
+  last_accepted_generation_ = generation;
+  return {Outcome::kAccepted, IssueMessages(counts, num_gaps),
           std::move(assignment)};
 }
 

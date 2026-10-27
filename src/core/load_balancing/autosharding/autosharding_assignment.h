@@ -87,9 +87,7 @@ class AutoshardingAssignmentBuilder final {
   // Builds the assignment from the chunks added since the last call to
   // Build() or Reset(), and then clears those chunks.
   // generation is the value from the AssignmentMetadata message.
-  // last_accepted_generation is the generation of the last accepted
-  // assignment, or 0 if no assignment was accepted yet.
-  Result Build(int64_t generation, int64_t last_accepted_generation);
+  Result Build(int64_t generation);
 
   // Discards all chunks added since the last call to Build().  Call this
   // when the stream restarts in the middle of an assignment.
@@ -100,7 +98,7 @@ class AutoshardingAssignmentBuilder final {
     std::string start_key;
     // Not set for +infinity.
     std::optional<std::string> end_key;
-    std::vector<int32_t> endpoint_indices;
+    std::vector<size_t> endpoints;
   };
 
   // Number of slices dropped for each kind of issue.
@@ -112,13 +110,10 @@ class AutoshardingAssignmentBuilder final {
     size_t overlapping = 0;
   };
 
-  // Maximum length of a slice key, as stated in the Slice message.
-  static constexpr size_t kMaxKeyLength = 512;
+  // Formats the issues as a semicolon-separated string.
+  static std::string IssueMessages(const IssueCounts& counts, size_t num_gaps);
 
-  // Formats the issues as a list of messages.
-  static std::vector<std::string> IssueMessages(const IssueCounts& counts,
-                                                size_t num_gaps);
-
+  int64_t last_accepted_generation_ = 0;
   size_t num_chunks_ = 0;
   size_t num_slice_assignments_ = 0;
   // Slices that passed the checks that do not need the complete endpoint
