@@ -870,6 +870,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/google/api/field_behavior.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/api/http.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/api/http.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/api/http.upb_minitable.h" role="src" />
@@ -924,6 +927,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h" role="src" />
@@ -1838,6 +1844,8 @@
     <file baseinstalldir="/" name="src/core/load_balancing/address_filtering.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/autosharding/autosharding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/autosharding/autosharding.h" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/autosharding/autosharding_assignment.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/autosharding/autosharding_assignment.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_parser.h" role="src" />

@@ -8319,6 +8319,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_policy_autosharding_assignment",
+    srcs = [
+        "load_balancing/autosharding/autosharding_assignment.cc",
+    ],
+    hdrs = [
+        "load_balancing/autosharding/autosharding_assignment.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "upb_utils",
+        "//:autosharding_upb",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_autosharding",
     srcs = [
         "load_balancing/autosharding/autosharding.cc",
@@ -8339,6 +8356,7 @@ grpc_cc_library(
         "connectivity_state",
         "delegating_helper",
         "grpc_check",
+        "grpc_lb_policy_autosharding_assignment",
         "grpc_lb_policy_pick_first",
         "json",
         "json_args",

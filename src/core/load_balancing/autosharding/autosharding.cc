@@ -34,6 +34,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/autosharding/autosharding_assignment.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
@@ -82,40 +83,6 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
  private:
   class AutoShardingEndpoint;
 
-  // A complete assignment received from the sharding service.
-  class Assignment {
-   public:
-    // A key range and its assigned endpoints.
-    // Slices partition [-infinity, +infinity) contiguously without gaps.
-    // The first slice implicitly starts at -infinity; subsequent slices
-    // implicitly start at the previous slice's end_key.
-    struct Slice {
-      // Exclusive end key.  Empty for +infinity.
-      std::string end_key;
-      // Indices into Assignment::endpoint_names_.
-      std::vector<size_t> endpoints;
-    };
-
-    Assignment(std::vector<Slice> slices,
-               std::vector<std::string> endpoint_names)
-        : slices_(std::move(slices)),
-          endpoint_names_(std::move(endpoint_names)) {}
-
-    // Slices covering the keyspace.  The autosharding client validates that
-    // they cover [-infinity, +infinity) with strictly increasing end keys,
-    // and that all endpoint indices are valid, before reporting the
-    // assignment to the LB policy.
-    const std::vector<Slice>& slices() const { return slices_; }
-    // Complete list of endpoint names in the assignment.
-    const std::vector<std::string>& endpoint_names() const {
-      return endpoint_names_;
-    }
-
-   private:
-    std::vector<Slice> slices_;
-    std::vector<std::string> endpoint_names_;
-  };
-
   //
   // SliceMap
   //
@@ -132,7 +99,7 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
     };
 
     // Populates slices from assignment and endpoint_map.
-    SliceMap(const Assignment& assignment,
+    SliceMap(const AutoshardingAssignment& assignment,
              const std::map<std::string, OrphanablePtr<AutoShardingEndpoint>>&
                  endpoint_map);
 
@@ -289,7 +256,8 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   // non-OK status if no valid assignment has been received yet (i.e., an
   // invalid assignment was received, or the initial assignment timer fired
   // before any valid assignment was received).
-  void OnAssignmentReceivedLocked(absl::StatusOr<Assignment> assignment);
+  void OnAssignmentReceivedLocked(
+      absl::StatusOr<AutoshardingAssignment> assignment);
 
   std::map<std::string, OrphanablePtr<AutoShardingEndpoint>> endpoint_map_;
   EndpointAddressesList endpoints_;
@@ -298,7 +266,7 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   // queue picks and report CONNECTING instead of using this status, so this
   // placeholder message must never reach a picker.  Fix this when the
   // autosharding client is implemented.
-  absl::StatusOr<Assignment> assignment_ =
+  absl::StatusOr<AutoshardingAssignment> assignment_ =
       absl::UnavailableError("invalid_value");
   RefCountedPtr<SliceMap> slice_map_;
   RefCountedPtr<AutoShardingLbConfig> config_;
@@ -580,18 +548,18 @@ void AutoshardingLbPolicy::AutoShardingEndpoint::OnStateUpdate(
 //
 
 AutoshardingLbPolicy::SliceMap::SliceMap(
-    const Assignment& assignment,
+    const AutoshardingAssignment& assignment,
     const std::map<std::string, OrphanablePtr<AutoShardingEndpoint>>&
         endpoint_map) {
   // Build entries for each slice in the assignment.
-  slices_.reserve(assignment.slices().size());
-  for (const auto& slice : assignment.slices()) {
+  slices_.reserve(assignment.slices.size());
+  for (const auto& slice : assignment.slices) {
     Entry entry;
     entry.end_key = slice.end_key;
     entry.endpoints.reserve(slice.endpoints.size());
     for (size_t idx : slice.endpoints) {
-      GRPC_CHECK_LT(idx, assignment.endpoint_names().size());
-      auto it = endpoint_map.find(assignment.endpoint_names()[idx]);
+      GRPC_CHECK_LT(idx, assignment.endpoint_names.size());
+      auto it = endpoint_map.find(assignment.endpoint_names[idx]);
       if (it != endpoint_map.end()) {
         entry.endpoints.push_back(it->second->index());
       }
@@ -729,7 +697,7 @@ void AutoshardingLbPolicy::CreateAutoshardingClientLocked() {
 }
 
 void AutoshardingLbPolicy::OnAssignmentReceivedLocked(
-    absl::StatusOr<Assignment> assignment) {
+    absl::StatusOr<AutoshardingAssignment> assignment) {
   if (shutdown_) return;
   assignment_ = std::move(assignment);
   // Build a new SliceMap.  If we have no assignment, we reset it.

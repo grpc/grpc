@@ -529,6 +529,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "autosharding_assignment_test",
+    srcs = ["autosharding_assignment_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:autosharding_upb",
+        "//src/core:grpc_lb_policy_autosharding_assignment",
+        "//src/core:upb_utils",
+        "//test/core/test_util:grpc_test_util",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_test(
     name = "autosharding_config_test",
     srcs = ["autosharding_config_test.cc"],
     external_deps = [

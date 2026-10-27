@@ -644,6 +644,8 @@ libs:
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/field_behavior.upb.h
+  - src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h
   - src/core/ext/upb-gen/google/api/http.upb.h
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/api/httpbody.upb.h
@@ -678,6 +680,8 @@ libs:
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.h
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -1174,6 +1178,7 @@ libs:
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/autosharding/autosharding.h
+  - src/core/load_balancing/autosharding/autosharding_assignment.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -1705,6 +1710,7 @@ libs:
   - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -1722,6 +1728,7 @@ libs:
   - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -2138,6 +2145,7 @@ libs:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
   - src/core/load_balancing/autosharding/autosharding.cc
+  - src/core/load_balancing/autosharding/autosharding_assignment.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -2639,6 +2647,8 @@ libs:
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
+  - src/core/ext/upb-gen/google/api/field_behavior.upb.h
+  - src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.h
   - src/core/ext/upb-gen/google/api/http.upb.h
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
@@ -2667,6 +2677,8 @@ libs:
   - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.h
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb.h
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -2935,6 +2947,7 @@ libs:
   - src/core/lib/transport/transport_fwd.h
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/autosharding/autosharding.h
+  - src/core/load_balancing/autosharding/autosharding_assignment.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -3196,6 +3209,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
+  - src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -3210,6 +3224,7 @@ libs:
   - src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   - src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
+  - src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -3427,6 +3442,7 @@ libs:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/address_filtering.cc
   - src/core/load_balancing/autosharding/autosharding.cc
+  - src/core/load_balancing/autosharding/autosharding_assignment.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -6484,6 +6500,17 @@ targets:
   - grpc++
   - grpc_authorization_provider
   - grpc_test_util
+- name: autosharding_assignment_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/load_balancing/autosharding_assignment_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: autosharding_config_test
   gtest: true
   build: test
