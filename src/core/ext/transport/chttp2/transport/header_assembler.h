@@ -54,10 +54,6 @@ namespace http2 {
 
 #define ASSEMBLER_LOG DVLOG(3)
 
-constexpr absl::string_view kAssemblerHpackError =
-    "RFC9113 : A decoding error in a field block MUST be treated as a "
-    "connection error of type COMPRESSION_ERROR.";
-
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
 // A complete field section (which contains our gRPC Metadata) consists of

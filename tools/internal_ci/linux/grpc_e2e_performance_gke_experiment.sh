@@ -233,6 +233,7 @@ fi
 # IMPORTANT: Scenario names are case-sensitive.
 declare -a disabledTests8core=(
   cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_insecure
+  cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_secure
 )
 declare -a disabledTests32core=()
 

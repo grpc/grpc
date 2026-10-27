@@ -731,6 +731,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     : ep(std::move(endpoint)),
       peer_string(
           grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep.get()))),
+      local_address_string(grpc_core::Slice::FromCopiedString(
+          grpc_endpoint_get_local_address(ep.get()))),
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner()),
@@ -979,10 +981,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->ep.reset();
   }
   t->MaybeNotifyOnReceiveSettingsLocked(error);
-  if (t->notify_on_close != nullptr) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_close, error);
-    t->notify_on_close = nullptr;
-  }
+  t->MaybeNotifyOnCloseLocked();
 }
 
 #ifndef NDEBUG
@@ -2328,6 +2327,12 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
     s->recv_initial_metadata->Set(grpc_core::PeerString(),
                                   t->peer_string.Ref());
+    // The local address is currently only propagated on the server side.
+    // TODO(b/568493863): Propagate the local address on the client side too.
+    if (!t->is_client) {
+      s->recv_initial_metadata->Set(grpc_core::LocalAddressString(),
+                                    t->local_address_string.Ref());
+    }
     // If we didn't receive initial metadata from the wire and instead faked a
     // status (due to stream cancellations for example), let upper layers know
     // that trailing metadata is immediately available.
@@ -3593,7 +3598,7 @@ void grpc_chttp2_transport_start_reading(
     absl::AnyInvocable<void(absl::StatusOr<uint32_t>)>
         notify_on_receive_settings,
     grpc_pollset_set* interested_parties_until_recv_settings,
-    grpc_closure* notify_on_close) {
+    absl::AnyInvocable<void()> notify_on_close) {
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
@@ -3604,19 +3609,17 @@ void grpc_chttp2_transport_start_reading(
                              notify_on_receive_settings =
                                  std::move(notify_on_receive_settings),
                              interested_parties_until_recv_settings,
-                             notify_on_close](grpc_error_handle) mutable {
+                             notify_on_close = std::move(notify_on_close)](
+                                grpc_error_handle) mutable {
         t->interested_parties_until_recv_settings =
             interested_parties_until_recv_settings;
         t->notify_on_receive_settings = std::move(notify_on_receive_settings);
+        t->notify_on_close = std::move(notify_on_close);
         if (!t->closed_with_error.ok()) {
           t->MaybeNotifyOnReceiveSettingsLocked(t->closed_with_error);
-          if (notify_on_close != nullptr) {
-            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_close,
-                                    t->closed_with_error);
-          }
+          t->MaybeNotifyOnCloseLocked();
           return;
         }
-        t->notify_on_close = notify_on_close;
         read_action_locked(std::move(t), absl::OkStatus());
       }),
       absl::OkStatus());
@@ -3757,4 +3760,16 @@ void grpc_chttp2_transport::MaybeNotifyOnReceiveSettingsLocked(
         // closures on the ExecCtx.
         notify_on_receive_settings = nullptr;
       });
+}
+
+void grpc_chttp2_transport::MaybeNotifyOnCloseLocked() {
+  if (notify_on_close == nullptr) return;
+  event_engine->Run([notify_on_close = std::move(notify_on_close)]() mutable {
+    grpc_core::ExecCtx exec_ctx;
+    notify_on_close();
+    // Ensure the captured callback is destroyed while ExecCtx is still
+    // alive. Its destructor may trigger work that needs to schedule
+    // closures on the ExecCtx.
+    notify_on_close = nullptr;
+  });
 }

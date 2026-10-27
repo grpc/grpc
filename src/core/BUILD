@@ -4456,7 +4456,6 @@ grpc_cc_library(
     deps = [
         "dual_ref_counted",
         "filter_chain",
-        "grpc_service_config",
         "metadata_batch",
         "ref_counted",
         "service_config_parser",
@@ -4489,7 +4488,6 @@ grpc_cc_library(
         "event_engine_context",
         "grpc_check",
         "grpc_server_config_selector",
-        "grpc_service_config",
         "latent_see",
         "metadata_batch",
         "observable",
@@ -5721,11 +5719,9 @@ grpc_cc_library(
     name = "grpc_rbac_filter",
     srcs = [
         "ext/filters/rbac/rbac_filter.cc",
-        "ext/filters/rbac/rbac_service_config_parser.cc",
     ],
     hdrs = [
         "ext/filters/rbac/rbac_filter.h",
-        "ext/filters/rbac/rbac_service_config_parser.h",
     ],
     external_deps = [
         "absl/status",
@@ -5743,13 +5739,8 @@ grpc_cc_library(
         "grpc_authorization_base",
         "grpc_matchers",
         "grpc_rbac_engine",
-        "grpc_service_config",
-        "json",
-        "json_args",
-        "json_object_loader",
         "latent_see",
         "metadata_batch",
-        "service_config_parser",
         "validation_errors",
         "//:config",
         "//:gpr",
@@ -6668,8 +6659,6 @@ grpc_cc_library(
         "envoy_type_upb",
         "experiment_env_var",
         "grpc_rbac_filter",
-        "json",
-        "json_writer",
         "protobuf_wrappers_upb",
         "upb_utils",
         "validation_errors",
@@ -7681,34 +7670,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_xds_channel_stack_modifier",
-    srcs = [
-        "server/xds_channel_stack_modifier.cc",
-    ],
-    hdrs = [
-        "server/xds_channel_stack_modifier.h",
-    ],
-    external_deps = ["absl/strings"],
-    deps = [
-        "channel_args",
-        "channel_fwd",
-        "channel_init",
-        "channel_stack_type",
-        "ref_counted",
-        "useful",
-        "//:channel_stack_builder",
-        "//:config",
-        "//:gpr_platform",
-        "//:grpc_base",
-        "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "server/xds_server_config_fetcher.cc",
-        "server/xds_server_config_fetcher_legacy.cc",
     ],
     hdrs = ["server/xds_server_config_fetcher.h"],
     external_deps = [
@@ -7727,10 +7691,8 @@ grpc_cc_library(
         "grpc_check",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
-        "grpc_service_config",
         "grpc_sockaddr",
         "grpc_tls_credentials",
-        "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
         "iomgr_fwd",
         "match",
@@ -9809,6 +9771,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "resource_quota_telemetry",
+        "seq",
         "sleep",
         "status_flag",
         "stream_data_queue",
@@ -11762,6 +11725,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lame_channel",
+    srcs = [
+        "client_channel/lame_channel.cc",
+    ],
+    hdrs = [
+        "client_channel/lame_channel.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "event_engine_context",
+        "//:channel",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "metadata_batch",
     srcs = [
         "call/metadata_batch.cc",
@@ -12060,7 +12042,6 @@ grpc_cc_library(
         "1999",
         "channel_args",
         "grpc_check",
-        "if",
         "inter_activity_latch",
         "latch",
         "map",
@@ -12070,6 +12051,7 @@ grpc_cc_library(
         "ping_rate_policy",
         "poll",
         "race",
+        "seq",
         "shared_bit_gen",
         "sleep",
         "time",

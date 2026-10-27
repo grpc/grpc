@@ -70,6 +70,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -711,7 +712,7 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata";
   if (assembler.IsReady()) {
-    ValueOrHttp2Status<ServerMetadataHandle> read_result =
+    ValueOrHttp2Status<ClientMetadataHandle> read_result =
         assembler.ReadMetadata(read_context_.parser(),
                                !read_context_.HeaderHasEndStream(),
                                /*max_header_list_size_soft_limit=*/
@@ -719,7 +720,7 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
                                /*max_header_list_size_hard_limit=*/
                                settings_->acked().max_header_list_size());
     if (read_result.IsOk()) {
-      ServerMetadataHandle metadata = TakeValue(std::move(read_result));
+      ClientMetadataHandle metadata = TakeValue(std::move(read_result));
       // TODO(tjagtap): [PH2][P0] : Might be worth differentiating between
       // initial and trailing metadata based on the number of header frames
       // received.
@@ -746,6 +747,8 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
         GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata "
                                   "SpawnPushServerInitialMetadata";
         metadata->Set(PeerString(), read_context_.peer_string());
+        metadata->Set(LocalAddressString(),
+                      read_context_.local_address_string());
         return IncomingStream(std::move(metadata), read_context_.GetStreamId());
       }
       return Http2Status::Ok();
@@ -1388,8 +1391,9 @@ auto Http2ServerTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
 
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
-      Seq(Map(HandleMetadataAndMessages(stream),
-              [stream = stream.get()](absl::Status&& status) {
+      Seq(
+          Map(HandleMetadataAndMessages(stream),
+              [](absl::Status&& status) {
                 GRPC_HTTP2_SERVER_DLOG
                     << "Http2ServerTransport::CallOutboundLoop "
                        "Completed initial metadata and messages with status: "
@@ -1407,13 +1411,16 @@ auto Http2ServerTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
                          "Received Server Trailing Metadata";
                   return send_trailing_metadata(std::move(metadata));
                 });
-          }));
-}
-
-absl::Status Http2ServerTransport::InitializeStream(
-    GRPC_UNUSED Stream& stream) {
-  GRPC_DCHECK(false) << "Should not be called for server";
-  return absl::OkStatus();
+          },
+          // Do not remove this no-op step. When a Seq step resolves, its
+          // promise, along with everything it captures, is destroyed only when
+          // the Seq moves on to the next step.
+          // Without this step, the previous step's promise, which holds a ref
+          // to `stream` through send_trailing_metadata, would stay alive until
+          // the CallOutboundLoop participant is destroyed, which can race with
+          // ~Http2ServerTransport. With this step, the stream ref is dropped as
+          // soon as send_trailing_metadata resolves.
+          [](absl::Status status) { return status; }));
 }
 
 std::optional<RefCountedPtr<Stream>> Http2ServerTransport::MakeStream(
@@ -1681,14 +1688,17 @@ absl::Status Http2ServerTransport::UpdateAllStreamsWritability() {
 // Ping Keepalive and Goaway
 
 void Http2ServerTransport::MaybeSpawnPingTimeout(
-    std::optional<uint64_t> opaque_data) {
-  if (opaque_data.has_value()) {
-    SpawnGuardedTransportParty(
-        "PingTimeout", [self = RefAsSubclass<Http2ServerTransport>(),
-                        opaque_data = *opaque_data]() {
-          return self->ping_manager_->TimeoutPromise(opaque_data);
-        });
+    std::optional<PingManager::PingTimeoutArgs> ping_timeout_args) {
+  if (!ping_timeout_args.has_value()) {
+    return;
   }
+  SpawnGuardedTransportParty(
+      "PingTimeout",
+      [self = RefAsSubclass<Http2ServerTransport>(),
+       ping_timeout_args = std::move(*ping_timeout_args)]() mutable {
+        return self->ping_manager_->TimeoutPromise(
+            std::move(ping_timeout_args));
+      });
 }
 void Http2ServerTransport::MaybeSpawnDelayedPing(
     std::optional<Duration> delayed_ping_wait) {
@@ -2003,8 +2013,13 @@ void Http2ServerTransport::CloseTransport() {
   settings_->HandleTransportShutdown(event_engine_.get());
 
   if (on_close_callback_ != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, on_close_callback_, absl::OkStatus());
-    on_close_callback_ = nullptr;
+    event_engine_->Run(
+        [on_close_callback = std::move(on_close_callback_)]() mutable {
+          ExecCtx exec_ctx;
+          on_close_callback();
+          // Destroy callback while ExecCtx is in scope.
+          on_close_callback = nullptr;
+        });
   }
 
   transport_party_.reset();
@@ -2135,14 +2150,14 @@ Http2ServerTransport::Http2ServerTransport(
     PromiseEndpoint endpoint, const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine,
     absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings,
-    grpc_closure* on_close_callback)
+    absl::AnyInvocable<void()> on_close_callback)
     : channelz::DataSource(http2::CreateChannelzSocketNode(
           endpoint.GetEventEngineEndpoint(), channel_args)),
       event_engine_(std::move(event_engine)),
       endpoint_(std::move(endpoint)),
       settings_(MakeRefCounted<SettingsPromiseManager>(
           kIsClient, std::move(on_receive_settings))),
-      on_close_callback_(on_close_callback),
+      on_close_callback_(std::move(on_close_callback)),
       is_goaway_received_(false),
       should_reset_ping_clock_(false),
       max_concurrent_streams_overload_protection_(false),
