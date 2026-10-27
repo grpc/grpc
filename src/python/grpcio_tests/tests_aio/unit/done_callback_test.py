@@ -39,8 +39,8 @@ _FAKE_METHOD = "/test/Fake"
 
 class TestClientSideDoneCallback(AioTestBase):
     async def setUp(self):
-        address, self._server = await start_test_server()
-        self._channel = aio.insecure_channel(address)
+        self._server_target, self._server = await start_test_server()
+        self._channel = aio.insecure_channel(self._server_target)
         self._stub = test_pb2_grpc.TestServiceStub(self._channel)
 
     async def tearDown(self):
@@ -126,7 +126,76 @@ class TestClientSideDoneCallback(AioTestBase):
                 break
         self.assertIsNone(call_ref())
 
-    async def test_stream_unary(self):
+    async def test_abandoned_call_with_interceptors_garbage_collected(self):
+        class _TestInterceptor(aio.UnaryStreamClientInterceptor):
+            async def intercept_unary_stream(
+                self, continuation, client_call_details, request
+            ):
+                return await continuation(client_call_details, request)
+
+        channel = aio.insecure_channel(
+            self._server_target, interceptors=[_TestInterceptor()]
+        )
+        stub = test_pb2_grpc.TestServiceStub(channel)
+
+        async def read_one_and_drop():
+            request = messages_pb2.StreamingOutputCallRequest()
+            for _ in range(_NUM_STREAM_RESPONSES):
+                request.response_parameters.append(
+                    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+                )
+            call = stub.StreamingOutputCall(request)
+            call_ref = weakref.ref(call)
+            async for _ in call:
+                return call_ref
+
+        try:
+            call_ref = await read_one_and_drop()
+            for _ in range(50):
+                gc.collect()
+                await asyncio.sleep(0.01)
+                if call_ref() is None:
+                    break
+            self.assertIsNone(call_ref())
+        finally:
+            await channel.close()
+
+    async def test_abandoned_call_with_interceptors_and_callback_garbage_collected(
+        self,
+    ):
+        class _TestInterceptor(aio.UnaryStreamClientInterceptor):
+            async def intercept_unary_stream(
+                self, continuation, client_call_details, request
+            ):
+                return await continuation(client_call_details, request)
+
+        channel = aio.insecure_channel(
+            self._server_target, interceptors=[_TestInterceptor()]
+        )
+        stub = test_pb2_grpc.TestServiceStub(channel)
+
+        async def read_one_and_drop():
+            request = messages_pb2.StreamingOutputCallRequest()
+            for _ in range(_NUM_STREAM_RESPONSES):
+                request.response_parameters.append(
+                    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+                )
+            call = stub.StreamingOutputCall(request)
+            call.add_done_callback(lambda _: None)
+            call_ref = weakref.ref(call)
+            async for _ in call:
+                return call_ref
+
+        try:
+            call_ref = await read_one_and_drop()
+            for _ in range(50):
+                gc.collect()
+                await asyncio.sleep(0.01)
+                if call_ref() is None:
+                    break
+            self.assertIsNone(call_ref())
+        finally:
+            await channel.close()
         payload = messages_pb2.Payload(body=b"\0" * _REQUEST_PAYLOAD_SIZE)
         request = messages_pb2.StreamingInputCallRequest(payload=payload)
 
