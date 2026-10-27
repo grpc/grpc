@@ -635,6 +635,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, SetExportedKeyingMaterialOptions) {
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        SetExportedKeyingMaterialOptionsWithNullLabel) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   ASSERT_DEATH(
       grpc_tls_credentials_options_set_exported_keying_material_options(
@@ -644,6 +645,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        SetExportedKeyingMaterialOptionsWithEmptyLabel) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   ASSERT_DEATH(
       grpc_tls_credentials_options_set_exported_keying_material_options(
@@ -653,6 +655,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        SetExportedKeyingMaterialOptionsWithZeroLength) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   ASSERT_DEATH(
       grpc_tls_credentials_options_set_exported_keying_material_options(
