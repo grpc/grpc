@@ -185,16 +185,13 @@ BaseCallData::~BaseCallData() {
 void BaseCallData::Orphan() { abort(); }
 
 Waker BaseCallData::MakeNonOwningWaker() {
-  if (IsV2NonOwningWakerImplementationEnabled()) {
-    if (handle_ == nullptr) {
-      handle_ = MakeOrphanable<WeakWakerHandle>(this);
-    }
-    handle_->Ref();
-    // The wakeup mask is unused by BaseCallData and WeakWakerHandle, so 0 is
-    // passed as a placeholder.
-    return Waker(handle_.get(), 0);
+  if (handle_ == nullptr) {
+    handle_ = MakeOrphanable<WeakWakerHandle>(this);
   }
-  return MakeOwningWaker();
+  handle_->Ref();
+  // The wakeup mask is unused by BaseCallData and WeakWakerHandle, so 0 is
+  // passed as a placeholder.
+  return Waker(handle_.get(), 0);
 }
 
 Waker BaseCallData::MakeOwningWaker() {
@@ -212,13 +209,7 @@ void BaseCallData::Wakeup(WakeupMask) {
   GRPC_CALL_COMBINER_START(call_combiner_, closure, absl::OkStatus(), "wakeup");
 }
 
-void BaseCallData::WakeupAsync(WakeupMask wakeup_mask) {
-  if (IsV2NonOwningWakerImplementationEnabled()) {
-    Wakeup(wakeup_mask);
-  } else {
-    Crash("not implemented");
-  }
-}
+void BaseCallData::WakeupAsync(WakeupMask wakeup_mask) { Wakeup(wakeup_mask); }
 
 void BaseCallData::Drop(WakeupMask) {
   GRPC_CALL_STACK_UNREF(call_stack_, "waker");
@@ -573,10 +564,8 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
       // while a message is in-flight. This prevents deadlocks where the
       // transport never receives the batch, leaving the RPC hanging for
       // metadata.
-      if (IsV2NonOwningWakerImplementationEnabled()) {
-        GRPC_DCHECK(batch_.is_captured());
-        batch_.CancelWith(StatusFromMetadata(metadata), flusher);
-      }
+      GRPC_DCHECK(batch_.is_captured());
+      batch_.CancelWith(StatusFromMetadata(metadata), flusher);
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
@@ -1338,14 +1327,13 @@ class ClientCallData::PollContext {
                 case RecvInitialMetadata::kCompleteWaitingForPipe:
                   self_->recv_initial_metadata_->state =
                       RecvInitialMetadata::kResponded;
+                  absl::Status status = StatusFromMetadata(*md);
+                  if (status.ok()) status = absl::CancelledError();
                   flusher_->AddClosure(
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      IsV2NonOwningWakerImplementationEnabled() &&
-                              !StatusFromMetadata(*md).ok()
-                          ? StatusFromMetadata(*md)
-                          : absl::CancelledError(),
+                      status,
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
@@ -2387,10 +2375,8 @@ void ServerCallData::Completed(grpc_error_handle error,
         batch->cancel_stream = true;
         batch->payload->cancel_stream.cancel_error = error;
         batch->payload->cancel_stream.tarpit = tarpit_cancellation;
-        if (IsPromiseFilterSendCancelMetadataEnabled()) {
-          batch->payload->cancel_stream.send_trailing_metadata =
-              std::move(trailing_metadata);
-        }
+        batch->payload->cancel_stream.send_trailing_metadata =
+            std::move(trailing_metadata);
         flusher->Resume(batch);
       }
       break;
@@ -2693,11 +2679,13 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
              });
 
       if (auto* nr = p.value_if_ready()) {
-        ServerMetadataHandle md = std::move(nr->value());
-        if (send_initial_metadata_->batch->payload->send_initial_metadata
-                .send_initial_metadata != md.get()) {
-          *send_initial_metadata_->batch->payload->send_initial_metadata
-               .send_initial_metadata = std::move(*md);
+        if (nr->has_value()) {
+          ServerMetadataHandle md = std::move(nr->value());
+          if (send_initial_metadata_->batch->payload->send_initial_metadata
+                  .send_initial_metadata != md.get()) {
+            *send_initial_metadata_->batch->payload->send_initial_metadata
+                 .send_initial_metadata = std::move(*md);
+          }
         }
         send_initial_metadata_->state = SendInitialMetadata::kForwarded;
         poll_ctx.Repoll();
@@ -2732,14 +2720,9 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GRPC_CHECK(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          if (IsPromiseFilterSendCancelMetadataEnabled()) {
-            absl::Status status = StatusFromMetadata(*md);
-            bool tar_pit_set = md->get(GrpcTarPit()).has_value();
-            Completed(std::move(status), std::move(md), tar_pit_set, flusher);
-          } else {
-            Completed(StatusFromMetadata(*md), /*trailing_metadata=*/nullptr,
-                      md->get(GrpcTarPit()).has_value(), flusher);
-          }
+          absl::Status status = StatusFromMetadata(*md);
+          bool tar_pit_set = md->get(GrpcTarPit()).has_value();
+          Completed(std::move(status), std::move(md), tar_pit_set, flusher);
         } break;
         case SendTrailingState::kCancelled:
           // Nothing to do.

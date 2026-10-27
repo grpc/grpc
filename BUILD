@@ -1916,6 +1916,7 @@ grpc_cc_library(
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
         "//src/core:grpc_check",
+        "//src/core:lame_channel",
         "//src/core:stats_data",
     ],
 )
@@ -4999,6 +5000,7 @@ grpc_cc_library(
         "stats",
         "//src/core:decode_huff",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:match",

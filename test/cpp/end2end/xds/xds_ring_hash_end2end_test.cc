@@ -459,8 +459,6 @@ TEST_P(RingHashTest, HeaderHashingWithRegexRewrite) {
 }
 
 TEST_P(RingHashTest, HashKeysInEds) {
-  grpc_core::testing::ScopedEnvVar env(
-      "GRPC_XDS_ENDPOINT_HASH_KEY_BACKWARD_COMPAT", "false");
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -537,6 +535,8 @@ TEST_P(RingHashTest, HashKeysInEds) {
 }
 
 TEST_P(RingHashTest, HashKeysInEdsNotEnabled) {
+  grpc_core::testing::ScopedEnvVar env(
+      "GRPC_XDS_ENDPOINT_HASH_KEY_BACKWARD_COMPAT", "true");
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
