@@ -24,13 +24,14 @@ namespace grpc_core {
 // TODO(roth): Consider moving registries from bootstrap into this interface.
 struct GrpcXdsDecodeContext final : public XdsResourceType::DecodeContext {
   enum class Component { kClient, kServer };
-
-  GrpcXdsDecodeContext(XdsClient* client, const XdsBootstrap::XdsServer& server,
-                       upb_DefPool* def_pool, upb_Arena* arena,
-                       Component component)
-      : DecodeContext(client, server, def_pool, arena), component(component) {}
-
   Component component;
+
+  GrpcXdsDecodeContext(XdsClient* client_in,
+                       const XdsBootstrap::XdsServer& server_in,
+                       upb_DefPool* def_pool_in, upb_Arena* arena_in,
+                       Component component_in)
+      : DecodeContext(client_in, server_in, def_pool_in, arena_in),
+        component(component_in) {}
 };
 
 }  // namespace grpc_core

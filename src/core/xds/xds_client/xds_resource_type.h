@@ -38,9 +38,14 @@ class XdsResourceType {
  public:
   // Context passed into Decode().
   struct DecodeContext {
-    DecodeContext(XdsClient* client, const XdsBootstrap::XdsServer& server,
-                  upb_DefPool* symtab, upb_Arena* arena)
-        : client(client), server(server), symtab(symtab), arena(arena) {}
+    DecodeContext(XdsClient* client_in,
+                  const XdsBootstrap::XdsServer& server_in,
+                  upb_DefPool* symtab_in, upb_Arena* arena_in)
+        : client(client_in),
+          server(server_in),
+          symtab(symtab_in),
+          arena(arena_in) {}
+
     virtual ~DecodeContext() = default;
 
     XdsClient* client;
