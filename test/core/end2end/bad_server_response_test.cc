@@ -161,6 +161,39 @@ static void handle_read(void* /*arg*/, grpc_error_handle error) {
   }
 }
 
+static void append_http2_frame_header(std::string* response,
+                                     size_t payload_length, uint8_t type,
+                                     uint8_t flags) {
+  response->push_back(static_cast<char>((payload_length >> 16) & 0xff));
+  response->push_back(static_cast<char>((payload_length >> 8) & 0xff));
+  response->push_back(static_cast<char>(payload_length & 0xff));
+  response->push_back(static_cast<char>(type));
+  response->push_back(static_cast<char>(flags));
+  response->push_back(0);
+  response->push_back(0);
+  response->push_back(0);
+  response->push_back(1);  // Stream ID 1.
+}
+
+static std::string http2_401_with_html_body() {
+  const std::string header_block =
+      "\x10\x07:status\x03" "401"
+      "\x10\x0e" "content-length\x02" "36"
+      "\x10\x0c" "content-type\x18" "text/html; charset=UTF-8"
+      "\x10\x1d" "x-goog-iap-generated-response\x04true"
+      "\x10\x0c" "grpc-message\x24" "Invalid IAP credentials: empty token"
+      "\x10\x0b" "grpc-status\x02" "16";
+  const std::string body = "Invalid IAP credentials: empty token";
+  std::string response;
+  append_http2_frame_header(&response, header_block.size(), /*type=*/1,
+                            /*flags=*/0x04);
+  response.append(header_block);
+  append_http2_frame_header(&response, body.size(), /*type=*/0,
+                            /*flags=*/0x01);
+  response.append(body);
+  return response;
+}
+
 static void on_connect(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
@@ -382,6 +415,12 @@ int main(int argc, char** argv) {
 
   // status not defined in hpack static table
   run_test(true, true, HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
+           GRPC_STATUS_UNAUTHENTICATED, HTTP2_DETAIL_MSG(401));
+  // An HTML error body after HTTP 401 response headers must not be parsed as a
+  // gRPC message and overwrite the status mapped from the HTTP response.
+  const std::string http_error_response =
+      http2_401_with_html_body();
+  run_test(true, true, http_error_response.data(), http_error_response.size(),
            GRPC_STATUS_UNAUTHENTICATED, HTTP2_DETAIL_MSG(401));
   run_test(true, true, HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
            GRPC_STATUS_PERMISSION_DENIED, HTTP2_DETAIL_MSG(403));
