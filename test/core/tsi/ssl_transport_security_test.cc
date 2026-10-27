@@ -269,6 +269,12 @@ class SslTransportSecurityTest
       verify_root_cert_subject_ = verify_root_cert_subject;
     }
 
+    void SetExpectedRootCertSubjects(absl::string_view client_root_subject,
+                                     absl::string_view server_root_subject) {
+      expected_client_root_cert_subject_ = std::string(client_root_subject);
+      expected_server_root_cert_subject_ = std::string(server_root_subject);
+    }
+
     ssl_key_cert_lib* MutableKeyCertLib() { return key_cert_lib_.get(); }
 
     void SetForceClientAuth(bool force_client_auth) {
@@ -653,13 +659,12 @@ class SslTransportSecurityTest
       tsi_peer_destruct(peer);
     }
 
-    static void CheckVerifiedRootCertSubject(const tsi_peer* peer) {
+    static void CheckVerifiedRootCertSubject(const tsi_peer* peer,
+                                             absl::string_view expected_match) {
       const tsi_peer_property* verified_root_cert_subject =
           tsi_peer_get_property_by_name(
               peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
       ASSERT_NE(verified_root_cert_subject, nullptr);
-      std::string expected_match =
-          "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
       ASSERT_EQ(expected_match,
                 std::string(verified_root_cert_subject->value.data,
                             verified_root_cert_subject->value.length));
@@ -712,7 +717,8 @@ class SslTransportSecurityTest
         CheckNegotiatedGroup(ssl_fixture, &peer);
         if (ssl_fixture->verify_root_cert_subject_) {
           if (!ssl_fixture->session_reused_) {
-            CheckVerifiedRootCertSubject(&peer);
+            CheckVerifiedRootCertSubject(
+                &peer, ssl_fixture->expected_client_root_cert_subject_);
           } else {
             CheckVerifiedRootCertSubjectUnset(&peer);
           }
@@ -738,7 +744,8 @@ class SslTransportSecurityTest
         CheckSecurityLevel(&peer);
         CheckNegotiatedGroup(ssl_fixture, &peer);
         if (ssl_fixture->force_client_auth_ && !ssl_fixture->session_reused_) {
-          CheckVerifiedRootCertSubject(&peer);
+          CheckVerifiedRootCertSubject(
+              &peer, ssl_fixture->expected_server_root_cert_subject_);
         } else {
           CheckVerifiedRootCertSubjectUnset(&peer);
         }
@@ -766,6 +773,10 @@ class SslTransportSecurityTest
     size_t network_bio_buf_size_;
     size_t ssl_bio_buf_size_;
     bool verify_root_cert_subject_;
+    std::string expected_client_root_cert_subject_ =
+        "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
+    std::string expected_server_root_cert_subject_ =
+        "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
     tsi_tls_version tls_version_;
     bool send_client_ca_list_;
     std::optional<std::string> alpn_client_overriden_protocols_ = std::nullopt;
@@ -1852,6 +1863,210 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
 }
 
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10101000L
+
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+constexpr absl::string_view kSslTsiMldsaTestCredentialsDir =
+    "test/core/tsi/test_creds/mldsa/";
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMldsa44) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa44.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa44.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa44.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa44,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa44,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  // ML-DSA is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMldsa65) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa65.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa65.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa65.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa65.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa65.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa65,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa65,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  // ML-DSA is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMldsa87) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa87.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa87.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa87.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  // ML-DSA is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+
+// In TLS 1.3 mTLS, BoringSSL generates two NewSessionTicket messages on the
+// server that each embed the client's certificate chain, and defers flushing
+// them until the server's first SSL_write call (in the TSI frame protector).
+// With a 2-certificate ML-DSA-87 client chain (~15 KB), the two queued session
+// tickets (~30 KB) exceed the default 17 KB BIO pair buffer size, causing
+// SSL_write to return SSL_ERROR_WANT_WRITE. This test verifies that
+// DoSslWrite, SslProtectorProtect, and SslProtectorProtectFlush handle
+// SSL_ERROR_WANT_WRITE (TSI_DRAIN_BUFFER) by draining the BIO across multiple
+// flushes rather than failing the connection.
+TEST_P(SslTransportSecurityTest, SuccessfulRoundTripMldsa87Chain) {
+  auto tls_version = std::get<0>(GetParam());
+  if (tls_version == TSI_TLS1_2) return;
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = GetFileContents(
+      absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa87.pem"));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                   "server_chain_mldsa87.key")),
+      GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                   "server_chain_mldsa87.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                   "client_chain_mldsa87.key")),
+      GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                   "client_chain_mldsa87.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  DoRoundTrip();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMixedMldsaCerts) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert =
+      absl::StrCat(GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "ca_mldsa87.pem")),
+                   GetFileContents(absl::StrCat(kSslTsiMldsaTestCredentialsDir,
+                                                "ca_mldsa44.pem")));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->server_pem_key_cert_pairs.clear();
+  key_cert_lib->server_pem_key_cert_pairs.emplace_back(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "server_mldsa87.pem")));
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa44.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca_mldsa87,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa44,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  // ML-DSA is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClassicalAndMldsaCerts) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_key_cert_lib* key_cert_lib = ssl_fixture_->MutableKeyCertLib();
+  key_cert_lib->root_cert = absl::StrCat(
+      GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "ca.pem")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "ca_mldsa65.pem")));
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert.c_str());
+  key_cert_lib->client_pem_key_cert_pair = PemKeyCertPair(
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa65.key")),
+      GetFileContents(
+          absl::StrCat(kSslTsiMldsaTestCredentialsDir, "client_mldsa65.pem")));
+  ssl_fixture_->SetExpectedRootCertSubjects(
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU",
+      "CN=testca_mldsa65,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  ssl_fixture_->SetServerNameIndication("foo.test.google.fr");
+  ssl_fixture_->SetForceClientAuth(true);
+  // ML-DSA client certificate is only supported in TLS 1.3.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_2);
+  DoHandshake();
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >=
+        // 0x30500000L
 
 }  // namespace
 }  // namespace testing
