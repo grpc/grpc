@@ -272,7 +272,10 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
         if (handshake_result != nullptr) {
           grpc_chttp2_transport_start_reading(
               transport.get(), (*result)->read_buffer.c_slice_buffer(),
-              /*notify_on_receive_settings=*/nullptr, nullptr, on_close);
+              /*notify_on_receive_settings=*/nullptr, nullptr,
+              [connection = connection_->RefAsSubclass<ActiveConnection>()]() {
+                connection->OnClose();
+              });
         } else {
           grpc_chttp2_transport_start_reading(
               transport.get(), (*result)->read_buffer.c_slice_buffer(),
