@@ -603,6 +603,7 @@ static const char* kBasicEndpoint = R"pb(
 
 static const char* kBasicSocketListener = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  xds_client_key: "#server"
   actions {
     start_watch {
       resource_type { listener {} }
