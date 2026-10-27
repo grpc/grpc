@@ -3336,14 +3336,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
-  SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
-#endif
   if (ssl_context == nullptr) {
     tsi::LogSslErrorStack();
     LOG(ERROR) << "Could not create ssl context.";
     return TSI_INVALID_ARGUMENT;
   }
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
+  SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
+#endif
 
   result = tsi_set_min_and_max_tls_versions(
       ssl_context, options->min_tls_version, options->max_tls_version);
@@ -3542,14 +3542,14 @@ tsi_result tsi_configure_server_ssl_context(
 #else
   ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
-  SSL_CTX_set_options(ssl_context.ssl_ctx, SSL_OP_NO_RENEGOTIATION);
-#endif
   if (ssl_context.ssl_ctx == nullptr) {
     tsi::LogSslErrorStack();
     LOG(ERROR) << "Could not create ssl context.";
     return TSI_OUT_OF_RESOURCES;
   }
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
+  SSL_CTX_set_options(ssl_context.ssl_ctx, SSL_OP_NO_RENEGOTIATION);
+#endif
 
   tsi_result result = tsi_set_min_and_max_tls_versions(
       ssl_context.ssl_ctx, options->min_tls_version, options->max_tls_version);
