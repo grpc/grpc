@@ -16,7 +16,6 @@
 cdef class _AioCall(GrpcCallWrapper):
     cdef:
         readonly AioChannel _channel
-        list _references
         object _deadline
         list _done_callbacks
 
