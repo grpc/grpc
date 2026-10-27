@@ -68,7 +68,8 @@ namespace {
 // sign.
 bool ParsePort(absl::string_view port, uint16_t* out) {
   uint32_t port_num;
-  if (port.empty() || !absl::c_all_of(port, absl::ascii_isdigit) ||
+  if (port.empty() ||
+      !absl::c_all_of(port, [](char c) { return absl::ascii_isdigit(c); }) ||
       !absl::SimpleAtoi(port, &port_num) || port_num > 65535) {
     return false;
   }
@@ -182,17 +183,15 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 namespace {
 
 // A vsock cid or port is an unsigned 32-bit value, but VMADDR_CID_ANY and
-// VMADDR_PORT_ANY are conventionally written as -1, so parse it as a signed
-// value and accept that one negative spelling in addition to the range that
-// fits in 32 bits.
+// VMADDR_PORT_ANY are conventionally written as -1, so accept that one
+// negative spelling in addition to plain decimal digits.
 bool ParseVsockComponent(absl::string_view text, uint32_t* out) {
-  int64_t value;
-  if (!absl::SimpleAtoi(text, &value) || value < -1 ||
-      value > std::numeric_limits<uint32_t>::max()) {
-    return false;
+  if (text == "-1") {
+    *out = std::numeric_limits<uint32_t>::max();
+    return true;
   }
-  *out = static_cast<uint32_t>(value);
-  return true;
+  return absl::c_all_of(text, [](char c) { return absl::ascii_isdigit(c); }) &&
+         absl::SimpleAtoi(text, out);
 }
 
 }  // namespace
