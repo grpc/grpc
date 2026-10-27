@@ -19,10 +19,8 @@
 
 #include <grpc/channel_factory.h>
 
-#include <memory>
 #include <utility>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 
@@ -41,10 +39,6 @@ class ChannelHandleImpl final
  private:
   RefCountedPtr<XdsTransport> transport_;
 };
-
-// Extracts ChannelFactory from ChannelArgs. Returns nullptr if not set.
-std::shared_ptr<experimental::ChannelFactory> GetChannelFactoryFromChannelArgs(
-    const ChannelArgs& args);
 
 }  // namespace grpc_core
 

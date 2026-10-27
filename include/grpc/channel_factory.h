@@ -36,7 +36,7 @@ namespace grpc_core {
 namespace experimental {
 
 // Implementations of this class must be thread-safe.
-class ChannelFactory {
+class ChannelFactory : public std::enable_shared_from_this<ChannelFactory> {
  public:
   // Opaque handle representing a side-channel (not a
   // grpc_core::Channel). A ChannelHandle may outlive the ChannelFactory
@@ -54,6 +54,9 @@ class ChannelFactory {
   // ChannelFactory, because gRPC core downcasts the returned handle.
   virtual std::unique_ptr<ChannelHandle> CreateChannel(
       absl::string_view key) = 0;
+
+  // Returns the channel argument name.
+  static absl::string_view ChannelArgName() { return GRPC_ARG_CHANNEL_FACTORY; }
 
   // Returns the channel argument vtable for std::shared_ptr<ChannelFactory>.
   static const grpc_arg_pointer_vtable* ChannelArgVtable();

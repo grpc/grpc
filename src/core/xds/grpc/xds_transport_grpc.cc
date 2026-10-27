@@ -57,15 +57,15 @@
 namespace grpc_core {
 
 //
-// GrpcStreamingCall
+// GrpcXdsTransport::GrpcStreamingCall
 //
 
-GrpcStreamingCall::GrpcStreamingCall(
-    RefCountedPtr<GrpcXdsTransport::SharedChannel> channel, const char* method,
+GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
+    RefCountedPtr<SharedChannel> channel, const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
     grpc_call_credentials* call_creds,
     const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-    Duration timeout, XdsTransport::CallOptions options)
+    Duration timeout, CallOptions options)
     : channel_(std::move(channel)),
       event_handler_(std::move(event_handler)),
       options_(options) {
@@ -113,7 +113,8 @@ GrpcStreamingCall::GrpcStreamingCall(
   StartBatch(op_list, "OnStatusReceived", &on_status_received_);
 }
 
-void GrpcStreamingCall::AddSendInitialMetadataOp(OpList& op_list) {
+void GrpcXdsTransport::GrpcStreamingCall::AddSendInitialMetadataOp(
+    OpList& op_list) {
   grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -127,7 +128,8 @@ void GrpcStreamingCall::AddSendInitialMetadataOp(OpList& op_list) {
   op.reserved = nullptr;
 }
 
-void GrpcStreamingCall::AddRecvInitialMetadataOp(OpList& op_list) {
+void GrpcXdsTransport::GrpcStreamingCall::AddRecvInitialMetadataOp(
+    OpList& op_list) {
   grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -136,7 +138,8 @@ void GrpcStreamingCall::AddRecvInitialMetadataOp(OpList& op_list) {
   op.reserved = nullptr;
 }
 
-void GrpcStreamingCall::AddRecvTrailingMetadataOp(OpList& op_list) {
+void GrpcXdsTransport::GrpcStreamingCall::AddRecvTrailingMetadataOp(
+    OpList& op_list) {
   grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -147,7 +150,8 @@ void GrpcStreamingCall::AddRecvTrailingMetadataOp(OpList& op_list) {
   op.reserved = nullptr;
 }
 
-void GrpcStreamingCall::AddSendCloseFromClientOp(OpList& op_list) {
+void GrpcXdsTransport::GrpcStreamingCall::AddSendCloseFromClientOp(
+    OpList& op_list) {
   grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -155,7 +159,8 @@ void GrpcStreamingCall::AddSendCloseFromClientOp(OpList& op_list) {
   op.reserved = nullptr;
 }
 
-void GrpcStreamingCall::AddSendMessageOp(std::string payload, OpList& op_list) {
+void GrpcXdsTransport::GrpcStreamingCall::AddSendMessageOp(std::string payload,
+                                                           OpList& op_list) {
   grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
   send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
   CSliceUnref(slice);
@@ -167,16 +172,16 @@ void GrpcStreamingCall::AddSendMessageOp(std::string payload, OpList& op_list) {
   op.reserved = nullptr;
 }
 
-void GrpcStreamingCall::StartBatch(const OpList& op_list,
-                                   const char* ref_reason,
-                                   grpc_closure* closure) {
+void GrpcXdsTransport::GrpcStreamingCall::StartBatch(const OpList& op_list,
+                                                     const char* ref_reason,
+                                                     grpc_closure* closure) {
   Ref(DEBUG_LOCATION, ref_reason).release();
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       call_, op_list.data(), op_list.size(), closure);
   GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
-GrpcStreamingCall::~GrpcStreamingCall() {
+GrpcXdsTransport::GrpcStreamingCall::~GrpcStreamingCall() {
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
@@ -189,7 +194,7 @@ GrpcStreamingCall::~GrpcStreamingCall() {
   grpc_call_unref(call_);
 }
 
-void GrpcStreamingCall::Orphan() {
+void GrpcXdsTransport::GrpcStreamingCall::Orphan() {
   GRPC_CHECK_NE(call_, nullptr);
   // If we are here because xds_client wants to cancel the call,
   // OnStatusReceived() will complete the cancellation and clean up.
@@ -199,7 +204,8 @@ void GrpcStreamingCall::Orphan() {
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
-void GrpcStreamingCall::SendMessage(std::string payload, bool send_half_close) {
+void GrpcXdsTransport::GrpcStreamingCall::SendMessage(std::string payload,
+                                                      bool send_half_close) {
   OpList op_list;
   if (!sent_initial_metadata_) {
     sent_initial_metadata_ = true;
@@ -212,7 +218,7 @@ void GrpcStreamingCall::SendMessage(std::string payload, bool send_half_close) {
   StartBatch(op_list, "OnRequestSent", &on_request_sent_);
 }
 
-void GrpcStreamingCall::StartRecvMessage() {
+void GrpcXdsTransport::GrpcStreamingCall::StartRecvMessage() {
   OpList op_list;
   grpc_op& op = op_list.emplace_back();
   memset(&op, 0, sizeof(op));
@@ -223,19 +229,20 @@ void GrpcStreamingCall::StartRecvMessage() {
   StartBatch(op_list, "StartRecvMessage", &on_response_received_);
 }
 
-void GrpcStreamingCall::SendHalfClose() {
+void GrpcXdsTransport::GrpcStreamingCall::SendHalfClose() {
   OpList op_list;
   AddSendCloseFromClientOp(op_list);
   StartBatch(op_list, "SendHalfClose", &on_half_closed_);
 }
 
-void GrpcStreamingCall::OnRecvInitialMetadata(void* arg,
-                                              grpc_error_handle /*error*/) {
+void GrpcXdsTransport::GrpcStreamingCall::OnRecvInitialMetadata(
+    void* arg, grpc_error_handle /*error*/) {
   RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
   grpc_metadata_array_destroy(&self->initial_metadata_recv_);
 }
 
-void GrpcStreamingCall::OnRequestSent(void* arg, grpc_error_handle error) {
+void GrpcXdsTransport::GrpcStreamingCall::OnRequestSent(
+    void* arg, grpc_error_handle error) {
   RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
   // Clean up the sent message.
   grpc_byte_buffer_destroy(self->send_message_payload_);
@@ -244,12 +251,13 @@ void GrpcStreamingCall::OnRequestSent(void* arg, grpc_error_handle error) {
   self->event_handler_->OnRequestSent(error.ok());
 }
 
-void GrpcStreamingCall::OnHalfClosed(void* arg, grpc_error_handle /*error*/) {
+void GrpcXdsTransport::GrpcStreamingCall::OnHalfClosed(
+    void* arg, grpc_error_handle /*error*/) {
   RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
 }
 
-void GrpcStreamingCall::OnResponseReceived(void* arg,
-                                           grpc_error_handle /*error*/) {
+void GrpcXdsTransport::GrpcStreamingCall::OnResponseReceived(
+    void* arg, grpc_error_handle /*error*/) {
   RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
   // If there was no payload, then we received status before we received
   // another message, so we stop reading.
@@ -266,8 +274,8 @@ void GrpcStreamingCall::OnResponseReceived(void* arg,
   }
 }
 
-void GrpcStreamingCall::OnStatusReceived(void* arg,
-                                         grpc_error_handle /*error*/) {
+void GrpcXdsTransport::GrpcStreamingCall::OnStatusReceived(
+    void* arg, grpc_error_handle /*error*/) {
   RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
   self->event_handler_->OnStatusReceived(
       absl::Status(static_cast<absl::StatusCode>(self->status_code_),

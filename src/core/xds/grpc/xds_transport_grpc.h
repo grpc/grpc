@@ -68,6 +68,8 @@ class GrpcXdsTransport final : public XdsTransport {
                                      GrpcXdsTransport* transport) = 0;
   };
 
+  class GrpcStreamingCall;
+
   // key is an opaque cache key that is passed back to
   // SharedChannel::OnTransportOrphaned().
   GrpcXdsTransport(
@@ -106,17 +108,17 @@ class GrpcXdsTransport final : public XdsTransport {
       watchers_ ABSL_GUARDED_BY(&mu_);
 };
 
-class GrpcStreamingCall final : public XdsTransport::StreamingCall {
+class GrpcXdsTransport::GrpcStreamingCall final
+    : public XdsTransport::StreamingCall {
  public:
   // Holds a ref to channel for the life of the call, which keeps the
   // channel and its pollset_set alive.
   GrpcStreamingCall(
-      RefCountedPtr<GrpcXdsTransport::SharedChannel> channel,
-      const char* method,
+      RefCountedPtr<SharedChannel> channel, const char* method,
       std::unique_ptr<StreamingCall::EventHandler> event_handler,
       grpc_call_credentials* call_creds,
       const std::vector<std::pair<std::string, std::string>>& initial_metadata,
-      Duration timeout, XdsTransport::CallOptions options);
+      Duration timeout, CallOptions options);
   ~GrpcStreamingCall() override;
 
   void Orphan() override;
@@ -144,7 +146,7 @@ class GrpcStreamingCall final : public XdsTransport::StreamingCall {
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
   static void OnStatusReceived(void* arg, grpc_error_handle /*error*/);
 
-  RefCountedPtr<GrpcXdsTransport::SharedChannel> channel_;
+  RefCountedPtr<SharedChannel> channel_;
 
   std::unique_ptr<StreamingCall::EventHandler> event_handler_;
 
@@ -176,7 +178,7 @@ class GrpcStreamingCall final : public XdsTransport::StreamingCall {
   grpc_slice status_details_ = grpc_empty_slice();
   grpc_closure on_status_received_;
 
-  const XdsTransport::CallOptions options_;
+  const CallOptions options_;
 };
 
 }  // namespace grpc_core

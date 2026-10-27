@@ -19,7 +19,6 @@
 #include <grpc/channel_factory.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include <memory>
@@ -87,10 +86,8 @@ namespace experimental {
 std::unique_ptr<ChannelFactory::ChannelHandle>
 ChannelFactory::CreateCoreChannel(absl::string_view target,
                                   grpc_channel_credentials* creds) {
-  ChannelArgs channel_args = ChannelArgs().Set(GRPC_ARG_KEEPALIVE_TIME_MS,
-                                               Duration::Minutes(5).millis());
   RefCountedPtr<Channel> channel(Channel::FromC(grpc_channel_create(
-      std::string(target).c_str(), creds, channel_args.ToC().get())));
+      std::string(target).c_str(), creds, /*args=*/nullptr)));
   return MakeStandaloneChannel(target, std::move(channel));
 }
 
@@ -110,13 +107,4 @@ const grpc_arg_pointer_vtable* ChannelFactory::ChannelArgVtable() {
 }
 
 }  // namespace experimental
-
-std::shared_ptr<experimental::ChannelFactory> GetChannelFactoryFromChannelArgs(
-    const ChannelArgs& args) {
-  auto* factory = static_cast<std::shared_ptr<experimental::ChannelFactory>*>(
-      args.GetVoidPointer(GRPC_ARG_CHANNEL_FACTORY));
-  if (factory == nullptr) return nullptr;
-  return *factory;
-}
-
 }  // namespace grpc_core
