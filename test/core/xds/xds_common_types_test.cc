@@ -245,6 +245,22 @@ TEST_F(FractionalPercentTest, ClampsValue) {
 // StringMatcherParse() tests
 //
 
+// Matches an absl::Status with the given code and message.
+MATCHER_P2(StatusIs, code, message, "") {
+  return arg.code() == code && arg.message() == message;
+}
+
+// Matches a StringMatcher with the given type, pattern and case sensitivity.
+MATCHER_P3(StringMatcherIs, type, pattern, case_sensitive, "") {
+  const std::string& actual_pattern =
+      arg.type() == StringMatcher::Type::kSafeRegex
+          ? arg.regex_matcher()->pattern()
+          : arg.string_matcher();
+  *result_listener << "actual: " << arg.ToString();
+  return arg.type() == type && actual_pattern == pattern &&
+         arg.case_sensitive() == case_sensitive;
+}
+
 class StringMatcherParseTest : public XdsCommonTypesTest {
  protected:
   absl::StatusOr<StringMatcher> Parse(
@@ -289,9 +305,9 @@ TEST_F(StringMatcherParseTest, Exact) {
   proto.set_exact("foo");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_EQ(string_matcher->type(), StringMatcher::Type::kExact);
-  EXPECT_EQ(string_matcher->string_matcher(), "foo");
-  EXPECT_TRUE(string_matcher->case_sensitive());
+  EXPECT_THAT(*string_matcher,
+              StringMatcherIs(StringMatcher::Type::kExact, "foo",
+                              /*case_sensitive=*/true));
 }
 
 TEST_F(StringMatcherParseTest, EmptyExact) {
@@ -299,8 +315,8 @@ TEST_F(StringMatcherParseTest, EmptyExact) {
   proto.set_exact("");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_EQ(string_matcher->type(), StringMatcher::Type::kExact);
-  EXPECT_EQ(string_matcher->string_matcher(), "");
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kExact, "",
+                                               /*case_sensitive=*/true));
 }
 
 TEST_F(StringMatcherParseTest, Prefix) {
@@ -308,9 +324,9 @@ TEST_F(StringMatcherParseTest, Prefix) {
   proto.set_prefix("foo");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_EQ(string_matcher->type(), StringMatcher::Type::kPrefix);
-  EXPECT_EQ(string_matcher->string_matcher(), "foo");
-  EXPECT_TRUE(string_matcher->case_sensitive());
+  EXPECT_THAT(*string_matcher,
+              StringMatcherIs(StringMatcher::Type::kPrefix, "foo",
+                              /*case_sensitive=*/true));
 }
 
 TEST_F(StringMatcherParseTest, Suffix) {
@@ -318,9 +334,9 @@ TEST_F(StringMatcherParseTest, Suffix) {
   proto.set_suffix("foo");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_EQ(string_matcher->type(), StringMatcher::Type::kSuffix);
-  EXPECT_EQ(string_matcher->string_matcher(), "foo");
-  EXPECT_TRUE(string_matcher->case_sensitive());
+  EXPECT_THAT(*string_matcher,
+              StringMatcherIs(StringMatcher::Type::kSuffix, "foo",
+                              /*case_sensitive=*/true));
 }
 
 TEST_F(StringMatcherParseTest, Contains) {
@@ -328,9 +344,9 @@ TEST_F(StringMatcherParseTest, Contains) {
   proto.set_contains("foo");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_EQ(string_matcher->type(), StringMatcher::Type::kContains);
-  EXPECT_EQ(string_matcher->string_matcher(), "foo");
-  EXPECT_TRUE(string_matcher->case_sensitive());
+  EXPECT_THAT(*string_matcher,
+              StringMatcherIs(StringMatcher::Type::kContains, "foo",
+                              /*case_sensitive=*/true));
 }
 
 TEST_F(StringMatcherParseTest, SafeRegex) {
@@ -338,9 +354,9 @@ TEST_F(StringMatcherParseTest, SafeRegex) {
   proto.mutable_safe_regex()->set_regex("fo+");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_EQ(string_matcher->type(), StringMatcher::Type::kSafeRegex);
-  EXPECT_EQ(string_matcher->regex_matcher()->pattern(), "fo+");
-  EXPECT_TRUE(string_matcher->case_sensitive());
+  EXPECT_THAT(*string_matcher,
+              StringMatcherIs(StringMatcher::Type::kSafeRegex, "fo+",
+                              /*case_sensitive=*/true));
 }
 
 TEST_F(StringMatcherParseTest, IgnoreCase) {
@@ -349,72 +365,78 @@ TEST_F(StringMatcherParseTest, IgnoreCase) {
   proto.set_ignore_case(true);
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_EQ(string_matcher->type(), StringMatcher::Type::kPrefix);
-  EXPECT_EQ(string_matcher->string_matcher(), "foo");
-  EXPECT_FALSE(string_matcher->case_sensitive());
+  EXPECT_THAT(*string_matcher,
+              StringMatcherIs(StringMatcher::Type::kPrefix, "foo",
+                              /*case_sensitive=*/false));
 }
 
 TEST_F(StringMatcherParseTest, NotPresent) {
   auto string_matcher =
       Parse(static_cast<const envoy_type_matcher_v3_StringMatcher*>(nullptr));
-  EXPECT_EQ(string_matcher.status().message(),
-            "validation failed: [field: error:field not present]")
-      << string_matcher.status();
+  EXPECT_THAT(string_matcher.status(),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       "validation failed: [field: error:field not present]"));
 }
 
 TEST_F(StringMatcherParseTest, NoMatchPattern) {
   envoy::type::matcher::v3::StringMatcher proto;
   auto string_matcher = Parse(proto);
-  EXPECT_EQ(string_matcher.status().message(),
-            "validation failed: [field: error:invalid string matcher]")
-      << string_matcher.status();
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field: error:invalid string matcher]"));
 }
 
 TEST_F(StringMatcherParseTest, EmptyPrefix) {
   envoy::type::matcher::v3::StringMatcher proto;
   proto.set_prefix("");
   auto string_matcher = Parse(proto);
-  EXPECT_EQ(string_matcher.status().message(),
-            "validation failed: [field:prefix error:must be non-empty]")
-      << string_matcher.status();
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field:prefix error:must be non-empty]"));
 }
 
 TEST_F(StringMatcherParseTest, EmptySuffix) {
   envoy::type::matcher::v3::StringMatcher proto;
   proto.set_suffix("");
   auto string_matcher = Parse(proto);
-  EXPECT_EQ(string_matcher.status().message(),
-            "validation failed: [field:suffix error:must be non-empty]")
-      << string_matcher.status();
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field:suffix error:must be non-empty]"));
 }
 
 TEST_F(StringMatcherParseTest, EmptyContains) {
   envoy::type::matcher::v3::StringMatcher proto;
   proto.set_contains("");
   auto string_matcher = Parse(proto);
-  EXPECT_EQ(string_matcher.status().message(),
-            "validation failed: [field:contains error:must be non-empty]")
-      << string_matcher.status();
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field:contains error:must be non-empty]"));
 }
 
 TEST_F(StringMatcherParseTest, EmptySafeRegex) {
   envoy::type::matcher::v3::StringMatcher proto;
   proto.mutable_safe_regex();
   auto string_matcher = Parse(proto);
-  EXPECT_EQ(
-      string_matcher.status().message(),
-      "validation failed: [field:safe_regex.regex error:must be non-empty]")
-      << string_matcher.status();
+  EXPECT_THAT(string_matcher.status(),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       "validation failed: [field:safe_regex.regex error:must "
+                       "be non-empty]"));
 }
 
 TEST_F(StringMatcherParseTest, InvalidSafeRegex) {
   envoy::type::matcher::v3::StringMatcher proto;
   proto.mutable_safe_regex()->set_regex("[");
   auto string_matcher = Parse(proto);
-  EXPECT_EQ(string_matcher.status().message(),
-            "validation failed: [field: error:Invalid regex string specified "
-            "in matcher: missing ]: []")
-      << string_matcher.status();
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(
+          absl::StatusCode::kInvalidArgument,
+          "validation failed: [field: error:Invalid regex string specified "
+          "in matcher: missing ]: []"));
 }
 
 TEST_F(StringMatcherParseTest, SafeRegexIgnoreCaseUnsupported) {
@@ -422,11 +444,12 @@ TEST_F(StringMatcherParseTest, SafeRegexIgnoreCaseUnsupported) {
   proto.mutable_safe_regex()->set_regex("foo");
   proto.set_ignore_case(true);
   auto string_matcher = Parse(proto);
-  EXPECT_EQ(
-      string_matcher.status().message(),
-      "validation failed: [field:ignore_case error:not supported for regex "
-      "matcher]")
-      << string_matcher.status();
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(
+          absl::StatusCode::kInvalidArgument,
+          "validation failed: [field:ignore_case error:not supported for regex "
+          "matcher]"));
 }
 
 TEST_F(StringMatcherParseTest, XdsStringMatcher) {
@@ -435,18 +458,19 @@ TEST_F(StringMatcherParseTest, XdsStringMatcher) {
   proto.set_ignore_case(true);
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_EQ(string_matcher->type(), StringMatcher::Type::kSuffix);
-  EXPECT_EQ(string_matcher->string_matcher(), "foo");
-  EXPECT_FALSE(string_matcher->case_sensitive());
+  EXPECT_THAT(*string_matcher,
+              StringMatcherIs(StringMatcher::Type::kSuffix, "foo",
+                              /*case_sensitive=*/false));
 }
 
 TEST_F(StringMatcherParseTest, XdsStringMatcherEmptyPrefix) {
   xds::type::matcher::v3::StringMatcher proto;
   proto.set_prefix("");
   auto string_matcher = Parse(proto);
-  EXPECT_EQ(string_matcher.status().message(),
-            "validation failed: [field:prefix error:must be non-empty]")
-      << string_matcher.status();
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field:prefix error:must be non-empty]"));
 }
 
 //
