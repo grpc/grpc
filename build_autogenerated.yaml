@@ -29431,6 +29431,10 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/resource.upb.h
@@ -29529,6 +29533,10 @@ targets:
   - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.h
   - src/core/ext/upb-gen/google/api/annotations.upb.h
   - src/core/ext/upb-gen/google/api/annotations.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h
   - src/core/ext/upb-gen/google/api/http.upb.h
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/api/httpbody.upb.h
@@ -29585,6 +29593,28 @@ targets:
   - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/range.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
@@ -29676,9 +29706,19 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
@@ -29728,6 +29768,8 @@ targets:
   - src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
   - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -29756,6 +29798,17 @@ targets:
   - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
   - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   - test/core/xds/xds_common_types_test.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
