@@ -360,6 +360,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::vector<RefCountedPtr<XdsChannel>> xds_channels;
     std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
         type_map;
+
+    bool HasUncachedResources() const;
+    bool ContainsChannel(XdsChannel* xds_channel) const;
   };
 
   absl::Status AppendNodeToStatus(const absl::Status& status) const;
@@ -389,8 +392,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Gets the type for resource_type, or null if the type is unknown.
   const XdsResourceType* GetResourceTypeLocked(absl::string_view resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
-  bool HasUncachedResources(const AuthorityState& authority_state);
 
   void MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
       XdsChannel* xds_channel, const XdsResourceType* type)

@@ -64,6 +64,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -210,9 +211,25 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
     return;
   }
   timer_handle_.reset();
-  auto t = std::get<RefCountedPtr<grpc_chttp2_transport>>(connection_->state_);
-  t->DisconnectWithError(GRPC_ERROR_CREATE(
-      "Did not receive HTTP/2 settings before handshake timeout"));
+  Match(
+      connection_->state_,
+      [](const OrphanablePtr<HandshakingState>& /*handshaking_state*/) {
+        GRPC_DCHECK(false)
+            << "Settings timeout fired before transport creation.";
+        LOG(ERROR) << "Settings timeout fired before transport creation.";
+      },
+      [](const RefCountedPtr<grpc_chttp2_transport>& transport) {
+        if (GPR_LIKELY(transport != nullptr)) {
+          transport->DisconnectWithError(GRPC_ERROR_CREATE(
+              "Did not receive HTTP/2 settings before handshake timeout"));
+        }
+      },
+      [](const RefCountedPtr<http2::Http2ServerTransport>& transport) {
+        if (GPR_LIKELY(transport != nullptr)) {
+          transport->DisconnectWithError(absl::UnavailableError(
+              "Did not receive HTTP/2 settings before handshake timeout"));
+        }
+      });
 }
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::
@@ -239,7 +256,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
         (*result)->args.GetObject<Http2SettingsHandshakeResult>();
     const bool is_callv3 =
         (*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
-
     if (!is_callv3) {
       RefCountedPtr<Transport> transport =
           grpc_create_chttp2_transport((*result)->args,
@@ -253,9 +269,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
         // handshake deadline.
         connection_->state_ =
             DownCast<grpc_chttp2_transport*>(transport.get())->Ref();
-        grpc_closure* on_close = &connection_->on_close_;
-        // Refs held by OnClose()
-        connection_->Ref().release();
         if (handshake_result != nullptr) {
           grpc_chttp2_transport_start_reading(
               transport.get(), (*result)->read_buffer.c_slice_buffer(),
@@ -266,7 +279,10 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
               [self = Ref()](absl::StatusOr<uint32_t>) {
                 self->OnReceiveSettings();
               },
-              nullptr, on_close);
+              nullptr,
+              [connection = connection_->RefAsSubclass<ActiveConnection>()]() {
+                connection->OnClose();
+              });
           timer_handle_ =
               connection_->listener_state_->event_engine()->RunAfter(
                   deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
@@ -297,11 +313,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
                                          std::move((*result)->read_buffer));
         std::shared_ptr<EventEngine> event_engine_ptr =
             (*result)->args.GetObjectRef<EventEngine>();
-        // TODO(akshitpatel) : [PH2][P4] : Consider making on_close_
-        // absl::AnyInvocable.
-        grpc_closure* on_close = &connection_->on_close_;
-        // Refs held by OnClose()
-        connection_->Ref().release();
         absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings;
         if (handshake_result == nullptr) {
           // Use notify_on_receive_settings callback to enforce the
@@ -313,7 +324,9 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
         auto* ph2_transport = new http2::Http2ServerTransport(
             std::move(promise_endpoint), (*result)->args,
             std::move(event_engine_ptr), std::move(on_receive_settings),
-            on_close);
+            [connection = connection_->RefAsSubclass<ActiveConnection>()]() {
+              connection->OnClose();
+            });
         // SetupTransport will spawn the initial transport promises.
         grpc_error_handle channel_init_err =
             connection_->listener_state_->server()->SetupTransport(
@@ -376,10 +389,7 @@ NewChttp2ServerListener::ActiveConnection::ActiveConnection(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       state_(memory_owner.MakeOrphanable<HandshakingState>(
           RefAsSubclass<ActiveConnection>(), tcp_server, accepting_pollset,
-          std::move(acceptor), args, std::move(endpoint))) {
-  GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
-                    grpc_schedule_on_exec_ctx);
-}
+          std::move(acceptor), args, std::move(endpoint))) {}
 
 void NewChttp2ServerListener::ActiveConnection::Orphan() {
   work_serializer_.Run(
@@ -426,12 +436,9 @@ void NewChttp2ServerListener::ActiveConnection::Start(const ChannelArgs& args) {
       DEBUG_LOCATION);
 }
 
-void NewChttp2ServerListener::ActiveConnection::OnClose(
-    void* arg, grpc_error_handle /* error */) {
-  ActiveConnection* self = static_cast<ActiveConnection*>(arg);
-  self->listener_state_->RemoveLogicalConnection(self);
-  self->listener_state_->connection_quota()->ReleaseConnections(1);
-  self->Unref();
+void NewChttp2ServerListener::ActiveConnection::OnClose() {
+  listener_state_->RemoveLogicalConnection(this);
+  listener_state_->connection_quota()->ReleaseConnections(1);
 }
 
 void NewChttp2ServerListener::ActiveConnection::SendGoAwayImplLocked() {

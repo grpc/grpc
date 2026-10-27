@@ -105,6 +105,9 @@ const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_lame_channel_v3 =
+    "Use v3 lame channel implementation.";
+const char* const additional_constraints_lame_channel_v3 = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -249,10 +252,6 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
-const char* const description_v2_non_owning_waker_implementation =
-    "Use non-owning wakers in v2 filter bridge.";
-const char* const additional_constraints_v2_non_owning_waker_implementation =
-    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -261,13 +260,6 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_server_filter_chain_per_route =
-    "xDS servers use a separate filter chain for each route.";
-const char* const additional_constraints_xds_server_filter_chain_per_route =
-    "{}";
-const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -334,6 +326,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
+    {"lame_channel_v3", description_lame_channel_v3,
+     additional_constraints_lame_channel_v3, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"map_host_header_to_authority", description_map_host_header_to_authority,
@@ -442,10 +436,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
-    {"v2_non_owning_waker_implementation",
-     description_v2_non_owning_waker_implementation,
-     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -454,10 +444,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_server_filter_chain_per_route",
-     description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -546,6 +532,9 @@ const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_lame_channel_v3 =
+    "Use v3 lame channel implementation.";
+const char* const additional_constraints_lame_channel_v3 = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -690,10 +679,6 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
-const char* const description_v2_non_owning_waker_implementation =
-    "Use non-owning wakers in v2 filter bridge.";
-const char* const additional_constraints_v2_non_owning_waker_implementation =
-    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -702,13 +687,6 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_server_filter_chain_per_route =
-    "xDS servers use a separate filter chain for each route.";
-const char* const additional_constraints_xds_server_filter_chain_per_route =
-    "{}";
-const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -775,6 +753,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
+    {"lame_channel_v3", description_lame_channel_v3,
+     additional_constraints_lame_channel_v3, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"map_host_header_to_authority", description_map_host_header_to_authority,
@@ -883,10 +863,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
-    {"v2_non_owning_waker_implementation",
-     description_v2_non_owning_waker_implementation,
-     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -895,10 +871,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_server_filter_chain_per_route",
-     description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -987,6 +959,9 @@ const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_lame_channel_v3 =
+    "Use v3 lame channel implementation.";
+const char* const additional_constraints_lame_channel_v3 = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -1131,10 +1106,6 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
-const char* const description_v2_non_owning_waker_implementation =
-    "Use non-owning wakers in v2 filter bridge.";
-const char* const additional_constraints_v2_non_owning_waker_implementation =
-    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -1143,13 +1114,6 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_server_filter_chain_per_route =
-    "xDS servers use a separate filter chain for each route.";
-const char* const additional_constraints_xds_server_filter_chain_per_route =
-    "{}";
-const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -1216,6 +1180,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
+    {"lame_channel_v3", description_lame_channel_v3,
+     additional_constraints_lame_channel_v3, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"map_host_header_to_authority", description_map_host_header_to_authority,
@@ -1324,10 +1290,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
-    {"v2_non_owning_waker_implementation",
-     description_v2_non_owning_waker_implementation,
-     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -1336,10 +1298,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_server_filter_chain_per_route",
-     description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
