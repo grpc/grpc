@@ -62,6 +62,7 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -205,9 +206,25 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
     return;
   }
   timer_handle_.reset();
-  auto t = std::get<RefCountedPtr<grpc_chttp2_transport>>(connection_->state_);
-  t->DisconnectWithError(GRPC_ERROR_CREATE(
-      "Did not receive HTTP/2 settings before handshake timeout"));
+  Match(
+      connection_->state_,
+      [](const OrphanablePtr<HandshakingState>& /*handshaking_state*/) {
+        GRPC_DCHECK(false)
+            << "Settings timeout fired before transport creation.";
+        LOG(ERROR) << "Settings timeout fired before transport creation.";
+      },
+      [](const RefCountedPtr<grpc_chttp2_transport>& transport) {
+        if (GPR_LIKELY(transport != nullptr)) {
+          transport->DisconnectWithError(GRPC_ERROR_CREATE(
+              "Did not receive HTTP/2 settings before handshake timeout"));
+        }
+      },
+      [](const RefCountedPtr<http2::Http2ServerTransport>& transport) {
+        if (GPR_LIKELY(transport != nullptr)) {
+          transport->DisconnectWithError(absl::UnavailableError(
+              "Did not receive HTTP/2 settings before handshake timeout"));
+        }
+      });
 }
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::
