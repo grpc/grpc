@@ -168,6 +168,9 @@ cdef class _ServicerContext:
         if self._rpc_state.abort_exception is not None:
             raise UsageError('Abort already called!')
         elif self._rpc_state.status_sent:
+            # The final status already went out (the handler returned, or the
+            # RPC was aborted or cancelled). A late abort must not start another
+            # batch on the finished call.
             raise UsageError(_RPC_FINISHED_DETAILS)
         else:
             # Keeps track of the exception object. After abort happen, the RPC
@@ -335,7 +338,11 @@ cdef class _SyncServicerContext:
         self._context.disable_next_message_compression()
 
     def add_callback(self, object callback):
+        if self._callbacks is None:
+            # The RPC already finished
+            return False
         self._callbacks.append(callback)
+        return True
 
     def peer(self):
         return self._context.peer()
@@ -432,15 +439,18 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     else:
         # Run sync method handlers in the thread pool
         sync_servicer_context = _SyncServicerContext(servicer_context)
-        response_message = await loop.run_in_executor(
-            rpc_state.server.thread_pool(),
-            unary_handler,
-            request,
-            sync_servicer_context,
-        )
-        # Support sync-stack callback
-        for callback in sync_servicer_context._callbacks:
-            callback()
+        try:
+            response_message = await loop.run_in_executor(
+                rpc_state.server.thread_pool(),
+                unary_handler,
+                request,
+                sync_servicer_context,
+            )
+            # Support sync-stack callback
+            for callback in sync_servicer_context._callbacks:
+                callback()
+        finally:
+            sync_servicer_context._callbacks = None
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()
