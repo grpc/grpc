@@ -32,10 +32,12 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include <atomic>
 #include <deque>
 #include <map>
 #include <optional>
 #include <thread>
+#include <vector>
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
@@ -996,6 +998,55 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
+}
+
+// Regression test for the default target's child policy being unreffed
+// outside of the WorkSerializer when the channel releases the last ref to
+// an old picker on a data plane thread.  Changes the default target
+// repeatedly while RPCs are in flight.
+TEST_F(RlsEnd2endTest, UpdateDefaultTargetWithRpcsInFlight) {
+  StartBackends(2);
+  auto service_config_builder =
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .set_default_target(grpc_core::LocalIpUri(backends_[0]->port_));
+  SetNextResolution(service_config_builder.Build());
+  // Don't give the RLS server a response, so the RLS request will fail.
+  // The data plane RPC should be sent to the default target.
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  // Now send RPCs from several threads while changing the default target.
+  // RPCs may fail while the default target is changing, so we don't check
+  // their status.
+  std::atomic<bool> done{false};
+  std::vector<std::thread> threads;
+  for (size_t i = 0; i < 4; ++i) {
+    threads.emplace_back([&]() {
+      while (!done.load()) {
+        SendRpc(RpcOptions().set_timeout_ms(1000).set_metadata(
+            {{"key1", kTestValue}}));
+      }
+    });
+  }
+  for (size_t i = 1; i <= 100; ++i) {
+    service_config_builder.set_default_target(
+        grpc_core::LocalIpUri(backends_[i % 2]->port_));
+    SetNextResolution(service_config_builder.Build());
+  }
+  done.store(true);
+  for (auto& thread : threads) thread.join();
 }
 
 TEST_F(RlsEnd2endTest, CachedResponse) {
