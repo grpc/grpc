@@ -37,8 +37,8 @@ class _StatusCodeProbe:
 
     Used as a sentinel to determine when `RPCState` is deallocated.
     """
-
-    value = grpc.StatusCode.OK.value
+    def __init__(self, status_code=grpc.StatusCode.OK):
+        self.value = status_code.value
 
 
 def _park_probe(context):
@@ -50,6 +50,11 @@ def _park_probe(context):
     probe = _StatusCodeProbe()
     context.set_code(probe)
     return weakref.ref(probe)
+
+
+def _abort_probe():
+    probe = _StatusCodeProbe(grpc.StatusCode.ABORTED)
+    return probe, weakref.ref(probe)
 
 
 def _use_context(context, outcome):
@@ -93,6 +98,9 @@ class ServerCallLifetimeTest(AioTestBase):
         return await self.loop.run_in_executor(None, fn, *args)
 
     async def _assert_rpc_state_released(self, probe_ref):
+        self.assertIsNone(
+            probe_ref(), "Probe was never parked. The handler did not run"
+        )
         deadline = self.loop.time() + test_constants.TIME_ALLOWANCE
         while probe_ref() is not None and self.loop.time() < deadline:
             await asyncio.sleep(0.01)
@@ -242,14 +250,54 @@ class ServerCallLifetimeTest(AioTestBase):
         await self._assert_workers_finished()
         await self._assert_rpc_state_released(probe_ref)
 
-    async def test_released_after_aborted_rpc(self):
+    async def test_released_after_async_rpc_with_done_callback(self):
+        callback_ran = asyncio.Event()
+        probe_ref = None
+
+        @grpc.unary_unary_rpc_method_handler
+        async def unary_unary_handler(unused_request, context):
+            nonlocal probe_ref
+            probe_ref = _park_probe(context)
+            context.add_done_callback(lambda unused_context: callback_ran.set())
+            return b""
+
+        self._adhoc_handlers.set_adhoc_handler(unary_unary_handler)
+        multi_callable = self._channel.unary_unary(_common.ADHOC_METHOD)
+        await multi_callable(b"")
+        await asyncio.wait_for(
+            callback_ran.wait(), test_constants.TIME_ALLOWANCE
+        )
+        await self._assert_rpc_state_released(probe_ref)
+
+    async def test_released_after_sync_rpc_with_done_callback(self):
+        outcome = {}
+        probe_ref = None
+
+        @grpc.unary_unary_rpc_method_handler
+        def unary_unary_handler(unused_request, context):
+            nonlocal probe_ref
+            probe_ref = _park_probe(context)
+            outcome["add_callback"] = context.add_callback(
+                lambda: outcome.update(callback_peer=context.peer())
+            )
+            return b""
+
+        self._adhoc_handlers.set_adhoc_handler(unary_unary_handler)
+        multi_callable = self._channel.unary_unary(_common.ADHOC_METHOD)
+        await multi_callable(b"")
+        await self._assert_workers_finished()
+        self.assertIs(outcome.get("add_callback"), True, outcome)
+        self.assertTrue(outcome.get("callback_peer"), outcome)
+        await self._assert_rpc_state_released(probe_ref)
+
+    async def test_released_after_async_aborted_rpc(self):
         probe_ref = None
 
         @grpc.unary_unary_rpc_method_handler
         async def aborted_unary_unary_handler(unused_request, context):
             nonlocal probe_ref
-            probe_ref = _park_probe(context)
-            await context.abort(grpc.StatusCode.ABORTED, "aborted")
+            probe, probe_ref = _abort_probe()
+            await context.abort(probe, "aborted")
 
         self._adhoc_handlers.set_adhoc_handler(aborted_unary_unary_handler)
         multi_callable = self._channel.unary_unary(_common.ADHOC_METHOD)
@@ -258,6 +306,25 @@ class ServerCallLifetimeTest(AioTestBase):
         self.assertEqual(
             grpc.StatusCode.ABORTED, exception_context.exception.code()
         )
+        await self._assert_rpc_state_released(probe_ref)
+
+    async def test_released_after_sync_aborted_rpc(self):
+        probe_ref = None
+
+        @grpc.unary_unary_rpc_method_handler
+        def aborted_unary_unary_handler(unused_request, context):
+            nonlocal probe_ref
+            probe, probe_ref = _abort_probe()
+            context.abort(probe, "aborted")
+
+        self._adhoc_handlers.set_adhoc_handler(aborted_unary_unary_handler)
+        multi_callable = self._channel.unary_unary(_common.ADHOC_METHOD)
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await multi_callable(b"")
+        self.assertEqual(
+            grpc.StatusCode.ABORTED, exception_context.exception.code()
+        )
+        await self._assert_workers_finished()
         await self._assert_rpc_state_released(probe_ref)
 
     async def test_released_when_handler_stops_reading_early(self):
@@ -292,6 +359,9 @@ class ServerCallLifetimeTest(AioTestBase):
             handler_started.set()
             release.wait(test_constants.TIME_ALLOWANCE)
             _use_context(context, outcome)
+            outcome["add_callback"] = context.add_callback(
+                lambda: outcome.update(late_callback=context.peer())
+            )
             return b""
 
         self._adhoc_handlers.set_adhoc_handler(unary_unary_handler)
@@ -314,6 +384,8 @@ class ServerCallLifetimeTest(AioTestBase):
         self.assertNotIn("error", outcome)
         self.assertTrue(outcome.get("peer"), f'Expected "peer" in {outcome}')
         self.assertIn("send_initial_metadata", outcome)
+        self.assertIs(outcome.get("add_callback"), False, outcome)
+        self.assertNotIn("late_callback", outcome)
         await self._assert_rpc_state_released(probe_ref)
 
     async def test_sync_stream_handler_outliving_client_cancel(self):
