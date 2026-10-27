@@ -55,26 +55,26 @@ void AutoshardingAssignmentBuilder::AddChunk(
         google_cloud_autosharding_v1_SliceAssignment_slice(
             slice_assignments[i]);
     if (slice != nullptr) {
-      pending.start_key = UpbStringToStdString(
-          google_cloud_autosharding_v1_Slice_start_key(slice));
+      absl::string_view start_key =
+          UpbStringToAbsl(google_cloud_autosharding_v1_Slice_start_key(slice));
+      if (start_key.size() > kMaxKeyLength) {
+        ++issue_counts_.long_start_key;
+        continue;
+      }
       if (google_cloud_autosharding_v1_Slice_has_end_key(slice)) {
-        pending.end_key = UpbStringToStdString(
-            google_cloud_autosharding_v1_Slice_end_key(slice));
+        absl::string_view end_key =
+            UpbStringToAbsl(google_cloud_autosharding_v1_Slice_end_key(slice));
+        if (end_key.size() > kMaxKeyLength) {
+          ++issue_counts_.long_end_key;
+          continue;
+        }
+        if (start_key >= end_key) {
+          ++issue_counts_.start_key_not_less_than_end_key;
+          continue;
+        }
+        pending.end_key = std::string(end_key);
       }
-    }
-    if (pending.start_key.size() > kMaxKeyLength) {
-      ++issue_counts_.long_start_key;
-      continue;
-    }
-    if (pending.end_key.has_value()) {
-      if (pending.end_key->size() > kMaxKeyLength) {
-        ++issue_counts_.long_end_key;
-        continue;
-      }
-      if (pending.start_key >= *pending.end_key) {
-        ++issue_counts_.start_key_not_less_than_end_key;
-        continue;
-      }
+      pending.start_key = std::string(start_key);
     }
     size_t num_endpoints;
     const google_cloud_autosharding_v1_PerSliceEndpointState* const* endpoints =
