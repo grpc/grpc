@@ -338,11 +338,13 @@ cdef class _SyncServicerContext:
     def disable_next_message_compression(self):
         self._context.disable_next_message_compression()
 
-    cdef list _run_callbacks(self):
+    cdef _run_callbacks(self):
         # Runs on the loop owning thread.
         with self._callbacks_lock:
             callbacks = self._callbacks
             self._callbacks = None
+        if callbacks is None:
+            return
         for callback in callbacks:
             try:
                 callback()
