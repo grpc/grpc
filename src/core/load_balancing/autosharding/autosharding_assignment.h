@@ -17,9 +17,8 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_AUTOSHARDING_AUTOSHARDING_ASSIGNMENT_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_AUTOSHARDING_AUTOSHARDING_ASSIGNMENT_H
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -92,6 +91,11 @@ class AutoshardingAssignmentBuilder final {
   // Discards all chunks added since the last call to Build().  Call this
   // when the stream restarts in the middle of an assignment.
   void Reset();
+
+  // Generation of the last accepted assignment, or 0 if no assignment was
+  // accepted yet.  An accepted generation is always greater than 0, because
+  // Build() rejects any generation that is not greater than this value.
+  int64_t last_accepted_generation() const { return last_accepted_generation_; }
 
  private:
   struct PendingSlice {

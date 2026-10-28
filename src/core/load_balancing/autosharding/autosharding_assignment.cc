@@ -197,8 +197,11 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
         {std::move(candidate->end_key).value_or(std::string()),
          std::move(candidate->endpoints), fallback_disabled});
   };
-  // Largest end_key seen so far; not set for +infinity.  Points into
-  // slices, which is not modified while the view is in use.
+  // Largest end_key seen so far. An empty string_view represents
+  // -infinity (the state before seeing any slice); std::nullopt represents
+  // +infinity. Points into the end_key of a slice in slices.  When that
+  // slice is the candidate, append_candidate() moves its end_key out, so
+  // max_end_key is reassigned right after each call.
   std::optional<absl::string_view> max_end_key = absl::string_view();
   for (PendingSlice& slice : slices) {
     bool has_invalid_endpoint = false;

@@ -16,8 +16,7 @@
 
 #include "src/core/load_balancing/autosharding/autosharding_assignment.h"
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -106,6 +105,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, SingleSliceCoversKeyspace) {
   EXPECT_EQ(result.outcome, Outcome::kAccepted);
   EXPECT_EQ(result.error_message, "");
   ASSERT_TRUE(result.assignment.has_value());
+  EXPECT_EQ(builder_.last_accepted_generation(), 1);
   EXPECT_THAT(result.assignment->endpoint_names, ElementsAre("host0", "host1"));
   EXPECT_THAT(result.assignment->slices,
               ElementsAre(SliceIs("", {0, 1}, false)));
@@ -164,6 +164,20 @@ TEST_F(AutoshardingAssignmentBuilderTest, EmptyEndpointListDisablesFallback) {
   EXPECT_THAT(result.assignment->slices,
               ElementsAre(SliceIs("a", {}, true), SliceIs("b", {0}, false),
                           SliceIs("", {}, true)));
+}
+
+TEST_F(AutoshardingAssignmentBuilderTest,
+       GapNextToSliceWithoutEndpointsKeepsFallbackEnabled) {
+  // The gap slices allow fallback, but the slice that the server sent with
+  // no endpoints does not.
+  AddChunk({{"b", "c", {}}}, {"host0"});
+  Result result = builder_.Build(1);
+  EXPECT_EQ(result.outcome, Outcome::kAccepted);
+  EXPECT_EQ(result.error_message, "encountered 2 gap(s) in the assignment");
+  ASSERT_TRUE(result.assignment.has_value());
+  EXPECT_THAT(result.assignment->slices,
+              ElementsAre(SliceIs("b", {}, false), SliceIs("c", {}, true),
+                          SliceIs("", {}, false)));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, GapsAreFilled) {
@@ -336,6 +350,7 @@ TEST_F(AutoshardingAssignmentBuilderTest, AllSlicesInvalidIsRejected) {
 TEST_F(AutoshardingAssignmentBuilderTest, StaleGeneration) {
   AddChunk({{"", std::nullopt, {0}}}, {"host0"});
   EXPECT_EQ(builder_.Build(5).outcome, Outcome::kAccepted);
+  EXPECT_EQ(builder_.last_accepted_generation(), 5);
   AddChunk({{"", std::nullopt, {0}}}, {"host0"});
   Result result = builder_.Build(5);
   EXPECT_EQ(result.outcome, Outcome::kStale);
@@ -343,12 +358,25 @@ TEST_F(AutoshardingAssignmentBuilderTest, StaleGeneration) {
             "received generation 5 is not greater than the latest generation "
             "5");
   EXPECT_FALSE(result.assignment.has_value());
+  EXPECT_EQ(builder_.last_accepted_generation(), 5);
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, ZeroGenerationIsStale) {
+  EXPECT_EQ(builder_.last_accepted_generation(), 0);
   AddChunk({{"", std::nullopt, {0}}}, {"host0"});
   Result result = builder_.Build(0);
   EXPECT_EQ(result.outcome, Outcome::kStale);
+  EXPECT_EQ(builder_.last_accepted_generation(), 0);
+}
+
+TEST_F(AutoshardingAssignmentBuilderTest, NegativeGenerationIsStale) {
+  AddChunk({{"", std::nullopt, {0}}}, {"host0"});
+  Result result = builder_.Build(-1);
+  EXPECT_EQ(result.outcome, Outcome::kStale);
+  EXPECT_EQ(result.error_message,
+            "received generation -1 is not greater than the latest generation "
+            "0");
+  EXPECT_EQ(builder_.last_accepted_generation(), 0);
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, BuildClearsChunks) {

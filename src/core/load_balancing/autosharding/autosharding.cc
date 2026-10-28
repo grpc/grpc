@@ -96,9 +96,6 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
       std::string end_key;
       // Indices into Picker::endpoints_.
       std::vector<size_t> endpoints;
-      // True if the autosharding server explicitly assigned no endpoints to
-      // this slice.  False for a slice that fills a gap in the assignment.
-      bool fallback_disabled = false;
     };
 
     // Populates slices from assignment and endpoint_map.
@@ -108,9 +105,9 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
 
     const std::vector<Entry>& slices() const { return slices_; }
 
-    // Returns the slice covering key. Lookup is guaranteed to succeed
+    // Returns endpoint indices covering key. Lookup is guaranteed to succeed
     // because slices partition the entire keyspace.
-    const Entry& Lookup(absl::string_view key) const {
+    absl::Span<const size_t> Lookup(absl::string_view key) const {
       auto it = std::upper_bound(slices_.begin(), slices_.end(), key,
                                  [](absl::string_view key, const Entry& entry) {
                                    // An empty end_key means +infinity.
@@ -118,7 +115,7 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
                                           key < entry.end_key;
                                  });
       GRPC_CHECK(it != slices_.end());
-      return *it;
+      return it->endpoints;
     }
 
    private:
@@ -350,14 +347,13 @@ AutoshardingLbPolicy::PickResult AutoshardingLbPolicy::Picker::Pick(
     FallbackEndpointIndexIterator iterator(endpoints_.size());
     return PickFromEndpointIndices(iterator, args);
   }
-  // Look up the slice covering the key.
-  const SliceMap::Entry& slice = slice_map_->Lookup(*key);
-  if (!slice.fallback_disabled && IsPoolInFallback(slice.endpoints) &&
-      config_->enable_fallback()) {
+  // Look up the endpoints covering the key.
+  absl::Span<const size_t> indices = slice_map_->Lookup(*key);
+  if (IsPoolInFallback(indices) && config_->enable_fallback()) {
     FallbackEndpointIndexIterator iterator(endpoints_.size());
     return PickFromEndpointIndices(iterator, args);
   }
-  SliceEndpointIndexIterator iterator(slice.endpoints);
+  SliceEndpointIndexIterator iterator(indices);
   return PickFromEndpointIndices(iterator, args);
 }
 
@@ -568,7 +564,6 @@ AutoshardingLbPolicy::SliceMap::SliceMap(
         entry.endpoints.push_back(it->second->index());
       }
     }
-    entry.fallback_disabled = slice.fallback_disabled;
     slices_.push_back(std::move(entry));
   }
 }
