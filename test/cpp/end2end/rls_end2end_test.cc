@@ -243,6 +243,7 @@ class RlsEnd2endTest : public ::testing::Test {
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
     std::string telemetry_label;
+    bool skip_cancelled_check = false;
 
     RpcOptions() {}
 
@@ -264,6 +265,11 @@ class RlsEnd2endTest : public ::testing::Test {
 
     RpcOptions& set_telemetry_label(absl::string_view label) {
       telemetry_label = std::string(label);
+      return *this;
+    }
+
+    RpcOptions& set_skip_cancelled_check(bool rpc_skip_cancelled_check) {
+      skip_cancelled_check = rpc_skip_cancelled_check;
       return *this;
     }
 
@@ -291,6 +297,9 @@ class RlsEnd2endTest : public ::testing::Test {
     rpc_options.SetupRpc(&context);
     EchoRequest request;
     request.set_message(kRequestMessage);
+    if (rpc_options.skip_cancelled_check) {
+      request.mutable_param()->set_skip_cancelled_check(true);
+    }
     return stub_->Echo(&context, request, response);
   }
 
@@ -1028,15 +1037,18 @@ TEST_F(RlsEnd2endTest, UpdateDefaultTargetWithRpcsInFlight) {
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   // Now send RPCs from several threads while changing the default target.
-  // RPCs may fail while the default target is changing, so we don't check
-  // their status.
+  // RPCs may fail or be cancelled while the default target is changing, so
+  // we don't check their status, and the backends don't check that they
+  // were not cancelled.
   std::atomic<bool> done{false};
   std::vector<std::thread> threads;
   for (size_t i = 0; i < 4; ++i) {
     threads.emplace_back([&]() {
       while (!done.load()) {
-        SendRpc(RpcOptions().set_timeout_ms(1000).set_metadata(
-            {{"key1", kTestValue}}));
+        SendRpc(RpcOptions()
+                    .set_timeout_ms(1000)
+                    .set_metadata({{"key1", kTestValue}})
+                    .set_skip_cancelled_check(true));
       }
     });
   }
