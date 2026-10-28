@@ -573,11 +573,15 @@ class TestWriteToIteratorQueueInterruptibleTaskLeak(AioTestBase):
             call = DummyCall()
 
             # First write fills the queue of size 1
-            await mixin._write_to_iterator_queue_interruptible("request1", call)
+            await mixin._write_to_iterator_queue_interruptible(
+                "request1", call
+            )  # pytype: disable=wrong-arg-types
 
             # Second write blocks on queue.put() because the queue is full
             write_task = asyncio.create_task(
-                mixin._write_to_iterator_queue_interruptible("request2", call)
+                mixin._write_to_iterator_queue_interruptible(
+                    "request2", call
+                )  # pytype: disable=wrong-arg-types
             )
 
             # Allow write_task to start and block on put()
