@@ -68,8 +68,8 @@
 namespace grpc_core {
 namespace http2 {
 
-// All Promise Based HTTP2 Transport TODOs have the tag
-// [PH2][Pn] where n = 0 to 5.
+// All Promise Based HTTP2 Transport TODOs carry the tag [PH2][Pn] right
+// after the owner ldap, where n = 0 to 5. The priority tag is mandatory.
 // This helps to maintain the uniformity for quick lookup and fixing.
 //
 // [PH2][P0] MUST be fixed before the current PR is submitted.
@@ -82,11 +82,22 @@ namespace http2 {
 //           Milestone 4. Either do the TODOs or delete them.
 // [PH2][P5] Can be fixed after roll out begins. Evaluate these during
 //           Milestone 4. Either do the TODOs or delete them.
-// [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
-//            in parallel.
-// [PH2][CHTTP2] This TODO is a part of CHTTP2 deletion.
-// [PH2][Px][FCV3] This TODO is related to Flow Control plumbing with the
-// Application and the Call V3 stack.
+//
+// Optional category tags follow the priority tag.
+// [PH2][Pn][Client] Affects only the PH2 client.
+// [PH2][Pn][Server] Affects only the PH2 server.
+// [PH2][Pn][EXT] A TODO related to a project unrelated to PH2 but happening
+//                in parallel.
+// [PH2][Pn][CHTTP2] A TODO that is a part of CHTTP2 deletion.
+// [PH2][Pn][FCV3] A TODO related to Flow Control plumbing with the
+//                 Application and the Call V3 stack.
+// [PH2][Pn][Retry] A TODO related to Retry support for PH2. Retry is a
+//                  separate feature that lands after the PH2 roll out.
+//
+// Skipped tests use fixed priorities.
+// SKIP_TEST_FOR_PH2_SERVER messages are currently [PH2][P1].
+// SKIP_TEST_FOR_PH2_CLIENT messages are currently [PH2][P3].
+// SKIP_RETRY_TEST_FOR_PH2_CLIENT messages are currently [PH2][P5][Retry].
 
 constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
 constexpr bool kDefaultEnablePreferredRxCryptoFrameAdvertisement = false;
