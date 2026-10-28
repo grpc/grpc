@@ -167,7 +167,6 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:experiments",
         "//src/core:for_each",
-        "//src/core:loop",
         "//src/core:map",
         "//src/core:memory_quota",
         "//src/core:message",

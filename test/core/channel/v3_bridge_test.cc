@@ -29,7 +29,6 @@
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
-#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
@@ -73,21 +72,27 @@ class EarlyFailureInterceptor
   void Orphaned() override {}
 };
 
+// An activity that records whether it has been woken, so a test can poll a
+// promise until it stops making progress instead of a fixed number of times.
 class TestActivity final : public Activity, public Wakeable {
  public:
   void Run(absl::FunctionRef<void()> f) {
     ScopedActivity scoped(this);
     f();
   }
+  bool TakeWoken() { return std::exchange(woken_, false); }
   void Orphan() override {}
-  void ForceImmediateRepoll(WakeupMask) override {}
+  void ForceImmediateRepoll(WakeupMask) override { woken_ = true; }
   Waker MakeNonOwningWaker() override { return Waker(this, 0); }
   Waker MakeOwningWaker() override { return Waker(this, 0); }
-  void Wakeup(WakeupMask) override {}
-  void WakeupAsync(WakeupMask) override {}
+  void Wakeup(WakeupMask) override { woken_ = true; }
+  void WakeupAsync(WakeupMask) override { woken_ = true; }
   void Drop(WakeupMask) override {}
   std::string DebugTag() const override { return "TestActivity"; }
   std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
+
+ private:
+  bool woken_ = false;
 };
 
 class V3BridgeTest : public ::testing::Test {
@@ -283,9 +288,9 @@ class HalfCloseRecordingInterceptor final
 
  private:
   void ForwardAndRecord(CallHandler handler, CallInitiator initiator) {
-    std::vector<std::string>* events = events_;
     handler.SpawnInfallible(
-        "record_client_to_server", [handler, initiator, events]() mutable {
+        "record_client_to_server",
+        [handler, initiator, events = events_]() mutable {
           return Seq(ForEach(MessagesFrom(handler),
                              [initiator, events](MessageHandle msg) mutable {
                                events->push_back(absl::StrCat(
@@ -316,29 +321,6 @@ class HalfCloseRecordingInterceptor final
   std::vector<std::string>* events_;
 };
 
-// An activity that records whether it has been woken, so a test can poll a
-// promise until it stops making progress instead of a fixed number of times.
-class WakeTrackingActivity final : public Activity, public Wakeable {
- public:
-  void Run(absl::FunctionRef<void()> f) {
-    ScopedActivity scoped(this);
-    f();
-  }
-  bool TakeWoken() { return std::exchange(woken_, false); }
-  void Orphan() override {}
-  void ForceImmediateRepoll(WakeupMask) override { woken_ = true; }
-  Waker MakeNonOwningWaker() override { return Waker(this, 0); }
-  Waker MakeOwningWaker() override { return Waker(this, 0); }
-  void Wakeup(WakeupMask) override { woken_ = true; }
-  void WakeupAsync(WakeupMask) override { woken_ = true; }
-  void Drop(WakeupMask) override {}
-  std::string DebugTag() const override { return "WakeTrackingActivity"; }
-  std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
-
- private:
-  bool woken_ = false;
-};
-
 // Drives V3InterceptorToV2Bridge::MakeCallPromise directly with
 // HalfCloseRecordingInterceptor. The test plays the previous v2 filter: it
 // owns the client-to-server pipe sender, pushes messages into it and closes it
@@ -354,13 +336,12 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
     arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine_.get());
     RunInActivity([this]() {
-      pipes_.emplace();
       CallArgs args{Arena::MakePooledForOverwrite<ClientMetadata>(),
                     ClientInitialMetadataOutstandingToken::Empty(),
                     nullptr,
-                    &pipes_->server_initial_metadata.sender,
-                    &pipes_->client_to_server.receiver,
-                    &pipes_->server_to_client.sender};
+                    &server_initial_metadata_.sender,
+                    &client_to_server_.receiver,
+                    &server_to_client_.sender};
       call_promise_ = interceptor_->MakeCallPromise(
           std::move(args), [this](CallArgs next_args) {
             return NextFilter(next_args.client_to_server_messages);
@@ -369,35 +350,30 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
   }
 
   ~ClientHalfClosePropagationTest() override {
-    // The call never finishes, so destroying the promise cancels the v3 call.
+    // If the call did not finish, destroying the promise cancels the v3 call.
     RunInActivity([this]() {
       push_.reset();
       call_promise_.reset();
-      pipes_.reset();
     });
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
   }
 
-  // The next v2 filter: pulls client-to-server messages until the pipe closes.
-  // Each message is acked once `hold_message_ack_` is false; holding the ack
-  // is like a transport that has not yet completed the send. It never returns
-  // trailing metadata.
+  // The next v2 filter: pulls client-to-server messages until the pipe closes,
+  // then completes the call. Each message is acked once `hold_message_ack_` is
+  // false; holding the ack is like a transport that has not yet completed the
+  // send.
   ArenaPromise<ServerMetadataHandle> NextFilter(
       PipeReceiver<MessageHandle>* messages) {
-    return Seq(
-        Loop([this, messages]() {
-          return Seq(
-              messages->Next(), [this](NextResult<MessageHandle> message) {
-                return [this, message = std::move(
-                                  message)]() mutable -> Poll<LoopCtl<Empty>> {
-                  if (!message.has_value()) return Empty{};
-                  if (hold_message_ack_) return Pending{};
-                  return Continue{};
-                };
-              });
-        }),
-        [](Empty) { return Never<ServerMetadataHandle>(); });
+    return Map(
+        ForEach(std::move(*messages),
+                [this](MessageHandle) {
+                  return [this]() -> Poll<StatusFlag> {
+                    if (hold_message_ack_) return Pending{};
+                    return Success{};
+                  };
+                }),
+        [](StatusFlag) { return ServerMetadataFromStatus(absl::OkStatus()); });
   }
 
   template <typename F>
@@ -413,20 +389,22 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
   void SendMessage(absl::string_view payload) {
     ASSERT_FALSE(push_.has_value());
     RunInActivity([&]() {
-      push_.emplace(
-          pipes_->client_to_server.sender.Push(Arena::MakePooled<Message>(
-              SliceBuffer(Slice::FromCopiedString(payload)), 0)));
+      push_.emplace(client_to_server_.sender.Push(Arena::MakePooled<Message>(
+          SliceBuffer(Slice::FromCopiedString(payload)), 0)));
       PollPush();
     });
   }
 
   // Polls the v2 side and ticks the event engine until neither has work left.
+  // The call promise is reset once it completes.
   void Drain() {
     for (int i = 0; i < 1000; ++i) {
       activity_.TakeWoken();
       RunInActivity([this]() {
         PollPush();
-        EXPECT_TRUE((*call_promise_)().pending());
+        if (call_promise_.has_value() && (*call_promise_)().ready()) {
+          call_promise_.reset();
+        }
       });
       const bool did_work = ExecCtx::Get()->Flush();
       if (!activity_.TakeWoken() && !did_work && event_engine_->IsIdle()) {
@@ -446,12 +424,6 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
     }
   }
 
-  struct Pipes {
-    Pipe<ServerMetadataHandle> server_initial_metadata;
-    Pipe<MessageHandle> client_to_server;
-    Pipe<MessageHandle> server_to_client;
-  };
-
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_ =
           std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
@@ -462,9 +434,11 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   RefCountedPtr<HalfCloseRecordingInterceptor> interceptor_ =
       MakeRefCounted<HalfCloseRecordingInterceptor>(&events_);
-  WakeTrackingActivity activity_;
+  TestActivity activity_;
   bool hold_message_ack_ = false;
-  std::optional<Pipes> pipes_;
+  Pipe<ServerMetadataHandle> server_initial_metadata_{arena_.get()};
+  Pipe<MessageHandle> client_to_server_{arena_.get()};
+  Pipe<MessageHandle> server_to_client_{arena_.get()};
   std::optional<PipeSender<MessageHandle>::PushType> push_;
   std::optional<ArenaPromise<ServerMetadataHandle>> call_promise_;
 };
@@ -472,9 +446,10 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
 TEST_F(ClientHalfClosePropagationTest,
        HalfCloseRightAfterMessagePropagatesAfterMessage) {
   SendMessage("hello");
-  RunInActivity([this]() { pipes_->client_to_server.sender.Close(); });
+  RunInActivity([this]() { client_to_server_.sender.Close(); });
   Drain();
   EXPECT_THAT(events_, ::testing::ElementsAre("msg:hello", "half_close"));
+  EXPECT_FALSE(call_promise_.has_value()) << "call did not complete";
 }
 
 TEST_F(ClientHalfClosePropagationTest, HalfCloseAfterMessagePropagates) {
@@ -482,17 +457,19 @@ TEST_F(ClientHalfClosePropagationTest, HalfCloseAfterMessagePropagates) {
   Drain();
   // No half-close was sent yet, so v3 must not see one.
   EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1"));
-  RunInActivity([this]() { pipes_->client_to_server.sender.Close(); });
+  RunInActivity([this]() { client_to_server_.sender.Close(); });
   Drain();
   EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1", "half_close"));
+  EXPECT_FALSE(call_promise_.has_value()) << "call did not complete";
 }
 
 TEST_F(ClientHalfClosePropagationTest, HalfCloseWithoutAnyMessagePropagates) {
   Drain();
   EXPECT_THAT(events_, ::testing::IsEmpty());
-  RunInActivity([this]() { pipes_->client_to_server.sender.Close(); });
+  RunInActivity([this]() { client_to_server_.sender.Close(); });
   Drain();
   EXPECT_THAT(events_, ::testing::ElementsAre("half_close"));
+  EXPECT_FALSE(call_promise_.has_value()) << "call did not complete";
 }
 
 TEST_F(ClientHalfClosePropagationTest,
@@ -503,13 +480,14 @@ TEST_F(ClientHalfClosePropagationTest,
   EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1"));
   // Half-close while the next filter still holds the ack for msg1. The v3
   // interceptor must not observe the half-close yet.
-  RunInActivity([this]() { pipes_->client_to_server.sender.Close(); });
+  RunInActivity([this]() { client_to_server_.sender.Close(); });
   Drain();
   EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1"));
   // Now ack msg1.
   hold_message_ack_ = false;
   Drain();
   EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1", "half_close"));
+  EXPECT_FALSE(call_promise_.has_value()) << "call did not complete";
 }
 
 }  // namespace
