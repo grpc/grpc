@@ -285,8 +285,9 @@ class XdsMatcherList::StringInputMatcher
   explicit StringInputMatcher(StringMatcher matcher)
       : matcher_(std::move(matcher)) {}
 
+  // An absent input (e.g. a missing header) never matches, as in Envoy.
   bool Match(const std::optional<absl::string_view>& input) const override {
-    return matcher_.Match(input.value_or(""));
+    return input.has_value() && matcher_.Match(*input);
   }
   static UniqueTypeName Type() {
     return GRPC_UNIQUE_TYPE_NAME_HERE("StringInputMatcher");
