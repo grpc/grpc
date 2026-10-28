@@ -815,10 +815,11 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void SetUp() override {
-    // TODO(rishesh): [PH2] Server-side ext_proc crashes with PH2 server, and
-    // client-side ext_proc tests are flaky with PH2 server due to a data race
-    // in ServerCall::failed_before_recv_message().
-    SKIP_TEST_FOR_PH2_SERVER("[PH2] ext_proc is not yet supported with PH2");
+    // Server-side ext_proc crashes with PH2 server, and client-side ext_proc
+    // tests are flaky with PH2 server due to a data race in
+    // ServerCall::failed_before_recv_message().
+    SKIP_TEST_FOR_PH2_SERVER(
+        "TODO(rishesh) [PH2][P1] ext_proc is not yet supported with PH2");
     env_var_.emplace(GetParam().filter_on_server()
                          ? "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER"
                          : "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
