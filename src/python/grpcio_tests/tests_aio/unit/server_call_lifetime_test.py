@@ -99,8 +99,8 @@ class ServerCallLifetimeTest(AioTestBase):
         return await self.loop.run_in_executor(None, fn, *args)
 
     async def _assert_rpc_state_released(self, probe_ref):
-        self.assertIsNone(
-            probe_ref(), "Probe was never parked. The handler did not run"
+        self.assertIsNotNone(
+            probe_ref, "Probe was never parked. The handler did not run"
         )
         deadline = self.loop.time() + test_constants.TIME_ALLOWANCE
         while probe_ref() is not None and self.loop.time() < deadline:
