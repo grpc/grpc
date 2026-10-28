@@ -37,6 +37,7 @@ class _StatusCodeProbe:
 
     Used as a sentinel to determine when `RPCState` is deallocated.
     """
+
     def __init__(self, status_code=grpc.StatusCode.OK):
         self.value = status_code.value
 
