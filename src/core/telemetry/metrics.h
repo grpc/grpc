@@ -348,6 +348,12 @@ class StatsPlugin {
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_values) = 0;
+  virtual void RecordHistogram(
+      const InstrumentMetadata::Description* /*description*/, int64_t /*value*/,
+      absl::Span<const std::string> /*label_values*/) {}
+  virtual void RecordHistogram(
+      const InstrumentMetadata::Description* /*description*/, double /*value*/,
+      absl::Span<const std::string> /*label_values*/) {}
   // Adds a callback to be invoked when the stats plugin wants to
   // populate the corresponding metrics (see callback->metrics() for list).
   virtual void AddCallback(RegisteredMetricCallback* callback) = 0;
@@ -388,7 +394,8 @@ class GlobalStatsPluginRegistry {
   // plugins for a specific scope and all operations on the stats plugin group
   // will be applied to all the stats plugins within the group.
   class StatsPluginGroup
-      : public std::enable_shared_from_this<StatsPluginGroup> {
+      : public std::enable_shared_from_this<StatsPluginGroup>,
+        public InstrumentRecorder {
    public:
     // Adds a stats plugin and a scope config (per-channel or per-server) to the
     // group.
@@ -412,6 +419,20 @@ class GlobalStatsPluginRegistry {
       }
       collection_scope_ =
           CreateCollectionScope(std::move(collection_scopes), {});
+    }
+    void RecordHistogram(const InstrumentMetadata::Description* description,
+                         int64_t value,
+                         absl::Span<const std::string> label_values) override {
+      for (auto& state : plugins_state_) {
+        state.plugin->RecordHistogram(description, value, label_values);
+      }
+    }
+    void RecordHistogram(const InstrumentMetadata::Description* description,
+                         double value,
+                         absl::Span<const std::string> label_values) override {
+      for (auto& state : plugins_state_) {
+        state.plugin->RecordHistogram(description, value, label_values);
+      }
     }
     // Adds a counter in all stats plugins within the group. See the StatsPlugin
     // interface for more documentation and valid types.

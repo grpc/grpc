@@ -1914,11 +1914,11 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
             CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
                 args.GetString(GRPC_ARG_SERVER_URI).value_or("")));
       }()),
+      stats_plugin_group_(
+          args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
       telemetry_storage_([&]() -> TelemetryStorage {
-        auto stats_plugin_group =
-            args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
-        if (stats_plugin_group == nullptr) return std::monostate{};
-        auto scope = stats_plugin_group->GetCollectionScope();
+        if (stats_plugin_group_ == nullptr) return std::monostate{};
+        auto scope = stats_plugin_group_->GetCollectionScope();
         if (scope == nullptr) return std::monostate{};
         if (is_server_) {
           return ServerTelemetryDomain::GetStorage(std::move(scope));
@@ -1946,6 +1946,7 @@ void ExtProcFilter::Orphaned() {
   config_.reset();
   per_channel_evaluate_args_.reset();
   auth_context_.reset();
+  stats_plugin_group_.reset();
   telemetry_storage_ = std::monostate{};
 }
 
@@ -1963,16 +1964,18 @@ void ExtProcFilter::RecordDuration(ClientTelemetryDomain::DoubleHistogramHandle<
                                    double duration_seconds) const {
   Match(
       telemetry_storage_, [](const std::monostate&) {},
-      [duration_seconds,
+      [this, duration_seconds,
        client_metric](const InstrumentStorageRefPtr<ClientTelemetryDomain>& s) {
         if (s != nullptr) {
-          s->Increment(client_metric, duration_seconds);
+          s->Increment(client_metric, duration_seconds,
+                       stats_plugin_group_.get());
         }
       },
-      [duration_seconds,
+      [this, duration_seconds,
        server_metric](const InstrumentStorageRefPtr<ServerTelemetryDomain>& s) {
         if (s != nullptr) {
-          s->Increment(server_metric, duration_seconds);
+          s->Increment(server_metric, duration_seconds,
+                       stats_plugin_group_.get());
         }
       });
 }

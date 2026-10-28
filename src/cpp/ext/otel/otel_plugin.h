@@ -493,6 +493,12 @@ class OpenTelemetryPluginImpl
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
+  void RecordHistogram(
+      const grpc_core::InstrumentMetadata::Description* description,
+      int64_t value, absl::Span<const std::string> label_values) override;
+  void RecordHistogram(
+      const grpc_core::InstrumentMetadata::Description* description,
+      double value, absl::Span<const std::string> label_values) override;
   void AddCallback(grpc_core::RegisteredMetricCallback* callback)
       ABSL_LOCKS_EXCLUDED(mu_) override;
   void RemoveCallback(grpc_core::RegisteredMetricCallback* callback)
@@ -599,6 +605,14 @@ class OpenTelemetryPluginImpl
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
   std::vector<std::unique_ptr<ExporterCallback>> exporter_callbacks_;
+  absl::flat_hash_map<
+      const grpc_core::InstrumentMetadata::Description*,
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>
+      uint64_histograms_;
+  absl::flat_hash_map<
+      const grpc_core::InstrumentMetadata::Description*,
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>>>
+      double_histograms_;
   grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope_;
 };
 
