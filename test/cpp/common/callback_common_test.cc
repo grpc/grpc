@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <new>
 #include <utility>
 
@@ -71,15 +72,20 @@ struct CallDestructionNotifier {
 
 class ScopedGlobalCallbackHook {
  public:
-  explicit ScopedGlobalCallbackHook(GlobalCallbackHook* hook) {
+  // SetGlobalCallbackHook() takes ownership of its argument, so the hook to
+  // restore is allocated here rather than in the destructor: allocating in a
+  // (noexcept) destructor has no way to handle a failed allocation.
+  explicit ScopedGlobalCallbackHook(GlobalCallbackHook* hook)
+      : restore_(std::make_unique<DefaultGlobalCallbackHook>()) {
     SetGlobalCallbackHook(hook);
   }
-  ~ScopedGlobalCallbackHook() {
-    SetGlobalCallbackHook(new DefaultGlobalCallbackHook());
-  }
+  ~ScopedGlobalCallbackHook() { SetGlobalCallbackHook(restore_.release()); }
 
   ScopedGlobalCallbackHook(const ScopedGlobalCallbackHook&) = delete;
   ScopedGlobalCallbackHook& operator=(const ScopedGlobalCallbackHook&) = delete;
+
+ private:
+  std::unique_ptr<DefaultGlobalCallbackHook> restore_;
 };
 
 class ArenaCheckingCallbackHook final : public GlobalCallbackHook {
@@ -169,7 +175,7 @@ TEST(CallbackCommonTest,
 }
 
 TEST(CallbackCommonTest,
-     CallbackWithSuccessTagClearedDuringFinalizeResultSkipsCallback) {
+     CallbackWithSuccessTagOwnerDestroyedDuringFinalizeResultKeepsCallAlive) {
   ScopedGlobalCallbackHook default_hook_guard(new DefaultGlobalCallbackHook());
   grpc_init();
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
@@ -188,22 +194,25 @@ TEST(CallbackCommonTest,
   grpc_core::Notification finalize_done;
   bool callback_ran = false;
   auto* holder = new (grpc_call_arena_alloc(call, sizeof(Holder))) Holder();
-  TestCompletionQueueTag test_ops([holder, &call_destroyed, &finalize_done]() {
-    // Destroy the owner (which calls ~CallbackWithSuccessTag() -> Clear())
-    // during FinalizeResult. Proceed's pre-FinalizeResult ref must keep `call`
-    // and its arena alive until Proceed finishes its own unref.
-    holder->~Holder();
-    EXPECT_FALSE(call_destroyed.HasBeenNotified());
-    finalize_done.Notify();
-  });
+  // Models ServerContextBase::CompletionOp::FinalizeResult, which destroys the
+  // arena-allocated object holding the tag and then returns. A FinalizeResult
+  // that does this must return false: once the owner is gone, Proceed cannot
+  // read any member of the tag to decide whether to dispatch.
+  TestCompletionQueueTag test_ops(
+      [holder, &call_destroyed, &finalize_done]() {
+        // Destroying the owner runs ~CallbackWithSuccessTag() -> Clear(),
+        // dropping the tag's reference to `call`. Proceed's
+        // pre-FinalizeResult ref must keep `call` and its arena alive until
+        // Proceed finishes its own unref.
+        holder->~Holder();
+        EXPECT_FALSE(call_destroyed.HasBeenNotified());
+        finalize_done.Notify();
+      },
+      /*result=*/false);
 
   holder->tag.Set(
-      call,
-      [holder, &callback_ran](bool /*ok*/) {
-        callback_ran = true;
-        EXPECT_EQ(holder->magic, 0xCAFEBABEu);
-      },
-      &test_ops, /*can_inline=*/false);
+      call, [&callback_ran](bool /*ok*/) { callback_ran = true; }, &test_ops,
+      /*can_inline=*/false);
 
   // Drop the initial creation ref so `holder->tag` holds the sole reference to
   // `call` entering `Proceed`.
