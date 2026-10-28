@@ -104,7 +104,7 @@ class Http2ServerTransport final : public ServerTransport,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings,
-      grpc_closure* on_close_callback);
+      absl::AnyInvocable<void()> on_close_callback);
 
   Http2ServerTransport(const Http2ServerTransport&) = delete;
   Http2ServerTransport& operator=(const Http2ServerTransport&) = delete;
@@ -759,7 +759,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   HPackCompressor encoder_;
   TransportShutdownTracker shutdown_tracker_;
-  grpc_closure* on_close_callback_;
+  absl::AnyInvocable<void()> on_close_callback_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_server", GRPC_CHANNEL_READY};

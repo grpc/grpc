@@ -815,11 +815,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void SetUp() override {
-    if (GetParam().filter_on_server() &&
-        !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
-      GTEST_SKIP()
-          << "test requires xds_server_filter_chain_per_route experiment";
-    }
     // TODO(rishesh): [PH2] Server-side ext_proc crashes with PH2 server, and
     // client-side ext_proc tests are flaky with PH2 server due to a data race
     // in ServerCall::failed_before_recv_message().
@@ -3514,7 +3509,6 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
   grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
