@@ -677,9 +677,16 @@ TEST(JwtVerifierTest, HeaderWithNonStringAlgIsRejectedBeforeSignatureCheck) {
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                                       httpcli_post_should_not_be_called,
                                       httpcli_put_should_not_be_called);
-  const char* bad_headers[] = {"{\"alg\":12345}",       "{\"alg\":true}",
-                               "{\"alg\":[\"RS256\"]}", "{\"alg\":{}}",
-                               "\"not-an-object\"",     "12345"};
+  const char* bad_headers[] = {"{\"alg\":12345}",
+                               "{\"alg\":true}",
+                               "{\"alg\":[\"RS256\"]}",
+                               "{\"alg\":{}}",
+                               "{}",
+                               "{\"alg\":\"HS256\"}",
+                               "{\"alg\":\"RS256\",\"typ\":123}",
+                               "{\"alg\":\"RS256\",\"kid\":123}",
+                               "\"not-an-object\"",
+                               "12345"};
   for (const char* bad_header : bad_headers) {
     std::string header = absl::WebSafeBase64Escape(bad_header);
     std::string payload = absl::WebSafeBase64Escape("{\"iss\":\"foo\"}");

@@ -163,9 +163,10 @@ static jose_header* jose_header_from_json(Json json) {
     return nullptr;
   }
   jose_header* h = grpc_core::Zalloc<jose_header>();
+  h->json.Init(std::move(json));
   // Check alg field.
-  it = json.object().find("alg");
-  if (it == json.object().end()) {
+  it = h->json->object().find("alg");
+  if (it == h->json->object().end()) {
     LOG(ERROR) << "Missing alg field.";
     goto error;
   }
@@ -181,18 +182,17 @@ static jose_header* jose_header_from_json(Json json) {
   }
   h->alg = alg_value;
   // Check typ field.
-  it = json.object().find("typ");
-  if (it != json.object().end()) {
+  it = h->json->object().find("typ");
+  if (it != h->json->object().end()) {
     h->typ = validate_string_field(it->second, "typ");
     if (h->typ == nullptr) goto error;
   }
   // Check kid field.
-  it = json.object().find("kid");
-  if (it != json.object().end()) {
+  it = h->json->object().find("kid");
+  if (it != h->json->object().end()) {
     h->kid = validate_string_field(it->second, "kid");
     if (h->kid == nullptr) goto error;
   }
-  h->json.Init(std::move(json));
   return h;
 
 error:
