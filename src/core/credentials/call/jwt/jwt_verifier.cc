@@ -158,11 +158,11 @@ static void jose_header_destroy(jose_header* h) {
 static jose_header* jose_header_from_json(Json json) {
   const char* alg_value;
   Json::Object::const_iterator it;
-  jose_header* h = grpc_core::Zalloc<jose_header>();
   if (json.type() != Json::Type::kObject) {
     LOG(ERROR) << "JSON value is not an object";
-    goto error;
+    return nullptr;
   }
+  jose_header* h = grpc_core::Zalloc<jose_header>();
   // Check alg field.
   it = json.object().find("alg");
   if (it == json.object().end()) {
@@ -173,9 +173,8 @@ static jose_header* jose_header_from_json(Json json) {
   // Beware of this if we add HMAC support:
   // https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
   //
-  alg_value = it->second.string().c_str();
-  if (it->second.type() != Json::Type::kString ||
-      strncmp(alg_value, "RS", 2) != 0 ||
+  alg_value = validate_string_field(it->second, "alg");
+  if (alg_value == nullptr || strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
     LOG(ERROR) << "Invalid alg field";
     goto error;
@@ -262,19 +261,18 @@ gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims* claims) {
 }
 
 grpc_jwt_claims* grpc_jwt_claims_from_json(Json json) {
+  // The payload must be a JSON object. A valid but non-object payload (string,
+  // number, boolean, or array) would make the object() call below throw
+  // std::bad_variant_access and abort the process in the no-exceptions build,
+  // so reject it here before allocating claims.
+  if (json.type() != Json::Type::kObject) {
+    return nullptr;
+  }
   grpc_jwt_claims* claims = grpc_core::Zalloc<grpc_jwt_claims>();
   claims->json.Init(std::move(json));
   claims->iat = gpr_inf_past(GPR_CLOCK_REALTIME);
   claims->nbf = gpr_inf_past(GPR_CLOCK_REALTIME);
   claims->exp = gpr_inf_future(GPR_CLOCK_REALTIME);
-
-  // The payload must be a JSON object. A valid but non-object payload (string,
-  // number, boolean, or array) would make the object() call below throw
-  // std::bad_variant_access and abort the process in the no-exceptions build,
-  // so reject it here, as jose_header_from_json() does for the header.
-  if (claims->json->type() != Json::Type::kObject) {
-    goto error;
-  }
 
   // Per the spec, all fields are optional.
   for (const auto& p : claims->json->object()) {
@@ -451,6 +449,9 @@ static Json json_from_http(const grpc_http_response* response) {
 }
 
 static const Json* find_property_by_name(const Json& json, const char* name) {
+  if (name == nullptr || json.type() != Json::Type::kObject) {
+    return nullptr;
+  }
   auto it = json.object().find(name);
   if (it == json.object().end()) {
     return nullptr;
@@ -624,6 +625,7 @@ end:
 
 static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
                                        const char* header_kid) {
+  if (header_alg == nullptr || header_kid == nullptr) return nullptr;
   // Try to parse the json as a JWK set:
   // https://tools.ietf.org/html/rfc7517#section-5.
   const Json* jwt_keys = find_property_by_name(json, "keys");
@@ -632,7 +634,9 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
     // { <kid1>: <x5091>, <kid2>: <x5092>, ... }
     const Json* cur = find_property_by_name(json, header_kid);
     if (cur == nullptr) return nullptr;
-    return extract_pkey_from_x509(cur->string().c_str());
+    const char* x509_str = validate_string_field(*cur, header_kid);
+    if (x509_str == nullptr) return nullptr;
+    return extract_pkey_from_x509(x509_str);
   }
   if (jwt_keys->type() != Json::Type::kArray) {
     LOG(ERROR) << "Unexpected value type of keys property in jwks key set.";
