@@ -24,6 +24,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 
+#include <chrono>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -42,6 +43,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -814,6 +816,43 @@ TEST_F(Http2ServerTransportTest, TestServerInitiatedGoAway) {
 
   // 4. Wait for the GOAWAY frame to be written.
   step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestCloseBeforeClientPrefaceClosesImmediately) {
+  // Test to validate that closing the transport before receiving the client
+  // preface completes immediately without sending GOAWAY or waiting for
+  // kGoawaySendTimeoutSeconds.
+  ExecCtx ctx;
+  std::shared_ptr<std::optional<absl::Status>> on_receive_settings_status =
+      std::make_shared<std::optional<absl::Status>>();
+
+  // 1. Initialize and start the transport without sending the client preface.
+  InitTransport(GetChannelArgs(),
+                [on_receive_settings_status](absl::StatusOr<uint32_t> status) {
+                  *on_receive_settings_status = status.status();
+                });
+  // Empty step parks the preface read and fails on any write.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  event_engine()->TickUntilIdle();
+  ASSERT_FALSE(on_receive_settings_status->has_value());
+
+  // 2. Disconnect the transport.
+  grpc_transport_op* op = grpc_make_transport_op(nullptr);
+  op->disconnect_with_error = absl::UnavailableError(
+      "Did not receive HTTP/2 settings before handshake timeout");
+  server_transport()->PerformOp(op);
+
+  // 3. Verify close completes before kGoawaySendTimeoutSeconds.
+  constexpr std::chrono::seconds kTickDuration(1);
+  static_assert(kTickDuration <
+                std::chrono::seconds(kGoawaySendTimeoutSeconds));
+  event_engine()->TickForDuration(kTickDuration);
+  ASSERT_TRUE(on_receive_settings_status->has_value());
+  EXPECT_EQ(on_receive_settings_status->value().code(),
+            absl::StatusCode::kUnavailable);
 }
 
 TEST_F(Http2ServerTransportTest, TestKeepAliveTimeout) {
