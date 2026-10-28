@@ -182,94 +182,6 @@ TEST_F(MatcherTest, MatcherListSinglePredicate) {
       "on_match={action=StringAction{str=foobar}, keep_matching=false}}}");
 }
 
-TEST_F(MatcherTest, MatcherListSinglePredicateHeaderNameMaxLength) {
-  Matcher matcher_proto;
-  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
-  StringValue string_value;
-  string_value.set_value("foobar");
-  ASSERT_TRUE(field_matcher->mutable_on_match()
-                  ->mutable_action()
-                  ->mutable_typed_config()
-                  ->PackFrom(string_value));
-  auto* single_predicate =
-      field_matcher->mutable_predicate()->mutable_single_predicate();
-  HttpRequestHeaderMatchInput http_request_header_match_input;
-  http_request_header_match_input.set_header_name(std::string(16384, 'a'));
-  ASSERT_TRUE(
-      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
-          http_request_header_match_input));
-  single_predicate->mutable_value_match()->set_exact("bar");
-  ValidationErrors errors;
-  auto matcher =
-      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), true, &errors);
-  EXPECT_TRUE(errors.ok())
-      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
-  EXPECT_NE(matcher, nullptr);
-}
-
-TEST_F(MatcherTest, MatcherListSinglePredicatePseudoHeaderName) {
-  Matcher matcher_proto;
-  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
-  StringValue string_value;
-  string_value.set_value("foobar");
-  ASSERT_TRUE(field_matcher->mutable_on_match()
-                  ->mutable_action()
-                  ->mutable_typed_config()
-                  ->PackFrom(string_value));
-  auto* single_predicate =
-      field_matcher->mutable_predicate()->mutable_single_predicate();
-  HttpRequestHeaderMatchInput http_request_header_match_input;
-  http_request_header_match_input.set_header_name(":path");
-  ASSERT_TRUE(
-      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
-          http_request_header_match_input));
-  single_predicate->mutable_value_match()->set_exact("bar");
-  ValidationErrors errors;
-  auto matcher =
-      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), true, &errors);
-  EXPECT_TRUE(errors.ok())
-      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
-  ASSERT_NE(matcher, nullptr);
-  EXPECT_EQ(
-      matcher->ToString(),
-      "XdsMatcherList{{predicate=SinglePredicate{input=MetadataInput("
-      "key=:path), matcher=StringMatcher{exact=bar}}, "
-      "on_match={action=StringAction{str=foobar}, keep_matching=false}}}");
-}
-
-TEST_F(MatcherTest, MatcherListSinglePredicateBinaryHeaderName) {
-  Matcher matcher_proto;
-  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
-  StringValue string_value;
-  string_value.set_value("foobar");
-  ASSERT_TRUE(field_matcher->mutable_on_match()
-                  ->mutable_action()
-                  ->mutable_typed_config()
-                  ->PackFrom(string_value));
-  auto* single_predicate =
-      field_matcher->mutable_predicate()->mutable_single_predicate();
-  HttpRequestHeaderMatchInput http_request_header_match_input;
-  http_request_header_match_input.set_header_name("foo-bin");
-  ASSERT_TRUE(
-      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
-          http_request_header_match_input));
-  single_predicate->mutable_value_match()->set_exact("bar");
-  ValidationErrors errors;
-  auto matcher =
-      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), true, &errors);
-  EXPECT_TRUE(errors.ok())
-      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
-  ASSERT_NE(matcher, nullptr);
-  EXPECT_EQ(
-      matcher->ToString(),
-      "XdsMatcherList{{predicate=SinglePredicate{input=MetadataInput("
-      "key=foo-bin), matcher=StringMatcher{exact=bar}}, "
-      "on_match={action=StringAction{str=foobar}, keep_matching=false}}}");
-}
-
 TEST_F(MatcherTest, KeepMatching) {
   Matcher matcher_proto;
   auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
@@ -958,90 +870,6 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInputTypeNotInRegistry) {
             "type:google.protobuf.BoolValue]");
 }
 
-TEST_F(MatcherTest, MatcherListSinglePredicateEmptyHeaderName) {
-  Matcher matcher_proto;
-  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
-  StringValue string_value;
-  string_value.set_value("foobar");
-  ASSERT_TRUE(field_matcher->mutable_on_match()
-                  ->mutable_action()
-                  ->mutable_typed_config()
-                  ->PackFrom(string_value));
-  auto* single_predicate =
-      field_matcher->mutable_predicate()->mutable_single_predicate();
-  HttpRequestHeaderMatchInput http_request_header_match_input;
-  http_request_header_match_input.set_header_name("");
-  ASSERT_TRUE(
-      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
-          http_request_header_match_input));
-  single_predicate->mutable_value_match()->set_exact("bar");
-  ValidationErrors errors;
-  auto matcher =
-      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), true, &errors);
-  EXPECT_FALSE(errors.ok());
-  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
-            ": [field:matcher_list.matchers[0].predicate.single_predicate."
-            "input.value[envoy.type.matcher.v3.HttpRequestHeaderMatchInput]."
-            "header_name error:length must be in the range [1, 16384]]");
-}
-
-TEST_F(MatcherTest, MatcherListSinglePredicateHeaderNameTooLong) {
-  Matcher matcher_proto;
-  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
-  StringValue string_value;
-  string_value.set_value("foobar");
-  ASSERT_TRUE(field_matcher->mutable_on_match()
-                  ->mutable_action()
-                  ->mutable_typed_config()
-                  ->PackFrom(string_value));
-  auto* single_predicate =
-      field_matcher->mutable_predicate()->mutable_single_predicate();
-  HttpRequestHeaderMatchInput http_request_header_match_input;
-  http_request_header_match_input.set_header_name(std::string(16385, 'a'));
-  ASSERT_TRUE(
-      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
-          http_request_header_match_input));
-  single_predicate->mutable_value_match()->set_exact("bar");
-  ValidationErrors errors;
-  auto matcher =
-      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), true, &errors);
-  EXPECT_FALSE(errors.ok());
-  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
-            ": [field:matcher_list.matchers[0].predicate.single_predicate."
-            "input.value[envoy.type.matcher.v3.HttpRequestHeaderMatchInput]."
-            "header_name error:length must be in the range [1, 16384]]");
-}
-
-TEST_F(MatcherTest, MatcherListSinglePredicateUppercaseHeaderName) {
-  Matcher matcher_proto;
-  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
-  StringValue string_value;
-  string_value.set_value("foobar");
-  ASSERT_TRUE(field_matcher->mutable_on_match()
-                  ->mutable_action()
-                  ->mutable_typed_config()
-                  ->PackFrom(string_value));
-  auto* single_predicate =
-      field_matcher->mutable_predicate()->mutable_single_predicate();
-  HttpRequestHeaderMatchInput http_request_header_match_input;
-  http_request_header_match_input.set_header_name("Foo");
-  ASSERT_TRUE(
-      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
-          http_request_header_match_input));
-  single_predicate->mutable_value_match()->set_exact("bar");
-  ValidationErrors errors;
-  auto matcher =
-      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), true, &errors);
-  EXPECT_FALSE(errors.ok());
-  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
-            ": [field:matcher_list.matchers[0].predicate.single_predicate."
-            "input.value[envoy.type.matcher.v3.HttpRequestHeaderMatchInput]."
-            "header_name error:not a valid HTTP/2 header name]");
-}
-
 TEST_F(MatcherTest, MatcherListSinglePredicateInputTypedStruct) {
   Matcher matcher_proto;
   auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
@@ -1343,6 +1171,182 @@ TEST_F(MatcherTest, ExceedsMaxDepth) {
             "matcher_tree.exact_match_map.on_match.matcher."
             "matcher_tree.exact_match_map.on_match.matcher "
             "error:matcher tree exceeds max recursion depth]");
+}
+
+//
+// HttpRequestHeaderMatchInput
+//
+
+TEST_F(MatcherTest, HttpRequestHeaderMatchInputEmptyHeaderName) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  StringValue string_value;
+  string_value.set_value("foobar");
+  ASSERT_TRUE(field_matcher->mutable_on_match()
+                  ->mutable_action()
+                  ->mutable_typed_config()
+                  ->PackFrom(string_value));
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name("");
+  ASSERT_TRUE(
+      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
+          http_request_header_match_input));
+  single_predicate->mutable_value_match()->set_exact("bar");
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+            ": [field:matcher_list.matchers[0].predicate.single_predicate."
+            "input.value[envoy.type.matcher.v3.HttpRequestHeaderMatchInput]."
+            "header_name error:length must be in the range [1, 16384]]");
+}
+
+TEST_F(MatcherTest, HttpRequestHeaderMatchInputHeaderNameMaxLength) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  StringValue string_value;
+  string_value.set_value("foobar");
+  ASSERT_TRUE(field_matcher->mutable_on_match()
+                  ->mutable_action()
+                  ->mutable_typed_config()
+                  ->PackFrom(string_value));
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name(std::string(16384, 'a'));
+  ASSERT_TRUE(
+      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
+          http_request_header_match_input));
+  single_predicate->mutable_value_match()->set_exact("bar");
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
+  EXPECT_TRUE(errors.ok())
+      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
+  EXPECT_NE(matcher, nullptr);
+}
+
+TEST_F(MatcherTest, HttpRequestHeaderMatchInputHeaderNameTooLong) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  StringValue string_value;
+  string_value.set_value("foobar");
+  ASSERT_TRUE(field_matcher->mutable_on_match()
+                  ->mutable_action()
+                  ->mutable_typed_config()
+                  ->PackFrom(string_value));
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name(std::string(16385, 'a'));
+  ASSERT_TRUE(
+      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
+          http_request_header_match_input));
+  single_predicate->mutable_value_match()->set_exact("bar");
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+            ": [field:matcher_list.matchers[0].predicate.single_predicate."
+            "input.value[envoy.type.matcher.v3.HttpRequestHeaderMatchInput]."
+            "header_name error:length must be in the range [1, 16384]]");
+}
+
+TEST_F(MatcherTest, HttpRequestHeaderMatchInputUppercaseHeaderName) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  StringValue string_value;
+  string_value.set_value("foobar");
+  ASSERT_TRUE(field_matcher->mutable_on_match()
+                  ->mutable_action()
+                  ->mutable_typed_config()
+                  ->PackFrom(string_value));
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name("Foo");
+  ASSERT_TRUE(
+      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
+          http_request_header_match_input));
+  single_predicate->mutable_value_match()->set_exact("bar");
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+            ": [field:matcher_list.matchers[0].predicate.single_predicate."
+            "input.value[envoy.type.matcher.v3.HttpRequestHeaderMatchInput]."
+            "header_name error:not a valid HTTP/2 header name]");
+}
+
+TEST_F(MatcherTest, HttpRequestHeaderMatchInputPseudoHeaderName) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  StringValue string_value;
+  string_value.set_value("foobar");
+  ASSERT_TRUE(field_matcher->mutable_on_match()
+                  ->mutable_action()
+                  ->mutable_typed_config()
+                  ->PackFrom(string_value));
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name(":path");
+  ASSERT_TRUE(
+      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
+          http_request_header_match_input));
+  single_predicate->mutable_value_match()->set_exact("bar");
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
+  EXPECT_TRUE(errors.ok())
+      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
+  ASSERT_NE(matcher, nullptr);
+  EXPECT_EQ(
+      matcher->ToString(),
+      "XdsMatcherList{{predicate=SinglePredicate{input=MetadataInput("
+      "key=:path), matcher=StringMatcher{exact=bar}}, "
+      "on_match={action=StringAction{str=foobar}, keep_matching=false}}}");
+}
+
+TEST_F(MatcherTest, HttpRequestHeaderMatchInputBinaryHeaderName) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  StringValue string_value;
+  string_value.set_value("foobar");
+  ASSERT_TRUE(field_matcher->mutable_on_match()
+                  ->mutable_action()
+                  ->mutable_typed_config()
+                  ->PackFrom(string_value));
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name("foo-bin");
+  ASSERT_TRUE(
+      single_predicate->mutable_input()->mutable_typed_config()->PackFrom(
+          http_request_header_match_input));
+  single_predicate->mutable_value_match()->set_exact("bar");
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
+  EXPECT_TRUE(errors.ok())
+      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
+  ASSERT_NE(matcher, nullptr);
+  EXPECT_EQ(
+      matcher->ToString(),
+      "XdsMatcherList{{predicate=SinglePredicate{input=MetadataInput("
+      "key=foo-bin), matcher=StringMatcher{exact=bar}}, "
+      "on_match={action=StringAction{str=foobar}, keep_matching=false}}}");
 }
 
 }  // namespace
