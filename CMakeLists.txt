@@ -43377,6 +43377,38 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.pb.h
@@ -43389,6 +43421,8 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
+  src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
@@ -43438,6 +43472,8 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
   src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -43466,6 +43502,17 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   test/core/xds/xds_common_types_test.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc
