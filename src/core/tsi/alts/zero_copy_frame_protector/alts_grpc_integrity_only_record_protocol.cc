@@ -69,6 +69,7 @@ static tsi_result alts_grpc_integrity_only_extra_copy_protect(
   if (status != GRPC_STATUS_OK) {
     LOG(ERROR) << "Failed to protect, " << error_details;
     gpr_free(error_details);
+    grpc_core::CSliceUnref(protected_slice);
     return TSI_INTERNAL_ERROR;
   }
   grpc_slice_buffer_add(protected_slices, protected_slice);
@@ -109,6 +110,8 @@ static tsi_result alts_grpc_integrity_only_protect(
   if (status != GRPC_STATUS_OK) {
     LOG(ERROR) << "Failed to protect, " << error_details;
     gpr_free(error_details);
+    grpc_core::CSliceUnref(header_slice);
+    grpc_core::CSliceUnref(tag_slice);
     return TSI_INTERNAL_ERROR;
   }
   // Appends result to protected_slices.

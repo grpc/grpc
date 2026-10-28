@@ -478,6 +478,43 @@ TEST(AltsGrpcRecordProtocolTest, MainTest) {
   grpc_shutdown();
 }
 
+// Calling protect on an instance created for unprotect makes the iovec record
+// protocol fail after protect has allocated its temporary slices, which must be
+// released on that error path. The leak is only detectable with a leak checker
+// (for example LeakSanitizer).
+TEST(AltsGrpcRecordProtocolTest, ProtectFailureReleasesTemporarySlices) {
+  grpc_init();
+  uint8_t* key;
+  gsec_test_random_array(&key, kAes128GcmKeyLength);
+  for (bool extra_copy : {false, true}) {
+    gsec_aead_crypter* crypter = nullptr;
+    ASSERT_EQ(gsec_aes_gcm_aead_crypter_create(
+                  std::make_unique<grpc_core::GsecKey>(
+                      absl::MakeConstSpan(key, kAes128GcmKeyLength),
+                      /*is_rekey=*/false),
+                  kAesGcmNonceLength, kAesGcmTagLength, &crypter,
+                  /*error_details=*/nullptr),
+              GRPC_STATUS_OK);
+    alts_grpc_record_protocol* rp = nullptr;
+    ASSERT_EQ(alts_grpc_integrity_only_record_protocol_create(
+                  crypter, 8, /*is_client=*/true, /*is_protect=*/false,
+                  extra_copy, &rp),
+              TSI_OK);
+    for (size_t i = 0; i < 3; i++) {
+      alts_grpc_record_protocol_test_var* var =
+          alts_grpc_record_protocol_test_var_create();
+      EXPECT_EQ(alts_grpc_record_protocol_protect(rp, &var->original_sb,
+                                                  &var->protected_sb),
+                TSI_INTERNAL_ERROR);
+      EXPECT_EQ(var->protected_sb.length, 0u);
+      alts_grpc_record_protocol_test_var_destroy(var);
+    }
+    alts_grpc_record_protocol_destroy(rp);
+  }
+  gpr_free(key);
+  grpc_shutdown();
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
