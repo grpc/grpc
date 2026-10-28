@@ -500,6 +500,17 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     uninstall_context()
 
 
+async def _send_stream_responses(RPCState rpc_state,
+                                 _ServicerContext servicer_context,
+                                 object async_response_generator):
+    # Consumes messages from the generator
+    async for response_message in async_response_generator:
+        # Raises exception if aborted
+        rpc_state.raise_for_termination()
+
+        await servicer_context.write(response_message)
+
+
 async def _finish_handler_with_stream_responses(RPCState rpc_state,
                                                 object stream_handler,
                                                 object request,
@@ -513,7 +524,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
     """
     cdef object async_response_generator
     cdef object response_message
-    cdef _SyncServicerContext sync_servicer_context = None
+    cdef _SyncServicerContext sync_servicer_context
     install_context_from_request_call_event_aio(rpc_state)
 
     if inspect.iscoroutinefunction(stream_handler):
@@ -523,34 +534,31 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
             request,
             servicer_context,
         )
+    elif inspect.isasyncgenfunction(stream_handler):
+        # Case 2: Async handler - async generator
+        # The handler uses async generator API
+        async_response_generator = stream_handler(
+            request,
+            servicer_context,
+        )
+        await _send_stream_responses(
+            rpc_state, servicer_context, async_response_generator
+        )
     else:
-        if inspect.isasyncgenfunction(stream_handler):
-            # Case 2: Async handler - async generator
-            # The handler uses async generator API
-            async_response_generator = stream_handler(
-                request,
-                servicer_context,
-            )
-        else:
-            # Case 3: Sync handler - normal generator
-            # NOTE(lidiz) Streaming handler in sync stack is either a generator
-            # function or a function returns a generator.
-            sync_servicer_context = _SyncServicerContext(servicer_context)
-            gen = stream_handler(request, sync_servicer_context)
-            async_response_generator = generator_to_async_generator(gen,
-                                                                    loop,
-                                                                    rpc_state.server.thread_pool())
-
+        # Case 3: Sync handler - normal generator
+        # NOTE(lidiz) Streaming handler in sync stack is either a generator
+        # function or a function returns a generator.
+        sync_servicer_context = _SyncServicerContext(servicer_context)
         try:
-            # Consumes messages from the generator
-            async for response_message in async_response_generator:
-                # Raises exception if aborted
-                rpc_state.raise_for_termination()
-
-                await servicer_context.write(response_message)
+            gen = stream_handler(request, sync_servicer_context)
+            async_response_generator = generator_to_async_generator(
+                gen, loop, rpc_state.server.thread_pool()
+            )
+            await _send_stream_responses(
+                rpc_state, servicer_context, async_response_generator
+            )
         finally:
-            if sync_servicer_context is not None:
-                sync_servicer_context._run_callbacks()
+            sync_servicer_context._run_callbacks()
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()
