@@ -81,7 +81,7 @@ git submodule update --init      # just to start in a clean state
 cd third_party/boringssl-with-bazel
 git fetch origin   # fetch what's new in the boringssl repository
 git checkout 0.20260929.0
-# Note the latest commit SHA on master-with-bazel branch
+# Note the commit SHA of the checked out version tag
 cd ../..   # go back to grpc repo root
 git status   #  will show that there are new commits in third_party/boringssl-with-bazel
 git add  third_party/boringssl-with-bazel     # we actually want to update the changes to the submodule
@@ -90,13 +90,13 @@ git commit -m "update submodule boringssl-with-bazel to 0.20260929.0"   # commit
 
 - Update boringssl dependency in `MODULE.bazel` to the same commit as upstream.
     - Update the `bazel_dep(name = "boringssl"` section in `templates/MODULE.bazel.inja` to match git submodule.
-- Update boringssl dependency in `bazel/grpc_deps.bzl` to the same commit as upstream.
+- Update boringssl dependency in `bazel/grpc_deps.bzl` to the same version as git submodule.
     - Update `http_archive(name = "boringssl",` section by updating the sha in `strip_prefix` and `urls` fields.
     - Also, set `sha256` field to "" as the existing value is not valid. This will be added later once we know what that value is.
 
 - Update `tools/run_tests/sanity/check_submodules.sh` with the same commit
 
-- Commit these changes `git commit -m "update bazel/grpc_deps.bzl boringssl dependency commit SHA"`
+- Commit these changes `git commit -m "update bazel/grpc_deps.bzl boringssl to 0.20260929.0"`
 
 - Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
     - Because `sha256` in `bazel/grpc_deps.bzl` was left empty, you will get a DEBUG msg like this one:
