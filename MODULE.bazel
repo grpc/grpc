@@ -35,7 +35,6 @@ bazel_dep(name = "abseil-cpp", version = "20260526.0", repo_name = "com_google_a
 single_version_override(
     module_name = "abseil-cpp",
     version = "20260526.0",
-
 )
 
 bazel_dep(name = "autosharding", version = "0.0.0-20260826-3a21f69")
