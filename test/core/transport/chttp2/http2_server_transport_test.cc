@@ -127,6 +127,7 @@ class Http2ServerTransportTest : public Http2TransportTest {
         endpoint()->NewStep();
     server_transport_->SetCallDestination(
         MakeRefCounted<TestCallDestination>(this));
+    server_transport_->InitializeAndSpawnTransportLoops();
     AddTransportStartExpectations(step.get(), expected_server_settings);
     step->Wait();
     // This tick ensures that settings ack is read by the ReadLoop. This is
@@ -840,6 +841,7 @@ TEST_F(Http2ServerTransportTest,
   std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   event_engine()->TickUntilIdle();
   ASSERT_FALSE(on_receive_settings_status->has_value());
 
@@ -1957,6 +1959,7 @@ TEST_F(Http2ServerTransportTest, TestServerStreamFlowControlWindowUpdate) {
       endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   settings_step->ThenPerformRead({
       EventEngineSlice(
           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
@@ -2439,6 +2442,7 @@ TEST_F(Http2ServerTransportTest,
       endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   handshake_step->ThenPerformRead({
       EventEngineSlice(
           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
@@ -2538,6 +2542,7 @@ TEST_F(Http2ServerTransportTest,
       endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   handshake_step->ThenPerformRead({
       EventEngineSlice(
           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
@@ -2687,6 +2692,7 @@ TEST_F(Http2ServerTransportTest,
       endpoint()->NewStep();
   server_transport()->SetCallDestination(
       MakeRefCounted<TestCallDestination>(this));
+  server_transport()->InitializeAndSpawnTransportLoops();
   handshake_step->ThenPerformRead({
       EventEngineSlice(
           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
@@ -3025,6 +3031,133 @@ TEST_F(Http2ServerTransportTest,
       endpoint()->NewStep();
   AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/5u);
   teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, TestDisconnectBeforeStartingTransportLoops) {
+  // Verifies that SetCallDestination() performs no endpoint I/O on its own, and
+  // that disconnecting the transport before InitializeAndSpawnTransportLoops()
+  // (e.g. when Server::SetupTransport() sees the server is already shut down)
+  // notifies the state watcher and makes starting the loops a safe no-op with
+  // no frames written.
+  ExecCtx ctx;
+
+  // 1. Initialize the transport and expect OnDisconnect on the state watcher.
+  InitTransport(GetChannelArgs());
+  const RefCountedPtr<StrictMock<MockStateWatcher>> watcher =
+      MakeRefCounted<StrictMock<MockStateWatcher>>();
+  EXPECT_CALL(*watcher, OnDisconnect(::testing::_, ::testing::_))
+      .WillOnce([](absl::Status status,
+                   Transport::StateWatcher::DisconnectInfo /*info*/) {
+        EXPECT_EQ(status.code(), absl::StatusCode::kUnavailable);
+        EXPECT_EQ(status.message(), "Server is already shut down.");
+      });
+  server_transport()->StartWatch(watcher);
+
+  // 2. Call SetCallDestination() and verify no endpoint I/O is scheduled yet.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  event_engine()->Tick();
+  EXPECT_TRUE(step->AreExpectationsEmpty());
+
+  // 3. Disconnect before starting the transport loops, then call
+  //    InitializeAndSpawnTransportLoops().
+  grpc_transport_op* const op = grpc_make_transport_op(nullptr);
+  op->disconnect_with_error =
+      absl::UnavailableError("Server is already shut down.");
+  server_transport()->PerformOp(op);
+  server_transport()->InitializeAndSpawnTransportLoops();
+
+  // 4. Run all pending EventEngine tasks and verify clean teardown with no I/O.
+  event_engine()->TickUntilIdle();
+  EXPECT_TRUE(step->AreExpectationsEmpty());
+}
+
+TEST_F(Http2ServerTransportTest,
+       TestServerGracefulGoAwayBeforeStartingTransportLoops) {
+  // Verifies that a graceful GOAWAY triggered before
+  // InitializeAndSpawnTransportLoops() (e.g. a concurrent Server::SendGoaways()
+  // right after SetupTransport() registers the transport) is preserved: once
+  // loops start and the client preface arrives, the server writes its initial
+  // SETTINGS frame first (RFC 9113 Section 3.4), sends the initial GOAWAY + RTT
+  // PING, and writes the final GOAWAY upon PING ACK.
+  ExecCtx ctx;
+
+  // 1. Initialize the transport and register the call destination without
+  //    starting the transport loops.
+  InitTransport(GetChannelArgs());
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  event_engine()->Tick();
+
+  // 2. Initiate graceful GOAWAY before starting the transport loops.
+  grpc_transport_op* const op = grpc_make_transport_op(nullptr);
+  op->goaway_error = absl::UnavailableError(kGoawayDebugData);
+  server_transport()->PerformOp(op);
+
+  // 3. Start transport loops and deliver client preface + SETTINGS. Assert the
+  //    server's first write is SETTINGS, SETTINGS ACK, initial GOAWAY
+  //    (last_stream_id = 2^31 - 1), and an RTT PING.
+  uint64_t ping_opaque_id = 0u;
+  const std::shared_ptr<EventSequenceEndpoint::Step> step1 =
+      endpoint()->NewStep();
+  server_transport()->InitializeAndSpawnTransportLoops();
+  step1->ThenPerformRead({
+      EventEngineSlice(
+          grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      helper_.SerializedDefaultClientSettingsFrame(),
+  });
+  step1->ThenExpectWrite(
+      [&,
+       expected_settings = helper_.SerializedDefaultServerSettingsFrame(),
+       expected_settings_ack = helper_.SerializedSettingsFrameAck(),
+       expected_goaway = helper_.SerializedGoawayFrame(
+           /*debug_data=*/kGoawayDebugData,
+           /*last_stream_id=*/RFC9113::kMaxStreamId31Bit,
+           /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))](
+          SliceBuffer& buffer) mutable {
+        SliceBuffer expected_prefix_buffer;
+        expected_prefix_buffer.Append(
+            Slice(grpc_slice_copy(expected_settings.c_slice())));
+        expected_prefix_buffer.Append(
+            Slice(grpc_slice_copy(expected_settings_ack.c_slice())));
+        expected_prefix_buffer.Append(
+            Slice(grpc_slice_copy(expected_goaway.c_slice())));
+        const Slice expected_prefix = expected_prefix_buffer.JoinIntoSlice();
+
+        const Slice joined = buffer.JoinIntoSlice();
+        const size_t prefix_len = expected_prefix.length();
+        ASSERT_EQ(joined.length(), prefix_len + 17u);
+        EXPECT_EQ(joined.as_string_view().substr(0u, prefix_len),
+                  expected_prefix.as_string_view());
+
+        Slice ping_slice =
+            Slice::FromCopiedBuffer(joined.as_string_view().substr(prefix_len));
+        SliceBuffer ping_buffer;
+        ping_buffer.Append(std::move(ping_slice));
+        ping_opaque_id =
+            VerifyPingFrameAndReturnOpaqueId(ping_buffer, /*is_ack=*/false);
+      });
+  step1->Wait();
+  event_engine()->Tick();
+
+  // 4. Deliver SETTINGS ACK + PING ACK and assert the final GOAWAY
+  //    (last_stream_id = 0) is written.
+  const std::shared_ptr<EventSequenceEndpoint::Step> step2 =
+      endpoint()->NewStep();
+  step2->ThenPerformRead({
+      helper_.SerializedSettingsFrameAck(),
+      helper_.SerializedPingFrame(/*ack=*/true, /*opaque=*/ping_opaque_id),
+  });
+  step2->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/kGoawayDebugData,
+          /*last_stream_id=*/0u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  step2->Wait();
+  event_engine()->TickUntilIdle();
 }
 
 }  // namespace testing

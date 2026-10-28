@@ -300,38 +300,40 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
             (*result)->args.GetObjectRef<EventEngine>();
         // Use notify_on_receive_settings callback to enforce the
         // handshake deadline.
-        auto* ph2_transport = new http2::Http2ServerTransport(
-            std::move(promise_endpoint), (*result)->args,
-            std::move(event_engine_ptr),
-            [self = Ref()](absl::StatusOr<uint32_t>) {
-              self->OnReceiveSettings();
-            },
-            [connection = connection_->RefAsSubclass<ActiveConnection>()]() {
-              connection->OnClose();
-            });
-        // SetupTransport will spawn the initial transport promises.
-        grpc_error_handle channel_init_err =
+        const RefCountedPtr<http2::Http2ServerTransport> ph2_transport =
+            MakeRefCounted<http2::Http2ServerTransport>(
+                std::move(promise_endpoint), (*result)->args,
+                std::move(event_engine_ptr),
+                [self = Ref()](absl::StatusOr<uint32_t>) {
+                  self->OnReceiveSettings();
+                },
+                [connection = connection_->RefAsSubclass<ActiveConnection>()]() {
+                  connection->OnClose();
+                });
+        // Set state_ before SetupTransport() so ActiveConnection::OnClose()
+        // is the sole owner of connection-quota cleanup on both success and
+        // failure.
+        connection_->state_ = ph2_transport;
+        const grpc_error_handle channel_init_err =
             connection_->listener_state_->server()->SetupTransport(
-                ph2_transport, accepting_pollset_, (*result)->args);
+                ph2_transport->Ref().release(), accepting_pollset_,
+                (*result)->args);
         if (GPR_LIKELY(channel_init_err.ok())) {
-          ph2_transport->Ref().release();
-          connection_->state_ =
-              RefCountedPtr<http2::Http2ServerTransport>(ph2_transport);
           timer_handle_ =
               connection_->listener_state_->event_engine()->RunAfter(
                   deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
                     // HandshakingState deletion might require an active
                     // ExecCtx.
                     ExecCtx exec_ctx;
-                    auto* self_ptr = self.get();
+                    HandshakingState* const self_ptr = self.get();
                     self_ptr->connection_->work_serializer_.Run(
                         [self = std::move(self)]() { self->OnTimeoutLocked(); },
                         DEBUG_LOCATION);
                   });
+          ph2_transport->InitializeAndSpawnTransportLoops();
         } else {
           LOG(ERROR) << "Failed to create channel: "
                      << StatusToString(channel_init_err);
-          ph2_transport->Orphan();
         }
       }
     }
@@ -918,18 +920,19 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
           std::move(event_engine_endpoint), grpc_core::SliceBuffer());
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine_ptr = server_args.GetObjectRef<grpc_core::EventEngine>();
-      grpc_core::Transport* transport =
-          new grpc_core::http2::Http2ServerTransport(
-              std::move(promise_endpoint), server_args,
-              std::move(event_engine_ptr), [](absl::StatusOr<uint32_t>) {},
-              /*on_close_callback=*/nullptr);
-      grpc_error_handle error =
-          core_server->SetupTransport(transport, nullptr, server_args);
-      // SetupTransport will spawn the initial transport promises.
-      if (!error.ok()) {
+      const grpc_core::RefCountedPtr<grpc_core::http2::Http2ServerTransport>
+          transport =
+              grpc_core::MakeRefCounted<grpc_core::http2::Http2ServerTransport>(
+                  std::move(promise_endpoint), server_args,
+                  std::move(event_engine_ptr), [](absl::StatusOr<uint32_t>) {},
+                  /*on_close_callback=*/nullptr);
+      const grpc_error_handle error = core_server->SetupTransport(
+          transport->Ref().release(), nullptr, server_args);
+      if (GPR_LIKELY(error.ok())) {
+        transport->InitializeAndSpawnTransportLoops();
+      } else {
         LOG(ERROR) << "Failed to create channel: "
                    << grpc_core::StatusToString(error);
-        transport->Orphan();
       }
     } else {
       LOG(ERROR) << "Failed to take endpoint.";
