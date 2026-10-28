@@ -624,6 +624,61 @@ static int httpcli_get_non_string_key_json(
   return 1;
 }
 
+static int httpcli_get_openid_config_non_string_jwks_uri(
+    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
+    grpc_core::Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  *response = http_response(200, gpr_strdup("{\"jwks_uri\": 12345}"));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+static int httpcli_get_jwks_non_array_keys(const grpc_http_request* /*request*/,
+                                           const grpc_core::URI& /*uri*/,
+                                           grpc_core::Timestamp /*deadline*/,
+                                           grpc_closure* on_done,
+                                           grpc_http_response* response) {
+  *response = http_response(200, gpr_strdup("{\"keys\": \"not-an-array\"}"));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+static int httpcli_get_jwks_bad_key_entry(const grpc_http_request* /*request*/,
+                                          const grpc_core::URI& /*uri*/,
+                                          grpc_core::Timestamp /*deadline*/,
+                                          grpc_closure* on_done,
+                                          grpc_http_response* response) {
+  *response = http_response(
+      200, gpr_strdup("{\"keys\": [\"not-an-object\", {\"kty\": 123, \"alg\": "
+                      "true, \"kid\": []}]}"));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+static int httpcli_get_openid_config_for_non_array_keys(
+    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
+    grpc_core::Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  *response = http_response(200, gpr_strdup(good_openid_config));
+  grpc_core::HttpRequest::SetOverride(httpcli_get_jwks_non_array_keys,
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+static int httpcli_get_openid_config_for_bad_key_entry(
+    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
+    grpc_core::Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  *response = http_response(200, gpr_strdup(good_openid_config));
+  grpc_core::HttpRequest::SetOverride(httpcli_get_jwks_bad_key_entry,
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
 // Regression test for the pre-signature abort on a non-object JWT payload.
 //
 // grpc_jwt_claims_from_json() iterated the payload with object() without first
@@ -756,6 +811,98 @@ TEST(JwtVerifierTest, NonObjectOrNonStringKeyResponseReturnsKeyRetrievalError) {
   grpc_core::HttpRequest::SetOverride(httpcli_get_non_string_key_json,
                                       httpcli_post_should_not_be_called,
                                       httpcli_put_should_not_be_called);
+  jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
+                                 nullptr);
+  ASSERT_NE(jwt, nullptr);
+  grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
+                           on_verification_key_retrieval_error,
+                           const_cast<char*>(expected_user_data));
+  gpr_free(jwt);
+
+  grpc_auth_json_key_destruct(&key);
+  grpc_jwt_verifier_destroy(verifier);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+// When a JWT has no "kid" header and uses an email issuer (proprietary key
+// format), find_verification_key() receives a null header_kid and should safely
+// return nullptr instead of calling find_property_by_name() with a null name.
+TEST(JwtVerifierTest, MissingKidHeaderWithEmailIssuerReturnsKeyRetrievalError) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
+  grpc_core::HttpRequest::SetOverride(httpcli_get_google_keys_for_email,
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
+  std::string header = absl::WebSafeBase64Escape("{\"alg\":\"RS256\"}");
+  std::string payload = absl::WebSafeBase64Escape(
+      "{\"iss\":\"777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount."
+      "com\",\"aud\":\"https://foo.com\"}");
+  std::string signature = absl::WebSafeBase64Escape("ignored-signature");
+  std::string jwt = header + "." + payload + "." + signature;
+  grpc_jwt_verifier_verify(verifier, nullptr, jwt.c_str(), expected_audience,
+                           on_verification_key_retrieval_error,
+                           const_cast<char*>(expected_user_data));
+  grpc_jwt_verifier_destroy(verifier);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+// When an OpenID configuration endpoint returns a non-string "jwks_uri" field,
+// validate_string_field() returns nullptr and verification should fail cleanly
+// with GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR.
+TEST(JwtVerifierTest, NonStringJwksUriInOpenidConfigReturnsKeyRetrievalError) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
+  char* jwt = nullptr;
+  char* key_str = json_key_str(json_key_str_part3_for_url_issuer);
+  grpc_auth_json_key key = grpc_auth_json_key_create_from_string(key_str);
+  gpr_free(key_str);
+  ASSERT_TRUE(grpc_auth_json_key_is_valid(&key));
+  grpc_core::HttpRequest::SetOverride(
+      httpcli_get_openid_config_non_string_jwks_uri,
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
+  jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
+                                 nullptr);
+  grpc_auth_json_key_destruct(&key);
+  ASSERT_NE(jwt, nullptr);
+  grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
+                           on_verification_key_retrieval_error,
+                           const_cast<char*>(expected_user_data));
+  grpc_jwt_verifier_destroy(verifier);
+  grpc_core::ExecCtx::Get()->Flush();
+  gpr_free(jwt);
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+// When a JWK set response contains a non-array "keys" property or malformed key
+// entries (non-object or non-string fields), find_verification_key() should
+// fail cleanly without aborting.
+TEST(JwtVerifierTest, MalformedJwksKeysResponseReturnsKeyRetrievalError) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
+  char* jwt = nullptr;
+  char* key_str = json_key_str(json_key_str_part3_for_url_issuer);
+  grpc_auth_json_key key = grpc_auth_json_key_create_from_string(key_str);
+  gpr_free(key_str);
+  ASSERT_TRUE(grpc_auth_json_key_is_valid(&key));
+
+  // 1. "keys" property is not an array.
+  grpc_core::HttpRequest::SetOverride(
+      httpcli_get_openid_config_for_non_array_keys,
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
+  jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
+                                 nullptr);
+  ASSERT_NE(jwt, nullptr);
+  grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
+                           on_verification_key_retrieval_error,
+                           const_cast<char*>(expected_user_data));
+  gpr_free(jwt);
+
+  // 2. JWKS array contains non-object and malformed key entries.
+  grpc_core::HttpRequest::SetOverride(
+      httpcli_get_openid_config_for_bad_key_entry,
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   ASSERT_NE(jwt, nullptr);
