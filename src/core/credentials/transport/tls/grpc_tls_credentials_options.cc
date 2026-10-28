@@ -61,6 +61,13 @@ void grpc_tls_credentials_options_set_verify_server_cert(
   options->set_verify_server_cert(verify_server_cert);
 }
 
+void grpc_tls_credentials_options_set_verification_key_purpose(
+    grpc_tls_credentials_options* options,
+    grpc_tls_verification_key_purpose purpose) {
+  GRPC_CHECK_NE(options, nullptr);
+  options->set_verification_key_purpose(purpose);
+}
+
 void grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name) {
   GRPC_CHECK_NE(options, nullptr);
