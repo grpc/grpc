@@ -15,6 +15,14 @@
 
 set -e
 
+# Like `openssl rehash`, but writes the hash-named files as regular copies
+# instead of symlinks, which are not reliably supported on Windows checkouts.
+rehash_with_copies() {
+  for crl in "$1"/*.crl; do
+    cp "${crl}" "$1/$(openssl crl -hash -noout -in "${crl}").r0"
+  done
+}
+
 # Meant to be run from test/core/tsi/test_creds/crl_data
 # Sets up an intermediate ca, generates certificates and crl files, then copies then up and deletes unnecessary files
 
@@ -57,15 +65,15 @@ openssl ca -revoke intermediate_ca.pem -keyfile ca.key -cert ca.pem -days 3650
 openssl ca -gencrl -out current.crl -keyfile ca.key -cert ca.pem -crldays 3650
 
 
-# Copy CRLs into their own directory and run rehash
+# Copy CRLs into their own directory and create hash-named copies
 cp "./intermediate_ca/intermediate.crl" ./crls
 cp current.crl ./crls/
-openssl rehash ./crls/
+rehash_with_copies ./crls
 
 cp current.crl ./crls_missing_intermediate/
-openssl rehash ./crls_missing_intermediate/
+rehash_with_copies ./crls_missing_intermediate
 
 cp intermediate.crl ./crls_missing_root/
-openssl rehash ./crls_missing_root/
+rehash_with_copies ./crls_missing_root
 
 rm intermediate_ca
