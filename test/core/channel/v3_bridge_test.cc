@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include <memory>
@@ -24,14 +25,18 @@
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/experiments/config.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -39,15 +44,21 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
+#include "src/core/util/time_precise.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/promise/poll_matcher.h"
+#include "test/core/test_util/mock_transport_filter.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
@@ -72,27 +83,21 @@ class EarlyFailureInterceptor
   void Orphaned() override {}
 };
 
-// An activity that records whether it has been woken, so a test can poll a
-// promise until it stops making progress instead of a fixed number of times.
 class TestActivity final : public Activity, public Wakeable {
  public:
   void Run(absl::FunctionRef<void()> f) {
     ScopedActivity scoped(this);
     f();
   }
-  bool TakeWoken() { return std::exchange(woken_, false); }
   void Orphan() override {}
-  void ForceImmediateRepoll(WakeupMask) override { woken_ = true; }
+  void ForceImmediateRepoll(WakeupMask) override {}
   Waker MakeNonOwningWaker() override { return Waker(this, 0); }
   Waker MakeOwningWaker() override { return Waker(this, 0); }
-  void Wakeup(WakeupMask) override { woken_ = true; }
-  void WakeupAsync(WakeupMask) override { woken_ = true; }
+  void Wakeup(WakeupMask) override {}
+  void WakeupAsync(WakeupMask) override {}
   void Drop(WakeupMask) override {}
   std::string DebugTag() const override { return "TestActivity"; }
   std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
-
- private:
-  bool woken_ = false;
 };
 
 class V3BridgeTest : public ::testing::Test {
@@ -257,15 +262,36 @@ TEST_F(V3BridgeTest, ForceDestroyPromiseCancelsV3Call) {
   });
 }
 
+// What the v3 interceptor sees on the client-to-server path. Passed to the
+// interceptor through channel args.
+struct HalfCloseRecorder {
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() {
+    return "grpc.test.half_close_recorder";
+  }
+  std::vector<std::string> events;
+};
+
 // A v3 interceptor run through V3InterceptorToV2Bridge. It forwards the call
 // to the next v2 filter and records each client-to-server message and the
-// client half-close into `events`.
+// client half-close into the HalfCloseRecorder from the channel args.
 class HalfCloseRecordingInterceptor final
     : public V3InterceptorToV2Bridge<HalfCloseRecordingInterceptor> {
  public:
-  explicit HalfCloseRecordingInterceptor(std::vector<std::string>* events)
-      : V3InterceptorToV2Bridge<HalfCloseRecordingInterceptor>(ChannelArgs()),
-        events_(events) {}
+  static const grpc_channel_filter kFilter;
+
+  explicit HalfCloseRecordingInterceptor(const ChannelArgs& args)
+      : V3InterceptorToV2Bridge<HalfCloseRecordingInterceptor>(args),
+        events_(&args.GetObject<HalfCloseRecorder>()->events) {}
+
+  static absl::string_view TypeName() {
+    return "half_close_recording_interceptor";
+  }
+
+  static absl::StatusOr<RefCountedPtr<HalfCloseRecordingInterceptor>> Create(
+      const ChannelArgs& args, ChannelFilter::Args) {
+    return MakeRefCounted<HalfCloseRecordingInterceptor>(args);
+  }
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     CallHandler handler = Consume(std::move(unstarted_call_handler));
@@ -321,107 +347,174 @@ class HalfCloseRecordingInterceptor final
   std::vector<std::string>* events_;
 };
 
-// Drives V3InterceptorToV2Bridge::MakeCallPromise directly with
-// HalfCloseRecordingInterceptor. The test plays the previous v2 filter: it
-// owns the client-to-server pipe sender, pushes messages into it and closes it
-// to half-close. The next v2 filter is a promise that pulls and acks
-// client-to-server messages like a transport would. The tests check that the
-// half-close reaches the v3 interceptor, and only after the last message.
+const grpc_channel_filter HalfCloseRecordingInterceptor::kFilter =
+    MakePromiseBasedFilter<
+        HalfCloseRecordingInterceptor, FilterEndpoint::kClient,
+        kFilterExaminesServerInitialMetadata | kFilterExaminesOutboundMessages |
+            kFilterExaminesInboundMessages>();
+
+// A v2 channel stack with HalfCloseRecordingInterceptor on top of the mock
+// transport, and one call on it. The tests start transport batches on the
+// call, so they go through ClientCallData, and check that a client half-close
+// (send_trailing_metadata) reaches the v3 interceptor through
+// V3InterceptorToV2Bridge, and only after the last message.
 //
 // The v3 parties run on a FuzzingEventEngine set on the call arena, so all
-// work runs on the test thread when the test ticks it.
+// work runs on the test thread when the test drains it.
 class ClientHalfClosePropagationTest : public ::testing::Test {
  protected:
+  // A transport batch and everything it points to.
+  struct Batch {
+    grpc_call_element* elem;
+    grpc_transport_stream_op_batch op{};
+    grpc_transport_stream_op_batch_payload payload{};
+    SliceBuffer message;
+    grpc_closure on_complete;
+    grpc_closure start;
+  };
+
   ClientHalfClosePropagationTest() {
+    transport_state_.call_combiner = &call_combiner_;
+    std::vector<FilterAndConfig> filters = {
+        {&HalfCloseRecordingInterceptor::kFilter, nullptr},
+        {&MockTransportFilter::kFilter, nullptr},
+    };
+    auto channel_args = CoreConfiguration::Get()
+                            .channel_args_preconditioning()
+                            .PreconditionChannelArgs(nullptr)
+                            .SetObject(&transport_state_)
+                            .SetObject(&recorder_);
+    channel_stack_ = static_cast<grpc_channel_stack*>(
+        gpr_malloc(grpc_channel_stack_size(filters)));
+    GRPC_CHECK_OK(grpc_channel_stack_init(
+        1,
+        [](void* p, grpc_error_handle) {
+          grpc_channel_stack_destroy(static_cast<grpc_channel_stack*>(p));
+          gpr_free(p);
+        },
+        channel_stack_, filters, channel_args, "test", channel_stack_));
     arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine_.get());
-    RunInActivity([this]() {
-      CallArgs args{Arena::MakePooledForOverwrite<ClientMetadata>(),
-                    ClientInitialMetadataOutstandingToken::Empty(),
-                    nullptr,
-                    &server_initial_metadata_.sender,
-                    &client_to_server_.receiver,
-                    &server_to_client_.sender};
-      call_promise_ = interceptor_->MakeCallPromise(
-          std::move(args), [this](CallArgs next_args) {
-            return NextFilter(next_args.client_to_server_messages);
-          });
-    });
+    call_stack_ = static_cast<grpc_call_stack*>(
+        gpr_malloc(channel_stack_->call_stack_size));
+    const grpc_call_element_args call_args = {
+        call_stack_,
+        nullptr,
+        gpr_get_cycle_counter(),
+        Timestamp::InfFuture(),
+        arena_.get(),
+        &call_combiner_,
+    };
+    GRPC_CHECK_OK(grpc_call_stack_init(
+        channel_stack_, 1,
+        [](void* p, grpc_error_handle) {
+          grpc_call_stack_destroy(static_cast<grpc_call_stack*>(p), nullptr,
+                                  nullptr);
+          gpr_free(p);
+        },
+        call_stack_, &call_args));
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
+                      this, nullptr);
   }
 
   ~ClientHalfClosePropagationTest() override {
-    // If the call did not finish, destroying the promise cancels the v3 call.
-    RunInActivity([this]() {
-      push_.reset();
-      call_promise_.reset();
-    });
-    event_engine_->TickUntilIdle();
+    GRPC_CALL_STACK_UNREF(call_stack_, "done");
+    Drain();
+    GRPC_CHANNEL_STACK_UNREF(channel_stack_, "done");
+    Drain();
     event_engine_->UnsetGlobalHooks();
   }
 
-  // The next v2 filter: pulls client-to-server messages until the pipe closes,
-  // then completes the call. Each message is acked once `hold_message_ack_` is
-  // false; holding the ack is like a transport that has not yet completed the
-  // send.
-  ArenaPromise<ServerMetadataHandle> NextFilter(
-      PipeReceiver<MessageHandle>* messages) {
-    return Map(
-        ForEach(std::move(*messages),
-                [this](MessageHandle) {
-                  return [this]() -> Poll<StatusFlag> {
-                    if (hold_message_ack_) return Pending{};
-                    return Success{};
-                  };
-                }),
-        [](StatusFlag) { return ServerMetadataFromStatus(absl::OkStatus()); });
+  // Returns a new batch on the top filter of the call. The fixture keeps it
+  // alive until the end of the test.
+  Batch& NewBatch() {
+    Batch& batch = *batches_.emplace_back(std::make_unique<Batch>());
+    batch.elem = grpc_call_stack_element(call_stack_, 0);
+    batch.op.payload = &batch.payload;
+    GRPC_CLOSURE_INIT(&batch.on_complete, OnComplete, &call_combiner_, nullptr);
+    batch.op.on_complete = &batch.on_complete;
+    return batch;
   }
 
-  template <typename F>
-  void RunInActivity(F f) {
-    activity_.Run([&]() {
-      promise_detail::Context<Arena> arena_ctx(arena_.get());
-      f();
-    });
+  // Adds the ops that the first batch of a call carries: send_initial_metadata
+  // and recv_trailing_metadata.
+  void AddStartCall(Batch& batch) {
+    batch.op.send_initial_metadata = true;
+    batch.payload.send_initial_metadata.send_initial_metadata =
+        &client_initial_metadata_;
+    batch.op.recv_trailing_metadata = true;
+    batch.payload.recv_trailing_metadata.recv_trailing_metadata =
+        &server_trailing_metadata_;
+    batch.payload.recv_trailing_metadata.recv_trailing_metadata_ready =
+        &recv_trailing_metadata_ready_;
   }
 
-  // Starts pushing a message from the previous v2 filter. The push is polled
-  // once so the message is in the pipe before this returns.
-  void SendMessage(absl::string_view payload) {
-    ASSERT_FALSE(push_.has_value());
-    RunInActivity([&]() {
-      push_.emplace(client_to_server_.sender.Push(Arena::MakePooled<Message>(
-          SliceBuffer(Slice::FromCopiedString(payload)), 0)));
-      PollPush();
-    });
+  void AddSendMessage(Batch& batch, absl::string_view payload) {
+    batch.message.Append(Slice::FromCopiedString(payload));
+    batch.op.send_message = true;
+    batch.payload.send_message.send_message = &batch.message;
   }
 
-  // Polls the v2 side and ticks the event engine until neither has work left.
-  // The call promise is reset once it completes.
+  // Adds send_trailing_metadata, which is the client half-close.
+  void AddSendTrailingMetadata(Batch& batch) {
+    batch.op.send_trailing_metadata = true;
+    batch.payload.send_trailing_metadata.send_trailing_metadata =
+        &client_trailing_metadata_;
+  }
+
+  // Starts the batch under the call combiner, as the surface does, then drains.
+  void StartBatch(Batch& batch) {
+    GRPC_CLOSURE_INIT(&batch.start, DoStartBatch, &batch, nullptr);
+    GRPC_CALL_COMBINER_START(&call_combiner_, &batch.start, absl::OkStatus(),
+                             "start_batch");
+    Drain();
+  }
+
+  // Runs the send_message on_complete held by the mock transport, then drains.
+  void CompleteHeldSendMessage() {
+    grpc_closure* on_complete = std::exchange(
+        transport_state_.pending_send_message_on_complete, nullptr);
+    ASSERT_NE(on_complete, nullptr);
+    GRPC_CALL_COMBINER_START(&call_combiner_, on_complete, absl::OkStatus(),
+                             "complete_held_send_message");
+    Drain();
+  }
+
+  // Sends OK trailing metadata up from the mock transport and checks that the
+  // call finishes.
+  void FinishCall() {
+    server_trailing_metadata_.Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
+    GRPC_CALL_COMBINER_START(&call_combiner_,
+                             transport_state_.recv_trailing_metadata_ready,
+                             absl::OkStatus(), "finish_call");
+    Drain();
+    EXPECT_TRUE(call_finished_);
+  }
+
+  // Runs closures and event engine work until neither has any left.
   void Drain() {
     for (int i = 0; i < 1000; ++i) {
-      activity_.TakeWoken();
-      RunInActivity([this]() {
-        PollPush();
-        if (call_promise_.has_value() && (*call_promise_)().ready()) {
-          call_promise_.reset();
-        }
-      });
       const bool did_work = ExecCtx::Get()->Flush();
-      if (!activity_.TakeWoken() && !did_work && event_engine_->IsIdle()) {
-        return;
-      }
+      if (!did_work && event_engine_->IsIdle()) return;
       event_engine_->TickUntilIdle();
     }
     ADD_FAILURE() << "call did not quiesce";
   }
 
-  void PollPush() {
-    if (!push_.has_value()) return;
-    Poll<bool> pushed = (*push_)();
-    if (pushed.ready()) {
-      EXPECT_TRUE(pushed.value());
-      push_.reset();
-    }
+  static void DoStartBatch(void* arg, grpc_error_handle) {
+    auto* batch = static_cast<Batch*>(arg);
+    batch->elem->filter->start_transport_stream_op_batch(batch->elem,
+                                                         &batch->op);
+  }
+
+  static void OnComplete(void* arg, grpc_error_handle) {
+    GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(arg), "on_complete");
+  }
+
+  static void RecvTrailingMetadataReady(void* arg, grpc_error_handle) {
+    auto* self = static_cast<ClientHalfClosePropagationTest*>(arg);
+    GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_trailing_metadata");
+    self->call_finished_ = true;
   }
 
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
@@ -430,64 +523,94 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
               grpc_event_engine::experimental::FuzzingEventEngine::Options(),
               fuzzing_event_engine::Actions());
   ExecCtx exec_ctx_;
-  std::vector<std::string> events_;
+  HalfCloseRecorder recorder_;
+  CallCombiner call_combiner_;
+  MockTransportFilter::State transport_state_;
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
-  RefCountedPtr<HalfCloseRecordingInterceptor> interceptor_ =
-      MakeRefCounted<HalfCloseRecordingInterceptor>(&events_);
-  TestActivity activity_;
-  bool hold_message_ack_ = false;
-  Pipe<ServerMetadataHandle> server_initial_metadata_{arena_.get()};
-  Pipe<MessageHandle> client_to_server_{arena_.get()};
-  Pipe<MessageHandle> server_to_client_{arena_.get()};
-  std::optional<PipeSender<MessageHandle>::PushType> push_;
-  std::optional<ArenaPromise<ServerMetadataHandle>> call_promise_;
+  grpc_channel_stack* channel_stack_ = nullptr;
+  grpc_call_stack* call_stack_ = nullptr;
+  grpc_metadata_batch client_initial_metadata_;
+  grpc_metadata_batch client_trailing_metadata_;
+  grpc_metadata_batch server_trailing_metadata_;
+  grpc_closure recv_trailing_metadata_ready_;
+  bool call_finished_ = false;
+  std::vector<std::unique_ptr<Batch>> batches_;
 };
 
+// send_message and send_trailing_metadata in the same batch, as in unary calls.
 TEST_F(ClientHalfClosePropagationTest,
-       HalfCloseRightAfterMessagePropagatesAfterMessage) {
-  SendMessage("hello");
-  RunInActivity([this]() { client_to_server_.sender.Close(); });
-  Drain();
-  EXPECT_THAT(events_, ::testing::ElementsAre("msg:hello", "half_close"));
-  EXPECT_FALSE(call_promise_.has_value()) << "call did not complete";
+       HalfCloseInSameBatchAsMessagePropagatesAfterMessage) {
+  Batch& batch = NewBatch();
+  AddStartCall(batch);
+  AddSendMessage(batch, "hello");
+  AddSendTrailingMetadata(batch);
+  StartBatch(batch);
+  EXPECT_THAT(recorder_.events,
+              ::testing::ElementsAre("msg:hello", "half_close"));
+  FinishCall();
 }
 
-TEST_F(ClientHalfClosePropagationTest, HalfCloseAfterMessagePropagates) {
-  SendMessage("msg1");
-  Drain();
+// send_trailing_metadata in a later batch, after send_message has completed.
+TEST_F(ClientHalfClosePropagationTest,
+       HalfCloseInLaterBatchPropagatesAfterMessage) {
+  Batch& batch1 = NewBatch();
+  AddStartCall(batch1);
+  AddSendMessage(batch1, "msg1");
+  StartBatch(batch1);
   // No half-close was sent yet, so v3 must not see one.
-  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1"));
-  RunInActivity([this]() { client_to_server_.sender.Close(); });
-  Drain();
-  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1", "half_close"));
-  EXPECT_FALSE(call_promise_.has_value()) << "call did not complete";
+  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("msg:msg1"));
+  Batch& batch2 = NewBatch();
+  AddSendTrailingMetadata(batch2);
+  StartBatch(batch2);
+  EXPECT_THAT(recorder_.events,
+              ::testing::ElementsAre("msg:msg1", "half_close"));
+  FinishCall();
 }
 
-TEST_F(ClientHalfClosePropagationTest, HalfCloseWithoutAnyMessagePropagates) {
-  Drain();
-  EXPECT_THAT(events_, ::testing::IsEmpty());
-  RunInActivity([this]() { client_to_server_.sender.Close(); });
-  Drain();
-  EXPECT_THAT(events_, ::testing::ElementsAre("half_close"));
-  EXPECT_FALSE(call_promise_.has_value()) << "call did not complete";
-}
-
+// send_trailing_metadata in the first batch, without any send_message.
 TEST_F(ClientHalfClosePropagationTest,
-       HalfCloseWhilePreviousMessageIsNotAckedPropagatesAfterAck) {
-  hold_message_ack_ = true;
-  SendMessage("msg1");
-  Drain();
-  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1"));
-  // Half-close while the next filter still holds the ack for msg1. The v3
-  // interceptor must not observe the half-close yet.
-  RunInActivity([this]() { client_to_server_.sender.Close(); });
-  Drain();
-  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1"));
-  // Now ack msg1.
-  hold_message_ack_ = false;
-  Drain();
-  EXPECT_THAT(events_, ::testing::ElementsAre("msg:msg1", "half_close"));
-  EXPECT_FALSE(call_promise_.has_value()) << "call did not complete";
+       HalfCloseInFirstBatchWithoutAnyMessagePropagates) {
+  Batch& batch = NewBatch();
+  AddStartCall(batch);
+  AddSendTrailingMetadata(batch);
+  StartBatch(batch);
+  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("half_close"));
+  FinishCall();
+}
+
+// send_trailing_metadata in a later batch, without any send_message.
+TEST_F(ClientHalfClosePropagationTest,
+       HalfCloseInLaterBatchWithoutAnyMessagePropagates) {
+  Batch& batch1 = NewBatch();
+  AddStartCall(batch1);
+  StartBatch(batch1);
+  EXPECT_THAT(recorder_.events, ::testing::IsEmpty());
+  Batch& batch2 = NewBatch();
+  AddSendTrailingMetadata(batch2);
+  StartBatch(batch2);
+  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("half_close"));
+  FinishCall();
+}
+
+// send_trailing_metadata while the transport has not yet completed the
+// previous send_message.
+TEST_F(ClientHalfClosePropagationTest,
+       HalfCloseWhileMessageIsPendingPropagatesAfterMessageCompletes) {
+  transport_state_.should_hold_send_message_on_complete = true;
+  Batch& batch1 = NewBatch();
+  AddStartCall(batch1);
+  AddSendMessage(batch1, "msg1");
+  StartBatch(batch1);
+  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("msg:msg1"));
+  Batch& batch2 = NewBatch();
+  AddSendTrailingMetadata(batch2);
+  StartBatch(batch2);
+  // send_message has not completed, so v3 must not see the half-close yet.
+  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("msg:msg1"));
+  CompleteHeldSendMessage();
+  EXPECT_THAT(recorder_.events,
+              ::testing::ElementsAre("msg:msg1", "half_close"));
+  FinishCall();
 }
 
 }  // namespace
@@ -495,5 +618,6 @@ TEST_F(ClientHalfClosePropagationTest,
 
 int main(int argc, char** argv) {
   grpc_core::ForceEnableExperiment("promise_filter_client_half_close", true);
+  ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
