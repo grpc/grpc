@@ -268,6 +268,22 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
         tracer->SetOptionalLabel(key, value);
       }
     }
+    void RecordDelayStart(absl::string_view delay_type,
+                          absl::string_view delay_reason) override {
+      for (auto* tracer : tracers_) {
+        tracer->RecordDelayStart(delay_type, delay_reason);
+      }
+    }
+    void RecordDelayReasonChanged(absl::string_view delay_reason) override {
+      for (auto* tracer : tracers_) {
+        tracer->RecordDelayReasonChanged(delay_reason);
+      }
+    }
+    void RecordDelayEnd() override {
+      for (auto* tracer : tracers_) {
+        tracer->RecordDelayEnd();
+      }
+    }
     std::string TraceId() override { return tracers_[0]->TraceId(); }
     std::string SpanId() override { return tracers_[0]->SpanId(); }
     bool IsSampled() override { return tracers_[0]->IsSampled(); }
@@ -306,6 +322,22 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
   void RecordAnnotation(const Annotation& annotation) override {
     for (auto* tracer : tracers_) {
       tracer->RecordAnnotation(annotation);
+    }
+  }
+  void RecordDelayStart(absl::string_view delay_type,
+                        absl::string_view delay_reason) override {
+    for (auto* tracer : tracers_) {
+      tracer->RecordDelayStart(delay_type, delay_reason);
+    }
+  }
+  void RecordDelayReasonChanged(absl::string_view delay_reason) override {
+    for (auto* tracer : tracers_) {
+      tracer->RecordDelayReasonChanged(delay_reason);
+    }
+  }
+  void RecordDelayEnd() override {
+    for (auto* tracer : tracers_) {
+      tracer->RecordDelayEnd();
     }
   }
   std::string TraceId() override { return tracers_[0]->TraceId(); }

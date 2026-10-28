@@ -259,6 +259,10 @@ class RingHash final : public LoadBalancingPolicy {
     void RequestConnectionForEndpoint(
         const RefCountedPtr<RingHashEndpoint>& endpoint);
 
+    void MaybeModifyDelayReason(bool is_first_index,
+                                const absl::Status& last_failure,
+                                PickResult& child_pick);
+
     RefCountedPtr<RingHash> ring_hash_;
     RefCountedPtr<Ring> ring_;
     std::vector<RingHashEndpoint::EndpointInfo> endpoints_;
@@ -355,19 +359,35 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       break;
     }
   }
+  const size_t first_endpoint_index = ring[index].endpoint_index;
   // Find the first endpoint we can use from the selected index.
   if (!using_random_hash) {
+    absl::Status last_failure;
     for (size_t i = 0; i < ring.size(); ++i) {
       const auto& entry = ring[(index + i) % ring.size()];
       const auto& endpoint_info = endpoints_[entry.endpoint_index];
       switch (endpoint_info.state) {
-        case GRPC_CHANNEL_READY:
-          return endpoint_info.picker->Pick(args);
         case GRPC_CHANNEL_IDLE:
           RequestConnectionForEndpoint(endpoint_info.endpoint);
+          if (endpoint_info.picker == nullptr) {
+            PickResult result =
+                PickResult::Queue{kDelayTypeConnecting,
+                                  "child policy has not yet returned a picker"};
+            MaybeModifyDelayReason(/*is_first_index=*/i == 0, last_failure,
+                                   result);
+            return result;
+          }
           [[fallthrough]];
         case GRPC_CHANNEL_CONNECTING:
-          return PickResult::Queue();
+        case GRPC_CHANNEL_READY: {
+          auto child_pick = endpoint_info.picker->Pick(args);
+          MaybeModifyDelayReason(/*is_first_index=*/i == 0, last_failure,
+                                 child_pick);
+          return child_pick;
+        }
+        case GRPC_CHANNEL_TRANSIENT_FAILURE:
+          last_failure = endpoint_info.status;
+          break;
         default:
           break;
       }
@@ -376,22 +396,45 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     // Using a random hash.  We will use the first READY endpoint we
     // find, triggering at most one endpoint to attempt connecting.
     bool requested_connection = has_endpoint_in_connecting_state_;
+    std::optional<size_t> connecting_endpoint_index;
+    absl::Status last_failure;
     for (size_t i = 0; i < ring.size(); ++i) {
       const auto& entry = ring[(index + i) % ring.size()];
       const auto& endpoint_info = endpoints_[entry.endpoint_index];
       if (endpoint_info.state == GRPC_CHANNEL_READY) {
         return endpoint_info.picker->Pick(args);
       }
+      if (!connecting_endpoint_index.has_value() &&
+          endpoint_info.state == GRPC_CHANNEL_CONNECTING) {
+        connecting_endpoint_index = entry.endpoint_index;
+      }
       if (!requested_connection && endpoint_info.state == GRPC_CHANNEL_IDLE) {
         RequestConnectionForEndpoint(endpoint_info.endpoint);
         requested_connection = true;
+        connecting_endpoint_index = entry.endpoint_index;
+      }
+      // Store the last failure before the queued RPC.
+      if (!connecting_endpoint_index.has_value() &&
+          endpoint_info.state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        last_failure = endpoint_info.status;
       }
     }
-    if (requested_connection) return PickResult::Queue();
+    if (connecting_endpoint_index.has_value()) {
+      const auto& endpoint_info = endpoints_[*connecting_endpoint_index];
+      PickResult result =
+          endpoint_info.picker == nullptr
+              ? PickResult::Queue{kDelayTypeConnecting,
+                                  "child policy has not yet returned a picker"}
+              : endpoint_info.picker->Pick(args);
+      MaybeModifyDelayReason(
+          /*is_first_index=*/connecting_endpoint_index == first_endpoint_index,
+          last_failure, result);
+      return result;
+    }
   }
   std::string message = absl::StrCat(
       "ring hash cannot find a connected endpoint; first failure: ",
-      endpoints_[ring[index].endpoint_index].status.message());
+      endpoints_[first_endpoint_index].status.message());
   if (!resolution_note_.empty()) {
     absl::StrAppend(&message, " (", resolution_note_, ")");
   }
@@ -405,6 +448,24 @@ void RingHash::Picker::RequestConnectionForEndpoint(
       endpoint->RequestConnectionLocked();
     }
   });
+}
+
+void RingHash::Picker::MaybeModifyDelayReason(bool is_first_index,
+                                              const absl::Status& last_failure,
+                                              PickResult& child_pick) {
+  auto* queue = std::get_if<PickResult::Queue>(&child_pick.result);
+  if (queue == nullptr) return;
+  if (is_first_index) {
+    queue->delay_reason = absl::StrCat(
+        "ring_hash: primary endpoint connecting: ", queue->delay_reason);
+  } else if (!last_failure.ok()) {
+    queue->delay_reason = absl::StrCat(
+        "ring_hash: fallback endpoint connecting: ", queue->delay_reason,
+        " (recent endpoint failure: ", last_failure.ToString(), ")");
+  } else {
+    queue->delay_reason = absl::StrCat(
+        "ring_hash: fallback endpoint connecting: ", queue->delay_reason);
+  }
 }
 
 //
