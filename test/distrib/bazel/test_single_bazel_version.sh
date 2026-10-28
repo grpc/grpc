@@ -48,6 +48,10 @@ fi
 
 cd "$(dirname "$0")"/../../..
 
+# The distribtest workspaces have no tools/bazel of their own, so they are
+# run with the wrapper from the repository root.
+BAZEL_WRAPPER="$(pwd)/tools/bazel"
+
 EXCLUDED_TARGETS=(
   # iOS platform fails the analysis phase since there is no toolchain available
   # for it.
@@ -99,8 +103,8 @@ do
   do
     pushd "test/distrib/bazel/${TEST_DIRECTORY}/"
     if [ "${TEST_SHARD}" == "distribtest_${TEST_DIRECTORY}" ] ; then
-      tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-      tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
+      "${BAZEL_WRAPPER}" version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
+      "${BAZEL_WRAPPER}" test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
       SHARD_RAN="true"
     fi
     popd
