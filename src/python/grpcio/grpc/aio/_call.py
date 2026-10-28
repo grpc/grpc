@@ -18,7 +18,6 @@ from collections.abc import AsyncIterable
 import enum
 import logging
 import traceback
-import weakref
 from typing import (
     Any,
     AsyncIterator,
@@ -28,6 +27,7 @@ from typing import (
     Tuple,
     Union,
 )
+import weakref
 
 import grpc
 from grpc import _common

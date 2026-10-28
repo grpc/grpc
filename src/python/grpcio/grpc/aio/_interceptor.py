@@ -22,7 +22,6 @@ from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
 import functools
-import weakref
 from typing import (
     Any,
     AsyncIterable,
@@ -39,6 +38,7 @@ from typing import (
     Sequence,
     Union,
 )
+import weakref
 
 import grpc
 from grpc._cython import cygrpc
@@ -390,9 +390,9 @@ class InterceptedCall:
 
     @staticmethod
     def _wrap_add_done_callback(
-        call_ref: weakref.ReferenceType[InterceptedCall],
+        call_ref: weakref.ReferenceType[Any],
         callback: DoneCallbackType,
-        unused_call: _base_call.Call,
+        _unused_call: _base_call.Call,
     ) -> None:
         call = call_ref()
         if call is not None:
