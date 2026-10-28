@@ -250,6 +250,8 @@ MATCHER_P2(StatusIs, code, message, "") {
   return arg.code() == code && arg.message() == message;
 }
 
+enum class CaseSensitive { kFalse, kTrue };
+
 // Matches a StringMatcher with the given type, pattern and case sensitivity.
 MATCHER_P3(StringMatcherIs, type, pattern, case_sensitive, "") {
   const std::string& actual_pattern =
@@ -258,7 +260,7 @@ MATCHER_P3(StringMatcherIs, type, pattern, case_sensitive, "") {
           : arg.string_matcher();
   *result_listener << "actual: " << arg.ToString();
   return arg.type() == type && actual_pattern == pattern &&
-         arg.case_sensitive() == case_sensitive;
+         arg.case_sensitive() == (case_sensitive == CaseSensitive::kTrue);
 }
 
 class StringMatcherParseTest : public XdsCommonTypesTest {
@@ -305,9 +307,8 @@ TEST_F(StringMatcherParseTest, Exact) {
   proto.set_exact("foo");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_THAT(*string_matcher,
-              StringMatcherIs(StringMatcher::Type::kExact, "foo",
-                              /*case_sensitive=*/true));
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kExact,
+                                               "foo", CaseSensitive::kTrue));
 }
 
 TEST_F(StringMatcherParseTest, EmptyExact) {
@@ -316,7 +317,7 @@ TEST_F(StringMatcherParseTest, EmptyExact) {
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
   EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kExact, "",
-                                               /*case_sensitive=*/true));
+                                               CaseSensitive::kTrue));
 }
 
 TEST_F(StringMatcherParseTest, Prefix) {
@@ -324,9 +325,8 @@ TEST_F(StringMatcherParseTest, Prefix) {
   proto.set_prefix("foo");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_THAT(*string_matcher,
-              StringMatcherIs(StringMatcher::Type::kPrefix, "foo",
-                              /*case_sensitive=*/true));
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kPrefix,
+                                               "foo", CaseSensitive::kTrue));
 }
 
 TEST_F(StringMatcherParseTest, Suffix) {
@@ -334,9 +334,8 @@ TEST_F(StringMatcherParseTest, Suffix) {
   proto.set_suffix("foo");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_THAT(*string_matcher,
-              StringMatcherIs(StringMatcher::Type::kSuffix, "foo",
-                              /*case_sensitive=*/true));
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kSuffix,
+                                               "foo", CaseSensitive::kTrue));
 }
 
 TEST_F(StringMatcherParseTest, Contains) {
@@ -344,9 +343,8 @@ TEST_F(StringMatcherParseTest, Contains) {
   proto.set_contains("foo");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_THAT(*string_matcher,
-              StringMatcherIs(StringMatcher::Type::kContains, "foo",
-                              /*case_sensitive=*/true));
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kContains,
+                                               "foo", CaseSensitive::kTrue));
 }
 
 TEST_F(StringMatcherParseTest, SafeRegex) {
@@ -354,9 +352,8 @@ TEST_F(StringMatcherParseTest, SafeRegex) {
   proto.mutable_safe_regex()->set_regex("fo+");
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_THAT(*string_matcher,
-              StringMatcherIs(StringMatcher::Type::kSafeRegex, "fo+",
-                              /*case_sensitive=*/true));
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kSafeRegex,
+                                               "fo+", CaseSensitive::kTrue));
 }
 
 TEST_F(StringMatcherParseTest, IgnoreCase) {
@@ -365,9 +362,8 @@ TEST_F(StringMatcherParseTest, IgnoreCase) {
   proto.set_ignore_case(true);
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_THAT(*string_matcher,
-              StringMatcherIs(StringMatcher::Type::kPrefix, "foo",
-                              /*case_sensitive=*/false));
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kPrefix,
+                                               "foo", CaseSensitive::kFalse));
 }
 
 TEST_F(StringMatcherParseTest, NotPresent) {
@@ -458,9 +454,8 @@ TEST_F(StringMatcherParseTest, XdsStringMatcher) {
   proto.set_ignore_case(true);
   auto string_matcher = Parse(proto);
   ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
-  EXPECT_THAT(*string_matcher,
-              StringMatcherIs(StringMatcher::Type::kSuffix, "foo",
-                              /*case_sensitive=*/false));
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kSuffix,
+                                               "foo", CaseSensitive::kFalse));
 }
 
 TEST_F(StringMatcherParseTest, XdsStringMatcherEmptyPrefix) {
