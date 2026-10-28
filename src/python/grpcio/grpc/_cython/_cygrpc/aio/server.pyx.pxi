@@ -300,6 +300,7 @@ cdef class _SyncServicerContext:
     def __cinit__(self,
                   _ServicerContext context):
         self._context = context
+        self._callbacks_lock = threading.Lock()
         self._callbacks = []
         self._loop = context._loop
 
@@ -337,12 +338,24 @@ cdef class _SyncServicerContext:
     def disable_next_message_compression(self):
         self._context.disable_next_message_compression()
 
+    cdef list _close_callbacks(self):
+        """Stops accepting callbacks and returns the ones registered so far
+
+        Runs on the loop owning thread.
+        """
+        with self._callbacks_lock:
+            callbacks = self._callbacks
+            self._callbacks = None
+        return callbacks
+
     def add_callback(self, object callback):
-        if self._callbacks is None:
-            # The RPC already finished
-            return False
-        self._callbacks.append(callback)
-        return True
+        # runs on a worker thread
+        with self._callbacks_lock:
+            if self._callbacks is None:
+                # The RPC already finished
+                return False
+            self._callbacks.append(callback)
+            return True
 
     def peer(self):
         return self._context.peer()
@@ -428,6 +441,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     # Executes application logic
     cdef object response_message
     cdef _SyncServicerContext sync_servicer_context
+    cdef list sync_callbacks
     install_context_from_request_call_event_aio(rpc_state)
 
     if _is_async_handler(unary_handler):
@@ -446,11 +460,12 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
                 request,
                 sync_servicer_context,
             )
-            # Support sync-stack callback
-            for callback in sync_servicer_context._callbacks:
-                callback()
         finally:
-            sync_servicer_context._callbacks = None
+            sync_callbacks = sync_servicer_context._close_callbacks()
+
+        # Support sync-stack callback
+        for callback in sync_callbacks:
+            callback()
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()

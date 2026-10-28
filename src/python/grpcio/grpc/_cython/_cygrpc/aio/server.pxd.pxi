@@ -52,8 +52,11 @@ cdef class _ServicerContext:
 
 cdef class _SyncServicerContext:
     cdef _ServicerContext _context
+    cdef object _callbacks_lock  # threading.Lock
     cdef list _callbacks
     cdef object _loop  # asyncio.AbstractEventLoop
+
+    cdef list _close_callbacks(self)
 
 
 cdef class _MessageReceiver:
