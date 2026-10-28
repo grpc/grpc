@@ -254,6 +254,7 @@
   expiry: 2027/03/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  requires: ["replace_auth_filter" ]
   allow_in_fuzzing_config: true
 - name: ph2_client_server
   description:
@@ -264,6 +265,7 @@
   expiry: 2027/03/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  requires: ["replace_auth_filter" ]
   allow_in_fuzzing_config: true
 - name: ph2_server
   description:
@@ -273,6 +275,7 @@
   expiry: 2027/03/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  requires: ["replace_auth_filter"]
   allow_in_fuzzing_config: true
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
@@ -320,6 +323,12 @@
   expiry: 2026/10/25
   owner: bpawan@google.com
   test_tags: [core_end2end_test]
+- name: replace_auth_filter
+  description: Replacing ServerAuthFilter in Call V3.
+  expiry: 2027/04/15
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
 - name: retry_in_callv3
   description: Support retries with call-v3
   expiry: 2027/02/01
