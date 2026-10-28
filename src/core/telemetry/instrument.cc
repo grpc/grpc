@@ -428,10 +428,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
 void MetricsQuery::Apply(InstrumentLabelList label_names,
                          absl::FunctionRef<void(MetricsSink&)> fn,
                          MetricsSink& sink) const {
-  if (collapsed_labels_.empty()) {
-    ApplyLabelChecks(label_names, fn, sink);
-    return;
-  }
+  // Compute the labels that survive the query (i.e. are not collapsed).
   std::vector<size_t> include_labels;
   InstrumentLabelList label_keys;
   for (size_t i = 0; i < label_names.size(); ++i) {
@@ -440,15 +437,22 @@ void MetricsQuery::Apply(InstrumentLabelList label_names,
       label_keys.Append(label_names[i]);
     }
   }
-  if (include_labels.size() == label_names.size()) {
-    ApplyLabelChecks(label_names, fn, sink);
-    return;
-  }
+  const bool collapsing = include_labels.size() != label_names.size();
+  // Counters and histograms are *always* aggregated by (label values, name)
+  // before being published, even when no label is collapsed. A scope's
+  // children (e.g. one per channel) can each own a storage whose observed
+  // labels are identical to a sibling's, so forwarding storages one by one
+  // would hand the sink several rows for the same key.
+  //
+  // Gauges are not aggregatable: when nothing is collapsed they are forwarded
+  // to `sink` unchanged; when labels are collapsed they are dropped.
   class Filter final : public MetricsSink {
    public:
     explicit Filter(absl::Span<const size_t> include_labels,
-                    InstrumentLabelList label_keys)
-        : include_labels_(include_labels), label_keys_(label_keys) {}
+                    InstrumentLabelList label_keys, MetricsSink* gauge_sink)
+        : include_labels_(include_labels),
+          label_keys_(label_keys),
+          gauge_sink_(gauge_sink) {}
 
     void Counter(InstrumentLabelList /* label_keys */,
                  absl::Span<const std::string> label_values,
@@ -506,20 +510,26 @@ void MetricsQuery::Apply(InstrumentLabelList label_names,
       }
     }
 
-    void DoubleGauge(InstrumentLabelList /* label_keys */,
-                     absl::Span<const std::string>, absl::string_view,
-                     double) override {
+    void DoubleGauge(InstrumentLabelList label_keys,
+                     absl::Span<const std::string> label_values,
+                     absl::string_view name, double value) override {
       // Not aggregatable
+      if (gauge_sink_ == nullptr) return;
+      gauge_sink_->DoubleGauge(label_keys, label_values, name, value);
     }
-    void IntGauge(InstrumentLabelList /* label_keys */,
-                  absl::Span<const std::string>, absl::string_view,
-                  int64_t) override {
+    void IntGauge(InstrumentLabelList label_keys,
+                  absl::Span<const std::string> label_values,
+                  absl::string_view name, int64_t value) override {
       // Not aggregatable
+      if (gauge_sink_ == nullptr) return;
+      gauge_sink_->IntGauge(label_keys, label_values, name, value);
     }
-    void UintGauge(InstrumentLabelList /* label_keys */,
-                   absl::Span<const std::string>, absl::string_view,
-                   uint64_t) override {
+    void UintGauge(InstrumentLabelList label_keys,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, uint64_t value) override {
       // Not aggregatable
+      if (gauge_sink_ == nullptr) return;
+      gauge_sink_->UintGauge(label_keys, label_values, name, value);
     }
 
     void Publish(MetricsSink& sink) const {
@@ -554,6 +564,8 @@ void MetricsQuery::Apply(InstrumentLabelList label_names,
 
     absl::Span<const size_t> include_labels_;
     InstrumentLabelList label_keys_;
+    // Receives gauge readings verbatim; nullptr when labels are collapsed.
+    MetricsSink* gauge_sink_;
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
                         uint64_t>
         uint64_counters_;
@@ -581,7 +593,7 @@ void MetricsQuery::Apply(InstrumentLabelList label_names,
                         DoubleHistogramValue>
         double_histograms_;
   };
-  Filter filter(include_labels, label_keys);
+  Filter filter(include_labels, label_keys, collapsing ? nullptr : &sink);
   ApplyLabelChecks(label_names, fn, filter);
   filter.Publish(sink);
 }
