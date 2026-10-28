@@ -441,9 +441,7 @@ TEST_F(Http2ServerTransportTest, ServerApplicationErrorTest) {
   step2->Wait();
 }
 
-// TODO(tjagtap): [PH2][P0] Re-enable this test once the bug is fixed.
-TEST_F(Http2ServerTransportTest,
-       DISABLED_ServerApplicationErrorClientHalfClosedTest) {
+TEST_F(Http2ServerTransportTest, ServerApplicationErrorClientHalfClosedTest) {
   InitTransport(GetChannelArgs());
   SpawnTransportLoopsAndExchangeSettings();
 
