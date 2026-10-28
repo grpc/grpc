@@ -56,7 +56,7 @@ cdef class _SyncServicerContext:
     cdef list _callbacks
     cdef object _loop  # asyncio.AbstractEventLoop
 
-    cdef list _close_callbacks(self)
+    cdef list _run_callbacks(self)
 
 
 cdef class _MessageReceiver:

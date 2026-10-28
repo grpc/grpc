@@ -338,15 +338,16 @@ cdef class _SyncServicerContext:
     def disable_next_message_compression(self):
         self._context.disable_next_message_compression()
 
-    cdef list _close_callbacks(self):
-        """Stops accepting callbacks and returns the ones registered so far
-
-        Runs on the loop owning thread.
-        """
+    cdef list _run_callbacks(self):
+        # Runs on the loop owning thread.
         with self._callbacks_lock:
             callbacks = self._callbacks
             self._callbacks = None
-        return callbacks
+        for callback in callbacks:
+            try:
+                callback()
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception('Error in sync-stack callback')
 
     def add_callback(self, object callback):
         # runs on a worker thread
@@ -441,7 +442,6 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     # Executes application logic
     cdef object response_message
     cdef _SyncServicerContext sync_servicer_context
-    cdef list sync_callbacks
     install_context_from_request_call_event_aio(rpc_state)
 
     if _is_async_handler(unary_handler):
@@ -461,11 +461,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
                 sync_servicer_context,
             )
         finally:
-            sync_callbacks = sync_servicer_context._close_callbacks()
-
-        # Support sync-stack callback
-        for callback in sync_callbacks:
-            callback()
+            sync_servicer_context._run_callbacks()
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()
@@ -515,6 +511,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
     """
     cdef object async_response_generator
     cdef object response_message
+    cdef _SyncServicerContext sync_servicer_context = None
     install_context_from_request_call_event_aio(rpc_state)
 
     if inspect.iscoroutinefunction(stream_handler):
@@ -542,12 +539,16 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
                                                                     loop,
                                                                     rpc_state.server.thread_pool())
 
-        # Consumes messages from the generator
-        async for response_message in async_response_generator:
-            # Raises exception if aborted
-            rpc_state.raise_for_termination()
+        try:
+            # Consumes messages from the generator
+            async for response_message in async_response_generator:
+                # Raises exception if aborted
+                rpc_state.raise_for_termination()
 
-            await servicer_context.write(response_message)
+                await servicer_context.write(response_message)
+        finally:
+            if sync_servicer_context is not None:
+                sync_servicer_context._run_callbacks()
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()

@@ -291,6 +291,30 @@ class ServerCallLifetimeTest(AioTestBase):
         self.assertTrue(outcome.get("callback_peer"), outcome)
         await self._assert_rpc_state_released(probe_ref)
 
+    async def test_released_after_sync_stream_rpc_with_done_callback(self):
+        outcome = {}
+        probe_ref = None
+
+        @grpc.unary_stream_rpc_method_handler
+        def unary_stream_handler(unused_request, context):
+            nonlocal probe_ref
+            probe_ref = _park_probe(context)
+            outcome["add_callback"] = context.add_callback(
+                lambda: outcome.update(callback_peer=context.peer())
+            )
+            for _ in range(_STREAM_LENGTH):
+                yield b""
+
+        self._adhoc_handlers.set_adhoc_handler(unary_stream_handler)
+        multi_callable = self._channel.unary_stream(_common.ADHOC_METHOD)
+        call = multi_callable(b"")
+        async for _ in call:
+            pass
+        await self._assert_workers_finished()
+        self.assertIs(outcome.get("add_callback"), True, outcome)
+        self.assertTrue(outcome.get("callback_peer"), outcome)
+        await self._assert_rpc_state_released(probe_ref)
+
     async def test_released_after_async_aborted_rpc(self):
         probe_ref = None
 
