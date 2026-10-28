@@ -829,11 +829,6 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void SetUp() override {
-    if (GetParam().filter_on_server() &&
-        !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
-      GTEST_SKIP()
-          << "test requires xds_server_filter_chain_per_route experiment";
-    }
     env_var_.emplace(GetParam().filter_on_server()
                          ? "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER"
                          : "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
@@ -3514,7 +3509,6 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
   grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
