@@ -18,7 +18,6 @@ _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
 _IMMUTABLE_EMPTY_METADATA = tuple()
 
-_UNKNOWN_CANCELLATION_DETAILS = 'RPC cancelled for unknown reason.'
 _OK_CALL_REPRESENTATION = ('<{} of RPC that terminated with:\n'
                            '\tstatus = {}\n'
                            '\tdetails = "{}"\n'
@@ -52,7 +51,6 @@ cdef class _AioCall(GrpcCallWrapper):
         self.call = NULL
         self._channel = channel
         self._loop = channel.loop
-        self._references = []
         self._status = None
         self._initial_metadata = None
         self._waiters_status = []
@@ -86,8 +84,8 @@ cdef class _AioCall(GrpcCallWrapper):
         else:
             return _NON_OK_CALL_REPRESENTATION.format(
                 self.__class__.__name__,
-                self._status.details(),
                 _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[self._status.code()],
+                self._status.details(),
                 self._status.debug_error_string())
 
     def __repr__(self) -> str:
@@ -240,7 +238,6 @@ cdef class _AioCall(GrpcCallWrapper):
         ))
 
         details_bytes = str_to_bytes(details)
-        self._references.append(details_bytes)
         c_details = <char *>details_bytes
         # By implementation, grpc_call_cancel_with_status always return OK
         error = grpc_call_cancel_with_status(
@@ -471,7 +468,7 @@ cdef class _AioCall(GrpcCallWrapper):
                 await _receive_initial_metadata(self,
                                                 self._loop),
             )
-        except ExecuteBatchError as batch_error:
+        except ExecuteBatchError:
             # Core should explain why this batch failed
             await status_task
 
@@ -564,7 +561,7 @@ cdef class _AioCall(GrpcCallWrapper):
             self._set_initial_metadata(
                 await _receive_initial_metadata(self, self._loop)
             )
-        except ExecuteBatchError as batch_error:
+        except ExecuteBatchError:
             # Core should explain why this batch failed
             await status_task
 
