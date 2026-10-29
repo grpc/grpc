@@ -17,7 +17,7 @@ def getHostArchitectureFilter() {
 
 android {
     namespace "io.grpc.helloworldexample.cpp"
-    compileSdkVersion 26
+    compileSdk 26
     ndkVersion "29.0.14206865"
     defaultConfig {
         applicationId "io.grpc.android.cpp.helloworldexample"

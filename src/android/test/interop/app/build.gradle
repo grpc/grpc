@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     namespace "io.grpc.interop.cpp"
-    compileSdkVersion 26
+    compileSdk 26
     ndkVersion "29.0.14206865"
     defaultConfig {
         applicationId "io.grpc.android.interop.cpp"
