@@ -1050,7 +1050,7 @@ class CSharpLanguage:
             _check_arch(self.args.arch, ["default"])
             self._cmake_arch_option = "x64"
         else:
-            self._docker_distro = "debian11"
+            self._docker_distro = "debian12"
 
     def test_specs(self):
         with open("src/csharp/tests.json") as f:

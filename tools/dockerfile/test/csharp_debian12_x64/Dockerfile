@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:12
 
 #=================
 # Basic C core dependencies
@@ -66,21 +66,27 @@ RUN git config --global protocol.file.allow always
 # run_tests.py python dependencies
 
 # Basic python dependencies to be able to run tools/run_tests python scripts
-# These dependencies are not sufficient to build gRPC Python, gRPC Python
-# deps are defined elsewhere (e.g. python_deps.include)
+# These dependencies are NOT for building gRPC Python, which are defined
+# elsewhere (requirements.txt, individual docker images, build scripts, etc).
 RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip \
-  python3-setuptools \
-  python3-yaml \
+  python3-venv \
   && apt-get clean
 
-# use pinned version of pip to avoid sudden breakages
-RUN python3 -m pip install --upgrade pip==19.3.1
+# Use system python to bootstrap virtualenv and activate it
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
-# but since our python2 usage is deprecated, we should get rid of it.
-RUN python3 -m pip install six==1.16.0
+# Persist this to /etc/profile.d because some of our tests
+# (e.g. tools/run_tests/dockerize/build_and_run_docker.sh)
+# use `bash -l` to launch tests and override Dockerfile's
+# ENV directives.
+RUN echo "export PATH=\"$VIRTUAL_ENV/bin:\$PATH\"" > /etc/profile.d/venv.sh
+
+# Install/upgrade basic requirements inside the virtualenv
+RUN pip install --upgrade pip setuptools pyyaml
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
@@ -88,16 +94,17 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# Install cmake from bullseye-backports
-# Note that this step should be only used for Debian 11 (bullseye) images.
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN echo "deb http://archive.debian.org/debian bullseye-backports main" > /etc/apt/sources.list.d/bullseye-backports.list && \
-    apt-get update && \
-    apt-get install -y -t bullseye-backports cmake
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 #================
 # C# dependencies
 
+# TODO(weizheyuan/asheshvidyut): Either modify this or deprecate C# support.
+#
+# This will break for debian >= 13 due to apt-key deprecation.
 # Install mono
 RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
 RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
@@ -117,7 +124,7 @@ RUN DOTNET_DOWNLOAD_VERSION=3.1.415 \
     && rm dotnet.tar.gz
 
 # Install .NET 6
-RUN DOTNET_DOWNLOAD_VERSION=6.0.100 \
+RUN DOTNET_DOWNLOAD_VERSION=6.0.428 \
     && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
     && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
     && mkdir -p /usr/share/dotnet \
@@ -131,7 +138,7 @@ RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 ENV NUGET_XMLDOC_MODE skip
 RUN mkdir warmup \
     && cd warmup \
-    && dotnet new \
+    && dotnet new console \
     && cd .. \
     && rm -rf warmup
 
