@@ -316,7 +316,6 @@ class TransportFlowControl final {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let the transport change its parameters.
-  // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
   int64_t test_only_target_window() const { return target_window(); }
@@ -544,7 +543,8 @@ class TransportFlowControl final {
   // For CHTTP2, this is always true.
   // For PH2, this is set by the transport based on the channel arg
   // GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE.
-  // TODO(tjagtap) [PH2][CHTTP2] Edit comment when CHTTP2 is getting deleted.
+  // TODO(tjagtap) [PH2][P5][CHTTP2] Edit comment when CHTTP2 is getting
+  // deleted.
   bool ph2_enable_rx_crypto_ = true;
 };
 

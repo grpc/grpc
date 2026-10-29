@@ -46,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
@@ -256,13 +257,17 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     ActOnFlowControlAction(flow_control_action.value(), stream.get());
   }
   if (stream == nullptr) {
-    // TODO(tjagtap) : [PH2][P2] : Implement the correct behaviour later.
     // RFC9113 : If a DATA frame is received whose stream is not in the "open"
     // or "half-closed (local)" state, the recipient MUST respond with a stream
     // error (Section 5.4.2) of type STREAM_CLOSED.
+    // However RFC9113 Section 5.1 also says that
+    // an endpoint MUST ignore frames received on a closed stream after it has
+    // sent RST_STREAM, because the peer may have already sent frames that
+    // cannot be withdrawn. We cannot distinguish between the two cases once
+    // the stream is cleaned up, so we ignore the frame. This matches CHTTP2.
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) { stream_id="
-        << frame.stream_id << "} Lookup Failed";
+        << frame.stream_id << "} Lookup Failed. Ignoring the frame.";
     return Http2Status::Ok();
   }
 
@@ -699,7 +704,7 @@ auto Http2ClientTransport::BdpLoop() {
     return TrySeq(
         flow_control_.WaitForBdpActivation(),
         [this]() {
-          // TODO(akshitpatel) : [PH2][P1] : Reset the keepalive ping timer
+          // TODO(akshitpatel) : [PH2][P2] : Reset the keepalive ping timer
           // when a BDP ping is sent, similar to CHTTP2's start_bdp_ping_locked.
           TriggerWriteCycleOrHandleError();
           return ping_manager_->RequestPing(
@@ -850,8 +855,10 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
   }
 
   if (apply_settings_result.should_spawn_security_frame_loop) {
+    EventEngine::Endpoint* const endpoint =
+        endpoint_.GetEventEngineEndpoint().get();
     const SecurityFrameHandler::EndpointExtensionState state =
-        security_frame_handler_->Initialize(event_engine_);
+        security_frame_handler_->Initialize(endpoint, event_engine_);
     if (state.is_set) {
       SpawnInfallibleTransportParty("SecurityFrameLoop",
                                     UntilTransportClosed(SecurityFrameLoop()));
@@ -1198,9 +1205,11 @@ Http2ClientTransport::Http2ClientTransport(
           kIsClient, std::move(on_receive_settings))),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
+      http2_transport_stats_(channel_args),
       read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient,
                     GetMaxSecurityFrameSize(channel_args),
-                    GetPingOnRstStreamPercent(channel_args, kIsClient)),
+                    GetPingOnRstStreamPercent(channel_args, kIsClient),
+                    http2_transport_stats_),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
@@ -1480,7 +1489,7 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   // in the MPSC to be drained and block any additional frames from being
   // enqueued. Additionally this also prevents additional frames with non-zero
   // stream_ids from being processed by the read loop.
-  ReleasableMutexLock lock(&transport_mutex_);
+  ReleasableMutexLock lock(transport_mutex_);
   if (shutdown_tracker_.IsShutdownInitiated(transport_mutex_)) {
     lock.Release();
     return;
@@ -1576,8 +1585,6 @@ RefCountedPtr<channelz::SocketNode> Http2ClientTransport::GetSocketNode()
 
 absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
   if (next_stream_id_ > GetMaxAllowedStreamId()) {
-    // TODO(tjagtap) : [PH2][P2] : Handle case if transport runs out of stream
-    // ids. Similar check is there in the same function. Check what to do.
     // RFC9113 : Stream identifiers cannot be reused. Long-lived connections
     // can result in an endpoint exhausting the available range of stream
     // identifiers. A client that is unable to establish a new stream
@@ -1591,10 +1598,6 @@ absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
   // starting new streams instead of failing them. This needs to be
   // implemented.
   {
-    // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
-    // this for incoming streams only. If a server receives more
-    // streams from a client than is allowed by the clients settings,
-    // whether or not we should fail is debatable.
     MutexLock lock(transport_mutex_);
     if (GetActiveStreamCountLocked() >=
         settings_->peer().max_concurrent_streams()) {
@@ -1825,7 +1828,16 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
                   }
                   return absl::OkStatus();
                 });
-          }));
+          },
+          // Do not remove this no-op step. When a TrySeq step resolves, its
+          // promise, along with everything it captures, is destroyed only when
+          // the TrySeq moves on to the next step.
+          // Without this step, the previous step's promise, which holds a ref
+          // to `stream`, would stay alive until the OutboundLoop participant is
+          // destroyed, which can race with ~Http2ClientTransport. With this
+          // step, the stream ref is dropped as soon as the previous step
+          // resolves.
+          []() { return absl::OkStatus(); }));
 }
 
 void Http2ClientTransport::StartCall(CallHandler call_handler) {
@@ -1868,14 +1880,17 @@ int64_t Http2ClientTransport::TestOnlyGetStreamFlowControlWindow(
 // Http2ClientTransport - Ping Helpers
 
 void Http2ClientTransport::MaybeSpawnPingTimeout(
-    std::optional<uint64_t> opaque_data) {
-  if (opaque_data.has_value()) {
-    SpawnGuardedTransportParty(
-        "PingTimeout", [self = RefAsSubclass<Http2ClientTransport>(),
-                        opaque_data = *opaque_data]() {
-          return self->ping_manager_->TimeoutPromise(opaque_data);
-        });
+    std::optional<PingManager::PingTimeoutArgs> ping_timeout_args) {
+  if (!ping_timeout_args.has_value()) {
+    return;
   }
+  SpawnGuardedTransportParty(
+      "PingTimeout",
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       ping_timeout_args = std::move(*ping_timeout_args)]() mutable {
+        return self->ping_manager_->TimeoutPromise(
+            std::move(ping_timeout_args));
+      });
 }
 void Http2ClientTransport::MaybeSpawnDelayedPing(
     std::optional<Duration> delayed_ping_wait) {

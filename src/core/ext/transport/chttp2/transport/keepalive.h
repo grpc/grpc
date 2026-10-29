@@ -63,9 +63,6 @@ class KeepaliveManager {
     // waker. Otherwise this would be noop.
     waker.Wakeup();
   }
-  void SetKeepAliveTimeout(Duration keepalive_timeout) {
-    keepalive_timeout_ = keepalive_timeout;
-  }
 
   bool IsKeepAliveLoopNeeded();
 

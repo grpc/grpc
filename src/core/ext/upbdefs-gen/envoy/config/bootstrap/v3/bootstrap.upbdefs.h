@@ -137,6 +137,21 @@ UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_MemoryAllocatorManage
   return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.MemoryAllocatorManager");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_ListenerManager_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.ListenerManager");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_ValidationListenerManager_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.ValidationListenerManager");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_ApiListenerManager_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.ApiListenerManager");
+}
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

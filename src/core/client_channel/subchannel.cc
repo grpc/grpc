@@ -790,7 +790,8 @@ class Subchannel::NewConnectedSubchannel final : public ConnectedSubchannel {
   }
 
   void Ping(absl::AnyInvocable<void(absl::Status)>) override {
-    // TODO(ctiller): add new transport API for this in v3 stack
+    // TODO(akshitpatel) : [PH2][P2][Client] : add new transport API for this in
+    // v3 stack
     Crash("not implemented");
   }
 
@@ -1539,7 +1540,7 @@ RefCountedPtr<Subchannel::Call> Subchannel::CreateCall(
 }
 
 RefCountedPtr<UnstartedCallDestination> Subchannel::call_destination() {
-  // TODO(roth): Implement connection scaling for v3.
+  // TODO(roth) : [PH2][P2][Client] : Implement connection scaling for v3.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel;
   {
     MutexLock lock(mu_);

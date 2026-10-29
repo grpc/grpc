@@ -29,6 +29,7 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_destination.h"
@@ -42,10 +43,12 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/read_context.h"
+#include "src/core/ext/transport/chttp2/transport/reclaimer.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -61,6 +64,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -100,7 +104,7 @@ class Http2ServerTransport final : public ServerTransport,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings,
-      grpc_closure* on_close_callback);
+      absl::AnyInvocable<void()> on_close_callback);
 
   Http2ServerTransport(const Http2ServerTransport&) = delete;
   Http2ServerTransport& operator=(const Http2ServerTransport&) = delete;
@@ -116,7 +120,7 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Deprecated Stuff
 
-  // TODO(tjagtap) : [PH2][EXT] : Remove after event engine rollout
+  // TODO(tjagtap) [PH2][P4][EXT] Remove after event engine rollout
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
@@ -391,6 +395,10 @@ class Http2ServerTransport final : public ServerTransport,
                 std::forward<Promise>(promise));
   }
 
+  // Returns the transport party, or nullptr if transport shutdown has already
+  // been initiated.
+  RefCountedPtr<Party> GetTransportPartyIfNotShutdown();
+
   // Spawns an infallible promise on the given party.
   template <typename Factory>
   void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
@@ -405,19 +413,28 @@ class Http2ServerTransport final : public ServerTransport,
     SpawnInfallible(transport_party_, name, std::forward<Factory>(factory));
   }
 
+  // Spawns a promise on the given party. If the promise returns a non-ok
+  // status, it is handled by closing the transport with the corresponding
+  // status.
+  template <typename Factory>
+  void SpawnGuarded(const RefCountedPtr<Party>& party, absl::string_view name,
+                    Factory&& factory) {
+    party->Spawn(
+        name, std::forward<Factory>(factory),
+        [self = RefAsSubclass<Http2ServerTransport>()](absl::Status&& status) {
+          if (!status.ok()) {
+            GRPC_UNUSED const absl::Status error = self->HandleError(
+                /*stream=*/nullptr, ToHttpOkOrConnError(status));
+          }
+        });
+  }
+
   // Spawns a promise on the transport party. If the promise returns a non-ok
   // status, it is handled by closing the transport with the corresponding
   // status.
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
-    transport_party_->Spawn(
-        name, std::forward<Factory>(factory),
-        [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
-          if (!status.ok()) {
-            GRPC_UNUSED absl::Status error = self->HandleError(
-                /*stream=*/nullptr, ToHttpOkOrConnError(status));
-          }
-        });
+    SpawnGuarded(transport_party_, name, std::forward<Factory>(factory));
   }
 
   template <typename Factory, typename OnDone>
@@ -495,9 +512,7 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
 
-  absl::Status InitializeStream(Stream& stream);
-
-  // Runs on the call party.
+  // Runs on the transport party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, uint32_t stream_id);
 
@@ -507,6 +522,12 @@ class Http2ServerTransport final : public ServerTransport,
 
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
+
+  // This MUST be called from the transport party only.
+  // Recomputes the MAX_CONCURRENT_STREAMS that we advertise to the peer, based
+  // on the process wide StreamQuota.
+  // Based on CHTTP2's use of GetConnectionMaxConcurrentRequests in parsing.cc
+  void UpdateMaxConcurrentStreamsFromStreamQuota();
 
   // Call this when a stream needs to be closed and we must notify the client by
   // sending a RST_STREAM frame (e.g., due to local stream error, cancellation).
@@ -548,7 +569,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
 
-  void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
+  void MaybeSpawnPingTimeout(
+      std::optional<PingManager::PingTimeoutArgs> ping_timeout_args);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
@@ -644,7 +666,7 @@ class Http2ServerTransport final : public ServerTransport,
     }));
   }
 
-  auto SpawnGracefulGoawayPromise(Slice&& debug_data);
+  void SpawnGracefulGoawayPromise(Slice&& debug_data);
 
   //////////////////////////////////////////////////////////////////////////////
   // Tarpit
@@ -737,7 +759,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   HPackCompressor encoder_;
   TransportShutdownTracker shutdown_tracker_;
-  grpc_closure* on_close_callback_;
+  absl::AnyInvocable<void()> on_close_callback_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_server", GRPC_CHANNEL_READY};
@@ -747,6 +769,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   bool should_reset_ping_clock_;
   bool max_concurrent_streams_overload_protection_ = false;
+  Http2TransportStats http2_transport_stats_;
   ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
@@ -761,7 +784,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
-  GRPC_UNUSED bool test_only_ack_pings_;
+  bool test_only_ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 
@@ -771,6 +794,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   MemoryOwner memory_owner_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+  RefCountedPtr<StreamQuota> stream_quota_;
   chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
