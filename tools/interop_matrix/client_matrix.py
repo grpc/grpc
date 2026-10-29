@@ -1010,23 +1010,74 @@ LANG_RELEASE_MATRIX = {
     ),
     "php": OrderedDict(
         [
-            ("v1.0.1", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.1.4", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.2.5", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.3.9", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.4.2", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.6.6", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.7.2", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.8.0", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.9.1", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.10.1", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.11.1", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.12.0", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.13.0", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.14.1", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.15.0", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.16.0", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
-            ("v1.17.1", ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1")),
+            (
+                "v1.0.1",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.1.4",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.2.5",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.3.9",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.4.2",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.6.6",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.7.2",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.8.0",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.9.1",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.10.1",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.11.1",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.12.0",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.13.0",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.14.1",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.15.0",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.16.0",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
+            (
+                "v1.17.1",
+                ReleaseInfo(runtimes=["php7"], testcases_file="php__v1.0.1"),
+            ),
             ("v1.18.0", ReleaseInfo(runtimes=["php7"])),
             # v1.19 and v1.20 were deliberately omitted here because of an issue.
             # See https://github.com/grpc/grpc/issues/18264
