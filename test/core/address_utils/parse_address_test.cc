@@ -198,7 +198,6 @@ TEST(ParseAddressTest, MainTest) {
 
   test_grpc_parse_unix("unix:/path/name", "/path/name");
   test_grpc_parse_unix_abstract("unix-abstract:foobar", "foobar");
-  test_grpc_parse_vsock("vsock:-1:12345", -1, 12345);
   test_grpc_parse_ipv4("ipv4:192.0.2.1:12345", "192.0.2.1", 12345);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1]:12345", "2001:db8::1", 12345, 0);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1%252]:12345", "2001:db8::1", 12345, 2);

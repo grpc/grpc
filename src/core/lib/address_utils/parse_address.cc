@@ -26,7 +26,6 @@
 #include <linux/vm_sockets.h>
 #endif
 
-#include <stdlib.h>
 #include <string.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
