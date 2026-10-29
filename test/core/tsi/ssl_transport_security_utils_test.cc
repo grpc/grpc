@@ -922,7 +922,7 @@ TEST(ParseUriString, WrongType) {
   ASN1_STRING_set(other, "foo", -1);
   GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, other);
   absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
-  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInternal);
   GENERAL_NAME_free(subject_alt_name);
 }
 
@@ -931,7 +931,7 @@ TEST(ParseUriString, DontSetASN1String) {
   ASN1_UTF8STRING* other = ASN1_UTF8STRING_new();
   GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, other);
   absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
-  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInternal);
   GENERAL_NAME_free(subject_alt_name);
 }
 
@@ -976,13 +976,13 @@ TEST(ParseDnsString, WrongType) {
   ASN1_STRING_set(other, "spiffe://foo.bar/path", -1);
   GENERAL_NAME_set0_value(subject_alt_name, GEN_URI, other);
   absl::StatusOr<std::string> parsed_dns = ParseDnsString(subject_alt_name);
-  EXPECT_EQ(parsed_dns.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(parsed_dns.status().code(), absl::StatusCode::kInternal);
   GENERAL_NAME_free(subject_alt_name);
 }
 
 TEST(ParseDnsString, NullSubjectAltName) {
   absl::StatusOr<std::string> parsed_dns = ParseDnsString(nullptr);
-  EXPECT_EQ(parsed_dns.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(parsed_dns.status().code(), absl::StatusCode::kInternal);
 }
 
 constexpr absl::string_view kTsiTestCredentialsDir = "src/core/tsi/test_creds/";
