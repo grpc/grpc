@@ -981,18 +981,17 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
       if (success_rate < ejection_threshold) {
         SharedBitGen bit_gen;
         uint32_t random_key = absl::Uniform(bit_gen, 1, 100);
-        double current_percent =
+        double percent_with_ejection =
             100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         GRPC_TRACE_LOG(outlier_detection_lb, INFO)
             << "[outlier_detection_lb " << parent_.get()
             << "] random_key=" << random_key
             << " ejected_host_count=" << ejected_host_count
-            << " current_percent=" << absl::StrFormat("%.3f", current_percent);
+            << " percent_with_ejection=" << absl::StrFormat("%.3f", percent_with_ejection);
         const bool below_enforcement =
             random_key < config.success_rate_ejection->enforcement_percentage;
         const bool below_max_ejection =
-            ejected_host_count == 0 ||
-            current_percent < config.max_ejection_percent;
+            percent_with_ejection <= config.max_ejection_percent;
         if (below_enforcement && below_max_ejection) {
           // Eject and record the timestamp for use when ejecting addresses in
           // this iteration.

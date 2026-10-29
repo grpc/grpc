@@ -117,8 +117,7 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
                  rpc_options);
 }
 
-// We don't eject more than max_ejection_percent (default 10%) of the backends
-// beyond the first one.
+// We don't eject more than max_ejection_percent (default 10%) of the backends.
 TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
@@ -133,6 +132,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
   outlier_detection->mutable_enforcing_success_rate()->set_value(100);
   outlier_detection->mutable_success_rate_minimum_hosts()->set_value(1);
   outlier_detection->mutable_success_rate_request_volume()->set_value(1);
+  outlier_detection->mutable_max_ejection_percent()->set_value(25);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -531,8 +531,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
-// We don't eject more than max_ejection_percent (default 10%) of the backends
-// beyond the first one.
+// We don't eject more than max_ejection_percent (default 10%) of the backends.
 TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
@@ -547,6 +546,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
   outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
   outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
   outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
+  outlier_detection->mutable_max_ejection_percent()->set_value(25);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
