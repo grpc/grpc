@@ -109,12 +109,12 @@ RUN apt-get install -y openjdk-21-jdk
 
 # Install Android SDK
 
-# AGP 8.13.2 use following default versions:
+# AGP 8.13.2 uses the following default versions:
 #
 # - SDK Build Tools 35.0.0
 # - ndk 27.0.12077973
 #
-# We choose ndk;29.0.14206865 to be consistent with helloworld app.
+# We choose ndk;29.0.14206865 to be consistent with helloworld and interop apps.
 #
 # See also https://developer.android.com/build/releases/agp-8-13-0-release-notes#8.13.2
 ENV ANDROID_HOME=/opt/android-sdk
