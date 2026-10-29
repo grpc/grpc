@@ -17,7 +17,9 @@ import logging
 import unittest
 
 import grpc
+from grpc.aio._interceptor import _InterceptedStreamRequestMixin
 from grpc.experimental import aio
+import typeguard
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -551,6 +553,61 @@ class TestStreamUnaryClientInterceptor(AioTestBase):
             await call.done_writing()
 
         await channel.close()
+
+
+class TestWriteToIteratorQueueInterruptibleTaskLeak(AioTestBase):
+
+    async def test_no_put_task_leak_on_cancellation(self):
+        with typeguard.suppress_type_checks():
+            mixin = _InterceptedStreamRequestMixin()
+            mixin._loop = asyncio.get_event_loop()
+            mixin._init_stream_request_mixin(request_iterator=None)
+
+            class DummyCall:
+                def __init__(self):
+                    self.code_future = asyncio.get_event_loop().create_future()
+
+                async def code(self):
+                    return await self.code_future
+
+            call = DummyCall()
+
+            # First write fills the queue of size 1
+            await mixin._write_to_iterator_queue_interruptible(
+                "request1", call
+            )  # pytype: disable=wrong-arg-types
+
+            # Second write blocks on queue.put() because the queue is full
+            write_task = asyncio.create_task(
+                mixin._write_to_iterator_queue_interruptible(
+                    "request2", call
+                )  # pytype: disable=wrong-arg-types
+            )
+
+            # Allow write_task to start and block on put()
+            await asyncio.sleep(0.1)
+            self.assertFalse(write_task.done())
+
+            # Complete the call's code() future to unblock asyncio.wait
+            call.code_future.set_result(grpc.StatusCode.CANCELLED)
+
+            # Await write_task to complete execution
+            await write_task
+
+            # Yield control to allow event loop to process cancelled put_task
+            await asyncio.sleep(0.01)
+
+            all_tasks = asyncio.all_tasks()
+            leaked_tasks = []
+            for t in all_tasks:
+                coro = t.get_coro()
+                coro_name = str(coro) if coro else t.get_name()
+                if "Queue.put" in coro_name:
+                    leaked_tasks.append(t)
+
+            self.assertEqual(
+                0, len(leaked_tasks), f"Leaked tasks found: {leaked_tasks}"
+            )
 
 
 class _RecordingStreamUnaryInterceptor(aio.StreamUnaryClientInterceptor):
