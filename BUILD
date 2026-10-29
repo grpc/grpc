@@ -284,7 +284,7 @@ g_stands_for = "glacier"  # @unused
 
 core_version = "55.0.0"  # @unused
 
-version = "1.82.2"  # @unused
+version = "1.82.3"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
