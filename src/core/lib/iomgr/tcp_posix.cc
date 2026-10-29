@@ -636,19 +636,19 @@ static void run_poller(backup_poller* p) {
       "backup_poller:pollset_work",
       grpc_pollset_work(BACKUP_POLLER_POLLSET(p), nullptr, deadline));
   gpr_mu_unlock(p->pollset_mu);
-  g_backup_poller_mu->Lock();
+  g_backup_poller_mu->lock();
   // last "uncovered" notification is the ref that keeps us polling
   if (g_uncovered_notifications_pending == 1) {
     GRPC_CHECK(g_backup_poller == p);
     g_backup_poller = nullptr;
     g_uncovered_notifications_pending = 0;
-    g_backup_poller_mu->Unlock();
+    g_backup_poller_mu->unlock();
     GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " shutdown";
     grpc_pollset_shutdown(BACKUP_POLLER_POLLSET(p),
                           GRPC_CLOSURE_INIT(&p->done_poller, done_poller, p,
                                             grpc_schedule_on_exec_ctx));
   } else {
-    g_backup_poller_mu->Unlock();
+    g_backup_poller_mu->unlock();
     GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " reschedule";
     p->engine->Run([p]() {
       grpc_core::ExecCtx exec_ctx;
@@ -660,10 +660,10 @@ static void run_poller(backup_poller* p) {
 static void drop_uncovered(grpc_tcp* /*tcp*/) {
   int old_count;
   backup_poller* p;
-  g_backup_poller_mu->Lock();
+  g_backup_poller_mu->lock();
   p = g_backup_poller;
   old_count = g_uncovered_notifications_pending--;
-  g_backup_poller_mu->Unlock();
+  g_backup_poller_mu->unlock();
   GRPC_CHECK_GT(old_count, 1);
   GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " uncover cnt "
                             << old_count << "->" << old_count - 1;
@@ -678,7 +678,7 @@ static void drop_uncovered(grpc_tcp* /*tcp*/) {
 // polling thread and progress is made) and hence add it to a backup poller here
 static void cover_self(grpc_tcp* tcp) {
   backup_poller* p;
-  g_backup_poller_mu->Lock();
+  g_backup_poller_mu->lock();
   int old_count = 0;
   if (g_uncovered_notifications_pending == 0) {
     g_uncovered_notifications_pending = 2;
@@ -687,7 +687,7 @@ static void cover_self(grpc_tcp* tcp) {
     p->engine = grpc_event_engine::experimental::GetDefaultEventEngine();
     g_backup_poller = p;
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
-    g_backup_poller_mu->Unlock();
+    g_backup_poller_mu->unlock();
     GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " create";
     p->engine->Run([p]() {
       grpc_core::ExecCtx exec_ctx;
@@ -696,7 +696,7 @@ static void cover_self(grpc_tcp* tcp) {
   } else {
     old_count = g_uncovered_notifications_pending++;
     p = g_backup_poller;
-    g_backup_poller_mu->Unlock();
+    g_backup_poller_mu->unlock();
   }
   GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " add " << tcp
                             << " cnt " << old_count - 1 << "->" << old_count;
@@ -799,9 +799,9 @@ static void tcp_destroy(grpc_endpoint* ep) {
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
-  tcp->read_mu.Lock();
+  tcp->read_mu.lock();
   tcp->memory_owner.Reset();
-  tcp->read_mu.Unlock();
+  tcp->read_mu.unlock();
   TCP_UNREF(tcp, "destroy");
 }
 
@@ -809,12 +809,12 @@ static void perform_reclamation(grpc_tcp* tcp)
     ABSL_LOCKS_EXCLUDED(tcp->read_mu) {
   GRPC_TRACE_LOG(resource_quota, INFO)
       << "TCP: benign reclamation to free memory";
-  tcp->read_mu.Lock();
+  tcp->read_mu.lock();
   if (tcp->incoming_buffer != nullptr) {
     grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
   }
   tcp->has_posted_reclaimer = false;
-  tcp->read_mu.Unlock();
+  tcp->read_mu.unlock();
 }
 
 static void maybe_post_reclaimer(grpc_tcp* tcp)
@@ -1113,7 +1113,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   GRPC_TRACE_LOG(tcp, INFO)
       << "TCP:" << tcp << " got_read: " << grpc_core::StatusToString(error);
-  tcp->read_mu.Lock();
+  tcp->read_mu.lock();
   grpc_error_handle tcp_read_error;
   if (GPR_LIKELY(error.ok()) && tcp->memory_owner.is_valid()) {
     maybe_make_read_slices(tcp);
@@ -1121,7 +1121,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
       // Maybe update rcv lowat value based on the number of bytes read in this
       // round.
       update_rcvlowat(tcp);
-      tcp->read_mu.Unlock();
+      tcp->read_mu.unlock();
       // We've consumed the edge, request a new one
       notify_on_read(tcp);
       return;
@@ -1145,7 +1145,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_closure* cb = tcp->read_cb;
   tcp->read_cb = nullptr;
   tcp->incoming_buffer = nullptr;
-  tcp->read_mu.Unlock();
+  tcp->read_mu.unlock();
   grpc_core::Closure::Run(DEBUG_LOCATION, cb, tcp_read_error);
   TCP_UNREF(tcp, "read");
 }
@@ -1155,7 +1155,7 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GRPC_CHECK_EQ(tcp->read_cb, nullptr);
   tcp->read_cb = cb;
-  tcp->read_mu.Lock();
+  tcp->read_mu.lock();
   tcp->incoming_buffer = incoming_buffer;
   tcp->min_progress_size = grpc_core::IsTcpFrameSizeTuningEnabled()
                                ? std::max(min_progress_size, 1)
@@ -1164,19 +1164,19 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
   if (tcp->is_first_read) {
-    tcp->read_mu.Unlock();
+    tcp->read_mu.unlock();
     // Endpoint read called for the very first time. Register read callback with
     // the polling engine
     tcp->is_first_read = false;
     notify_on_read(tcp);
   } else if (!urgent && tcp->inq == 0) {
-    tcp->read_mu.Unlock();
+    tcp->read_mu.unlock();
     // Upper layer asked to read more but we know there is no pending data
     // to read from previous reads. So, wait for POLLIN.
     //
     notify_on_read(tcp);
   } else {
-    tcp->read_mu.Unlock();
+    tcp->read_mu.unlock();
     // Not the first time. We may or may not have more bytes available. In any
     // case call tcp->read_done_closure (i.e tcp_handle_read()) which does the
     // right thing (i.e calls tcp_do_read() which either reads the available
@@ -2081,9 +2081,9 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
-  tcp->read_mu.Lock();
+  tcp->read_mu.lock();
   tcp->memory_owner.Reset();
-  tcp->read_mu.Unlock();
+  tcp->read_mu.unlock();
   TCP_UNREF(tcp, "destroy");
 }
 

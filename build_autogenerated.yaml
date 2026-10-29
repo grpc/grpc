@@ -145,6 +145,7 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
+  - include/grpc/channel_factory.h
   - include/grpc/compression.h
   - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
@@ -226,6 +227,7 @@ libs:
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/buffered_call.h
+  - src/core/client_channel/channel_factory.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
   - src/core/client_channel/client_channel_factory.h
@@ -321,7 +323,6 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/filters/rbac/rbac_filter.h
-  - src/core/ext/filters/rbac/rbac_service_config_parser.h
   - src/core/ext/filters/stateful_session/stateful_session_filter.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
@@ -1225,7 +1226,6 @@ libs:
   - src/core/server/server_config_selector.h
   - src/core/server/server_config_selector_filter.h
   - src/core/server/server_interface.h
-  - src/core/server/xds_channel_stack_modifier.h
   - src/core/server/xds_server_config_fetcher.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
@@ -1390,6 +1390,7 @@ libs:
   - src/core/xds/grpc/xds_server_grpc_interface.h
   - src/core/xds/grpc/xds_tls_context.h
   - src/core/xds/grpc/xds_tls_context_parser.h
+  - src/core/xds/grpc/xds_transport_factory_grpc.h
   - src/core/xds/grpc/xds_transport_grpc.h
   - src/core/xds/xds_client/lrs_client.h
   - src/core/xds/xds_client/xds_api.h
@@ -1402,6 +1403,7 @@ libs:
   - src/core/xds/xds_client/xds_resource_type.h
   - src/core/xds/xds_client/xds_resource_type_impl.h
   - src/core/xds/xds_client/xds_transport.h
+  - src/core/xds/xds_client/xds_transport_factory.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
@@ -1431,6 +1433,7 @@ libs:
   - src/core/channelz/v2tov1/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/buffered_call.cc
+  - src/core/client_channel/channel_factory.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -1529,7 +1532,6 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/rbac/rbac_filter.cc
-  - src/core/ext/filters/rbac/rbac_service_config_parser.cc
   - src/core/ext/filters/stateful_session/stateful_session_filter.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/chttp2_plugin.cc
@@ -2187,9 +2189,7 @@ libs:
   - src/core/server/server.cc
   - src/core/server/server_call_tracer_filter.cc
   - src/core/server/server_config_selector_filter.cc
-  - src/core/server/xds_channel_stack_modifier.cc
   - src/core/server/xds_server_config_fetcher.cc
-  - src/core/server/xds_server_config_fetcher_legacy.cc
   - src/core/service_config/service_config_channel_arg_filter.cc
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
@@ -2316,6 +2316,7 @@ libs:
   - src/core/xds/grpc/xds_server_grpc.cc
   - src/core/xds/grpc/xds_tls_context.cc
   - src/core/xds/grpc/xds_tls_context_parser.cc
+  - src/core/xds/grpc/xds_transport_factory_grpc.cc
   - src/core/xds/grpc/xds_transport_grpc.cc
   - src/core/xds/xds_client/lrs_client.cc
   - src/core/xds/xds_client/xds_api.cc
@@ -2450,6 +2451,7 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
+  - include/grpc/channel_factory.h
   - include/grpc/compression.h
   - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
@@ -2528,6 +2530,7 @@ libs:
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/buffered_call.h
+  - src/core/client_channel/channel_factory.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
   - src/core/client_channel/client_channel_factory.h
@@ -3073,6 +3076,8 @@ libs:
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
+  - src/core/xds/grpc/xds_transport_grpc.h
+  - src/core/xds/xds_client/xds_transport.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
@@ -3099,6 +3104,7 @@ libs:
   - src/core/channelz/text_encode.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/buffered_call.cc
+  - src/core/client_channel/channel_factory.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -3522,6 +3528,7 @@ libs:
   - src/core/util/validation_errors.cc
   - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
+  - src/core/xds/grpc/xds_transport_grpc.cc
   deps:
   - upb_textformat_lib
   - z
@@ -4701,6 +4708,7 @@ libs:
   public_headers:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
+  - include/grpc/channel_factory.h
   - include/grpc/compression.h
   - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
@@ -22737,17 +22745,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-- name: rbac_service_config_parser_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  uses_polling: false
 - name: rbac_translator_test
   gtest: true
   build: test
@@ -23993,6 +23990,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -29447,6 +29445,10 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/resource.upb.h
@@ -29545,6 +29547,10 @@ targets:
   - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.h
   - src/core/ext/upb-gen/google/api/annotations.upb.h
   - src/core/ext/upb-gen/google/api/annotations.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h
   - src/core/ext/upb-gen/google/api/http.upb.h
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/api/httpbody.upb.h
@@ -29601,6 +29607,28 @@ targets:
   - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/range.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
@@ -29692,9 +29720,19 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
@@ -29744,6 +29782,8 @@ targets:
   - src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
   - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
   - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -29772,6 +29812,17 @@ targets:
   - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
   - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   - test/core/xds/xds_common_types_test.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc

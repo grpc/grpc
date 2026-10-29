@@ -815,15 +815,11 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
   }
 
   void SetUp() override {
-    if (GetParam().filter_on_server() &&
-        !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
-      GTEST_SKIP()
-          << "test requires xds_server_filter_chain_per_route experiment";
-    }
-    // TODO(rishesh): [PH2] Server-side ext_proc crashes with PH2 server, and
-    // client-side ext_proc tests are flaky with PH2 server due to a data race
-    // in ServerCall::failed_before_recv_message().
-    SKIP_TEST_FOR_PH2_SERVER("[PH2] ext_proc is not yet supported with PH2");
+    // Server-side ext_proc crashes with PH2 server, and client-side ext_proc
+    // tests are flaky with PH2 server due to a data race in
+    // ServerCall::failed_before_recv_message().
+    SKIP_TEST_FOR_PH2_SERVER(
+        "TODO(rishesh) [PH2][P1] ext_proc is not yet supported with PH2");
     env_var_.emplace(GetParam().filter_on_server()
                          ? "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER"
                          : "GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
@@ -2985,7 +2981,9 @@ TEST_P(XdsExtProcEnd2endTest, StreamCleanCloseResponseBodyNotDrainedFails) {
   ASSERT_THAT(req2, ::testing::Optional(MatchesResponseBody(
                         EchoResponseMessageIs(kMessage2), !kEndOfStream)));
   ext_proc_stream->SendStatus(absl::OkStatus());
-  stream.StartWritesDone();
+  // Don't half-close here: the side-stream status fails the call, which can
+  // complete all outstanding ops and destroy the call before WritesDone is
+  // started.
   EXPECT_THAT(
       stream.WaitForStatus(),
       ::testing::Optional(GrpcStatusIs(StatusCode::INTERNAL,
@@ -3067,7 +3065,9 @@ TEST_P(XdsExtProcEnd2endTest,
   ASSERT_THAT(drain_req,
               ::testing::Optional(MatchesResponseBodyDrainComplete()));
   ext_proc_stream->SendStatus(absl::OkStatus());
-  stream.StartWritesDone();
+  // Don't half-close here: the side-stream status fails the call, which can
+  // complete all outstanding ops and destroy the call before WritesDone is
+  // started.
   EXPECT_THAT(
       stream.WaitForStatus(),
       ::testing::Optional(GrpcStatusIs(StatusCode::INTERNAL,
@@ -3510,7 +3510,6 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcServerTrailersDurationMetric) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
   grpc_core::ForceEnableExperiment("recv_message_filter_bypass_fix", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

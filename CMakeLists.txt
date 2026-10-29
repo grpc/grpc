@@ -1752,7 +1752,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx race_test)
   add_dependencies(buildtests_cxx random_early_detection_test)
   add_dependencies(buildtests_cxx raw_end2end_test)
-  add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx read_context_test)
   add_dependencies(buildtests_cxx recv_message_filter_bypass_test)
@@ -2304,6 +2303,7 @@ add_library(grpc
   src/core/channelz/v2tov1/property_list.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
+  src/core/client_channel/channel_factory.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -2402,7 +2402,6 @@ add_library(grpc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
-  src/core/ext/filters/rbac/rbac_service_config_parser.cc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/chttp2_plugin.cc
@@ -3060,9 +3059,7 @@ add_library(grpc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
   src/core/server/server_config_selector_filter.cc
-  src/core/server/xds_channel_stack_modifier.cc
   src/core/server/xds_server_config_fetcher.cc
-  src/core/server/xds_server_config_fetcher_legacy.cc
   src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
@@ -3189,6 +3186,7 @@ add_library(grpc
   src/core/xds/grpc/xds_server_grpc.cc
   src/core/xds/grpc/xds_tls_context.cc
   src/core/xds/grpc/xds_tls_context_parser.cc
+  src/core/xds/grpc/xds_transport_factory_grpc.cc
   src/core/xds/grpc/xds_transport_grpc.cc
   src/core/xds/xds_client/lrs_client.cc
   src/core/xds/xds_client/xds_api.cc
@@ -3273,6 +3271,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
+  include/grpc/channel_factory.h
   include/grpc/compression.h
   include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
@@ -3513,6 +3512,7 @@ add_library(grpc_unsecure
   src/core/channelz/text_encode.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
+  src/core/client_channel/channel_factory.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -3936,6 +3936,7 @@ add_library(grpc_unsecure
   src/core/util/validation_errors.cc
   src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
+  src/core/xds/grpc/xds_transport_grpc.cc
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -4012,6 +4013,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
+  include/grpc/channel_factory.h
   include/grpc/compression.h
   include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
@@ -6479,6 +6481,7 @@ target_link_libraries(grpc_authorization_provider
 foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
+  include/grpc/channel_factory.h
   include/grpc/compression.h
   include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
@@ -31140,49 +31143,6 @@ target_link_libraries(raw_end2end_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(rbac_service_config_parser_test
-  test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(rbac_service_config_parser_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(rbac_service_config_parser_test PUBLIC cxx_std_17)
-target_include_directories(rbac_service_config_parser_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_CEL_C_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(rbac_service_config_parser_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(rbac_translator_test
   test/core/security/rbac_translator_test.cc
 )
@@ -43417,6 +43377,38 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.pb.h
@@ -43429,6 +43421,8 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
+  src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
@@ -43478,6 +43472,8 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
   src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -43506,6 +43502,17 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   test/core/xds/xds_common_types_test.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc

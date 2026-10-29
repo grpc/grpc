@@ -465,9 +465,6 @@ class ReadContext {
         did_receive_initial_metadata, did_receive_trailing_metadata);
   }
 
-  Http2FrameCountTracker& mutable_tracker() { return tracker_; }
-  const Http2FrameCountTracker& tracker() const { return tracker_; }
-
   //////////////////////////////////////////////////////////////////////////////
   // Current Frame Header management.
 
