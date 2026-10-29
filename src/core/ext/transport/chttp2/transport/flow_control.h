@@ -543,7 +543,8 @@ class TransportFlowControl final {
   // For CHTTP2, this is always true.
   // For PH2, this is set by the transport based on the channel arg
   // GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE.
-  // TODO(tjagtap) [PH2][CHTTP2] Edit comment when CHTTP2 is getting deleted.
+  // TODO(tjagtap) [PH2][P5][CHTTP2] Edit comment when CHTTP2 is getting
+  // deleted.
   bool ph2_enable_rx_crypto_ = true;
 };
 
