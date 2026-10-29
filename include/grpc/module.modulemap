@@ -5,6 +5,7 @@ framework module grpc {
 header "byte_buffer.h"
   header "byte_buffer_reader.h"
   header "census.h"
+  header "channel_factory.h"
   header "compression.h"
   header "context_types.h"
   header "create_channel_from_endpoint.h"

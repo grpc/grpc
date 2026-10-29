@@ -137,5 +137,100 @@ CORE_END2END_TEST(RetryTests, RetryStreamSucceedsBeforeReplayFinished) {
   EXPECT_EQ(client_message4.payload(), "foo");
 }
 
+// Tests that we do not fail a pending batch's recv_initial_metadata_ready
+// again if the call is cancelled after that callback was returned to the
+// surface but before the batch's recv_message completed, while send ops
+// are still being replayed.
+CORE_END2END_TEST(RetryTests,
+                  RetryStreamCancelAfterRecvInitialMetadataDuringReplay) {
+  SKIP_IF_V3();  // Not working yet
+  // Disabling BDP probing keeps the server's stream window at the default
+  // size, so the client cannot replay the first message on the second
+  // attempt until the server reads it.
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
+  InitClient(ChannelArgs().Set(
+      GRPC_ARG_SERVICE_CONFIG,
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"service\", \"method\": \"method\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}"));
+  auto c =
+      NewClientCall("/service/method").Timeout(Duration::Seconds(30)).Create();
+  EXPECT_NE(c.GetPeer(), std::nullopt);
+  // Client starts a batch for receiving initial metadata and a message,
+  // and a separate batch for receiving trailing metadata.
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
+  c.NewBatch(1)
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvMessage(server_message);
+  IncomingStatusOnClient server_status;
+  c.NewBatch(2).RecvStatusOnClient(server_status);
+  // Client sends initial metadata and a message larger than the default
+  // HTTP/2 stream window.
+  c.NewBatch(3).SendInitialMetadata({}).SendMessage(RandomSlice(128 * 1024));
+  // Server gets a call and receives the message.  With a proxy in between,
+  // the client's send may complete before the server reads the message.
+  bool send_message_done = false;
+  std::optional<IncomingCall> s = RequestCall(101);
+  Expect(101, true);
+  Expect(3, Maybe{&send_message_done});
+  Step();
+  IncomingMessage client_message;
+  s->NewBatch(102).RecvMessage(client_message);
+  Expect(102, true);
+  if (!send_message_done) Expect(3, true);
+  Step();
+  // Client sends a second message, so that a send op remains to be replayed
+  // after the first one.
+  c.NewBatch(4).SendMessage("bar");
+  IncomingMessage client_message2;
+  s->NewBatch(103).RecvMessage(client_message2);
+  Expect(4, true);
+  Expect(103, true);
+  Step();
+  // Server fails the first attempt with a retriable status.
+  IncomingCloseOnServer client_close;
+  s->NewBatch(104)
+      .RecvCloseOnServer(client_close)
+      .SendInitialMetadata({})
+      .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {});
+  Expect(104, true);
+  Step();
+  s.reset();
+  EXPECT_EQ(client_message2.payload(), "bar");
+  // Server gets a second call (the retry) and sends only initial metadata,
+  // without reading the replayed messages.
+  s.emplace(RequestCall(201));
+  Expect(201, true);
+  Step();
+  s->NewBatch(202).SendInitialMetadata({});
+  Expect(202, true);
+  Step();
+  // Give the client time to receive the initial metadata.  Batch 1 must not
+  // complete, because recv_message is still pending.
+  Step();
+  // Client cancels the call.
+  c.Cancel();
+  IncomingCloseOnServer client_close2;
+  s->NewBatch(203).RecvCloseOnServer(client_close2);
+  Expect(1, AnyStatus{});
+  Expect(2, true);
+  Expect(203, true);
+  Step();
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_CANCELLED);
+  EXPECT_TRUE(client_close2.was_cancelled());
+}
+
 }  // namespace
 }  // namespace grpc_core

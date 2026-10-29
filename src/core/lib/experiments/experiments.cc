@@ -59,23 +59,18 @@ const char* const additional_constraints_chaotic_good_send_supported_features =
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_listener =
-    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
-const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_event_engine_callback_cq =
     "Use EventEngine instead of the CallbackAlternativeCQ.";
 const char* const additional_constraints_event_engine_callback_cq = "{}";
 const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_event_engine_for_all_other_endpoints =
     "Use EventEngine endpoints for all call sites, including direct uses of "
     "grpc_tcp_create.";
 const char* const additional_constraints_event_engine_for_all_other_endpoints =
     "{}";
 const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -144,25 +139,6 @@ const char* const additional_constraints_optimization_06 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
-const char* const description_ph2_client =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test PH2 Client "
-    "with CHTTP2 Server.";
-const char* const additional_constraints_ph2_client = "{}";
-const char* const description_ph2_client_server =
-    "This is a combination of ph2_server and ph2_client experiments. When this "
-    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
-    "Server. We will NEVER be rolling out this experiment, because the roll "
-    "out would be done using ph2_server and ph2_client. This experiment MUST "
-    "be deleted when either ph2_server or ph2_client experiments are deleted.";
-const char* const additional_constraints_ph2_client_server = "{}";
-const char* const description_ph2_server =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test CHTTP2 "
-    "Client with PH2 Server.";
-const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -170,15 +146,13 @@ const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
 const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
 const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_prioritize_finished_requests =
     "Prioritize flushing out finished requests over other in-flight requests "
     "during transport writes.";
@@ -193,6 +167,34 @@ const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
 const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
+const char* const description_replace_auth_filter =
+    "Replacing ServerAuthFilter in Call V3.";
+const char* const additional_constraints_replace_auth_filter = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const uint8_t required_experiments_ph2_client[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
+const uint8_t required_experiments_ph2_client_server[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
+const uint8_t required_experiments_ph2_server[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -210,21 +212,21 @@ const char* const description_secure_endpoint_offload_large_reads =
 const char* const additional_constraints_secure_endpoint_offload_large_reads =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_secure_endpoint_offload_large_writes =
     "If a large read write to be encrypted, use a separate thread.";
 const char* const additional_constraints_secure_endpoint_offload_large_writes =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_secure_endpoint_read_coalescing =
     "Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.";
 const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
 const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
+const char* const description_server_connection_management =
+    "Server connection management.";
+const char* const additional_constraints_server_connection_management = "{}";
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -249,10 +251,6 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
-const char* const description_v2_non_owning_waker_implementation =
-    "Use non-owning wakers in v2 filter bridge.";
-const char* const additional_constraints_v2_non_owning_waker_implementation =
-    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -261,13 +259,6 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_server_filter_chain_per_route =
-    "xDS servers use a separate filter chain for each route.";
-const char* const additional_constraints_xds_server_filter_chain_per_route =
-    "{}";
-const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -300,15 +291,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
      additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 2, true, true},
+     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
-     required_experiments_event_engine_for_all_other_endpoints, 2, true, false},
+     required_experiments_event_engine_for_all_other_endpoints, 1, true, false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -367,12 +356,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
-    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
-     nullptr, 0, false, true},
-    {"ph2_client_server", description_ph2_client_server,
-     additional_constraints_ph2_client_server, nullptr, 0, false, true},
-    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
-     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -380,10 +363,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
-     required_experiments_pipelined_read_secure_endpoint, 2, false, false},
+     required_experiments_pipelined_read_secure_endpoint, 1, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
-     required_experiments_pollset_alternative, 2, false, false},
+     required_experiments_pollset_alternative, 1, false, false},
     {"prioritize_finished_requests", description_prioritize_finished_requests,
      additional_constraints_prioritize_finished_requests, nullptr, 0, false,
      true},
@@ -399,6 +382,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
      true},
+    {"replace_auth_filter", description_replace_auth_filter,
+     additional_constraints_replace_auth_filter, nullptr, 0, false, true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     required_experiments_ph2_client, 1, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server,
+     required_experiments_ph2_client_server, 1, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
+     required_experiments_ph2_server, 1, false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -412,15 +404,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"secure_endpoint_offload_large_reads",
      description_secure_endpoint_offload_large_reads,
      additional_constraints_secure_endpoint_offload_large_reads,
-     required_experiments_secure_endpoint_offload_large_reads, 2, false, true},
+     required_experiments_secure_endpoint_offload_large_reads, 1, false, true},
     {"secure_endpoint_offload_large_writes",
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
-     required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
+     required_experiments_secure_endpoint_offload_large_writes, 1, false, true},
     {"secure_endpoint_read_coalescing",
      description_secure_endpoint_read_coalescing,
      additional_constraints_secure_endpoint_read_coalescing,
-     required_experiments_secure_endpoint_read_coalescing, 2, false, true},
+     required_experiments_secure_endpoint_read_coalescing, 1, false, true},
+    {"server_connection_management", description_server_connection_management,
+     additional_constraints_server_connection_management, nullptr, 0, false,
+     true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -441,10 +436,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
-    {"v2_non_owning_waker_implementation",
-     description_v2_non_owning_waker_implementation,
-     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -453,10 +444,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_server_filter_chain_per_route",
-     description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -499,23 +486,18 @@ const char* const additional_constraints_chaotic_good_send_supported_features =
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_listener =
-    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
-const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_event_engine_callback_cq =
     "Use EventEngine instead of the CallbackAlternativeCQ.";
 const char* const additional_constraints_event_engine_callback_cq = "{}";
 const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_event_engine_for_all_other_endpoints =
     "Use EventEngine endpoints for all call sites, including direct uses of "
     "grpc_tcp_create.";
 const char* const additional_constraints_event_engine_for_all_other_endpoints =
     "{}";
 const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -584,25 +566,6 @@ const char* const additional_constraints_optimization_06 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
-const char* const description_ph2_client =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test PH2 Client "
-    "with CHTTP2 Server.";
-const char* const additional_constraints_ph2_client = "{}";
-const char* const description_ph2_client_server =
-    "This is a combination of ph2_server and ph2_client experiments. When this "
-    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
-    "Server. We will NEVER be rolling out this experiment, because the roll "
-    "out would be done using ph2_server and ph2_client. This experiment MUST "
-    "be deleted when either ph2_server or ph2_client experiments are deleted.";
-const char* const additional_constraints_ph2_client_server = "{}";
-const char* const description_ph2_server =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test CHTTP2 "
-    "Client with PH2 Server.";
-const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -610,15 +573,13 @@ const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
 const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
 const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_prioritize_finished_requests =
     "Prioritize flushing out finished requests over other in-flight requests "
     "during transport writes.";
@@ -633,6 +594,34 @@ const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
 const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
+const char* const description_replace_auth_filter =
+    "Replacing ServerAuthFilter in Call V3.";
+const char* const additional_constraints_replace_auth_filter = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const uint8_t required_experiments_ph2_client[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
+const uint8_t required_experiments_ph2_client_server[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
+const uint8_t required_experiments_ph2_server[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -650,21 +639,21 @@ const char* const description_secure_endpoint_offload_large_reads =
 const char* const additional_constraints_secure_endpoint_offload_large_reads =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_secure_endpoint_offload_large_writes =
     "If a large read write to be encrypted, use a separate thread.";
 const char* const additional_constraints_secure_endpoint_offload_large_writes =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_secure_endpoint_read_coalescing =
     "Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.";
 const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
 const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
+const char* const description_server_connection_management =
+    "Server connection management.";
+const char* const additional_constraints_server_connection_management = "{}";
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -689,10 +678,6 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
-const char* const description_v2_non_owning_waker_implementation =
-    "Use non-owning wakers in v2 filter bridge.";
-const char* const additional_constraints_v2_non_owning_waker_implementation =
-    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -701,13 +686,6 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_server_filter_chain_per_route =
-    "xDS servers use a separate filter chain for each route.";
-const char* const additional_constraints_xds_server_filter_chain_per_route =
-    "{}";
-const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -740,15 +718,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
      additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 2, true, true},
+     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
-     required_experiments_event_engine_for_all_other_endpoints, 2, true, false},
+     required_experiments_event_engine_for_all_other_endpoints, 1, true, false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -807,12 +783,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
-    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
-     nullptr, 0, false, true},
-    {"ph2_client_server", description_ph2_client_server,
-     additional_constraints_ph2_client_server, nullptr, 0, false, true},
-    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
-     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -820,10 +790,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
-     required_experiments_pipelined_read_secure_endpoint, 2, false, false},
+     required_experiments_pipelined_read_secure_endpoint, 1, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
-     required_experiments_pollset_alternative, 2, false, false},
+     required_experiments_pollset_alternative, 1, false, false},
     {"prioritize_finished_requests", description_prioritize_finished_requests,
      additional_constraints_prioritize_finished_requests, nullptr, 0, false,
      true},
@@ -839,6 +809,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
      true},
+    {"replace_auth_filter", description_replace_auth_filter,
+     additional_constraints_replace_auth_filter, nullptr, 0, false, true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     required_experiments_ph2_client, 1, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server,
+     required_experiments_ph2_client_server, 1, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
+     required_experiments_ph2_server, 1, false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -852,15 +831,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"secure_endpoint_offload_large_reads",
      description_secure_endpoint_offload_large_reads,
      additional_constraints_secure_endpoint_offload_large_reads,
-     required_experiments_secure_endpoint_offload_large_reads, 2, false, true},
+     required_experiments_secure_endpoint_offload_large_reads, 1, false, true},
     {"secure_endpoint_offload_large_writes",
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
-     required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
+     required_experiments_secure_endpoint_offload_large_writes, 1, false, true},
     {"secure_endpoint_read_coalescing",
      description_secure_endpoint_read_coalescing,
      additional_constraints_secure_endpoint_read_coalescing,
-     required_experiments_secure_endpoint_read_coalescing, 2, false, true},
+     required_experiments_secure_endpoint_read_coalescing, 1, false, true},
+    {"server_connection_management", description_server_connection_management,
+     additional_constraints_server_connection_management, nullptr, 0, false,
+     true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -881,10 +863,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
-    {"v2_non_owning_waker_implementation",
-     description_v2_non_owning_waker_implementation,
-     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -893,10 +871,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_server_filter_chain_per_route",
-     description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
@@ -939,23 +913,18 @@ const char* const additional_constraints_chaotic_good_send_supported_features =
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
-const char* const description_event_engine_listener =
-    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
-const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_event_engine_callback_cq =
     "Use EventEngine instead of the CallbackAlternativeCQ.";
 const char* const additional_constraints_event_engine_callback_cq = "{}";
 const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_event_engine_for_all_other_endpoints =
     "Use EventEngine endpoints for all call sites, including direct uses of "
     "grpc_tcp_create.";
 const char* const additional_constraints_event_engine_for_all_other_endpoints =
     "{}";
 const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -1024,25 +993,6 @@ const char* const additional_constraints_optimization_06 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
-const char* const description_ph2_client =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test PH2 Client "
-    "with CHTTP2 Server.";
-const char* const additional_constraints_ph2_client = "{}";
-const char* const description_ph2_client_server =
-    "This is a combination of ph2_server and ph2_client experiments. When this "
-    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
-    "Server. We will NEVER be rolling out this experiment, because the roll "
-    "out would be done using ph2_server and ph2_client. This experiment MUST "
-    "be deleted when either ph2_server or ph2_client experiments are deleted.";
-const char* const additional_constraints_ph2_client_server = "{}";
-const char* const description_ph2_server =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs. "
-    "When this flag is enabled for the test suites, it would test CHTTP2 "
-    "Client with PH2 Server.";
-const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -1050,15 +1000,13 @@ const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
 const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
 const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_prioritize_finished_requests =
     "Prioritize flushing out finished requests over other in-flight requests "
     "during transport writes.";
@@ -1073,6 +1021,34 @@ const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
 const char* const additional_constraints_recv_message_filter_bypass_fix = "{}";
+const char* const description_replace_auth_filter =
+    "Replacing ServerAuthFilter in Call V3.";
+const char* const additional_constraints_replace_auth_filter = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const uint8_t required_experiments_ph2_client[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
+const uint8_t required_experiments_ph2_client_server[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
+const uint8_t required_experiments_ph2_server[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdReplaceAuthFilter)};
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -1090,21 +1066,21 @@ const char* const description_secure_endpoint_offload_large_reads =
 const char* const additional_constraints_secure_endpoint_offload_large_reads =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_secure_endpoint_offload_large_writes =
     "If a large read write to be encrypted, use a separate thread.";
 const char* const additional_constraints_secure_endpoint_offload_large_writes =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_secure_endpoint_read_coalescing =
     "Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.";
 const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
 const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
+const char* const description_server_connection_management =
+    "Server connection management.";
+const char* const additional_constraints_server_connection_management = "{}";
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -1129,10 +1105,6 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
-const char* const description_v2_non_owning_waker_implementation =
-    "Use non-owning wakers in v2 filter bridge.";
-const char* const additional_constraints_v2_non_owning_waker_implementation =
-    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -1141,13 +1113,6 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_server_filter_chain_per_route =
-    "xDS servers use a separate filter chain for each route.";
-const char* const additional_constraints_xds_server_filter_chain_per_route =
-    "{}";
-const uint8_t required_experiments_xds_server_filter_chain_per_route[] = {
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdV2NonOwningWakerImplementation)};
 }  // namespace
 
 namespace grpc_core {
@@ -1180,15 +1145,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
-    {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
      additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 2, true, true},
+     required_experiments_event_engine_callback_cq, 1, true, true},
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
-     required_experiments_event_engine_for_all_other_endpoints, 2, true, false},
+     required_experiments_event_engine_for_all_other_endpoints, 1, true, false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -1247,12 +1210,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
-    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
-     nullptr, 0, false, true},
-    {"ph2_client_server", description_ph2_client_server,
-     additional_constraints_ph2_client_server, nullptr, 0, false, true},
-    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
-     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -1260,10 +1217,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
-     required_experiments_pipelined_read_secure_endpoint, 2, false, false},
+     required_experiments_pipelined_read_secure_endpoint, 1, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
-     required_experiments_pollset_alternative, 2, false, false},
+     required_experiments_pollset_alternative, 1, false, false},
     {"prioritize_finished_requests", description_prioritize_finished_requests,
      additional_constraints_prioritize_finished_requests, nullptr, 0, false,
      true},
@@ -1279,6 +1236,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_recv_message_filter_bypass_fix,
      additional_constraints_recv_message_filter_bypass_fix, nullptr, 0, false,
      true},
+    {"replace_auth_filter", description_replace_auth_filter,
+     additional_constraints_replace_auth_filter, nullptr, 0, false, true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     required_experiments_ph2_client, 1, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server,
+     required_experiments_ph2_client_server, 1, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
+     required_experiments_ph2_server, 1, false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -1292,15 +1258,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"secure_endpoint_offload_large_reads",
      description_secure_endpoint_offload_large_reads,
      additional_constraints_secure_endpoint_offload_large_reads,
-     required_experiments_secure_endpoint_offload_large_reads, 2, false, true},
+     required_experiments_secure_endpoint_offload_large_reads, 1, false, true},
     {"secure_endpoint_offload_large_writes",
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
-     required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
+     required_experiments_secure_endpoint_offload_large_writes, 1, false, true},
     {"secure_endpoint_read_coalescing",
      description_secure_endpoint_read_coalescing,
      additional_constraints_secure_endpoint_read_coalescing,
-     required_experiments_secure_endpoint_read_coalescing, 2, false, true},
+     required_experiments_secure_endpoint_read_coalescing, 1, false, true},
+    {"server_connection_management", description_server_connection_management,
+     additional_constraints_server_connection_management, nullptr, 0, false,
+     true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -1321,10 +1290,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
-    {"v2_non_owning_waker_implementation",
-     description_v2_non_owning_waker_implementation,
-     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
-     true, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -1333,10 +1298,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_server_filter_chain_per_route",
-     description_xds_server_filter_chain_per_route,
-     additional_constraints_xds_server_filter_chain_per_route,
-     required_experiments_xds_server_filter_chain_per_route, 1, true, true},
 };
 
 }  // namespace grpc_core
