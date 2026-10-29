@@ -1045,10 +1045,10 @@ TEST_F(RlsEnd2endTest, UpdateDefaultTargetWithRpcsInFlight) {
   for (size_t i = 0; i < 4; ++i) {
     threads.emplace_back([&]() {
       while (!done.load()) {
-        SendRpc(RpcOptions()
-                    .set_timeout_ms(1000)
-                    .set_metadata({{"key1", kTestValue}})
-                    .set_skip_cancelled_check(true));
+        (void)SendRpc(RpcOptions()
+                          .set_timeout_ms(1000)
+                          .set_metadata({{"key1", kTestValue}})
+                          .set_skip_cancelled_check(true));
       }
     });
   }
