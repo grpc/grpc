@@ -115,19 +115,26 @@ void grpc_transport_stream_op_batch_queue_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombinerClosureList* closures) {
   // Construct a list of closures to execute.
+  // The retry filter nulls out recv ready closures it has already delivered.
   if (batch->recv_initial_metadata) {
-    closures->Add(
-        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        error, "failing recv_initial_metadata_ready");
+    auto* closure =
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    if (closure != nullptr) {
+      closures->Add(closure, error, "failing recv_initial_metadata_ready");
+    }
   }
   if (batch->recv_message) {
-    closures->Add(batch->payload->recv_message.recv_message_ready, error,
-                  "failing recv_message_ready");
+    auto* closure = batch->payload->recv_message.recv_message_ready;
+    if (closure != nullptr) {
+      closures->Add(closure, error, "failing recv_message_ready");
+    }
   }
   if (batch->recv_trailing_metadata) {
-    closures->Add(
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        error, "failing recv_trailing_metadata_ready");
+    auto* closure =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    if (closure != nullptr) {
+      closures->Add(closure, error, "failing recv_trailing_metadata_ready");
+    }
   }
   if (batch->on_complete != nullptr) {
     closures->Add(batch->on_complete, error, "failing on_complete");

@@ -75,7 +75,7 @@ absl::StatusOr<RefCountedPtr<Channel>> VirtualChannel::Create(
     args = args.SetObject(sec_ctx->auth_context);
   }
 
-  // TODO(snohria) : [PH2][P2] : Add support for Call V3.
+  // TODO(snohria) : [PH2][P2][Client] : Add support for Call V3.
   GRPC_CHECK(core_call->call_stack() != nullptr);
 
   auto event_engine =

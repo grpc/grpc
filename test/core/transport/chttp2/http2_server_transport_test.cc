@@ -72,6 +72,8 @@ namespace testing {
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 using ::testing::MockFunction;
+using ::testing::Pointee;
+using ::testing::Property;
 using ::testing::StrictMock;
 using util::testing::EventSequenceEndpoint;
 
@@ -90,7 +92,7 @@ const std::vector<uint8_t> kGrpcStatusCancelledOnly = {
 class Http2ServerTransportTest : public Http2TransportTest {
  public:
   Http2ServerTransportTest() = default;
-  // Http2TransportTest is not copyable or movable.
+
   Http2ServerTransportTest(const Http2ServerTransportTest&) = delete;
   Http2ServerTransportTest& operator=(const Http2ServerTransportTest&) = delete;
   Http2ServerTransportTest(Http2ServerTransportTest&&) = delete;
@@ -251,6 +253,12 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
           call_handler.PullClientInitialMetadata(),
           [call_handler](ClientMetadataHandle metadata) mutable {
             LOG(INFO) << "Client initial metadata: " << metadata->DebugString();
+            EXPECT_THAT(metadata->get_pointer(PeerString()),
+                        Pointee(Property(&Slice::as_string_view,
+                                         "ipv4:127.0.0.1:12345")));
+            EXPECT_THAT(metadata->get_pointer(LocalAddressString()),
+                        Pointee(Property(&Slice::as_string_view,
+                                         "ipv4:127.0.0.1:6789")));
             return call_handler.PushServerInitialMetadata(
                 ServerMetadataFromStatus(absl::OkStatus()));
           },
@@ -1683,10 +1691,8 @@ TEST_F(Http2ServerTransportTest, ServerTrailingMetadataTarpitTest) {
 
 // RST_STREAM received from the client must close the stream immediately, so
 // that the stream no longer counts towards MAX_CONCURRENT_STREAMS.
-// TODO(akshitpatel) [PH2][P1] : Enable this test once the test infra supports
-// it.
 TEST_F(Http2ServerTransportTest,
-       DISABLED_ClientRstStreamWithTarpitEnabledFreesConcurrentStreamCount) {
+       ClientRstStreamWithTarpitEnabledFreesConcurrentStreamCount) {
   ExecCtx ctx;
 
   // Step 1: Initialize the transport with MAX_CONCURRENT_STREAMS = 1 and

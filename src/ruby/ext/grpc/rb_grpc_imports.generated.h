@@ -393,6 +393,9 @@ extern grpc_call_start_batch_type grpc_call_start_batch_import;
 typedef char*(*grpc_call_get_peer_type)(grpc_call* call);
 extern grpc_call_get_peer_type grpc_call_get_peer_import;
 #define grpc_call_get_peer grpc_call_get_peer_import
+typedef char*(*grpc_call_get_local_address_type)(grpc_call* call);
+extern grpc_call_get_local_address_type grpc_call_get_local_address_import;
+#define grpc_call_get_local_address grpc_call_get_local_address_import
 typedef void(*grpc_census_call_set_context_type)(grpc_call* call, struct census_context* context);
 extern grpc_census_call_set_context_type grpc_census_call_set_context_import;
 #define grpc_census_call_set_context grpc_census_call_set_context_import
