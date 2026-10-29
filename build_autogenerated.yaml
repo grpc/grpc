@@ -6524,6 +6524,29 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: autosharding_client_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/load_balancing/autosharding/autosharding_client.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/xds/xds_transport_fake.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - third_party/autosharding/proto/autosharding/v1/autosharding.proto
+  - third_party/googleapis/google/api/field_behavior.proto
+  - src/core/load_balancing/autosharding/autosharding_client.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/load_balancing/autosharding_client_test.cc
+  - test/core/xds/xds_transport_fake.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: autosharding_config_test
   gtest: true
   build: test

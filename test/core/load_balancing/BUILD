@@ -546,6 +546,36 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "autosharding_client_test",
+    srcs = ["autosharding_client_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:autosharding_cc_proto",
+        "//:grpc",
+        "//:iomgr_timer",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:work_serializer",
+        "//:xds_client",
+        "//src/core:grpc_lb_policy_autosharding_assignment",
+        "//src/core:grpc_lb_policy_autosharding_client",
+        "//src/core:time",
+        "//src/core:wait_for_single_owner",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/xds:xds_transport_fake",
+    ],
+)
+
+grpc_cc_test(
     name = "autosharding_config_test",
     srcs = ["autosharding_config_test.cc"],
     external_deps = [

@@ -8409,6 +8409,40 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_policy_autosharding_client",
+    srcs = [
+        "load_balancing/autosharding/autosharding_client.cc",
+    ],
+    hdrs = [
+        "load_balancing/autosharding/autosharding_client.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "grpc_check",
+        "grpc_lb_policy_autosharding_assignment",
+        "time",
+        "upb_utils",
+        "//:autosharding_upb",
+        "//:backoff",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:work_serializer",
+        "//:xds_transport",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_autosharding",
     srcs = [
         "load_balancing/autosharding/autosharding.cc",
