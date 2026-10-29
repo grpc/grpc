@@ -70,10 +70,10 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
     StrAppend(result, "\"");
     is_first = false;
   }
-  if (!spiffe_bundle_map_file_.empty()) {
+  if (!spiffe_trust_bundle_map_file_.empty()) {
     if (!is_first) StrAppend(result, ", ");
-    StrAppend(result, "spiffe_bundle_map_file=\"");
-    StrAppend(result, spiffe_bundle_map_file_);
+    StrAppend(result, "spiffe_trust_bundle_map_file=\"");
+    StrAppend(result, spiffe_trust_bundle_map_file_);
     StrAppend(result, "\"");
     is_first = false;
   }
@@ -91,8 +91,8 @@ FileWatcherCertificateProviderFactory::Config::JsonLoader(const JsonArgs&) {
           .OptionalField("certificate_file", &Config::identity_cert_file_)
           .OptionalField("private_key_file", &Config::private_key_file_)
           .OptionalField("ca_certificate_file", &Config::root_cert_file_)
-          .OptionalField("spiffe_bundle_map_file",
-                         &Config::spiffe_bundle_map_file_)
+          .OptionalField("spiffe_trust_bundle_map_file",
+                         &Config::spiffe_trust_bundle_map_file_)
           .OptionalField("refresh_interval", &Config::refresh_interval_)
           .Finish();
   return loader;
@@ -109,13 +109,13 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
   if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE")) {
     if (json.object().find("certificate_file") == json.object().end() &&
         json.object().find("ca_certificate_file") == json.object().end() &&
-        json.object().find("spiffe_bundle_map_file") == json.object().end()) {
+        json.object().find("spiffe_trust_bundle_map_file") == json.object().end()) {
       errors->AddError(
           "at least one of \"certificate_file\", \"ca_certificate_file\", and "
-          "\"spiffe_bundle_map_file\" must be specified");
+          "\"spiffe_trust_bundle_map_file\" must be specified");
     }
   } else {
-    spiffe_bundle_map_file_ = "";
+    spiffe_trust_bundle_map_file_ = "";
     if ((json.object().find("certificate_file") == json.object().end()) &&
         (json.object().find("ca_certificate_file") == json.object().end())) {
       errors->AddError(
@@ -153,7 +153,7 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
       file_watcher_config->private_key_file(),
       file_watcher_config->identity_cert_file(),
       file_watcher_config->root_cert_file(),
-      file_watcher_config->spiffe_bundle_map_file(),
+      file_watcher_config->spiffe_trust_bundle_map_file(),
       file_watcher_config->refresh_interval().millis() / GPR_MS_PER_SEC);
 }
 
