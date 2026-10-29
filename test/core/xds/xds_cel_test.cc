@@ -800,21 +800,97 @@ TEST_F(CelProgramTest, DurationGetMinutesReturnsTotalMinutes) {
             true);
 }
 
-// The date getters are not implemented by cel-c, so expressions using them
-// are rejected rather than failing at runtime.
-TEST_F(CelProgramTest, UnsupportedTimestampGetter) {
-  cel_expr_Expr* root;
-  auto* checked = builder_.NewCheckedExpr(&root, ResultType::kBool);
-  auto eq_args = builder_.SetCall(root, "_==_", 2);
-  builder_.SetStringConst(builder_.SetCall(builder_.SetReceiverCall(
-                                               eq_args[0], "getFullYear", 0)[0],
-                                           "timestamp", 1)[0],
-                          "2025-12-01T10:20:30Z");
-  builder_.SetIntConst(eq_args[1], 2025);
-  EXPECT_EQ(CelProgram::Create(checked, ResultType::kBool).status(),
-            absl::InternalError(
-                "failed to compile CEL expression: cel: function with name "
-                "getFullYear taking 1 args not found"));
+TEST_F(CelProgramTest, TimestampGetFullYear) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getFullYear", 0);
+                  builder_.SetStringConst(
+                      builder_.SetCall(exprs[0], "timestamp", 1)[0],
+                      "2025-12-01T10:20:30Z");
+                },
+                2025),
+            true);
+}
+
+TEST_F(CelProgramTest, TimestampGetFullYearWithNegativeUtcOffset) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getFullYear", 1);
+                  builder_.SetStringConst(
+                      builder_.SetCall(exprs[0], "timestamp", 1)[0],
+                      "2026-01-01T02:00:00Z");
+                  builder_.SetStringConst(exprs[1], "-05:00");
+                },
+                2025),
+            true);
+}
+
+// The month is 0-based.
+TEST_F(CelProgramTest, TimestampGetMonth) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getMonth", 0);
+                  builder_.SetStringConst(
+                      builder_.SetCall(exprs[0], "timestamp", 1)[0],
+                      "2025-12-01T10:20:30Z");
+                },
+                11),
+            true);
+}
+
+// getDate() is 1-based.
+TEST_F(CelProgramTest, TimestampGetDate) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs = builder_.SetReceiverCall(call, "getDate", 0);
+                  builder_.SetStringConst(
+                      builder_.SetCall(exprs[0], "timestamp", 1)[0],
+                      "2025-12-01T10:20:30Z");
+                },
+                1),
+            true);
+}
+
+// getDayOfMonth() is 0-based.
+TEST_F(CelProgramTest, TimestampGetDayOfMonth) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs =
+                      builder_.SetReceiverCall(call, "getDayOfMonth", 0);
+                  builder_.SetStringConst(
+                      builder_.SetCall(exprs[0], "timestamp", 1)[0],
+                      "2025-12-01T10:20:30Z");
+                },
+                0),
+            true);
+}
+
+// The day of the week is 0-based, starting on Sunday.
+TEST_F(CelProgramTest, TimestampGetDayOfWeek) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs =
+                      builder_.SetReceiverCall(call, "getDayOfWeek", 0);
+                  builder_.SetStringConst(
+                      builder_.SetCall(exprs[0], "timestamp", 1)[0],
+                      "2025-12-01T10:20:30Z");
+                },
+                1),
+            true);
+}
+
+// The day of the year is 0-based.
+TEST_F(CelProgramTest, TimestampGetDayOfYear) {
+  EXPECT_EQ(EvaluateIntEquals(
+                [&](cel_expr_Expr* call) {
+                  auto exprs =
+                      builder_.SetReceiverCall(call, "getDayOfYear", 0);
+                  builder_.SetStringConst(
+                      builder_.SetCall(exprs[0], "timestamp", 1)[0],
+                      "2025-12-01T10:20:30Z");
+                },
+                334),
+            true);
 }
 
 //
