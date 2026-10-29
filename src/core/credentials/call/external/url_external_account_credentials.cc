@@ -40,7 +40,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -80,10 +79,6 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
     return;
   }
   url_ = *tmp_url;
-  // The url must follow the format of <scheme>://<authority>/<path>
-  std::vector<absl::string_view> v =
-      absl::StrSplit(it->second.string(), absl::MaxSplits('/', 3));
-  url_full_path_ = absl::StrCat("/", v[3]);
   it = options.credential_source.object().find("headers");
   if (it != options.credential_source.object().end()) {
     if (it->second.type() != Json::Type::kObject) {
@@ -145,22 +140,10 @@ OrphanablePtr<ExternalAccountCredentials::FetchBody>
 UrlExternalAccountCredentials::RetrieveSubjectToken(
     Timestamp deadline,
     absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) {
-  // Take the path and the query from the parsed URL rather than passing a path
-  // that still contains the query string: the request target is built with
-  // URI::EncodedPathAndQueryParams(), so a query smuggled through the path
-  // argument has its delimiters percent-encoded and never reaches the server.
-  auto url_for_request =
-      URI::Create(url_.scheme(), url_.user_info(), url_.host_port(), url_.path(),
-                  url_.query_parameter_pairs(), "" /* fragment */);
-  if (!url_for_request.ok()) {
-    return MakeOrphanable<NoOpFetchBody>(event_engine(), std::move(on_done),
-                                         url_for_request.status());
-  }
   return MakeOrphanable<HttpFetchBody>(
       [&](grpc_http_response* response, grpc_closure* on_http_response) {
         grpc_http_request request;
         memset(&request, 0, sizeof(grpc_http_request));
-        request.path = gpr_strdup(url_full_path_.c_str());
         grpc_http_header* headers = nullptr;
         request.hdr_count = headers_.size();
         headers = static_cast<grpc_http_header*>(
@@ -179,10 +162,12 @@ UrlExternalAccountCredentials::RetrieveSubjectToken(
         } else {
           http_request_creds = CreateHttpRequestSSLCredentials();
         }
-        auto http_request =
-            HttpRequest::Get(std::move(*url_for_request), /*args=*/nullptr,
-                             pollent(), &request, deadline, on_http_response,
-                             response, std::move(http_request_creds));
+        // Pass url_ itself: it already holds the path and the query parameters
+        // split apart, and the request target is built from them with
+        // URI::EncodedPathAndQueryParams().
+        auto http_request = HttpRequest::Get(
+            url_, /*args=*/nullptr, pollent(), &request, deadline,
+            on_http_response, response, std::move(http_request_creds));
         http_request->Start();
         grpc_http_request_destroy(&request);
         return http_request;
