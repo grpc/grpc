@@ -272,8 +272,7 @@ def _running_call_handler_loops():
         task
         for task in asyncio.all_tasks()
         if not task.done()
-        and "_call_handler_loop"
-        in getattr(task.get_coro(), "__qualname__", "")
+        and "_call_handler_loop" in getattr(task.get_coro(), "__qualname__", "")
     }
 
 
@@ -843,7 +842,8 @@ class TestServer(AioTestBase):
                 )(_REQUEST),
             )
             self.assertEqual(
-                _RESPONSE, await channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
+                _RESPONSE,
+                await channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST),
             )
 
         # One loop per registered method plus one for generic handlers.
@@ -939,7 +939,9 @@ class TestServer(AioTestBase):
         recorded_methods = []
 
         class _RecordingInterceptor(aio.ServerInterceptor):
-            async def intercept_service(self, continuation, handler_call_details):
+            async def intercept_service(
+                self, continuation, handler_call_details
+            ):
                 recorded_methods.append(handler_call_details.method)
                 return await continuation(handler_call_details)
 
