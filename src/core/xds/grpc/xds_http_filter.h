@@ -29,7 +29,7 @@
 #include "src/core/xds/grpc/blackboard.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "src/core/xds/xds_client/xds_transport.h"
+#include "src/core/xds/xds_client/xds_transport_factory.h"
 #include "upb/reflection/def.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"

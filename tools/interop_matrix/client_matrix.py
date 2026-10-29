@@ -499,6 +499,9 @@ LANG_RELEASE_MATRIX = {
             ("v1.80.0", ReleaseInfo()),
             ("v1.81.0", ReleaseInfo()),
             ("v1.82.0", ReleaseInfo()),
+            ("v1.83.1", ReleaseInfo()),
+            ("v1.84.3", ReleaseInfo()),
+            ("v1.85.1", ReleaseInfo()),
         ]
     ),
     "python": OrderedDict(
@@ -751,165 +754,111 @@ LANG_RELEASE_MATRIX = {
             ),
             (
                 "v1.44.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.46.2",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.47.1",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.48.3",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.49.1",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.52.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.53.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.54.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.55.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.56.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.57.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.58.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.60.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.61.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.62.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.63.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.64.1",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.65.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.66.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.67.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.69.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.70.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.71.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.72.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.73.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.74.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.75.1",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             # Python images can't be anymore built without #40959 temporary fix,
             # or #40833 proper pyproject migration.
@@ -917,37 +866,33 @@ LANG_RELEASE_MATRIX = {
             # (
             #     "v1.76.0",
             #     ReleaseInfo(
-            #         runtimes=["python"], testcases_file="python__master"
+            #         runtimes=["python"], testcases_file="python__py39"
             #     ),
             # ),
             (
                 "v1.78.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.80.0",
-                ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
-                ),
+                ReleaseInfo(runtimes=["python"], testcases_file="python__py39"),
             ),
             (
                 "v1.81.1",
                 ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
+                    runtimes=["python"], testcases_file="python__py310"
                 ),
             ),
             (
                 "v1.82.1",
                 ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
+                    runtimes=["python"], testcases_file="python__py310"
                 ),
             ),
             (
                 "v1.83.0",
                 ReleaseInfo(
-                    runtimes=["python"], testcases_file="python__master"
+                    runtimes=["python"], testcases_file="python__py310"
                 ),
             ),
         ]

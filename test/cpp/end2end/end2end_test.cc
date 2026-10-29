@@ -1857,7 +1857,9 @@ TEST_P(ProxyEnd2endTest, LocalAddress) {
   // parent (ClientContext::FromServerContext), which the PH2 server does not
   // support yet (ServerCall::Completed() is unimplemented).
   if (GetParam().use_proxy()) {
-    SKIP_TEST_FOR_PH2_SERVER("Proxy call propagation is not supported by PH2");
+    SKIP_TEST_FOR_PH2_SERVER(
+        "TODO(ritulb) [PH2][P1] Proxy call propagation is not supported by "
+        "PH2");
   }
   ResetStub();
   EchoRequest request;
