@@ -15,6 +15,8 @@
 #include "src/core/lib/promise/promise.h"
 
 #include <memory>
+#include <optional>
+#include <type_traits>
 #include <utility>
 
 #include "src/core/channelz/property_list.h"
@@ -38,6 +40,72 @@ TEST(PromiseTest, AssertResultType) {
   EXPECT_EQ(AssertResultType<int>(Immediate(42))(), Poll<int>(42));
   // Fails to compile: AssertResultType<int>(Immediate(std::string("hello")));
   // Fails to compile: AssertResultType<int>(Immediate(42.9));
+}
+
+namespace {
+
+template <typename T, typename F, typename = void>
+struct CanAssertResultType : std::false_type {};
+
+template <typename T, typename F>
+struct CanAssertResultType<
+    T, F, std::void_t<decltype(GRPC_ASSERT_RESULT_TYPE(T)(std::declval<F>()))>>
+    : std::true_type {};
+
+class MoveCountingPromise {
+ public:
+  MoveCountingPromise() = delete;
+  MoveCountingPromise(const int value, int* const move_count)
+      : value_(value), move_count_(move_count) {}
+  MoveCountingPromise(const MoveCountingPromise&) = delete;
+  MoveCountingPromise& operator=(const MoveCountingPromise&) = delete;
+  MoveCountingPromise(MoveCountingPromise&& other) noexcept
+      : value_(other.value_), move_count_(other.move_count_) {
+    ++(*move_count_);
+  }
+  MoveCountingPromise& operator=(MoveCountingPromise&&) = delete;
+
+  Poll<int> operator()() { return value_; }
+
+ private:
+  const int value_;
+  int* const move_count_;
+};
+
+MoveCountingPromise MakeMoveCountingPromise(const int value,
+                                            int* const move_count) {
+  return GRPC_ASSERT_RESULT_TYPE(int)(MoveCountingPromise(value, move_count));
+}
+
+}  // namespace
+
+TEST(PromiseTest, GrpcAssertResultTypeMacro) {
+  // Verifies value forwarding, comma-containing result types, and debug-only
+  // type checking.
+  EXPECT_EQ(GRPC_ASSERT_RESULT_TYPE(int)(Immediate(42))(), Poll<int>(42));
+  EXPECT_EQ(NowOrNever(GRPC_ASSERT_RESULT_TYPE(std::pair<int, int>)(
+                Immediate(std::make_pair(1, 2)))),
+            std::make_optional(std::make_pair(1, 2)));
+
+  EXPECT_TRUE((CanAssertResultType<int, decltype(Immediate(42))>::value));
+#ifdef NDEBUG
+  EXPECT_TRUE((CanAssertResultType<int, decltype(Immediate(42.9))>::value));
+#else
+  EXPECT_FALSE((CanAssertResultType<int, decltype(Immediate(42.9))>::value));
+#endif
+}
+
+TEST(PromiseTest, GrpcAssertResultTypeMacroMoveCount) {
+  // Verifies returning through GRPC_ASSERT_RESULT_TYPE elides moves in NDEBUG
+  // builds and costs one move in debug builds.
+  int move_count = 0;
+  MoveCountingPromise promise = MakeMoveCountingPromise(7, &move_count);
+  EXPECT_EQ(promise(), Poll<int>(7));
+#ifdef NDEBUG
+  EXPECT_EQ(move_count, 0);
+#else
+  EXPECT_EQ(move_count, 1);
+#endif
 }
 
 TEST(PromiseTest, NowOrNever) {

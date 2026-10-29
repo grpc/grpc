@@ -620,7 +620,7 @@ Http2Status Http2ClientTransport::ProcessMetadata(
 auto Http2ClientTransport::ReadAndProcessOneFrame() {
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport::ReadAndProcessOneFrame Factory";
-  return AssertResultType<absl::Status>(TrySeq(
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(TrySeq(
       // Fetch the first kFrameHeaderSize bytes of the Frame, these contain
       // the frame header.
       EndpointReadSlice(kFrameHeaderSize),
@@ -647,7 +647,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       [this]() {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::ReadAndProcessOneFrame Read Frame ";
-        return AssertResultType<absl::Status>(
+        return GRPC_ASSERT_RESULT_TYPE(absl::Status)(
             Map(EndpointRead(read_context_.GetCurrentFrameHeader().length),
                 [this](absl::StatusOr<SliceBuffer>&& payload) {
                   if (GPR_UNLIKELY(!payload.ok())) {
@@ -688,7 +688,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
 }
 
 auto Http2ClientTransport::ReadLoop() {
-  return AssertResultType<absl::Status>(Loop([this]() {
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(Loop([this]() {
     return TrySeq(ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
       GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ReadLoop Continue";
       return Continue();
@@ -700,7 +700,7 @@ auto Http2ClientTransport::ReadLoop() {
 // Flow Control for the Transport
 
 auto Http2ClientTransport::BdpLoop() {
-  return AssertResultType<absl::Status>(Loop([this]() {
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(Loop([this]() {
     return TrySeq(
         flow_control_.WaitForBdpActivation(),
         [this]() {
@@ -886,7 +886,7 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
 }
 
 auto Http2ClientTransport::MaybeWriteUrgentFrames() {
-  return AssertResultType<absl::Status>(If(
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(If(
       transport_write_context_.GetWriteCycle().CanSerializeUrgentFrames(),
       [this]() mutable {
         WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
@@ -914,7 +914,7 @@ void Http2ClientTransport::NotifyFramesWriteDone() {
 void Http2ClientTransport::NotifyUrgentFramesWriteDone() {}
 
 auto Http2ClientTransport::SerializeAndWrite() {
-  return AssertResultType<absl::Status>(If(
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(If(
       transport_write_context_.GetWriteCycle().CanSerializeRegularFrames(),
       [this]() mutable {
         WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
@@ -1013,7 +1013,7 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
 // Requests (HTTP2 Streams) and writing them into one common endpoint.
 auto Http2ClientTransport::MultiplexerLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::MultiplexerLoop Factory";
-  return AssertResultType<absl::Status>(Loop([this]() {
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(Loop([this]() {
     return TrySeq(
         Map(writable_stream_list_.WaitForReady(
                 AreTransportFlowControlTokensAvailable()),
@@ -1463,12 +1463,13 @@ auto Http2ClientTransport::CloseTransportFactory(
         // TODO(akshitpatel) : [PH2][P4] : This is creating a copy of
         // the debug data. Verify if this is causing a performance
         // issue.
-        Race(AssertResultType<absl::Status>(self->goaway_manager_.RequestGoaway(
-                 http2_status.GetConnectionErrorCode(),
-                 /*debug_data=*/
-                 Slice::FromCopiedString(
-                     http2_status.GetAbslConnectionError().message()),
-                 kLastIncomingStreamIdClient, /*immediate=*/true)),
+        Race(GRPC_ASSERT_RESULT_TYPE(absl::Status)(
+                 self->goaway_manager_.RequestGoaway(
+                     http2_status.GetConnectionErrorCode(),
+                     /*debug_data=*/
+                     Slice::FromCopiedString(
+                         http2_status.GetAbslConnectionError().message()),
+                     kLastIncomingStreamIdClient, /*immediate=*/true)),
              // Failsafe to close.
              Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
         [self](auto) mutable {

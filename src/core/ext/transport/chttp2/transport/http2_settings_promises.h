@@ -161,7 +161,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
         << "SettingsPromiseManager::WaitForSettingsTimeout Factory timeout_"
         << settings_ack_timeout_;
     StartSettingsTimeoutTimer();
-    return AssertResultType<absl::Status>(Race(
+    return GRPC_ASSERT_RESULT_TYPE(absl::Status)(Race(
         [self = this->Ref()]() -> Poll<absl::Status> {
           GRPC_SETTINGS_TIMEOUT_DLOG
               << "SettingsPromiseManager::WaitForSettingsTimeout Race";

@@ -277,7 +277,7 @@ class PingManager {
   auto TimeoutPromise(PingTimeoutArgs args) {
     InterActivityLatch<void>* const timeout_latch = args.timeout.get();
     Latch<void>* const ack_latch = args.ack.get();
-    return AssertResultType<absl::Status>(Race(
+    return GRPC_ASSERT_RESULT_TYPE(absl::Status)(Race(
         Seq(timeout_latch->Wait(),
             [this, timeout = std::move(args.timeout),
              opaque_data = args.opaque_data](Empty) {

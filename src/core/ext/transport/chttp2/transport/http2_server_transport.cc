@@ -264,7 +264,7 @@ auto Http2ServerTransport::EndpointWrite(SliceBuffer&& output_buf) {
 }
 
 auto Http2ServerTransport::SerializeAndWrite() {
-  return AssertResultType<absl::Status>(If(
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(If(
       transport_write_context_.GetWriteCycle().CanSerializeRegularFrames(),
       [this]() mutable {
         WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
@@ -763,7 +763,7 @@ Http2Status Http2ServerTransport::ProcessMetadata() {
 auto Http2ServerTransport::ReadAndProcessOneFrame() {
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ReadAndProcessOneFrame Factory";
-  return AssertResultType<absl::Status>(TrySeq(
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(TrySeq(
       // Fetch the first kFrameHeaderSize bytes of the Frame, these contain
       // the frame header.
       EndpointReadSlice(kFrameHeaderSize),
@@ -790,7 +790,7 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
       [this]() {
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::ReadAndProcessOneFrame Read Frame ";
-        return AssertResultType<absl::Status>(
+        return GRPC_ASSERT_RESULT_TYPE(absl::Status)(
             Map(EndpointRead(read_context_.GetCurrentFrameHeader().length),
                 [this](absl::StatusOr<SliceBuffer>&& payload) {
                   if (GPR_UNLIKELY(!payload.ok())) {
@@ -831,7 +831,7 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
 }
 
 auto Http2ServerTransport::ReadLoop() {
-  return AssertResultType<absl::Status>(Loop([this]() {
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(Loop([this]() {
     return TrySeq(ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
       GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ReadLoop Continue";
       return Continue();
@@ -917,7 +917,7 @@ absl::Status Http2ServerTransport::PrepareControlFrames() {
 }
 
 auto Http2ServerTransport::MaybeWriteUrgentFrames() {
-  return AssertResultType<absl::Status>(If(
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(If(
       transport_write_context_.GetWriteCycle().CanSerializeUrgentFrames(),
       [this]() mutable {
         WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
@@ -1021,7 +1021,7 @@ absl::Status Http2ServerTransport::DequeueStreamFrames(
 // Requests (HTTP2 Streams) and writing them into one common endpoint.
 auto Http2ServerTransport::MultiplexerLoop() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::MultiplexerLoop Factory";
-  return AssertResultType<absl::Status>(Loop([this]() {
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(Loop([this]() {
     return TrySeq(
         Map(writable_stream_list_.WaitForReady(
                 AreTransportFlowControlTokensAvailable()),
@@ -1191,7 +1191,7 @@ void Http2ServerTransport::MaybeGetWindowUpdateFrames(
 }
 
 auto Http2ServerTransport::BdpLoop() {
-  return AssertResultType<absl::Status>(Loop([this]() {
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(Loop([this]() {
     return TrySeq(
         flow_control_.WaitForBdpActivation(),
         [this]() {
@@ -1961,14 +1961,15 @@ auto Http2ServerTransport::CloseTransportFactory(
     self->tarpit_manager_.Shutdown();
     self->CloseAllActiveStreams(std::move(stream_list), http2_status, whence);
 
-    // Sleep for kGoawaySendTimeoutSeconds before closing the transport to
-    // let write buffers drain.
     return Map(
-        Race(AssertResultType<absl::Status>(self->goaway_manager_.RequestGoaway(
-                 http2_status.GetConnectionErrorCode(),
-                 Slice::FromCopiedString(std::string(
-                     http2_status.GetAbslConnectionError().message())),
-                 self->GetLastStreamId(), /*immediate=*/true)),
+        // Sleep for kGoawaySendTimeoutSeconds before closing the transport to
+        // let write buffers drain.
+        Race(GRPC_ASSERT_RESULT_TYPE(absl::Status)(
+                 self->goaway_manager_.RequestGoaway(
+                     http2_status.GetConnectionErrorCode(),
+                     Slice::FromCopiedString(std::string(
+                         http2_status.GetAbslConnectionError().message())),
+                     self->GetLastStreamId(), /*immediate=*/true)),
              Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
         [self](absl::Status) mutable {
           self->CloseTransport();

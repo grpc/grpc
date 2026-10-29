@@ -650,7 +650,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   auto SecurityFrameLoop() {
     GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SecurityFrameLoop Factory";
-    return AssertResultType<Empty>(Loop([this]() {
+    return GRPC_ASSERT_RESULT_TYPE(Empty)(Loop([this]() {
       return Map(security_frame_handler_->WaitForSecurityFrameSending(),
                  [this](Empty) -> LoopCtl<Empty> {
                    if (security_frame_handler_->TriggerWriteSecurityFrame()

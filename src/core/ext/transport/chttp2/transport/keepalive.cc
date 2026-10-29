@@ -40,8 +40,8 @@ KeepaliveManager::KeepaliveManager(
       keepalive_time_(keepalive_time) {}
 
 auto KeepaliveManager::WaitForKeepAliveTimeout() {
-  return AssertResultType<absl::Status>(
-      TrySeq(Sleep(keepalive_timeout_), [this] {
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(TrySeq(
+      Sleep(keepalive_timeout_), [this] {
         return If(
             data_received_in_last_cycle_,
             [] {
@@ -73,7 +73,7 @@ auto KeepaliveManager::TimeoutAndSendPing() {
 }
 auto KeepaliveManager::MaybeSendKeepAlivePing() {
   GRPC_HTTP2_KEEPALIVE_LOG << "KeepaliveManager::MaybeSendKeepAlivePing";
-  return AssertResultType<absl::Status>(
+  return GRPC_ASSERT_RESULT_TYPE(absl::Status)(
       TrySeq(If(
                  NeedToSendKeepAlivePing(),
                  [this]() {

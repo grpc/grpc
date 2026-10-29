@@ -325,17 +325,17 @@ class GoawayManager {
   // once the final GOAWAY frame is sent.
   auto RequestGoaway(const Http2ErrorCode error_code, Slice&& debug_data,
                      const uint32_t last_good_stream_id, const bool immediate) {
-    return AssertResultType<absl::Status>(UntilDone(If(
+    return GRPC_ASSERT_RESULT_TYPE(absl::Status)(UntilDone(If(
         immediate,
         [ctx = context_->Ref(), error_code, debug_data = debug_data.Ref(),
          last_good_stream_id]() mutable {
-          return AssertResultType<absl::Status>(HandleImmediateGoaway(
+          return GRPC_ASSERT_RESULT_TYPE(absl::Status)(HandleImmediateGoaway(
               std::move(ctx), error_code, std::move(debug_data),
               last_good_stream_id));
         },
         [ctx = context_->Ref(), error_code, debug_data = debug_data.Ref(),
          last_good_stream_id]() mutable {
-          return AssertResultType<absl::Status>(
+          return GRPC_ASSERT_RESULT_TYPE(absl::Status)(
               HandleGracefulGoaway(std::move(ctx), error_code,
                                    std::move(debug_data), last_good_stream_id));
         })));

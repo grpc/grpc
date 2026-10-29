@@ -90,6 +90,7 @@ struct ImmediateOkStatus {
 
 // Typecheck that a promise returns the expected return type.
 // usage: auto promise = AssertResultType<int>([]() { return 3; });
+// Prefer GRPC_ASSERT_RESULT_TYPE, which is a no-op in NDEBUG builds.
 // NOTE: there are tests in promise_test.cc that are commented out because they
 // should fail to compile. When modifying this code these should be uncommented
 // and their miscompilation verified.
@@ -104,5 +105,14 @@ using PromiseResult = typename PollTraits<
     typename promise_detail::PromiseLike<Promise>::Result>::Type;
 
 }  // namespace grpc_core
+
+// Asserts that a promise returns Poll<T> in debug builds. Expands to nothing
+// in NDEBUG builds, avoiding template instantiation and extra promise moves.
+// Usage: GRPC_ASSERT_RESULT_TYPE(int)(Immediate(3))
+#ifndef NDEBUG
+#define GRPC_ASSERT_RESULT_TYPE(...) ::grpc_core::AssertResultType<__VA_ARGS__>
+#else
+#define GRPC_ASSERT_RESULT_TYPE(...)
+#endif
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_PROMISE_H
