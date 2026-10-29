@@ -43,6 +43,11 @@ constexpr double kBackoffMultiplier = 1.6;
 constexpr double kBackoffJitter = 0.2;
 constexpr Duration kMaxBackoff = Duration::Seconds(120);
 
+// Maximum length of AssignmentAck.error_message, in Unicode code points.
+// The builder creates only ASCII messages, so bytes and code points are the
+// same.
+constexpr size_t kMaxAckErrorMessageLength = 512;
+
 std::string SerializeRequest(
     const google_cloud_autosharding_v1_WatchShardingAssignmentRequest* request,
     upb_Arena* arena) {
@@ -84,7 +89,8 @@ std::string CreateAssignmentAckRequest(int64_t generation, bool accepted,
   google_cloud_autosharding_v1_AssignmentAck_set_generation(ack, generation);
   google_cloud_autosharding_v1_AssignmentAck_set_accepted(ack, accepted);
   google_cloud_autosharding_v1_AssignmentAck_set_error_message(
-      ack, StdStringToUpbString(error_message));
+      ack,
+      StdStringToUpbString(error_message.substr(0, kMaxAckErrorMessageLength)));
   return SerializeRequest(request, arena.ptr());
 }
 
@@ -119,9 +125,12 @@ class AutoshardingClient::StreamCall final
   // Builds the assignment and sends the AssignmentAck.
   void HandleMetadataLocked(int64_t generation);
 
-  RefCountedPtr<AutoshardingClient> client_;
+  const RefCountedPtr<AutoshardingClient> client_;
   OrphanablePtr<XdsTransport::StreamingCall> streaming_call_;
-  bool seen_valid_assignment_ = false;
+  // Chunks of the assignment in progress on this stream.  A new stream
+  // starts with a new builder, so a partial assignment is never used.
+  AutoshardingAssignmentBuilder builder_;
+  bool seen_response_ = false;
 };
 
 // Moves each stream event into the WorkSerializer.
@@ -170,9 +179,9 @@ AutoshardingClient::StreamCall::StreamCall(
   GRPC_TRACE_LOG(autosharding_lb, INFO)
       << "[autosharding_client " << client_.get() << "] starting stream "
       << this << " for target \"" << client_->target_ << "\"";
-  streaming_call_->SendMessage(CreateInitialClientConfigRequest(
-      client_->target_, client_->client_uuid_,
-      client_->builder_.last_accepted_generation()));
+  streaming_call_->SendMessage(
+      CreateInitialClientConfigRequest(client_->target_, client_->client_uuid_,
+                                       client_->last_accepted_generation_));
 }
 
 void AutoshardingClient::StreamCall::Orphan() {
@@ -200,12 +209,13 @@ void AutoshardingClient::StreamCall::OnRecvMessageLocked(
   // incomplete.  Fail the stream, so that the server resends everything.
   if (response == nullptr) {
     client_->OnStreamFinishedLocked(
-        seen_valid_assignment_,
+        seen_response_,
         absl::InternalError(
             "cannot parse WatchShardingAssignmentResponse from autosharding "
             "server"));
     return;
   }
+  seen_response_ = true;
   if (const auto* metadata =
           google_cloud_autosharding_v1_WatchShardingAssignmentResponse_metadata(
               response);
@@ -220,14 +230,14 @@ void AutoshardingClient::StreamCall::OnRecvMessageLocked(
           google_cloud_autosharding_v1_WatchShardingAssignmentResponse_chunk(
               response);
       chunk != nullptr) {
-    client_->builder_.AddChunk(chunk);
+    builder_.AddChunk(chunk);
   }
   streaming_call_->StartRecvMessage();
 }
 
 void AutoshardingClient::StreamCall::HandleMetadataLocked(int64_t generation) {
   AutoshardingAssignmentBuilder::Result result =
-      client_->builder_.Build(generation);
+      builder_.Build(generation, client_->last_accepted_generation_);
   const bool accepted =
       result.outcome == AutoshardingAssignmentBuilder::Outcome::kAccepted;
   GRPC_TRACE_LOG(autosharding_lb, INFO)
@@ -245,8 +255,8 @@ void AutoshardingClient::StreamCall::HandleMetadataLocked(int64_t generation) {
                        result.error_message)));
       break;
     case AutoshardingAssignmentBuilder::Outcome::kAccepted:
-      seen_valid_assignment_ = true;
-      client_->ReportAssignmentLocked(std::move(*result.assignment));
+      client_->ReportAssignmentLocked(generation,
+                                      std::move(*result.assignment));
       break;
   }
 }
@@ -257,7 +267,7 @@ void AutoshardingClient::StreamCall::OnStatusReceivedLocked(
   GRPC_TRACE_LOG(autosharding_lb, INFO)
       << "[autosharding_client " << client_.get() << "] stream " << this
       << " ended: " << status;
-  client_->OnStreamFinishedLocked(seen_valid_assignment_, std::move(status));
+  client_->OnStreamFinishedLocked(seen_response_, std::move(status));
 }
 
 //
@@ -291,9 +301,10 @@ AutoshardingClient::AutoshardingClient(Args args)
 }
 
 void AutoshardingClient::Orphan() {
-  // Release anything that the callback holds now.  This client can live on
-  // until the transport releases the stream.
-  on_result_ = nullptr;
+  // Stopping the stream and the timers is enough to stop the callback: stream
+  // events are ignored unless they come from stream_, and timer events are
+  // ignored unless their handle is set.  The callback is kept until the
+  // destructor, so it is never destroyed while it runs.
   stream_.reset();
   if (retry_timer_handle_.has_value()) {
     event_engine_->Cancel(*retry_timer_handle_);
@@ -303,17 +314,23 @@ void AutoshardingClient::Orphan() {
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
+void AutoshardingClient::ResetBackoffLocked() {
+  backoff_.Reset();
+  transport_->ResetBackoff();
+}
+
 void AutoshardingClient::StartStreamLocked() {
   GRPC_CHECK(stream_ == nullptr);
   stream_ = MakeOrphanable<StreamCall>(Ref(DEBUG_LOCATION, "StreamCall"));
 }
 
-void AutoshardingClient::OnStreamFinishedLocked(bool seen_valid_assignment,
+void AutoshardingClient::OnStreamFinishedLocked(bool seen_response,
                                                 absl::Status status) {
+  // The chunks of a partial assignment are dropped with the stream.  The
+  // accepted generation is kept.
   stream_.reset();
-  // Drop the chunks of a partial assignment.
-  builder_.Reset();
-  if (seen_valid_assignment) backoff_.Reset();
+  // Same as XdsClient: reset the backoff if the stream received any response.
+  if (seen_response) backoff_.Reset();
   // Start the retry timer before reporting the error, so that the timer is
   // cancelled if the result callback orphans this client.
   StartRetryTimerLocked();
@@ -356,15 +373,16 @@ void AutoshardingClient::CancelInitialAssignmentTimerLocked() {
 }
 
 void AutoshardingClient::ReportAssignmentLocked(
-    AutoshardingAssignment assignment) {
+    int64_t generation, AutoshardingAssignment assignment) {
+  // Update the state before the callback, because the callback can orphan
+  // this client.
+  last_accepted_generation_ = generation;
   CancelInitialAssignmentTimerLocked();
   on_result_(std::move(assignment));
 }
 
 void AutoshardingClient::ReportErrorLocked(absl::Status status) {
-  // Accepted generations are always greater than 0, so a non-zero value
-  // means that a valid assignment was reported.
-  if (builder_.last_accepted_generation() > 0) return;
+  if (HasReportedAssignmentLocked()) return;
   // The first result, whether an assignment or an error, ends the wait for
   // the initial assignment (gRFC A119).
   CancelInitialAssignmentTimerLocked();

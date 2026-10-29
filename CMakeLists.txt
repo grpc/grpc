@@ -3024,6 +3024,7 @@ add_library(grpc
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/autosharding/autosharding.cc
   src/core/load_balancing/autosharding/autosharding_assignment.cc
+  src/core/load_balancing/autosharding/autosharding_client.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -3860,6 +3861,7 @@ add_library(grpc_unsecure
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/autosharding/autosharding.cc
   src/core/load_balancing/autosharding/autosharding_assignment.cc
+  src/core/load_balancing/autosharding/autosharding_client.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -8965,7 +8967,6 @@ add_executable(autosharding_client_test
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
-  src/core/load_balancing/autosharding/autosharding_client.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/load_balancing/autosharding_client_test.cc

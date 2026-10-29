@@ -1868,6 +1868,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/load_balancing/autosharding/autosharding.h )
   s.files += %w( src/core/load_balancing/autosharding/autosharding_assignment.cc )
   s.files += %w( src/core/load_balancing/autosharding/autosharding_assignment.h )
+  s.files += %w( src/core/load_balancing/autosharding/autosharding_client.cc )
+  s.files += %w( src/core/load_balancing/autosharding/autosharding_client.h )
   s.files += %w( src/core/load_balancing/backend_metric_data.h )
   s.files += %w( src/core/load_balancing/backend_metric_parser.cc )
   s.files += %w( src/core/load_balancing/backend_metric_parser.h )

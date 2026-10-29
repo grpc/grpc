@@ -1181,6 +1181,7 @@ libs:
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/autosharding/autosharding.h
   - src/core/load_balancing/autosharding/autosharding_assignment.h
+  - src/core/load_balancing/autosharding/autosharding_client.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -2151,6 +2152,7 @@ libs:
   - src/core/load_balancing/address_filtering.cc
   - src/core/load_balancing/autosharding/autosharding.cc
   - src/core/load_balancing/autosharding/autosharding_assignment.cc
+  - src/core/load_balancing/autosharding/autosharding_client.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -2956,6 +2958,7 @@ libs:
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/autosharding/autosharding.h
   - src/core/load_balancing/autosharding/autosharding_assignment.h
+  - src/core/load_balancing/autosharding/autosharding_client.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
@@ -3454,6 +3457,7 @@ libs:
   - src/core/load_balancing/address_filtering.cc
   - src/core/load_balancing/autosharding/autosharding.cc
   - src/core/load_balancing/autosharding/autosharding_assignment.cc
+  - src/core/load_balancing/autosharding/autosharding_client.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
@@ -6529,7 +6533,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/load_balancing/autosharding/autosharding_client.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/xds/xds_transport_fake.h
@@ -6537,7 +6540,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - third_party/autosharding/proto/autosharding/v1/autosharding.proto
   - third_party/googleapis/google/api/field_behavior.proto
-  - src/core/load_balancing/autosharding/autosharding_client.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/load_balancing/autosharding_client_test.cc

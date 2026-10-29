@@ -1862,6 +1862,8 @@ let package = Package(
         "src/core/load_balancing/autosharding/autosharding.h",
         "src/core/load_balancing/autosharding/autosharding_assignment.cc",
         "src/core/load_balancing/autosharding/autosharding_assignment.h",
+        "src/core/load_balancing/autosharding/autosharding_client.cc",
+        "src/core/load_balancing/autosharding/autosharding_client.h",
         "src/core/load_balancing/backend_metric_data.h",
         "src/core/load_balancing/backend_metric_parser.cc",
         "src/core/load_balancing/backend_metric_parser.h",

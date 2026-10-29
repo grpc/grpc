@@ -1849,6 +1849,8 @@
     <file baseinstalldir="/" name="src/core/load_balancing/autosharding/autosharding.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/autosharding/autosharding_assignment.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/autosharding/autosharding_assignment.h" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/autosharding/autosharding_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/autosharding/autosharding_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_parser.h" role="src" />

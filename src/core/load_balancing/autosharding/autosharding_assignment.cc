@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "proto/autosharding/v1/autosharding.upb.h"
 #include "src/core/util/upb_utils.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -81,8 +82,10 @@ void AutoshardingAssignmentBuilder::AddChunk(
         google_cloud_autosharding_v1_SliceAssignment_endpoints(
             slice_assignments[i], &num_endpoints);
     pending.endpoints.reserve(num_endpoints);
+    // Copy the indices, and stop at the first negative one.  If not all
+    // indices were copied, the slice is invalid and is dropped.
     for (size_t j = 0; j < num_endpoints; ++j) {
-      int32_t index =
+      const int32_t index =
           google_cloud_autosharding_v1_PerSliceEndpointState_endpoint_index(
               endpoints[j]);
       if (index < 0) break;
@@ -106,7 +109,7 @@ void AutoshardingAssignmentBuilder::AddChunk(
   }
 }
 
-void AutoshardingAssignmentBuilder::Reset() {
+void AutoshardingAssignmentBuilder::ClearChunks() {
   num_chunks_ = 0;
   num_slice_assignments_ = 0;
   slices_.clear();
@@ -146,7 +149,7 @@ std::string AutoshardingAssignmentBuilder::IssueMessages(
 }
 
 AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
-    int64_t generation) {
+    int64_t generation, int64_t last_accepted_generation) {
   // Take the pending chunks, so that the builder is empty for the next
   // assignment, whatever the outcome.
   const size_t num_chunks = num_chunks_;
@@ -154,13 +157,13 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
   std::vector<PendingSlice> slices = std::move(slices_);
   std::vector<std::string> endpoint_names = std::move(endpoint_names_);
   IssueCounts counts = issue_counts_;
-  Reset();
+  ClearChunks();
   // Check the generation.
-  if (generation <= last_accepted_generation_) {
+  if (generation <= last_accepted_generation) {
     return {Outcome::kStale,
             absl::StrCat("received generation ", generation,
                          " is not greater than the latest generation ",
-                         last_accepted_generation_),
+                         last_accepted_generation),
             std::nullopt};
   }
   if (num_chunks == 0) {
@@ -184,10 +187,14 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
   size_t num_gaps = 0;
   PendingSlice* candidate = nullptr;
   auto append_candidate = [&]() {
-    absl::string_view prev_end_key = assignment.slices.empty()
-                                         ? absl::string_view()
-                                         : assignment.slices.back().end_key;
-    if (candidate->start_key > prev_end_key) {
+    // The first slice implicitly starts at -infinity.  Compare before moving
+    // start_key, and do not hold on to a view of the last end key across the
+    // push_back() below, since that can reallocate the vector.
+    const bool needs_gap =
+        assignment.slices.empty()
+            ? !candidate->start_key.empty()
+            : candidate->start_key > assignment.slices.back().end_key;
+    if (needs_gap) {
       assignment.slices.push_back({std::move(candidate->start_key), {}, false});
       ++num_gaps;
     }
@@ -197,12 +204,11 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
         {std::move(candidate->end_key).value_or(std::string()),
          std::move(candidate->endpoints), fallback_disabled});
   };
-  // Largest end_key seen so far. An empty string_view represents
-  // -infinity (the state before seeing any slice); std::nullopt represents
-  // +infinity. Points into the end_key of a slice in slices.  When that
-  // slice is the candidate, append_candidate() moves its end_key out, so
-  // max_end_key is reassigned right after each call.
-  std::optional<absl::string_view> max_end_key = absl::string_view();
+  // Largest end_key seen so far.  An empty string represents -infinity (the
+  // state before seeing any slice); std::nullopt represents +infinity.  This
+  // is a copy, not a view, because append_candidate() moves end_key out of
+  // the candidate slice.
+  std::optional<std::string> max_end_key = std::string();
   for (PendingSlice& slice : slices) {
     bool has_invalid_endpoint = false;
     for (size_t index : slice.endpoints) {
@@ -253,7 +259,6 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
     ++num_gaps;
   }
   assignment.endpoint_names = std::move(endpoint_names);
-  last_accepted_generation_ = generation;
   return {Outcome::kAccepted, IssueMessages(counts, num_gaps),
           std::move(assignment)};
 }

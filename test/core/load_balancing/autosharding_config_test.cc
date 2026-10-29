@@ -25,9 +25,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -150,6 +152,22 @@ TEST(AutoShardingConfigTest, EmptyFields) {
                 "[field:autoshardingTarget error:must be non-empty; "
                 "field:channelFactoryKey error:must be non-empty; "
                 "field:keyHeaderName error:must be non-empty]"));
+}
+
+TEST(AutoShardingConfigTest, InvalidKeyHeaderName) {
+  for (const char* key_header_name : {"X-Slice-Key", ":method", "x y"}) {
+    const std::string lb_config_json = absl::StrCat(
+        "[{\"autosharding_experimental\":{"
+        "\"channelFactoryKey\": \"sharding_service\","
+        "\"autoshardingTarget\": \"my_autosharding_target\","
+        "\"keyHeaderName\": \"",
+        key_header_name, "\"}}]");
+    auto config = ParseConfig(lb_config_json);
+    ASSERT_FALSE(config.ok()) << key_header_name;
+    EXPECT_THAT(config.status().ToString(),
+                ::testing::HasSubstr("field:keyHeaderName"))
+        << key_header_name;
+  }
 }
 
 TEST(AutoShardingConfigTest, ZeroInitialAssignmentTimeout) {

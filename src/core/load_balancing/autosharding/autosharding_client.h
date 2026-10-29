@@ -19,6 +19,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -44,8 +45,17 @@ namespace grpc_core {
 // - Collects assignment chunks, validates each complete assignment, and
 //   sends an AssignmentAck for it.
 // - Restarts the stream with exponential backoff when it fails.  The
-//   backoff is reset when a stream receives a valid assignment.
+//   backoff is reset when a stream receives any response.
 // - Runs the initial assignment timer.
+//
+// A client instance is scoped to one (channel factory key, autosharding
+// target) pair.  The LB policy creates a new client whenever either of those
+// changes, which resets the assignment generation: the new client may be
+// talking to a different sharding service or a different target, so a
+// generation from the previous client is not meaningful (gRFC A119).  The
+// generation survives stream restarts within one client.  The client reports
+// errors only until it has reported a valid assignment; after that, the LB
+// policy keeps using the last valid assignment.
 //
 // All methods, including the constructor, must be called from the
 // WorkSerializer.  The result callback is also called from the
@@ -54,7 +64,9 @@ class AutoshardingClient final
     : public InternallyRefCounted<AutoshardingClient> {
  public:
   // Receives each valid assignment, or an error if no valid assignment
-  // was reported yet.  Not called after Orphan().
+  // was reported yet.  Not called after Orphan().  The callback is destroyed
+  // with the client, which can be after Orphan(), so it can hold a ref to the
+  // LB policy.
   using ResultCallback =
       absl::AnyInvocable<void(absl::StatusOr<AutoshardingAssignment>)>;
 
@@ -83,30 +95,47 @@ class AutoshardingClient final
   // Stops the stream and the timers.
   void Orphan() override;
 
+  // Resets the stream retry backoff and the transport's connection backoff.
+  // Does not restart a stream whose retry timer is pending.
+  void ResetBackoffLocked();
+
  private:
   class StreamCall;
 
   void StartStreamLocked();
-  // Called when the current stream ends.  seen_valid_assignment is true if
-  // the stream received a valid assignment.
-  void OnStreamFinishedLocked(bool seen_valid_assignment, absl::Status status);
+  // Called when the current stream ends.  seen_response is true if the
+  // stream received any response.
+  void OnStreamFinishedLocked(bool seen_response, absl::Status status);
   void StartRetryTimerLocked();
   void OnRetryTimerLocked();
   void OnInitialAssignmentTimerLocked();
   void CancelInitialAssignmentTimerLocked();
 
-  void ReportAssignmentLocked(AutoshardingAssignment assignment);
+  // Stores generation as the last accepted generation, and reports
+  // assignment.
+  void ReportAssignmentLocked(int64_t generation,
+                              AutoshardingAssignment assignment);
   // Does nothing if a valid assignment was reported before.
   void ReportErrorLocked(absl::Status status);
 
-  RefCountedPtr<XdsTransport> transport_;
+  // An accepted generation is always greater than 0, so a non-zero value
+  // means that a valid assignment was reported.
+  bool HasReportedAssignmentLocked() const {
+    return last_accepted_generation_ > 0;
+  }
+
+  const RefCountedPtr<XdsTransport> transport_;
   const std::string target_;
   const std::string client_uuid_;
-  std::shared_ptr<WorkSerializer> work_serializer_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  const std::shared_ptr<WorkSerializer> work_serializer_;
+  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+      event_engine_;
   ResultCallback on_result_;
 
-  AutoshardingAssignmentBuilder builder_;
+  // Generation of the last accepted assignment, or 0 if none.  Sent as
+  // InitialClientConfig.latest_generation on each new stream.  Each stream
+  // has its own AutoshardingAssignmentBuilder for the chunks.
+  int64_t last_accepted_generation_ = 0;
   BackOff backoff_;
   OrphanablePtr<StreamCall> stream_;
   std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>

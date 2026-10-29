@@ -786,6 +786,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/load_balancing/address_filtering.cc \
     src/core/load_balancing/autosharding/autosharding.cc \
     src/core/load_balancing/autosharding/autosharding_assignment.cc \
+    src/core/load_balancing/autosharding/autosharding_client.cc \
     src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \

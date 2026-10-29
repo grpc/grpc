@@ -620,16 +620,23 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":lb_policy_test_lib",
+        "//:autosharding_upb",
         "//:endpoint_addresses",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:orphanable",
         "//:ref_counted_ptr",
+        "//:xds_transport",
         "//src/core:channel_args",
+        "//src/core:channel_factory",
         "//src/core:grpc_lb_policy_autosharding",
         "//src/core:json",
         "//src/core:lb_policy",
         "//src/core:time",
+        "//src/core:upb_utils",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 

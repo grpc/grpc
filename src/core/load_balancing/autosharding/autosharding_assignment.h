@@ -23,7 +23,9 @@
 #include <string>
 #include <vector>
 
-#include "proto/autosharding/v1/autosharding.upb.h"
+// Forward declaration, so that this header does not depend on the wire
+// format.  Only the builder needs the proto.
+struct google_cloud_autosharding_v1_AssignmentChunk;
 
 namespace grpc_core {
 
@@ -54,11 +56,17 @@ struct AutoshardingAssignment {
 // then builds and validates the assignment when the AssignmentMetadata
 // message arrives (gRFC A119).
 //
+// A builder instance is scoped to one WatchShardingAssignment stream.  A new
+// stream uses a new builder, so the chunks of a partial assignment from a
+// failed stream are never used.  The builder does not store the accepted
+// generation, because that value must survive stream restarts: the caller
+// owns it and passes it to Build().
+//
 // Not thread-safe.
 class AutoshardingAssignmentBuilder final {
  public:
   enum class Outcome {
-    // The generation is not newer than the last accepted generation.
+    // The generation is not greater than the last accepted generation.
     // Send a NACK.  Do not tell the LB policy.
     kStale,
     // The assignment has no usable slice.  Send a NACK.  Report an error
@@ -72,8 +80,9 @@ class AutoshardingAssignmentBuilder final {
   struct Result {
     Outcome outcome;
     // Value for AssignmentAck.error_message.  Empty if there was no issue.
-    // The message holds only counts, so it is always shorter than the
-    // 512-character limit of that field.
+    // The message holds only counts and the generation, so it is short in
+    // practice; the caller still truncates it to the 512-character limit of
+    // that field.
     std::string error_message;
     // Set only if outcome is kAccepted.
     std::optional<AutoshardingAssignment> assignment;
@@ -84,18 +93,15 @@ class AutoshardingAssignmentBuilder final {
   void AddChunk(const google_cloud_autosharding_v1_AssignmentChunk* chunk);
 
   // Builds the assignment from the chunks added since the last call to
-  // Build() or Reset(), and then clears those chunks.
+  // Build(), and then clears those chunks, whatever the outcome.
   // generation is the value from the AssignmentMetadata message.
-  Result Build(int64_t generation);
-
-  // Discards all chunks added since the last call to Build().  Call this
-  // when the stream restarts in the middle of an assignment.
-  void Reset();
-
-  // Generation of the last accepted assignment, or 0 if no assignment was
-  // accepted yet.  An accepted generation is always greater than 0, because
-  // Build() rejects any generation that is not greater than this value.
-  int64_t last_accepted_generation() const { return last_accepted_generation_; }
+  // last_accepted_generation is the generation of the last accepted
+  // assignment, or 0 if no assignment was accepted yet.  If the outcome is
+  // kAccepted, the caller must store generation as the new
+  // last_accepted_generation.  The caller starts at 0, and generation must be
+  // greater than last_accepted_generation, so an accepted generation is
+  // always greater than 0.
+  Result Build(int64_t generation, int64_t last_accepted_generation);
 
  private:
   struct PendingSlice {
@@ -117,7 +123,9 @@ class AutoshardingAssignmentBuilder final {
   // Formats the issues as a semicolon-separated string.
   static std::string IssueMessages(const IssueCounts& counts, size_t num_gaps);
 
-  int64_t last_accepted_generation_ = 0;
+  // Discards the chunks added since the last call to Build().
+  void ClearChunks();
+
   size_t num_chunks_ = 0;
   size_t num_slice_assignments_ = 0;
   // Slices that passed the checks that do not need the complete endpoint

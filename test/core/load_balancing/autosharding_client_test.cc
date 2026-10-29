@@ -173,10 +173,22 @@ class AutoshardingClientTest : public ::testing::Test {
   RefCountedPtr<Stream> FailStreamAndWaitForNewStream(Stream* old_stream) {
     old_stream->MaybeSendStatusToClient(
         absl::UnavailableError("stream failed"));
-    while (!old_stream->IsOrphaned()) {
+    // On timeout, return null, so that the caller's ASSERT_NE stops the test.
+    if (!WaitForOrphaned(old_stream)) return nullptr;
+    return WaitForStream();
+  }
+
+  // Waits until the client orphans stream, for up to 1 minute of virtual
+  // time, so that a bug fails the test instead of hanging it.  Returns true
+  // if the stream was orphaned.
+  bool WaitForOrphaned(Stream* stream) {
+    const auto deadline = event_engine_->Now() + std::chrono::minutes(1);
+    while (!stream->IsOrphaned() && event_engine_->Now() < deadline) {
       event_engine_->Tick(std::chrono::milliseconds(1));
     }
-    return WaitForStream();
+    EXPECT_TRUE(stream->IsOrphaned()) << "timed out waiting for the stream "
+                                         "to be orphaned";
+    return stream->IsOrphaned();
   }
 
   static std::optional<WatchShardingAssignmentRequest> ReadRequest(
@@ -222,9 +234,17 @@ class AutoshardingClientTest : public ::testing::Test {
     Send(stream, MakeMetadata(generation));
   }
 
-  // Waits for the next result.
+  // Waits for the next result, for up to 30 minutes of virtual time, so that
+  // a missing result fails the test instead of hanging it.
   absl::StatusOr<AutoshardingAssignment> WaitForResult() {
-    while (results_.empty()) event_engine_->Tick();
+    const auto deadline = event_engine_->Now() + std::chrono::minutes(30);
+    while (results_.empty() && event_engine_->Now() < deadline) {
+      event_engine_->Tick();
+    }
+    if (results_.empty()) {
+      ADD_FAILURE() << "timed out waiting for a result";
+      return absl::DeadlineExceededError("no result");
+    }
     auto result = std::move(results_.front());
     results_.erase(results_.begin());
     return result;
@@ -314,6 +334,53 @@ TEST_F(AutoshardingClientTest, StaleGenerationIsNackedAndNotReported) {
             "generation 2");
   DrainWork();
   EXPECT_TRUE(results_.empty());
+}
+
+TEST_F(AutoshardingClientTest, MultipleAssignmentsOnOneStream) {
+  CreateClient();
+  auto stream = WaitForStream();
+  ASSERT_NE(stream, nullptr);
+  ExpectInitialClientConfig(stream.get(), 0);
+  SendValidAssignment(stream.get(), 1);
+  ExpectAck(stream.get(), 1, true, "");
+  ASSERT_TRUE(WaitForResult().ok());
+  // A stale generation on the same stream is NACKed and not reported.
+  Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host1"}));
+  Send(stream.get(), MakeMetadata(1));
+  ExpectAck(stream.get(), 1, false,
+            "received generation 1 is not greater than the latest "
+            "generation 1");
+  // A newer generation on the same stream is accepted and reported.  It has
+  // only its own chunks, not the chunks of the stale assignment.
+  Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host2"}));
+  Send(stream.get(), MakeMetadata(2));
+  ExpectAck(stream.get(), 2, true, "");
+  auto result = WaitForResult();
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_THAT(result->endpoint_names, ElementsAre("host2"));
+  DrainWork();
+  EXPECT_TRUE(results_.empty());
+}
+
+TEST_F(AutoshardingClientTest, RejectedThenValidAssignmentOnOneStream) {
+  CreateClient();
+  auto stream = WaitForStream();
+  ASSERT_NE(stream, nullptr);
+  ExpectInitialClientConfig(stream.get(), 0);
+  Send(stream.get(), MakeChunk({{"b", "a", {0}}}, {"host0"}));
+  Send(stream.get(), MakeMetadata(1));
+  ExpectAck(stream.get(), 1, false,
+            "no valid slice assignments in generation 1: 1 slice(s) with "
+            "start_key >= end_key");
+  ASSERT_FALSE(WaitForResult().ok());
+  // The rejected generation was not stored, so generation 1 is accepted on
+  // the same stream.  The chunk of the rejected assignment is not reused.
+  Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host1"}));
+  Send(stream.get(), MakeMetadata(1));
+  ExpectAck(stream.get(), 1, true, "");
+  auto result = WaitForResult();
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_THAT(result->endpoint_names, ElementsAre("host1"));
 }
 
 TEST_F(AutoshardingClientTest, ErrorIsNotReportedAfterValidAssignment) {
@@ -456,6 +523,66 @@ TEST_F(AutoshardingClientTest, BackoffIsResetAfterValidAssignment) {
   EXPECT_LE(delays[2], std::chrono::milliseconds(1200));
 }
 
+TEST_F(AutoshardingClientTest, BackoffIsResetAfterAnyResponse) {
+  std::vector<EventEngine::Duration> delays;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](EventEngine::Duration delay) { delays.push_back(delay); });
+  CreateClient();
+  // The first RunAfter() is the initial assignment timer.
+  ASSERT_THAT(delays, ElementsAre(std::chrono::hours(1)));
+  delays.clear();
+  auto stream = WaitForStream();
+  ASSERT_NE(stream, nullptr);
+  ExpectInitialClientConfig(stream.get(), 0);
+  // First failure: initial backoff of 1s, with 20% jitter.
+  auto stream2 = FailStreamAndWaitForNewStream(stream.get());
+  ASSERT_FALSE(WaitForResult().ok());
+  ASSERT_NE(stream2, nullptr);
+  ExpectInitialClientConfig(stream2.get(), 0);
+  // The second stream receives a chunk, but no valid assignment, and then
+  // fails.  Any response resets the backoff, as in XdsClient.
+  Send(stream2.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
+  DrainWork();
+  auto stream3 = FailStreamAndWaitForNewStream(stream2.get());
+  ASSERT_FALSE(WaitForResult().ok());
+  ASSERT_NE(stream3, nullptr);
+  ExpectInitialClientConfig(stream3.get(), 0);
+  ASSERT_EQ(delays.size(), 2);
+  EXPECT_GE(delays[0], std::chrono::milliseconds(800));
+  EXPECT_LE(delays[0], std::chrono::milliseconds(1200));
+  EXPECT_GE(delays[1], std::chrono::milliseconds(800));
+  EXPECT_LE(delays[1], std::chrono::milliseconds(1200));
+}
+
+TEST_F(AutoshardingClientTest, ResetBackoffLockedResetsStreamBackoff) {
+  std::vector<EventEngine::Duration> delays;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](EventEngine::Duration delay) { delays.push_back(delay); });
+  CreateClient();
+  // The first RunAfter() is the initial assignment timer.
+  ASSERT_THAT(delays, ElementsAre(std::chrono::hours(1)));
+  delays.clear();
+  auto stream = WaitForStream();
+  ASSERT_NE(stream, nullptr);
+  ExpectInitialClientConfig(stream.get(), 0);
+  // First failure: initial backoff of 1s, with 20% jitter.
+  auto stream2 = FailStreamAndWaitForNewStream(stream.get());
+  ASSERT_FALSE(WaitForResult().ok());
+  ASSERT_NE(stream2, nullptr);
+  ExpectInitialClientConfig(stream2.get(), 0);
+  // Without a reset, the next backoff would grow by 1.6x.
+  RunInWorkSerializer([&]() { client_->ResetBackoffLocked(); });
+  auto stream3 = FailStreamAndWaitForNewStream(stream2.get());
+  ASSERT_FALSE(WaitForResult().ok());
+  ASSERT_NE(stream3, nullptr);
+  ExpectInitialClientConfig(stream3.get(), 0);
+  ASSERT_EQ(delays.size(), 2);
+  EXPECT_GE(delays[0], std::chrono::milliseconds(800));
+  EXPECT_LE(delays[0], std::chrono::milliseconds(1200));
+  EXPECT_GE(delays[1], std::chrono::milliseconds(800));
+  EXPECT_LE(delays[1], std::chrono::milliseconds(1200));
+}
+
 TEST_F(AutoshardingClientTest, EndpointIndexRefersToEarlierChunk) {
   CreateClient();
   auto stream = WaitForStream();
@@ -531,9 +658,7 @@ TEST_F(AutoshardingClientTest, UnparseableResponseRestartsStream) {
             absl::UnavailableError(
                 "stream to autosharding server failed: INTERNAL: cannot parse "
                 "WatchShardingAssignmentResponse from autosharding server"));
-  while (!stream->IsOrphaned()) {
-    event_engine_->Tick(std::chrono::milliseconds(1));
-  }
+  WaitForOrphaned(stream.get());
   auto stream2 = WaitForStream();
   ASSERT_NE(stream2, nullptr);
   ASSERT_NE(stream2, stream);
@@ -643,6 +768,43 @@ TEST_F(AutoshardingClientTest, StaleGenerationOnRestartedStream) {
   EXPECT_TRUE(results_.empty());
 }
 
+TEST_F(AutoshardingClientTest, GenerationAcceptedOnRestartedStreamIsKept) {
+  CreateClient();
+  auto stream = WaitForStream();
+  ASSERT_NE(stream, nullptr);
+  ExpectInitialClientConfig(stream.get(), 0);
+  SendValidAssignment(stream.get(), 5);
+  ExpectAck(stream.get(), 5, true, "");
+  ASSERT_TRUE(WaitForResult().ok());
+  auto stream2 = FailStreamAndWaitForNewStream(stream.get());
+  ASSERT_NE(stream2, nullptr);
+  ExpectInitialClientConfig(stream2.get(), 5);
+  // A newer generation on the restarted stream advances the generation.
+  SendValidAssignment(stream2.get(), 6);
+  ExpectAck(stream2.get(), 6, true, "");
+  ASSERT_TRUE(WaitForResult().ok());
+  auto stream3 = FailStreamAndWaitForNewStream(stream2.get());
+  ASSERT_NE(stream3, nullptr);
+  ExpectInitialClientConfig(stream3.get(), 6);
+}
+
+TEST_F(AutoshardingClientTest, RejectedAssignmentDoesNotAdvanceGeneration) {
+  CreateClient();
+  auto stream = WaitForStream();
+  ASSERT_NE(stream, nullptr);
+  ExpectInitialClientConfig(stream.get(), 0);
+  // Metadata with no chunks is rejected.
+  Send(stream.get(), MakeMetadata(4));
+  ExpectAck(stream.get(), 4, false,
+            "received metadata with generation 4, but no chunks were "
+            "received");
+  ASSERT_FALSE(WaitForResult().ok());
+  auto stream2 = FailStreamAndWaitForNewStream(stream.get());
+  ASSERT_FALSE(WaitForResult().ok());
+  ASSERT_NE(stream2, nullptr);
+  ExpectInitialClientConfig(stream2.get(), 0);
+}
+
 TEST_F(AutoshardingClientTest,
        UnparseableResponseAfterValidAssignmentReportsNoError) {
   CreateClient();
@@ -656,9 +818,7 @@ TEST_F(AutoshardingClientTest,
       absl::string_view("\x0a\x05"
                         "ab",
                         4));
-  while (!stream->IsOrphaned()) {
-    event_engine_->Tick(std::chrono::milliseconds(1));
-  }
+  WaitForOrphaned(stream.get());
   auto stream2 = WaitForStream();
   ASSERT_NE(stream2, nullptr);
   ASSERT_NE(stream2, stream);
