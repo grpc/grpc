@@ -3248,23 +3248,39 @@ TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeAllowBodiesDrainedSuccess) {
                              .Build();
   SetFilterConfig(ext_proc_config);
   StartBackendServer();
-  AsyncRpc rpc;
-  rpc.StartRpc(stub_.get());
+  // Use a streaming RPC so that the client message is not sent until after
+  // the filter has started draining. Otherwise, the message could be sent to
+  // the ext_proc server before it responds to the request headers, in which
+  // case fail-open would no longer be allowed.
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
   auto ext_proc_stream = ext_proc_service().GetStream();
   ASSERT_NE(ext_proc_stream, nullptr);
   auto req = ext_proc_stream->GetNextRequest();
-  ASSERT_THAT(
-      req,
-      ::testing::Optional(MatchesRequestHeaders(::testing::Contains(
-          ::testing::Pair(":path", "/grpc.testing.EchoTestService/Echo")))));
+  ASSERT_THAT(req,
+              ::testing::Optional(
+                  MatchesRequestHeaders(::testing::Contains(::testing::Pair(
+                      ":path", "/grpc.testing.EchoTestService/BidiStream")))));
   ext_proc_stream->SendResponse(
       SetRequestDrains(MakeRequestHeadersMutationResponse({}),
                        /*drain_requests=*/true, /*drain_responses=*/true));
+  // Wait for the filter to start draining.
+  auto drain_req1 = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req1,
+              ::testing::Optional(MatchesRequestBodyDrainComplete()));
+  auto drain_req2 = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(drain_req2,
+              ::testing::Optional(MatchesResponseBodyDrainComplete()));
   ext_proc_stream->SendStatus(absl::ResourceExhaustedError(
       "Call closed by ext_proc server after drain"));
-  Status status = rpc.GetStatus();
-  EXPECT_THAT(status, IsStatusOk());
-  EXPECT_EQ(rpc.response().message(), kRequestMessage);
+  EchoRequest request;
+  request.set_message(kMessage1);
+  stream.StartWrite(request);
+  EXPECT_TRUE(stream.WaitForWrite());
+  EXPECT_THAT(stream.ReadMessage(),
+              ::testing::Optional(MatchesEchoResponse(kMessage1)));
+  stream.StartWritesDone();
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
 TEST_P(XdsExtProcEnd2endTest, StreamErrorFailureModeFalseFails) {

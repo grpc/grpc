@@ -645,15 +645,12 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // Latch signaled when the side-stream is closed or drained.
   Latch<void> side_stream_closed_latch_;
   // Latch signaled when the child call has been started (i.e., initiator_
-  // has been set). The read-from-client loop waits on this before reading
-  // client messages. This matters only when request headers are sent to the
-  // ext_proc server and observability mode is off: in that case the child
-  // call is not started until the ext_proc server responds to the request
-  // headers, but in a v3 stack client messages can be read from handler_
-  // before then. Without this wait, if the request body mode is NONE, those
-  // messages would be forwarded to initiator_ before it is set; if the
-  // request body mode is SEND, they would be sent to the ext_proc server
-  // before it has responded to the request headers.
+  // has been set). Client messages and half-close wait on this before
+  // being forwarded to initiator_. This matters only when observability
+  // mode is off, the request header mode is SEND, and the request body mode
+  // is NONE: in that case the child call is not started until the ext_proc
+  // server responds to the request headers, but client messages and
+  // half-close can be read from handler_ before then.
   // Synchronized by the handler_ activity.
   Latch<void> child_call_started_latch_;
 
@@ -1402,37 +1399,46 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
           // (If<bool> invokes its branch factory eagerly on construction).
           [self = WeakRef(), send_to_sidestream, message = std::move(message),
            payload = std::move(payload)]() mutable {
-            return Map(
-                TryJoin<ValueOrFailure>(
-                    // Forward client message to backend if not waiting for
-                    // side-stream or running in observability mode.
-                    If(
-                        !send_to_sidestream ||
-                            self->config().observability_mode,
-                        [self, message = std::move(message)]() mutable {
-                          // TODO(rishesh, roth): Spawning this push into the
-                          // activity means that we won't have flow control
-                          // feedback here in a pure v3 stack, so we need to
-                          // fix it before we finish the v3 migration.
-                          self->initiator_.SpawnPushMessage(std::move(message));
-                          return Immediate(StatusFlag(Success{}));
-                        },
-                        Immediate(StatusFlag(Success{}))),
-                    // Send client message payload to the side-stream.
-                    If(
-                        send_to_sidestream,
-                        [self, payload = std::move(payload)]() mutable {
-                          self->first_body_message_sent_ = true;
-                          if (self->config().observability_mode) {
-                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                                << self->DebugTag()
-                                << "Client message observability mode";
-                          }
-                          return self->SendMessageToSideStream(
-                              std::move(*payload));
-                        },
-                        Immediate(StatusFlag(Success{})))),
-                [](auto x) { return x.status(); });
+            return Map(TryJoin<ValueOrFailure>(
+                           // Forward client message to backend if not waiting
+                           // for side-stream or running in observability mode.
+                           // Wait for the child call to be started first, since
+                           // the message may be read before the ext_proc server
+                           // has responded to the request headers.
+                           If(
+                               !send_to_sidestream ||
+                                   self->config().observability_mode,
+                               [self, message = std::move(message)]() mutable {
+                                 return Map(
+                                     self->child_call_started_latch_.Wait(),
+                                     [self, message = std::move(message)](
+                                         Empty) mutable {
+                                       // TODO(rishesh, roth): Spawning this
+                                       // push into the activity means that we
+                                       // won't have flow control feedback here
+                                       // in a pure v3 stack, so we need to fix
+                                       // it before we finish the v3 migration.
+                                       self->initiator_.SpawnPushMessage(
+                                           std::move(message));
+                                       return StatusFlag(Success{});
+                                     });
+                               },
+                               Immediate(StatusFlag(Success{}))),
+                           // Send client message payload to the side-stream.
+                           If(
+                               send_to_sidestream,
+                               [self, payload = std::move(payload)]() mutable {
+                                 self->first_body_message_sent_ = true;
+                                 if (self->config().observability_mode) {
+                                   GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                                       << self->DebugTag()
+                                       << "Client message observability mode";
+                                 }
+                                 return self->SendMessageToSideStream(
+                                     std::move(*payload));
+                               },
+                               Immediate(StatusFlag(Success{})))),
+                       [](auto x) { return x.status(); });
           }));
 }
 
@@ -1486,12 +1492,20 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
           // Forward half-close to backend if not waiting for side-stream
           // or running in observability mode. This is a promise factory
           // so that the half-close is not forwarded until the drain wait
-          // above completes.
+          // above completes. Wait for the child call to be started first,
+          // since the half-close may be read before the ext_proc server has
+          // responded to the request headers.
           [self = WeakRef(), send_to_sidestream]() {
-            if (!send_to_sidestream || self->config().observability_mode) {
-              self->initiator_.SpawnFinishSends();
-            }
-            return Immediate(StatusFlag(Success{}));
+            return If(
+                !send_to_sidestream || self->config().observability_mode,
+                [self]() {
+                  return Map(self->child_call_started_latch_.Wait(),
+                             [self](Empty) {
+                               self->initiator_.SpawnFinishSends();
+                               return StatusFlag(Success{});
+                             });
+                },
+                Immediate(StatusFlag(Success{})));
           },
           // Send client half-close payload to the side-stream.
           [self = WeakRef(), send_to_sidestream,
@@ -1788,13 +1802,6 @@ auto ExtProcFilter::ExtProcCall::HandleReadFromClientLoop() {
       handler_.PullClientInitialMetadata(),
       [self = WeakRef()](ClientMetadataHandle metadata) {
         return self->HandleInitialMetadataFromClient(std::move(metadata));
-      },
-      // Do not read any client messages until the child call has been
-      // started, which in normal mode happens only after the ext_proc server
-      // has responded to the request headers.
-      [self = WeakRef()]() {
-        return Map(self->child_call_started_latch_.Wait(),
-                   [](Empty) { return StatusFlag(Success{}); });
       },
       [self = WeakRef()]() {
         return ForEach(
