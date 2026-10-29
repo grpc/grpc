@@ -96,9 +96,6 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 #================
 # C# dependencies
 
-# TODO(weizheyuan/asheshvidyut): Either modify this or deprecate C# support.
-#
-# This will break for debian >= 13 due to apt-key deprecation.
 # Install mono
 RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
 RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
@@ -118,7 +115,7 @@ RUN DOTNET_DOWNLOAD_VERSION=3.1.415 \
     && rm dotnet.tar.gz
 
 # Install .NET 6
-RUN DOTNET_DOWNLOAD_VERSION=6.0.100 \
+RUN DOTNET_DOWNLOAD_VERSION=6.0.428 \
     && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
     && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
     && mkdir -p /usr/share/dotnet \
@@ -132,7 +129,7 @@ RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 ENV NUGET_XMLDOC_MODE skip
 RUN mkdir warmup \
     && cd warmup \
-    && dotnet new \
+    && dotnet new console \
     && cd .. \
     && rm -rf warmup
 
