@@ -40,6 +40,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
@@ -69,7 +70,7 @@ namespace grpc_core {
 
 class Fuzzer {
  public:
-  Fuzzer(absl::string_view bootstrap_json,
+  Fuzzer(absl::string_view bootstrap_json, absl::string_view xds_client_key,
          const fuzzing_event_engine::Actions& fuzzing_ee_actions) {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_ee_actions);
@@ -85,9 +86,10 @@ class Fuzzer {
         []() { Crash("Multiple concurrent reads"); }, event_engine_);
     transport_factory_->SetAutoCompleteMessagesFromClient(false);
     transport_factory_->SetAbortOnUndrainedMessages(false);
-    xds_client_ = MakeRefCounted<XdsClient>(
-        std::move(*bootstrap), transport_factory_, event_engine_,
-        /*metrics_reporter=*/nullptr, "foo agent", "foo version");
+    xds_client_ = MakeRefCounted<GrpcXdsClient>(
+        xds_client_key, std::move(*bootstrap), ChannelArgs(),
+        transport_factory_, /*certificate_provider_store=*/nullptr,
+        /*stats_plugin_group=*/nullptr, event_engine_);
   }
 
   ~Fuzzer() {
@@ -601,6 +603,7 @@ static const char* kBasicEndpoint = R"pb(
 
 static const char* kBasicSocketListener = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  xds_client_key: "#server"
   actions {
     start_watch {
       resource_type { listener {} }
@@ -749,7 +752,8 @@ auto ParseTestProto(const std::string& proto) {
 }
 
 void Fuzz(const xds_client_fuzzer::Msg& message) {
-  Fuzzer fuzzer(message.bootstrap(), message.fuzzing_event_engine_actions());
+  Fuzzer fuzzer(message.bootstrap(), message.xds_client_key(),
+                message.fuzzing_event_engine_actions());
   for (int i = 0; i < message.actions_size(); i++) {
     fuzzer.Act(message.actions(i));
   }

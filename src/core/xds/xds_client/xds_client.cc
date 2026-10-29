@@ -972,11 +972,13 @@ void XdsClient::XdsChannel::AdsCall::ParseResource(
     return;
   }
   // Parse the resource.
-  XdsResourceType::DecodeContext resource_type_context = {
-      xds_client(), xds_channel()->server_, xds_client()->def_pool_.ptr(),
-      context->arena.ptr()};
+  std::unique_ptr<XdsResourceType::DecodeContext> resource_type_context =
+      xds_client()->CreateDecodeContext(xds_channel()->server_,
+                                        xds_client()->def_pool_.ptr(),
+                                        context->arena.ptr());
+  GRPC_CHECK(resource_type_context != nullptr);
   XdsResourceType::DecodeResult decode_result =
-      context->type->Decode(resource_type_context, serialized_resource);
+      context->type->Decode(*resource_type_context, serialized_resource);
   // If we didn't already have the resource name from the Resource
   // wrapper, try to get it from the decoding result.
   if (resource_name.empty()) {
@@ -1915,6 +1917,13 @@ void XdsClient::ResetBackoff() {
   for (auto& [_, xds_channel] : xds_channel_map_) {
     xds_channel->ResetBackoff();
   }
+}
+
+std::unique_ptr<XdsResourceType::DecodeContext> XdsClient::CreateDecodeContext(
+    const XdsBootstrap::XdsServer& server, upb_DefPool* def_pool,
+    upb_Arena* arena) {
+  return std::make_unique<XdsResourceType::DecodeContext>(this, server,
+                                                          def_pool, arena);
 }
 
 absl::Status XdsClient::AppendNodeToStatus(const absl::Status& status) const {

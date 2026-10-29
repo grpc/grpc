@@ -25,6 +25,7 @@
 #include "envoy/extensions/filters/http/composite/v3/composite.upbdefs.h"
 #include "src/core/filter/composite/composite_filter.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/grpc_xds_decode_context.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
@@ -106,6 +107,9 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
       errors->AddError("could not parse ExecuteFilterAction");
       return nullptr;
     }
+    const bool is_client =
+        DownCast<const GrpcXdsDecodeContext&>(context).component ==
+        GrpcXdsDecodeContext::Component::kClient;
     const auto& http_filter_registry =
         DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
@@ -120,16 +124,16 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
               filter_chain, &num_filters);
       for (size_t i = 0; i < num_filters; ++i) {
         const auto* typed_config = typed_configs[i];
-        filters.push_back(
-            ParseFilter(context, http_filter_registry, typed_config, errors));
+        filters.push_back(ParseFilter(context, is_client, http_filter_registry,
+                                      typed_config, errors));
       }
     } else if (
         const auto* typed_config =
             envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_typed_config(
                 execute_filter);
         typed_config != nullptr) {
-      filters.push_back(
-          ParseFilter(context, http_filter_registry, typed_config, errors));
+      filters.push_back(ParseFilter(context, is_client, http_filter_registry,
+                                    typed_config, errors));
     } else {
       errors->AddError("one of typed_config or filter_chain must be set");
     }
@@ -155,7 +159,7 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
 
  private:
   static CompositeFilter::ExecuteFilterAction::Filter ParseFilter(
-      const XdsResourceType::DecodeContext& context,
+      const XdsResourceType::DecodeContext& context, bool is_client,
       const XdsHttpFilterRegistry& http_filter_registry,
       const envoy_config_core_v3_TypedExtensionConfig* typed_config,
       ValidationErrors* errors) {
@@ -174,6 +178,10 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
       } else if (factory->IsTerminalFilter()) {
         errors->AddError(
             "terminal filters may not be used under composite filter");
+      } else if ((is_client && !factory->IsSupportedOnClients()) ||
+                 (!is_client && !factory->IsSupportedOnServers())) {
+        errors->AddError(absl::StrCat("filter is not supported on ",
+                                      is_client ? "clients" : "servers"));
       } else {
         config =
             factory->ParseTopLevelConfig(name, context, *extension, errors);

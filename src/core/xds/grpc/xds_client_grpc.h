@@ -67,7 +67,9 @@ class GrpcXdsClient final : public XdsClient {
       RefCountedPtr<XdsTransportFactory> transport_factory,
       RefCountedPtr<CertificateProviderStore> certificate_provider_store,
       std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-          stats_plugin_group);
+          stats_plugin_group,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
 
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
@@ -94,6 +96,10 @@ class GrpcXdsClient final : public XdsClient {
 
  private:
   class MetricsReporter;
+
+  std::unique_ptr<XdsResourceType::DecodeContext> CreateDecodeContext(
+      const XdsBootstrap::XdsServer& server, upb_DefPool* def_pool,
+      upb_Arena* arena) override;
 
   void ReportCallbackMetrics(CallbackMetricReporter& reporter);
   void Orphaned() override;

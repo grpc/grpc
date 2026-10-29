@@ -62,6 +62,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/xds/grpc/grpc_xds_decode_context.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
@@ -116,18 +117,11 @@ class XdsHttpFilterTest : public ::testing::Test {
             std::make_shared<
                 grpc_event_engine::experimental::ThreadedFuzzingEventEngine>()),
         transport_factory_(
-            MakeRefCounted<FakeXdsTransportFactory>([]() {}, event_engine_)),
-        decode_context_{nullptr, xds_server_, upb_def_pool_.ptr(),
-                        upb_arena_.ptr()} {
-    Reset();
+            MakeRefCounted<FakeXdsTransportFactory>([]() {}, event_engine_)) {
+    ResetXdsClient();
   }
 
-  void Reset() {
-    xds_client_ = MakeXdsClient();
-    decode_context_.client = xds_client_.get();
-  }
-
-  RefCountedPtr<XdsClient> MakeXdsClient() {
+  void ResetXdsClient() {
     grpc_error_handle error;
     auto bootstrap = GrpcXdsBootstrapBuilder::Build(
         "{\n"
@@ -156,9 +150,17 @@ class XdsHttpFilterTest : public ::testing::Test {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
     }
-    return MakeRefCounted<XdsClient>(
+    xds_client_ = MakeRefCounted<XdsClient>(
         std::move(*bootstrap), transport_factory_, event_engine_,
         /*metrics_reporter=*/nullptr, "foo agent", "foo version");
+  }
+
+  GrpcXdsDecodeContext MakeDecodeContext(bool is_client = true) {
+    return GrpcXdsDecodeContext(
+        xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+        upb_def_pool_.ptr(), upb_arena_.ptr(),
+        is_client ? GrpcXdsDecodeContext::Component::kClient
+                  : GrpcXdsDecodeContext::Component::kServer);
   }
 
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
@@ -193,12 +195,10 @@ class XdsHttpFilterTest : public ::testing::Test {
   }
 
   std::shared_ptr<FuzzingEventEngine> event_engine_;
-  GrpcXdsServer xds_server_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   RefCountedPtr<XdsClient> xds_client_;
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
-  XdsResourceType::DecodeContext decode_context_;
   ValidationErrors errors_;
   std::string type_url_storage_;
   std::string serialized_storage_;
@@ -261,8 +261,8 @@ TEST_F(XdsRouterFilterTest, Accessors) {
 
 TEST_F(XdsRouterFilterTest, ParseTopLevelConfig) {
   XdsExtension extension = MakeXdsExtension(Router());
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   EXPECT_EQ(config, nullptr);
@@ -271,8 +271,8 @@ TEST_F(XdsRouterFilterTest, ParseTopLevelConfig) {
 TEST_F(XdsRouterFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(Router());
   extension.value = Json();
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -288,8 +288,8 @@ TEST_F(XdsRouterFilterTest, ParseTopLevelConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(Router());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -303,8 +303,8 @@ TEST_F(XdsRouterFilterTest, ParseTopLevelConfigUnparsable) {
 
 TEST_F(XdsRouterFilterTest, ParseOverrideConfig) {
   XdsExtension extension = MakeXdsExtension(Router());
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -350,10 +350,10 @@ class XdsFaultInjectionFilterConfigTest
  protected:
   RefCountedPtr<const FilterConfig> ParseConfig(XdsExtension extension) {
     if (GetParam()) {
-      return factory_->ParseOverrideConfig("", decode_context_, extension,
+      return factory_->ParseOverrideConfig("", MakeDecodeContext(), extension,
                                            &errors_);
     }
-    return factory_->ParseTopLevelConfig("", decode_context_, extension,
+    return factory_->ParseTopLevelConfig("", MakeDecodeContext(), extension,
                                          &errors_);
   }
 };
@@ -523,8 +523,8 @@ TEST_F(XdsRbacFilterTest, Accessors) {
 
 TEST_F(XdsRbacFilterTest, ParseTopLevelConfig) {
   XdsExtension extension = MakeXdsExtension(RBAC());
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -536,8 +536,8 @@ TEST_F(XdsRbacFilterTest, ParseTopLevelConfig) {
 TEST_F(XdsRbacFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   extension.value = Json();
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -553,8 +553,8 @@ TEST_F(XdsRbacFilterTest, ParseTopLevelConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -568,8 +568,8 @@ TEST_F(XdsRbacFilterTest, ParseTopLevelConfigUnparsable) {
 
 TEST_F(XdsRbacFilterTest, ParseOverrideConfig) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -581,8 +581,8 @@ TEST_F(XdsRbacFilterTest, ParseOverrideConfig) {
 TEST_F(XdsRbacFilterTest, ParseOverrideConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   extension.value = Json();
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -597,8 +597,8 @@ TEST_F(XdsRbacFilterTest, ParseOverrideConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -620,11 +620,11 @@ class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
       RBACPerRoute rbac_per_route;
       *rbac_per_route.mutable_rbac() = rbac;
       XdsExtension extension = MakeXdsExtension(rbac_per_route);
-      return factory_->ParseOverrideConfig("", decode_context_, extension,
+      return factory_->ParseOverrideConfig("", MakeDecodeContext(), extension,
                                            &errors_);
     }
     XdsExtension extension = MakeXdsExtension(rbac);
-    return factory_->ParseTopLevelConfig("", decode_context_, extension,
+    return factory_->ParseTopLevelConfig("", MakeDecodeContext(), extension,
                                          &errors_);
   }
 
@@ -1327,8 +1327,8 @@ TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigDisabled) {
   StatefulSessionPerRoute stateful_session_per_route;
   stateful_session_per_route.set_disabled(true);
   XdsExtension extension = MakeXdsExtension(stateful_session_per_route);
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -1339,8 +1339,8 @@ TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigDisabled) {
 TEST_F(XdsStatefulSessionFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(StatefulSession());
   extension.value = Json();
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1357,8 +1357,8 @@ TEST_F(XdsStatefulSessionFilterTest, ParseTopLevelConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(StatefulSession());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1374,8 +1374,8 @@ TEST_F(XdsStatefulSessionFilterTest, ParseTopLevelConfigUnparsable) {
 TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(StatefulSessionPerRoute());
   extension.value = Json();
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1392,8 +1392,8 @@ TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(StatefulSessionPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1418,11 +1418,11 @@ class XdsStatefulSessionFilterConfigTest
       StatefulSessionPerRoute stateful_session_per_route;
       *stateful_session_per_route.mutable_stateful_session() = stateful_session;
       XdsExtension extension = MakeXdsExtension(stateful_session_per_route);
-      return factory_->ParseOverrideConfig("", decode_context_, extension,
+      return factory_->ParseOverrideConfig("", MakeDecodeContext(), extension,
                                            &errors_);
     }
     XdsExtension extension = MakeXdsExtension(stateful_session);
-    return factory_->ParseTopLevelConfig("", decode_context_, extension,
+    return factory_->ParseTopLevelConfig("", MakeDecodeContext(), extension,
                                          &errors_);
   }
 
@@ -1626,7 +1626,7 @@ TEST_F(XdsGcpAuthnFilterTest, Accessors) {
 
 TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigEmpty) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
-  auto config = factory_->ParseTopLevelConfig("enterprise", decode_context_,
+  auto config = factory_->ParseTopLevelConfig("enterprise", MakeDecodeContext(),
                                               extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
@@ -1640,7 +1640,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeDefault) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config();
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config = factory_->ParseTopLevelConfig("yorktown", decode_context_,
+  auto config = factory_->ParseTopLevelConfig("yorktown", MakeDecodeContext(),
                                               extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
@@ -1654,7 +1654,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSize) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config()->mutable_cache_size()->set_value(6);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config = factory_->ParseTopLevelConfig("hornet", decode_context_,
+  auto config = factory_->ParseTopLevelConfig("hornet", MakeDecodeContext(),
                                               extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
@@ -1668,7 +1668,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeZero) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config()->mutable_cache_size()->set_value(0);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config = factory_->ParseTopLevelConfig("ranger", decode_context_,
+  auto config = factory_->ParseTopLevelConfig("ranger", MakeDecodeContext(),
                                               extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
@@ -1685,7 +1685,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeZero) {
 TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   extension.value = Json();
-  auto config = factory_->ParseTopLevelConfig("lexington", decode_context_,
+  auto config = factory_->ParseTopLevelConfig("lexington", MakeDecodeContext(),
                                               extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
@@ -1702,7 +1702,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigUnparseable) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = factory_->ParseTopLevelConfig("saratoga", decode_context_,
+  auto config = factory_->ParseTopLevelConfig("saratoga", MakeDecodeContext(),
                                               extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
@@ -1717,7 +1717,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigUnparseable) {
 
 TEST_F(XdsGcpAuthnFilterTest, ParseOverrideConfig) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
-  auto config = factory_->ParseOverrideConfig("wasp", decode_context_,
+  auto config = factory_->ParseOverrideConfig("wasp", MakeDecodeContext(),
                                               extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
@@ -1763,7 +1763,7 @@ class XdsCompositeFilterTest : public XdsHttpFilterTest {
   XdsCompositeFilterTest() : env_("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER") {}
 
   void SetUp() override {
-    Reset();  // Recreate registry now that env var is set.
+    ResetXdsClient();  // Recreate registry now that env var is set.
     XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
     factory_ = GetFactory(extension.type);
     GRPC_CHECK_NE(factory_, nullptr) << extension.type;
@@ -1797,8 +1797,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSkipFilter) {
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       SkipFilter());
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -1826,8 +1826,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSingleFilter) {
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
@@ -1857,8 +1857,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigFilterChain) {
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
@@ -1890,8 +1890,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSamplePercentage) {
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
@@ -1908,8 +1908,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigNoMatcher) {
       ->mutable_typed_config()
       ->PackFrom(Composite());
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -1937,8 +1937,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigInvalidNestedFilterConfig) {
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   EXPECT_EQ(errors_.message("errors validating filter config"),
             "errors validating filter config: "
             "[field:http_filter.value["
@@ -1969,8 +1969,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigTerminalFilter) {
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   EXPECT_EQ(errors_.message("errors validating filter config"),
             "errors validating filter config: "
             "[field:http_filter.value["
@@ -1982,11 +1982,73 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigTerminalFilter) {
             "error:terminal filters may not be used under composite filter]");
 }
 
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigNotSupportedOnClient) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  ExecuteFilterAction execute_filter_action;
+  execute_filter_action.mutable_typed_config()
+      ->mutable_typed_config()
+      ->PackFrom(RBAC());
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      execute_filter_action);
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
+  EXPECT_EQ(errors_.message("errors validating filter config"),
+            "errors validating filter config: "
+            "[field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher]"
+            ".xds_matcher.matcher_tree.exact_match_map.on_match.action.value["
+            "envoy.extensions.filters.http.composite.v3.ExecuteFilterAction]"
+            ".typed_config.typed_config.value["
+            "envoy.extensions.filters.http.rbac.v3.RBAC] "
+            "error:filter is not supported on clients]");
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigNotSupportedOnServer) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  ExecuteFilterAction execute_filter_action;
+  execute_filter_action.mutable_typed_config()
+      ->mutable_typed_config()
+      ->PackFrom(GcpAuthnFilterConfig());
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      execute_filter_action);
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config = factory_->ParseTopLevelConfig(
+      "", MakeDecodeContext(/*is_client=*/false), extension, &errors_);
+  EXPECT_EQ(errors_.message("errors validating filter config"),
+            "errors validating filter config: "
+            "[field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher]"
+            ".xds_matcher.matcher_tree.exact_match_map.on_match.action.value["
+            "envoy.extensions.filters.http.composite.v3.ExecuteFilterAction]"
+            ".typed_config.typed_config.value["
+            "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
+            "error:filter is not supported on servers]");
+}
+
 TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
   extension.value = Json();
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2002,8 +2064,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigUnparseable) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2020,8 +2082,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigUnparseable) {
 // failure case here, because those are covered in xds_matcher_parse_test.cc.
 TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigRequiredFieldsMissing) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2047,8 +2109,8 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigWrongExtensionConfigType) {
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       SkipFilter());
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2073,8 +2135,8 @@ TEST_F(XdsCompositeFilterTest, ParseOverrideConfigBasic) {
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       SkipFilter());
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2087,8 +2149,8 @@ TEST_F(XdsCompositeFilterTest, ParseOverrideConfigBasic) {
 TEST_F(XdsCompositeFilterTest, ParseOverrideConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcherPerRoute());
   extension.value = Json();
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2104,8 +2166,8 @@ TEST_F(XdsCompositeFilterTest, ParseOverrideConfigUnparseable) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcherPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2122,8 +2184,8 @@ TEST_F(XdsCompositeFilterTest, ParseOverrideConfigUnparseable) {
 // failure case here, because those are covered in xds_matcher_parse_test.cc.
 TEST_F(XdsCompositeFilterTest, ParseOverrideConfigRequiredFieldMissing) {
   XdsExtension extension = MakeXdsExtension(ExtensionWithMatcherPerRoute());
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -2160,8 +2222,8 @@ TEST_F(XdsCompositeFilterTest, MergeConfigsHandlesBlackboardForNestedFilters) {
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
   XdsExtension extension = MakeXdsExtension(extension_with_matcher);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
   ASSERT_NE(config, nullptr);
   // Now call MergeConfigs() and make sure it delegates to the child
@@ -2205,7 +2267,7 @@ class XdsExtProcFilterTest : public XdsHttpFilterTest {
   XdsExtProcFilterTest() : env_("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT") {}
 
   void SetUp() override {
-    Reset();
+    ResetXdsClient();
     XdsExtension extension = MakeXdsExtension(ExternalProcessor());
     factory_ = GetFactory(extension.type);
     GRPC_CHECK_NE(factory_, nullptr);
@@ -2237,8 +2299,8 @@ TEST_F(XdsExtProcFilterTest, ParseMinimumConfig) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2275,8 +2337,8 @@ TEST_F(XdsExtProcFilterTest, ParseFullConfig) {
       ->add_patterns()
       ->set_exact("allowed");
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2310,8 +2372,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidTimeout) {
   proto.mutable_deferred_close_timeout()->set_seconds(0);
   proto.mutable_deferred_close_timeout()->set_nanos(0);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2335,8 +2397,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidGrpcService) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2363,8 +2425,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidHeaderProcessingModes) {
       static_cast<envoy::extensions::filters::http::ext_proc::v3::
                       ProcessingMode::HeaderSendMode>(99));
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2400,8 +2462,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidBodyProcessingModes) {
       static_cast<envoy::extensions::filters::http::ext_proc::v3::
                       ProcessingMode::BodySendMode>(99));
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2428,8 +2490,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestHeaderModeDefault) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2449,8 +2511,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestHeaderModeSend) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2470,8 +2532,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestHeaderModeSkip) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2492,8 +2554,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseHeaderModeDefault) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2513,8 +2575,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseHeaderModeSend) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2534,8 +2596,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseHeaderModeSkip) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2555,8 +2617,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseTrailerModeDefault) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::DEFAULT);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2572,8 +2634,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigEmptyProcessingMode) {
   // modes and NONE for the body modes.
   proto.mutable_processing_mode();
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2595,8 +2657,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigNoProcessingMode) {
   // Leave the processing_mode field unset, which is equivalent to setting it
   // to an empty message.
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2621,8 +2683,8 @@ TEST_F(XdsExtProcFilterTest,
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
   // response_trailer_mode is left unset, which means SKIP.
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2640,8 +2702,8 @@ TEST_F(XdsExtProcFilterTest, ParseOverrideConfigDefaultProcessingMode) {
   // modes and NONE for the body modes.
   proto.mutable_overrides()->mutable_processing_mode();
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2666,8 +2728,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseTrailerModeSend) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SEND);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2687,8 +2749,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseTrailerModeSkip) {
   mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   EXPECT_FALSE(DownCast<const ExtProcFilter::Config&>(*config)
@@ -2709,8 +2771,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestBodyModeNone) {
   mode->set_request_body_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::NONE);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2732,8 +2794,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigRequestBodyModeGrpc) {
   mode->set_request_body_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2755,8 +2817,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseBodyModeNone) {
   mode->set_response_body_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::NONE);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2776,8 +2838,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigResponseBodyModeGrpc) {
   mode->set_response_body_mode(mode->GRPC);
   mode->set_response_trailer_mode(mode->SEND);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2802,8 +2864,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigForwardRules) {
   forward_rules->mutable_disallowed_headers()->add_patterns()->set_exact(
       "disallowed");
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
@@ -2829,8 +2891,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidAllowedHeaders) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   proto.mutable_forward_rules()->mutable_allowed_headers()->add_patterns();
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2855,8 +2917,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidDisallowedHeaders) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   proto.mutable_forward_rules()->mutable_disallowed_headers()->add_patterns();
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2884,8 +2946,8 @@ TEST_F(XdsExtProcFilterTest,
       proto.mutable_forward_rules()->mutable_allowed_headers()->add_patterns();
   pattern->mutable_safe_regex()->set_regex("[");
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2914,8 +2976,8 @@ TEST_F(XdsExtProcFilterTest,
                       ->add_patterns();
   pattern->mutable_safe_regex()->set_regex("[");
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2940,8 +3002,8 @@ TEST_F(XdsExtProcFilterTest,
   mode->set_response_body_mode(mode->GRPC);
   mode->set_response_trailer_mode(mode->SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2967,8 +3029,8 @@ TEST_F(XdsExtProcFilterTest, ParseTopLevelConfigInvalidMutationRules) {
   auto* mutation_rules = proto.mutable_mutation_rules();
   mutation_rules->mutable_allow_expression()->set_regex("[");
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseTopLevelConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -2997,8 +3059,8 @@ TEST_F(XdsExtProcFilterTest, ParseOverrideConfig) {
   overrides->add_request_attributes("override_req_attr");
   overrides->add_response_attributes("override_resp_attr");
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_EQ(config->type(), ExtProcFilter::Config::Type());
@@ -3017,8 +3079,8 @@ TEST_F(XdsExtProcFilterTest, ParseOverrideConfig) {
 TEST_F(XdsExtProcFilterTest, ParseOverrideConfigEmpty) {
   ExtProcPerRoute proto;
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   EXPECT_EQ(config, nullptr);
@@ -3030,8 +3092,8 @@ TEST_F(XdsExtProcFilterTest, ParseOverrideConfigInvalid) {
   auto* grpc_service = overrides->mutable_grpc_service();
   grpc_service->mutable_envoy_grpc()->set_cluster_name("some_cluster");
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config =
-      factory_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  auto config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
+                                              extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(
@@ -3056,7 +3118,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsNoOverride) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(top_level_config, nullptr);
@@ -3089,7 +3151,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithVirtualHostOverride) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ExtProcPerRoute vhost_proto;
@@ -3101,7 +3163,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithVirtualHostOverride) {
   vhost_mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension vhost_extension = MakeXdsExtension(vhost_proto);
-  auto vhost_config = factory_->ParseOverrideConfig("", decode_context_,
+  auto vhost_config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
                                                     vhost_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
@@ -3133,7 +3195,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithRouteOverride) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ExtProcPerRoute vhost_proto;
@@ -3145,7 +3207,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithRouteOverride) {
   vhost_mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension vhost_extension = MakeXdsExtension(vhost_proto);
-  auto vhost_config = factory_->ParseOverrideConfig("", decode_context_,
+  auto vhost_config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
                                                     vhost_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
@@ -3162,7 +3224,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithRouteOverride) {
   route_mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension route_extension = MakeXdsExtension(route_proto);
-  auto route_config = factory_->ParseOverrideConfig("", decode_context_,
+  auto route_config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
                                                     route_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
@@ -3194,7 +3256,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithClusterWeightOverride) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ExtProcPerRoute vhost_proto;
@@ -3206,7 +3268,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithClusterWeightOverride) {
   vhost_mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension vhost_extension = MakeXdsExtension(vhost_proto);
-  auto vhost_config = factory_->ParseOverrideConfig("", decode_context_,
+  auto vhost_config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
                                                     vhost_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
@@ -3223,7 +3285,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithClusterWeightOverride) {
   route_mode->set_response_trailer_mode(
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension route_extension = MakeXdsExtension(route_proto);
-  auto route_config = factory_->ParseOverrideConfig("", decode_context_,
+  auto route_config = factory_->ParseOverrideConfig("", MakeDecodeContext(),
                                                     route_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
@@ -3239,7 +3301,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithClusterWeightOverride) {
   XdsExtension cluster_weight_extension =
       MakeXdsExtension(cluster_weight_proto);
   auto cluster_weight_config = factory_->ParseOverrideConfig(
-      "", decode_context_, cluster_weight_extension, &errors_);
+      "", MakeDecodeContext(), cluster_weight_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   auto blackboard = MakeRefCounted<Blackboard>();
@@ -3273,7 +3335,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideGrpcService) {
   proto.add_response_attributes("resp_attr1");
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ExtProcPerRoute override_proto;
@@ -3283,7 +3345,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideGrpcService) {
       ->set_target_uri("localhost:5678");
   XdsExtension override_extension = MakeXdsExtension(override_proto);
   auto override_config = factory_->ParseOverrideConfig(
-      "", decode_context_, override_extension, &errors_);
+      "", MakeDecodeContext(), override_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   auto blackboard = MakeRefCounted<Blackboard>();
@@ -3319,7 +3381,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideFailureModeAllow) {
   proto.add_response_attributes("resp_attr1");
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ExtProcPerRoute override_proto;
@@ -3327,7 +3389,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideFailureModeAllow) {
       true);
   XdsExtension override_extension = MakeXdsExtension(override_proto);
   auto override_config = factory_->ParseOverrideConfig(
-      "", decode_context_, override_extension, &errors_);
+      "", MakeDecodeContext(), override_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   auto blackboard = MakeRefCounted<Blackboard>();
@@ -3364,14 +3426,14 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideRequestAttributes) {
   proto.add_response_attributes("resp_attr1");
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ExtProcPerRoute override_proto;
   override_proto.mutable_overrides()->add_request_attributes("req_attr2");
   XdsExtension override_extension = MakeXdsExtension(override_proto);
   auto override_config = factory_->ParseOverrideConfig(
-      "", decode_context_, override_extension, &errors_);
+      "", MakeDecodeContext(), override_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   auto blackboard = MakeRefCounted<Blackboard>();
@@ -3407,14 +3469,14 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideResponseAttributes) {
   proto.add_response_attributes("resp_attr1");
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ExtProcPerRoute override_proto;
   override_proto.mutable_overrides()->add_response_attributes("resp_attr2");
   XdsExtension override_extension = MakeXdsExtension(override_proto);
   auto override_config = factory_->ParseOverrideConfig(
-      "", decode_context_, override_extension, &errors_);
+      "", MakeDecodeContext(), override_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   auto blackboard = MakeRefCounted<Blackboard>();
@@ -3450,7 +3512,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideProcessingMode) {
   proto.add_response_attributes("resp_attr1");
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ExtProcPerRoute override_proto;
@@ -3464,7 +3526,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsOverrideProcessingMode) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension override_extension = MakeXdsExtension(override_proto);
   auto override_config = factory_->ParseOverrideConfig(
-      "", decode_context_, override_extension, &errors_);
+      "", MakeDecodeContext(), override_extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   auto blackboard = MakeRefCounted<Blackboard>();
@@ -3497,7 +3559,7 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsSharesChannel) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension = MakeXdsExtension(proto);
   auto top_level_config = factory_->ParseTopLevelConfig(
-      "instance_name", decode_context_, extension, &errors_);
+      "instance_name", MakeDecodeContext(), extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   auto blackboard = MakeRefCounted<Blackboard>();
@@ -3530,7 +3592,7 @@ TEST_F(XdsExtProcFilterTest,
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension1 = MakeXdsExtension(proto1);
   auto top_level_config1 = factory_->ParseTopLevelConfig(
-      "instance_name1", decode_context_, extension1, &errors_);
+      "instance_name1", MakeDecodeContext(), extension1, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ExternalProcessor proto2;
@@ -3545,7 +3607,7 @@ TEST_F(XdsExtProcFilterTest,
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::SKIP);
   XdsExtension extension2 = MakeXdsExtension(proto2);
   auto top_level_config2 = factory_->ParseTopLevelConfig(
-      "instance_name2", decode_context_, extension2, &errors_);
+      "instance_name2", MakeDecodeContext(), extension2, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   auto blackboard = MakeRefCounted<Blackboard>();
