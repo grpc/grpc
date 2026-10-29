@@ -23,7 +23,7 @@ GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
 HEALTH_PROTO = os.path.join(
     GRPC_ROOT_ABS_PATH, "third_party/grpc-proto/grpc/health/v1/health.proto"
 )
-LICENSE = os.path.join(GRPC_ROOT_ABS_PATH, "./LICENSE")
+LICENSE = os.path.join(GRPC_ROOT_ABS_PATH, "LICENSE")
 
 
 @nox.session(python=False)
