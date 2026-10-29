@@ -987,7 +987,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
             << "[outlier_detection_lb " << parent_.get()
             << "] random_key=" << random_key
             << " ejected_host_count=" << ejected_host_count
-            << " percent_with_ejection=" << absl::StrFormat("%.3f", percent_with_ejection);
+            << " percent_with_ejection="
+            << absl::StrFormat("%.3f", percent_with_ejection);
         const bool below_enforcement =
             random_key < config.success_rate_ejection->enforcement_percentage;
         const bool below_max_ejection =
