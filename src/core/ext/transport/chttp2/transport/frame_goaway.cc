@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2015 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,20 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
+#include "src/core/lib/slice/byte_source.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/util/grpc_check.h"
-#include "absl/base/attributes.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 grpc_error_handle grpc_chttp2_goaway_parser_begin_frame(
     grpc_chttp2_goaway_parser* p, uint32_t length, uint8_t /*flags*/) {
@@ -143,46 +134,5 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
   GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
 }
 
-void grpc_chttp2_goaway_append(
-    uint32_t last_stream_id, uint32_t error_code, const grpc_slice& debug_data,
-    grpc_slice_buffer* slice_buffer,
-    grpc_core::Http2ZTraceCollector* ztrace_collector) {
-  grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
-  uint8_t* p = GRPC_SLICE_START_PTR(header);
-  uint32_t frame_length;
-  GRPC_CHECK(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
-  frame_length = 4 + 4 + static_cast<uint32_t> GRPC_SLICE_LENGTH(debug_data);
-
-  ztrace_collector->Append([last_stream_id, error_code, debug_data]() {
-    return grpc_core::H2GoAwayTrace<false>{
-        last_stream_id, error_code,
-        std::string(grpc_core::StringViewFromSlice(debug_data))};
-  });
-
-  // frame header: length
-  *p++ = static_cast<uint8_t>(frame_length >> 16);
-  *p++ = static_cast<uint8_t>(frame_length >> 8);
-  *p++ = static_cast<uint8_t>(frame_length);
-  // frame header: type
-  *p++ = GRPC_CHTTP2_FRAME_GOAWAY;
-  // frame header: flags
-  *p++ = 0;
-  // frame header: stream id
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  // payload: last stream id
-  *p++ = static_cast<uint8_t>(last_stream_id >> 24);
-  *p++ = static_cast<uint8_t>(last_stream_id >> 16);
-  *p++ = static_cast<uint8_t>(last_stream_id >> 8);
-  *p++ = static_cast<uint8_t>(last_stream_id);
-  // payload: error code
-  *p++ = static_cast<uint8_t>(error_code >> 24);
-  *p++ = static_cast<uint8_t>(error_code >> 16);
-  *p++ = static_cast<uint8_t>(error_code >> 8);
-  *p++ = static_cast<uint8_t>(error_code);
-  GRPC_CHECK(p == GRPC_SLICE_END_PTR(header));
-  grpc_slice_buffer_add(slice_buffer, header);
-  grpc_slice_buffer_add(slice_buffer, debug_data);
-}
+}  // namespace
+}  // namespace grpc_core
