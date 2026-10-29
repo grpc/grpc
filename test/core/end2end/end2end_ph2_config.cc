@@ -88,17 +88,17 @@ class Ph2InsecureFixture : public InsecureFixture {
 // RequestResponseWithPayload10Times and InvokeLargeRequest flake about 6%.
 #define GRPC_HTTP2_PH2_SERVER_ONLY_AVOID_LIST             \
   "|CoreLargeSendTests.RequestResponseWithPayload10Times" \
-  "|Http2Tests.HighInitialSeqno"                          \
-  "|Http2SingleHopTests.InvokeLargeRequest"
+  "|Http2Tests.HighInitialSeqno"
 
 #define GRPC_HTTP2_PH2_CLIENT_SERVER_ONLY_AVOID_LIST ""
 
-#define GRPC_HTTP2_PH2_COMMON_AVOID_LIST  \
-  "|Http2SingleHopTests.KeepaliveTimeout" \
-  "|Http2Tests.GracefulServerShutdown"    \
-  "|Http2Tests.MaxAgeForciblyClose"       \
-  "|Http2Tests.MaxAgeGracefullyClose"     \
-  "|Http2SingleHopTests.ServerMaxConcurrentStreams"
+#define GRPC_HTTP2_PH2_COMMON_AVOID_LIST            \
+  "|Http2SingleHopTests.KeepaliveTimeout"           \
+  "|Http2Tests.GracefulServerShutdown"              \
+  "|Http2Tests.MaxAgeForciblyClose"                 \
+  "|Http2Tests.MaxAgeGracefullyClose"               \
+  "|Http2SingleHopTests.ServerMaxConcurrentStreams" \
+  "|Http2SingleHopTests.InvokeLargeRequest"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Allow List of test suites for all configs

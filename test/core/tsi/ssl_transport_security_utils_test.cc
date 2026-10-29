@@ -509,12 +509,18 @@ TEST(ConvertKeyExchangeGroupToStringTest, ValidCases) {
             "P-384");
   EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519),
             "X25519");
-#if defined(OPENSSL_IS_BORINGSSL)
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
   EXPECT_EQ(
       *tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519_MLKEM768),
       "X25519MLKEM768");
+  EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_MLKEM1024),
+            "MLKEM1024");
 #else
   EXPECT_EQ(tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519_MLKEM768)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_MLKEM1024)
                 .status()
                 .code(),
             absl::StatusCode::kInvalidArgument);

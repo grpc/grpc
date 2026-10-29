@@ -196,7 +196,7 @@ class XdsMatcherList : public XdsMatcher {
 
   // Factory method for creating a SinglePredicate.
   template <typename InputType, typename MatcherType>
-  static absl::enable_if_t<
+  static std::enable_if_t<
       std::is_same<typename InputType::ProducedType,
                    typename MatcherType::ConsumedType>::value,
       std::unique_ptr<Predicate>>
@@ -210,7 +210,7 @@ class XdsMatcherList : public XdsMatcher {
   // Alternative template specialization to return null in the case where
   // the input produces a different type than the matcher consumes.
   template <typename InputType, typename MatcherType>
-  static absl::enable_if_t<
+  static std::enable_if_t<
       !std::is_same<typename InputType::ProducedType,
                     typename MatcherType::ConsumedType>::value,
       std::unique_ptr<Predicate>>
@@ -285,8 +285,9 @@ class XdsMatcherList::StringInputMatcher
   explicit StringInputMatcher(StringMatcher matcher)
       : matcher_(std::move(matcher)) {}
 
+  // An absent input (e.g. a missing header) never matches, as in Envoy.
   bool Match(const std::optional<absl::string_view>& input) const override {
-    return matcher_.Match(input.value_or(""));
+    return input.has_value() && matcher_.Match(*input);
   }
   static UniqueTypeName Type() {
     return GRPC_UNIQUE_TYPE_NAME_HERE("StringInputMatcher");

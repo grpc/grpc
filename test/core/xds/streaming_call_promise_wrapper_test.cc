@@ -18,11 +18,13 @@
 
 #include <grpc/grpc.h>
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
@@ -36,6 +38,7 @@
 #include "test/core/promise/test_wakeup_schedulers.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 
@@ -85,28 +88,31 @@ class XdsStreamingCallPromiseWrapperTest : public ::testing::Test {
     WaitForSingleOwner(std::move(event_engine_));
   }
 
+  using CallOptions = XdsTransport::CallOptions;
+
   void InitStream(bool auto_complete_messages_from_client = true,
-                  bool start_upon_send_message = false) {
+                  CallOptions options = CallOptions()) {
     transport_factory_->SetAutoCompleteMessagesFromClient(
         auto_complete_messages_from_client);
     absl::Status status;
     transport_ = transport_factory_->GetTransport(*target_, &status);
     ASSERT_TRUE(status.ok()) << status;
     ASSERT_NE(transport_, nullptr);
-    wrapper_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
-        *transport_, kMethod, start_upon_send_message);
+    wrapper_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(*transport_,
+                                                              kMethod, options);
     stream_ = transport_factory_->WaitForStream(*target_, kMethod);
-    if (start_upon_send_message) {
+    if (options.start_upon_send_message) {
       ASSERT_EQ(stream_, nullptr);
     } else {
       ASSERT_NE(stream_, nullptr);
+      EXPECT_EQ(stream_->wait_for_ready(), options.wait_for_ready);
     }
   }
 
   std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   std::unique_ptr<FakeXdsServerTarget> target_;
-  RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+  RefCountedPtr<XdsTransport> transport_;
   RefCountedPtr<XdsStreamingCallPromiseWrapper> wrapper_;
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> stream_;
 };
@@ -256,6 +262,43 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, PullMessageAfterStatusReceived) {
   EXPECT_FALSE(received_message.has_value());
 }
 
+TEST_F(XdsStreamingCallPromiseWrapperTest,
+       PullMessageReturnsMessageReceivedBeforeStatus) {
+  InitStream();
+  // Defer activity wakeups so that both the message and the status are
+  // received before the pending PullMessage() promise is polled again.
+  ::testing::StrictMock<MockCallbackScheduler> scheduler;
+  std::vector<std::function<void()>> wakeups;
+  EXPECT_CALL(scheduler, Schedule(::testing::_))
+      .WillRepeatedly([&wakeups](std::function<void()> wakeup) {
+        wakeups.push_back(std::move(wakeup));
+      });
+  std::optional<std::string> received_message;
+  bool pull_completed = false;
+  auto activity = MakeActivity(
+      [this, &received_message, &pull_completed] {
+        return Map(wrapper_->PullMessage(),
+                   [&](const std::optional<std::string>& res) {
+                     received_message = res;
+                     pull_completed = true;
+                     return absl::OkStatus();
+                   });
+      },
+      UseMockCallbackScheduler{&scheduler},
+      [](const absl::Status& status) { EXPECT_TRUE(status.ok()) << status; });
+  event_engine_->TickUntilIdle();
+  EXPECT_FALSE(pull_completed);
+  stream_->SendMessageToClient(kServerMessage);
+  stream_->MaybeSendStatusToClient(absl::OkStatus());
+  event_engine_->TickUntilIdle();
+  EXPECT_FALSE(pull_completed);
+  ASSERT_FALSE(wakeups.empty());
+  for (auto& wakeup : std::exchange(wakeups, {})) wakeup();
+  EXPECT_TRUE(pull_completed);
+  ASSERT_TRUE(received_message.has_value());
+  EXPECT_EQ(*received_message, kServerMessage);
+}
+
 TEST_F(XdsStreamingCallPromiseWrapperTest, SendHalfClose) {
   InitStream();
   EXPECT_FALSE(stream_->half_closed());
@@ -287,7 +330,7 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, PushMessageWithSendHalfClose) {
 
 TEST_F(XdsStreamingCallPromiseWrapperTest, StartUponSendMessage) {
   InitStream(/*auto_complete_messages_from_client=*/true,
-             /*start_upon_send_message=*/true);
+             CallOptions().set_start_upon_send_message(true));
   std::optional<std::string> received_message;
   auto pull_activity = MakeActivity(
       [this, &received_message] {
@@ -318,6 +361,7 @@ TEST_F(XdsStreamingCallPromiseWrapperTest, StartUponSendMessage) {
   EXPECT_TRUE(send_completed);
   stream_ = transport_factory_->WaitForStream(*target_, kMethod);
   ASSERT_NE(stream_, nullptr);
+  EXPECT_FALSE(stream_->wait_for_ready());
   EXPECT_EQ(stream_->WaitForMessageFromClient(), kClientMessage);
   EXPECT_TRUE(stream_->half_closed());
   stream_->SendMessageToClient(kServerMessage);

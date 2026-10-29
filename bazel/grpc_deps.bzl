@@ -33,11 +33,11 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            sha256 = "0db063f7484f25492a8e9ce149f1a2fc18e795f57086d528ae6dda6e08969ad8",
-            strip_prefix = "boringssl-3adc3d1aba162a578e2547f329fcce8659b8e89c",
+            sha256 = "54f6eacb3121a1bf7690e185f987ee5c30a6aa0b42b6dad17872992be113cd9b",
+            strip_prefix = "boringssl-427ec40cc8edc545253289232e885708c409e5ea",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/3adc3d1aba162a578e2547f329fcce8659b8e89c.tar.gz",
-                "https://github.com/google/boringssl/archive/3adc3d1aba162a578e2547f329fcce8659b8e89c.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/427ec40cc8edc545253289232e885708c409e5ea.tar.gz",
+                "https://github.com/google/boringssl/archive/427ec40cc8edc545253289232e885708c409e5ea.tar.gz",
             ],
         )
 
@@ -151,11 +151,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "9b7a064305e9fd94d124ffa6cc358592eb42b5da588fb4e07d09254aa40086db",
-            strip_prefix = "abseil-cpp-20250512.1",
+            sha256 = "6e1aee535473414164bf83e4ebc40240dec71a4701f8a642d906e95bea1aea0c",
+            strip_prefix = "abseil-cpp-20260526.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20260526.0.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20260526.0.tar.gz",
             ],
             repo_mapping = {
                 "@googletest": "@com_google_googletest",
@@ -213,11 +213,29 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855",
-            strip_prefix = "data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff",
+            # envoy_api's BUILD files use the bzlmod module names of its
+            # dependencies, which differ from the repo names used here.
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@googleapis": "@com_google_googleapis",
+                "@googletest": "@com_google_googletest",
+                "@grpc": "@com_github_grpc_grpc",
+                "@protobuf": "@com_google_protobuf",
+                "@protoc-gen-validate": "@com_envoyproxy_protoc_gen_validate",
+                "@rules_go": "@io_bazel_rules_go",
+                "@xds": "@com_github_cncf_xds",
+            },
+            # Drops pgv_cc_proto_library() args not supported by the
+            # protoc-gen-validate version used here.
+            patches = [
+                "@com_github_grpc_grpc//third_party:envoy-api.patch",
+            ],
+            patch_args = ["-p1"],
+            sha256 = "40ba505a3c8e0d56f10ad5b95c05d54138228ff521cff22393276bb67188dfc3",
+            strip_prefix = "data-plane-api-005c18a923f166a793a1c227171398dab883cc5d",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz",
             ],
         )
 
@@ -366,6 +384,33 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz",
                 "https://github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz",
+            ],
+        )
+
+    if "cel_c" not in native.existing_rules():
+        http_archive(
+            name = "cel_c",
+            # Same source fix that the BCR cel-c module applies, needed to
+            # build against the protobuf (upb) version used by gRPC.
+            patches = [
+                "@com_github_grpc_grpc//third_party:cel-c.patch",
+            ],
+            patch_args = ["-p1"],
+            # cel-c's BUILD files use the bzlmod module names of its
+            # dependencies, which differ from the repo names used here.
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@cel-spec": "@dev_cel",
+                "@googleapis": "@com_google_googleapis",
+                "@googletest": "@com_google_googletest",
+                "@protobuf": "@com_google_protobuf",
+                "@re2": "@com_googlesource_code_re2",
+            },
+            sha256 = "15f5079ede81208eac938fc0f5808bb30acd9d0937cd90528c65dc9710bc1a23",
+            strip_prefix = "cel-c-7c739eed27b702b45f664143540f76bd75d7bdd6",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cel-expr/cel-c/archive/7c739eed27b702b45f664143540f76bd75d7bdd6.tar.gz",
+                "https://github.com/cel-expr/cel-c/archive/7c739eed27b702b45f664143540f76bd75d7bdd6.tar.gz",
             ],
         )
 

@@ -353,7 +353,7 @@ void CFStreamEndpointImpl::DoRead(
   }
 
   buffer->RemoveLastNBytes(buffer->Length() - read_size);
-  on_read(read_size == 0 ? absl::InternalError("Socket closed")
+  on_read(read_size == 0 ? absl::UnavailableError("Socket closed")
                          : absl::OkStatus());
 }
 

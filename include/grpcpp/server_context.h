@@ -350,6 +350,14 @@ class ServerContextBase {
   /// functionality. Instead, use auth_context.
   std::string peer() const;
 
+  /// Return the local (server-side) address of the connection this call
+  /// arrived on. Returns "unknown" if the transport does not expose socket
+  /// addresses (e.g. inproc), and an empty string if no call is bound to this
+  /// context.
+  /// WARNING: like peer(), this value is not authenticated and must not be
+  /// used for authentication or authorization. Use auth_context() instead.
+  std::string local_address() const;
+
   /// Get the census context associated with this server call.
   const struct census_context* census_context() const;
 
@@ -424,7 +432,7 @@ class ServerContextBase {
   void MarkInitialMetadataSent() {
     // Lock prevents the session from transitioning to the lock-free read phase
     // while a concurrent call to SetSessionContext is currently executing.
-    grpc::internal::MutexLock lock(&metadata_mu_);
+    grpc::internal::MutexLock lock(metadata_mu_);
     // Release-store synchronizes with the acquire-loads in
     // Set/GetSessionContext to guarantee that all context writes made before
     // initial metadata is sent are fully visible to subsequent read operations.
@@ -502,7 +510,7 @@ class ServerContextBase {
   template <typename T>
   void SetSessionContext(std::shared_ptr<T> context) {
     if (!sent_initial_metadata_.load(std::memory_order_acquire)) {
-      grpc::internal::MutexLock lock(&metadata_mu_);
+      grpc::internal::MutexLock lock(metadata_mu_);
       if (!sent_initial_metadata_.load(std::memory_order_acquire)) {
         internal::ServerContextSetSessionContext(
             call_.call, internal::SessionContextType<T>::id(),
@@ -518,7 +526,7 @@ class ServerContextBase {
           internal::ServerContextGetSessionContext(
               call_.call, internal::SessionContextType<T>::id()));
     } else {
-      grpc::internal::MutexLock lock(&metadata_mu_);
+      grpc::internal::MutexLock lock(metadata_mu_);
       return internal::SessionContextType<T>::Unwrap(
           internal::ServerContextGetSessionContext(
               call_.call, internal::SessionContextType<T>::id()));

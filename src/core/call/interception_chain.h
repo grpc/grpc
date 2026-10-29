@@ -193,11 +193,11 @@ class InterceptionChainBuilder final {
   // Call class must be one compatible with the filters described in
   // call_filters.h.
   template <typename T>
-  absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
+  std::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
     if (!status_.ok()) return *this;
     auto filter = T::Create(
-        args_, {FilterInstanceId(FilterTypeId<T>()), std::move(config)});
+        args_, FilterArgs(/*channel_stack=*/nullptr, std::move(config)));
     if (!filter.ok()) {
       status_ = filter.status();
       return *this;
@@ -210,11 +210,11 @@ class InterceptionChainBuilder final {
 
   // Add a filter that is an interceptor - one that can hijack calls.
   template <typename T>
-  absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
-                    InterceptionChainBuilder&>
+  std::enable_if_t<std::is_base_of<Interceptor, T>::value,
+                   InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
     AddInterceptor(T::Create(
-        args_, {FilterInstanceId(FilterTypeId<T>()), std::move(config)}));
+        args_, FilterArgs(/*channel_stack=*/nullptr, std::move(config))));
     return *this;
   };
 
@@ -279,10 +279,6 @@ class InterceptionChainBuilder final {
     return id;
   }
 
-  size_t FilterInstanceId(size_t filter_type) {
-    return filter_type_counts_[filter_type]++;
-  }
-
   void AddInterceptor(absl::StatusOr<RefCountedPtr<Interceptor>> interceptor);
 
   ChannelArgs args_;
@@ -291,7 +287,6 @@ class InterceptionChainBuilder final {
   std::vector<absl::AnyInvocable<void(InterceptionChainBuilder*)>>
       on_new_interception_tail_;
   absl::Status status_;
-  std::map<size_t, size_t> filter_type_counts_;
   static std::atomic<size_t> next_filter_id_;
 };
 
