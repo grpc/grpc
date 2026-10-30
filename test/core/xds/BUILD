@@ -269,6 +269,7 @@ grpc_cc_library(
         "absl/status",
         "absl/time",
     ],
+    visibility = ["//test/core/load_balancing:__pkg__"],
     deps = [
         "//:event_engine_base_hdrs",
         "//:exec_ctx",

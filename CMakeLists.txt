@@ -784,6 +784,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/autosharding/proto/autosharding/v1/autosharding.proto proto/autosharding/v1/autosharding.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/cel-spec/proto/cel/expr/checked.proto cel/expr/checked.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1192,6 +1195,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/googleapis/google/api/expr/v1alpha1/syntax.proto google/api/expr/v1alpha1/syntax.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/googleapis/google/api/field_behavior.proto google/api/field_behavior.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/googleapis/google/api/http.proto google/api/http.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1342,6 +1348,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
   add_dependencies(buildtests_cxx authorization_policy_provider_test)
+  add_dependencies(buildtests_cxx autosharding_assignment_test)
+  add_dependencies(buildtests_cxx autosharding_client_test)
   add_dependencies(buildtests_cxx autosharding_config_test)
   add_dependencies(buildtests_cxx autosharding_test)
   add_dependencies(buildtests_cxx avl_test)
@@ -2580,6 +2588,7 @@ add_library(grpc
   src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
   src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
   src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
+  src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -2597,6 +2606,7 @@ add_library(grpc
   src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c
+  src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -3013,6 +3023,8 @@ add_library(grpc
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/autosharding/autosharding.cc
+  src/core/load_balancing/autosharding/autosharding_assignment.cc
+  src/core/load_balancing/autosharding/autosharding_client.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -3615,6 +3627,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
+  src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -3629,6 +3642,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/grpc/health/v1/health.upb_minitable.c
   src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c
   src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c
+  src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -3846,6 +3860,8 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/autosharding/autosharding.cc
+  src/core/load_balancing/autosharding/autosharding_assignment.cc
+  src/core/load_balancing/autosharding/autosharding_client.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
@@ -8888,6 +8904,108 @@ target_link_libraries(authorization_policy_provider_test
   gtest
   grpc++
   grpc_authorization_provider
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(autosharding_assignment_test
+  test/core/load_balancing/autosharding_assignment_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(autosharding_assignment_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(autosharding_assignment_test PUBLIC cxx_std_17)
+target_include_directories(autosharding_assignment_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(autosharding_assignment_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(autosharding_client_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/autosharding_client_test.cc
+  test/core/xds/xds_transport_fake.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(autosharding_client_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(autosharding_client_test PUBLIC cxx_std_17)
+target_include_directories(autosharding_client_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(autosharding_client_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 

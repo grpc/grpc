@@ -28,8 +28,6 @@
 #include "src/core/util/validation_errors.h"
 #include "absl/strings/string_view.h"
 
-// TODO(bpawan): Expose Channel Factory types once defined for C++ (gRFC A119).
-
 namespace grpc_core {
 
 class AutoShardingLbConfig final : public LoadBalancingPolicy::Config {
@@ -54,8 +52,7 @@ class AutoShardingLbConfig final : public LoadBalancingPolicy::Config {
     return key_header_name_;
   }
   bool enable_fallback() const { return enable_fallback_; }
-  // TODO(bpawan): Pass this to the autosharding client, which will own the
-  // initial assignment timer (gRFC A119).
+  // The autosharding client owns the initial assignment timer (gRFC A119).
   Duration initial_assignment_timeout() const {
     return initial_assignment_timeout_;
   }
