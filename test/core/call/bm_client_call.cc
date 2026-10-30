@@ -15,6 +15,8 @@
 #include <benchmark/benchmark.h>
 #include <grpc/grpc.h>
 
+#include <utility>
+
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/client_call.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -64,7 +66,8 @@ class Helper {
     return std::unique_ptr<grpc_call, void (*)(grpc_call*)>(
         MakeClientCall(nullptr, 0, cq_, path_.Copy(), std::nullopt, true,
                        Timestamp::InfFuture(), compression_options_,
-                       std::move(arena), destination_),
+                       std::move(arena), destination_,
+                       /*stats_plugin_group=*/nullptr),
         grpc_call_unref);
   }
 
