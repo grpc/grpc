@@ -1162,7 +1162,7 @@ TEST_P(XdsSniSecurityTest, SanValidationFailure) {
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   static void SetUpTestSuite() {
-    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P2][Client] Fix bug");
+    SKIP_TEST_FOR_PH2_CLIENT("TODO(ritulb) [PH2][P3][Client] Fix bug");
     SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   }
 
@@ -1893,8 +1893,7 @@ TEST_P(XdsRbacHostHeaderTest, HostOnlyIsDenied) {
   StartBackend(0);
   ASSERT_EQ(backends_[0]->GetNextStatus(), absl::OkStatus());
   absl::Status status = SendRawEchoRequest({{"host", "bar"}});
-  if (grpc_core::IsMapHostHeaderToAuthorityEnabled() ||
-      !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+  if (grpc_core::IsMapHostHeaderToAuthorityEnabled()) {
     EXPECT_EQ(status, absl::PermissionDeniedError("Unauthorized RPC rejected"));
   } else {
     EXPECT_EQ(status, absl::UnavailableError("INTERNAL:no authority found"));

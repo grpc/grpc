@@ -72,9 +72,9 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(
     const SubchannelKey& key) {
   auto shard_index = ShardIndex(key);
   auto& read_shard = read_shards_[shard_index];
-  read_shard.mu.Lock();
+  read_shard.mu.lock();
   auto map = read_shard.map;
-  read_shard.mu.Unlock();
+  read_shard.mu.unlock();
   auto* subchannel = map.Lookup(key);
   if (subchannel == nullptr) return nullptr;
   return (*subchannel)->RefIfNonZero();

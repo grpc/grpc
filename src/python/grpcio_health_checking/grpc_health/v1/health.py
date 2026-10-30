@@ -29,10 +29,13 @@ SERVICE_NAME = _health_pb2.DESCRIPTOR.services_by_name["Health"].full_name
 OVERALL_HEALTH = ""
 
 
+# TODO(asheshvidyut): Maybe we don't need this class at all.
+# Since other languages like C++ and Java use a single variable for response.
+# Consider migrating to use a single variable for response.
 class _Watcher:
     def __init__(self):
         self._condition = threading.Condition()
-        self._responses = collections.deque()
+        self._responses = collections.deque(maxlen=1)
         self._open = True
 
     def __iter__(self):

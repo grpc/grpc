@@ -86,9 +86,9 @@ bool LockedMultiProducerSingleConsumerQueue::Push(Node* node) {
 
 LockedMultiProducerSingleConsumerQueue::Node*
 LockedMultiProducerSingleConsumerQueue::TryPop() {
-  if (mu_.TryLock()) {
+  if (mu_.try_lock()) {
     Node* node = queue_.Pop();
-    mu_.Unlock();
+    mu_.unlock();
     return node;
   }
   return nullptr;
