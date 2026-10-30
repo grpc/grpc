@@ -50,6 +50,7 @@ namespace testing {
 class Chttp2ServerListenerTestPeer;
 class ActiveConnectionTestPeer;
 class HandshakingStateTestPeer;
+class HandshakingConnectionTestPeer;
 }  // namespace testing
 
 // New ChttpServerListener
@@ -136,6 +137,45 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
                  RefCountedPtr<http2::Http2ServerTransport>>
         state_;
     bool shutdown_ = false;
+  };
+
+  // State for an incoming connection while handshaking is in progress.
+  // Owned by the server.
+  class HandshakingConnection
+      : public InternallyRefCounted<HandshakingConnection> {
+   public:
+    HandshakingConnection(RefCountedPtr<Server::ListenerState> listener_state,
+                          grpc_tcp_server* tcp_server,
+                          grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
+                          const ChannelArgs& args, MemoryOwner memory_owner,
+                          OrphanablePtr<grpc_endpoint> endpoint);
+
+    ~HandshakingConnection() override;
+
+    void Start(const ChannelArgs& args);
+
+    void Orphan() override;
+
+   private:
+    friend class NewChttp2ServerListener;  // For access to Ref().
+
+    friend class grpc_core::testing::HandshakingConnectionTestPeer;
+
+    void StartLocked(const ChannelArgs& args);
+    void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
+
+    RefCountedPtr<Server::ListenerState> const listener_state_;
+    WorkSerializer work_serializer_;
+    grpc_tcp_server* const tcp_server_;
+    grpc_pollset* const accepting_pollset_;
+    const AcceptorPtr acceptor_;
+    grpc_pollset_set* const interested_parties_;
+    Timestamp const deadline_;
+    OrphanablePtr<grpc_endpoint> endpoint_;
+
+    // If null, that means we're shutting down.
+    // Protected by WorkSerializer.
+    RefCountedPtr<HandshakeManager> handshake_mgr_;
   };
 
   static grpc_error_handle Create(

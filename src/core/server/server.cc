@@ -407,13 +407,14 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnection(
   return new_args;
 }
 
-void Server::ListenerState::OnHandshakeDone(
+bool Server::ListenerState::OnHandshakeDone(
     Orphanable* handshaking_connection, Transport* transport,
     grpc_pollset* accepting_pollset, const ChannelArgs& args) {
   auto connection_manager =
       args.GetObjectRef<ServerConfigFetcher::ConnectionManager>();
   absl::StatusOr<OrphanablePtr<ServerTransport>> owned_transport =
       server_->SetupCallLinkageForTransport(transport, accepting_pollset, args);
+  const bool transport_initialized = owned_transport.ok();
   OrphanablePtr<Orphanable> handshaking_connection_to_orphan;
   MutexLock lock(server_->mu_global_);
   // Create Connection object while holding the mutex.  This ensures
@@ -438,7 +439,7 @@ void Server::ListenerState::OnHandshakeDone(
       if (connection != nullptr) {
         it->second.active_connections.insert(std::move(connection));
       }
-      return;
+      return transport_initialized;
     }
   }
   // If the connection succeeded but we didn't find the handshaking
@@ -452,6 +453,7 @@ void Server::ListenerState::OnHandshakeDone(
         // FIXME: what is the right reason and time to use here?
         "server closing connection", Duration::Infinity());
   }
+  return transport_initialized;
 }
 
 void Server::ListenerState::DrainConnectionsLocked() {
@@ -1666,16 +1668,16 @@ Server::SetupCallLinkageForTransport(
   if (transport == nullptr) return absl::UnavailableError("handshake failed");
   GRPC_LATENT_SEE_SCOPE("Server::SetupCallLinkageForTransport");
   global_stats().IncrementServerChannelsCreated();
-  OrphanablePtr<ServerTransport> active_connection;
+  OrphanablePtr<ServerTransport> owned_transport;
   if (transport->server_transport() != nullptr) {
     // Take ownership.
-    active_connection.reset(transport->server_transport());
+    owned_transport.reset(transport->server_transport());
     auto destination = MakeCallDestination(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
         GRPC_SERVER_CHANNEL);
     if (!destination.ok()) return destination.status();
-    active_connection->SetCallDestination(std::move(*destination));
+    owned_transport->SetCallDestination(std::move(*destination));
   } else {
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
@@ -1683,7 +1685,10 @@ Server::SetupCallLinkageForTransport(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
         GRPC_SERVER_CHANNEL);
-    if (!channel.ok()) return channel.status();
+    if (!channel.ok()) {
+      transport->Orphan();
+      return channel.status();
+    }
     GRPC_CHECK(*channel != nullptr);
     auto* channel_stack = (*channel)->channel_stack();
     GRPC_CHECK(channel_stack != nullptr);
@@ -1702,7 +1707,7 @@ Server::SetupCallLinkageForTransport(
     // premature destruction if the transport fails concurrently.
     RefCountedPtr<Channel> channel_keep_alive = *channel;
     // Wrap the channel in a transport, just to make it look the same as v3.
-    active_connection =
+    owned_transport =
         MakeOrphanable<ChannelData::V1ChannelTransport>(*channel);
     // Set up call linkage.
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport);
@@ -1718,7 +1723,7 @@ Server::SetupCallLinkageForTransport(
   if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
     socket_node->AddParent(channelz_node_.get());
   }
-  return active_connection;
+  return owned_transport;
 }
 
 bool Server::HasOpenConnections() {

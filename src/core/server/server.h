@@ -285,12 +285,14 @@ class Server : public ServerInterface,
     // TODO(roth): After the v3 migration, change this API to take the
     // transport argument as OrphanablePtr<ServerTransport> instead of
     // Transport*, and to return void.
-    void OnHandshakeDone(Orphanable* handshaking_connection,
+    bool OnHandshakeDone(Orphanable* handshaking_connection,
                          Transport* transport, grpc_pollset* accepting_pollset,
                          const ChannelArgs& args);
 
     const MemoryQuotaRefPtr& memory_quota() const { return memory_quota_; }
 
+    // TODO(roth): This should probably apply across all listeners, not
+    // per-listener.
     const ConnectionQuotaRefPtr& connection_quota() const {
       return connection_quota_;
     }
