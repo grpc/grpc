@@ -1490,8 +1490,10 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
           // or running in observability mode. This is a promise factory
           // so that the half-close is not forwarded until the drain wait
           // above completes. Wait for the child call to be started first,
-          // since the half-close may be read before the ext_proc server has
-          // responded to the request headers.
+          // since if the client half-closes without sending any message,
+          // the half-close may be read before the ext_proc server has
+          // responded to the request headers. (Any message forwarded before
+          // the half-close has already waited for the child call.)
           [self = WeakRef(), send_to_sidestream]() {
             return If(
                 !send_to_sidestream || self->config().observability_mode,

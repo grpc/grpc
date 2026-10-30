@@ -1771,6 +1771,41 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
 
+// The request body is not sent to the ext_proc server, so the half-close is
+// forwarded directly to the backend. However, the child call is not started
+// until the ext_proc server responds to the request headers, so the filter
+// must hold the half-close until then.
+// Note: With the PH2 server transport, the server-side filter reads the
+// half-close before the ext_proc server's response is processed. With the
+// other transports, the half-close is currently read after it.
+TEST_P(XdsExtProcEnd2endTest,
+       BidiStreamHalfCloseWithoutMessageBeforeRequestHeadersResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(false)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  StartBackendServer();
+  AsyncBidiStream stream;
+  stream.Start(stub_.get());
+  // Half-close without sending any message, before the ext_proc server
+  // responds to the request headers.  Start the read first, so the pending
+  // read keeps the call alive.
+  stream.StartReadMessage();
+  stream.StartWritesDone();
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_THAT(req,
+              ::testing::Optional(
+                  MatchesRequestHeaders(::testing::Contains(::testing::Pair(
+                      ":path", "/grpc.testing.EchoTestService/BidiStream")))));
+  ext_proc_stream->SendResponse(MakeRequestHeadersMutationResponse({}));
+  EXPECT_FALSE(stream.WaitForRead().has_value());
+  EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+  EXPECT_EQ(ext_proc_stream->GetNextRequest(), std::nullopt);
+}
+
 //
 // Response Headers tests
 //
