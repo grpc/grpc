@@ -29,6 +29,17 @@
 
 namespace grpc_core {
 
+// A ValueOrFailure<T> (as returned by FilterTest's Pull*() methods) that holds
+// a value matching `value_matcher`: the ValueOrFailure counterpart of
+// ::testing::Optional().
+MATCHER_P(IsOkAndHolds, value_matcher, "") {
+  if (!arg.ok()) {
+    *result_listener << "which is a failure";
+    return false;
+  }
+  return ::testing::ExplainMatchResult(value_matcher, *arg, result_listener);
+}
+
 // Metadata has a given key with a given value.
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {
   std::string temp;

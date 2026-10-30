@@ -30616,6 +30616,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/filters/ext_proc_test_util.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
@@ -30690,8 +30691,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
-  - third_party/envoy-api/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto
-  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.proto
   - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto

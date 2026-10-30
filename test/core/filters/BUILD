@@ -43,6 +43,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_proc_test_util",
+    testonly = 1,
+    hdrs = ["ext_proc_test_util.h"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    visibility = ["//test:__subpackages__"],
+    deps = [
+        "//:grpc_status",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_library(
     name = "filter_test",
     testonly = 1,
     srcs = ["filter_test.cc"],
@@ -401,6 +418,44 @@ grpc_cc_benchmark(
         "//src/core:default_event_engine",
         "//src/core:metadata",
         "//test/core/call:call_spine_benchmarks",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "ext_proc_filter_test",
+    srcs = ["ext_proc_filter_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        ":ext_proc_test_util",
+        ":filter_matchers",
+        ":filter_test",
+        "//:gpr",
+        "//:grpc",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+        "//src/core:call_spine",
+        "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:client_channel_args",
+        "//src/core:endpoint_info_handshaker",
+        "//src/core:ext_proc_messages",
+        "//src/core:filter_args",
+        "//src/core:grpc_ext_proc_filter",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:metrics",
+        "//src/core:time",
+        "//src/core:xds_server_grpc",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/xds:xds_transport_fake",
+        "@com_google_protobuf//:struct_cc_proto",
+        "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
     ],
 )
 
