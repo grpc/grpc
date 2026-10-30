@@ -604,6 +604,24 @@ TEST(JwtVerifierTest, JwtVerifierBadFormat) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+// The JOSE header of this token decodes to {"alg":{}}, i.e. the alg field is
+// present but is not a string. The verifier must reject it rather than reading
+// the non-string field.
+TEST(JwtVerifierTest, JwtVerifierNonStringAlgFormat) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
+  grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                                      httpcli_post_should_not_be_called,
+                                      httpcli_put_should_not_be_called);
+  grpc_jwt_verifier_verify(verifier, nullptr,
+                           "eyJhbGciOnt9fQ.eyJpc3MiOiJ4In0.AAAA",
+                           expected_audience, on_verification_bad_format,
+                           const_cast<char*>(expected_user_data));
+  grpc_jwt_verifier_destroy(verifier);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 // find verification key: bad jks, cannot find key in jks
 // bad signature custom provided email
 // bad key
