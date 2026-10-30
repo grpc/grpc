@@ -23,9 +23,11 @@
 #include <vector>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace experimental {
@@ -132,6 +134,13 @@ absl::Status InMemoryCertificateProvider::UpdateRoot(
              c_provider_, root_certificate.c_str())
              ? absl::OkStatus()
              : absl::InternalError("Unable to update root certificate");
+}
+
+absl::Status InMemoryCertificateProvider::UpdateSpiffeBundleMap(
+    absl::string_view spiffe_bundle_map) {
+  auto* provider =
+      grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(c_provider_);
+  return provider->UpdateSpiffeBundleMap(spiffe_bundle_map);
 }
 
 absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
