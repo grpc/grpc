@@ -93,3 +93,13 @@ pushd "examples/cpp/helloworld/cmake/build"
 cmake -DCMAKE_CXX_STANDARD=17 ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd
+
+# Verify the installed health.proto is consumable via gRPC_PROTOS_DIR.
+# Remove the source copy so the example cannot fall back to the source tree.
+test -f /usr/local/share/grpc/protos/grpc/health/v1/health.proto
+rm -rf third_party/grpc-proto
+mkdir -p "examples/cpp/health/cmake/build"
+pushd "examples/cpp/health/cmake/build"
+cmake -DCMAKE_CXX_STANDARD=17 ../..
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
+popd

@@ -1,6 +1,11 @@
 # Module path
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/modules)
 
+# Directory containing installed .proto files (e.g. grpc/health/v1/health.proto).
+# Use as a protoc include path: -I ${gRPC_PROTOS_DIR}
+get_filename_component(gRPC_PROTOS_DIR
+  "${CMAKE_CURRENT_LIST_DIR}/@_gRPC_CMAKEDIR_TO_PROTOS@" ABSOLUTE)
+
 # Depend packages
 @_gRPC_FIND_ZLIB@
 @_gRPC_FIND_PROTOBUF@
