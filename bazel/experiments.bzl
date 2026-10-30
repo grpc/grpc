@@ -39,6 +39,7 @@ EXPERIMENT_ENABLES = {
     "inproc_cancel_stream": "inproc_cancel_stream",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
+    "map_host_header_to_authority": "map_host_header_to_authority",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
@@ -203,6 +204,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "map_host_header_to_authority",
                 "v2_non_owning_waker_implementation",
             ],
             "event_engine_client_test": [
@@ -214,7 +216,11 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
+            "hpack_test": [
+                "map_host_header_to_authority",
+            ],
             "xds_end2end_test": [
+                "map_host_header_to_authority",
                 "xds_server_filter_chain_per_route",
             ],
             "xds_test": [

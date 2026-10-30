@@ -44,8 +44,10 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_constants",
         "//:sockaddr_utils",
         "//src/core:grpc_authorization_base",
+        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
