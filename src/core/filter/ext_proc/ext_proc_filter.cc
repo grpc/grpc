@@ -51,6 +51,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
+#include "src/core/util/useful.h"
 #include "src/core/xds/grpc/streaming_call_promise_wrapper.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_transport.h"
@@ -501,7 +502,22 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // Coordinates client-side and server-side message sources within the handler_
   // activity so that only one send is in-flight on streaming_call_ at a time,
   // using a single Waker without any queue or vector allocations.
-  auto SendMessageToSideStream(std::string payload);
+  //
+  // For body events (messages and half-close), `drain_state` may be set to the
+  // drain state of their direction. Per gRFC A93, the ext_proc server echoes
+  // back only the body events it receives before drain_complete, so if a drain
+  // has started in that direction by the time the event would be sent, it is
+  // not sent and this resolves to Failure; the caller must then forward the
+  // event on the data plane once the drain completes. Otherwise, this always
+  // resolves to Success; side-stream errors are handled by
+  // HandleSideStreamStatus().
+  auto SendMessageToSideStream(std::string payload,
+                               const BodyDrainState* drain_state = nullptr);
+
+  // Wait for an in-flight request or response body drain to complete.
+  // Resolve to Failure if the drain did not complete successfully.
+  auto WaitForRequestBodyDrain();
+  auto WaitForResponseBodyDrain();
 
   // Parses and processes an incoming response message payload from the
   // side-stream, then sends any resulting drain messages.
@@ -530,6 +546,14 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
     if (config().observability_mode) return allow;
     return allow && !first_body_message_sent_;
   }
+
+  // Returns pending accumulated client window increments to piggyback on an
+  // outbound request.
+  std::optional<ExtProcClientWindowUpdate> MaybeGetClientWindowUpdate();
+
+  // Dispatches a standalone ClientWindowUpdate if pending increments cross the
+  // threshold or if send windows are exhausted with pending increments.
+  void MaybeSendStandaloneWindowUpdate();
 
   // Fails the intercepted data plane RPC with the given error status by
   // pushing error trailing metadata downstream to the client.
@@ -643,6 +667,19 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // Latch signaled when the side-stream is closed or drained.
   Latch<void> side_stream_closed_latch_;
 
+  // Flow control windows and pending client window updates in bytes.
+  int64_t downstream_to_sidestream_window_ = kExtProcInitialWindowSize;
+  int64_t upstream_to_sidestream_window_ = kExtProcInitialWindowSize;
+  int64_t pending_increment_sidestream_to_upstream_ = 0;
+  int64_t pending_increment_sidestream_to_downstream_ = 0;
+  // Flow control windows granted to the ext_proc server for sending messages
+  // back to the filter, in bytes, as seen by the filter. Used to detect an
+  // ext_proc server that does not respect flow control.
+  int64_t sidestream_to_upstream_window_ = kExtProcInitialWindowSize;
+  int64_t sidestream_to_downstream_window_ = kExtProcInitialWindowSize;
+  Waker downstream_to_sidestream_waker_;
+  Waker upstream_to_sidestream_waker_;
+
   // Send state and waiters for coordinating message sends on the side-stream
   // within the handler_ activity.
   SideStreamSendState ext_proc_send_state_ = SideStreamSendState::kIdle;
@@ -707,19 +744,29 @@ ExtProcFilter::ExtProcCall::~ExtProcCall() {
 // - if a message is already in progress then wait for the in flight message to
 // get complete and then send the previous one if the stream is not closed
 // - Handle the failure mode allow
-auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
+// - if `drain_state` is non-null, skip sending if a drain has started in that
+// direction
+auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(
+    std::string payload, const BodyDrainState* drain_state) {
   return Map(
       TrySeq(
-          // Wait until send state is kIdle, then mark kSendInFlight.
-          [self = WeakRef()]() -> Poll<StatusFlag> {
+          // Wait until no other send is in flight, then mark kSendInFlight,
+          // unless the side-stream can no longer be used or a drain has
+          // started. The drain check must happen here, when the send is
+          // claimed, since that determines the order of this message relative
+          // to drain_complete on the side-stream.
+          [self = WeakRef(), drain_state]() -> Poll<StatusFlag> {
+            if (self->ext_proc_send_state_ ==
+                SideStreamSendState::kSendInFlight) {
+              return self->ext_proc_send_waiter_.pending();
+            }
             if (self->streaming_call_ == nullptr ||
                 self->ext_proc_send_state_ ==
                     SideStreamSendState::kSendFailed ||
-                self->side_stream_closed_latch_.is_set()) {
+                self->side_stream_closed_latch_.is_set() ||
+                (drain_state != nullptr &&
+                 *drain_state != BodyDrainState::kNotDraining)) {
               return Failure{};
-            }
-            if (self->ext_proc_send_state_ != SideStreamSendState::kIdle) {
-              return self->ext_proc_send_waiter_.pending();
             }
             self->ext_proc_send_state_ = SideStreamSendState::kSendInFlight;
             return Success{};
@@ -728,8 +775,18 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
           [self = WeakRef(), payload = std::move(payload)]() mutable {
             return self->streaming_call_->PushMessage(std::move(payload));
           }),
-      // Reset send state and wake up any waiting senders.
-      [self = WeakRef()](StatusFlag status) -> StatusFlag {
+      [self = WeakRef(), drain_state](StatusFlag status) -> StatusFlag {
+        // If the send was not claimed, the message was not sent. Return
+        // Failure if that is because a drain has started, so that the caller
+        // forwards the event on the data plane.
+        if (self->ext_proc_send_state_ != SideStreamSendState::kSendInFlight) {
+          if (drain_state != nullptr &&
+              *drain_state != BodyDrainState::kNotDraining) {
+            return Failure{};
+          }
+          return Success{};
+        }
+        // Reset send state and wake up any waiting senders.
         self->ext_proc_send_state_ =
             status.ok() && !self->side_stream_closed_latch_.is_set()
                 ? SideStreamSendState::kIdle
@@ -741,6 +798,79 @@ auto ExtProcFilter::ExtProcCall::SendMessageToSideStream(std::string payload) {
         // and policy decisions are handled by HandleSideStreamStatus.
         return Success{};
       });
+}
+
+auto ExtProcFilter::ExtProcCall::WaitForRequestBodyDrain() {
+  return TrySeq(
+      request_body_drain_complete_latch_.Wait(),
+      [self = WeakRef()]() -> StatusFlag {
+        if (self->request_body_drain_state_ != BodyDrainState::kDrained) {
+          return Failure{};
+        }
+        return Success{};
+      });
+}
+
+auto ExtProcFilter::ExtProcCall::WaitForResponseBodyDrain() {
+  return TrySeq(
+      response_body_drain_complete_latch_.Wait(),
+      [self = WeakRef()]() -> StatusFlag {
+        if (self->response_body_drain_state_ != BodyDrainState::kDrained) {
+          return Failure{};
+        }
+        return Success{};
+      });
+}
+
+std::optional<ExtProcClientWindowUpdate>
+ExtProcFilter::ExtProcCall::MaybeGetClientWindowUpdate() {
+  if (pending_increment_sidestream_to_upstream_ == 0 &&
+      pending_increment_sidestream_to_downstream_ == 0) {
+    return std::nullopt;
+  }
+  ExtProcClientWindowUpdate update;
+  update.window_increment_sidestream_to_upstream =
+      std::exchange(pending_increment_sidestream_to_upstream_, 0);
+  update.window_increment_sidestream_to_downstream =
+      std::exchange(pending_increment_sidestream_to_downstream_, 0);
+  sidestream_to_upstream_window_ +=
+      update.window_increment_sidestream_to_upstream;
+  sidestream_to_downstream_window_ +=
+      update.window_increment_sidestream_to_downstream;
+  return update;
+}
+
+void ExtProcFilter::ExtProcCall::MaybeSendStandaloneWindowUpdate() {
+  // Send a standalone update only if a pending increment has reached the
+  // threshold, or if either window is non-positive, since then there may be no
+  // upcoming payload to piggyback the update on.
+  if (pending_increment_sidestream_to_upstream_ <
+          kExtProcWindowUpdateThreshold &&
+      pending_increment_sidestream_to_downstream_ <
+          kExtProcWindowUpdateThreshold &&
+      downstream_to_sidestream_window_ > 0 &&
+      upstream_to_sidestream_window_ > 0) {
+    return;
+  }
+  std::optional<ExtProcClientWindowUpdate> update =
+      MaybeGetClientWindowUpdate();
+  if (!update.has_value()) return;
+  upb::Arena arena;
+  auto payload = CreateExtProcClientWindowUpdateRequest(arena.ptr(), *update);
+  if (!payload.ok()) {
+    HandleSideStreamStatus(payload.status());
+    return;
+  }
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << DebugTag()
+      << "Sending standalone ClientWindowUpdate: sidestream_to_upstream="
+      << update->window_increment_sidestream_to_upstream
+      << ", sidestream_to_downstream="
+      << update->window_increment_sidestream_to_downstream;
+  handler_.SpawnGuarded("send_client_window_update",
+                        [self = WeakRef(), payload = std::move(*payload)]() {
+                          return self->SendMessageToSideStream(payload);
+                        });
 }
 
 // Spawns the read-from-server loop on initiator_.
@@ -860,13 +990,39 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
   // Handle message, if any.
   if (!response.mutation.end_of_stream ||
       !response.mutation.end_of_stream_without_message) {
+    const int64_t message_size =
+        static_cast<int64_t>(response.mutation.body.size());
+    // Per gRFC A93, the ext_proc server may send a message only while its
+    // flow control window is positive.
+    if (sidestream_to_upstream_window_ <= 0) {
+      CancelCallWithError(absl::InternalError(
+          "External processor exceeded flow control window for client "
+          "messages"));
+      return Failure{};
+    }
+    sidestream_to_upstream_window_ -= message_size;
     auto slice = Slice::FromCopiedString(response.mutation.body);
     auto new_msg = initiator_.arena()->MakePooled<Message>(
         SliceBuffer(std::move(slice)), /*flags=*/0);
     // TODO(rishesh, roth): Spawning this push into the activity means that we
     // won't have flow control feedback here in a pure v3 stack, so we need to
     // fix it before we finish the v3 migration.
-    initiator_.SpawnPushMessage(std::move(new_msg));
+    // Per gRFC A93, the window for this message is returned to the ext_proc
+    // server only once the message has passed flow control upstream. The
+    // on_done callback runs on initiator_'s party, but the window state is
+    // synchronized by handler_'s party, so we must hop back to handler_'s
+    // party before touching it.
+    initiator_.SpawnPushMessage(
+        std::move(new_msg),
+        [self = WeakRef(), handler = handler_, message_size](bool ok) mutable {
+          if (!ok) return;
+          handler.SpawnInfallible(
+              "ext_proc_return_sidestream_to_upstream_window",
+              [self = std::move(self), message_size]() {
+                self->pending_increment_sidestream_to_upstream_ += message_size;
+                self->MaybeSendStandaloneWindowUpdate();
+              });
+        });
   }
   // Handle EOS.
   if (response.mutation.end_of_stream) {
@@ -988,15 +1144,34 @@ StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
     return Failure{};
   }
   --outstanding_s2c_messages_;
+  const int64_t message_size =
+      static_cast<int64_t>(response.mutation.body.size());
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << DebugTag() << "Processing external processor response for server body";
+  // Per gRFC A93, the ext_proc server may send a message only while its flow
+  // control window is positive.
+  if (sidestream_to_downstream_window_ <= 0) {
+    CancelCallWithError(absl::InternalError(
+        "External processor exceeded flow control window for server "
+        "messages"));
+    return Failure{};
+  }
+  sidestream_to_downstream_window_ -= message_size;
   auto slice = Slice::FromCopiedString(response.mutation.body);
   auto new_msg = handler_.arena()->MakePooled<Message>(
       SliceBuffer(std::move(slice)), /*flags=*/0);
   // TODO(rishesh, roth): Spawning this push into the activity means that we
   // won't have flow control feedback here in a pure v3 stack, so we need to fix
   // it before we finish the v3 migration.
-  handler_.SpawnPushMessage(std::move(new_msg));
+  // Per gRFC A93, the window for this message is returned to the ext_proc
+  // server only once the message has passed flow control downstream. The push
+  // completes on handler_'s party, which is where this state lives.
+  handler_.SpawnPushMessage(
+      std::move(new_msg), [self = WeakRef(), message_size](bool ok) {
+        if (!ok) return;
+        self->pending_increment_sidestream_to_downstream_ += message_size;
+        self->MaybeSendStandaloneWindowUpdate();
+      });
   return Success{};
 }
 
@@ -1083,6 +1258,32 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       HandleSideStreamStatus(parsed_response.status());
       return Failure{};
     }
+    // Apply server_window_update if present. Per gRFC A93, increments may be
+    // positive or negative and must be applied immediately, so the available
+    // window may go negative. Use saturating arithmetic since the values come
+    // from the ext_proc server.
+    if (parsed_response->server_window_update.has_value()) {
+      const auto& update = *parsed_response->server_window_update;
+      GRPC_TRACE_LOG(ext_proc_filter, INFO)
+          << DebugTag()
+          << "Processing ServerWindowUpdate: downstream_to_sidestream="
+          << update.window_increment_downstream_to_sidestream
+          << ", upstream_to_sidestream="
+          << update.window_increment_upstream_to_sidestream;
+      downstream_to_sidestream_window_ =
+          SaturatingAdd(downstream_to_sidestream_window_,
+                        update.window_increment_downstream_to_sidestream);
+      if (downstream_to_sidestream_window_ > 0) {
+        downstream_to_sidestream_waker_.Wakeup();
+      }
+      upstream_to_sidestream_window_ =
+          SaturatingAdd(upstream_to_sidestream_window_,
+                        update.window_increment_upstream_to_sidestream);
+      if (upstream_to_sidestream_window_ > 0) {
+        upstream_to_sidestream_waker_.Wakeup();
+      }
+      MaybeSendStandaloneWindowUpdate();
+    }
     // Handle request body drain initiation.
     if (parsed_response->request_drain_requests &&
         processing_mode().send_request_body && !c2s_writes_done_ &&
@@ -1091,12 +1292,13 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       GRPC_TRACE_LOG(ext_proc_filter, INFO)
           << DebugTag() << "initiating request body drain";
       request_body_drain_state_ = BodyDrainState::kDrainInFlight;
+      downstream_to_sidestream_waker_.Wakeup();
       upb::Arena arena;
       auto drain_payload = CreateExtProcClientBodyRequest(
           arena.ptr(), /*body=*/"", /*attributes=*/nullptr,
           config().observability_mode, /*processing_mode=*/std::nullopt,
           /*end_of_stream=*/false, /*end_of_stream_without_message=*/false,
-          /*drain_complete=*/true);
+          /*drain_complete=*/true, MaybeGetClientWindowUpdate());
       if (!drain_payload.ok()) {
         HandleSideStreamStatus(drain_payload.status());
         return Failure{};
@@ -1111,11 +1313,12 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       GRPC_TRACE_LOG(ext_proc_filter, INFO)
           << DebugTag() << "initiating response body drain";
       response_body_drain_state_ = BodyDrainState::kDrainInFlight;
+      upstream_to_sidestream_waker_.Wakeup();
       upb::Arena arena;
       auto drain_payload = CreateExtProcServerBodyRequest(
           arena.ptr(), /*body=*/"", /*attributes=*/nullptr,
           config().observability_mode, /*processing_mode=*/std::nullopt,
-          /*drain_complete=*/true);
+          /*drain_complete=*/true, MaybeGetClientWindowUpdate());
       if (!drain_payload.ok()) {
         HandleSideStreamStatus(drain_payload.status());
         return Failure{};
@@ -1166,6 +1369,8 @@ bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
     return true;
   }
   side_stream_closed_latch_.Set();
+  downstream_to_sidestream_waker_.Wakeup();
+  upstream_to_sidestream_waker_.Wakeup();
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << DebugTag() << "status received: " << status;
   const bool has_outstanding_messages =
@@ -1260,7 +1465,8 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromClient(
         arena.ptr(), client_initial_metadata_.get(),
         config().forwarding_allowed_headers,
         config().forwarding_disallowed_headers, header_attributes,
-        config().observability_mode, processing_mode);
+        config().observability_mode, processing_mode,
+        MaybeGetClientWindowUpdate());
   }
   // If request body will be sent later and request attributes are
   // configured, extract initial attributes from client metadata.
@@ -1321,6 +1527,7 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
       !side_stream_closed_latch_.is_set() &&
       request_body_drain_state_ == BodyDrainState::kNotDraining;
   absl::StatusOr<std::string> payload = "";
+  int64_t message_size = 0;
   if (request_body_drain_state_ != BodyDrainState::kNotDraining) {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << DebugTag() << "Client message in drain mode";
@@ -1345,8 +1552,15 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
     if (message != nullptr) {
       message_bytes = message->payload()->JoinIntoString();
     }
+    message_size = static_cast<int64_t>(message_bytes.size());
     if (!config().observability_mode) {
       ++outstanding_c2s_messages_;
+      // If we are about to block on flow control, flush any pending client
+      // window update now rather than piggybacking it on this payload, which
+      // would hold it back until the window opens.
+      if (downstream_to_sidestream_window_ <= 0) {
+        MaybeSendStandaloneWindowUpdate();
+      }
     }
     std::optional<ExtProcProcessingMode> processing_mode;
     if (IsFirstMessageOnSideStream()) {
@@ -1357,7 +1571,8 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
         arena.ptr(), message_bytes, request_attributes_,
         config().observability_mode, processing_mode,
         /*end_of_stream=*/false,
-        /*end_of_stream_without_message=*/false);
+        /*end_of_stream_without_message=*/false,
+        /*drain_complete=*/false, MaybeGetClientWindowUpdate());
     request_attributes_ = nullptr;
   }
   const bool call_cancelled =
@@ -1370,53 +1585,94 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromClient(
           // Wait for request body drain to complete if in flight.
           If(
               request_body_drain_state_ == BodyDrainState::kDrainInFlight,
-              [self = WeakRef()]() {
-                return TrySeq(self->request_body_drain_complete_latch_.Wait(),
-                              [self]() -> StatusFlag {
-                                if (self->request_body_drain_state_ !=
-                                    BodyDrainState::kDrained) {
-                                  return Failure{};
-                                }
-                                return Success{};
-                              });
+              [self = WeakRef()]() { return self->WaitForRequestBodyDrain(); },
+              Immediate(StatusFlag(Success{}))),
+          // Wait for downstream_to_sidestream_window_ to be positive (or for
+          // flow control to no longer apply), then charge this message
+          // against the window. Per gRFC A93, in GRPC body send mode a single
+          // message may be sent whenever the window is positive, even if the
+          // message is larger than the window, so the window may go negative.
+          // ext_proc-level flow control does not apply in observability mode.
+          If(
+              send_to_sidestream && !config().observability_mode,
+              [self = WeakRef(), message_size]() -> Poll<StatusFlag> {
+                // If the side-stream has failed or a drain has started, this
+                // message will not be sent on the side-stream.
+                if (self->side_stream_closed_latch_.is_set() ||
+                    self->request_body_drain_state_ !=
+                        BodyDrainState::kNotDraining ||
+                    self->ext_proc_send_state_ ==
+                        SideStreamSendState::kSendFailed) {
+                  return Success{};
+                }
+                if (self->downstream_to_sidestream_window_ <= 0) {
+                  self->downstream_to_sidestream_waker_ =
+                      GetContext<Activity>()->MakeNonOwningWaker();
+                  return Pending{};
+                }
+                self->downstream_to_sidestream_window_ -= message_size;
+                if (self->downstream_to_sidestream_window_ <= 0) {
+                  self->MaybeSendStandaloneWindowUpdate();
+                }
+                return Success{};
               },
               Immediate(StatusFlag(Success{}))),
-          // This is a promise factory rather than a promise, so that the
-          // message is not forwarded until the drain wait above completes
-          // (If<bool> invokes its branch factory eagerly on construction).
-          [self = WeakRef(), send_to_sidestream, message = std::move(message),
-           payload = std::move(payload)]() mutable {
-            return Map(
-                TryJoin<ValueOrFailure>(
-                    // Forward client message to backend if not waiting for
-                    // side-stream or running in observability mode.
-                    If(
-                        !send_to_sidestream ||
-                            self->config().observability_mode,
-                        [self, message = std::move(message)]() mutable {
+          // Send client message payload to the side-stream, then forward it to
+          // the backend if not waiting for side-stream or running in
+          // observability mode. In observability mode, per gRFC A93, the
+          // message must not proceed on the data plane until the side-stream
+          // write completes, so that HTTP/2 flow control push-back on the
+          // side-stream propagates to the originator of the message.
+          // Note: This must be a factory rather than an If() so that the push
+          // happens only after the previous steps complete; If() with a bool
+          // condition invokes its factory eagerly upon construction.
+          [self = WeakRef(), payload = std::move(payload),
+           message = std::move(message), send_to_sidestream,
+           forward =
+               !send_to_sidestream || config().observability_mode]() mutable {
+            return Seq(
+                If(
+                    send_to_sidestream,
+                    [self, payload = std::move(payload)]() mutable {
+                      self->first_body_message_sent_ = true;
+                      // Drains do not apply in observability mode.
+                      const BodyDrainState* drain_state = nullptr;
+                      if (self->config().observability_mode) {
+                        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                            << self->DebugTag()
+                            << "Client message observability mode";
+                      } else {
+                        drain_state = &self->request_body_drain_state_;
+                      }
+                      return self->SendMessageToSideStream(std::move(*payload),
+                                                           drain_state);
+                    },
+                    Immediate(StatusFlag(Success{}))),
+                // Failure means the message was not sent because a request
+                // body drain started after it was read. The ext_proc server
+                // will not echo it back, so forward it once the drain
+                // completes, after any messages that the ext_proc server does
+                // echo back.
+                [self, message = std::move(message),
+                 forward](StatusFlag sent) mutable {
+                  if (!sent.ok()) --self->outstanding_c2s_messages_;
+                  return TrySeq(
+                      If(
+                          !sent.ok(),
+                          [self]() { return self->WaitForRequestBodyDrain(); },
+                          Immediate(StatusFlag(Success{}))),
+                      [self, message = std::move(message),
+                       forward = forward || !sent.ok()]() mutable {
+                        if (forward) {
                           // TODO(rishesh, roth): Spawning this push into the
                           // activity means that we won't have flow control
                           // feedback here in a pure v3 stack, so we need to
                           // fix it before we finish the v3 migration.
                           self->initiator_.SpawnPushMessage(std::move(message));
-                          return Immediate(StatusFlag(Success{}));
-                        },
-                        Immediate(StatusFlag(Success{}))),
-                    // Send client message payload to the side-stream.
-                    If(
-                        send_to_sidestream,
-                        [self, payload = std::move(payload)]() mutable {
-                          self->first_body_message_sent_ = true;
-                          if (self->config().observability_mode) {
-                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                                << self->DebugTag()
-                                << "Client message observability mode";
-                          }
-                          return self->SendMessageToSideStream(
-                              std::move(*payload));
-                        },
-                        Immediate(StatusFlag(Success{})))),
-                [](auto x) { return x.status(); });
+                        }
+                        return StatusFlag(Success{});
+                      });
+                });
           }));
 }
 
@@ -1443,7 +1699,8 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
         arena.ptr(), /*body=*/"", request_attributes_,
         config().observability_mode, processing_mode,
         /*end_of_stream=*/true,
-        /*end_of_stream_without_message=*/true);
+        /*end_of_stream_without_message=*/true,
+        /*drain_complete=*/false, MaybeGetClientWindowUpdate());
     request_attributes_ = nullptr;
   }
   const bool call_cancelled =
@@ -1456,37 +1713,48 @@ auto ExtProcFilter::ExtProcCall::HandleHalfCloseFromClient() {
           // Wait for request body drain to complete if in flight.
           If(
               request_body_drain_state_ == BodyDrainState::kDrainInFlight,
-              [self = WeakRef()]() {
-                return TrySeq(self->request_body_drain_complete_latch_.Wait(),
-                              [self]() -> StatusFlag {
-                                if (self->request_body_drain_state_ !=
-                                    BodyDrainState::kDrained) {
-                                  return Failure{};
-                                }
-                                return Success{};
-                              });
-              },
+              [self = WeakRef()]() { return self->WaitForRequestBodyDrain(); },
               Immediate(StatusFlag(Success{}))),
           // Forward half-close to backend if not waiting for side-stream
-          // or running in observability mode. This is a promise factory
-          // so that the half-close is not forwarded until the drain wait
-          // above completes.
-          [self = WeakRef(), send_to_sidestream]() {
-            if (!send_to_sidestream || self->config().observability_mode) {
-              self->initiator_.SpawnFinishSends();
-            }
-            return Immediate(StatusFlag(Success{}));
+          // or running in observability mode.
+          [self = WeakRef(),
+           forward = !send_to_sidestream || config().observability_mode]() {
+            if (forward) self->initiator_.SpawnFinishSends();
+            return StatusFlag(Success{});
           },
           // Send client half-close payload to the side-stream.
-          [self = WeakRef(), send_to_sidestream,
-           payload = std::move(payload)]() mutable {
-            return If(
-                send_to_sidestream,
-                [self, payload = std::move(payload)]() mutable {
-                  self->first_body_message_sent_ = true;
-                  return self->SendMessageToSideStream(std::move(*payload));
-                },
-                Immediate(StatusFlag(Success{})));
+          [self = WeakRef(), payload = std::move(payload),
+           send_to_sidestream]() mutable {
+            return Seq(If(
+                           send_to_sidestream,
+                           [self, payload = std::move(payload)]() mutable {
+                             self->first_body_message_sent_ = true;
+                             // Drains do not apply in observability mode.
+                             const BodyDrainState* drain_state = nullptr;
+                             if (!self->config().observability_mode) {
+                               drain_state = &self->request_body_drain_state_;
+                             }
+                             return self->SendMessageToSideStream(
+                                 std::move(*payload), drain_state);
+                           },
+                           Immediate(StatusFlag(Success{}))),
+                       // Failure means the half-close was not sent because a
+                       // request body drain started after it was read. The
+                       // ext_proc server will not echo it back, so forward it
+                       // once the drain completes.
+                       [self](StatusFlag sent) {
+                         if (!sent.ok()) --self->outstanding_c2s_messages_;
+                         return If(
+                             !sent.ok(),
+                             [self]() {
+                               return TrySeq(
+                                   self->WaitForRequestBodyDrain(), [self]() {
+                                     self->initiator_.SpawnFinishSends();
+                                     return StatusFlag(Success{});
+                                   });
+                             },
+                             Immediate(StatusFlag(Success{})));
+                       });
           }));
 }
 
@@ -1525,7 +1793,7 @@ auto ExtProcFilter::ExtProcCall::HandleInitialMetadataFromServer(
         config().forwarding_allowed_headers,
         config().forwarding_disallowed_headers,
         /*attributes=*/nullptr, config().observability_mode, processing_mode,
-        /*end_of_stream=*/false);
+        /*end_of_stream=*/false, MaybeGetClientWindowUpdate());
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
@@ -1598,13 +1866,14 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
                         config().forwarding_allowed_headers,
                         config().forwarding_disallowed_headers,
                         /*attributes=*/nullptr, config().observability_mode,
-                        processing_mode, /*end_of_stream=*/true)
+                        processing_mode, /*end_of_stream=*/true,
+                        MaybeGetClientWindowUpdate())
                   : CreateExtProcServerTrailersRequest(
                         arena.ptr(), server_trailing_metadata_.get(),
                         config().forwarding_allowed_headers,
                         config().forwarding_disallowed_headers,
                         /*attributes=*/nullptr, config().observability_mode,
-                        processing_mode);
+                        processing_mode, MaybeGetClientWindowUpdate());
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
@@ -1621,14 +1890,7 @@ auto ExtProcFilter::ExtProcCall::HandleTrailingMetadataFromServer(
                     << self->DebugTag()
                     << "Waiting for response body drain before handling server "
                        "trailing metadata";
-                return TrySeq(self->response_body_drain_complete_latch_.Wait(),
-                              [self]() -> StatusFlag {
-                                if (self->response_body_drain_state_ !=
-                                    BodyDrainState::kDrained) {
-                                  return Failure{};
-                                }
-                                return Success{};
-                              });
+                return self->WaitForResponseBodyDrain();
               },
               Immediate(StatusFlag(Success{}))),
           // Send server trailing metadata payload to the side-stream.
@@ -1681,6 +1943,7 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
       !side_stream_closed_latch_.is_set() &&
       response_body_drain_state_ == BodyDrainState::kNotDraining;
   absl::StatusOr<std::string> payload = "";
+  int64_t message_size = 0;
   if (response_body_drain_state_ != BodyDrainState::kNotDraining) {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << DebugTag() << "Server message in drain mode";
@@ -1693,8 +1956,15 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
     if (message != nullptr) {
       message_bytes = message->payload()->JoinIntoString();
     }
+    message_size = static_cast<int64_t>(message_bytes.size());
     if (!config().observability_mode) {
       ++outstanding_s2c_messages_;
+      // If we are about to block on flow control, flush any pending client
+      // window update now rather than piggybacking it on this payload, which
+      // would hold it back until the window opens.
+      if (upstream_to_sidestream_window_ <= 0) {
+        MaybeSendStandaloneWindowUpdate();
+      }
     }
     std::optional<ExtProcProcessingMode> processing_mode;
     if (IsFirstMessageOnSideStream()) {
@@ -1703,7 +1973,8 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
     upb::Arena arena;
     payload = CreateExtProcServerBodyRequest(
         arena.ptr(), message_bytes, /*attributes=*/nullptr,
-        config().observability_mode, processing_mode);
+        config().observability_mode, processing_mode,
+        /*drain_complete=*/false, MaybeGetClientWindowUpdate());
   }
   const bool call_cancelled =
       !payload.ok() && !HandleSideStreamStatus(payload.status());
@@ -1715,49 +1986,94 @@ auto ExtProcFilter::ExtProcCall::HandleMessageFromServer(
           // Wait for response body drain to complete if in flight.
           If(
               response_body_drain_state_ == BodyDrainState::kDrainInFlight,
-              [self = WeakRef()]() {
-                return TrySeq(self->response_body_drain_complete_latch_.Wait(),
-                              [self]() -> StatusFlag {
-                                if (self->response_body_drain_state_ !=
-                                    BodyDrainState::kDrained) {
-                                  return Failure{};
-                                }
-                                return Success{};
-                              });
+              [self = WeakRef()]() { return self->WaitForResponseBodyDrain(); },
+              Immediate(StatusFlag(Success{}))),
+          // Wait for upstream_to_sidestream_window_ to be positive (or for
+          // flow control to no longer apply), then charge this message
+          // against the window. Per gRFC A93, in GRPC body send mode a single
+          // message may be sent whenever the window is positive, even if the
+          // message is larger than the window, so the window may go negative.
+          // ext_proc-level flow control does not apply in observability mode.
+          If(
+              send_to_sidestream && !config().observability_mode,
+              [self = WeakRef(), message_size]() -> Poll<StatusFlag> {
+                // If the side-stream has failed or a drain has started, this
+                // message will not be sent on the side-stream.
+                if (self->side_stream_closed_latch_.is_set() ||
+                    self->response_body_drain_state_ !=
+                        BodyDrainState::kNotDraining ||
+                    self->ext_proc_send_state_ ==
+                        SideStreamSendState::kSendFailed) {
+                  return Success{};
+                }
+                if (self->upstream_to_sidestream_window_ <= 0) {
+                  self->upstream_to_sidestream_waker_ =
+                      GetContext<Activity>()->MakeNonOwningWaker();
+                  return Pending{};
+                }
+                self->upstream_to_sidestream_window_ -= message_size;
+                if (self->upstream_to_sidestream_window_ <= 0) {
+                  self->MaybeSendStandaloneWindowUpdate();
+                }
+                return Success{};
               },
               Immediate(StatusFlag(Success{}))),
-          // This is a promise factory rather than a promise, so that the
-          // message is not forwarded until the drain wait above completes
-          // (If<bool> invokes its branch factory eagerly on construction).
-          [self = WeakRef(), send_to_sidestream, message = std::move(message),
-           payload = std::move(payload)]() mutable {
-            return Map(
-                TryJoin<ValueOrFailure>(
-                    // Forward server message downstream to client if not
-                    // waiting for side-stream or running in observability
-                    // mode.
-                    If(
-                        !send_to_sidestream ||
-                            self->config().observability_mode,
-                        [self, message = std::move(message)]() mutable {
-                          return self->handler_.PushMessage(std::move(message));
-                        },
-                        Immediate(StatusFlag(Success{}))),
-                    // Send server message payload to the side-stream.
-                    If(
-                        send_to_sidestream,
-                        [self, payload = std::move(payload)]() mutable {
-                          self->first_body_message_sent_ = true;
-                          if (self->config().observability_mode) {
-                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                                << self->DebugTag()
-                                << "Server message observability mode";
-                          }
-                          return self->SendMessageToSideStream(
-                              std::move(*payload));
-                        },
-                        Immediate(StatusFlag(Success{})))),
-                [](auto x) { return x.status(); });
+          // Send server message payload to the side-stream, then forward it
+          // downstream to client if not waiting for side-stream or running in
+          // observability mode. In observability mode, per gRFC A93, the
+          // message must not proceed on the data plane until the side-stream
+          // write completes, so that HTTP/2 flow control push-back on the
+          // side-stream propagates to the originator of the message.
+          // Note: This must be a factory rather than an If() so that the push
+          // starts only after the previous steps complete; If() with a bool
+          // condition invokes its factory eagerly upon construction, and
+          // PushMessage() begins the push when the promise is created.
+          [self = WeakRef(), payload = std::move(payload),
+           message = std::move(message), send_to_sidestream,
+           forward =
+               !send_to_sidestream || config().observability_mode]() mutable {
+            return Seq(
+                If(
+                    send_to_sidestream,
+                    [self, payload = std::move(payload)]() mutable {
+                      self->first_body_message_sent_ = true;
+                      // Drains do not apply in observability mode.
+                      const BodyDrainState* drain_state = nullptr;
+                      if (self->config().observability_mode) {
+                        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                            << self->DebugTag()
+                            << "Server message observability mode";
+                      } else {
+                        drain_state = &self->response_body_drain_state_;
+                      }
+                      return self->SendMessageToSideStream(std::move(*payload),
+                                                           drain_state);
+                    },
+                    Immediate(StatusFlag(Success{}))),
+                // Failure means the message was not sent because a response
+                // body drain started after it was read. The ext_proc server
+                // will not echo it back, so forward it once the drain
+                // completes, after any messages that the ext_proc server does
+                // echo back.
+                [self, message = std::move(message),
+                 forward](StatusFlag sent) mutable {
+                  if (!sent.ok()) --self->outstanding_s2c_messages_;
+                  return TrySeq(
+                      If(
+                          !sent.ok(),
+                          [self]() { return self->WaitForResponseBodyDrain(); },
+                          Immediate(StatusFlag(Success{}))),
+                      [self, message = std::move(message),
+                       forward = forward || !sent.ok()]() mutable {
+                        return If(
+                            forward,
+                            [self, message = std::move(message)]() mutable {
+                              return self->handler_.PushMessage(
+                                  std::move(message));
+                            },
+                            Immediate(StatusFlag(Success{})));
+                      });
+                });
           }));
 }
 
