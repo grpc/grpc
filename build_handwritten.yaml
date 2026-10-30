@@ -30,7 +30,7 @@ settings:
   - '3.13'
   - '3.14'
   - '3.15'
-  version: 1.85.0
+  version: 1.85.1
 configs:
   asan:
     CC: clang

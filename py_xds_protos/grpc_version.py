@@ -14,5 +14,5 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/py_xds_protos/grpc_version.py.inja`!!!
 
-VERSION = '1.85.0'
+VERSION = '1.85.1'
 PROTOBUF_VERSION = '7.35.1'

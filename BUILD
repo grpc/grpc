@@ -289,7 +289,7 @@ g_stands_for = "googol"  # @unused
 
 core_version = "58.0.0"  # @unused
 
-version = "1.85.0"  # @unused
+version = "1.85.1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
