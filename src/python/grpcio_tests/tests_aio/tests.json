@@ -40,6 +40,7 @@
   "tests_aio.unit.init_test.TestInit",
   "tests_aio.unit.metadata_test.TestMetadata",
   "tests_aio.unit.outside_init_test.TestOutsideInit",
+  "tests_aio.unit.plugin_lock_loop_test.TestPluginLockDoesNotStallLoop",
   "tests_aio.unit.secure_call_test.TestStreamStreamSecureCall",
   "tests_aio.unit.secure_call_test.TestUnaryStreamSecureCall",
   "tests_aio.unit.secure_call_test.TestUnaryUnarySecureCall",
