@@ -299,7 +299,9 @@ inline std::ostream& operator<<(std::ostream& os,
   }
 }
 
-template <typename Sink, typename T>
+// Only participates in overload resolution if T itself is stringifiable.
+template <typename Sink, typename T,
+          typename = decltype(absl::StrCat(std::declval<const T&>()))>
 void AbslStringify(Sink& sink, const ValueOrFailure<T>& value) {
   if (value.ok()) {
     sink.Append("Success(");
