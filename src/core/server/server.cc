@@ -146,7 +146,7 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
     RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager) {
   RefCountedPtr<ServerConfigFetcher::ConnectionManager>
       connection_manager_to_destroy;
-  if (!IsServerConnnectionManagementEnabled()) {
+  if (!IsServerConnectionManagementEnabled()) {
     {
       MutexLock lock(listener_state_->mu_);
       connection_manager_to_destroy =
@@ -165,13 +165,12 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
     return;
   }
   {
-    Server* server = listener_state_->server_.get();
-    MutexLock lock(server->mu_global_);
+    MutexLock lock(listener_state_->server_->mu_global_);
     connection_manager_to_destroy = listener_state_->connection_manager_;
     listener_state_->connection_manager_ = std::move(connection_manager);
-    server->DrainAllConnectionsForConnectionManagerLocked(
+    listener_state_->server_->DrainAllConnectionsForConnectionManagerLocked(
         connection_manager_to_destroy.get());
-    if (server->ShutdownCalled()) return;
+    if (listener_state_->server_->ShutdownCalled()) return;
     listener_state_->is_serving_ = true;
     if (listener_state_->started_) return;
     listener_state_->started_ = true;
@@ -180,7 +179,7 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
 }
 
 void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
-  if (!IsServerConnnectionManagementEnabled()) {
+  if (!IsServerConnectionManagementEnabled()) {
     MutexLock lock(listener_state_->mu_);
     listener_state_->legacy_is_serving_ = false;
     listener_state_->DrainConnectionsLocked();
@@ -190,7 +189,7 @@ void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
   MutexLock lock(server->mu_global_);
   listener_state_->is_serving_ = false;
   server->DrainAllConnectionsForConnectionManagerLocked(
-      listener_state_>connection_manager_.get());
+      listener_state_->connection_manager_.get());
 }
 
 //
@@ -239,7 +238,7 @@ void Server::ListenerState::Start() {
 void Server::ListenerState::Stop() {
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections;
-  if (!IsServerConnnectionManagementEnabled()) {
+  if (!IsServerConnectionManagementEnabled()) {
     MutexLock lock(mu_);
     // Orphan the connections so that they can start cleaning up.
     connections = std::move(connections_);
@@ -367,7 +366,7 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnection(
       return std::nullopt;
     }
     connection_manager = connection_manager_;
-    auto& connections = server_->connections_map_[connection_manager];
+    auto& connections = server_->connection_map_[connection_manager];
     connections.handshaking_connections.insert(
         std::move(handshaking_connection));
   }
@@ -451,7 +450,7 @@ void Server::ListenerState::OnHandshakeDone(
     server_->AddDrainingConnectionLocked(std::move(connection),
                                          // FIXME: what is the right
                                          // time to use here?
-                                         Duration::Infinite());
+                                         Duration::Infinity());
   }
 }
 
@@ -535,7 +534,7 @@ class Server::Connection::StateWatcher final : public Transport::StateWatcher {
 
   void OnDisconnect(absl::Status /*status*/,
                     DisconnectInfo /*disconnect_info*/) override {
-    MutexLock lock(connection_->server->mu_global_);
+    MutexLock lock(connection_->server_->mu_global_);
     // Orphan the transport first, so that when the connection is
     // orphaned inside of Server::RemoveActiveConnectionLocked(), it
     // won't try to ask the transport to disconnect.
@@ -599,9 +598,10 @@ void Server::Connection::MaybeSendGoawayLocked(absl::string_view reason) {
   // Do an async hop here, so that we're not calling into the transport
   // while holding the server's lock.
   server_->event_engine_->Run(
-      [transport = transport_->Ref(), reason = std::string(reason)]() mutable {
+      [transport = transport_->RefAsSubclass<ServerTransport>(),
+       reason = std::string(reason)]() mutable {
         ExecCtx exec_ctx;
-        transport->SendGoway(reason);
+        transport->SendGoaway(reason);
         transport.reset();  // While ExecCtx is in scope.
       });
 }
@@ -611,9 +611,10 @@ void Server::Connection::MaybeDisconnectImmediatelyLocked(absl::Status status) {
   // Do an async hop here, so that we're not calling into the transport
   // while holding the server's lock.
   server_->event_engine_->Run(
-      [transport = transport_->Ref(), status = std::move(status)]() mutable {
+      [transport = transport_->RefAsSubclass<ServerTransport>(),
+       status = std::move(status)]() mutable {
         ExecCtx exec_ctx;
-        transport->DisconnectImmediately(std::move(status));
+        transport->DisconnectWithError(std::move(status));
         transport.reset();  // While ExecCtx is in scope.
       });
 }
@@ -1464,10 +1465,10 @@ Server::Server(const ChannelArgs& args)
           channel_args_
               .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)
               .value_or(30))),
-      stream_quota_(channel_args_.GetObject<ResourceQuota>()->stream_quota()),
       event_engine_(
           channel_args_
-              .GetObject<grpc_event_engine::experimental::EventEngine>()) {
+              .GetObject<grpc_event_engine::experimental::EventEngine>()),
+      stream_quota_(channel_args_.GetObject<ResourceQuota>()->stream_quota()) {
   SourceConstructed();
 }
 
@@ -1584,6 +1585,7 @@ grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
   GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
+// FIXME: how should we handle legacy code paths?
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
   // Set up channelz node.
@@ -1723,20 +1725,20 @@ bool Server::HasOpenConnections() {
 
 void Server::DrainAllConnectionsForConnectionManagerLocked(
     ServerConfigFetcher::ConnectionManager* connection_manager) {
-  auto nh = connections_map_.extract(connection_manager);
+  auto nh = connection_map_.extract(connection_manager);
   if (nh.empty()) return;
   // For handshaking connections, orphan them immediately.
-  nh.value().handshaking_connections.clear();
+  nh.mapped().handshaking_connections.clear();
   // For active connections, send GOAWAYs and start a drain timer.
-  for (auto& connection : nh.value().active_connections) {
-    connection->SendGoAway();
+  for (auto& connection : nh.mapped().active_connections) {
+    connection->MaybeSendGoawayLocked("server shutting down");
   }
   auto& draining_connections = draining_connections_list_.emplace_back();
-  draining_connections.connections = std::move(nh.value().active_connections);
+  draining_connections.connections = std::move(nh.mapped().active_connections);
   draining_connections.timestamp =
       Timestamp::Now() +
       std::max(Duration::Zero(),
-               server_->channel_args()
+               channel_args_
                    .GetDurationFromIntMillis(
                        GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
                    .value_or(Duration::Minutes(10)));
@@ -1759,24 +1761,24 @@ void Server::AddDrainingConnectionLocked(OrphanablePtr<Connection> connection,
   MaybeStartNewGraceTimerLocked();
 }
 
-OrphanablePtr<Connection> Server::ExtractActiveConnectionLocked(
+OrphanablePtr<Server::Connection> Server::ExtractActiveConnectionLocked(
     Connection* connection) {
-  auto it = connections_map_.find(connection->connection_manager());
-  if (it != connections_map_.end()) {
+  auto it = connection_map_.find(connection->connection_manager());
+  if (it != connection_map_.end()) {
     auto nh = it->second.active_connections.extract(connection);
     if (!nh.empty()) {
       if (it->second.handshaking_connections.empty() &&
           it->second.active_connections.empty()) {
-        connections_map_.erase(it);
+        connection_map_.erase(it);
       }
-      return nh.value();
+      return std::move(nh.value());
     }
   }
   return nullptr;
 }
 
 void Server::RemoveActiveConnectionLocked(Connection* connection) {
-  // First, check connections_map_.
+  // First, check connection_map_.
   OrphanablePtr<Connection> owned_connection =
       ExtractActiveConnectionLocked(connection);
   if (owned_connection != nullptr) return;
@@ -1809,22 +1811,22 @@ void Server::RemoveActiveConnectionLocked(Connection* connection) {
 
 void Server::OnDrainGraceTimer() {
   absl::flat_hash_set<OrphanablePtr<Connection>> connections_to_be_drained;
-  {
-    MutexLock lock(mu_global_);
-    if (draning_connections_list_.empty()) return;
-    connections_to_be_drained =
-        std::move(draining_connections_list_.front().connections);
-    draining_connections_list_.pop_front();
-    MaybeStartNewGraceTimerLocked();
-  }
+  MutexLock lock(mu_global_);
+  if (draining_connections_list_.empty()) return;
+  connections_to_be_drained =
+      std::move(draining_connections_list_.front().connections);
+  draining_connections_list_.pop_front();
+  MaybeStartNewGraceTimerLocked();
   for (auto& connection : connections_to_be_drained) {
-    connection->DisconnectImmediately();
+    connection->MaybeDisconnectImmediatelyLocked(
+        absl::UnavailableError(
+            "grace time expired, server shutting down connection"));
   }
 }
 
 void Server::MaybeStartNewGraceTimerLocked() {
   if (draining_connections_list_.empty()) return;
-  drain_grace_timer_handle_ = event_engine()->RunAfter(
+  drain_grace_timer_handle_ = event_engine_->RunAfter(
       draining_connections_list_.front().timestamp - Timestamp::Now(),
       [self = Ref()]() mutable {
         ExecCtx exec_ctx;

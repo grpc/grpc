@@ -344,9 +344,9 @@ class Server : public ServerInterface,
     ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
 
     RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
-        ABSL_GUARDED_BY(Server::mu_global_);
-    bool is_serving_ ABSL_GUARDED_BY(Server::mu_global_) = false;
-    bool started_ ABSL_GUARDED_BY(Server::mu_global_) = false;
+        ABSL_GUARDED_BY(&Server::mu_global_);
+    bool is_serving_ ABSL_GUARDED_BY(&Server::mu_global_) = false;
+    bool started_ ABSL_GUARDED_BY(&Server::mu_global_) = false;
 
     // TODO(roth): Remove these fields as part of removing the
     // server_connection_management experiment.
@@ -663,9 +663,9 @@ class Server : public ServerInterface,
 
     // FIXME: maybe use http2 status code here?
     void MaybeSendGoawayLocked(absl::string_view reason)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(Server::mu_global_);
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
     void MaybeDisconnectImmediatelyLocked(absl::Status status)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(Server::mu_global_);
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
 
     ServerConfigFetcher::ConnectionManager* connection_manager() const {
       return connection_manager_.get();
@@ -679,7 +679,7 @@ class Server : public ServerInterface,
 
     // Will be unset when the transport is closed.
     OrphanablePtr<ServerTransport> transport_
-        ABSL_GUARDED_BY(server_->mu_global_);
+        ABSL_GUARDED_BY(&Server::mu_global_);
   };
 
   // A set of connections that are currently draining (i.e., a GOAWAY
@@ -692,25 +692,26 @@ class Server : public ServerInterface,
 
   void DrainAllConnectionsForConnectionManagerLocked(
       ServerConfigFetcher::ConnectionManager* connection_manager)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void StartDrainingConnectionLocked(Connection* connection,
                                      Duration grace_period)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void AddDrainingConnectionLocked(OrphanablePtr<Connection> connection,
                                    Duration grace_period)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   OrphanablePtr<Connection> ExtractActiveConnectionLocked(
       Connection* connection)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void RemoveActiveConnectionLocked(Connection* connection)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void OnDrainGraceTimer();
-  void MaybeStartNewGraceTimerLocked();
+  void MaybeStartNewGraceTimerLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
                                         const absl::string_view& path);
@@ -863,8 +864,10 @@ class Server : public ServerInterface,
     absl::flat_hash_set<OrphanablePtr<Connection>> active_connections;
   };
   absl::flat_hash_map<RefCountedPtr<ServerConfigFetcher::ConnectionManager>,
-                      ConnectionsForConnectionManager>
-      connections_map_ ABSL_GUARDED_BY(mu_global_);
+                      ConnectionsForConnectionManager,
+                      RefCountedPtrHash<ServerConfigFetcher::ConnectionManager>,
+                      RefCountedPtrEq<ServerConfigFetcher::ConnectionManager>>
+      connection_map_ ABSL_GUARDED_BY(mu_global_);
 
   // Tracks connections that are in the process of draining.
   // A connection starts draining when we send a GOAWAY.  Then, some
