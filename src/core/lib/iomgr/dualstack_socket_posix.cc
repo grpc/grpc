@@ -34,7 +34,15 @@
 int grpc_forbid_dualstack_sockets_for_testing = 0;
 
 int grpc_set_socket_dualstack(int fd) {
-  if (!grpc_forbid_dualstack_sockets_for_testing) {
+#ifdef GPR_DRAGONFLY
+  // DragonFly accepts IPV6_V6ONLY=0 but has no IPv4-mapped IPv6 addresses,
+  // so connect() to ::ffff:127.0.0.1 fails with EADDRNOTAVAIL.  Treat it
+  // like the testing case below, so the caller falls back to AF_INET.
+  const bool forbid = true;
+#else
+  const bool forbid = grpc_forbid_dualstack_sockets_for_testing != 0;
+#endif
+  if (!forbid) {
     const int off = 0;
     return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
   } else {
