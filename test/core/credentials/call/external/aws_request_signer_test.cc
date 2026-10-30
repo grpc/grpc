@@ -117,6 +117,24 @@ TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentity) {
       "73452984e4a880ffdc5c392355733ec3f5ba310d5e0609a89244440cadfe7a7a");
 }
 
+TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentityFips) {
+  grpc_error_handle error;
+  grpc_core::AwsRequestSigner signer(
+      kAmzTestAccessKeyId, kAmzTestSecretAccessKey, kAmzTestToken, "POST",
+      "https://"
+      "sts-fips.us-east-2.amazonaws.com?Action=GetCallerIdentity&Version=2011-"
+      "06-15",
+      "us-east-2", "", {{"x-amz-date", kAmzTestDate}}, &error);
+  EXPECT_EQ(error, absl::OkStatus());
+  EXPECT_EQ(
+      signer.GetSignedRequestHeaders()["Authorization"],
+      "AWS4-HMAC-SHA256 "
+      "Credential=ASIARD4OQDT6A77FR3CL/20200811/us-east-2/sts/aws4_request, "
+      "SignedHeaders=host;x-amz-date;x-amz-security-token, "
+      "Signature="
+      "dc64d2d5b33786e97de10de5a82428f1e79cbc69d6ec3d450780f29b20eaa43f");
+}
+
 TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentityNoToken) {
   grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(

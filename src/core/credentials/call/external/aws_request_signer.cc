@@ -32,6 +32,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -200,7 +201,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   // 3. CredentialScope
   std::pair<absl::string_view, absl::string_view> host_parts =
       absl::StrSplit(authority, absl::MaxSplits('.', 1));
-  std::string service_name(host_parts.first);
+  std::string service_name(absl::StripSuffix(host_parts.first, "-fips"));
   std::string credential_scope = absl::StrFormat(
       "%s/%s/%s/aws4_request", request_date_short, region_, service_name);
   string_to_sign_vector.emplace_back(credential_scope);
