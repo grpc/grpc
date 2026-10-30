@@ -87,7 +87,10 @@ XdsStreamingCallPromiseWrapper::PollPullMessage() {
     case RecvState::kRecvMessageInFlight:
       return Pending{};
     case RecvState::kReceivedStatus:
-      return std::nullopt;
+      // Status may arrive after a message has been received but before it
+      // has been consumed, so return any buffered message before reporting
+      // end of stream.
+      return std::exchange(recv_message_, std::nullopt);
     default:
       return Pending{};
   }

@@ -64,6 +64,11 @@
     NSBundle *resourceBundle = [NSBundle
         bundleWithURL:[[bundle resourceURL] URLByAppendingPathComponent:resourceBundlePath]];
     _sslRootPathStr = [resourceBundle pathForResource:rootsPEM ofType:@"pem"];
+#ifdef SWIFTPM_MODULE_BUNDLE
+    if (_sslRootPathStr == nil) {
+      _sslRootPathStr = [SWIFTPM_MODULE_BUNDLE pathForResource:rootsPEM ofType:@"pem"];
+    }
+#endif
     const char *utf8Str = [_sslRootPathStr cStringUsingEncoding:NSUTF8StringEncoding];
     if (utf8Str != NULL) {
       setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", utf8Str, 1);

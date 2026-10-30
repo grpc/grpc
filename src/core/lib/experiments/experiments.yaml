@@ -91,7 +91,7 @@
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2027/02/01
   owner: mlumish@google.com
-  requires: ["event_engine_client", "event_engine_listener"]
+  requires: ["event_engine_client"]
   platforms: ["all"]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
@@ -111,16 +111,7 @@
   requires:
     [
       "event_engine_client",
-      "event_engine_listener",
     ]
-  platforms: ["all"]
-- name: event_engine_listener
-  description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2026/10/30
-  owner: mlumish@google.com
-  test_tags: ["core_end2end_test", "event_engine_listener_test"]
-  uses_polling: true
-  allow_in_fuzzing_config: false
   platforms: ["all"]
 - name: fail_recv_metadata_on_deadline_exceeded
   description: Fail recv initial metadata when the deadline is exceeded.
@@ -286,7 +277,7 @@
   expiry: 2027/01/16
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
-  requires: ["event_engine_client", "event_engine_listener"]
+  requires: ["event_engine_client"]
   uses_polling: true
   allow_in_fuzzing_config: false
 - name: pollset_alternative
@@ -296,7 +287,7 @@
   expiry: 2026/10/30
   owner: mlumish@google.com
   test_tags: ["core_end2end_test"]
-  requires: ["event_engine_client", "event_engine_listener"]
+  requires: ["event_engine_client"]
   allow_in_fuzzing_config: false
   platforms: ["all"]
 - name: prioritize_finished_requests
@@ -357,7 +348,6 @@
   requires:
     [
       "event_engine_client",
-      "event_engine_listener",
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
@@ -367,7 +357,6 @@
   requires:
     [
       "event_engine_client",
-      "event_engine_listener",
     ]
 - name: secure_endpoint_read_coalescing
   description:
@@ -378,7 +367,6 @@
   requires:
     [
       "event_engine_client",
-      "event_engine_listener",
     ]
 - name: server_connection_management
   description: Server connection management.

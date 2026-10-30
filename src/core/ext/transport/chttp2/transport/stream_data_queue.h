@@ -172,7 +172,7 @@ class SimpleQueue {
     std::optional<Entry> entry = queue_.Pop();
     GRPC_DCHECK(entry.has_value());
     tokens_consumed_ -= entry->tokens;
-    auto waker = std::move(waker_);
+    Waker waker = std::move(waker_);
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Dequeue successful. Data tokens released: " << entry->tokens
         << " Current tokens consumed: " << tokens_consumed_;
