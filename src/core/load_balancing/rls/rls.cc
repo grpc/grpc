@@ -346,6 +346,8 @@ class RlsLb final : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
+    void Orphaned() override;
+
     PickResult PickFromDefaultTargetOrFail(const char* reason, PickArgs args,
                                            absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
@@ -748,6 +750,9 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
 }
 
 void RlsLb::ChildPolicyWrapper::Orphaned() {
+#ifndef NDEBUG
+  GRPC_DCHECK(lb_policy_->work_serializer()->RunningInWorkSerializer());
+#endif
   GRPC_TRACE_LOG(rls_lb, INFO)
       << "[rlslb " << lb_policy_.get() << "] ChildPolicyWrapper=" << this
       << " [" << target_ << "]: shutdown";
@@ -960,6 +965,20 @@ RlsLb::Picker::Picker(RefCountedPtr<RlsLb> lb_policy)
   if (lb_policy_->default_child_policy_ != nullptr) {
     default_child_policy_ =
         lb_policy_->default_child_policy_->Ref(DEBUG_LOCATION, "Picker");
+  }
+}
+
+void RlsLb::Picker::Orphaned() {
+  // The channel may release the last ref to the picker outside of the
+  // WorkSerializer, but if ours is the last ref to the default child
+  // policy, unreffing it will shut down the child policy and remove it
+  // from child_policy_map_, which must be done in the WorkSerializer.
+  if (default_child_policy_ != nullptr) {
+    lb_policy_->work_serializer()->Run(
+        [default_child_policy = std::move(default_child_policy_)]() mutable {
+          default_child_policy.reset(DEBUG_LOCATION, "Picker");
+        },
+        DEBUG_LOCATION);
   }
 }
 
