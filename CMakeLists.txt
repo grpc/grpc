@@ -2429,6 +2429,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/transport/chttp2/transport/http2_settings_handshaker.cc
   src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   src/core/ext/transport/chttp2/transport/http2_transport.cc
@@ -3596,6 +3597,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/transport/chttp2/transport/http2_settings_handshaker.cc
   src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   src/core/ext/transport/chttp2/transport/http2_transport.cc
@@ -18898,6 +18900,9 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_manager_test
   src/core/call/message.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/metadata_info.cc
+  src/core/call/parsed_metadata.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -18927,6 +18932,8 @@ add_executable(flow_control_manager_test
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
+  src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -18953,12 +18960,16 @@ add_executable(flow_control_manager_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/timeout_encoding.cc
+  src/core/telemetry/call_tracer.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
+  src/core/telemetry/tcp_tracer.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
@@ -19011,6 +19022,7 @@ target_link_libraries(flow_control_manager_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
+  absl::no_destructor
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
@@ -19031,6 +19043,9 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_test
   src/core/call/message.cc
+  src/core/call/metadata_batch.cc
+  src/core/call/metadata_info.cc
+  src/core/call/parsed_metadata.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -19060,6 +19075,8 @@ add_executable(flow_control_test
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
+  src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -19086,12 +19103,16 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/timeout_encoding.cc
+  src/core/telemetry/call_tracer.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
+  src/core/telemetry/tcp_tracer.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
@@ -19144,6 +19165,7 @@ target_link_libraries(flow_control_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
+  absl::no_destructor
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector

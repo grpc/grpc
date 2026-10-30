@@ -127,22 +127,6 @@ Http2Status ValidateIncomingConnectionPreface(
   return Http2Status::Ok();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Settings helpers
-
-void InitLocalSettings(Http2Settings& settings, const bool is_client) {
-  if (is_client) {
-    // gRPC has never supported PUSH_PROMISE and we have no plan to do so in the
-    // future. We are not setting this to false for Server to be consistent
-    // with the legacy CHTTP2 transport.
-    settings.SetEnablePush(false);
-    // This is to make it double-sure that server cannot initiate a stream.
-    settings.SetMaxConcurrentStreams(0);
-  }
-  settings.SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
-  settings.SetAllowTrueBinaryMetadata(true);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Channel Args helpers
 
@@ -223,59 +207,19 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  Http2Settings& local_settings,
                                  chttp2::TransportFlowControl& flow_control,
                                  const bool is_client) {
-  if (channel_args.Contains(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
-    local_settings.SetHeaderTableSize(
-        channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)
-            .value_or(-1));
-  }
-
-  if (channel_args.Contains(GRPC_ARG_MAX_CONCURRENT_STREAMS)) {
-    if (!is_client) {
-      local_settings.SetMaxConcurrentStreams(
-          channel_args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS).value_or(-1));
-    } else {
-      // We do not allow the channel arg to alter our 0 setting for
-      // MAX_CONCURRENT_STREAMS for clients because we don't support
-      // PUSH_PROMISE
-      LOG(WARNING) << "ChannelArg GRPC_ARG_MAX_CONCURRENT_STREAMS is not "
-                      "available on clients";
-    }
-  }
-
+  ReadSettingsFromChannelArgs(channel_args, local_settings, is_client);
   if (channel_args.Contains(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
     int value =
         channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
     if (value >= 0) {
-      local_settings.SetInitialWindowSize(value);
       flow_control.set_target_initial_window_size(value);
     }
   }
-
-  local_settings.SetMaxHeaderListSize(
-      GetHardLimitFromChannelArgs(channel_args));
-
-  if (channel_args.Contains(GRPC_ARG_HTTP2_MAX_FRAME_SIZE)) {
-    local_settings.SetMaxFrameSize(
-        channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1));
-  }
-
   const bool enable_preferred_crypto =
       channel_args
           .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
           .value_or(kDefaultEnablePreferredRxCryptoFrameAdvertisement);
   flow_control.set_ph2_enable_rx_crypto(enable_preferred_crypto);
-  if (enable_preferred_crypto) {
-    local_settings.SetPreferredReceiveCryptoMessageSize(INT_MAX);
-  }
-
-  if (channel_args.Contains(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY)) {
-    local_settings.SetAllowTrueBinaryMetadata(
-        channel_args.GetInt(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY).value_or(-1) !=
-        0);
-  }
-
-  local_settings.SetAllowSecurityFrame(
-      channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
 
   GRPC_HTTP2_COMMON_DLOG
       << "Http2Settings: {"

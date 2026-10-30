@@ -20,16 +20,32 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
+#include <limits.h>
 
 #include <cstdint>
 #include <optional>
 #include <utility>
 
+#include "src/core/call/metadata_info.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
+
+void Http2SettingsManager::InitFromHandshake(
+    const Http2Settings& local_settings_sent,
+    const Http2Settings& peer_initial_settings) {
+  local_ = local_settings_sent;
+  sent_ = local_settings_sent;
+  update_state_ = UpdateState::kSending;
+  peer_ = peer_initial_settings;
+  count_updates_.allow_true_binary_metadata_update = true;
+  count_updates_.allow_security_frame_update = true;
+}
 
 std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
   switch (update_state_) {
@@ -57,6 +73,84 @@ bool Http2SettingsManager::AckLastSend() {
   update_state_ = UpdateState::kIdle;
   acked_ = sent_;
   return true;
+}
+
+void InitLocalSettings(Http2Settings& settings, const bool is_client) {
+  if (is_client) {
+    // gRPC has never supported PUSH_PROMISE and we have no plan to do so in the
+    // future. We are not setting this to false for Server to be consistent
+    // with the legacy CHTTP2 transport.
+    settings.SetEnablePush(false);
+    // This is to make it double-sure that server cannot initiate a stream.
+    settings.SetMaxConcurrentStreams(0);
+  }
+  settings.SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
+  settings.SetAllowTrueBinaryMetadata(true);
+}
+
+void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
+                                 Http2Settings& local_settings,
+                                 const bool is_client) {
+  if (channel_args.Contains(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
+    const int value =
+        channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)
+            .value_or(-1);
+    if (value >= 0) {
+      local_settings.SetHeaderTableSize(value);
+    }
+  }
+
+  if (channel_args.Contains(GRPC_ARG_MAX_CONCURRENT_STREAMS)) {
+    if (!is_client) {
+      const int value =
+          channel_args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS).value_or(-1);
+      if (value >= 0) {
+        local_settings.SetMaxConcurrentStreams(value);
+      }
+    } else {
+      // We do not allow the channel arg to alter our 0 setting for
+      // MAX_CONCURRENT_STREAMS for clients because we don't support
+      // PUSH_PROMISE
+      VLOG(2) << "ChannelArg GRPC_ARG_MAX_CONCURRENT_STREAMS is not "
+                 "available on clients";
+    }
+  }
+
+  if (channel_args.Contains(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
+    const int value =
+        channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
+    if (value >= 0) {
+      local_settings.SetInitialWindowSize(value);
+    }
+  }
+
+  local_settings.SetMaxHeaderListSize(
+      GetHardLimitFromChannelArgs(channel_args));
+
+  if (channel_args.Contains(GRPC_ARG_HTTP2_MAX_FRAME_SIZE)) {
+    const int value =
+        channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1);
+    if (value >= 0) {
+      local_settings.SetMaxFrameSize(value);
+    }
+  }
+
+  if (channel_args
+          .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
+          .value_or(false)) {
+    local_settings.SetPreferredReceiveCryptoMessageSize(INT_MAX);
+  }
+
+  if (channel_args.Contains(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY)) {
+    const int value =
+        channel_args.GetInt(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY).value_or(-1);
+    if (value >= 0) {
+      local_settings.SetAllowTrueBinaryMetadata(value != 0);
+    }
+  }
+
+  local_settings.SetAllowSecurityFrame(
+      channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
 }
 
 }  // namespace grpc_core

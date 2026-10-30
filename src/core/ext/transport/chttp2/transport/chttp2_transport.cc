@@ -506,44 +506,13 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->max_header_list_size_soft_limit =
       grpc_core::GetSoftLimitFromChannelArgs(channel_args);
 
-  int value;
-  if (!is_client) {
-    value = channel_args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS).value_or(-1);
-    if (value >= 0) {
-      t->settings.mutable_local().SetMaxConcurrentStreams(value);
-    }
-  } else if (channel_args.Contains(GRPC_ARG_MAX_CONCURRENT_STREAMS)) {
-    VLOG(2) << GRPC_ARG_MAX_CONCURRENT_STREAMS
-            << " is not available on clients";
-  }
-  value =
-      channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER).value_or(-1);
-  if (value >= 0) {
-    t->settings.mutable_local().SetHeaderTableSize(value);
-  }
-  t->settings.mutable_local().SetMaxHeaderListSize(
-      grpc_core::GetHardLimitFromChannelArgs(channel_args));
-  value = channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1);
-  if (value >= 0) {
-    t->settings.mutable_local().SetMaxFrameSize(value);
-  }
-  value =
+  grpc_core::ReadSettingsFromChannelArgs(
+      channel_args, t->settings.mutable_local(), is_client);
+  const int lookahead_bytes =
       channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
-  if (value >= 0) {
-    t->settings.mutable_local().SetInitialWindowSize(value);
-    t->flow_control.set_target_initial_window_size(value);
+  if (lookahead_bytes >= 0) {
+    t->flow_control.set_target_initial_window_size(lookahead_bytes);
   }
-  value = channel_args.GetInt(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY).value_or(-1);
-  if (value >= 0) {
-    t->settings.mutable_local().SetAllowTrueBinaryMetadata(value != 0);
-  }
-
-  if (t->enable_preferred_rx_crypto_frame_advertisement) {
-    t->settings.mutable_local().SetPreferredReceiveCryptoMessageSize(INT_MAX);
-  }
-
-  t->settings.mutable_local().SetAllowSecurityFrame(
-      channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
   t->max_security_frame_size = static_cast<uint32_t>(grpc_core::Clamp(
       channel_args.GetInt(GRPC_ARG_MAX_SECURITY_FRAME_SIZE)
           .value_or(kMaxSecurityFrameSize),
@@ -789,7 +758,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
   grpc_slice_buffer_init(&read_buffer);
-  if (is_client) {
+  const auto* handshake_result =
+      channel_args.GetObject<grpc_core::Http2SettingsHandshakeResult>();
+  if (is_client && handshake_result == nullptr) {
     grpc_slice_buffer_add(
         outbuf.c_slice_buffer(),
         grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
@@ -797,14 +768,29 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   grpc_slice_buffer_init(&qbuf);
 
   // configure http2 the way we like it
-  if (is_client) {
-    settings.mutable_local().SetEnablePush(false);
-    settings.mutable_local().SetMaxConcurrentStreams(0);
-  }
-  settings.mutable_local().SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
-  settings.mutable_local().SetAllowTrueBinaryMetadata(true);
+  grpc_core::InitLocalSettings(settings.mutable_local(), is_client);
 
   read_channel_args(this, channel_args, is_client);
+
+  http2_stats = grpc_core::CreateHttp2StatsCollector(auth_context);
+  hpack_parser.hpack_table()->SetHttp2StatsCollector(http2_stats);
+
+  if (handshake_result != nullptr) {
+    deframe_state = GRPC_DTS_FH_0;
+    is_first_frame = false;
+    settings.InitFromHandshake(handshake_result->local_settings_sent(),
+                               handshake_result->peer_initial_settings());
+    if (keepalive_timeout != grpc_core::Duration::Infinity()) {
+      settings_ack_watchdog =
+          event_engine->RunAfter(settings_timeout, [t = Ref()]() mutable {
+            grpc_core::ExecCtx exec_ctx;
+            grpc_chttp2_settings_timeout(std::move(t));
+          });
+    }
+    flow_control.FlushedSettings();
+    http2_stats->IncrementHttp2SettingsWrites();
+    grpc_chttp2_apply_peer_settings_from_handshake(this);
+  }
 
   next_adjusted_keepalive_timestamp = grpc_core::Timestamp::InfPast();
 
@@ -831,9 +817,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   if (grpc_core::test_only_init_callback != nullptr) {
     grpc_core::test_only_init_callback();
   }
-
-  http2_stats = grpc_core::CreateHttp2StatsCollector(auth_context);
-  hpack_parser.hpack_table()->SetHttp2StatsCollector(http2_stats);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   closure_barrier_may_cover_write =
@@ -2949,7 +2932,8 @@ void grpc_chttp2_act_on_flowctl_action(
   }
 }
 
-static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
+grpc_error_handle grpc_chttp2_try_http_parsing(
+    const grpc_slice_buffer& read_buffer) {
   grpc_http_parser parser;
   size_t i = 0;
   grpc_error_handle error;
@@ -2958,9 +2942,9 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
   grpc_error_handle parse_error;
-  for (; i < t->read_buffer.count && parse_error.ok(); i++) {
+  for (; i < read_buffer.count && parse_error.ok(); i++) {
     parse_error =
-        grpc_http_parser_parse(&parser, t->read_buffer.slices[i], nullptr);
+        grpc_http_parser_parse(&parser, read_buffer.slices[i], nullptr);
   }
   if (parse_error.ok() &&
       (parse_error = grpc_http_parser_eof(&parser)) == absl::OkStatus()) {
@@ -3029,7 +3013,7 @@ static void read_action_parse_loop_locked(
       }
     }
     if (errors[1] != absl::OkStatus()) {
-      errors[2] = try_http_parsing(t.get());
+      errors[2] = grpc_chttp2_try_http_parsing(t->read_buffer);
       error = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
                                             GPR_ARRAY_SIZE(errors));
     }

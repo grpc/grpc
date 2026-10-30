@@ -160,7 +160,7 @@ TODO(tjagtap) [PH2][P5][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
         *   `hpack_parser.{h,cc}`
         *   `hpack_parser_table.{h,cc}`
     *   Flow Control: `flow_control.{h,cc}`
-    *   Settings: `http2_settings.{h,cc}`, `http2_settings_manager.{h,cc}`
+    *   Settings: `http2_settings.{h,cc}`, `http2_settings_handshaker.{h,cc}`, `http2_settings_manager.{h,cc}`
     *   Ping policies: `ping_abuse_policy.{h,cc}`, `ping_callbacks.{h,cc}`, `ping_rate_policy.{h,cc}`
     *   Other utilities: `bin_encoder.{h,cc}`, `decode_huff.{h,cc}`, `huffsyms.{h,cc}`, `varint.{h,cc}`
     *   `transport_common.{h,cc}`

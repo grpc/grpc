@@ -352,6 +352,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_settings_handshaker.h
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.h
   - src/core/ext/transport/chttp2/transport/http2_settings_promises.h
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
@@ -1559,6 +1560,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/transport/chttp2/transport/http2_settings_handshaker.cc
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
@@ -2617,6 +2619,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_settings_handshaker.h
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.h
   - src/core/ext/transport/chttp2/transport/http2_settings_promises.h
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
@@ -3188,6 +3191,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/transport/chttp2/transport/http2_settings_handshaker.cc
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
@@ -13990,7 +13994,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/custom_metadata.h
   - src/core/call/message.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/metadata_info.h
+  - src/core/call/parsed_metadata.h
+  - src/core/call/simple_slice_based_metadata.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -13999,9 +14009,11 @@ targets:
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/flow_control_manager.h
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
@@ -14031,6 +14043,7 @@ targets:
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
+  - src/core/lib/compression/compression_internal.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -14077,17 +14090,22 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/timeout_encoding.h
+  - src/core/telemetry/call_tracer.h
   - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
+  - src/core/telemetry/tcp_tracer.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
@@ -14096,6 +14114,7 @@ targets:
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
+  - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
@@ -14106,6 +14125,7 @@ targets:
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
+  - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
   - src/core/util/postmortem_emit.h
   - src/core/util/ref_counted.h
@@ -14113,15 +14133,21 @@ targets:
   - src/core/util/ref_counted_string.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
+  - src/core/util/sorted_pack.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
+  - src/core/util/table.h
   - src/core/util/time.h
+  - src/core/util/type_list.h
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/message.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/metadata_info.cc
+  - src/core/call/parsed_metadata.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -14151,6 +14177,8 @@ targets:
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
+  - src/core/lib/compression/compression.cc
+  - src/core/lib/compression/compression_internal.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -14177,12 +14205,16 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/timeout_encoding.cc
+  - src/core/telemetry/call_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
@@ -14204,6 +14236,7 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -14221,7 +14254,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/custom_metadata.h
   - src/core/call/message.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/metadata_info.h
+  - src/core/call/parsed_metadata.h
+  - src/core/call/simple_slice_based_metadata.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -14229,9 +14268,11 @@ targets:
   - src/core/channelz/text_encode.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
@@ -14261,6 +14302,7 @@ targets:
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
+  - src/core/lib/compression/compression_internal.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -14307,17 +14349,22 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/timeout_encoding.h
+  - src/core/telemetry/call_tracer.h
   - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
+  - src/core/telemetry/tcp_tracer.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
@@ -14326,6 +14373,7 @@ targets:
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
+  - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
@@ -14336,6 +14384,7 @@ targets:
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
+  - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
   - src/core/util/postmortem_emit.h
   - src/core/util/ref_counted.h
@@ -14343,15 +14392,21 @@ targets:
   - src/core/util/ref_counted_string.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
+  - src/core/util/sorted_pack.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
+  - src/core/util/table.h
   - src/core/util/time.h
+  - src/core/util/type_list.h
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/message.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/metadata_info.cc
+  - src/core/call/parsed_metadata.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -14381,6 +14436,8 @@ targets:
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
+  - src/core/lib/compression/compression.cc
+  - src/core/lib/compression/compression_internal.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -14407,12 +14464,16 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/timeout_encoding.cc
+  - src/core/telemetry/call_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
@@ -14434,6 +14495,7 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
