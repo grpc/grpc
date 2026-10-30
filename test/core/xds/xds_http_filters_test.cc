@@ -3613,7 +3613,6 @@ TEST_F(XdsExtAuthzFilterTest, Accessors) {
             "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz");
   EXPECT_EQ(factory_->OverrideConfigProtoName(),
             "envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute");
-  EXPECT_EQ(factory_->channel_filter(), &ExtAuthzFilter::kFilterVtable);
   EXPECT_TRUE(factory_->IsSupportedOnClients());
   EXPECT_TRUE(factory_->IsSupportedOnServers());
   EXPECT_FALSE(factory_->IsTerminalFilter());

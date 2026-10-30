@@ -131,7 +131,7 @@ std::string ExtAuthzFilter::Config::ToString() const {
 namespace {
 
 class ExtAuthzCallEventHandler
-    : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+    : public XdsTransport::StreamingCall::EventHandler {
  public:
   ExtAuthzCallEventHandler(Notification* notification,
                            std::optional<std::string>* response_payload,
@@ -229,7 +229,7 @@ absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(
       "/envoy.service.auth.v3.Authorization/Check",
       std::make_unique<ExtAuthzCallEventHandler>(&notification, &result,
                                                  &status),
-      XdsTransportFactory::XdsTransport::CallOptions()
+      XdsTransport::CallOptions()
           .set_start_upon_send_message(true));
   if (call == nullptr) {
     return handle_failure("Failed to create ext_authz unary call");
@@ -359,7 +359,7 @@ absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
 
 ExtAuthzFilter::ExtAuthzChannel::ExtAuthzChannel(
     GrpcXdsServerTarget server,
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport)
+    RefCountedPtr<XdsTransport> transport)
     : server_(std::move(server)), transport_(std::move(transport)) {}
 
 ExtAuthzFilter::ExtAuthzChannel::~ExtAuthzChannel() = default;

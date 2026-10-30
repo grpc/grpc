@@ -42,7 +42,6 @@
 #include "envoy/type/v3/percent.pb.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/sync.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
@@ -166,11 +165,6 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
                      : "GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT") {}
 
   void SetUp() override {
-    if (GetParam().filter_on_server() &&
-        !grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
-      GTEST_SKIP()
-          << "test requires xds_server_filter_chain_per_route experiment";
-    }
     ext_authz_server_ = std::make_unique<ExtAuthzServerThread>(this);
     ext_authz_server_->Start();
     // The backend is not started here: on the server path it is an

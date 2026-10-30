@@ -52,17 +52,17 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
       return GRPC_UNIQUE_TYPE_NAME_HERE("ext_authz_channel");
     }
     ExtAuthzChannel(GrpcXdsServerTarget server,
-                    RefCountedPtr<XdsTransportFactory::XdsTransport> transport);
+                    RefCountedPtr<XdsTransport> transport);
     ~ExtAuthzChannel() override;
     const GrpcXdsServerTarget& server() const { return server_; }
 
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport() const {
+    RefCountedPtr<XdsTransport> transport() const {
       return transport_;
     }
 
    private:
     GrpcXdsServerTarget server_;
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransport> transport_;
   };
 
   struct Config : public FilterConfig {

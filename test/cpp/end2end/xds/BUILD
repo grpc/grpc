@@ -502,7 +502,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/core:experiments",
         "//src/core:ext_authz_messages",
         "//src/core:sync",
         "//test/core/test_util:grpc_test_util",

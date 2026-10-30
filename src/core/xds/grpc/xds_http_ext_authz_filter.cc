@@ -60,11 +60,6 @@ void XdsHttpExtAuthzFilterFactory::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_ext_authz_v3_ExtAuthzPerRoute_getmsgdef(symtab);
 }
 
-const grpc_channel_filter* XdsHttpExtAuthzFilterFactory::channel_filter()
-    const {
-  return &ExtAuthzFilter::kFilterVtable;
-}
-
 void XdsHttpExtAuthzFilterFactory::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {

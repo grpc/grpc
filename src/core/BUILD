@@ -5993,6 +5993,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:transport_auth_context",
         "//:xds_client",
+        "//:xds_transport",
     ],
 )
 
