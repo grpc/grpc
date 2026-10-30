@@ -31,6 +31,7 @@
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 
 using grpc_core::Json;
 
@@ -719,7 +720,7 @@ TEST(JwtVerifierTest, NonObjectPayloadIsRejectedBeforeSignatureCheck) {
   std::string header = absl::WebSafeBase64Escape("{\"alg\":\"RS256\"}");
   std::string payload = absl::WebSafeBase64Escape("\"not-an-object\"");
   std::string signature = absl::WebSafeBase64Escape("ignored-signature");
-  std::string jwt = header + "." + payload + "." + signature;
+  std::string jwt = absl::StrCat(header, ".", payload, ".", signature);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt.c_str(), expected_audience,
                            on_verification_bad_format,
                            const_cast<char*>(expected_user_data));
@@ -750,7 +751,7 @@ TEST(JwtVerifierTest, HeaderWithNonStringAlgIsRejectedBeforeSignatureCheck) {
     std::string header = absl::WebSafeBase64Escape(bad_header);
     std::string payload = absl::WebSafeBase64Escape("{\"iss\":\"foo\"}");
     std::string signature = absl::WebSafeBase64Escape("ignored-signature");
-    std::string jwt = header + "." + payload + "." + signature;
+    std::string jwt = absl::StrCat(header, ".", payload, ".", signature);
     grpc_jwt_verifier_verify(verifier, nullptr, jwt.c_str(), expected_audience,
                              on_verification_bad_format,
                              const_cast<char*>(expected_user_data));
@@ -857,7 +858,7 @@ TEST(JwtVerifierTest, MissingKidHeaderReturnsKeyRetrievalError) {
       "{\"iss\":\"777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount."
       "com\",\"aud\":\"https://foo.com\"}");
   std::string signature = absl::WebSafeBase64Escape("ignored-signature");
-  std::string jwt = header + "." + payload + "." + signature;
+  std::string jwt = absl::StrCat(header, ".", payload, ".", signature);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt.c_str(), expected_audience,
                            on_verification_key_retrieval_error,
                            const_cast<char*>(expected_user_data));
