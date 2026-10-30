@@ -1964,6 +1964,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx xds_audit_logger_registry_test)
   add_dependencies(buildtests_cxx xds_bootstrap_test)
+  add_dependencies(buildtests_cxx xds_cel_test)
   add_dependencies(buildtests_cxx xds_certificate_provider_test)
   add_dependencies(buildtests_cxx xds_client_grpc_test)
   add_dependencies(buildtests_cxx xds_client_test)
@@ -40681,6 +40682,123 @@ target_link_libraries(xds_bootstrap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_cel_test
+  src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/xds/grpc/xds_cel.cc
+  test/core/xds/cel_expr_builder.cc
+  test/core/xds/xds_cel_test.cc
+  third_party/cel-c/cel-c/alloc.cc
+  third_party/cel-c/cel-c/arena.cc
+  third_party/cel-c/cel-c/assert.cc
+  third_party/cel-c/cel-c/ast.cc
+  third_party/cel-c/cel-c/ast_proto.cc
+  third_party/cel-c/cel-c/ast_traverse.cc
+  third_party/cel-c/cel-c/constant.cc
+  third_party/cel-c/cel-c/constant_proto.cc
+  third_party/cel-c/cel-c/cstring_view.cc
+  third_party/cel-c/cel-c/decl.cc
+  third_party/cel-c/cel-c/duration.cc
+  third_party/cel-c/cel-c/duration_proto.cc
+  third_party/cel-c/cel-c/error.cc
+  third_party/cel-c/cel-c/error_code.cc
+  third_party/cel-c/cel-c/error_space.cc
+  third_party/cel-c/cel-c/internal/any.cc
+  third_party/cel-c/cel-c/internal/bitset.cc
+  third_party/cel-c/cel-c/internal/charconv.cc
+  third_party/cel-c/cel-c/internal/durationconv.cc
+  third_party/cel-c/cel-c/internal/empty_list_value.cc
+  third_party/cel-c/cel-c/internal/empty_map_value.cc
+  third_party/cel-c/cel-c/internal/generic_array.cc
+  third_party/cel-c/cel-c/internal/generic_deque.cc
+  third_party/cel-c/cel-c/internal/generic_flat_hash.cc
+  third_party/cel-c/cel-c/internal/generic_string.cc
+  third_party/cel-c/cel-c/internal/hash.cc
+  third_party/cel-c/cel-c/internal/list_value.cc
+  third_party/cel-c/cel-c/internal/malloc.cc
+  third_party/cel-c/cel-c/internal/map_value.cc
+  third_party/cel-c/cel-c/internal/memory.cc
+  third_party/cel-c/cel-c/internal/message_equality.cc
+  third_party/cel-c/cel-c/internal/mutable_list_value.cc
+  third_party/cel-c/cel-c/internal/mutable_map_value.cc
+  third_party/cel-c/cel-c/internal/opaque_value.cc
+  third_party/cel-c/cel-c/internal/optional_value.cc
+  third_party/cel-c/cel-c/internal/parsed_map_field_value.cc
+  third_party/cel-c/cel-c/internal/parsed_message_value.cc
+  third_party/cel-c/cel-c/internal/parsed_repeated_field_value.cc
+  third_party/cel-c/cel-c/internal/regexp.cc
+  third_party/cel-c/cel-c/internal/runtime/activation.cc
+  third_party/cel-c/cel-c/internal/runtime/interpretable.cc
+  third_party/cel-c/cel-c/internal/runtime/interpreter.cc
+  third_party/cel-c/cel-c/internal/runtime/program.cc
+  third_party/cel-c/cel-c/internal/runtime/runtime.cc
+  third_party/cel-c/cel-c/internal/struct_value.cc
+  third_party/cel-c/cel-c/internal/timestampconv.cc
+  third_party/cel-c/cel-c/internal/utf8.cc
+  third_party/cel-c/cel-c/internal/value.cc
+  third_party/cel-c/cel-c/operators.cc
+  third_party/cel-c/cel-c/ref.cc
+  third_party/cel-c/cel-c/ref_proto.cc
+  third_party/cel-c/cel-c/status.cc
+  third_party/cel-c/cel-c/status_absl.cc
+  third_party/cel-c/cel-c/status_code.cc
+  third_party/cel-c/cel-c/string_view.cc
+  third_party/cel-c/cel-c/timestamp.cc
+  third_party/cel-c/cel-c/timestamp_proto.cc
+  third_party/cel-c/cel-c/type.cc
+  third_party/cel-c/cel-c/type_proto.cc
+  third_party/cel-c/cel-c/well_known_types.cc
+  third_party/upb/upb/message/compare.c
+  third_party/upb/upb/message/internal/compare_unknown.c
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_cel_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(xds_cel_test PUBLIC cxx_std_17)
+target_include_directories(xds_cel_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_cel_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  upb_reflection_lib
+  absl::function_ref
+  absl::int128
+  absl::statusor
+  absl::string_view
+  gpr
 )
 
 
