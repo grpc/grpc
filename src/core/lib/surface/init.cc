@@ -76,7 +76,7 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  auto& authz_registration =
+  ChannelInit::FilterRegistration& authz_registration =
       builder->channel_init()
           ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
           .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
@@ -203,8 +203,8 @@ void grpc_maybe_wait_for_async_shutdown(void) {
 
 bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
   GRPC_TRACE_LOG(api, INFO) << "grpc_wait_for_shutdown_with_timeout()";
-  const auto started = absl::Now();
-  const auto deadline = started + timeout;
+  const absl::Time started = absl::Now();
+  const absl::Time deadline = started + timeout;
   gpr_once_init(&g_basic_init, do_basic_init);
   grpc_core::MutexLock lock(*g_init_mu);
   while (g_initializations != 0) {
