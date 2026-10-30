@@ -692,6 +692,7 @@ LIBGRPC_SRC = \
     src/core/channelz/v2tov1/property_list.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/buffered_call.cc \
+    src/core/client_channel/channel_factory.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
@@ -793,7 +794,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
-    src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/chttp2_plugin.cc \
@@ -1453,9 +1453,7 @@ LIBGRPC_SRC = \
     src/core/server/server.cc \
     src/core/server/server_call_tracer_filter.cc \
     src/core/server/server_config_selector_filter.cc \
-    src/core/server/xds_channel_stack_modifier.cc \
     src/core/server/xds_server_config_fetcher.cc \
-    src/core/server/xds_server_config_fetcher_legacy.cc \
     src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
@@ -1618,6 +1616,7 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_server_grpc.cc \
     src/core/xds/grpc/xds_tls_context.cc \
     src/core/xds/grpc/xds_tls_context_parser.cc \
+    src/core/xds/grpc/xds_transport_factory_grpc.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/lrs_client.cc \
     src/core/xds/xds_client/xds_api.cc \
@@ -1856,6 +1855,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
+    include/grpc/channel_factory.h \
     include/grpc/compression.h \
     include/grpc/context_types.h \
     include/grpc/create_channel_from_endpoint.h \
