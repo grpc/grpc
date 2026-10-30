@@ -594,7 +594,6 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
     t->combiner->Run(
         grpc_core::NewClosure([t, sink = std::move(sink)](
                                   grpc_error_handle) mutable {
-          Json::Object http2_info;
           sink.AddData(
               "http2",
               grpc_core::channelz::PropertyList()

@@ -4277,7 +4277,6 @@ TEST_F(ClientLbSubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
 TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
   using grpc_core::testing::GetFileContents;
   const int port = grpc_pick_unused_port_or_die();
-  std::string target = grpc_core::LocalIpAndPort(port);
   grpc::SslServerCredentialsOptions ssl_opts_server;
   std::string ca_cert = GetFileContents("src/core/tsi/test_creds/ca.pem");
   grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {

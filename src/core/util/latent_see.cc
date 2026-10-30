@@ -277,7 +277,6 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
       }
     }
   }
-  std::string json = "[\n";
   // Add a mark for the actual timestamp when collection started.
   output->Mark(
       "LatentseeCollectionStart", /*tid=*/0, /*timestamp=*/0,
