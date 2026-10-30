@@ -17,6 +17,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/call/metadata.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
@@ -82,7 +83,7 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   Cancel();
 }
 
-void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
+StatusFlag CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   GRPC_CHECK(md != nullptr);
   GRPC_TRACE_LOG(call, INFO)
       << GetContext<Activity>()->DebugTag() << " PushServerTrailingMetadata["
@@ -91,7 +92,9 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   if (call_state_.PushServerTrailingMetadata(
           md->get(GrpcCallWasCancelled()).value_or(false))) {
     push_server_trailing_metadata_ = std::move(md);
+    return Success{};
   }
+  return Failure{};
 }
 
 void CallFilters::Cancel() {

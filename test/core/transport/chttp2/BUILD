@@ -1110,6 +1110,7 @@ grpc_cc_test(
         "//src/core:sleep",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/core:status_flag",
         "//src/core:stream_quota",
         "//src/core:time",
         "//src/core:transport_common",
