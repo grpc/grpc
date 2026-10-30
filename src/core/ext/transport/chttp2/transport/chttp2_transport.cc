@@ -718,6 +718,18 @@ void grpc_chttp2_transport::WriteSecurityFrameLocked(
                   "Unexpected SECURITY frame scheduled for write"));
     return;
   }
+  // The 24-bit frame length field cannot encode more than this. Enforce the
+  // limit here rather than relying on the debug-only GRPC_DCHECK in the send
+  // paths: grpc_chttp2_security_frame_create() hand-writes the length and
+  // would silently truncate an oversized frame instead of rejecting it.
+  if (data->Length() > max_security_frame_size) {
+    close_transport_locked(
+        this, absl::ResourceExhaustedError(absl::StrCat(
+                  "Security frame is larger than the maximum allowed size : ",
+                  max_security_frame_size, ", Received size : ",
+                  data->Length())));
+    return;
+  }
   grpc_core::SliceBuffer security_frame;
   grpc_chttp2_security_frame_create(data->c_slice_buffer(), data->Length(),
                                     security_frame.c_slice_buffer());
