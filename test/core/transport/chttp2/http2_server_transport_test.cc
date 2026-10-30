@@ -47,6 +47,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -268,8 +269,10 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1158,8 +1161,10 @@ TEST_F(Http2ServerTransportTest, TestBdpPingIsSentWithStreamWithoutAck) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1266,8 +1271,10 @@ TEST_F(Http2ServerTransportTest, TestBdpProbeEnabledWithAck) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1501,8 +1508,10 @@ TEST_F(Http2ServerTransportTest, ReadGoawayWithActiveStream) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1652,7 +1661,9 @@ TEST_F(Http2ServerTransportTest, ServerTrailingMetadataTarpitTest) {
                 Arena::MakePooledForOverwrite<ServerMetadata>();
             trailers->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
             trailers->Set(GrpcTarPit(), Empty());
-            return call_handler.PushServerTrailingMetadata(std::move(trailers));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(std::move(trailers));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
