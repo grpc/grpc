@@ -657,7 +657,7 @@ class Server : public ServerInterface,
 
     void Orphan() override;
 
-    void Shutdown(Duration grace_period, absl::string_view reason);
+    void Shutdown(absl::string_view reason, Duration grace_period);
 
     absl::string_view peer_address() const;
 
@@ -690,16 +690,11 @@ class Server : public ServerInterface,
     grpc_core::Timestamp timestamp;
   };
 
-  void DrainAllConnectionsForConnectionManagerLocked(
+  void StartDrainingAllConnectionsLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
+  void StartDrainingAllConnectionsForConnectionManagerLocked(
       ServerConfigFetcher::ConnectionManager* connection_manager)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
-
-  void StartDrainingConnectionLocked(Connection* connection,
-                                     Duration grace_period)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
-
-  void AddDrainingConnectionLocked(OrphanablePtr<Connection> connection,
-                                   Duration grace_period)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   OrphanablePtr<Connection> ExtractActiveConnectionLocked(
@@ -707,6 +702,11 @@ class Server : public ServerInterface,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void RemoveActiveConnectionLocked(Connection* connection)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
+  void StartDrainingConnectionsLocked(
+      absl::flat_hash_set<OrphanablePtr<Connection>> connections,
+      absl::string_view reason, Duration grace_period)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void OnDrainGraceTimer();
