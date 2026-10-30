@@ -1084,9 +1084,12 @@ TEST(X509SubjectRfc2253, PrintExFailure) {
   ASSERT_NE(entry, nullptr);
   ASN1_STRING* val = X509_NAME_ENTRY_get_data(entry);
   ASSERT_NE(val, nullptr);
-  const unsigned char invalid_utf8[] = {0xff, 0xff};
-  ASN1_STRING_set(val, invalid_utf8, sizeof(invalid_utf8));
-  val->type = V_ASN1_UTF8STRING;
+  // A BMPString is UCS-2 (2 bytes per character), so an odd length is
+  // malformed and X509_NAME_print_ex fails on both BoringSSL and OpenSSL.
+  // (Invalid UTF-8 is not portable: OpenSSL escapes it instead of failing.)
+  const unsigned char odd_length_bmp[] = {0x00, 0x41, 0x00};
+  ASSERT_EQ(ASN1_STRING_set(val, odd_length_bmp, sizeof(odd_length_bmp)), 1);
+  val->type = V_ASN1_BMPSTRING;
   EXPECT_EQ(X509SubjectRfc2253(cert).status().code(),
             absl::StatusCode::kInternal);
   X509_free(cert);
