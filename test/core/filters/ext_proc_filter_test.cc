@@ -12,6 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Behaviour tests for the ext_proc filter.
+//
+// ExtProcFilter runs in a v3 interception chain built by FilterTest. The test
+// plays all three remote parties:
+// - the client, via the call started by StartCall() (PushClient*/PullServer*);
+// - the backend, via the child call collected by GetNextHandler()
+//   (PullClient*/PushServer*);
+// - the ext_proc server, via a FakeXdsTransportFactory standing in for the
+//   side-channel transport (the *SideStream* helpers below).
+//
+// xDS config parsing is covered by test/core/xds/xds_http_filters_test.cc,
+// and end-to-end wiring by test/cpp/end2end/xds/xds_ext_proc_end2end_test.cc.
+
 #include "src/core/filter/ext_proc/ext_proc_filter.h"
 
 #include <grpc/status.h>
@@ -58,6 +71,38 @@ using ::testing::Not;
 using ::testing::Optional;
 using ::testing::Pair;
 using ::testing::Pointee;
+
+//
+// Constants
+//
+
+// The ext_proc service method the filter calls on its side stream.
+constexpr char kExtProcMethod[] =
+    "/envoy.service.ext_proc.v3.ExternalProcessor/Process";
+// Target of the data plane channel; also the "target" label on metrics.
+constexpr char kServerUri[] = "dns:///server.example.com";
+constexpr char kPath[] = "/package.Service/Method";
+
+// Headers.
+constexpr char kRequestHeadersMutatedHeaderKey[] =
+    "x-extproc-request-headers-mutated";
+constexpr char kResponseHeadersMutatedHeaderKey[] =
+    "x-extproc-response-headers-mutated";
+constexpr char kResponseTrailersMutatedHeaderKey[] =
+    "x-extproc-response-trailers-mutated";
+constexpr char kHeaderMutatedValue[] = "yes";
+constexpr char kImmediateResponseHeaderKey[] =
+    "x-extproc-immediate-response-added";
+constexpr char kCustomHeaderKey[] = "custom-header-key";
+constexpr char kCustomHeaderValue[] = "custom-header-value";
+
+// Message bodies.
+constexpr char kMessage1[] = "message1";
+constexpr char kMessage2[] = "message2";
+constexpr char kMessage1Mutated[] = "message1-mutated";
+constexpr char kMessage1DoubleMutated[] = "message1-mutated-mutated";
+constexpr bool kEndOfStream = true;
+constexpr char kEmptyBody[] = "";
 
 //
 // Test fixture
@@ -144,8 +189,8 @@ class ExtProcFilterTest : public FilterTest {
 
   // Returns the value of `attribute_name` from the ext_proc attributes of
   // `request`, or "" if it is not set.
-  std::string GetExtProcAttribute(const ProcessingRequest& request,
-                                  absl::string_view attribute_name) {
+  static std::string GetExtProcAttribute(const ProcessingRequest& request,
+                                         absl::string_view attribute_name) {
     auto it = request.attributes().find("envoy.filters.http.ext_proc");
     if (it == request.attributes().end()) return "";
     const auto& fields = it->second.fields();
@@ -224,6 +269,9 @@ class ExtProcFilterTest : public FilterTest {
       // it; the fake never does so on its own. Finish it here so the filter
       // drops the side call, which holds references to the fake transport
       // and, through it, to event_engine().
+      // WaitForStream() does not wait for a new stream: it returns the side
+      // stream the test already opened, if the filter still holds it, or null
+      // if the filter has released it (or never opened one).
       auto side_stream =
           transport_factory_->WaitForStream(target_, kExtProcMethod);
       if (side_stream != nullptr) {

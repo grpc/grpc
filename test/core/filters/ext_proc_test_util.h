@@ -36,43 +36,6 @@
 namespace grpc_core {
 
 //
-// Constants
-//
-
-// The ext_proc service method the filter calls on its side stream.
-inline constexpr char kExtProcMethod[] =
-    "/envoy.service.ext_proc.v3.ExternalProcessor/Process";
-// Name of the ext_proc filter instance in the xDS HttpConnectionManager.
-inline constexpr absl::string_view kFilterInstanceName = "ext_proc_instance";
-// Target of the data plane channel; also the "target" label on metrics.
-inline constexpr char kServerUri[] = "dns:///server.example.com";
-inline constexpr char kPath[] = "/package.Service/Method";
-
-// Headers.
-inline constexpr char kRequestHeadersMutatedHeaderKey[] =
-    "x-extproc-request-headers-mutated";
-inline constexpr char kResponseHeadersMutatedHeaderKey[] =
-    "x-extproc-response-headers-mutated";
-inline constexpr char kResponseTrailersMutatedHeaderKey[] =
-    "x-extproc-response-trailers-mutated";
-inline constexpr char kHeaderMutatedValue[] = "yes";
-inline constexpr char kImmediateResponseHeaderKey[] =
-    "x-extproc-immediate-response-added";
-inline constexpr char kCustomHeaderKey[] = "custom-header-key";
-inline constexpr char kCustomHeaderValue[] = "custom-header-value";
-
-// Message bodies.
-inline constexpr char kMessage1[] = "message1";
-inline constexpr char kMessage2[] = "message2";
-inline constexpr char kMessage1Mutated[] = "message1-mutated";
-inline constexpr char kMessage1DoubleMutated[] = "message1-mutated-mutated";
-inline constexpr char kMutatedSuffix[] = "-mutated";
-inline constexpr char kRequestBodyMutatedSuffix[] = "-request-body-mutated";
-inline constexpr char kResponseBodyMutatedSuffix[] = "-response-body-mutated";
-inline constexpr bool kEndOfStream = true;
-inline constexpr char kEmptyBody[] = "";
-
-//
 // ProcessingResponse builders
 //
 

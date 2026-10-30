@@ -61,19 +61,7 @@ using ::grpc_core::EchoRequestMessageIs;
 using ::grpc_core::EchoResponseMessageIs;
 using ::grpc_core::GrpcStatusIs;
 using ::grpc_core::IsStatusOk;
-using ::grpc_core::kEmptyBody;
-using ::grpc_core::kEndOfStream;
-using ::grpc_core::kFilterInstanceName;
-using ::grpc_core::kHeaderMutatedValue;
-using ::grpc_core::kMessage1;
-using ::grpc_core::kMessage1Mutated;
-using ::grpc_core::kMessage2;
-using ::grpc_core::kMutatedSuffix;
-using ::grpc_core::kRequestBodyMutatedSuffix;
-using ::grpc_core::kRequestHeadersMutatedHeaderKey;
-using ::grpc_core::kResponseBodyMutatedSuffix;
-using ::grpc_core::kResponseHeadersMutatedHeaderKey;
-using ::grpc_core::kResponseTrailersMutatedHeaderKey;
+using ::grpc_core::MakeImmediateResponse;
 using ::grpc_core::MakeRequestBodyDrainCompleteResponse;
 using ::grpc_core::MakeRequestBodyMutationResponse;
 using ::grpc_core::MakeRequestHeadersMutationResponse;
@@ -91,6 +79,30 @@ using ::grpc_core::MatchesResponseHeaders;
 using ::grpc_core::MatchesResponseTrailers;
 using ::grpc_core::SetRequestDrains;
 using ExtProcService = ::envoy::service::ext_proc::v3::ExternalProcessor;
+
+// Name of the ext_proc filter instance in the xDS HttpConnectionManager.
+constexpr absl::string_view kFilterInstanceName = "ext_proc_instance";
+
+// Headers.
+constexpr char kRequestHeadersMutatedHeaderKey[] =
+    "x-extproc-request-headers-mutated";
+constexpr char kResponseHeadersMutatedHeaderKey[] =
+    "x-extproc-response-headers-mutated";
+constexpr char kResponseTrailersMutatedHeaderKey[] =
+    "x-extproc-response-trailers-mutated";
+constexpr char kHeaderMutatedValue[] = "yes";
+constexpr char kImmediateResponseHeaderKey[] =
+    "x-extproc-immediate-response-added";
+
+// Message bodies.
+constexpr char kMessage1[] = "message1";
+constexpr char kMessage2[] = "message2";
+constexpr char kMessage1Mutated[] = "message1-mutated";
+constexpr char kMutatedSuffix[] = "-mutated";
+constexpr char kRequestBodyMutatedSuffix[] = "-request-body-mutated";
+constexpr char kResponseBodyMutatedSuffix[] = "-response-body-mutated";
+constexpr bool kEndOfStream = true;
+constexpr char kEmptyBody[] = "";
 
 // A stream-based fake external processor service that provides fine-grained,
 // sequential control over incoming ext_proc stream requests and outgoing
@@ -639,18 +651,46 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                                     bool send_response = true)
         : stream_(stream), send_response_(send_response) {}
 
-    ~ClientHalfCloseHandler();
-    void Handle(const ProcessingRequest& request);
+    // TODO(rishesh): The server-side filter does not reliably observe client
+    // half-close yet, so we only verify it on the client side.
+    ~ClientHalfCloseHandler() {
+      if (!GetParam().filter_on_server()) {
+        EXPECT_TRUE(seen_) << "client half-close not seen";
+      }
+    }
+
+    void Handle(const ProcessingRequest& request) {
+      EXPECT_FALSE(seen_) << "duplicate client half-close event";
+      seen_ = true;
+      EXPECT_THAT(request, MatchesRequestBody(kEmptyBody, kEndOfStream));
+      if (send_response_) {
+        stream_->SendResponse(
+            MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
+      }
+    }
 
     // Wrapper for GetNextRequest() that handles the client half-close event
     // if that's the event we got, in which case it returns the event after it.
     std::optional<ProcessingRequest> MaybeHandle(
-        std::optional<ProcessingRequest> request);
+        std::optional<ProcessingRequest> request) {
+      if (!request.has_value() || !request->has_request_body()) return request;
+      Handle(*request);
+      return stream_->GetNextRequest();
+    }
 
     // Handles the half-close if it arrived after all of the response-path
     // events.  When send_response is true, this must be called before waiting
     // for the RPC to complete, which cannot happen until we respond.
-    void HandleIfNotYetSeen();
+    void HandleIfNotYetSeen() {
+      // TODO(rishesh): The server-side filter does not observe client
+      // half-close yet, so don't wait for it.
+      if (GetParam().filter_on_server()) return;
+      if (seen_) return;
+      auto request = stream_->GetNextRequest();
+      ASSERT_TRUE(request.has_value())
+          << "timed out waiting for client half-close";
+      Handle(*request);
+    }
 
    private:
     FakeExtProcService::Stream* stream_;
@@ -658,7 +698,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     bool seen_ = false;
   };
 
-  std::string GetExtProcAttribute(
+  static std::string GetExtProcAttribute(
       const ::envoy::service::ext_proc::v3::ProcessingRequest& request,
       absl::string_view attribute_name) {
     auto it = request.attributes().find("envoy.filters.http.ext_proc");
@@ -671,8 +711,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
 
   // Response construction helper functions
 
-  std::string ModifyEchoRequest(absl::string_view body,
-                                absl::string_view add_suffix) {
+  static std::string ModifyEchoRequest(absl::string_view body,
+                                       absl::string_view add_suffix) {
     EchoRequest echo_req;
     CHECK(echo_req.ParseFromString(body));
     echo_req.set_message(absl::StrCat(echo_req.message(), add_suffix));
@@ -681,8 +721,8 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     return mutated;
   }
 
-  std::string ModifyEchoResponse(absl::string_view body,
-                                 absl::string_view add_suffix) {
+  static std::string ModifyEchoResponse(absl::string_view body,
+                                        absl::string_view add_suffix) {
     EchoResponse echo_resp;
     CHECK(echo_resp.ParseFromString(body));
     echo_resp.set_message(absl::StrCat(echo_resp.message(), add_suffix));
@@ -837,47 +877,6 @@ INSTANTIATE_TEST_SUITE_P(
         XdsTestType().set_filter_on_server().set_filter_config_setup(
             XdsTestType::kHttpFilterConfigInRoute)),
     &XdsTestType::Name);
-
-//
-// XdsExtProcEnd2endTest::ClientHalfCloseHandler
-//
-
-// TODO(rishesh): The server-side filter does not reliably observe client
-// half-close yet, so we only verify it on the client side.
-XdsExtProcEnd2endTest::ClientHalfCloseHandler::~ClientHalfCloseHandler() {
-  if (!GetParam().filter_on_server()) {
-    EXPECT_TRUE(seen_) << "client half-close not seen";
-  }
-}
-
-void XdsExtProcEnd2endTest::ClientHalfCloseHandler::Handle(
-    const ProcessingRequest& request) {
-  EXPECT_FALSE(seen_) << "duplicate client half-close event";
-  seen_ = true;
-  EXPECT_THAT(request, MatchesRequestBody(kEmptyBody, kEndOfStream));
-  if (send_response_) {
-    stream_->SendResponse(
-        MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
-  }
-}
-
-std::optional<ProcessingRequest>
-XdsExtProcEnd2endTest::ClientHalfCloseHandler::MaybeHandle(
-    std::optional<ProcessingRequest> request) {
-  if (!request.has_value() || !request->has_request_body()) return request;
-  Handle(*request);
-  return stream_->GetNextRequest();
-}
-
-void XdsExtProcEnd2endTest::ClientHalfCloseHandler::HandleIfNotYetSeen() {
-  // TODO(rishesh): The server-side filter does not observe client half-close
-  // yet, so don't wait for it.
-  if (GetParam().filter_on_server()) return;
-  if (seen_) return;
-  auto request = stream_->GetNextRequest();
-  ASSERT_TRUE(request.has_value()) << "timed out waiting for client half-close";
-  Handle(*request);
-}
 
 //
 // Tests
@@ -1324,6 +1323,37 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
   ext_proc_stream->SendResponse(proc_response);
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
+}
+
+//
+// Immediate Response tests
+//
+
+TEST_P(XdsExtProcEnd2endTest, ImmediateResponse) {
+  auto ext_proc_config = MakeFilterConfigBuilder()
+                             .SetRequestHeaderMode(true)
+                             .SetResponseHeaderMode(true)
+                             .SetResponseTrailerMode(true)
+                             .SetRequestBodyMode(true)
+                             .SetResponseBodyMode(true)
+                             .Build();
+  SetFilterConfig(ext_proc_config);
+  StartBackendServer();
+  AsyncRpc rpc;
+  rpc.StartRpc(stub_.get());
+  auto ext_proc_stream = ext_proc_service().GetStream();
+  ASSERT_NE(ext_proc_stream, nullptr);
+  auto req = ext_proc_stream->GetNextRequest();
+  ASSERT_TRUE(req.has_value());
+  EXPECT_TRUE(req->has_request_headers());
+  ext_proc_stream->SendResponse(MakeImmediateResponse(
+      GRPC_STATUS_PERMISSION_DENIED,
+      "Access Denied by ExtProc (Request Headers)",
+      {{kImmediateResponseHeaderKey, kHeaderMutatedValue}}));
+  Status status = rpc.GetStatus();
+  EXPECT_THAT(status,
+              GrpcStatusIs(StatusCode::PERMISSION_DENIED,
+                           "Access Denied by ExtProc (Request Headers)"));
 }
 
 //
