@@ -30,6 +30,8 @@
 #include <variant>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 namespace grpc {
 namespace experimental {
 
@@ -170,11 +172,15 @@ class GRPCXX_DLL InMemoryCertificateProvider
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
-  // TODO(anasalazar): Expose some API for callers to pass in a SPIFFE bundle
-  // map for the root cert.
-  // Users should verify the status retuned to confirm that the update was
+  // Users should verify the status returned to confirm that the update was
   // successful.
   absl::Status UpdateRoot(const std::string& root_certificate);
+  // Updates the root certificates from a SPIFFE Bundle Map JSON string.
+  // Replaces any roots previously set via UpdateRoot (and vice versa). On
+  // failure, the currently loaded roots are left unchanged.
+  // Users should verify the status returned to confirm that the update was
+  // successful.
+  absl::Status UpdateSpiffeBundleMap(absl::string_view spiffe_bundle_map);
   [[deprecated("Use IdentityKeyOrSignerCertPair overload instead")]]
   absl::Status UpdateIdentityKeyCertPair(
       std::vector<IdentityKeyCertPair> identity_key_cert_pairs);
