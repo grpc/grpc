@@ -44,6 +44,7 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/down_cast.h"
@@ -663,8 +664,12 @@ ExtProcFilter::ExtProcCall::ExtProcCall(
       handler_(handler),
       ext_proc_filter_(std::move(ext_proc_filter)) {
   const char* method = "/envoy.service.ext_proc.v3.ExternalProcessor/Process";
+  // Pass the data plane RPC's tracing context, so that the ext_proc call is
+  // traced as its child.
   streaming_call_ = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
-      *transport, method, XdsTransport::CallOptions());
+      *transport, method,
+      XdsTransport::CallOptions().set_parent_census_context(
+          handler_.arena()->GetContext<census_context>()));
 }
 
 std::string ExtProcFilter::ExtProcCall::DebugTag() const {

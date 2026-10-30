@@ -65,6 +65,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
           method_(method),
           event_engine_(transport_->factory()->event_engine_),
           wait_for_ready_(options.wait_for_ready),
+          parent_census_context_(options.parent_census_context),
           event_handler_(
               MakeRefCounted<RefCountedEventHandler>(std::move(event_handler))),
           started_(!options.start_upon_send_message) {}
@@ -102,6 +103,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool wait_for_ready() const { return wait_for_ready_; }
 
+    census_context* parent_census_context() const {
+      return parent_census_context_;
+    }
+
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
      public:
@@ -132,6 +137,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine_;
     const bool wait_for_ready_;
+    census_context* const parent_census_context_;
 
     mutable Mutex mu_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
