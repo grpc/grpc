@@ -22,6 +22,7 @@ cdef extern from "<queue>" namespace "std" nogil:
     bint empty()
     T& front()
     void pop()
+    void swap(queue[T]&)
 
 cdef extern from "<mutex>" namespace "std" nogil:
   cdef cppclass mutex:
