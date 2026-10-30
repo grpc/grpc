@@ -447,8 +447,8 @@ void Server::ListenerState::OnHandshakeDone(
   // At this point, the connection has finished handshaking and therefore
   // may start receiving RPCs, so we need to drain it gracefully.
   if (connection != nullptr) {
-    server_->StartDrainingConnectionsLocked(
-        {std::move(connection)},
+    server_->StartDrainingConnectionLocked(
+        std::move(connection),
         // FIXME: what is the right reason and time to use here?
         "server closing connection", Duration::Infinity());
   }
@@ -592,8 +592,8 @@ void Server::Connection::Shutdown(absl::string_view reason,
   OrphanablePtr<Connection> owned_connection =
       server_->ExtractActiveConnectionLocked(this);
   if (owned_connection == nullptr) return;
-  server_->StartDrainingConnectionsLocked(
-      {std::move(owned_connection)}, reason, grace_period);
+  server_->StartDrainingConnectionLocked(
+      std::move(owned_connection), reason, grace_period);
 }
 
 void Server::Connection::MaybeSendGoawayLocked(absl::string_view reason) {
@@ -1807,6 +1807,14 @@ void Server::RemoveActiveConnectionLocked(Connection* connection) {
       return;
     }
   }
+}
+
+void Server::StartDrainingConnectionLocked(
+    OrphanablePtr<Connection> connection,
+    absl::string_view reason, Duration grace_period) {
+  absl::flat_hash_set<OrphanablePtr<Connection>> connections;
+  connections.insert(std::move(connection));
+  StartDrainingConnectionsLocked(std::move(connections), reason, grace_period);
 }
 
 void Server::StartDrainingConnectionsLocked(

@@ -704,6 +704,11 @@ class Server : public ServerInterface,
   void RemoveActiveConnectionLocked(Connection* connection)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
+  void StartDrainingConnectionLocked(
+      OrphanablePtr<Connection> connections,
+      absl::string_view reason, Duration grace_period)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
   void StartDrainingConnectionsLocked(
       absl::flat_hash_set<OrphanablePtr<Connection>> connections,
       absl::string_view reason, Duration grace_period)
