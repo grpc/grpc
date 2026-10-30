@@ -90,6 +90,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -1094,32 +1095,16 @@ static tsi_result peer_property_from_x509_common_name(
 static tsi_result peer_property_from_x509_subject(X509* cert,
                                                   tsi_peer_property* property,
                                                   bool is_verified_root_cert) {
-  auto* subject_name = X509_get_subject_name(cert);
-  if (subject_name == nullptr) {
-    GRPC_TRACE_LOG(tsi, INFO) << "Could not get subject name from certificate.";
-    return TSI_NOT_FOUND;
-  }
-  BIO* bio = BIO_new(BIO_s_mem());
-  X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
-  char* contents;
-  long len = BIO_get_mem_data(bio, &contents);
-  if (len < 0) {
-    LOG(ERROR) << "Could not get subject entry from certificate.";
-    BIO_free(bio);
+  absl::StatusOr<std::string> subject = tsi::X509SubjectRfc2253(cert);
+  if (!subject.ok()) {
+    LOG(ERROR) << "Could not get subject from certificate: "
+               << subject.status();
     return TSI_INTERNAL_ERROR;
   }
-  tsi_result result;
-  if (!is_verified_root_cert) {
-    result = tsi_construct_string_peer_property(
-        TSI_X509_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
-        property);
-  } else {
-    result = tsi_construct_string_peer_property(
-        TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY, contents,
-        static_cast<size_t>(len), property);
-  }
-  BIO_free(bio);
-  return result;
+  return tsi_construct_string_peer_property(
+      is_verified_root_cert ? TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY
+                            : TSI_X509_SUBJECT_PEER_PROPERTY,
+      subject->data(), subject->size(), property);
 }
 
 // Gets the X509 cert in PEM format as a tsi_peer_property.
@@ -2309,6 +2294,26 @@ static tsi_result ssl_handshaker_result_extract_peer(
   const char* tls_version = SSL_get_version(impl->ssl);
   X509* verified_root_cert = static_cast<X509*>(
       SSL_get_ex_data(impl->ssl, g_ssl_ex_verified_root_cert_index));
+  // Only servers report the principal of their own certificate: it backs
+  // AttributeContext.destination.principal in the ext_authz filter, which is
+  // populated only for incoming calls.  SSL_get_certificate() returns the leaf
+  // actually used on this connection, taking SNI and certificate selection
+  // into account; it is owned by the SSL object.
+  std::optional<std::string> local_principal;
+  if (SSL_is_server(impl->ssl)) {
+    X509* local_cert = SSL_get_certificate(impl->ssl);
+    if (local_cert != nullptr) {
+      absl::StatusOr<std::string> principal = tsi::X509Principal(local_cert);
+      if (principal.ok()) {
+        if (!principal->empty()) local_principal = *std::move(principal);
+      } else {
+        // Not fatal: the handshake has already succeeded, and this property
+        // is informational only.
+        LOG(ERROR) << "Could not get principal of local certificate: "
+                   << principal.status();
+      }
+    }
+  }
   // 1 is for session reused property.
   size_t new_property_count = peer->property_count + 3;
   if (alpn_selected != nullptr) new_property_count++;
@@ -2316,6 +2321,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (verified_root_cert != nullptr) new_property_count++;
   if (server_name != nullptr) new_property_count++;
   if (tls_version != nullptr) new_property_count++;
+  if (local_principal.has_value()) new_property_count++;
   if (!impl->exported_keying_material_label.empty()) new_property_count++;
 #if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   int nid = SSL_get_negotiated_group(impl->ssl);
@@ -2376,10 +2382,21 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (verified_root_cert != nullptr) {
     result = peer_property_from_x509_subject(
         verified_root_cert, &peer->properties[peer->property_count], true);
-    if (result != TSI_OK) {
+    if (result == TSI_OK) {
+      peer->property_count++;
+    } else {
+      // Not fatal: the handshake has already succeeded, and this property is
+      // informational only.  Leave the slot unpopulated and carry on.
       VLOG(2) << "Problem extracting subject from verified_root_cert. result: "
               << result;
+      result = TSI_OK;
     }
+  }
+  if (local_principal.has_value()) {
+    result = tsi_construct_string_peer_property(
+        TSI_X509_LOCAL_PRINCIPAL_PEER_PROPERTY, local_principal->data(),
+        local_principal->size(), &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
     peer->property_count++;
   }
 
