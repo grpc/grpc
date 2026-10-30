@@ -504,6 +504,7 @@ grpc_cc_test(
         "//:grpc++",
         "//src/core:ext_authz_messages",
         "//src/core:sync",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:tls_test_utils",

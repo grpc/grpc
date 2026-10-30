@@ -87,8 +87,6 @@ constexpr absl::string_view kDeniedResponseNotPresentErrorMessage =
     "denied_response not present in CheckResponse";
 constexpr absl::string_view kOkResponseNotPresentErrorMessage =
     "ok_response not present in CheckResponse";
-constexpr absl::string_view kHeaderMutationNotAllowedErrorMessage =
-    "ExtAuthz header mutation is not allowed";
 constexpr absl::string_view kForbiddenHeaderMutationErrorMessage =
     "Forbidden header mutation: x-custom-header";
 constexpr absl::string_view kForbiddenHeaderRemovalErrorMessage =
@@ -1050,21 +1048,20 @@ FILTER_TEST(ExtAuthzFilterTest,
         header->mutable_header()->set_value(std::string(kCustomHeaderValue));
         unary_call->SendMessageToClient(response.SerializeAsString());
       });
-  EXPECT_TRUE(PullClientInitialMetadata().ok());
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
   handler.join();
-  PushServerInitialMetadata(NewServerMetadata());
-  (void)PullServerInitialMetadata();
   ValueOrFailure<ServerMetadataHandle> server_trailing_md =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_md.ok());
   EXPECT_THAT(**server_trailing_md,
               HasMetadataResult(absl::PermissionDeniedError(
-                  kHeaderMutationNotAllowedErrorMessage)));
+                  kForbiddenHeaderMutationErrorMessage)));
   WaitForAllPendingWork();
 }
 
-// Response header mutation errors fail the call with status_on_error even
-// when failure_mode_allow is set.
+// Like any other failure to get a valid decision, a disallowed response header
+// mutation allows the call when failure_mode_allow is set.  The response
+// header is not added.
 FILTER_TEST(ExtAuthzFilterTest,
             ResponseHeaderMutationFailsWithFailureModeAllow) {
   auto config = MakeConfig(/*failure_mode_allow=*/true,
@@ -1088,16 +1085,25 @@ FILTER_TEST(ExtAuthzFilterTest,
         header->mutable_header()->set_value(std::string(kCustomHeaderValue));
         unary_call->SendMessageToClient(response.SerializeAsString());
       });
-  EXPECT_TRUE(PullClientInitialMetadata().ok());
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
   handler.join();
-  PushServerInitialMetadata(NewServerMetadata());
-  (void)PullServerInitialMetadata();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md,
+              HasMetadataKeyValue(kFailureModeAllowedHeader, kTrue));
+  PushServerInitialMetadata(
+      NewServerMetadata({{kServerHeaderKey, kServerHeaderValue}}));
+  ValueOrFailure<std::optional<ServerMetadataHandle>> server_initial_md =
+      PullServerInitialMetadata();
+  ASSERT_TRUE(server_initial_md.ok());
+  ASSERT_TRUE(server_initial_md->has_value());
+  EXPECT_THAT(***server_initial_md,
+              AllOf(HasMetadataKeyValue(kServerHeaderKey, kServerHeaderValue),
+                    LacksMetadataKey(kCustomHeaderKey)));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
   ValueOrFailure<ServerMetadataHandle> server_trailing_md =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_md.ok());
-  EXPECT_THAT(**server_trailing_md,
-              HasMetadataResult(absl::UnavailableError(
-                  kHeaderMutationNotAllowedErrorMessage)));
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
   WaitForAllPendingWork();
 }
 
@@ -1133,10 +1139,12 @@ FILTER_TEST(ExtAuthzFilterTest,
   ASSERT_TRUE(server_trailing_md.ok());
   EXPECT_THAT(**server_trailing_md,
               HasMetadataResult(absl::ResourceExhaustedError(
-                  kHeaderMutationNotAllowedErrorMessage)));
+                  kForbiddenHeaderMutationErrorMessage)));
   WaitForAllPendingWork();
 }
 
+// A disallowed trailer mutation on a denied response counts as a failure to
+// get a valid decision, so failure_mode_allow allows the call.
 FILTER_TEST(ExtAuthzFilterTest,
             HeaderMutationFailsOnDeniedResponseWithFailureModeAllow) {
   auto config = MakeConfig(/*failure_mode_allow=*/true,
@@ -1161,14 +1169,56 @@ FILTER_TEST(ExtAuthzFilterTest,
         header->mutable_header()->set_value(std::string(kCustomHeaderValue));
         unary_call->SendMessageToClient(response.SerializeAsString());
       });
-  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
   handler.join();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md,
+              HasMetadataKeyValue(kFailureModeAllowedHeader, kTrue));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
   ValueOrFailure<ServerMetadataHandle> server_trailing_md =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_md.ok());
-  EXPECT_THAT(**server_trailing_md,
-              HasMetadataResult(absl::PermissionDeniedError(
-                  kHeaderMutationNotAllowedErrorMessage)));
+  EXPECT_THAT(**server_trailing_md, AllOf(HasMetadataResult(absl::OkStatus()),
+                                          LacksMetadataKey(kCustomHeaderKey)));
+  WaitForAllPendingWork();
+}
+
+// All mutations are checked before any are applied, so when one of them is
+// disallowed, the allowed ones are not applied either.
+FILTER_TEST(ExtAuthzFilterTest,
+            DisallowedMutationPreventsAllMutationsWithFailureModeAllow) {
+  auto config = MakeConfig(/*failure_mode_allow=*/true,
+                           /*failure_mode_allow_header_add=*/true);
+  HeaderMutationRules rules;
+  // Mutating "host" is never allowed, so this allows everything else.
+  rules.disallow_is_error = true;
+  config->decoder_header_mutation_rules = std::move(rules);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* ok = response.mutable_ok_response();
+        auto* header = ok->add_headers();
+        header->mutable_header()->set_key(std::string(kCustomHeaderKey));
+        header->mutable_header()->set_value(std::string(kCustomHeaderValue));
+        ok->add_headers_to_remove("host");
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
+  handler.join();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md,
+              AllOf(HasMetadataKeyValue(kFailureModeAllowedHeader, kTrue),
+                    LacksMetadataKey(kCustomHeaderKey)));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
   WaitForAllPendingWork();
 }
 

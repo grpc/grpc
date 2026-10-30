@@ -30,6 +30,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -38,6 +40,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -56,9 +59,7 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     ~ExtAuthzChannel() override;
     const GrpcXdsServerTarget& server() const { return server_; }
 
-    RefCountedPtr<XdsTransport> transport() const {
-      return transport_;
-    }
+    RefCountedPtr<XdsTransport> transport() const { return transport_; }
 
    private:
     GrpcXdsServerTarget server_;
@@ -141,12 +142,12 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
 
   class Call {
    public:
-    absl::Status OnClientInitialMetadata(ClientMetadata& md,
-                                         ExtAuthzFilter* filter);
-    absl::Status OnServerInitialMetadata(ServerMetadata& md,
-                                         ExtAuthzFilter* filter);
-    absl::Status OnServerTrailingMetadata(ServerMetadata& md,
-                                          ExtAuthzFilter* filter);
+    // Sends a CheckRequest to the authorization service and resolves once its
+    // CheckResponse has been applied, without blocking the calling thread.
+    ArenaPromise<absl::Status> OnClientInitialMetadata(ClientMetadata& md,
+                                                       ExtAuthzFilter* filter);
+    void OnServerInitialMetadata(ServerMetadata& md);
+    void OnServerTrailingMetadata(ServerMetadata& md);
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnClientToServerHalfClose;
@@ -163,8 +164,49 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
   RefCountedPtr<ExtAuthzChannel> channel() const { return config_->channel(); }
   bool is_client() const { return is_client_; }
 
+  // Metrics, as described in gRFC A92.
+  void RecordAllowedRpc() const;
+  void RecordDeniedRpc() const;
+  void RecordFilterDisabledRpc() const;
+  void RecordFailedRpc() const;
+
  private:
+  class ClientTelemetryDomain final
+      : public InstrumentDomain<ClientTelemetryDomain> {
+   public:
+    using Backend = HighContentionBackend;
+    static constexpr absl::string_view kName = "client_ext_authz";
+    GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.target");
+
+    static CounterHandle kAllowedRpcs;
+    static CounterHandle kDeniedRpcs;
+    static CounterHandle kFilterDisabledRpcs;
+    static CounterHandle kFailedRpcs;
+  };
+
+  class ServerTelemetryDomain final
+      : public InstrumentDomain<ServerTelemetryDomain> {
+   public:
+    using Backend = HighContentionBackend;
+    static constexpr absl::string_view kName = "server_ext_authz";
+    GRPC_EMPTY_INSTRUMENT_DOMAIN_LABELS();
+
+    static CounterHandle kAllowedRpcs;
+    static CounterHandle kDeniedRpcs;
+    static CounterHandle kFilterDisabledRpcs;
+    static CounterHandle kFailedRpcs;
+  };
+
+  using TelemetryStorage =
+      std::variant<std::monostate,
+                   InstrumentStorageRefPtr<ClientTelemetryDomain>,
+                   InstrumentStorageRefPtr<ServerTelemetryDomain>>;
+
   ExtAuthzFilter(const ChannelArgs& args, RefCountedPtr<const Config> config);
+
+  void IncrementCounter(
+      ClientTelemetryDomain::CounterHandle client_counter,
+      ServerTelemetryDomain::CounterHandle server_counter) const;
 
   const RefCountedPtr<const Config> config_;
   const bool is_client_;
@@ -180,6 +222,8 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
   // server side and the config sets include_peer_certificate. Computed once
   // here rather than per RPC, since it requires encoding the whole cert.
   std::string peer_certificate_;
+  // Unset if there are no stats plugins.
+  TelemetryStorage telemetry_storage_;
 };
 
 }  // namespace grpc_core

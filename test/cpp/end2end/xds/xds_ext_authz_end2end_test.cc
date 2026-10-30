@@ -43,6 +43,7 @@
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_messages.h"
 #include "src/core/util/sync.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
@@ -322,6 +323,21 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
     }
   }
 
+  // Returns the value of the ext_authz counter \a name (e.g.,
+  // "allowed_rpcs") from the client or server side, depending on where the
+  // filter is.  Unset values are returned as 0.
+  uint64_t GetExtAuthzCounter(grpc_core::FakeStatsPlugin& stats_plugin,
+                              absl::string_view name) {
+    const bool on_server = GetParam().filter_on_server();
+    const std::string metric_name = absl::StrCat(
+        on_server ? "grpc.server_ext_authz." : "grpc.client_ext_authz.", name);
+    const std::string target = absl::StrCat("xds:", kServerName);
+    std::vector<absl::string_view> labels;
+    if (!on_server) labels.push_back(target);
+    return stats_plugin.GetUInt64MetricValueByName(metric_name, labels)
+        .value_or(0);
+  }
+
   // Sends an Echo RPC, returning the server's initial and trailing metadata
   // in addition to the status.  XdsEnd2endTest::SendRpc() does not expose
   // trailing metadata, which the ext_authz filter mutates for denied
@@ -409,6 +425,7 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
 // Run with the HTTP filter config in the Listener only, with an additional
 // per-route override, and on a server-side filter chain (both with and without
 // per-route override).
+
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsExtAuthzTest,
     ::testing::Values(
@@ -680,14 +697,16 @@ TEST_P(XdsExtAuthzTest, ExtAuthzDeniedDisallowedHeaderMutation) {
   rules->mutable_disallow_all()->set_value(true);
   rules->mutable_disallow_is_error()->set_value(true);
   SetExtAuthzListenerAndStart(ext_authz_config);
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "ExtAuthz header mutation is not allowed");
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("Forbidden header mutation: ", kDeniedTrailerKey));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 0);
   EXPECT_EQ(ext_authz_server_->service()->request_count(), 1);
 }
 
-// failure_mode_allow applies only to communication failures with the ext_authz
-// service, so a denied response with a disallowed header mutation still fails.
+// A disallowed header mutation means that the ext_authz response is invalid,
+// which is handled like a communication failure, so failure_mode_allow allows
+// the RPC even though the response denied it.
 TEST_P(XdsExtAuthzTest,
        ExtAuthzDeniedDisallowedHeaderMutationFailureModeAllow) {
   ext_authz_server_->service()->SetCheckHandler(
@@ -705,10 +724,16 @@ TEST_P(XdsExtAuthzTest,
   rules->mutable_disallow_all()->set_value(true);
   rules->mutable_disallow_is_error()->set_value(true);
   SetExtAuthzListenerAndStart(ext_authz_config);
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::PERMISSION_DENIED,
-                      "ExtAuthz header mutation is not allowed");
-  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 0);
+  std::multimap<std::string, std::string> server_initial_metadata;
+  Status status = SendRpcWithMetadata(
+      RpcOptions().set_echo_metadata_initially(true), &server_initial_metadata,
+      /*server_trailing_metadata=*/nullptr);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
   EXPECT_EQ(ext_authz_server_->service()->request_count(), 1);
+  EXPECT_THAT(server_initial_metadata,
+              Contains(Pair(kFailureModeAllowedHeader, kTrue)));
 }
 
 TEST_P(XdsExtAuthzTest, ExtAuthzDeniedIgnoresFailureModeAllow) {
@@ -740,6 +765,97 @@ TEST_P(XdsExtAuthzTest, ExtAuthzDeniedWithoutDeniedResponse) {
                       "denied_response not present in CheckResponse");
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 0);
   EXPECT_EQ(ext_authz_server_->service()->request_count(), 1);
+}
+
+//
+// Metrics
+//
+
+// The counters are compared against their values before the RPC, since their
+// storage may be shared with earlier tests that used the same target.
+
+TEST_P(XdsExtAuthzTest, ExtAuthzAllowedRpcsMetric) {
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig());
+  const uint64_t allowed = GetExtAuthzCounter(*stats_plugin, "allowed_rpcs");
+  CheckRpcSendOk(DEBUG_LOCATION);
+  EXPECT_EQ(GetExtAuthzCounter(*stats_plugin, "allowed_rpcs"), allowed + 1);
+}
+
+TEST_P(XdsExtAuthzTest, ExtAuthzDeniedRpcsMetric) {
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  ext_authz_server_->service()->SetCheckHandler(
+      [](const CheckRequest*, CheckResponse* response) {
+        response->mutable_status()->set_code(GRPC_STATUS_PERMISSION_DENIED);
+        response->mutable_denied_response();
+        return grpc::Status::OK;
+      });
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig());
+  const uint64_t denied = GetExtAuthzCounter(*stats_plugin, "denied_rpcs");
+  const uint64_t allowed = GetExtAuthzCounter(*stats_plugin, "allowed_rpcs");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::PERMISSION_DENIED,
+                      "ExtAuthz request is denied");
+  EXPECT_EQ(GetExtAuthzCounter(*stats_plugin, "denied_rpcs"), denied + 1);
+  EXPECT_EQ(GetExtAuthzCounter(*stats_plugin, "allowed_rpcs"), allowed);
+}
+
+TEST_P(XdsExtAuthzTest, ExtAuthzFilterDisabledRpcsMetric) {
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  auto ext_authz_config = BuildExtAuthzConfig();
+  auto* default_value =
+      ext_authz_config.mutable_filter_enabled()->mutable_default_value();
+  default_value->set_numerator(0);
+  default_value->set_denominator(envoy::type::v3::FractionalPercent::HUNDRED);
+  SetExtAuthzListenerAndStart(ext_authz_config);
+  const uint64_t disabled =
+      GetExtAuthzCounter(*stats_plugin, "filter_disabled_rpcs");
+  CheckRpcSendOk(DEBUG_LOCATION);
+  EXPECT_EQ(GetExtAuthzCounter(*stats_plugin, "filter_disabled_rpcs"),
+            disabled + 1);
+}
+
+TEST_P(XdsExtAuthzTest, ExtAuthzFailedRpcsMetric) {
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  ext_authz_server_->service()->SetCheckHandler(
+      [](const CheckRequest*, CheckResponse*) {
+        return grpc::Status(grpc::StatusCode::UNAVAILABLE,
+                            "ext_authz service unavailable");
+      });
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig());
+  const uint64_t failed = GetExtAuthzCounter(*stats_plugin, "failed_rpcs");
+  const uint64_t allowed = GetExtAuthzCounter(*stats_plugin, "allowed_rpcs");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::PERMISSION_DENIED,
+                      "ext_authz service unavailable");
+  EXPECT_EQ(GetExtAuthzCounter(*stats_plugin, "failed_rpcs"), failed + 1);
+  EXPECT_EQ(GetExtAuthzCounter(*stats_plugin, "allowed_rpcs"), allowed);
+}
+
+// With failure_mode_allow, an RPC whose ext_authz call fails counts as both
+// failed and allowed.
+TEST_P(XdsExtAuthzTest, ExtAuthzFailedRpcsMetricWithFailureModeAllow) {
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  ext_authz_server_->service()->SetCheckHandler(
+      [](const CheckRequest*, CheckResponse*) {
+        return grpc::Status(grpc::StatusCode::UNAVAILABLE,
+                            "ext_authz service unavailable");
+      });
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig(
+      /*failure_mode_allow=*/true, /*failure_mode_allow_header_add=*/false));
+  const uint64_t failed = GetExtAuthzCounter(*stats_plugin, "failed_rpcs");
+  const uint64_t allowed = GetExtAuthzCounter(*stats_plugin, "allowed_rpcs");
+  CheckRpcSendOk(DEBUG_LOCATION);
+  EXPECT_EQ(GetExtAuthzCounter(*stats_plugin, "failed_rpcs"), failed + 1);
+  EXPECT_EQ(GetExtAuthzCounter(*stats_plugin, "allowed_rpcs"), allowed + 1);
 }
 
 }  // namespace
