@@ -40,6 +40,7 @@ cdef extern from "<queue>" namespace "std" nogil:
         void pop()
         void push(T&)
         size_t size()
+        void swap(queue&)
 
 
 cdef extern from "<mutex>" namespace "std" nogil:
@@ -62,6 +63,14 @@ cdef extern from "<atomic>" namespace "std" nogil:
     atomic()
     T load()
     void store(T)
+
+cdef extern from "<unordered_map>" namespace "std" nogil:
+  cdef cppclass unordered_map[K, V]:
+    unordered_map()
+    size_t count(const K&)
+    V& operator[](const K&)
+    size_t erase(const K&)
+    void clear()
 
 # gRPC Core Declarations
 
