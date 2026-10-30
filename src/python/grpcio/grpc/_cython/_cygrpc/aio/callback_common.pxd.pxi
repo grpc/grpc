@@ -52,6 +52,8 @@ cdef class CallbackWrapper:
 
     cdef grpc_completion_queue_functor *c_functor(self)
 
+    cdef void deregister(self) noexcept
+
 
 cdef class GrpcCallWrapper:
     cdef grpc_call* call

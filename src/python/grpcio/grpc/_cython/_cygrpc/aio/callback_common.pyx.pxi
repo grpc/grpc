@@ -63,11 +63,13 @@ cdef class CallbackWrapper:
     cdef grpc_completion_queue_functor *c_functor(self):
         return &self.context.functor
 
+    cdef void deregister(self) noexcept:
+        """Drops the reference `__cinit__` took for Core.
 
-cdef CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
-    'grpc_completion_queue_shutdown',
-    'Unknown',
-    InternalError)
+        Should be used for a Core functions that refused the
+        operation synchronously (a grpc_call_error reported).
+        """
+        cpython.Py_DECREF(self)
 
 
 class ExecuteBatchError(InternalError):
@@ -93,6 +95,7 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
         wrapper.c_functor(), NULL)
 
     if error != GRPC_CALL_OK:
+        wrapper.deregister()
         grpc_call_error_string = grpc_call_error_to_string(error).decode()
         raise ExecuteBatchError("Failed grpc_call_start_batch: {} with grpc_call_error value: '{}'".format(error, grpc_call_error_string))
 

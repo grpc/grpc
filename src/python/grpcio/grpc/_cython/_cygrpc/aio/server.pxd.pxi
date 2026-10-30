@@ -91,7 +91,6 @@ cdef class AioServer:
     cdef object _serving_task  # asyncio.Task
     cdef object _shutdown_lock  # asyncio.Lock
     cdef object _shutdown_completed  # asyncio.Future
-    cdef CallbackWrapper _shutdown_callback_wrapper
     cdef object _crash_exception  # Exception
     cdef tuple _interceptors
     cdef object _thread_pool  # concurrent.futures.ThreadPoolExecutor

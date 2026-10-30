@@ -955,10 +955,6 @@ cdef class AioServer:
 
         self._shutdown_lock = asyncio.Lock()
         self._shutdown_completed = self._loop.create_future()
-        self._shutdown_callback_wrapper = CallbackWrapper(
-            self._shutdown_completed,
-            self._loop,
-            SERVER_SHUTDOWN_FAILURE_HANDLER)
         self._crash_exception = None
 
         if interceptors:
@@ -1014,6 +1010,7 @@ cdef class AioServer:
             wrapper.c_functor()
         )
         if error != GRPC_CALL_OK:
+            wrapper.deregister()
             raise InternalError("Error in grpc_server_request_registered_call: %s" % error)
 
         await future
@@ -1034,6 +1031,7 @@ cdef class AioServer:
             wrapper.c_functor()
         )
         if error != GRPC_CALL_OK:
+            wrapper.deregister()
             raise InternalError("Error in grpc_server_request_call: %s" % error)
 
         await future
@@ -1192,10 +1190,14 @@ cdef class AioServer:
         This coroutine function is NOT coroutine-safe.
         """
         # The shutdown callback won't be called until there is no live RPC.
+        cdef CallbackWrapper wrapper = CallbackWrapper(
+            self._shutdown_completed,
+            self._loop,
+            SERVER_SHUTDOWN_FAILURE_HANDLER)
         grpc_server_shutdown_and_notify(
             self._server.c_server,
             global_completion_queue(),
-            self._shutdown_callback_wrapper.c_functor())
+            wrapper.c_functor())
 
         # Ensures the serving task (coroutine) exits.
         try:
