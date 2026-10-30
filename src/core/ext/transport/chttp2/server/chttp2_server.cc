@@ -252,7 +252,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
   // code, so we can just clean up here without creating a transport.
   if (!connection_->shutdown_ && result.ok() &&
       (*result)->endpoint != nullptr) {
-    const auto* handshake_result =
+    const auto* settings_handshake_result =
         (*result)->args.GetObject<Http2SettingsHandshakeResult>();
     const bool is_callv3 =
         (*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
@@ -269,7 +269,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
         // handshake deadline.
         connection_->state_ =
             DownCast<grpc_chttp2_transport*>(transport.get())->Ref();
-        if (handshake_result != nullptr) {
+        if (settings_handshake_result != nullptr) {
           grpc_chttp2_transport_start_reading(
               transport.get(), (*result)->read_buffer.c_slice_buffer(),
               /*notify_on_receive_settings=*/nullptr, nullptr,
@@ -317,7 +317,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
         std::shared_ptr<EventEngine> event_engine_ptr =
             (*result)->args.GetObjectRef<EventEngine>();
         absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings;
-        if (handshake_result == nullptr) {
+        if (settings_handshake_result == nullptr) {
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
           on_receive_settings = [self = Ref()](absl::StatusOr<uint32_t>) {
@@ -338,7 +338,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
           ph2_transport->Ref().release();
           connection_->state_ =
               RefCountedPtr<http2::Http2ServerTransport>(ph2_transport);
-          if (handshake_result == nullptr) {
+          if (settings_handshake_result == nullptr) {
             timer_handle_ =
                 connection_->listener_state_->event_engine()->RunAfter(
                     deadline_ - Timestamp::Now(), [self = Ref()]() mutable {

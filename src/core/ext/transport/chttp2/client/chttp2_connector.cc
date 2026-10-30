@@ -179,7 +179,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   } else if ((*result)->endpoint != nullptr) {
     GRPC_HTTP2_CONNECTOR_DLOG
         << "Chttp2Connector::OnHandshakeDone handshake succeeded with endpoint";
-    const auto* handshake_result =
+    const auto* settings_handshake_result =
         (*result)->args.GetObject<Http2SettingsHandshakeResult>();
     const bool is_callv1 =
         !((*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false));
@@ -190,9 +190,10 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
           (*result)->args, std::move((*result)->endpoint), true);
       GRPC_CHECK_NE(result_->transport, nullptr);
       result_->channel_args = std::move((*result)->args);
-      if (handshake_result != nullptr) {
+      if (settings_handshake_result != nullptr) {
         result_->max_concurrent_streams =
-            handshake_result->peer_initial_settings().max_concurrent_streams();
+            settings_handshake_result->peer_initial_settings()
+                .max_concurrent_streams();
         grpc_chttp2_transport_start_reading(
             result_->transport, (*result)->read_buffer.c_slice_buffer(),
             /*notify_on_receive_settings=*/nullptr,
@@ -246,7 +247,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
                   ->args
                   .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings;
-      if (handshake_result == nullptr) {
+      if (settings_handshake_result == nullptr) {
         on_receive_settings =
             [self = RefAsSubclass<Chttp2Connector>()](
                 absl::StatusOr<uint32_t> max_concurrent_streams) {
@@ -262,9 +263,10 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
       result_->transport = client_transport;
       result_->channel_args = std::move((*result)->args);
       client_transport->SpawnTransportLoops();
-      if (handshake_result != nullptr) {
+      if (settings_handshake_result != nullptr) {
         result_->max_concurrent_streams =
-            handshake_result->peer_initial_settings().max_concurrent_streams();
+            settings_handshake_result->peer_initial_settings()
+                .max_concurrent_streams();
         NullThenSchedClosure(DEBUG_LOCATION, &notify_, absl::OkStatus());
       } else {
         timer_handle_ = event_engine_->RunAfter(
