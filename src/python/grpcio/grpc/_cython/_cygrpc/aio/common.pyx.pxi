@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import concurrent.futures
 import warnings
 import threading
 
 from cpython.version cimport PY_MINOR_VERSION
 
 TYPE_METADATA_STRING = "Tuple[Tuple[str, Union[str, bytes]]...]"
+_LOOP_CLOSED_POLL_INTERVAL_S = 0.1
 
 
 cdef grpc_status_code get_status_code(object code) except *:
@@ -109,27 +111,63 @@ class InternalError(BaseError):
 
 
 def schedule_coro_threadsafe(object coro, object loop):
+    """Schedules a coroutine on `loop` from any thread."""
     try:
+        running_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        running_loop = None
+
+    # In the loop's owning thread case - create a task right away
+    if running_loop is loop:
         return loop.create_task(coro)
-    except RuntimeError as runtime_error:
-        if 'Non-thread-safe operation' in str(runtime_error):
-            return asyncio.run_coroutine_threadsafe(
-                coro,
-                loop,
-            )
-        else:
-            raise
+
+    # In the loop's non-owning thread case - schedule a coroutine for the owner
+    return asyncio.run_coroutine_threadsafe(coro, loop)
+
+
+def _run_coro_threadsafe_and_wait(object coro, object loop):
+    """Runs `coro` on `loop` from a non-owning thread and blocks for its result.
+
+    When the `loop` is closed its pending task is dropped and `RuntimeError`
+    is raised.
+
+    Must not be called from the loop's owning thread. The `future.result()` call
+    from the loop's owning thread would wait it for itself (a deadlock).
+    """
+    try:
+        future = asyncio.run_coroutine_threadsafe(coro, loop)
+    except RuntimeError:
+        # Event loop is closed
+        coro.close()
+        raise
+    # Nothing wakes a waiter up when a loop gets closed (asyncio has no hook
+    # for it), so the wait is sliced and the loop status is checked in between.
+    while True:
+        try:
+            return future.result(timeout=_LOOP_CLOSED_POLL_INTERVAL_S)
+        except concurrent.futures.TimeoutError:
+            if future.done():
+                # The coroutine has finished, either by raising TimeoutError
+                # itself, or with a valid result. Fetch that outcome below.
+                break
+            if loop.is_closed():
+                try:
+                    coro.close()
+                except (RuntimeError, ValueError):
+                    pass
+                raise RuntimeError("Event loop is closed")
+    return future.result()
 
 
 def async_generator_to_generator(object agen, object loop):
-    """Converts an async generator into generator."""
+    """Converts an async generator into generator.
+
+    Must be iterated from a thread other than the one running `loop`. Raises
+    `RuntimeError` if `loop` is closed before the async generator is exhausted.
+    """
     try:
         while True:
-            future = asyncio.run_coroutine_threadsafe(
-                agen.__anext__(),
-                loop
-            )
-            response = future.result()
+            response = _run_coro_threadsafe_and_wait(agen.__anext__(), loop)
             if response is EOF:
                 break
             else:
@@ -148,27 +186,48 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
 
         TypeError: StopIteration interacts badly with generators and cannot be
             raised into a Future
+
+    The thread pool hands each item to the loop through a one slot queue and
+    waits until the loop has taken it. If the consumer stops early (the RPC was
+    cancelled, or its await raised) or the loop is closed, the thread pool
+    closes the generator and finishes.
+
+    Raises `RuntimeError` if `loop` is closed before the generator is exhausted.
     """
     queue = asyncio.Queue(maxsize=1)
+    consumer_gone = threading.Event()
 
     def yield_to_queue():
         try:
             for item in gen:
-                asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
+                if consumer_gone.is_set():
+                    break
+                _run_coro_threadsafe_and_wait(queue.put(item), loop)
         finally:
-            asyncio.run_coroutine_threadsafe(queue.put(EOF), loop).result()
+            if consumer_gone.is_set() or loop.is_closed():
+                close = getattr(gen, "close", None)
+                if close is not None:
+                    close()
+            else:
+                _run_coro_threadsafe_and_wait(queue.put(EOF), loop)
 
     future = loop.run_in_executor(
         thread_pool,
         yield_to_queue,
     )
 
-    while True:
-        response = await queue.get()
-        if response is EOF:
-            break
-        else:
-            yield response
+    try:
+        while True:
+            response = await queue.get()
+            if response is EOF:
+                break
+            else:
+                yield response
+    finally:
+        consumer_gone.set()
+        # Releases a queue.put(...) call on a thread pool
+        while not queue.empty():
+            queue.get_nowait()
 
     # Port the exception if there is any
     await future

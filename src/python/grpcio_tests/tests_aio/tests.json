@@ -32,6 +32,7 @@
   "tests_aio.unit.client_unary_unary_interceptor_test.TestInterceptedUnaryUnaryCallWithRegisteredMethods",
   "tests_aio.unit.close_channel_test.TestCloseChannel",
   "tests_aio.unit.compatibility_test.TestCompatibility",
+  "tests_aio.unit.compatibility_test.TestSyncHandlerInvokedOffLoop",
   "tests_aio.unit.compression_test.TestCompression",
   "tests_aio.unit.connectivity_test.TestConnectivityState",
   "tests_aio.unit.context_peer_test.TestContextPeer",
@@ -47,6 +48,10 @@
   "tests_aio.unit.server_interceptor_test.TestServerInterceptorWithRegisteredMethods",
   "tests_aio.unit.server_test.TestServer",
   "tests_aio.unit.server_time_remaining_test.TestServerTimeRemaining",
+  "tests_aio.unit.sync_handler_bridge_test.TestAsyncGeneratorToGenerator",
+  "tests_aio.unit.sync_handler_bridge_test.TestGeneratorToAsyncGenerator",
+  "tests_aio.unit.sync_handler_bridge_test.TestScheduleCoroThreadsafe",
+  "tests_aio.unit.sync_handler_bridge_test.TestWorkerReleasedWhenLoopCloses",
   "tests_aio.unit.timeout_test.TestTimeout",
   "tests_aio.unit.wait_for_connection_test.TestWaitForConnection",
   "tests_aio.unit.wait_for_ready_test.TestWaitForReady"
