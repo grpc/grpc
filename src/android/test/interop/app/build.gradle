@@ -1,7 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    namespace "io.grpc.interop.cpp"
+    compileSdk 26
     ndkVersion "29.0.14206865"
     defaultConfig {
         applicationId "io.grpc.android.interop.cpp"
@@ -46,7 +47,7 @@ android {
         }
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     externalNativeBuild {
