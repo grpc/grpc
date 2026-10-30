@@ -466,14 +466,18 @@ absl::StatusOr<std::string> Asn1StringToUtf8(ASN1_STRING* value) {
 
 absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name) {
   if (subject_alt_name == nullptr || subject_alt_name->type != GEN_URI) {
-    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+    return absl::InternalError(
+        "Tried to convert subject alternative name to a URI but it is not a "
+        "URI.");
   }
   return Asn1StringToUtf8(subject_alt_name->d.uniformResourceIdentifier);
 }
 
 absl::StatusOr<std::string> ParseDnsString(GENERAL_NAME* subject_alt_name) {
   if (subject_alt_name == nullptr || subject_alt_name->type != GEN_DNS) {
-    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+    return absl::InternalError(
+        "Tried to convert subject alternative name to a DNS name but it is not "
+        "a DNS name.");
   }
   return Asn1StringToUtf8(subject_alt_name->d.dNSName);
 }
@@ -513,13 +517,10 @@ absl::StatusOr<std::string> X509SubjectRfc2253(X509* cert) {
 
 namespace {
 
-// Returns the value of \a subject_alt_name, which must be a URI or DNS SAN, if
-// it can be used as a principal: it decodes, is non-empty and contains no
-// embedded null byte.
-std::optional<std::string> UsableSanValue(GENERAL_NAME* subject_alt_name) {
-  absl::StatusOr<std::string> parsed = subject_alt_name->type == GEN_URI
-                                           ? ParseUriString(subject_alt_name)
-                                           : ParseDnsString(subject_alt_name);
+// Returns \a parsed, the result of parsing a SAN, if it can be used as a
+// principal: it parsed successfully, is non-empty and contains no embedded
+// null byte.
+std::optional<std::string> SanAsPrincipal(absl::StatusOr<std::string> parsed) {
   if (!parsed.ok()) {
     LOG(ERROR) << "Could not parse SAN: " << parsed.status();
     return std::nullopt;
@@ -550,10 +551,10 @@ absl::StatusOr<std::string> X509Principal(X509* cert) {
           sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
       if (subject_alt_name == nullptr) continue;
       if (subject_alt_name->type == GEN_URI) {
-        uri_san = UsableSanValue(subject_alt_name);
+        uri_san = SanAsPrincipal(ParseUriString(subject_alt_name));
         if (uri_san.has_value()) break;
       } else if (subject_alt_name->type == GEN_DNS && !dns_san.has_value()) {
-        dns_san = UsableSanValue(subject_alt_name);
+        dns_san = SanAsPrincipal(ParseDnsString(subject_alt_name));
       }
     }
     sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);

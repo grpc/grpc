@@ -8,14 +8,11 @@ The RBAC filter provides a mechanism for authorizing incoming requests based on 
 
 ## Files
 
-*   `rbac_filter.h`, `rbac_filter.cc`: These files define the `RbacFilter` class, a server-side filter that enforces RBAC policies on incoming requests. The filter fetches the RBAC policy from the method config of the service config, and then uses the `GrpcAuthorizationEngine` to evaluate the policy against the request.
-*   `rbac_service_config_parser.h`, `rbac_service_config_parser.cc`: These files define the `RbacServiceConfigParser` class, which is responsible for parsing the RBAC policy from the service config. The parser is registered with the `ServiceConfigParser` registry, and is invoked when the `rbac` key is present in the service config.
+*   `rbac_filter.h`, `rbac_filter.cc`: These files define the `RbacFilter` class, a server-side filter that enforces RBAC policies on incoming requests. The filter fetches the RBAC policy from the filter config, and then uses the `GrpcAuthorizationEngine` to evaluate the policy against the request.
 
 ## Major Classes
 
 *   `grpc_core::RbacFilter`: The channel filter implementation. This filter is responsible for enforcing the RBAC policy.
-*   `grpc_core::RbacServiceConfigParser`: The service config parser for the RBAC policy. This parser is responsible for parsing the RBAC policy from the service config and creating a `RbacMethodParsedConfig` object.
-*   `grpc_core::RbacMethodParsedConfig`: This class holds the parsed RBAC policies. It contains a vector of `GrpcAuthorizationEngine` objects, one for each RBAC policy.
 
 ## Notes
 

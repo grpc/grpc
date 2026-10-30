@@ -625,15 +625,23 @@ class _InterceptedStreamRequestMixin(
         if self._status_code_task is None:
             self._status_code_task = self._loop.create_task(call.code())
 
-        await asyncio.wait(
-            (
-                self._loop.create_task(
-                    self._write_to_iterator_queue.put(request)
-                ),
-                self._status_code_task,
-            ),
-            return_when=asyncio.FIRST_COMPLETED,
+        put_task = self._loop.create_task(
+            self._write_to_iterator_queue.put(request)
         )
+        try:
+            await asyncio.wait(
+                (
+                    put_task,
+                    self._status_code_task,
+                ),
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+        finally:
+            # If put_task is not done, it means the RPC has completed.
+            # This means the RPC terminated before the message could
+            # be queued. We must cancel put_task to prevent a leak.
+            if not put_task.done():
+                put_task.cancel()
 
     async def write(self, request: RequestType) -> None:
         # If no queue was created it means that requests

@@ -38,10 +38,12 @@ For more details on each step, refer to sections below.
 
 ## Instructions for creating new test cases
 
-- Create test cases by running `LANG=<lang> [RELEASE=<release>] ./create_testcases.sh`.  For example,
+- Create test cases by running `LANG=<lang> [RELEASE=<release>] [CUSTOM_FILE_NAME=<custom_override_name>] ./create_testcases.sh`.
+For example,
   - `LANG=go ./create_testcases.sh` will generate `./testcases/go__master`, which is also a functional bash script.
   - `LANG=go KEEP_IMAGE=1 ./create_testcases.sh` will generate `./testcases/go__master` and keep the local docker image so it can be invoked simply via `./testcases/go__master`.  Note: remove local docker images manually afterwards with `docker rmi <image_id>`.
-- Stage and commit the generated test case file `./testcases/<lang>__<release>`.
+  - `LANG=python CUSTOM_FILE_NAME="py310" ./create_testcases.sh` will generate `./testcases/python__py310` instead of `./testcases/python__master`.
+- Stage and commit the generated test case file `./testcases/<lang>__<release>` or `./testcases/<lang>__<custom_override_name>`.
 
 ## Instructions for running test cases against AR docker images
 

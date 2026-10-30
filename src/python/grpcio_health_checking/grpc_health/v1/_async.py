@@ -29,11 +29,13 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         str, "_health_pb2.HealthCheckResponse.ServingStatus"
     ]
     _server_watchers: MutableMapping[str, asyncio.Condition]
+    _watcher_count_by_service: MutableMapping[str, int]
     _gracefully_shutting_down: bool
 
     def __init__(self) -> None:
         self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._server_watchers = collections.defaultdict(asyncio.Condition)
+        self._watcher_count_by_service = collections.defaultdict(int)
         self._gracefully_shutting_down = False
 
     async def Check(
@@ -50,6 +52,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self, request: _health_pb2.HealthCheckRequest, context
     ) -> None:
         condition = self._server_watchers[request.service]
+        self._watcher_count_by_service[request.service] += 1
         last_status = None
         try:
             async with condition:
@@ -74,8 +77,10 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                     # Polling on health state changes
                     await condition.wait()
         finally:
-            if request.service in self._server_watchers:
+            self._watcher_count_by_service[request.service] -= 1
+            if self._watcher_count_by_service[request.service] == 0:
                 del self._server_watchers[request.service]
+                del self._watcher_count_by_service[request.service]
 
     async def _set(
         self,

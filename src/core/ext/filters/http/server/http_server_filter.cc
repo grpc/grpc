@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
@@ -115,7 +116,11 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
     return MalformedRequest("Missing :path header");
   }
 
-  if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
+  // TODO(rishesh): Remove this once the map_host_header_to_authority
+  // experiment rolls out, since the HPACK parser then copies "host" into
+  // ":authority" itself.
+  if (!IsMapHostHeaderToAuthorityEnabled() &&
+      md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
     std::optional<Slice> host = md.Take(HostMetadata());
     if (host.has_value()) {
       md.Set(HttpAuthorityMetadata(), std::move(*host));

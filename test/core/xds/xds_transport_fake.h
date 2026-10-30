@@ -35,6 +35,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "src/core/xds/xds_client/xds_transport_factory.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"

@@ -293,7 +293,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::StopConnectivityFailureWatch(
   watchers_.erase(watcher);
 }
 
-OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
+OrphanablePtr<XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler,
@@ -314,8 +314,7 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
 constexpr char FakeXdsTransportFactory::kAdsMethod[];
 constexpr char FakeXdsTransportFactory::kLrsMethod[];
 
-RefCountedPtr<XdsTransportFactory::XdsTransport>
-FakeXdsTransportFactory::GetTransport(
+RefCountedPtr<XdsTransport> FakeXdsTransportFactory::GetTransport(
     const XdsBootstrap::XdsServerTarget& server, absl::Status* /*status*/) {
   std::string key = server.Key();
   MutexLock lock(mu_);

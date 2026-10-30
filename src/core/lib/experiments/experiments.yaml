@@ -91,7 +91,7 @@
   description: Use EventEngine instead of the CallbackAlternativeCQ.
   expiry: 2027/02/01
   owner: mlumish@google.com
-  requires: ["event_engine_client", "event_engine_listener"]
+  requires: ["event_engine_client"]
   platforms: ["all"]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
@@ -111,16 +111,7 @@
   requires:
     [
       "event_engine_client",
-      "event_engine_listener",
     ]
-  platforms: ["all"]
-- name: event_engine_listener
-  description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2026/10/30
-  owner: mlumish@google.com
-  test_tags: ["core_end2end_test", "event_engine_listener_test"]
-  uses_polling: true
-  allow_in_fuzzing_config: false
   platforms: ["all"]
 - name: fail_recv_metadata_on_deadline_exceeded
   description: Fail recv initial metadata when the deadline is exceeded.
@@ -188,7 +179,7 @@
     duplicate host/authority headers.
   expiry: 2027/07/01
   owner: rishesh@google.com
-  test_tags: ["core_end2end_test", "hpack_test"]
+  test_tags: ["core_end2end_test", "hpack_test", "xds_end2end_test"]
 - name: memory_optimization_01
   description: Memory Optimization
   expiry: 2027/02/01
@@ -254,6 +245,7 @@
   expiry: 2027/03/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  requires: ["replace_auth_filter" ]
   allow_in_fuzzing_config: true
 - name: ph2_client_server
   description:
@@ -264,6 +256,7 @@
   expiry: 2027/03/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  requires: ["replace_auth_filter" ]
   allow_in_fuzzing_config: true
 - name: ph2_server
   description:
@@ -273,6 +266,7 @@
   expiry: 2027/03/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  requires: ["replace_auth_filter"]
   allow_in_fuzzing_config: true
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
@@ -283,7 +277,7 @@
   expiry: 2027/01/16
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
-  requires: ["event_engine_client", "event_engine_listener"]
+  requires: ["event_engine_client"]
   uses_polling: true
   allow_in_fuzzing_config: false
 - name: pollset_alternative
@@ -293,7 +287,7 @@
   expiry: 2026/10/30
   owner: mlumish@google.com
   test_tags: ["core_end2end_test"]
-  requires: ["event_engine_client", "event_engine_listener"]
+  requires: ["event_engine_client"]
   allow_in_fuzzing_config: false
   platforms: ["all"]
 - name: prioritize_finished_requests
@@ -320,6 +314,12 @@
   expiry: 2026/10/25
   owner: bpawan@google.com
   test_tags: [core_end2end_test]
+- name: replace_auth_filter
+  description: Replacing ServerAuthFilter in Call V3.
+  expiry: 2027/04/15
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
 - name: retry_in_callv3
   description: Support retries with call-v3
   expiry: 2027/02/01
@@ -348,7 +348,6 @@
   requires:
     [
       "event_engine_client",
-      "event_engine_listener",
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
@@ -358,7 +357,6 @@
   requires:
     [
       "event_engine_client",
-      "event_engine_listener",
     ]
 - name: secure_endpoint_read_coalescing
   description:
@@ -369,8 +367,12 @@
   requires:
     [
       "event_engine_client",
-      "event_engine_listener",
     ]
+- name: server_connection_management
+  description: Server connection management.
+  expiry: 2027/02/15
+  owner: roth@google.com
+  test_tags: ["core_end2end_test", "xds_end2end_test"]
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.
   expiry: 2027/01/16
@@ -406,11 +408,6 @@
   owner: pragunsaxena@google.com
   test_tags: ["core_end2end_test"]
   platforms: ["all"]
-- name: v2_non_owning_waker_implementation
-  description: Use non-owning wakers in v2 filter bridge.
-  expiry: 2027/03/01
-  owner: rishesh@google.com
-  test_tags: [core_end2end_test]
 - name: verbose_channelz_connection_logging
   description: Verbose logging of events into channelz during connection setup.
   expiry: 2027/01/16
@@ -422,9 +419,3 @@
   expiry: 2027/03/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
-- name: xds_server_filter_chain_per_route
-  description: xDS servers use a separate filter chain for each route.
-  expiry: 2026/10/31
-  owner: roth@google.com
-  test_tags: ["xds_end2end_test", "xds_test"]
-  requires: ["v2_non_owning_waker_implementation"]

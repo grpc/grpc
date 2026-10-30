@@ -47,7 +47,7 @@ bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_car
 
 # -- CEL (Common Expression Language) C implementation.
 # Pinning version to be consistent with third_party/cel-c.
-bazel_dep(name = "cel-c", version = "0.0.0-20261021-024a0e4", repo_name = "cel_c")
+bazel_dep(name = "cel-c", version = "0.0.0-20261024-7c739ee", repo_name = "cel_c")
 
 # -- CEL specification protos (cel.expr.*).
 # This dep exists for the repo_name mapping: gRPC code refers to these protos
