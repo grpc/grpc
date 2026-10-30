@@ -77,8 +77,6 @@ inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
-inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
@@ -95,7 +93,8 @@ inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
-inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAP_HOST_HEADER_TO_AUTHORITY
+inline bool IsMapHostHeaderToAuthorityEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
@@ -162,8 +161,6 @@ inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
-inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
@@ -180,7 +177,8 @@ inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
-inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAP_HOST_HEADER_TO_AUTHORITY
+inline bool IsMapHostHeaderToAuthorityEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
@@ -247,8 +245,6 @@ inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
-inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
@@ -265,7 +261,8 @@ inline bool IsInternalFix1Enabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLameChannelV3Enabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
-inline bool IsMapHostHeaderToAuthorityEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAP_HOST_HEADER_TO_AUTHORITY
+inline bool IsMapHostHeaderToAuthorityEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
@@ -323,7 +320,6 @@ enum ExperimentIds {
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChaoticGoodSendSupportedFeatures,
   kExperimentIdEventEngineClient,
-  kExperimentIdEventEngineListener,
   kExperimentIdEventEngineCallbackCq,
   kExperimentIdEventEngineForAllOtherEndpoints,
   kExperimentIdFailRecvMetadataOnDeadlineExceeded,
@@ -415,10 +411,6 @@ inline bool IsChaoticGoodSendSupportedFeaturesEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineClient>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
-inline bool IsEventEngineListenerEnabled() {
-  return IsExperimentEnabled<kExperimentIdEventEngineListener>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() {
