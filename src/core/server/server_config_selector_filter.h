@@ -69,6 +69,8 @@ class ServerConfigSelectorInterceptor final
 
   void Orphaned() override;
 
+  void Init(const ChannelArgs& args) override;
+
   void OnConfigSelectorUpdate(
       absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector);
 
