@@ -61,6 +61,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -1356,19 +1357,25 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                       ->InterceptAndMapWithHalfClose(
                           [initiator, handler,
                            pipe_owner](MessageHandle message) mutable {
-                            // Step 1: Push the message onto the v3 initiator in
-                            // its activity.
-                            initiator.SpawnPushMessage(std::move(message));
-                            // Step 3: Here in the v2 activity, read the message
-                            // from the inter-activity pipe and return it.
-                            return Map(
-                                pipe_owner->client_to_server_messages.receiver
-                                    .Next(),
-                                [](InterActivityPipe<MessageHandle,
-                                                     1>::NextResult message)
-                                    -> std::optional<MessageHandle> {
-                                  if (!message.has_value()) return std::nullopt;
-                                  return std::move(*message);
+                            return Seq(
+                                // Step 1: Push the message onto the v3
+                                // initiator in its activity.
+                                initiator.SpawnPushMessage(std::move(message)),
+                                [pipe_owner](StatusFlag) {
+                                  // Step 3: Here in the v2 activity, read the
+                                  // message from the inter-activity pipe and
+                                  // return it.
+                                  return Map(
+                                      pipe_owner->client_to_server_messages
+                                          .receiver.Next(),
+                                      [](InterActivityPipe<
+                                          MessageHandle, 1>::NextResult message)
+                                          -> std::optional<MessageHandle> {
+                                        if (!message.has_value()) {
+                                          return std::nullopt;
+                                        }
+                                        return std::move(*message);
+                                      });
                                 });
                           },
                           [initiator]() mutable {
@@ -1446,18 +1453,24 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                   call_args.server_to_client_messages->InterceptAndMap(
                       [initiator, handler,
                        pipe_owner](MessageHandle message) mutable {
-                        // Step 1: Push the message onto the v3 handler in
-                        // its activity.
-                        handler.SpawnPushMessage(std::move(message));
-                        // Step 3: Here in the v2 activity, read from the
-                        // inter-activity pipe and return the messages.
-                        return Map(
-                            pipe_owner->server_to_client_messages.receiver
-                                .Next(),
-                            [](InterActivityPipe<MessageHandle, 1>::NextResult
-                                   message) -> std::optional<MessageHandle> {
-                              if (!message.has_value()) return std::nullopt;
-                              return std::move(*message);
+                        return Seq(
+                            // Step 1: Push the message onto the v3 handler in
+                            // its activity.
+                            handler.SpawnPushMessage(std::move(message)),
+                            [pipe_owner](StatusFlag) {
+                              // Step 3: Here in the v2 activity, read from the
+                              // inter-activity pipe and return the messages.
+                              return Map(
+                                  pipe_owner->server_to_client_messages.receiver
+                                      .Next(),
+                                  [](InterActivityPipe<MessageHandle,
+                                                       1>::NextResult message)
+                                      -> std::optional<MessageHandle> {
+                                    if (!message.has_value()) {
+                                      return std::nullopt;
+                                    }
+                                    return std::move(*message);
+                                  });
                             });
                       });
                   // In the v3 handler's activity, pull client initial metadata.

@@ -290,6 +290,24 @@ class Party : public Activity, private Wakeable {
           party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
     }
 
+    // As Spawn, but returns a promise that resolves to the result of the
+    // spawned promise once it completes on the party.
+    //
+    // Must be called from within an activity: the returned promise must be
+    // polled by that same activity.
+    template <class Factory>
+    auto SpawnWaitable(Factory&& factory) {
+      auto participant =
+          MakeRefCounted<PromiseParticipantImpl<std::decay_t<Factory>>>(
+              "SpawnSerializer", std::forward<Factory>(factory));
+      next_.Push(participant->Ref().release());
+      party_->WakeupFromState<false>(
+          party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
+      return [participant = std::move(participant)]() mutable {
+        return participant->PollCompletion();
+      };
+    }
+
     channelz::PropertyList ChannelzProperties() override {
       channelz::PropertyList properties;
       if (active_ != nullptr) {
