@@ -57,6 +57,7 @@
 #define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
 #define TSI_X509_PEM_CERT_CHAIN_PROPERTY "x509_pem_cert_chain"
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
+#define TSI_SSL_EXPORTED_KEYING_MATERIAL "ssl_exported_keying_material"
 #define TSI_X509_DNS_PEER_PROPERTY "x509_dns"
 #define TSI_X509_URI_PEER_PROPERTY "x509_uri"
 #define TSI_X509_EMAIL_PEER_PROPERTY "x509_email"
@@ -67,6 +68,9 @@
   "ssl_negotiated_key_exchange_group"
 #define TSI_SSL_REQUESTED_SERVER_NAME_PEER_PROPERTY "ssl_requested_server_name"
 #define TSI_SSL_TLS_VERSION_PEER_PROPERTY "ssl_tls_version"
+// Principal of the certificate that *this* endpoint presented (see
+// tsi::X509Principal()).  Set on the server side only.
+#define TSI_X509_LOCAL_PRINCIPAL_PEER_PROPERTY "x509_local_principal"
 
 namespace tsi {
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
@@ -256,6 +260,11 @@ struct tsi_ssl_client_handshaker_options {
   // the handshaker, in order of preference.
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups;
 
+  // The label for TLS Exported Keying Material.
+  std::string exported_keying_material_label;
+  // The length of TLS Exported Keying Material.
+  size_t exported_keying_material_length;
+
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_client_handshaker_options()
@@ -269,7 +278,8 @@ struct tsi_ssl_client_handshaker_options {
         skip_server_certificate_verification(false),
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
-        crl_directory(nullptr) {}
+        crl_directory(nullptr),
+        exported_keying_material_length(0) {}
 };
 
 // Creates a client handshaker factory.
@@ -431,6 +441,11 @@ struct tsi_ssl_server_handshaker_options {
   // the handshaker, in order of preference.
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups;
 
+  // The label for TLS Exported Keying Material.
+  std::string exported_keying_material_label;
+  // The length of TLS Exported Keying Material.
+  size_t exported_keying_material_length;
+
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_server_handshaker_options()
@@ -444,7 +459,8 @@ struct tsi_ssl_server_handshaker_options {
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         key_logger(nullptr),
         crl_directory(nullptr),
-        send_client_ca_list(true) {}
+        send_client_ca_list(true),
+        exported_keying_material_length(0) {}
 };
 
 // Creates a server handshaker factory.

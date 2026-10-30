@@ -135,7 +135,6 @@ EXPERIMENTS = {
                 "buffer_list_deletion_prep",
                 "fix_v3_filter_stack_server_side_ordering",
                 "local_connector_secure",
-                "map_host_header_to_authority",
                 "otel_export_telemetry_domains",
                 "ph2_client",
                 "ph2_client_server",
@@ -164,9 +163,6 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "hpack_test": [
-                "map_host_header_to_authority",
-            ],
             "lame_client_test": [
                 "lame_channel_v3",
             ],
@@ -187,7 +183,6 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
-                "map_host_header_to_authority",
                 "ph2_client",
                 "ph2_client_server",
                 "ph2_server",
@@ -200,9 +195,16 @@ EXPERIMENTS = {
                 "callv3_batch_validation",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
+                "map_host_header_to_authority",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
+            ],
+            "hpack_test": [
+                "map_host_header_to_authority",
+            ],
+            "xds_end2end_test": [
+                "map_host_header_to_authority",
             ],
         },
     },
