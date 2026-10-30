@@ -131,6 +131,13 @@ class SpiffeBundleMap final {
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 
+  // Loads a SPIFFE Bundle Map from a JSON string representation. Returns a bad
+  // status if there is a problem parsing the JSON. A returned value represents
+  // a valid SPIFFE Bundle Map.
+  // The only supported use is configuring X509 roots for a given trust domain -
+  // no other SPIFFE Bundle configurations are supported.
+  static absl::StatusOr<SpiffeBundleMap> FromString(absl::string_view json_str);
+
   // Loads a SPIFFE Bundle Map from a json file representation. Returns a bad
   // status if there is a problem while loading the file and parsing the JSON. A
   // returned value represents a valid and SPIFFE Bundle Map.

@@ -525,6 +525,14 @@ absl::Status InMemoryCertificateProvider::UpdateRoot(
   return Update(root_certificates, std::nullopt);
 }
 
+absl::Status InMemoryCertificateProvider::UpdateSpiffeBundleMap(
+    absl::string_view spiffe_bundle_map) {
+  ExecCtx exec_ctx;
+  auto map = SpiffeBundleMap::FromString(spiffe_bundle_map);
+  if (!map.ok()) return map.status();
+  return UpdateRoot(std::make_shared<tsi::RootCertInfo>(std::move(*map)));
+}
+
 absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
     const KeyCertPairsOrSelector& key_cert_pairs_or_selector) {
   return Update(std::nullopt, key_cert_pairs_or_selector);

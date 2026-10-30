@@ -465,6 +465,88 @@ TEST_F(SpiffeBundleMapTest, ClientSideSpiffeVerificationFailure) {
         MakeTlsHandshakeFailureRegex(expected_message_start), expected_status);
 }
 
+TEST_F(SpiffeBundleMapTest, InMemorySpiffeMTLSAndReload) {
+  std::string server_key =
+      grpc_core::testing::GetFileContents(std::string(kServerChainKeyPath));
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(std::string(kServerChainCertPath));
+  std::string server_bundle_map = grpc_core::testing::GetFileContents(
+      std::string(kServerSpiffeBundleMapPath));
+  std::string client_key =
+      grpc_core::testing::GetFileContents(std::string(kClientKeyPath));
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(std::string(kClientCertPath));
+  std::string client_bundle_map = grpc_core::testing::GetFileContents(
+      std::string(kClientSpiffeBundleMapPath));
+
+  auto server_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+  EXPECT_FALSE(server_provider->UpdateSpiffeBundleMap("invalid json").ok());
+  ASSERT_TRUE(server_provider->UpdateSpiffeBundleMap(server_bundle_map).ok());
+  std::vector<experimental::IdentityKeyOrSignerCertPair> server_identities = {
+      {server_key, server_cert}};
+  ASSERT_TRUE(
+      server_provider->UpdateIdentityKeyCertPair(std::move(server_identities))
+          .ok());
+  EXPECT_TRUE(server_provider->ValidateCredentials().ok());
+
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    grpc::experimental::TlsServerCredentialsOptions server_options(
+        server_provider);
+    server_options.watch_root_certs();
+    server_options.set_root_cert_name("root");
+    server_options.watch_identity_key_cert_pairs();
+    server_options.set_identity_cert_name("identity");
+    server_options.set_cert_request_type(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+    auto server_credentials =
+        grpc::experimental::TlsServerCredentials(server_options);
+    CHECK_NE(server_credentials.get(), nullptr);
+
+    grpc::ServerBuilder builder;
+    builder.AddListeningPort(server_addr_, server_credentials);
+    builder.RegisterService("foo.test.google.fr", &service_);
+    server_ = builder.BuildAndStart();
+    notification.Notify();
+    server_->Wait();
+  });
+  notification.WaitForNotification();
+
+  auto client_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+  ASSERT_TRUE(client_provider->UpdateSpiffeBundleMap(client_bundle_map).ok());
+  std::vector<experimental::IdentityKeyOrSignerCertPair> client_identities = {
+      {client_key, client_cert}};
+  ASSERT_TRUE(
+      client_provider->UpdateIdentityKeyCertPair(std::move(client_identities))
+          .ok());
+  EXPECT_TRUE(client_provider->ValidateCredentials().ok());
+
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(client_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+
+  DoRpc(server_addr_, options, true);
+
+  // Dynamically update the client's SPIFFE bundle map in-memory to one that
+  // does not trust the server's trust domain.
+  ASSERT_TRUE(client_provider->UpdateSpiffeBundleMap(server_bundle_map).ok());
+  constexpr absl::string_view expected_message_start =
+      "failed to connect to all addresses; last error: ";
+  const StatusCode expected_status = StatusCode::UNAVAILABLE;
+  DoRpc(server_addr_, options, false,
+        MakeTlsHandshakeFailureRegex(expected_message_start), expected_status);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

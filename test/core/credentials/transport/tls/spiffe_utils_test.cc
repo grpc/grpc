@@ -535,6 +535,24 @@ TEST(SpiffeBundle, BundleRootToPem) {
                          "\n-----END CERTIFICATE-----"));
 }
 
+TEST(SpiffeBundle, FromStringSuccess) {
+  constexpr absl::string_view kSpiffeBundlePath =
+      "test/core/credentials/transport/tls/test_data/spiffe/"
+      "test_bundles/spiffebundle.json";
+  std::string json_str =
+      testing::GetFileContents(std::string(kSpiffeBundlePath));
+  auto from_str = SpiffeBundleMap::FromString(json_str);
+  ASSERT_TRUE(from_str.ok()) << from_str.status();
+  auto from_file = SpiffeBundleMap::FromFile(kSpiffeBundlePath);
+  ASSERT_TRUE(from_file.ok()) << from_file.status();
+  EXPECT_EQ(*from_str, *from_file);
+}
+
+TEST(SpiffeBundle, FromStringInvalidJsonFails) {
+  EXPECT_FALSE(SpiffeBundleMap::FromString("not valid json").ok());
+  EXPECT_FALSE(SpiffeBundleMap::FromString("{}").ok());
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
