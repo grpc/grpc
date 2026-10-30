@@ -19,13 +19,19 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_private_key_signer.h>
 
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/credentials/transport/tls/spiffe_utils.h"
+#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace experimental {
@@ -132,6 +138,16 @@ absl::Status InMemoryCertificateProvider::UpdateRoot(
              c_provider_, root_certificate.c_str())
              ? absl::OkStatus()
              : absl::InternalError("Unable to update root certificate");
+}
+
+absl::Status InMemoryCertificateProvider::UpdateSpiffeBundleMap(
+    absl::string_view spiffe_bundle_map) {
+  auto map = grpc_core::SpiffeBundleMap::FromString(spiffe_bundle_map);
+  if (!map.ok()) return map.status();
+  auto* provider =
+      grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(c_provider_);
+  return provider->UpdateRoot(
+      std::make_shared<tsi::RootCertInfo>(std::move(*map)));
 }
 
 absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
