@@ -76,6 +76,8 @@
   default: false
 - name: local_connector_secure
   default: false
+- name: map_host_header_to_authority
+  default: true
 - name: memory_optimization_01
   default: false
 - name: memory_optimization_02
