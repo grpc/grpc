@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_MANAGER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_MANAGER_H
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
@@ -28,6 +29,9 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/useful.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -43,6 +47,11 @@ class Http2SettingsManager {
   // default values.
   const Http2Settings& acked() const { return acked_; }
   const Http2Settings& peer() const { return peer_; }
+
+  // Initializes settings state when the initial SETTINGS frame exchange was
+  // performed during the connection handshake.
+  void InitFromHandshake(const Http2Settings& local_settings_sent,
+                         const Http2Settings& peer_initial_settings);
 
   channelz::PropertyGrid ChannelzProperties() const {
     return channelz::PropertyGrid()
@@ -135,6 +144,40 @@ class Http2SettingsManager {
   Http2Settings sent_;
   Http2Settings acked_;
 };
+
+// Channel arg object carrying the initial HTTP/2 SETTINGS frames exchanged
+// during the handshake to the HTTP/2 transport.
+class Http2SettingsHandshakeResult final
+    : public RefCounted<Http2SettingsHandshakeResult> {
+ public:
+  Http2SettingsHandshakeResult(const Http2Settings& local_settings_sent,
+                               const Http2Settings& peer_initial_settings)
+      : local_settings_sent_(local_settings_sent),
+        peer_initial_settings_(peer_initial_settings) {}
+
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.http2.settings_handshake_result";
+  }
+  static int ChannelArgsCompare(const Http2SettingsHandshakeResult* a,
+                                const Http2SettingsHandshakeResult* b) {
+    return QsortCompare(a, b);
+  }
+
+  const Http2Settings& local_settings_sent() const {
+    return local_settings_sent_;
+  }
+  const Http2Settings& peer_initial_settings() const {
+    return peer_initial_settings_;
+  }
+
+ private:
+  Http2Settings local_settings_sent_;
+  Http2Settings peer_initial_settings_;
+};
+
+void InitLocalSettings(Http2Settings& settings, bool is_client);
+void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
+                                 Http2Settings& local_settings, bool is_client);
 
 }  // namespace grpc_core
 

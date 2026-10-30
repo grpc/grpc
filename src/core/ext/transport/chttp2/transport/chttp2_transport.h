@@ -68,6 +68,9 @@ void grpc_chttp2_transport_start_reading(
     grpc_pollset_set* interested_parties_until_recv_settings,
     absl::AnyInvocable<void()> notify_on_close);
 
+grpc_error_handle grpc_chttp2_try_http_parsing(
+    const grpc_slice_buffer& read_buffer);
+
 namespace grpc_core {
 typedef void (*TestOnlyGlobalHttp2TransportInitCallback)();
 typedef void (*TestOnlyGlobalHttp2TransportDestructCallback)();
