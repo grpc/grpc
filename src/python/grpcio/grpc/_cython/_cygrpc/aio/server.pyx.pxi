@@ -167,6 +167,11 @@ cdef class _ServicerContext:
               tuple trailing_metadata=_IMMUTABLE_EMPTY_METADATA):
         if self._rpc_state.abort_exception is not None:
             raise UsageError('Abort already called!')
+        elif self._rpc_state.status_sent:
+            # The final status already went out (the handler returned, or the
+            # RPC was aborted or cancelled). A late abort must not start another
+            # batch on the finished call.
+            raise UsageError(_RPC_FINISHED_DETAILS)
         else:
             # Keeps track of the exception object. After abort happen, the RPC
             # should stop execution. However, if users decided to suppress it, it
@@ -295,6 +300,7 @@ cdef class _SyncServicerContext:
     def __cinit__(self,
                   _ServicerContext context):
         self._context = context
+        self._callbacks_lock = threading.Lock()
         self._callbacks = []
         self._loop = context._loop
 
@@ -332,8 +338,27 @@ cdef class _SyncServicerContext:
     def disable_next_message_compression(self):
         self._context.disable_next_message_compression()
 
+    cdef _run_callbacks(self):
+        # Runs on the loop owning thread.
+        with self._callbacks_lock:
+            callbacks = self._callbacks
+            self._callbacks = None
+        if callbacks is None:
+            return
+        for callback in callbacks:
+            try:
+                callback()
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception('Error in sync-stack callback')
+
     def add_callback(self, object callback):
-        self._callbacks.append(callback)
+        # runs on a worker thread
+        with self._callbacks_lock:
+            if self._callbacks is None:
+                # The RPC already finished
+                return False
+            self._callbacks.append(callback)
+            return True
 
     def peer(self):
         return self._context.peer()
@@ -430,15 +455,15 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     else:
         # Run sync method handlers in the thread pool
         sync_servicer_context = _SyncServicerContext(servicer_context)
-        response_message = await loop.run_in_executor(
-            rpc_state.server.thread_pool(),
-            unary_handler,
-            request,
-            sync_servicer_context,
-        )
-        # Support sync-stack callback
-        for callback in sync_servicer_context._callbacks:
-            callback()
+        try:
+            response_message = await loop.run_in_executor(
+                rpc_state.server.thread_pool(),
+                unary_handler,
+                request,
+                sync_servicer_context,
+            )
+        finally:
+            sync_servicer_context._run_callbacks()
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()
@@ -475,6 +500,17 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     uninstall_context()
 
 
+async def _send_stream_responses(RPCState rpc_state,
+                                 _ServicerContext servicer_context,
+                                 object async_response_generator):
+    # Consumes messages from the generator
+    async for response_message in async_response_generator:
+        # Raises exception if aborted
+        rpc_state.raise_for_termination()
+
+        await servicer_context.write(response_message)
+
+
 async def _finish_handler_with_stream_responses(RPCState rpc_state,
                                                 object stream_handler,
                                                 object request,
@@ -488,6 +524,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
     """
     cdef object async_response_generator
     cdef object response_message
+    cdef _SyncServicerContext sync_servicer_context
     install_context_from_request_call_event_aio(rpc_state)
 
     if inspect.iscoroutinefunction(stream_handler):
@@ -497,30 +534,31 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
             request,
             servicer_context,
         )
+    elif inspect.isasyncgenfunction(stream_handler):
+        # Case 2: Async handler - async generator
+        # The handler uses async generator API
+        async_response_generator = stream_handler(
+            request,
+            servicer_context,
+        )
+        await _send_stream_responses(
+            rpc_state, servicer_context, async_response_generator
+        )
     else:
-        if inspect.isasyncgenfunction(stream_handler):
-            # Case 2: Async handler - async generator
-            # The handler uses async generator API
-            async_response_generator = stream_handler(
-                request,
-                servicer_context,
-            )
-        else:
-            # Case 3: Sync handler - normal generator
-            # NOTE(lidiz) Streaming handler in sync stack is either a generator
-            # function or a function returns a generator.
-            sync_servicer_context = _SyncServicerContext(servicer_context)
+        # Case 3: Sync handler - normal generator
+        # NOTE(lidiz) Streaming handler in sync stack is either a generator
+        # function or a function returns a generator.
+        sync_servicer_context = _SyncServicerContext(servicer_context)
+        try:
             gen = stream_handler(request, sync_servicer_context)
-            async_response_generator = generator_to_async_generator(gen,
-                                                                    loop,
-                                                                    rpc_state.server.thread_pool())
-
-        # Consumes messages from the generator
-        async for response_message in async_response_generator:
-            # Raises exception if aborted
-            rpc_state.raise_for_termination()
-
-            await servicer_context.write(response_message)
+            async_response_generator = generator_to_async_generator(
+                gen, loop, rpc_state.server.thread_pool()
+            )
+            await _send_stream_responses(
+                rpc_state, servicer_context, async_response_generator
+            )
+        finally:
+            sync_servicer_context._run_callbacks()
 
     # Raises exception if aborted
     rpc_state.raise_for_termination()
@@ -611,6 +649,17 @@ async def _handle_unary_stream_rpc(object method_handler,
     )
 
 
+async def _receive_messages(_ServicerContext servicer_context):
+    """An async generator that receives messages."""
+    cdef object message
+    while True:
+        message = await servicer_context.read()
+        if message is not EOF:
+            yield message
+        else:
+            break
+
+
 cdef class _MessageReceiver:
     """Bridge between the async generator API and the reader-writer API."""
 
@@ -618,20 +667,10 @@ cdef class _MessageReceiver:
         self._servicer_context = servicer_context
         self._agen = None
 
-    async def _async_message_receiver(self):
-        """An async generator that receives messages."""
-        cdef object message
-        while True:
-            message = await self._servicer_context.read()
-            if message is not EOF:
-                yield message
-            else:
-                break
-
     def __aiter__(self):
         # Prevents never awaited warning if application never used the async generator
         if self._agen is None:
-            self._agen = self._async_message_receiver()
+            self._agen = _receive_messages(self._servicer_context)
         return self._agen
 
     async def __anext__(self):
@@ -771,6 +810,8 @@ cdef _add_callback_handler(object rpc_task,
                 callback()
         except:
             _LOGGER.exception('Error in callback for method [%s]', method_name)
+        finally:
+            rpc_state.callbacks = []
 
     rpc_task.add_done_callback(handle_callbacks)
 
@@ -816,13 +857,10 @@ async def _schedule_rpc_coro(object rpc_coro,
         ))
         traceback.print_exc()
     finally:
-        # All batches (both OK and NOK paths) are complete at this point. Explicitly
-        # release the call so that the server call tracer records completion metrics
-        # (duration, bytes) immediately rather than waiting for non-deterministic
-        # garbage collection of RPCState object
-        if rpc_state.call:
-            grpc_call_unref(rpc_state.call)
-            rpc_state.call = NULL
+        # All batches (both OK and NOK paths) are complete at this point.
+        # The `abort_exception` keeps a traceback whose frames hold the
+        # `_ServicerContext`, which holds `RPCState`. Break the cycle here.
+        rpc_state.abort_exception = None
 
 
 async def _handle_rpc(str method_name,
@@ -1054,11 +1092,83 @@ cdef class AioServer:
             return self._loop.create_task(self._request_call())
 
 
-    async def _server_main_loop(self,
-                                object server_started):
+    async def _process_events(self,
+                              object pending_futures,
+                              object rpc_tasks,
+                              _MethodResolver method_resolver):
         cdef RPCState rpc_state
         cdef str method_name
 
+        done, _ = await asyncio.wait(
+            pending_futures.keys(),
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        for completed in done:
+            method_bytes = pending_futures.pop(completed)
+            try:
+                rpc_state = completed.result()
+            except _RequestCallError:
+                # Only _RequestCallError (the async failure) is caught
+                # here. A synchronous error from re-issuing the call
+                # (InternalError / KeyError) is persistent - re-arming
+                # it would busy-loop. So it is left to propagate to the
+                # serving task's crash handler (fail loud) instead.
+                if self._status == AIO_SERVER_STATUS_RUNNING:
+                    new_fut = self._make_request_call_future(method_bytes)
+                    pending_futures[new_fut] = method_bytes
+                continue
+
+            concurrency_exceeded = False
+            if self._limiter is not None:
+                self._limiter.check_before_request_call()
+                concurrency_exceeded = self._limiter.limiter_concurrency_exceeded
+
+            if method_bytes is not None:
+                method_name = method_bytes.decode()
+            else:
+                method_name = rpc_state.method().decode()
+
+            # Creates the dedicated RPC coroutine. If we schedule it right now,
+            # there is no guarantee if the cancellation listening coroutine is
+            # ready or not. So, we should control the ordering by scheduling
+            # the coroutine onto event loop inside of the cancellation
+            # coroutine.
+            rpc_coro = _handle_rpc(method_name,
+                                   method_resolver,
+                                   self._interceptors,
+                                   rpc_state,
+                                   self._loop,
+                                   concurrency_exceeded)
+
+            # Fires off a task that listens on the cancellation from client.
+            rpc_task = self._loop.create_task(
+                _schedule_rpc_coro(
+                    rpc_coro,
+                    rpc_state,
+                    self._loop,
+                    method_name,
+                ),
+                name="rpc_task",
+            )
+
+            # loop.create_task only holds a weakref to the task.
+            # Maintain reference to tasks to avoid garbage collection.
+            rpc_tasks.add(rpc_task)
+            rpc_task.add_done_callback(rpc_tasks.discard)
+
+            if self._limiter is not None and not concurrency_exceeded:
+                self._limiter.decrease_once_finished(rpc_task)
+
+            if self._status == AIO_SERVER_STATUS_RUNNING:
+                # Unconditionally re-arm the call request future even when concurrency_exceeded
+                # is True. This enables application-layer load shedding (fast RESOURCE_EXHAUSTED
+                # rejection in _handle_rpc) without blocking Core completion queues.
+                new_fut = self._make_request_call_future(method_bytes)
+                pending_futures[new_fut] = method_bytes
+
+    async def _server_main_loop(self,
+                                object server_started):
         self._server.start(backup_queue=False)
         server_started.set_result(True)
         rpc_tasks = set()
@@ -1072,85 +1182,18 @@ cdef class AioServer:
 
         for method in self._registered_method_handlers:
             method_bytes = str_to_bytes(method)
-            fut = self._make_request_call_future(method_bytes)
-            pending_futures[fut] = method_bytes
+            pending_futures[self._make_request_call_future(method_bytes)] = method_bytes
 
-        generic_fut = self._make_request_call_future(None)
-        pending_futures[generic_fut] = None
+        pending_futures[self._make_request_call_future(None)] = None
 
         try:
-            while True:
-                # When shutdown begins, no more new connections.
-                if self._status != AIO_SERVER_STATUS_RUNNING:
-                    break
-
-                done, _ = await asyncio.wait(
-                    pending_futures.keys(),
-                    return_when=asyncio.FIRST_COMPLETED,
+            # When shutdown begins, no more new connections.
+            while self._status == AIO_SERVER_STATUS_RUNNING:
+                await self._process_events(
+                    pending_futures,
+                    rpc_tasks,
+                    method_resolver,
                 )
-
-                for completed in done:
-                    method_bytes = pending_futures.pop(completed)
-                    try:
-                        rpc_state = completed.result()
-                    except _RequestCallError:
-                        # Only _RequestCallError (the async failure) is caught
-                        # here. A synchronous error from re-issuing the call
-                        # (InternalError / KeyError) is persistent - re-arming
-                        # it would busy-loop. So it is left to propagate to the
-                        # serving task's crash handler (fail loud) instead.
-                        if self._status == AIO_SERVER_STATUS_RUNNING:
-                            new_fut = self._make_request_call_future(method_bytes)
-                            pending_futures[new_fut] = method_bytes
-                        continue
-
-                    concurrency_exceeded = False
-                    if self._limiter is not None:
-                        self._limiter.check_before_request_call()
-                        concurrency_exceeded = self._limiter.limiter_concurrency_exceeded
-
-                    if method_bytes is not None:
-                        method_name = method_bytes.decode()
-                    else:
-                        method_name = rpc_state.method().decode()
-
-                    # Creates the dedicated RPC coroutine. If we schedule it right now,
-                    # there is no guarantee if the cancellation listening coroutine is
-                    # ready or not. So, we should control the ordering by scheduling
-                    # the coroutine onto event loop inside of the cancellation
-                    # coroutine.
-                    rpc_coro = _handle_rpc(method_name,
-                                           method_resolver,
-                                           self._interceptors,
-                                           rpc_state,
-                                           self._loop,
-                                           concurrency_exceeded)
-
-                    # Fires off a task that listens on the cancellation from client.
-                    rpc_task = self._loop.create_task(
-                        _schedule_rpc_coro(
-                            rpc_coro,
-                            rpc_state,
-                            self._loop,
-                            method_name,
-                        ),
-                        name="rpc_task",
-                    )
-
-                    # loop.create_task only holds a weakref to the task.
-                    # Maintain reference to tasks to avoid garbage collection.
-                    rpc_tasks.add(rpc_task)
-                    rpc_task.add_done_callback(rpc_tasks.discard)
-
-                    if self._limiter is not None and not concurrency_exceeded:
-                        self._limiter.decrease_once_finished(rpc_task)
-
-                    if self._status == AIO_SERVER_STATUS_RUNNING:
-                        # Unconditionally re-arm the call request future even when concurrency_exceeded
-                        # is True. This enables application-layer load shedding (fast RESOURCE_EXHAUSTED
-                        # rejection in _handle_rpc) without blocking Core completion queues.
-                        new_fut = self._make_request_call_future(method_bytes)
-                        pending_futures[new_fut] = method_bytes
         finally:
             for fut in pending_futures:
                 if not fut.done():

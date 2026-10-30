@@ -13,7 +13,10 @@
 # limitations under the License.
 
 import asyncio
+import concurrent.futures
 import logging
+import threading
+import time
 from typing import AsyncIterable, Union
 
 import grpc
@@ -134,3 +137,54 @@ class AdhocGenericHandler(grpc.GenericRpcHandler):
             return self._handler
         else:
             return None
+
+
+class DaemonThreadExecutor(concurrent.futures.Executor):
+    """Runs every submitted callable in its own daemon thread.
+
+    Meant for tests that must notice a leaked worker (e.g. as the server's
+    `migration_thread_pool`).
+    """
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._threads = []
+
+    def submit(self, fn, *args, **kwargs):
+        future = concurrent.futures.Future()
+
+        thread = threading.Thread(
+            target=self._run,
+            args=(future, fn, args, kwargs),
+            daemon=True,
+            name="daemon-executor-worker",
+        )
+        with self._lock:
+            self._threads.append(thread)
+        thread.start()
+        return future
+
+    @staticmethod
+    def _run(future, fn, args, kwargs):
+        if not future.set_running_or_notify_cancel():
+            return
+        try:
+            result = fn(*args, **kwargs)
+        except BaseException as exc:  # pylint: disable=broad-except
+            future.set_exception(exc)
+            # the traceback of `exc` keeps this frame alive, so the frame must
+            # not keep the future
+            future = fn = args = kwargs = None
+        else:
+            future.set_result(result)
+
+    def workers_finished(self, timeout):
+        """Returns `True` if every worker thread returned within `timeout`."""
+        deadline = time.monotonic() + timeout
+        with self._lock:
+            threads = list(self._threads)
+        for thread in threads:
+            thread.join(max(0.0, deadline - time.monotonic()))
+            if thread.is_alive():
+                return False
+        return True
