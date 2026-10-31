@@ -13,8 +13,10 @@
 # limitations under the License.
 """Tests the behaviour of the Call classes under a secure channel."""
 
+import gc
 import logging
 import unittest
+import weakref
 
 import grpc
 from grpc.experimental import aio
@@ -80,6 +82,27 @@ class TestUnaryUnarySecureCall(_SecureCallMixin, AioTestBase):
         response = await call
 
         self.assertIsInstance(response, messages_pb2.SimpleResponse)
+
+    async def test_call_credentials_not_leaked(self):
+        class Plugin(grpc.AuthMetadataPlugin):
+            def __call__(self, context, callback):
+                callback((("authorization", "Bearer token"),), None)
+
+        plugin = Plugin()
+        plugin_ref = weakref.ref(plugin)
+        call_credentials = grpc.metadata_call_credentials(plugin)
+        del plugin
+
+        call = self._stub.UnaryCall(
+            messages_pb2.SimpleRequest(), credentials=call_credentials
+        )
+        response = await call
+        self.assertIsInstance(response, messages_pb2.SimpleResponse)
+        del call_credentials
+        del call
+
+        gc.collect()
+        self.assertIsNone(plugin_ref())
 
 
 class TestUnaryStreamSecureCall(_SecureCallMixin, AioTestBase):
