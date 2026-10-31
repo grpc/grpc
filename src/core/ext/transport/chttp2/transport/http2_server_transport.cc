@@ -1961,18 +1961,31 @@ auto Http2ServerTransport::CloseTransportFactory(
     self->tarpit_manager_.Shutdown();
     self->CloseAllActiveStreams(std::move(stream_list), http2_status, whence);
 
-    // Sleep for kGoawaySendTimeoutSeconds before closing the transport to
-    // let write buffers drain.
-    return Map(
-        Race(AssertResultType<absl::Status>(self->goaway_manager_.RequestGoaway(
-                 http2_status.GetConnectionErrorCode(),
-                 Slice::FromCopiedString(std::string(
-                     http2_status.GetAbslConnectionError().message())),
-                 self->GetLastStreamId(), /*immediate=*/true)),
-             Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
-        [self](absl::Status) mutable {
+    return If(
+        self->is_multiplexer_loop_spawned_,
+        [self, &http2_status]() {
+          // Sleep for kGoawaySendTimeoutSeconds before closing the transport
+          // to let write buffers drain.
+          return Map(
+              Race(
+                  AssertResultType<absl::Status>(
+                      self->goaway_manager_.RequestGoaway(
+                          http2_status.GetConnectionErrorCode(),
+                          Slice::FromCopiedString(std::string(
+                              http2_status.GetAbslConnectionError().message())),
+                          self->GetLastStreamId(), /*immediate=*/true)),
+                  Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
+              [self](absl::Status) mutable {
+                self->CloseTransport();
+                return Empty{};
+              });
+        },
+        [self]() {
+          GRPC_HTTP2_SERVER_DLOG
+              << "Http2ServerTransport::CloseTransportFactory MultiplexerLoop "
+                 "not spawned. Closing transport immediately.";
           self->CloseTransport();
-          return Empty{};
+          return Immediate(Empty{});
         });
   };
 }
@@ -2301,6 +2314,7 @@ void Http2ServerTransport::SpawnTransportLoops() {
   SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
   SpawnGuardedTransportParty("MultiplexerLoop",
                              UntilTransportClosed(MultiplexerLoop()));
+  is_multiplexer_loop_spawned_ = true;
   if (tarpit_manager_.allow_tarpit()) {
     SpawnGuardedTransportParty("TarpitDrainLoop",
                                UntilTransportClosed(MakeTarpitDrainLoop()));

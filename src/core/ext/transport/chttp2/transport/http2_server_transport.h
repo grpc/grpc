@@ -766,7 +766,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
   bool is_goaway_received_;
-
+  bool is_multiplexer_loop_spawned_ = false;
   bool should_reset_ping_clock_;
   bool max_concurrent_streams_overload_protection_ = false;
   Http2TransportStats http2_transport_stats_;
