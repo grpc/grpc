@@ -27,6 +27,8 @@ from . import _async as aio  # pylint: disable=unused-import
 SERVICE_NAME = _health_pb2.DESCRIPTOR.services_by_name["Health"].full_name
 # The entry of overall health for the entire server.
 OVERALL_HEALTH = ""
+# The maximum number of services List is allowed to report.
+MAX_ALLOWED_SERVICES = 100
 
 
 # TODO(asheshvidyut): Maybe we don't need this class at all.
@@ -108,6 +110,20 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 context.set_code(grpc.StatusCode.NOT_FOUND)
                 return _health_pb2.HealthCheckResponse()
             return _health_pb2.HealthCheckResponse(status=status)
+
+    def List(self, request, context):
+        with self._lock:
+            if len(self._server_status) > MAX_ALLOWED_SERVICES:
+                context.abort(
+                    grpc.StatusCode.RESOURCE_EXHAUSTED,
+                    "server health list exceeds maximum capacity: %d"
+                    % MAX_ALLOWED_SERVICES,
+                )
+            statuses = {
+                service: _health_pb2.HealthCheckResponse(status=status)
+                for service, status in self._server_status.items()
+            }
+        return _health_pb2.HealthListResponse(statuses=statuses)
 
     # pylint: disable=arguments-differ
     def Watch(self, request, context, send_response_callback=None):
