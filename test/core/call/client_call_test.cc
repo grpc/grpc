@@ -265,6 +265,36 @@ CLIENT_CALL_TEST(CancelBeforeInvoke2) {
   EXPECT_EQ(status.status(), GRPC_STATUS_CANCELLED);
 }
 
+// Asserts that Completed() becomes true once the status op completes.
+CLIENT_CALL_TEST(CompletedAfterRecvStatus) {
+  grpc_call* const call = InitCall(CallOptions());
+  EXPECT_FALSE(Call::FromC(call)->Completed());
+  IncomingStatusOnClient status;
+  NewBatch(1).SendInitialMetadata({}).RecvStatusOnClient(status);
+  SpawnTestSeq(
+      handler(), "push-status",
+      [this]() { return handler().PullClientInitialMetadata(); },
+      [this](ValueOrFailure<ClientMetadataHandle> md) {
+        CHECK(md.ok());
+        handler().PushServerTrailingMetadata(
+            ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "test error"));
+        return Immediate(Empty{});
+      });
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_INTERNAL);
+  EXPECT_TRUE(Call::FromC(call)->Completed());
+  WaitForAllPendingWork();
+}
+
+// Asserts that cancelling the call marks it as completed immediately.
+CLIENT_CALL_TEST(CompletedAfterCancel) {
+  grpc_call* const call = InitCall(CallOptions());
+  EXPECT_FALSE(Call::FromC(call)->Completed());
+  grpc_call_cancel(call, nullptr);
+  EXPECT_TRUE(Call::FromC(call)->Completed());
+}
+
 CLIENT_CALL_TEST(NegativeDeadline) {
   auto start = Timestamp::Now();
   InitCall(CallOptions().SetTimeout(Duration::Seconds(-1)));
