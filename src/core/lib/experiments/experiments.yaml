@@ -307,6 +307,18 @@
   expiry: 2027/02/01
   owner: akshitpatel@google.com
   test_tags: []
+- name: promise_filter_client_half_close
+  description: Propagate client half-close in promise-based filters and v3 filter bridge.
+  expiry: 2027/03/01
+  owner: rishesh@google.com
+  test_tags: ["core_end2end_test", "xds_end2end_test", "xds_test"]
+- name: promise_filter_send_cancel_metadata
+  description: Enables sending all trailing metadata fields from server side promise-based filters
+    upon stream cancellation.
+  expiry: 2026/10/30
+  owner: akshitpatel@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
 - name: recv_message_filter_bypass_fix
   description:
     Receive message bypass happen if trailing metadata is received while
