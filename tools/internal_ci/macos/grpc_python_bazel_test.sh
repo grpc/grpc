@@ -88,6 +88,21 @@ python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
   -- \
   ${TEST_TARGETS}
 
+# TODO(https://github.com/grpc/grpc/issues/43596): Remove once the
+# python_single_copy_recv experiment is fully rolled out.
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_single_copy_recv
+# Run the tests with the single-copy message receive experiment enabled
+python_bazel_tests_single_copy_recv/bazel_wrapper \
+  --output_base=.bazel_rbe \
+  --bazelrc=tools/remote_build/mac.bazelrc \
+  test \
+  --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
+  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
+  --test_env=GRPC_EXPERIMENTS=python_single_copy_recv \
+  ${BAZEL_FLAGS} \
+  -- \
+  ${TEST_TARGETS}
+
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
 # Run fork support tests

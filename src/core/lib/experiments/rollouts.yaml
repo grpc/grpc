@@ -100,6 +100,8 @@
   default: false
 - name: promise_batch_cleanup_on_cancel
   default: true
+- name: python_single_copy_recv
+  default: false
 - name: return_preexisting_errors
   default: true
 - name: schedule_cancellation_over_write

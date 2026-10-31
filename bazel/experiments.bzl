@@ -57,6 +57,7 @@ EXPERIMENT_ENABLES = {
     "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
+    "python_single_copy_recv": "python_single_copy_recv",
     "recv_message_filter_bypass_fix": "recv_message_filter_bypass_fix",
     "replace_auth_filter": "replace_auth_filter",
     "ph2_client": "ph2_client,replace_auth_filter",
