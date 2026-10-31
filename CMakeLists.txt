@@ -57928,6 +57928,21 @@ endif()
 
 include(CMakePackageConfigHelpers)
 
+# Relative path from the installed gRPCConfig.cmake to the installed .proto
+# files, used to define a relocatable gRPC_PROTOS_DIR for find_package(gRPC).
+# Absolute gRPC_INSTALL_* values are honored as-is; such installs are not
+# relocatable.
+foreach(_gRPC_DIR_VAR CMAKEDIR SHAREDIR)
+  if(IS_ABSOLUTE "${gRPC_INSTALL_${_gRPC_DIR_VAR}}")
+    set(_gRPC_ABS_${_gRPC_DIR_VAR} "${gRPC_INSTALL_${_gRPC_DIR_VAR}}")
+  else()
+    set(_gRPC_ABS_${_gRPC_DIR_VAR} "${CMAKE_INSTALL_PREFIX}/${gRPC_INSTALL_${_gRPC_DIR_VAR}}")
+  endif()
+endforeach()
+file(RELATIVE_PATH _gRPC_CMAKEDIR_TO_PROTOS
+  "${_gRPC_ABS_CMAKEDIR}"
+  "${_gRPC_ABS_SHAREDIR}/protos")
+
 configure_file(cmake/gRPCConfig.cmake.in
   gRPCConfig.cmake @ONLY)
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/gRPCConfigVersion.cmake
@@ -57947,6 +57962,14 @@ install(FILES
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem
   DESTINATION ${gRPC_INSTALL_SHAREDIR})
+
+# Install the raw health.proto schema (not generated code) so that users of
+# an installed gRPC can compile it with their own protoc via
+# `-I ${gRPC_PROTOS_DIR}` and `import "grpc/health/v1/health.proto"`.
+if(gRPC_INSTALL)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/third_party/grpc-proto/grpc/health/v1/health.proto
+    DESTINATION ${gRPC_INSTALL_SHAREDIR}/protos/grpc/health/v1)
+endif()
 
 # Function to generate pkg-config files.
 function(generate_pkgconfig name description version requires requires_private
