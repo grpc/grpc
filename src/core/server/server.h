@@ -674,7 +674,7 @@ class Server : public ServerInterface,
     }
 
    private:
-    class StateWatcher;
+    class ConnectivityWatcher;
 
     RefCountedPtr<Server> const server_;
     RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_;
@@ -718,6 +718,9 @@ class Server : public ServerInterface,
 
   void OnDrainGraceTimer();
   void MaybeStartNewGraceTimerLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
+  void DisconnectAllConnectionsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
