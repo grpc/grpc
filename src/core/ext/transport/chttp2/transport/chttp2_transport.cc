@@ -843,6 +843,13 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           : CLOSURE_BARRIER_MAY_COVER_WRITE;
 #endif
 
+#if defined(GPR_APPLE) && defined(GRPC_POSIX_SOCKET_TCP)
+  // EventEngine I/O runs in the background on macOS, unlike the legacy pollset.
+  if (is_client && grpc_core::IsEventEngineClientEnabled()) {
+    closure_barrier_may_cover_write = 0;
+  }
+#endif
+
   if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     channelz_socket =
