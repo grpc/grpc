@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Patches the spawn() command for windows compilers.
+"""Patches compiler command execution for Windows compilers.
 
 Windows has an 8191 character command line limit, but some compilers
 support an @command_file directive where command_file is a file
@@ -27,7 +27,9 @@ import tempfile
 
 MAX_COMMAND_LENGTH = 8191
 
-_classic_spawn = ccompiler.CCompiler.spawn
+# Setuptools 84 uses call() directly, bypassing spawn() overrides.
+_compiler_method = "call" if hasattr(ccompiler.CCompiler, "call") else "spawn"
+_classic_spawn = getattr(ccompiler.CCompiler, _compiler_method)
 
 
 def escape_arg(arg):
@@ -120,4 +122,4 @@ def _commandfile_spawn(self, command, **kwargs):
 def monkeypatch_spawn():
     """Monkeypatching is dumb, but it's either that or we become maintainers of
     something much, much bigger."""
-    ccompiler.CCompiler.spawn = _commandfile_spawn
+    setattr(ccompiler.CCompiler, _compiler_method, _commandfile_spawn)
