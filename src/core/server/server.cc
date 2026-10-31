@@ -111,16 +111,25 @@ class Server::ChannelData::V1ChannelTransport final : public ServerTransport {
   // This is always called while holding the server's mu_global_, but the
   // compiler can't tell.
   void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS {
-    ChannelData* chand = static_cast<ChannelData*>(
-        grpc_channel_stack_element(channel_->channel_stack(), 0)->channel_data);
-    chand->Destroy();
-    channel_.reset();
+    {
+      MutexLock lock(mu_);
+      ChannelData* chand = static_cast<ChannelData*>(
+          grpc_channel_stack_element(channel_->channel_stack(), 0)
+              ->channel_data);
+      chand->Destroy();
+      channel_.reset();
+    }
     Unref();
   }
 
   void PerformOp(grpc_transport_op* op) override {
-    GRPC_CHECK(channel_ != nullptr);
-    auto* elem = grpc_channel_stack_element(channel_->channel_stack(), 0);
+    RefCountedPtr<Channel> channel;
+    {
+      MutexLock lock(mu_);
+      channel = channel_;
+    }
+    if (channel == nullptr) return;
+    auto* elem = grpc_channel_stack_element(channel->channel_stack(), 0);
     elem->filter->start_transport_op(elem, op);
   }
 
@@ -135,7 +144,8 @@ class Server::ChannelData::V1ChannelTransport final : public ServerTransport {
   }
 
  private:
-  RefCountedPtr<Channel> channel_;
+  Mutex mu_;
+  RefCountedPtr<Channel> channel_ ABSL_GUARDED_BY(mu_);
 };
 
 //
@@ -1911,6 +1921,9 @@ void Server::OnDrainGraceTimer() {
   if (draining_connections_list_.empty()) return;
   connections_to_be_drained =
       std::move(draining_connections_list_.front().connections);
+// FIXME: need a better story for how these get cleaned up.  ideally
+// don't want this to happen until we get notified by the transport that
+// the connection has been closed.
   draining_connections_list_.pop_front();
   MaybeStartNewGraceTimerLocked();
   for (auto& connection : connections_to_be_drained) {
