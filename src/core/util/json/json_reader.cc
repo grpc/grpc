@@ -66,11 +66,13 @@ class JsonReader {
     GRPC_JSON_STATE_STRING_ESCAPE_U2,
     GRPC_JSON_STATE_STRING_ESCAPE_U3,
     GRPC_JSON_STATE_STRING_ESCAPE_U4,
+    GRPC_JSON_STATE_VALUE_NUMBER_MINUS,
     GRPC_JSON_STATE_VALUE_NUMBER,
     GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL,
     GRPC_JSON_STATE_VALUE_NUMBER_ZERO,
     GRPC_JSON_STATE_VALUE_NUMBER_DOT,
     GRPC_JSON_STATE_VALUE_NUMBER_E,
+    GRPC_JSON_STATE_VALUE_NUMBER_E_SIGN,
     GRPC_JSON_STATE_VALUE_NUMBER_EPM,
     GRPC_JSON_STATE_VALUE_TRUE_R,
     GRPC_JSON_STATE_VALUE_TRUE_U,
@@ -593,9 +595,13 @@ JsonReader::Status JsonReader::Run() {
               case '7':
               case '8':
               case '9':
-              case '-':
                 if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
                 state_ = State::GRPC_JSON_STATE_VALUE_NUMBER;
+                break;
+
+              case '-':
+                if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
+                state_ = State::GRPC_JSON_STATE_VALUE_NUMBER_MINUS;
                 break;
 
               case '{':
@@ -725,6 +731,29 @@ JsonReader::Status JsonReader::Run() {
             }
             break;
 
+          case State::GRPC_JSON_STATE_VALUE_NUMBER_MINUS:
+            switch (c) {
+              case '0':
+                if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
+                state_ = State::GRPC_JSON_STATE_VALUE_NUMBER_ZERO;
+                break;
+              case '1':
+              case '2':
+              case '3':
+              case '4':
+              case '5':
+              case '6':
+              case '7':
+              case '8':
+              case '9':
+                if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
+                state_ = State::GRPC_JSON_STATE_VALUE_NUMBER;
+                break;
+              default:
+                return Status::GRPC_JSON_PARSE_ERROR;
+            }
+            break;
+
           case State::GRPC_JSON_STATE_VALUE_NUMBER:
             if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             switch (c) {
@@ -775,10 +804,13 @@ JsonReader::Status JsonReader::Run() {
             break;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
-            if (c != '.') return Status::GRPC_JSON_PARSE_ERROR;
-            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
-            state_ = State::GRPC_JSON_STATE_VALUE_NUMBER_DOT;
-            break;
+            if (c == '.' || c == 'e' || c == 'E') {
+              if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
+              state_ = c == '.' ? State::GRPC_JSON_STATE_VALUE_NUMBER_DOT
+                                : State::GRPC_JSON_STATE_VALUE_NUMBER_E;
+              break;
+            }
+            return Status::GRPC_JSON_PARSE_ERROR;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER_DOT:
             if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
@@ -813,8 +845,30 @@ JsonReader::Status JsonReader::Run() {
               case '7':
               case '8':
               case '9':
+                state_ = State::GRPC_JSON_STATE_VALUE_NUMBER_EPM;
+                break;
               case '+':
               case '-':
+                state_ = State::GRPC_JSON_STATE_VALUE_NUMBER_E_SIGN;
+                break;
+              default:
+                return Status::GRPC_JSON_PARSE_ERROR;
+            }
+            break;
+
+          case State::GRPC_JSON_STATE_VALUE_NUMBER_E_SIGN:
+            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
+            switch (c) {
+              case '0':
+              case '1':
+              case '2':
+              case '3':
+              case '4':
+              case '5':
+              case '6':
+              case '7':
+              case '8':
+              case '9':
                 state_ = State::GRPC_JSON_STATE_VALUE_NUMBER_EPM;
                 break;
               default:
