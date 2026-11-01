@@ -44,6 +44,37 @@ namespace grpc_core {
 
 namespace {
 
+// Checks whether the accumulated number literal is a valid JSON number per
+// ECMA-404 (minus, int, optional fraction, optional exponent).  The state
+// machine below can reach a number-terminal state with a trailing sign or
+// exponent marker (e.g. "-", "1e+" or "-e3") or with a leading zero before
+// the value ("-01"), so we re-check the whole literal before committing it.
+bool IsValidJsonNumber(absl::string_view str) {
+  size_t i = 0;
+  const size_t n = str.size();
+  if (i < n && str[i] == '-') ++i;
+  if (i >= n) return false;
+  if (str[i] == '0') {
+    ++i;
+  } else if (str[i] >= '1' && str[i] <= '9') {
+    while (i < n && str[i] >= '0' && str[i] <= '9') ++i;
+  } else {
+    return false;
+  }
+  if (i < n && str[i] == '.') {
+    ++i;
+    if (i >= n || str[i] < '0' || str[i] > '9') return false;
+    while (i < n && str[i] >= '0' && str[i] <= '9') ++i;
+  }
+  if (i < n && (str[i] == 'e' || str[i] == 'E')) {
+    ++i;
+    if (i < n && (str[i] == '+' || str[i] == '-')) ++i;
+    if (i >= n || str[i] < '0' || str[i] > '9') return false;
+    while (i < n && str[i] >= '0' && str[i] <= '9') ++i;
+  }
+  return i == n;
+}
+
 class JsonReader {
  public:
   static absl::StatusOr<Json> Parse(absl::string_view input);
@@ -310,6 +341,16 @@ void JsonReader::SetString() {
 }
 
 bool JsonReader::SetNumber() {
+  if (!IsValidJsonNumber(string_)) {
+    if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
+      truncated_errors_ = true;
+    } else {
+      errors_.push_back(
+          absl::StrFormat("invalid number \"%s\" at index %" PRIuPTR,
+                          string_.c_str(), CurrentIndex()));
+    }
+    return false;
+  }
   Json* value = CreateAndLinkValue();
   *value = Json::FromNumber(std::move(string_));
   string_.clear();
@@ -775,10 +816,13 @@ JsonReader::Status JsonReader::Run() {
             break;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
-            if (c != '.') return Status::GRPC_JSON_PARSE_ERROR;
-            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
-            state_ = State::GRPC_JSON_STATE_VALUE_NUMBER_DOT;
-            break;
+            if (c == '.' || c == 'e' || c == 'E') {
+              if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
+              state_ = c == '.' ? State::GRPC_JSON_STATE_VALUE_NUMBER_DOT
+                                : State::GRPC_JSON_STATE_VALUE_NUMBER_E;
+              break;
+            }
+            return Status::GRPC_JSON_PARSE_ERROR;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER_DOT:
             if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;

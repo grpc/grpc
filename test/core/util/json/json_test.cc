@@ -185,6 +185,14 @@ TEST(Json, ValidNumbers) {
                      Json::FromNumber("0.3e+3"),
                  }),
                  "[1e4,-53.235e-31,0.3e+3]");
+  // A lone zero followed by an exponent is a valid JSON number.
+  RunSuccessTest("[0e1, 0e+2, 0e-3]",
+                 Json::FromArray({
+                     Json::FromNumber("0e1"),
+                     Json::FromNumber("0e+2"),
+                     Json::FromNumber("0e-3"),
+                 }),
+                 "[0e1,0e+2,0e-3]");
 }
 
 TEST(Json, Keywords) {
@@ -292,6 +300,21 @@ TEST(Json, InvalidNumbers) {
   RunParseFailureTest("1e12x");
   RunParseFailureTest(".12x");
   RunParseFailureTest("000");
+  // Truncated literals: the state machine can reach a number-terminal state
+  // with a dangling sign or exponent marker, and the commit-time validation
+  // has to reject them.
+  RunParseFailureTest("-");
+  RunParseFailureTest("- ");
+  RunParseFailureTest("-e3");
+  RunParseFailureTest("-e+3");
+  RunParseFailureTest("1e+");
+  RunParseFailureTest("1e-");
+  RunParseFailureTest("1e+ ");
+  RunParseFailureTest("[1e+]");
+  RunParseFailureTest("{\"a\": 1e-}");
+  // Leading zeroes are only valid as the single digit "0".
+  RunParseFailureTest("-01");
+  RunParseFailureTest("-0123");
 };
 
 TEST(Json, Equality) {
