@@ -273,12 +273,18 @@ struct HalfCloseRecorder {
 };
 
 // A v3 interceptor run through V3InterceptorToV2Bridge. It forwards the call
-// to the next v2 filter and records each client-to-server message and the
-// client half-close into the HalfCloseRecorder from the channel args.
+// to the next v2 filter and records each client-to-server message and how the
+// message stream ended (client half-close or cancellation) into the
+// HalfCloseRecorder from the channel args.
 class HalfCloseRecordingInterceptor final
     : public V3InterceptorToV2Bridge<HalfCloseRecordingInterceptor> {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<RefCountedPtr<HalfCloseRecordingInterceptor>> Create(
+      const ChannelArgs& args, ChannelFilter::Args) {
+    return MakeRefCounted<HalfCloseRecordingInterceptor>(args);
+  }
 
   explicit HalfCloseRecordingInterceptor(const ChannelArgs& args)
       : V3InterceptorToV2Bridge<HalfCloseRecordingInterceptor>(args),
@@ -286,11 +292,6 @@ class HalfCloseRecordingInterceptor final
 
   static absl::string_view TypeName() {
     return "half_close_recording_interceptor";
-  }
-
-  static absl::StatusOr<RefCountedPtr<HalfCloseRecordingInterceptor>> Create(
-      const ChannelArgs& args, ChannelFilter::Args) {
-    return MakeRefCounted<HalfCloseRecordingInterceptor>(args);
   }
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
@@ -314,26 +315,25 @@ class HalfCloseRecordingInterceptor final
 
  private:
   void ForwardAndRecord(CallHandler handler, CallInitiator initiator) {
-    handler.SpawnInfallible(
-        "record_client_to_server",
-        [handler, initiator, events = events_]() mutable {
-          return Seq(ForEach(MessagesFrom(handler),
-                             [initiator, events](MessageHandle msg) mutable {
-                               events->push_back(absl::StrCat(
-                                   "msg:", msg->payload()->JoinIntoString()));
-                               initiator.SpawnPushMessage(std::move(msg));
-                               return Success{};
-                             }),
-                     [initiator, events](StatusFlag status) mutable {
-                       // A clean end of the message stream is the client
-                       // half-close.
-                       if (status.ok()) {
-                         events->push_back("half_close");
-                       }
-                       initiator.SpawnFinishSends();
-                       return Empty{};
-                     });
-        });
+    handler.SpawnInfallible("record_client_to_server", [handler, initiator,
+                                                        events =
+                                                            events_]() mutable {
+      return Seq(ForEach(MessagesFrom(handler),
+                         [initiator, events](MessageHandle msg) mutable {
+                           events->push_back(absl::StrCat(
+                               "msg:", msg->payload()->JoinIntoString()));
+                           initiator.SpawnPushMessage(std::move(msg));
+                           return Success{};
+                         }),
+                 [initiator, events](StatusFlag status) mutable {
+                   // A clean end of the message stream is the client
+                   // half-close; a failed one means the call was
+                   // cancelled.
+                   events->push_back(status.ok() ? "half_close" : "cancelled");
+                   initiator.SpawnFinishSends();
+                   return Empty{};
+                 });
+    });
     initiator.SpawnInfallible(
         "forward_server_trailing_metadata", [handler, initiator]() mutable {
           return Map(initiator.PullServerTrailingMetadata(),
@@ -470,20 +470,21 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
     Drain();
   }
 
-  // Runs the send_message on_complete held by the mock transport, then drains.
-  void CompleteHeldSendMessage() {
+  // Runs the send_message on_complete held by the mock transport with `status`,
+  // then drains.
+  void CompleteHeldSendMessage(absl::Status status = absl::OkStatus()) {
     grpc_closure* on_complete = std::exchange(
         transport_state_.pending_send_message_on_complete, nullptr);
     ASSERT_NE(on_complete, nullptr);
-    GRPC_CALL_COMBINER_START(&call_combiner_, on_complete, absl::OkStatus(),
+    GRPC_CALL_COMBINER_START(&call_combiner_, on_complete, std::move(status),
                              "complete_held_send_message");
     Drain();
   }
 
-  // Sends OK trailing metadata up from the mock transport and checks that the
-  // call finishes.
-  void FinishCall() {
-    server_trailing_metadata_.Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
+  // Sends trailing metadata with `status` up from the mock transport and checks
+  // that the call finishes.
+  void FinishCall(grpc_status_code status = GRPC_STATUS_OK) {
+    server_trailing_metadata_.Set(GrpcStatusMetadata(), status);
     GRPC_CALL_COMBINER_START(&call_combiner_,
                              transport_state_.recv_trailing_metadata_ready,
                              absl::OkStatus(), "finish_call");
@@ -611,6 +612,35 @@ TEST_F(ClientHalfClosePropagationTest,
   EXPECT_THAT(recorder_.events,
               ::testing::ElementsAre("msg:msg1", "half_close"));
   FinishCall();
+}
+
+// The call is cancelled while the half-close is queued behind a send_message
+// that the transport has not completed yet.
+TEST_F(ClientHalfClosePropagationTest,
+       CancelWhileHalfCloseIsQueuedBehindPendingSendDropsHalfClose) {
+  transport_state_.should_hold_send_message_on_complete = true;
+  Batch& batch1 = NewBatch();
+  AddStartCall(batch1);
+  AddSendMessage(batch1, "msg1");
+  StartBatch(batch1);
+  Batch& batch2 = NewBatch();
+  AddSendTrailingMetadata(batch2);
+  StartBatch(batch2);
+  EXPECT_THAT(recorder_.events, ::testing::ElementsAre("msg:msg1"));
+  Batch& cancel = NewBatch();
+  cancel.op.cancel_stream = true;
+  cancel.payload.cancel_stream.cancel_error = absl::CancelledError();
+  StartBatch(cancel);
+  // v3 sees the cancellation, not a half-close.
+  EXPECT_THAT(recorder_.events,
+              ::testing::ElementsAre("msg:msg1", "cancelled"));
+  // The transport fails the pending send_message because of the cancellation.
+  // This must not apply the queued half-close (SendMessage would crash on
+  // the completion if it had moved to kClosed), and v3 sees nothing new.
+  CompleteHeldSendMessage(absl::CancelledError());
+  EXPECT_THAT(recorder_.events,
+              ::testing::ElementsAre("msg:msg1", "cancelled"));
+  FinishCall(GRPC_STATUS_CANCELLED);
 }
 
 }  // namespace
