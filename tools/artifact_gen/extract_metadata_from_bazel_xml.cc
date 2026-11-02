@@ -414,6 +414,13 @@ class ArtifactGen {
     for (const auto& query : doc.children("query")) {
       for (const auto& child : query.children("rule")) {
         auto bazel_rule = BazelRuleFromXml(child);
+        const bool is_plugin =
+            bazel_rule.generator_function == "grpc_proto_plugin" &&
+            bazel_rule.clazz == "_copy_xfile";
+        if (is_plugin) {
+          // CMake builds the native plugin from source on every platform.
+          bazel_rule.deps.push_back(bazel_rule.name + "_native");
+        }
         if (bazel_rule.clazz == "cc_library" ||
             bazel_rule.clazz == "cc_binary" || bazel_rule.clazz == "cc_test" ||
             bazel_rule.clazz == "cc_proto_library" ||
@@ -422,7 +429,7 @@ class ArtifactGen {
             bazel_rule.clazz == "upb_c_proto_library" ||
             bazel_rule.clazz == "upb_proto_reflection_library" ||
             bazel_rule.clazz == "alias" || bazel_rule.clazz == "bind" ||
-            bazel_rule.clazz == "genrule") {
+            bazel_rule.clazz == "genrule" || is_plugin) {
           rules_[bazel_rule.name] = bazel_rule;
         }
       }

@@ -253,7 +253,14 @@ def _extract_rules_from_bazel_xml(xml_tree):
             rule_dict = _rule_dict_from_xml_node(child)
             rule_clazz = rule_dict["class"]
             rule_name = rule_dict["name"]
-            if rule_clazz in [
+            is_plugin = (
+                rule_dict["generator_function"] == "grpc_proto_plugin"
+                and rule_clazz == "_copy_xfile"
+            )
+            if is_plugin:
+                # CMake builds the native plugin from source on every platform.
+                rule_dict["deps"].append(rule_name + "_native")
+            if is_plugin or rule_clazz in [
                 "cc_library",
                 "cc_binary",
                 "cc_test",
