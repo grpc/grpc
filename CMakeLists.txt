@@ -40128,8 +40128,7 @@ target_include_directories(write_size_policy_test
 target_link_libraries(write_size_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  #upb_textformat_lib
-  protobuf::libupb
+  upb_textformat_lib
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
@@ -58045,6 +58044,3 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
     "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
     "grpcpp_otel_plugin.pc")
 endif()
-
-add_executable(upb_example upb_example.cc)
-target_link_libraries(upb_example PRIVATE protobuf::libupb)
