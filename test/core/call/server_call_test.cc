@@ -16,15 +16,24 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/status.h>
 
 #include <atomic>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/time.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "test/core/end2end/cq_verifier.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 
 namespace grpc_core {
@@ -89,6 +98,27 @@ class ServerCallTest : public YodelTest {
     return FindInMetadataArray(publish_initial_metadata_, key);
   }
 
+  BatchBuilder NewBatch(int tag) {
+    return BatchBuilder(call_.load(std::memory_order_acquire),
+                        cq_verifier_.get(), tag);
+  }
+
+  using ExpectedResult = CqVerifier::ExpectedResult;
+  void Expect(int tag, ExpectedResult result, SourceLocation whence = {}) {
+    expectations_++;
+    cq_verifier_->Expect(CqVerifier::tag(tag), std::move(result), whence);
+  }
+
+  void TickThroughCqExpectations(std::optional<Duration> timeout = std::nullopt,
+                                 SourceLocation whence = {}) {
+    if (expectations_ == 0) {
+      cq_verifier_->VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
+      return;
+    }
+    expectations_ = 0;
+    cq_verifier_->Verify(timeout.value_or(Duration::Minutes(5)), whence);
+  }
+
  private:
   class TestServer final : public ServerInterface {
    public:
@@ -111,6 +141,12 @@ class ServerCallTest : public YodelTest {
 
   void InitTest() override {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
+    cq_verifier_ = std::make_unique<CqVerifier>(
+        cq_, CqVerifier::FailUsingGprCrash,
+        [this](
+            grpc_event_engine::experimental::EventEngine::Duration max_step) {
+          event_engine()->Tick(max_step);
+        });
   }
 
   void Shutdown() override {
@@ -130,6 +166,8 @@ class ServerCallTest : public YodelTest {
   CallInitiator call_initiator_;
   TestServer test_server_;
   grpc_metadata_array publish_initial_metadata_{0, 0, nullptr};
+  std::unique_ptr<CqVerifier> cq_verifier_;
+  int expectations_ = 0;
 };
 
 #define SERVER_CALL_TEST(name) YODEL_TEST(ServerCallTest, name)
@@ -139,6 +177,32 @@ SERVER_CALL_TEST(NoOp) { InitCall(MakeClientInitialMetadata({})); }
 SERVER_CALL_TEST(InitialMetadataPassedThrough) {
   InitCall(MakeClientInitialMetadata({{"foo", "bar"}}));
   EXPECT_EQ(GetClientInitialMetadata("foo"), "bar");
+}
+
+// Asserts that sending status on an active call succeeds.
+SERVER_CALL_TEST(SendStatusFromServerSucceeds) {
+  InitCall(MakeClientInitialMetadata({}));
+  NewBatch(1).SendStatusFromServer(GRPC_STATUS_OK, "ok", {});
+  Expect(1, true);
+  TickThroughCqExpectations();
+  WaitForAllPendingWork();
+}
+
+// Asserts that sending status after the call was cancelled fails because
+// cancellation already pushed the server trailing metadata, and that
+// RECV_CLOSE_ON_SERVER reports the call as cancelled.
+SERVER_CALL_TEST(SendStatusFromServerAfterCancelFails) {
+  grpc_call* const call = InitCall(MakeClientInitialMetadata({}));
+  EXPECT_EQ(grpc_call_cancel(call, nullptr), GRPC_CALL_OK);
+  WaitForAllPendingWork();
+  IncomingCloseOnServer close;
+  NewBatch(1).SendStatusFromServer(GRPC_STATUS_OK, "ok", {});
+  NewBatch(2).RecvCloseOnServer(close);
+  Expect(1, false);
+  Expect(2, true);
+  TickThroughCqExpectations();
+  EXPECT_TRUE(close.was_cancelled());
+  WaitForAllPendingWork();
 }
 
 }  // namespace grpc_core

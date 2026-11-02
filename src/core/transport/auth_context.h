@@ -53,6 +53,11 @@ void grpc_auth_property_reset(grpc_auth_property* property);
 
 #define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
 
+// Principal of the certificate that the local (server) endpoint presented on a
+// TLS connection: its first URI SAN, else its first DNS SAN, else its subject.
+// Set on the server side only.  Internal; not part of the public API.
+#define GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME "x509_local_principal"
+
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.

@@ -120,7 +120,7 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Deprecated Stuff
 
-  // TODO(tjagtap) : [PH2][EXT] : Remove after event engine rollout
+  // TODO(tjagtap) [PH2][P4][EXT] Remove after event engine rollout
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 

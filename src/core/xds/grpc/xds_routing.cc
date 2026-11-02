@@ -43,7 +43,7 @@
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
-#include "src/core/xds/xds_client/xds_transport.h"
+#include "src/core/xds/xds_client/xds_transport_factory.h"
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"

@@ -44,6 +44,7 @@
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "src/core/xds/xds_client/xds_transport_factory.h"
 #include "upb/reflection/def.hpp"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
@@ -240,9 +241,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
 
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
-    RefCountedPtr<XdsTransportFactory::XdsTransport::ConnectivityFailureWatcher>
-        failure_watcher_;
+    RefCountedPtr<XdsTransport> transport_;
+    RefCountedPtr<XdsTransport::ConnectivityFailureWatcher> failure_watcher_;
 
     bool shutting_down_ = false;
 
