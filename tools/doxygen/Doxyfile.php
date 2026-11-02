@@ -804,6 +804,7 @@ doc/workarounds.md \
 doc/xds-test-descriptions.md \
 src/php/README.md \
 src/php/docker/README.md \
+src/php/ext/grpc/README.md \
 src/php/lib/Grpc/AbstractCall.php \
 src/php/lib/Grpc/BaseStub.php \
 src/php/lib/Grpc/BidiStreamingCall.php \
