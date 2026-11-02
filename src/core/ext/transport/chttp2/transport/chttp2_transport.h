@@ -58,9 +58,9 @@ grpc_core::Transport* grpc_create_chttp2_transport(
 /// interested_parties_until_recv_settings before
 /// notify_on_receive_settings is invoked.
 //
-// TODO(roth): Consider using the new StateWatcher API in the connector
-// code instead of supporting notify_on_receive_settings and
-// notify_on_close here.  This might be easier after pollset_set goes away.
+// TODO(roth): Remove the notify_on_receive_settings and
+// interested_parties_until_recv_settings parameters as part of removing
+// the server_connection_management experiment.
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
     absl::AnyInvocable<void(absl::StatusOr<uint32_t>)>
