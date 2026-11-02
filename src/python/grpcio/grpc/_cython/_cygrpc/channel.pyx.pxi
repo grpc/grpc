@@ -136,6 +136,9 @@ cdef tuple _operate(grpc_call *c_call, object operations, object user_tag):
   with nogil:
     c_call_error = grpc_call_start_batch(
         c_call, tag.c_ops, tag.c_nops, <cpython.PyObject *>tag, NULL)
+  if c_call_error != GRPC_CALL_OK:
+    cpython.Py_DECREF(tag)
+    tag.release()
   return c_call_error, tag
 
 
@@ -298,7 +301,14 @@ cdef void _call(
           _raise_call_error_no_metadata(c_call_error)
       started_tags = set()
       for operations, user_tag in operationses_and_user_tags:
-        c_call_error, tag = _operate(call_state.c_call, operations, user_tag)
+        try:
+          c_call_error, tag = _operate(call_state.c_call, operations, user_tag)
+        except:
+          # The batch could not even be prepared (e.g. invalid metadata). The
+          # call is not owned by anyone else yet, so it has to be released here.
+          grpc_call_cancel(call_state.c_call, NULL)
+          call_state.delete_call()
+          raise
         if c_call_error == GRPC_CALL_OK:
           started_tags.add(tag)
         else:

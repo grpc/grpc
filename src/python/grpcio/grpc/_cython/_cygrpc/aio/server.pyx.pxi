@@ -991,13 +991,14 @@ cdef class AioServer:
 
     async def _request_registered_call(self, bytes method):
         cdef grpc_call_error error
+        cdef RegisteredMethod registered_method = self._server.registered_methods[method]
         cdef RPCState rpc_state = RPCState(self)
         cdef object future = self._loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             self._loop,
-            REQUEST_REGISTERED_CALL_FAILURE_HANDLER)
-        cdef RegisteredMethod registered_method = self._server.registered_methods[method]
+            REQUEST_REGISTERED_CALL_FAILURE_HANDLER,
+            rpc_state)
         error = grpc_server_request_registered_call(
             self._server.c_server, 
             registered_method.c_registered_method,
@@ -1023,7 +1024,8 @@ cdef class AioServer:
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             self._loop,
-            REQUEST_CALL_FAILURE_HANDLER)
+            REQUEST_CALL_FAILURE_HANDLER,
+            rpc_state)
         error = grpc_server_request_call(
             self._server.c_server, &rpc_state.call, &rpc_state.details,
             &rpc_state.request_metadata,
@@ -1193,7 +1195,9 @@ cdef class AioServer:
         cdef CallbackWrapper wrapper = CallbackWrapper(
             self._shutdown_completed,
             self._loop,
-            SERVER_SHUTDOWN_FAILURE_HANDLER)
+            SERVER_SHUTDOWN_FAILURE_HANDLER,
+            None
+        )
         grpc_server_shutdown_and_notify(
             self._server.c_server,
             global_completion_queue(),
