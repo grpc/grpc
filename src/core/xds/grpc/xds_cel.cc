@@ -64,6 +64,10 @@ namespace {
 // Matches Envoy's regex_max_program_size CEL runtime option.
 constexpr int kMaxRegexProgramSize = 100;
 
+// Size of the stack-allocated initial block of the arena used to evaluate a
+// program.
+constexpr size_t kEvaluationArenaInitialBlockSize = 512;
+
 absl::Status ValidateResultType(const cel_expr_CheckedExpr* checked_expr,
                                 int64_t root_id,
                                 CelProgram::ResultType result_type) {
@@ -81,7 +85,8 @@ absl::Status ValidateResultType(const cel_expr_CheckedExpr* checked_expr,
     case CelProgram::ResultType::kString:
       // A string extractor may also be typed dyn, e.g. `request['path']` when
       // the control plane declares `request` as dyn.  Its result is then
-      // checked at runtime, falling back to CelExtractString.default_value.
+      // checked at runtime: gRFC A106 says that CelExtractString.default_value
+      // is used if the expression "evaluates to an error or a non-string type".
       if (cel_expr_Type_has_dyn(type)) break;
       if (!cel_expr_Type_has_primitive(type) ||
           cel_expr_Type_primitive(type) != cel_expr_Type_STRING) {
@@ -99,7 +104,8 @@ absl::Status ValidateRegex(const cel_expr_Expr* pattern) {
         "CEL matches() pattern must be a constant string");
   }
   RE2 re(UpbStringToAbsl(
-      cel_expr_Constant_string_value(cel_expr_Expr_const_expr(pattern))));
+             cel_expr_Constant_string_value(cel_expr_Expr_const_expr(pattern))),
+         RE2::Quiet);
   if (!re.ok()) {
     return absl::InternalError(
         absl::StrCat("CEL matches() pattern is invalid: ", re.error()));
@@ -123,7 +129,9 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
   }
   if (function == "_+_") {
     // Which overload of + this is can only be told from the type-checker's
-    // reference map.  Reject if it might be string or list concatenation.
+    // reference map.  Reject if it might be string, bytes or list
+    // concatenation.  Envoy disables these via cel-cpp's enable_string_concat
+    // (which covers both string and bytes) and enable_list_concat options.
     cel_expr_Reference* reference;
     size_t num_overloads = 0;
     const upb_StringView* overloads = nullptr;
@@ -135,9 +143,10 @@ absl::Status ValidateCall(const cel_expr_CheckedExpr* checked_expr, int64_t id,
     }
     for (size_t i = 0; i < num_overloads; ++i) {
       absl::string_view overload = UpbStringToAbsl(overloads[i]);
-      if (overload == "add_string" || overload == "add_list") {
+      if (overload == "add_string" || overload == "add_bytes" ||
+          overload == "add_list") {
         return absl::InternalError(
-            "CEL string and list concatenation are not supported");
+            "CEL string, bytes and list concatenation are not supported");
       }
     }
   }
@@ -237,6 +246,29 @@ absl::Status ValidateCelExpr(const cel_expr_CheckedExpr* checked_expr,
   return absl::OkStatus();
 }
 
+// Deterministically serializes checked_expr for use in equality
+// comparisons. Omits source_info (source positions, used only in error
+// messages), so that expressions differing only in formatting compare equal.
+// Returns nullopt if the expression exceeds upb's encoding depth limit (it
+// comes from the control plane, so may be arbitrarily deep) or if allocation
+// fails.
+std::optional<std::string> SerializeForEquality(
+    const cel_expr_CheckedExpr* checked_expr, upb_Arena* arena) {
+  // checked_expr is const, so clear source_info on a copy.
+  size_t size;
+  const char* serialized =
+      cel_expr_CheckedExpr_serialize(checked_expr, arena, &size);
+  if (serialized == nullptr) return std::nullopt;
+  cel_expr_CheckedExpr* copy =
+      cel_expr_CheckedExpr_parse(serialized, size, arena);
+  if (copy == nullptr) return std::nullopt;
+  cel_expr_CheckedExpr_clear_source_info(copy);
+  serialized = cel_expr_CheckedExpr_serialize_ex(
+      copy, kUpb_EncodeOption_Deterministic, arena, &size);
+  if (serialized == nullptr) return std::nullopt;
+  return std::string(serialized, size);
+}
+
 // RAII wrapper for cel_Status (cel-c doesn't provide one).
 class CelStatus final {
  public:
@@ -252,11 +284,6 @@ class CelStatus final {
  private:
   cel_Status status_;
 };
-
-struct ArenaDeleter {
-  void operator()(cel_Arena* arena) const { cel_Arena_Delete(arena); }
-};
-using ArenaPtr = std::unique_ptr<cel_Arena, ArenaDeleter>;
 
 struct AstDeleter {
   void operator()(cel_Ast* ast) const { cel_Ast_Delete(ast); }
@@ -307,14 +334,18 @@ const cel_Runtime* GetCelRuntime() {
 // error or unknown.
 void Evaluate(const cel_Program* program, const cel_VariableResolver& resolver,
               absl::FunctionRef<void(const cel_Value&)> on_result) {
+  // An activation binds program to resolver, which is per-RPC, so it can't
+  // be reused across evaluations.  It fails only if allocation fails.
   ActivationPtr activation(
       cel_Program_Activate(program, &resolver, /*opts=*/nullptr));
-  if (activation == nullptr) return;
-  ArenaPtr arena(cel_Arena_New(cel_DefaultAllocator));
-  if (arena == nullptr) return;
+  CHECK_NE(activation.get(), nullptr);
+  // Holds values created during evaluation.  Its initial block is on the
+  // stack, so that evaluations needing little memory don't allocate.
+  char initial_block[kEvaluationArenaInitialBlockSize];
+  upb::Arena arena(initial_block, sizeof(initial_block));
   cel_Value result;
   CelStatus status;
-  if (!cel_Activation_Execute(activation.get(), &result, arena.get(),
+  if (!cel_Activation_Execute(activation.get(), &result, arena.ptr(),
                               status.get()) ||
       !status.ok()) {
     return;
@@ -331,25 +362,17 @@ absl::StatusOr<std::unique_ptr<CelProgram>> CelProgram::Create(
     const cel_expr_CheckedExpr* checked_expr, ResultType result_type) {
   absl::Status validation = ValidateCelExpr(checked_expr, result_type);
   if (!validation.ok()) return validation;
-  // Serialize deterministically for use in equality comparisons.
-  upb::Arena upb_arena;
-  size_t size;
-  const char* serialized = cel_expr_CheckedExpr_serialize_ex(
-      checked_expr, kUpb_EncodeOption_Deterministic, upb_arena.ptr(), &size);
-  // This fails if the expression exceeds upb's encoding depth limit (it
-  // comes from the control plane, so may be arbitrarily deep) or if
-  // allocation fails.
-  if (serialized == nullptr) {
+  upb::Arena arena;
+  std::optional<std::string> serialized =
+      SerializeForEquality(checked_expr, arena.ptr());
+  if (!serialized.has_value()) {
     return absl::InternalError("failed to serialize CEL expression");
   }
-  // Convert to a cel-c AST and compile it.  The compiled program copies
-  // everything it needs, so the AST and its arena may be freed afterwards.
-  ArenaPtr arena(cel_Arena_New(cel_DefaultAllocator));
-  if (arena == nullptr) {
-    return absl::ResourceExhaustedError("failed to allocate CEL arena");
-  }
+  // Convert to a cel-c AST (cel_Arena is upb_Arena) and compile it.  The
+  // compiled program copies everything it needs, so the AST and its arena
+  // may be freed afterwards.
   CelStatus status;
-  AstPtr ast(cel_Ast_FromProto(checked_expr, arena.get(), status.get()));
+  AstPtr ast(cel_Ast_FromProto(checked_expr, arena.ptr(), status.get()));
   if (ast == nullptr || !status.ok()) {
     return absl::InternalError(absl::StrCat(
         "failed to convert CEL expression: ", status.ToAbsl().message()));
@@ -361,7 +384,7 @@ absl::StatusOr<std::unique_ptr<CelProgram>> CelProgram::Create(
         "failed to compile CEL expression: ", status.ToAbsl().message()));
   }
   return std::unique_ptr<CelProgram>(
-      new CelProgram(std::string(serialized, size), std::move(program)));
+      new CelProgram(std::move(*serialized), std::move(program)));
 }
 
 std::optional<bool> CelProgram::EvaluateBool(

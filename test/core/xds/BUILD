@@ -666,10 +666,10 @@ grpc_cc_test(
     name = "xds_cel_test",
     srcs = ["xds_cel_test.cc"],
     external_deps = [
-        "absl/functional:function_ref",
         "absl/status",
         "absl/strings",
         "cel_c_runtime",
+        "cel_c_status",
         "cel_c_string_view_absl",
         "cel_c_value",
         "gtest",

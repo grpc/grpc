@@ -43,7 +43,7 @@ class CelProgram final {
   // - the result type is result_type (or dyn, for kString);
   // - the only variable is `request`;
   // - no comprehensions (e.g. exists(), all(), cel.bind());
-  // - no string() conversions and no string or list concatenation;
+  // - no string() conversions and no string, bytes or list concatenation;
   // - matches() patterns are constant, valid RE2 regexes with a program
   //   size of at most 100.
   static absl::StatusOr<std::unique_ptr<CelProgram>> Create(
@@ -56,6 +56,8 @@ class CelProgram final {
   std::optional<std::string> EvaluateString(
       const cel_VariableResolver& resolver) const;
 
+  // Compares the CheckedExprs that the programs were created from,
+  // ignoring source_info.
   bool operator==(const CelProgram& other) const {
     return serialized_expr_ == other.serialized_expr_;
   }
@@ -73,7 +75,8 @@ class CelProgram final {
       : serialized_expr_(std::move(serialized_expr)),
         program_(std::move(program)) {}
 
-  // Deterministically serialized CheckedExpr, used for equality.
+  // Deterministically serialized CheckedExpr without source_info, used for
+  // equality.
   std::string serialized_expr_;
   ProgramPtr program_;
 };
