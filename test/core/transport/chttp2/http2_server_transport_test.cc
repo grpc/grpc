@@ -23,6 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
+#include <grpc/support/time.h>
 
 #include <cstdint>
 #include <limits>
@@ -53,6 +54,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -2979,6 +2981,135 @@ TEST_F(Http2ServerTransportTest,
   const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
       endpoint()->NewStep();
   AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/5u);
+  teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, PopulatesCallFinalInfoTransportStreamStats) {
+  // Verifies that Http2ServerTransport populates grpc_call_final_info's
+  // transport_stream_stats (incoming bytes, outgoing bytes, and stream latency)
+  // in the call Arena before CallSpine finalization runs on stream destruction.
+  ExecCtx ctx;
+
+  // Step 1: Initialize server transport with BDP disabled for deterministic
+  // framing and exchange HTTP/2 settings.
+  InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Register a server stream handler that retains a reference to the
+  // call's Arena, reads client initial metadata and one request message
+  // (kString1), and replies with initial metadata, one response message
+  // ("World!"), and trailing metadata.
+  RefCountedPtr<Arena> call_arena;
+  StrictMock<MockFunction<void()>> on_call_done;
+  EXPECT_CALL(on_call_done, Call());
+
+  AddStream([&call_arena, &on_call_done](CallHandler call_handler) {
+    call_arena = call_handler.arena()->Ref();
+    const bool registered = call_handler.OnDone(
+        [&on_call_done](const bool /*cancelled*/) { on_call_done.Call(); });
+    EXPECT_TRUE(registered);
+    return [call_handler]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler](ClientMetadataHandle /*metadata*/) mutable {
+            return Map(call_handler.PullMessage(),
+                       [](ClientToServerNextMessage message)
+                           -> ValueOrFailure<MessageHandle> {
+                         EXPECT_TRUE(message.ok());
+                         EXPECT_TRUE(message.has_value());
+                         if (!message.ok() || !message.has_value()) {
+                           return Failure{};
+                         }
+                         EXPECT_EQ(message.value().payload()->JoinIntoString(),
+                                   kString1);
+                         return message.TakeValue();
+                       });
+          },
+          [call_handler](MessageHandle /*request*/) mutable {
+            return call_handler.PushServerInitialMetadata(
+                ServerMetadataFromStatus(absl::OkStatus()));
+          },
+          [call_handler]() mutable {
+            MessageHandle response = Arena::MakePooled<Message>(
+                SliceBuffer(Slice::FromExternalString("World!")), 0u);
+            return call_handler.PushMessage(std::move(response));
+          },
+          [call_handler]() mutable {
+            return call_handler.PushServerTrailingMetadata(
+                ServerMetadataFromStatus(absl::CancelledError()));
+          });
+    };
+  });
+
+  // Step 3: Client sends initial HEADERS and a half-closing DATA frame
+  // containing kString1. Server responds with transport WINDOW_UPDATE
+  // (stream_id=0), initial HEADERS, DATA ("World!"), trailing HEADERS, and
+  // RST_STREAM(NO_ERROR).
+  const std::shared_ptr<EventSequenceEndpoint::Step> step =
+      endpoint()->NewStep();
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+      helper_.SerializedDataFrame(std::string(kString1.begin(), kString1.end()),
+                                  /*stream_id=*/1u, /*end_stream=*/true),
+  });
+  step->ThenExpectWrite({
+      helper_.SerializedWindowUpdateFrame(
+          /*stream_id=*/0u,
+          /*increment=*/static_cast<uint32_t>(kGrpcHeaderSizeInBytes +
+                                              kString1.size())),
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusOK.begin(), kGrpcStatusOK.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/false),
+      helper_.SerializedDataFrame("World!", /*stream_id=*/1u,
+                                  /*end_stream=*/false),
+      helper_.SerializedHeaderFrame(
+          std::string(kGrpcStatusCancelled.begin(), kGrpcStatusCancelled.end()),
+          /*stream_id=*/1u, /*end_headers=*/true, /*end_stream=*/true),
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1u,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+  });
+  step->Wait();
+  event_engine()->Tick();
+
+  // Step 4: Verify grpc_call_final_info in the call Arena carries exact
+  // incoming/outgoing data, framing, and header byte counts and finite latency.
+  ASSERT_NE(call_arena, nullptr);
+  const grpc_call_final_info* const final_info =
+      call_arena->GetContext<grpc_call_final_info>();
+  ASSERT_NE(final_info, nullptr);
+  const grpc_transport_stream_stats& stream_stats =
+      final_info->stats.transport_stream_stats;
+
+  // Incoming: 1 HEADERS frame (9 framing + 26 header bytes) + 1 DATA frame
+  // (9 frame header + 5 gRPC message prefix = 14 framing bytes, 16 data bytes).
+  EXPECT_EQ(stream_stats.incoming.data_bytes, kString1.size());
+  EXPECT_EQ(stream_stats.incoming.framing_bytes,
+            kFrameHeaderSize + kFrameHeaderSize + kGrpcHeaderSizeInBytes);
+  EXPECT_EQ(stream_stats.incoming.header_bytes, kPathDemoServiceStep.size());
+
+  // Outgoing: initial HEADERS (9 framing + 15 header bytes) + DATA (9 frame
+  // header + 5 gRPC prefix = 14 framing bytes, 6 data bytes) + trailing HEADERS
+  // (9 framing + 30 header bytes) + RST_STREAM (9 + 4 = 13 framing bytes).
+  // Transport-level WINDOW_UPDATE (stream_id=0) is excluded from stream stats.
+  EXPECT_EQ(stream_stats.outgoing.data_bytes, 6u);
+  EXPECT_EQ(stream_stats.outgoing.framing_bytes, (3u * kFrameHeaderSize) +
+                                                     kGrpcHeaderSizeInBytes +
+                                                     (kFrameHeaderSize + 4u));
+  EXPECT_EQ(stream_stats.outgoing.header_bytes,
+            kGrpcStatusOK.size() + kGrpcStatusCancelled.size());
+
+  // Stream latency must be populated (not gpr_inf_future) and non-negative.
+  EXPECT_NE(gpr_time_cmp(stream_stats.latency, gpr_inf_future(GPR_TIMESPAN)),
+            0);
+  EXPECT_GE(gpr_time_cmp(stream_stats.latency, gpr_time_0(GPR_TIMESPAN)), 0);
+
+  // Step 5: Tear down the transport.
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/1u);
   teardown_step->Wait();
 }
 

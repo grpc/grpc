@@ -118,6 +118,17 @@ class FilterTest : public YodelTest {
   // implicit initiator and handler. May be called only once per test.
   void StartCallForFilter(ClientMetadataHandle client_initial_metadata);
 
+  void CloseCallHandles() {
+    initiator_.reset();
+    handler_.reset();
+  }
+
+  void CancelCall() {
+    if (initiator_.has_value()) {
+      initiator_->SpawnCancel();
+    }
+  }
+
   // Driving the six call operations.
   //
   // Push*() is asynchronous and serializes operations onto the call's party in

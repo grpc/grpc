@@ -288,6 +288,10 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
            "AppendNewDataFrame Failed";
     return status;
   }
+  // Account for the 9-byte DATA frame header.
+  stream->AddIncomingBytes({/*framing_bytes=*/kFrameHeaderSize,
+                            /*data_bytes=*/0u,
+                            /*header_bytes=*/0u});
 
   // Pass the messages up the stack if it is ready.
   while (true) {
@@ -303,6 +307,10 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     }
     MessageHandle message = TakeValue(std::move(result));
     if (message != nullptr) {
+      // Account for the 5-byte gRPC message header and message payload bytes.
+      stream->AddIncomingBytes({/*framing_bytes=*/kGrpcHeaderSizeInBytes,
+                                /*data_bytes=*/message->payload()->Length(),
+                                /*header_bytes=*/0u});
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
              "SpawnPushMessage ";
@@ -347,6 +355,7 @@ Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
     return validation_status;
   }
 
+  const uint64_t payload_length = frame.payload.Length();
   Http2Status append_result =
       read_context_.header_assembler().AppendFrame(frame);
   if (!append_result.IsOk()) {
@@ -356,6 +365,12 @@ Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
         std::move(frame.payload), frame.end_headers, std::move(append_result),
         settings_->acked().max_header_list_size());
   }
+  // Account for the 9-byte HEADERS/CONTINUATION frame header and HPACK payload
+  // bytes before ProcessMetadata (which may complete trailing metadata on
+  // END_HEADERS).
+  stream->AddIncomingBytes({/*framing_bytes=*/kFrameHeaderSize,
+                            /*data_bytes=*/0u,
+                            /*header_bytes=*/payload_length});
 
   Http2Status status = ProcessMetadata(stream);
   if (!status.IsOk()) {
@@ -393,6 +408,11 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
                                      "Reset stream frame received.");
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream != nullptr) {
+    // Account for the 9-byte frame header and 4-byte error code payload before
+    // closing the stream.
+    stream->AddIncomingBytes({/*framing_bytes=*/kFrameHeaderSize + 4u,
+                              /*data_bytes=*/0u,
+                              /*header_bytes=*/0u});
     HandleStreamStateChange(*stream, stream->OnResetReceived(status));
   }
 
@@ -527,6 +547,13 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
   RefCountedPtr<Stream> stream = nullptr;
   if (frame.stream_id != 0) {
     stream = LookupStream(frame.stream_id);
+    if (stream != nullptr) {
+      // Account for the 9-byte frame header and 4-byte window increment
+      // payload.
+      stream->AddIncomingBytes({/*framing_bytes=*/kFrameHeaderSize + 4u,
+                                /*data_bytes=*/0u,
+                                /*header_bytes=*/0u});
+    }
   }
 
   const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(

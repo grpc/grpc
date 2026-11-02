@@ -20,8 +20,11 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_H
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
+#include <array>
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -38,10 +41,14 @@
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -228,6 +235,7 @@ class Stream : public RefCounted<Stream> {
       : flow_control_(&transport_flow_control),
         call_(std::move(call_handler)),
         state_(/*started=*/false),
+        creation_time_(gpr_now(GPR_CLOCK_MONOTONIC)),
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             std::get<CallHandler>(call_).arena(), /*is_client=*/true,
             /*queue_size=*/kStreamQueueSize)) {}
@@ -240,10 +248,22 @@ class Stream : public RefCounted<Stream> {
         call_(std::move(call_initiator)),
         state_(/*started=*/true),
         stream_id_(stream_id),
+        creation_time_(gpr_now(GPR_CLOCK_MONOTONIC)),
+        final_info_(
+            EnsureCallFinalInfo(std::get<CallInitiator>(call_).arena())),
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             std::get<CallInitiator>(call_).arena(), /*is_client=*/false,
             /*queue_size=*/kStreamQueueSize)) {
     InitializeStream(allow_true_binary_metadata_peer);
+  }
+
+  ~Stream() override {
+    if (is_server()) {
+      // Based on CHTTP2's grpc_chttp2_maybe_complete_recv_trailing_metadata in
+      // chttp2_transport.cc: publish accumulated transport stream stats before
+      // call_ (CallInitiator) is destroyed and CallSpine::OnPartyOver() runs.
+      PublishFinalInfoOnServer();
+    }
   }
 
   Stream(const Stream&) = delete;
@@ -307,11 +327,27 @@ class Stream : public RefCounted<Stream> {
                      const uint32_t max_frame_length, HPackCompressor& encoder,
                      FrameSender& frame_sender) {
     // Reset stream MUST not be sent if the stream is idle or closed.
-    return data_queue_->DequeueFrames(tokens, max_frame_length,
-                                      stream_flow_control_tokens, encoder,
-                                      frame_sender,
-                                      /*can_send_reset_stream=*/
-                                      !(IsStreamIdle() || IsStreamClosed()));
+    const StreamDataQueue<Arena::PoolPtr<grpc_metadata_batch>>::DequeueResult
+        result = data_queue_->DequeueFrames(
+            tokens, max_frame_length, stream_flow_control_tokens, encoder,
+            frame_sender,
+            /*can_send_reset_stream=*/!(IsStreamIdle() || IsStreamClosed()));
+    AddOutgoingBytes(result.outgoing_stats);
+    return result;
+  }
+
+  // Called from the transport party.
+  void AddIncomingBytes(const grpc_transport_one_way_stats& stats) {
+    stream_stats_.incoming.framing_bytes += stats.framing_bytes;
+    stream_stats_.incoming.data_bytes += stats.data_bytes;
+    stream_stats_.incoming.header_bytes += stats.header_bytes;
+  }
+
+  // Called from the transport party.
+  void AddOutgoingBytes(const grpc_transport_one_way_stats& stats) {
+    stream_stats_.outgoing.framing_bytes += stats.framing_bytes;
+    stream_stats_.outgoing.data_bytes += stats.data_bytes;
+    stream_stats_.outgoing.header_bytes += stats.header_bytes;
   }
 
   auto UpdateStreamWritability(const int64_t stream_fc_tokens) {
@@ -380,12 +416,13 @@ class Stream : public RefCounted<Stream> {
 
   StreamStateChange OnHalfCloseSent() {
     GRPC_DCHECK(is_client());
-    return state_.OnHalfCloseSent();
+    return RecordStateChange(state_.OnHalfCloseSent());
   }
 
   StreamStateChange OnTrailingMetadataReceived(ServerMetadataHandle metadata) {
     SetTrailingMetadataReceived();
-    const StreamStateChange change = state_.OnTrailingMetadataReceived();
+    const StreamStateChange change =
+        RecordStateChange(state_.OnTrailingMetadataReceived());
     if (is_client()) {
       MaybePushServerTrailingMetadata(std::move(metadata));
     } else {
@@ -405,7 +442,8 @@ class Stream : public RefCounted<Stream> {
 
   StreamStateChange OnHalfCloseReceived() {
     GRPC_DCHECK(is_server());
-    const StreamStateChange change = state_.OnHalfCloseReceived();
+    const StreamStateChange change =
+        RecordStateChange(state_.OnHalfCloseReceived());
     if (change.reads_became_closed) {
       GetCallInitiator().SpawnFinishSends();
     }
@@ -413,13 +451,14 @@ class Stream : public RefCounted<Stream> {
   }
 
   StreamStateChange OnResetReceived(absl::Status status) {
-    const StreamStateChange change = state_.OnResetReceived();
+    const StreamStateChange change =
+        RecordStateChange(state_.OnResetReceived());
     CancelCall(std::move(status));
     return change;
   }
 
   StreamStateChange OnResetSent() {
-    const StreamStateChange change = state_.OnResetSent();
+    const StreamStateChange change = RecordStateChange(state_.OnResetSent());
 
     // Fallback cancel. Safe even for normal completion as CallSpine would have
     // already processed trailing metadata, making Cancel a no-op.
@@ -429,13 +468,14 @@ class Stream : public RefCounted<Stream> {
 
   StreamStateChange OnInitiateReset(absl::Status status) {
     GRPC_DCHECK(!status.ok());
-    const StreamStateChange change = state_.OnInitiateReset();
+    const StreamStateChange change =
+        RecordStateChange(state_.OnInitiateReset());
     CancelCall(std::move(status));
     return change;
   }
 
   StreamStateChange ForceClose(absl::Status status) {
-    const StreamStateChange change = state_.ForceClose();
+    const StreamStateChange change = RecordStateChange(state_.ForceClose());
     CancelCall(std::move(status));
     return change;
   }
@@ -471,7 +511,31 @@ class Stream : public RefCounted<Stream> {
 
     if (!did_push_server_trailing_metadata_) {
       did_push_server_trailing_metadata_ = true;
-      GetCallHandler().SpawnPushServerTrailingMetadata(std::move(metadata));
+      CallHandler call_handler = GetCallHandler();
+      grpc_transport_stream_stats stats = TakeStreamStats();
+      // Based on CHTTP2's grpc_chttp2_maybe_complete_recv_trailing_metadata in
+      // chttp2_transport.cc: publish accumulated transport stream stats on the
+      // CallSpine party so that Arena context access is serialized with
+      // SpawnCancel() and completes before PushServerTrailingMetadata triggers
+      // CallSpine::OnPartyOver().
+      call_handler.SpawnInfallible(
+          "publish-final-info",
+          [call_handler, stats, metadata = std::move(metadata)]() mutable {
+            if (!call_handler.WasCancelledPushed()) {
+              Arena* const arena = call_handler.arena();
+              MutexLock lock(FinalInfoPublishMutex(arena));
+              grpc_call_final_info* const final_info =
+                  EnsureCallFinalInfoLocked(arena);
+              grpc_transport_move_stats(
+                  &stats, &final_info->stats.transport_stream_stats);
+            }
+            if (metadata->get(GrpcCallWasCancelled()).value_or(false)) {
+              call_handler.PushServerTrailingMetadata(std::move(metadata));
+            } else {
+              call_handler.SpawnPushServerTrailingMetadata(std::move(metadata));
+            }
+            return Empty{};
+          });
     }
   }
 
@@ -542,6 +606,60 @@ class Stream : public RefCounted<Stream> {
     data_queue_->SetStreamId(stream_id_, allow_true_binary_metadata_peer);
   }
 
+  static Mutex& FinalInfoPublishMutex(const Arena* const arena) {
+    static constexpr size_t kNumShards = 64u;
+    static NoDestruct<std::array<Mutex, kNumShards>> shards;
+    const size_t index =
+        (reinterpret_cast<uintptr_t>(arena) >> 6u) % kNumShards;
+    return (*shards)[index];
+  }
+
+  static grpc_call_final_info* EnsureCallFinalInfoLocked(Arena* const arena) {
+    GRPC_DCHECK_NE(arena, nullptr);
+    grpc_call_final_info* final_info =
+        arena->GetContext<grpc_call_final_info>();
+    if (final_info == nullptr) {
+      final_info = arena->New<grpc_call_final_info>();
+      arena->SetContext<grpc_call_final_info>(final_info);
+    }
+    return final_info;
+  }
+
+  static grpc_call_final_info* EnsureCallFinalInfo(Arena* const arena) {
+    MutexLock lock(FinalInfoPublishMutex(arena));
+    return EnsureCallFinalInfoLocked(arena);
+  }
+
+  // record transport stream latency when the stream becomes closed.
+  StreamStateChange RecordStateChange(const StreamStateChange change) {
+    if (change.stream_became_closed &&
+        gpr_time_cmp(stream_stats_.latency, gpr_inf_future(GPR_TIMESPAN)) ==
+            0) {
+      stream_stats_.latency =
+          gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), creation_time_);
+    }
+    return change;
+  }
+
+  grpc_transport_stream_stats TakeStreamStats() {
+    if (gpr_time_cmp(stream_stats_.latency, gpr_inf_future(GPR_TIMESPAN)) ==
+        0) {
+      stream_stats_.latency =
+          gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), creation_time_);
+    }
+    grpc_transport_stream_stats out;
+    grpc_transport_move_stats(&stream_stats_, &out);
+    return out;
+  }
+
+  void PublishFinalInfoOnServer() {
+    if (final_info_published_ || final_info_ == nullptr) return;
+    final_info_published_ = true;
+    grpc_transport_stream_stats stats = TakeStreamStats();
+    grpc_transport_move_stats(&stats,
+                              &final_info_->stats.transport_stream_stats);
+  }
+
   GrpcMessageAssembler assembler_;
   chttp2::StreamFlowControl flow_control_;
   std::variant<CallInitiator, CallHandler> call_;
@@ -559,6 +677,10 @@ class Stream : public RefCounted<Stream> {
 
   StreamState state_;
   uint32_t stream_id_ = kInvalidStreamId;
+  const gpr_timespec creation_time_;
+  grpc_call_final_info* final_info_ = nullptr;
+  grpc_transport_stream_stats stream_stats_;
+  bool final_info_published_ = false;
   bool did_receive_initial_metadata_ = false;
   bool did_receive_trailing_metadata_ = false;
   bool did_push_server_trailing_metadata_ = false;

@@ -102,6 +102,7 @@ class HeaderAssembler {
 
     // Manage payload
     frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
+    ++num_frames_;
     ASSEMBLER_LOG << "HeaderAssembler::AppendFrame HEADERS " << current_len
                   << " Bytes.";
 
@@ -126,6 +127,7 @@ class HeaderAssembler {
     // Manage payload
     const size_t current_len = frame.payload.Length();
     frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
+    ++num_frames_;
     ASSEMBLER_LOG << "HeaderAssembler::AppendFrame CONTINUATION " << current_len
                   << " Bytes.";
 
@@ -220,6 +222,7 @@ class HeaderAssembler {
   }
 
   size_t GetBufferedHeadersLength() const { return buffer_.Length(); }
+  uint64_t GetBufferedFrameCount() const { return num_frames_; }
 
   // This value MUST be checked before calling ReadMetadata()
   bool IsReady() const { return is_ready_; }
@@ -228,7 +231,8 @@ class HeaderAssembler {
       : header_in_progress_(false),
         is_ready_(false),
         is_client_(is_client),
-        stream_id_(0) {}
+        stream_id_(0u),
+        num_frames_(0u) {}
 
   ~HeaderAssembler() = default;
 
@@ -346,7 +350,8 @@ class HeaderAssembler {
     buffer_.Clear();
     header_in_progress_ = false;
     is_ready_ = false;
-    stream_id_ = 0;
+    stream_id_ = 0u;
+    num_frames_ = 0u;
   }
 
   bool header_in_progress_;
@@ -354,6 +359,7 @@ class HeaderAssembler {
   std::optional<bool> allow_true_binary_metadata_acked_;
   const bool is_client_;
   uint32_t stream_id_;
+  uint64_t num_frames_;
   SliceBuffer buffer_;
 };
 
