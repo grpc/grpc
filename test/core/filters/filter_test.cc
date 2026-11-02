@@ -169,7 +169,7 @@ typename CallHalf::NextMessage ReleaseCallState(
 
 void FilterTest::PushClientMessage(CallInitiator initiator,
                                    MessageHandle message) {
-  initiator.SpawnPushMessage(std::move(message));
+  initiator.SpawnPushMessageWithoutWaiting(std::move(message));
 }
 
 void FilterTest::PushClientHalfClose(CallInitiator initiator) {
@@ -228,7 +228,7 @@ void FilterTest::PushServerInitialMetadata(CallHandler handler,
 }
 
 void FilterTest::PushServerMessage(CallHandler handler, MessageHandle message) {
-  handler.SpawnPushMessage(std::move(message));
+  handler.SpawnPushMessageWithoutWaiting(std::move(message));
 }
 
 void FilterTest::PushServerTrailingMetadata(CallHandler handler,

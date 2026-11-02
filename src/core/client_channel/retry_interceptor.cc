@@ -256,9 +256,8 @@ auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
                              GRPC_TRACE_LOG(retry, INFO)
                                  << call->DebugTag() << " got server message "
                                  << message->DebugString();
-                             call->call_handler()->SpawnPushMessage(
+                             return call->call_handler()->SpawnPushMessage(
                                  std::move(message));
-                             return Success{};
                            }),
                    initiator_.PullServerTrailingMetadata(),
                    [call = call_](ServerMetadataHandle md) {
@@ -344,11 +343,13 @@ auto RetryInterceptor::Attempt::ClientToServer() {
         self->call_->call_handler()->AddChildCall(self->initiator_);
         self->initiator_.SpawnGuarded(
             "server_to_client", [self]() { return self->ServerToClient(); });
-        return ForEach(MessagesFrom(&self->reader_),
-                       [self](MessageHandle message) {
-                         self->initiator_.SpawnPushMessage(std::move(message));
-                         return Success{};
-                       });
+        return ForEach(
+            MessagesFrom(&self->reader_), [self](MessageHandle message) {
+              // A failure to push onto this attempt must not fail the
+              // parent call, since we may still retry on another attempt.
+              return Map(self->initiator_.SpawnPushMessage(std::move(message)),
+                         [](StatusFlag) { return Success{}; });
+            });
       });
 }
 

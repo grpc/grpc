@@ -259,7 +259,38 @@ class CallSpine final : public Party, public channelz::DataSource {
         });
   }
 
-  void SpawnPushServerToClientMessage(MessageHandle msg) {
+  // Returns a promise that resolves to a StatusFlag once the push has
+  // completed on this call's party. If the push fails, the call is cancelled.
+  // Must be called from within an activity, and the returned promise must be
+  // polled by that same activity.
+  GRPC_MUST_USE_RESULT auto SpawnPushServerToClientMessage(MessageHandle msg) {
+    return server_to_client_serializer()->SpawnWaitable(
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+          return Map(self->PushServerToClientMessage(std::move(msg)),
+                     [self](StatusFlag r) {
+                       self->CancelIfFailed(r);
+                       return r;
+                     });
+        });
+  }
+
+  // As above, but for the client->server direction.
+  GRPC_MUST_USE_RESULT auto SpawnPushClientToServerMessage(MessageHandle msg) {
+    return client_to_server_serializer()->SpawnWaitable(
+        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+          return Map(self->PushClientToServerMessage(std::move(msg)),
+                     [self](StatusFlag r) {
+                       self->CancelIfFailed(r);
+                       return r;
+                     });
+        });
+  }
+
+  // Variants of the above that do not provide any way to wait for the push to
+  // complete, and therefore provide no flow control feedback to the caller.
+  // Callers should strongly prefer the variants above; these exist only for
+  // callers that are not running in a promise context.
+  void SpawnPushServerToClientMessageWithoutWaiting(MessageHandle msg) {
     server_to_client_serializer()->Spawn(
         [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
           return self->CancelIfFails(
@@ -267,7 +298,7 @@ class CallSpine final : public Party, public channelz::DataSource {
         });
   }
 
-  void SpawnPushClientToServerMessage(MessageHandle msg) {
+  void SpawnPushClientToServerMessageWithoutWaiting(MessageHandle msg) {
     client_to_server_serializer()->Spawn(
         [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
           return self->CancelIfFails(
@@ -403,9 +434,22 @@ class CallInitiator {
     return spine_->PushClientToServerMessage(std::move(message));
   }
 
-  void SpawnPushMessage(MessageHandle message) {
+  // Pushes a message into the call from outside the call's party.
+  // Returns a promise that resolves to a StatusFlag once the push completes.
+  // Must be called from within an activity, and the returned promise must be
+  // polled by that same activity.
+  GRPC_MUST_USE_RESULT auto SpawnPushMessage(MessageHandle message) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
-    spine_->SpawnPushClientToServerMessage(std::move(message));
+    return spine_->SpawnPushClientToServerMessage(std::move(message));
+  }
+
+  // As above, but provides no way to wait for the push to complete, and
+  // therefore no flow control feedback to the caller.
+  // Callers should strongly prefer SpawnPushMessage(); this exists only for
+  // callers that are not running in a promise context.
+  void SpawnPushMessageWithoutWaiting(MessageHandle message) {
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
+    spine_->SpawnPushClientToServerMessageWithoutWaiting(std::move(message));
   }
 
   void FinishSends() {
@@ -558,8 +602,20 @@ class CallHandler {
     return spine_->PushServerToClientMessage(std::move(message));
   }
 
-  void SpawnPushMessage(MessageHandle message) {
-    spine_->SpawnPushServerToClientMessage(std::move(message));
+  // Pushes a message into the call from outside the call's party.
+  // Returns a promise that resolves to a StatusFlag once the push completes.
+  // Must be called from within an activity, and the returned promise must be
+  // polled by that same activity.
+  GRPC_MUST_USE_RESULT auto SpawnPushMessage(MessageHandle message) {
+    return spine_->SpawnPushServerToClientMessage(std::move(message));
+  }
+
+  // As above, but provides no way to wait for the push to complete, and
+  // therefore no flow control feedback to the caller.
+  // Callers should strongly prefer SpawnPushMessage(); this exists only for
+  // callers that are not running in a promise context.
+  void SpawnPushMessageWithoutWaiting(MessageHandle message) {
+    spine_->SpawnPushServerToClientMessageWithoutWaiting(std::move(message));
   }
 
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
