@@ -245,7 +245,6 @@
   expiry: 2027/03/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
-  requires: ["replace_auth_filter" ]
   allow_in_fuzzing_config: true
 - name: ph2_client_server
   description:
@@ -256,7 +255,6 @@
   expiry: 2027/03/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
-  requires: ["replace_auth_filter" ]
   allow_in_fuzzing_config: true
 - name: ph2_server
   description:
@@ -266,7 +264,6 @@
   expiry: 2027/03/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
-  requires: ["replace_auth_filter"]
   allow_in_fuzzing_config: true
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)

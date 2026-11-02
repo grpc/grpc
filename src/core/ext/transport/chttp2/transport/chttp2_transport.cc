@@ -2932,7 +2932,7 @@ void grpc_chttp2_act_on_flowctl_action(
   }
 }
 
-grpc_error_handle grpc_chttp2_try_http_parsing(
+grpc_error_handle grpc_chttp2_try_http1_parsing(
     const grpc_slice_buffer& read_buffer) {
   grpc_http_parser parser;
   size_t i = 0;
@@ -3013,7 +3013,7 @@ static void read_action_parse_loop_locked(
       }
     }
     if (errors[1] != absl::OkStatus()) {
-      errors[2] = grpc_chttp2_try_http_parsing(t->read_buffer);
+      errors[2] = grpc_chttp2_try_http1_parsing(t->read_buffer);
       error = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
                                             GPR_ARRAY_SIZE(errors));
     }

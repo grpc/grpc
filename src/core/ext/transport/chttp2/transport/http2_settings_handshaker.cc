@@ -470,7 +470,7 @@ absl::Status Http2SettingsHandshaker::ProcessReadBufferLocked() {
 void Http2SettingsHandshaker::RecordErrorLocked(absl::Status error) {
   if (!overall_status_.ok()) return;
   if (is_client_ && read_bytes_for_http1_check_.Count() > 0) {
-    grpc_error_handle http1_error = grpc_chttp2_try_http_parsing(
+    grpc_error_handle http1_error = grpc_chttp2_try_http1_parsing(
         *read_bytes_for_http1_check_.c_slice_buffer());
     if (!http1_error.ok()) {
       grpc_error_handle errors[2] = {error, http1_error};
