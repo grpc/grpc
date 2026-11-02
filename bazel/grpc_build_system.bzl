@@ -27,6 +27,7 @@
 Contains macros used throughout the repo.
 """
 
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@build_bazel_apple_support//rules:universal_binary.bzl", "universal_binary")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
@@ -212,16 +213,17 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         binary = name + "_native",
     )
 
-    # In order to avoid warnings from Bazel, names of the rule and its output file must differ.
-    native.genrule(
+    copy_file(
         name = name,
-        srcs = select({
-            "@platforms//os:macos": [name + "_universal"],
-            "//conditions:default": [name + "_native"],
+        src = select({
+            "@platforms//os:macos": name + "_universal",
+            "//conditions:default": name + "_native",
         }),
-        outs = [name + "_binary"],
-        cmd = "cp $< $@",
-        executable = True,
+        # In order to avoid warnings from Bazel, names of the rule and its output file must differ.
+        out = name + "_binary",
+        # NB: must be a symlink else copy_file requires a shell.
+        allow_symlink = True,
+        is_executable = True,
     )
 
 def grpc_internal_proto_library(
