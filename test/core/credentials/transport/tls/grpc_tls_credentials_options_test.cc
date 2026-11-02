@@ -673,6 +673,7 @@ int main(int argc, char** argv) {
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   grpc_core::ConfigVars::SetOverrides(overrides);
   ::testing::InitGoogleTest(&argc, argv);
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
