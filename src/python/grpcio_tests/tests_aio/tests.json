@@ -18,6 +18,7 @@
   "tests_aio.unit.call_test.TestStreamUnaryCall",
   "tests_aio.unit.call_test.TestUnaryStreamCall",
   "tests_aio.unit.call_test.TestUnaryUnaryCall",
+  "tests_aio.unit.callback_wrapper_leak_test.TestCallbackWrapperLeak",
   "tests_aio.unit.channel_argument_test.TestChannelArgument",
   "tests_aio.unit.channel_ready_test.TestChannelReady",
   "tests_aio.unit.channel_test.TestChannel",
