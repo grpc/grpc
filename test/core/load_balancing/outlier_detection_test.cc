@@ -264,6 +264,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
                                   .SetFailurePercentageRequestVolume(1)
                                   .SetMaxEjectionTime(Duration::Seconds(1))
                                   .SetBaseEjectionTime(Duration::Seconds(1))
+                                  .SetMaxEjectionPercent(40)
                                   .Build()),
       lb_policy());
   EXPECT_TRUE(status.ok()) << status;
@@ -317,6 +318,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
                                   .SetFailurePercentageRequestVolume(1)
                                   .SetMaxEjectionTime(Duration::Seconds(1))
                                   .SetBaseEjectionTime(Duration::Seconds(1))
+                                  .SetMaxEjectionPercent(40)
                                   .Build()),
       lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
@@ -413,6 +415,7 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
                      .SetFailurePercentageRequestVolume(1)
                      .SetMaxEjectionTime(Duration::Seconds(1))
                      .SetBaseEjectionTime(Duration::Seconds(1))
+                     .SetMaxEjectionPercent(40)
                      .Build();
   // Send initial update.
   absl::Status status =
@@ -605,7 +608,8 @@ TEST_F(OutlierDetectionTest,
 TEST_F(OutlierDetectionTest,
        SuccessRateEjectionUnenforcedDueToMaxEjectionOverflow) {
   // Use 4 addresses so that a single ejection brings current_percent to 25%,
-  // which is above max_ejection_percent=10.  We pre-load 2 outliers, so the
+  // and a second ejection would bring the ejection percent above the
+  // configured max_ejection_percent=35.  We pre-load 2 outliers, so the
   // first goes through enforced and the second falls into
   // max_ejection_overflow.
   constexpr std::array<absl::string_view, 4> kAddresses = {
@@ -618,9 +622,10 @@ TEST_F(OutlierDetectionTest,
                       .SetSuccessRateEnforcementPercentage(100)
                       .SetSuccessRateMinHosts(1)
                       .SetSuccessRateRequestVolume(1)
-                      // Default is 10%; with 4 endpoints, ejecting 1 puts
-                      // current_percent at 25%, blocking further ejections.
-                      .SetMaxEjectionPercent(10)
+                      // Configure to 35%; with 4 endpoints, ejecting 1 puts
+                      // current_percent at 25%. Ejecting 2 would put the
+                      // current_percent at 50%, blocking future ejections
+                      .SetMaxEjectionPercent(35)
                       .SetMaxEjectionTime(Duration::Seconds(1))
                       .SetBaseEjectionTime(Duration::Seconds(1))
                       .Build()),
@@ -687,7 +692,7 @@ TEST_F(OutlierDetectionTest,
        FailurePercentageEjectionUnenforcedDueToMaxEjectionOverflow) {
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
-  // 3 endpoints, all failing.  With max_ejection_percent=10, only the first
+  // 3 endpoints, all failing.  With max_ejection_percent=40, only the first
   // can be ejected; the other 2 hit max_ejection_overflow.
   absl::Status status = ApplyUpdate(
       BuildUpdate(kAddresses,
@@ -696,7 +701,7 @@ TEST_F(OutlierDetectionTest,
                       .SetFailurePercentageEnforcementPercentage(100)
                       .SetFailurePercentageMinimumHosts(1)
                       .SetFailurePercentageRequestVolume(1)
-                      .SetMaxEjectionPercent(10)
+                      .SetMaxEjectionPercent(40)
                       .SetMaxEjectionTime(Duration::Seconds(1))
                       .SetBaseEjectionTime(Duration::Seconds(1))
                       .Build()),
