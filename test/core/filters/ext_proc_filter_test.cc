@@ -30,7 +30,10 @@
 #include <grpc/status.h>
 #include <grpc/support/metrics.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <string>
 #include <utility>
@@ -103,6 +106,32 @@ constexpr char kMessage1Mutated[] = "message1-mutated";
 constexpr char kMessage1DoubleMutated[] = "message1-mutated-mutated";
 constexpr bool kEndOfStream = true;
 constexpr char kEmptyBody[] = "";
+
+//
+// Matchers
+//
+
+// Matches the bucket counts of a duration histogram (60s max, 20 buckets)
+// holding exactly one sample of at least 2 seconds.
+//
+// The tests hold each event for 2 seconds, but the fuzzer may also delay the
+// event engine's tasks, which advances the simulated clock while the filter is
+// waiting on the ext_proc server. Such delays only lengthen the measured
+// duration, so the sample lands in the 2-second bucket (index 4) or above.
+MATCHER(HasOneSampleOfAtLeastTwoSeconds,
+        "has one sample, in the 2-second bucket or above") {
+  constexpr size_t kTwoSecondBucket = 4;
+  if (arg.size() <= kTwoSecondBucket) {
+    *result_listener << "has only " << arg.size() << " buckets";
+    return false;
+  }
+  const uint64_t below_two_seconds =
+      std::accumulate(arg.begin(), arg.begin() + kTwoSecondBucket, uint64_t{0});
+  const uint64_t total = std::accumulate(arg.begin(), arg.end(), uint64_t{0});
+  *result_listener << "has " << total << " sample(s), " << below_two_seconds
+                   << " of them below 2 seconds";
+  return below_two_seconds == 0 && total == 1;
+}
 
 //
 // Test fixture
@@ -2432,8 +2461,7 @@ FILTER_TEST(ExtProcFilterTest, ExtProcClientHeadersDurationMetric) {
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
   EXPECT_THAT(stats_plugin->GetHistogramValueByName(
                   "grpc.client_ext_proc.client_headers_duration", {kServerUri}),
-              Optional(ElementsAre(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   0, 0, 0, 0, 0)));
+              Optional(HasOneSampleOfAtLeastTwoSeconds()));
   WaitForAllPendingWork();
 }
 
@@ -2472,8 +2500,7 @@ FILTER_TEST(ExtProcFilterTest, ExtProcClientHalfCloseDurationMetric) {
   EXPECT_THAT(
       stats_plugin->GetHistogramValueByName(
           "grpc.client_ext_proc.client_half_close_duration", {kServerUri}),
-      Optional(ElementsAre(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0)));
+      Optional(HasOneSampleOfAtLeastTwoSeconds()));
   WaitForAllPendingWork();
 }
 
@@ -2545,8 +2572,7 @@ FILTER_TEST(ExtProcFilterTest, ExtProcServerHeadersDurationMetric) {
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
   EXPECT_THAT(stats_plugin->GetHistogramValueByName(
                   "grpc.client_ext_proc.server_headers_duration", {kServerUri}),
-              Optional(ElementsAre(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   0, 0, 0, 0, 0)));
+              Optional(HasOneSampleOfAtLeastTwoSeconds()));
   WaitForAllPendingWork();
 }
 
@@ -2574,8 +2600,7 @@ FILTER_TEST(ExtProcFilterTest, ExtProcServerTrailersDurationMetric) {
   EXPECT_THAT(
       stats_plugin->GetHistogramValueByName(
           "grpc.client_ext_proc.server_trailers_duration", {kServerUri}),
-      Optional(ElementsAre(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0)));
+      Optional(HasOneSampleOfAtLeastTwoSeconds()));
   WaitForAllPendingWork();
 }
 
@@ -2631,14 +2656,14 @@ FILTER_TEST(ExtProcFilterTest, ServerSideDurationMetrics) {
   side_stream->SendMessageToClient(
       MakeResponseTrailersMutationResponse({}).SerializeAsString());
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
-  // The server metrics have no labels. Each has one 2-second sample.
+  // The server metrics have no labels. Each has one sample of at least 2
+  // seconds.
   for (absl::string_view metric :
        {"client_headers_duration", "client_half_close_duration",
         "server_headers_duration", "server_trailers_duration"}) {
     EXPECT_THAT(stats_plugin->GetHistogramValueByName(
                     absl::StrCat("grpc.server_ext_proc.", metric)),
-                Optional(ElementsAre(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                     0, 0, 0, 0, 0, 0)))
+                Optional(HasOneSampleOfAtLeastTwoSeconds()))
         << metric;
     EXPECT_EQ(stats_plugin->GetHistogramValueByName(
                   absl::StrCat("grpc.client_ext_proc.", metric), {kServerUri}),
