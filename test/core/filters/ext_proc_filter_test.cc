@@ -898,6 +898,64 @@ FILTER_TEST(ExtProcFilterTest, BidiStreamNormalHalfCloseSuccess) {
   WaitForAllPendingWork();
 }
 
+// The request body is not sent to the ext_proc server, so client messages
+// and the half-close are forwarded directly to the backend. However, the
+// child call is not started until the ext_proc server responds to the request
+// headers, so the filter must hold them until then.
+FILTER_TEST(ExtProcFilterTest, ClientMessageBeforeRequestHeadersResponse) {
+  Init(ConfigBuilder().SetRequestHeaderMode(true).SetResponseHeaderMode(false));
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  auto side_stream = transport_factory_->WaitForStream(target_, kExtProcMethod);
+  ASSERT_NE(side_stream, nullptr);
+  EXPECT_THAT(GetNextSideStreamRequest(*side_stream),
+              Optional(MatchesRequestHeaders(Contains(Pair(":path", kPath)))));
+  PushClientMessage(client, NewMessage(kMessage1));
+  PushClientHalfClose(client);
+  side_stream->SendMessageToClient(
+      MakeRequestHeadersMutationResponse({}).SerializeAsString());
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  EXPECT_TRUE(PullClientInitialMetadata(*backend).ok());
+  EXPECT_THAT(PullClientMessage(*backend), IsMessage(kMessage1));
+  EXPECT_THAT(PullClientMessage(*backend), IsEndOfStream());
+  PushServerInitialMetadata(*backend, NewServerMetadata());
+  PushServerMessage(*backend, NewMessage(kMessage1));
+  EXPECT_TRUE(PullServerInitialMetadata(client).ok());
+  EXPECT_THAT(PullServerMessage(client), IsMessage(kMessage1));
+  PushServerTrailingMetadata(*backend,
+                             ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  EXPECT_EQ(GetNextSideStreamRequest(*side_stream), std::nullopt);
+  WaitForAllPendingWork();
+}
+
+// As above, but the client half-closes without sending any message, so the
+// half-close is the first thing the filter has to hold.
+FILTER_TEST(ExtProcFilterTest,
+            ClientHalfCloseWithoutMessageBeforeRequestHeadersResponse) {
+  Init(ConfigBuilder().SetRequestHeaderMode(true).SetResponseHeaderMode(false));
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  auto side_stream = transport_factory_->WaitForStream(target_, kExtProcMethod);
+  ASSERT_NE(side_stream, nullptr);
+  EXPECT_THAT(GetNextSideStreamRequest(*side_stream),
+              Optional(MatchesRequestHeaders(Contains(Pair(":path", kPath)))));
+  PushClientHalfClose(client);
+  side_stream->SendMessageToClient(
+      MakeRequestHeadersMutationResponse({}).SerializeAsString());
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  EXPECT_TRUE(PullClientInitialMetadata(*backend).ok());
+  EXPECT_THAT(PullClientMessage(*backend), IsEndOfStream());
+  PushServerInitialMetadata(*backend, NewServerMetadata());
+  EXPECT_TRUE(PullServerInitialMetadata(client).ok());
+  PushServerTrailingMetadata(*backend,
+                             ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_THAT(PullServerMessage(client), IsEndOfStream());
+  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  EXPECT_EQ(GetNextSideStreamRequest(*side_stream), std::nullopt);
+  WaitForAllPendingWork();
+}
+
 //
 // Response headers / body / trailers tests
 //
@@ -2261,6 +2319,59 @@ FILTER_TEST(ExtProcFilterTest,
   PushServerTrailingMetadata(*backend,
                              ServerMetadataFromStatus(GRPC_STATUS_OK));
   EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  WaitForAllPendingWork();
+}
+
+// The client message and half-close are held while waiting for the ext_proc
+// server to respond to the request headers. If the side stream fails during
+// that wait, fail-open starts the child call and forwards them.
+FILTER_TEST(ExtProcFilterTest,
+            StreamErrorFailureModeAllowWhileClientMessageHeldSuccess) {
+  Init(ConfigBuilder()
+           .SetFailureModeAllow(true)
+           .SetRequestHeaderMode(true)
+           .SetResponseHeaderMode(false));
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  auto side_stream = transport_factory_->WaitForStream(target_, kExtProcMethod);
+  ASSERT_NE(side_stream, nullptr);
+  EXPECT_THAT(GetNextSideStreamRequest(*side_stream),
+              Optional(MatchesRequestHeaders(Contains(Pair(":path", kPath)))));
+  PushClientMessage(client, NewMessage(kMessage1));
+  PushClientHalfClose(client);
+  side_stream->MaybeSendStatusToClient(
+      absl::UnavailableError("Call closed by ext_proc server on headers"));
+  std::optional<CallHandler> backend = GetNextHandler();
+  ASSERT_TRUE(backend.has_value());
+  EXPECT_TRUE(PullClientInitialMetadata(*backend).ok());
+  EXPECT_THAT(PullClientMessage(*backend), IsMessage(kMessage1));
+  EXPECT_THAT(PullClientMessage(*backend), IsEndOfStream());
+  PushServerInitialMetadata(*backend, NewServerMetadata());
+  PushServerMessage(*backend, NewMessage(kMessage1));
+  EXPECT_TRUE(PullServerInitialMetadata(client).ok());
+  EXPECT_THAT(PullServerMessage(client), IsMessage(kMessage1));
+  PushServerTrailingMetadata(*backend,
+                             ServerMetadataFromStatus(GRPC_STATUS_OK));
+  EXPECT_EQ(PullServerTrailingStatus(client), absl::OkStatus());
+  WaitForAllPendingWork();
+}
+
+// As above, but without fail-open the call fails instead of waiting forever.
+FILTER_TEST(ExtProcFilterTest,
+            StreamErrorFailureModeFalseWhileClientMessageHeld) {
+  Init(ConfigBuilder().SetRequestHeaderMode(true).SetResponseHeaderMode(false));
+  CallInitiator client = StartCall(NewClientMetadata({}, kPath));
+  auto side_stream = transport_factory_->WaitForStream(target_, kExtProcMethod);
+  ASSERT_NE(side_stream, nullptr);
+  EXPECT_THAT(GetNextSideStreamRequest(*side_stream),
+              Optional(MatchesRequestHeaders(Contains(Pair(":path", kPath)))));
+  PushClientMessage(client, NewMessage(kMessage1));
+  PushClientHalfClose(client);
+  side_stream->MaybeSendStatusToClient(absl::UnavailableError(
+      "Call closed by ext_proc server on request headers"));
+  EXPECT_EQ(
+      PullServerTrailingStatus(client),
+      absl::InternalError("External processor stream failed: UNAVAILABLE: Call "
+                          "closed by ext_proc server on request headers"));
   WaitForAllPendingWork();
 }
 

@@ -663,8 +663,7 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
       seen_ = true;
       EXPECT_THAT(request, MatchesRequestBody(kEmptyBody, kEndOfStream));
       if (send_response_) {
-        stream_->SendResponse(
-            MakeRequestBodyMutationResponse(/*body=*/"", kEndOfStream));
+        stream_->SendResponse(MakeRequestHalfCloseResponse());
       }
     }
 
@@ -1307,7 +1306,7 @@ TEST_P(XdsExtProcEnd2endTest, BidiStreamNormalHalfCloseSuccess) {
   ASSERT_THAT(eos_req, ::testing::Optional(
                            MatchesRequestBody(kEmptyBody, kEndOfStream)));
   EXPECT_TRUE(eos_req->request_body().end_of_stream_without_message());
-  ext_proc_stream->SendResponse(MakeRequestBodyHalfCloseResponse());
+  ext_proc_stream->SendResponse(MakeRequestHalfCloseResponse());
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
@@ -1507,9 +1506,9 @@ TEST_P(XdsExtProcEnd2endTest, DrainIgnoredAfterHalfClose) {
   stream.StartWritesDone();
   auto req2 = ext_proc_stream->GetNextRequest();
   ASSERT_THAT(req2, ::testing::Optional(MatchesRequestBody("", kEndOfStream)));
-  ext_proc_stream->SendResponse(
-      SetRequestDrains(MakeRequestBodyHalfCloseResponse(),
-                       /*drain_requests=*/true, /*drain_responses=*/false));
+  ext_proc_stream->SendResponse(SetRequestDrains(MakeRequestHalfCloseResponse(),
+                                                 /*drain_requests=*/true,
+                                                 /*drain_responses=*/false));
   EXPECT_FALSE(stream.WaitForRead().has_value());
   EXPECT_THAT(stream.WaitForStatus(), ::testing::Optional(IsStatusOk()));
 }
@@ -1814,7 +1813,7 @@ TEST_P(XdsExtProcEnd2endTest, ExtProcClientHalfCloseDurationMetric) {
   req = ext_proc_stream->GetNextRequest();
   ASSERT_TRUE(req.has_value());
   EXPECT_THAT(*req, MatchesRequestBody(kEmptyBody, kEndOfStream));
-  ext_proc_stream->SendResponse(MakeRequestBodyHalfCloseResponse());
+  ext_proc_stream->SendResponse(MakeRequestHalfCloseResponse());
   Status status = rpc.GetStatus();
   EXPECT_THAT(status, IsStatusOk());
   const std::string expected_target = absl::StrCat("xds:", kServerName);
