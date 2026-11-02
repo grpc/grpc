@@ -842,3 +842,6 @@ cdef extern from "src/core/config/config_vars.h" namespace "grpc_core":
   cdef cppclass ConfigVars:
     @staticmethod
     void Reset()
+
+cdef extern from "src/core/lib/experiments/experiments.h" namespace "grpc_core" nogil:
+  bint IsPythonSingleCopyRecvEnabled()
