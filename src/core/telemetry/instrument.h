@@ -796,8 +796,7 @@ class LowContentionBackend final {
     counters_[index].fetch_add(amount, std::memory_order_relaxed);
   }
   void Subtract(size_t index, uint64_t amount) {
-    uint64_t old_value =
-        counters_[index].fetch_sub(amount, std::memory_order_relaxed);
+    [[maybe_unused]] uint64_t old_value = counters_[index].fetch_sub(amount, std::memory_order_relaxed);
     // Every decrement should have a corresponding increment.
     GRPC_DCHECK(old_value >= amount);
   }
