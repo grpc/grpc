@@ -51,6 +51,7 @@ using tsi::AkidFromCertificate;
 using tsi::AkidFromCrl;
 using tsi::HasCrlSignBit;
 using tsi::IssuerFromCert;
+using tsi::ParseDnsString;
 using tsi::ParsePemCertificateChain;
 using tsi::ParsePemPrivateKey;
 using tsi::ParseUriString;
@@ -59,6 +60,8 @@ using tsi::SslProtectorProtectFlush;
 using tsi::SslProtectorUnprotect;
 using tsi::VerifyCrlCertIssuerNamesMatch;
 using tsi::VerifyCrlSignature;
+using tsi::X509Principal;
+using tsi::X509SubjectRfc2253;
 
 const char* kValidCrl = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kCrlIssuer = "test/core/tsi/test_creds/crl_data/ca.pem";
@@ -919,7 +922,7 @@ TEST(ParseUriString, WrongType) {
   ASN1_STRING_set(other, "foo", -1);
   GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, other);
   absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
-  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInternal);
   GENERAL_NAME_free(subject_alt_name);
 }
 
@@ -928,8 +931,321 @@ TEST(ParseUriString, DontSetASN1String) {
   ASN1_UTF8STRING* other = ASN1_UTF8STRING_new();
   GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, other);
   absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
-  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInternal);
   GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseDnsString, ValidDns) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_IA5STRING* dns = ASN1_IA5STRING_new();
+  ASN1_STRING_set(dns, "foo.bar.com", -1);
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, dns);
+  absl::StatusOr<std::string> parsed_dns = ParseDnsString(subject_alt_name);
+  ASSERT_EQ(parsed_dns.status(), absl::OkStatus());
+  EXPECT_EQ(*parsed_dns, "foo.bar.com");
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseDnsString, EmptyDns) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_IA5STRING* dns = ASN1_IA5STRING_new();
+  ASN1_STRING_set(dns, "", -1);
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, dns);
+  absl::StatusOr<std::string> parsed_dns = ParseDnsString(subject_alt_name);
+  ASSERT_EQ(parsed_dns.status(), absl::OkStatus());
+  EXPECT_EQ(*parsed_dns, "");
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseDnsString, InvalidUtf8) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_UTF8STRING* dns = ASN1_UTF8STRING_new();
+  // This sequence is invalid UTF8.
+  const unsigned char invalid_utf8[] = {0xc0};
+  ASN1_STRING_set(reinterpret_cast<ASN1_STRING*>(dns), invalid_utf8,
+                  sizeof(invalid_utf8));
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, dns);
+  absl::StatusOr<std::string> parsed_dns = ParseDnsString(subject_alt_name);
+  EXPECT_EQ(parsed_dns.status().code(), absl::StatusCode::kInvalidArgument);
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseDnsString, WrongType) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_IA5STRING* other = ASN1_IA5STRING_new();
+  ASN1_STRING_set(other, "spiffe://foo.bar/path", -1);
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_URI, other);
+  absl::StatusOr<std::string> parsed_dns = ParseDnsString(subject_alt_name);
+  EXPECT_EQ(parsed_dns.status().code(), absl::StatusCode::kInternal);
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseDnsString, NullSubjectAltName) {
+  absl::StatusOr<std::string> parsed_dns = ParseDnsString(nullptr);
+  EXPECT_EQ(parsed_dns.status().code(), absl::StatusCode::kInternal);
+}
+
+constexpr absl::string_view kTsiTestCredentialsDir = "src/core/tsi/test_creds/";
+
+X509* LoadTestCertificate(absl::string_view cert_file) {
+  absl::StatusOr<Slice> pem =
+      LoadFile(absl::StrCat(kTsiTestCredentialsDir, cert_file));
+  if (!pem.ok()) return nullptr;
+  return ReadPemCert(pem->as_string_view());
+}
+
+void AddIa5San(GENERAL_NAMES* subject_alt_names, int san_type,
+               absl::string_view value) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  subject_alt_name->type = san_type;
+  ASN1_IA5STRING* ia5_value = ASN1_IA5STRING_new();
+  ASN1_STRING_set(ia5_value, value.data(), static_cast<int>(value.size()));
+  if (san_type == GEN_URI) {
+    subject_alt_name->d.uniformResourceIdentifier = ia5_value;
+  } else if (san_type == GEN_DNS) {
+    subject_alt_name->d.dNSName = ia5_value;
+  } else if (san_type == GEN_EMAIL) {
+    subject_alt_name->d.rfc822Name = ia5_value;
+  }
+  sk_GENERAL_NAME_push(subject_alt_names, subject_alt_name);
+}
+
+void AddIpSan(GENERAL_NAMES* subject_alt_names, const unsigned char* ip_bytes,
+              size_t ip_bytes_len) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  subject_alt_name->type = GEN_IPADD;
+  subject_alt_name->d.iPAddress = ASN1_OCTET_STRING_new();
+  ASN1_OCTET_STRING_set(subject_alt_name->d.iPAddress, ip_bytes,
+                        static_cast<int>(ip_bytes_len));
+  sk_GENERAL_NAME_push(subject_alt_names, subject_alt_name);
+}
+
+void AttachSansAndFree(X509* cert, GENERAL_NAMES* subject_alt_names) {
+  EXPECT_EQ(X509_add1_ext_i2d(cert, NID_subject_alt_name, subject_alt_names, 0,
+                              X509V3_ADD_DEFAULT),
+            1);
+  sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
+}
+
+TEST(X509SubjectRfc2253, NullCert) {
+  EXPECT_EQ(X509SubjectRfc2253(nullptr).status().code(),
+            absl::StatusCode::kInvalidArgument);
+}
+
+TEST(X509SubjectRfc2253, EmptySubject) {
+  X509* cert = X509_new();
+  ASSERT_NE(cert, nullptr);
+  absl::StatusOr<std::string> subject = X509SubjectRfc2253(cert);
+  ASSERT_EQ(subject.status(), absl::OkStatus());
+  EXPECT_TRUE(subject->empty());
+  X509_free(cert);
+}
+
+TEST(X509SubjectRfc2253, StandardSubject) {
+  X509* cert = LoadTestCertificate("server0.pem");
+  ASSERT_NE(cert, nullptr);
+  absl::StatusOr<std::string> subject = X509SubjectRfc2253(cert);
+  ASSERT_EQ(subject.status(), absl::OkStatus());
+  EXPECT_EQ(
+      *subject,
+      "CN=*.test.google.com.au,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
+  X509_free(cert);
+}
+
+TEST(X509SubjectRfc2253, EscapedCommaInSubject) {
+  X509* cert = LoadTestCertificate("server1.pem");
+  ASSERT_NE(cert, nullptr);
+  absl::StatusOr<std::string> subject = X509SubjectRfc2253(cert);
+  ASSERT_EQ(subject.status(), absl::OkStatus());
+  EXPECT_EQ(*subject,
+            "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
+  X509_free(cert);
+}
+
+TEST(X509SubjectRfc2253, MultipleAttributesInSubject) {
+  X509* cert = LoadTestCertificate("multi-domain.pem");
+  ASSERT_NE(cert, nullptr);
+  absl::StatusOr<std::string> subject = X509SubjectRfc2253(cert);
+  ASSERT_EQ(subject.status(), absl::OkStatus());
+  EXPECT_EQ(*subject, "CN=xpigors,OU=Google,L=SF,ST=CA,C=US");
+  X509_free(cert);
+}
+
+TEST(X509SubjectRfc2253, PrintExFailure) {
+  X509* cert = X509_new();
+  ASSERT_NE(cert, nullptr);
+  X509_NAME* name = X509_get_subject_name(cert);
+  ASSERT_NE(name, nullptr);
+  ASSERT_EQ(X509_NAME_add_entry_by_txt(
+                name, "CN", MBSTRING_ASC,
+                reinterpret_cast<const unsigned char*>("test"), 4, -1, 0),
+            1);
+  X509_NAME_ENTRY* entry = X509_NAME_get_entry(name, 0);
+  ASSERT_NE(entry, nullptr);
+  ASN1_STRING* val = X509_NAME_ENTRY_get_data(entry);
+  ASSERT_NE(val, nullptr);
+  // A BMPString is UCS-2 (2 bytes per character), so an odd length is
+  // malformed and X509_NAME_print_ex fails on both BoringSSL and OpenSSL.
+  // (Invalid UTF-8 is not portable: OpenSSL escapes it instead of failing.)
+  const unsigned char odd_length_bmp[] = {0x00, 0x41, 0x00};
+  ASSERT_EQ(ASN1_STRING_set(val, odd_length_bmp, sizeof(odd_length_bmp)), 1);
+  val->type = V_ASN1_BMPSTRING;
+  EXPECT_EQ(X509SubjectRfc2253(cert).status().code(),
+            absl::StatusCode::kInternal);
+  X509_free(cert);
+}
+
+struct TestSan {
+  int type;  // GEN_URI, GEN_DNS, GEN_EMAIL or GEN_IPADD.
+  absl::string_view value;
+};
+
+// Returns the principal of a certificate whose subject is "CN=test" (or empty
+// if \a with_subject is false) and whose SANs are \a sans, in order.
+absl::StatusOr<std::string> PrincipalOfCert(const std::vector<TestSan>& sans,
+                                            bool with_subject = true) {
+  X509* cert = X509_new();
+  EXPECT_NE(cert, nullptr);
+  if (with_subject) {
+    EXPECT_EQ(X509_NAME_add_entry_by_txt(
+                  X509_get_subject_name(cert), "CN", MBSTRING_ASC,
+                  reinterpret_cast<const unsigned char*>("test"), 4, -1, 0),
+              1);
+  }
+  if (!sans.empty()) {
+    GENERAL_NAMES* subject_alt_names = sk_GENERAL_NAME_new_null();
+    EXPECT_NE(subject_alt_names, nullptr);
+    for (const TestSan& san : sans) {
+      if (san.type == GEN_IPADD) {
+        AddIpSan(subject_alt_names,
+                 reinterpret_cast<const unsigned char*>(san.value.data()),
+                 san.value.size());
+      } else {
+        AddIa5San(subject_alt_names, san.type, san.value);
+      }
+    }
+    AttachSansAndFree(cert, subject_alt_names);
+  }
+  absl::StatusOr<std::string> principal = X509Principal(cert);
+  X509_free(cert);
+  return principal;
+}
+
+constexpr absl::string_view kEmbeddedNullUri("https://bad\0example.com", 23);
+constexpr absl::string_view kEmbeddedNullDns("bad\0dns.com", 11);
+constexpr absl::string_view kIpv4Loopback("\x7f\x00\x00\x01", 4);
+
+TEST(X509Principal, UriSanPreferredEvenWhenListedAfterDnsSan) {
+  absl::StatusOr<std::string> principal = PrincipalOfCert(
+      {{GEN_DNS, "valid.example.com"}, {GEN_URI, "https://valid.example.com"}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "https://valid.example.com");
+}
+
+TEST(X509Principal, FirstOfSeveralDnsSans) {
+  absl::StatusOr<std::string> principal = PrincipalOfCert(
+      {{GEN_DNS, "first.example.com"}, {GEN_DNS, "second.example.com"}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "first.example.com");
+}
+
+TEST(X509Principal, SkipsUriSanWithEmbeddedNull) {
+  absl::StatusOr<std::string> principal = PrincipalOfCert(
+      {{GEN_URI, kEmbeddedNullUri}, {GEN_URI, "https://valid.example.com"}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "https://valid.example.com");
+}
+
+TEST(X509Principal, SkipsEmptyUriSan) {
+  absl::StatusOr<std::string> principal =
+      PrincipalOfCert({{GEN_URI, ""}, {GEN_URI, "https://valid.example.com"}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "https://valid.example.com");
+}
+
+TEST(X509Principal, SkipsDnsSanWithEmbeddedNull) {
+  absl::StatusOr<std::string> principal = PrincipalOfCert(
+      {{GEN_DNS, kEmbeddedNullDns}, {GEN_DNS, "valid.example.com"}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "valid.example.com");
+}
+
+TEST(X509Principal, SkipsEmptyDnsSan) {
+  absl::StatusOr<std::string> principal =
+      PrincipalOfCert({{GEN_DNS, ""}, {GEN_DNS, "valid.example.com"}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "valid.example.com");
+}
+
+TEST(X509Principal, UnusableUriSanFallsBackToDnsSan) {
+  absl::StatusOr<std::string> principal =
+      PrincipalOfCert({{GEN_URI, kEmbeddedNullUri},
+                       {GEN_URI, ""},
+                       {GEN_DNS, "valid.example.com"}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "valid.example.com");
+}
+
+TEST(X509Principal, UnusableSansFallBackToSubject) {
+  absl::StatusOr<std::string> principal =
+      PrincipalOfCert({{GEN_URI, kEmbeddedNullUri}, {GEN_DNS, ""}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "CN=test");
+}
+
+TEST(X509Principal, IgnoresEmailAndIpAddressSans) {
+  absl::StatusOr<std::string> principal =
+      PrincipalOfCert({{GEN_EMAIL, "foo@example.com"},
+                       {GEN_IPADD, kIpv4Loopback},
+                       {GEN_DNS, "valid.example.com"}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "valid.example.com");
+}
+
+TEST(X509Principal, OnlyEmailAndIpAddressSansFallBackToSubject) {
+  absl::StatusOr<std::string> principal = PrincipalOfCert(
+      {{GEN_EMAIL, "foo@example.com"}, {GEN_IPADD, kIpv4Loopback}});
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "CN=test");
+}
+
+TEST(X509Principal, NoSansAndEmptySubjectYieldsEmptyString) {
+  absl::StatusOr<std::string> principal =
+      PrincipalOfCert({}, /*with_subject=*/false);
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "");
+}
+
+TEST(X509Principal, PrefersUriSan) {
+  // multi-domain.pem has URI SANs, DNS SANs and a subject.
+  X509* cert = LoadTestCertificate("multi-domain.pem");
+  ASSERT_NE(cert, nullptr);
+  absl::StatusOr<std::string> principal = X509Principal(cert);
+  X509_free(cert);
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "https://foo.test.domain.com/test");
+}
+
+TEST(X509Principal, FallsBackToDnsSan) {
+  // server1.pem has DNS SANs but no URI SAN.
+  X509* cert = LoadTestCertificate("server1.pem");
+  ASSERT_NE(cert, nullptr);
+  absl::StatusOr<std::string> principal = X509Principal(cert);
+  X509_free(cert);
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(*principal, "*.test.google.fr");
+}
+
+TEST(X509Principal, FallsBackToSubject) {
+  // server0.pem has no SAN extension.
+  X509* cert = LoadTestCertificate("server0.pem");
+  ASSERT_NE(cert, nullptr);
+  absl::StatusOr<std::string> principal = X509Principal(cert);
+  X509_free(cert);
+  ASSERT_EQ(principal.status(), absl::OkStatus());
+  EXPECT_EQ(
+      *principal,
+      "CN=*.test.google.com.au,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU");
 }
 
 TEST(DefaultRepoRoots, RootsAreValid) {

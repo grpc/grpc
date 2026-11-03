@@ -59,7 +59,7 @@ bool IsUnknownSetting(const uint16_t setting_id) {
 
 Http2Status ValidateSettingsValues(
     std::vector<Http2SettingsFrame::Setting>& list) {
-  for (const auto& setting : list) {
+  for (const Http2SettingsFrame::Setting& setting : list) {
     if (GPR_UNLIKELY(setting.id == Http2Settings::kInitialWindowSizeWireId &&
                      setting.value > RFC9113::kMaxSize31Bit)) {
       LOG(ERROR)
@@ -224,7 +224,7 @@ class SerializeHeaderAndPayload {
         << "SerializeHeaderAndPayload Http2DataFrame Type:0 { stream_id:"
         << frame.stream_id << ", end_stream:" << frame.end_stream
         << ", payload_length:" << frame.payload.Length() << "}";
-    auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
+    MutableSlice hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{static_cast<uint32_t>(frame.payload.Length()),
                      static_cast<uint8_t>(FrameType::kData),
                      MaybeFlag(frame.end_stream, kFlagEndStream),
@@ -241,7 +241,7 @@ class SerializeHeaderAndPayload {
         << frame.stream_id << ", end_headers:" << frame.end_headers
         << ", end_stream:" << frame.end_stream
         << ", payload_length:" << frame.payload.Length() << "}";
-    auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
+    MutableSlice hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{
         static_cast<uint32_t>(frame.payload.Length()),
         static_cast<uint8_t>(FrameType::kHeader),
@@ -261,7 +261,7 @@ class SerializeHeaderAndPayload {
                           << ", end_headers:" << frame.end_headers
                           << ", payload_length:" << frame.payload.Length()
                           << "}";
-    auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
+    MutableSlice hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{
         static_cast<uint32_t>(frame.payload.Length()),
         static_cast<uint8_t>(FrameType::kContinuation),
@@ -277,7 +277,7 @@ class SerializeHeaderAndPayload {
     GRPC_HTTP2_FRAME_DLOG
         << "SerializeHeaderAndPayload Http2RstStreamFrame Type:3 { stream_id:"
         << frame.stream_id << ", error_code:" << frame.error_code << "}";
-    auto hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 4);
+    MutableSlice hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 4);
     Http2FrameHeader{4, static_cast<uint8_t>(FrameType::kRstStream), 0,
                      frame.stream_id}
         .Serialize(hdr_and_payload.begin());
@@ -292,14 +292,14 @@ class SerializeHeaderAndPayload {
         << DebugStringSettings(frame.settings) << "] }";
     // Six bytes per setting (u16 id, u32 value)
     const size_t payload_size = 6 * frame.settings.size();
-    auto hdr_and_payload =
+    MutableSlice hdr_and_payload =
         extra_bytes_.TakeFirst(kFrameHeaderSize + payload_size);
     Http2FrameHeader{static_cast<uint32_t>(payload_size),
                      static_cast<uint8_t>(FrameType::kSettings),
                      MaybeFlag(frame.ack, kFlagAck), 0}
         .Serialize(hdr_and_payload.begin());
     size_t offset = kFrameHeaderSize;
-    for (auto& setting : frame.settings) {
+    for (const Http2SettingsFrame::Setting& setting : frame.settings) {
       Write2b(setting.id, hdr_and_payload.begin() + offset);
       Write4b(setting.value, hdr_and_payload.begin() + offset + 2);
       offset += 6;
@@ -311,7 +311,7 @@ class SerializeHeaderAndPayload {
     GRPC_HTTP2_FRAME_DLOG
         << "SerializeHeaderAndPayload Http2PingFrame Type:6 { ack:" << frame.ack
         << ", opaque:" << frame.opaque << "}";
-    auto hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 8);
+    MutableSlice hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 8);
     Http2FrameHeader{8, static_cast<uint8_t>(FrameType::kPing),
                      MaybeFlag(frame.ack, kFlagAck), 0}
         .Serialize(hdr_and_payload.begin());
@@ -324,7 +324,8 @@ class SerializeHeaderAndPayload {
         << "SerializeHeaderAndPayload Http2GoawayFrame Type:7 { last_stream_id:"
         << frame.last_stream_id << ", error_code:" << frame.error_code
         << ", debug_data:" << frame.debug_data.as_string_view() << "}";
-    auto hdr_and_fixed_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 8);
+    MutableSlice hdr_and_fixed_payload =
+        extra_bytes_.TakeFirst(kFrameHeaderSize + 8);
     Http2FrameHeader{static_cast<uint32_t>(8 + frame.debug_data.length()),
                      static_cast<uint8_t>(FrameType::kGoaway), 0, 0}
         .Serialize(hdr_and_fixed_payload.begin());
@@ -345,7 +346,7 @@ class SerializeHeaderAndPayload {
                              "Type:8 { stream_id:"
                           << frame.stream_id
                           << ", increment:" << frame.increment << "}";
-    auto hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 4);
+    MutableSlice hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 4);
     Http2FrameHeader{4, static_cast<uint8_t>(FrameType::kWindowUpdate), 0,
                      frame.stream_id}
         .Serialize(hdr_and_payload.begin());
@@ -363,7 +364,7 @@ class SerializeHeaderAndPayload {
     GRPC_HTTP2_FRAME_DLOG << "SerializeHeaderAndPayload Http2SecurityFrame "
                              "Type:200 { payload_length:"
                           << frame.payload.Length() << ", payload: redacted}";
-    auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
+    MutableSlice hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{static_cast<uint32_t>(frame.payload.Length()),
                      static_cast<uint8_t>(FrameType::kCustomSecurity), 0, 0}
         .Serialize(hdr.begin());
@@ -381,7 +382,7 @@ class SerializeHeaderAndPayload {
   std::string DebugStringSettings(
       const std::vector<Http2SettingsFrame::Setting>& settings) {
     std::string settings_str;
-    for (const auto& setting : settings) {
+    for (const Http2SettingsFrame::Setting& setting : settings) {
       absl::StrAppend(&settings_str, " {id:", setting.id,
                       ", value:", setting.value, "}");
     }
@@ -709,14 +710,14 @@ std::string Http2FrameHeader::ToString() const {
 SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   size_t buffer_needed = 0;
   SerializeReturn serialize_return{/*should_reset_ping_clock=*/false};
-  for (auto& frame : frames) {
+  for (const Http2Frame& frame : frames) {
     // Bytes needed for framing
     buffer_needed += kFrameHeaderSize;
     // Bytes needed for frame payload
     buffer_needed += std::visit(SerializeExtraBytesRequired(), frame);
   }
   SerializeHeaderAndPayload serialize(buffer_needed, out, serialize_return);
-  for (auto& frame : frames) {
+  for (Http2Frame& frame : frames) {
     std::visit(serialize, frame);
   }
 
