@@ -63,6 +63,7 @@ using ::grpc_core::IsStatusOk;
 using ::grpc_core::MakeImmediateResponse;
 using ::grpc_core::MakeRequestBodyDrainCompleteResponse;
 using ::grpc_core::MakeRequestBodyMutationResponse;
+using ::grpc_core::MakeRequestHalfCloseResponse;
 using ::grpc_core::MakeRequestHeadersMutationResponse;
 using ::grpc_core::MakeResponseBodyDrainCompleteResponse;
 using ::grpc_core::MakeResponseBodyMutationResponse;
