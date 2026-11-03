@@ -152,6 +152,7 @@ EXTERNAL_SOURCE_PREFIXES = {
 LIBUPB_NAME = "_libupb"
 LIBUPB_BAZEL_NAME = "//:_libupb"
 
+
 # bazel mod show_repo should return starlark-like output.
 def _bazel_mod_show_repo() -> StarlarkLike:
     args = [
@@ -716,9 +717,9 @@ def _prefix_to_strip(proto_src):
 # and/or use protobuf's official cmake/libupb.cmake for our cmake builds.
 def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
     UPB_EXCLUDED_TARGET_PATTERNS = [
-      "//upb/wire/decode_fast",
-      "stage0",
-      "stage1",
+        "//upb/wire/decode_fast",
+        "stage0",
+        "stage1",
     ]
     UPB_EXCLUDED_TARGETS_EXCEPTIONS = [
         "//upb/wire/decode_fast:select",
@@ -727,7 +728,9 @@ def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
     ]
 
     def _should_include(rule_name):
-        if not any(pattern in rule_name for pattern in UPB_EXCLUDED_TARGET_PATTERNS):
+        if not any(
+            pattern in rule_name for pattern in UPB_EXCLUDED_TARGET_PATTERNS
+        ):
             return True
         if any(rule_name.endswith(e) for e in UPB_EXCLUDED_TARGETS_EXCEPTIONS):
             return True
@@ -1273,6 +1276,7 @@ def _is_upb_target(target: str) -> bool:
             return True
     return False
 
+
 def _add_libupb_target(
     bazel_rules: BuildDict, all_extra_metadata: BuildDict
 ) -> None:
@@ -1315,6 +1319,7 @@ def _populate_transitive_metadata_for_libupb(
     libupb["srcs"] = libupb["_COLLAPSED_SRCS"]
     libupb["hdrs"] = libupb["_COLLAPSED_HEADERS"]
 
+
 def _replace_upb_with_libupb(
     bazel_rules: BuildDict, all_extra_metadata: BuildDict
 ) -> None:
@@ -1350,6 +1355,7 @@ def _replace_upb_with_libupb(
             _get_bazel_label(extra_key)
         ):
             del all_extra_metadata[extra_key]
+
 
 def _replace_upb_with_pseudo_libupb():
     _add_libupb_target(bazel_rules, all_extra_metadata)
