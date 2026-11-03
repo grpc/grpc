@@ -76,11 +76,12 @@ class TlsCredentials final : public grpc_channel_credentials {
   // Returns a refcounted tsi_ssl_client_handshaker_factory keyed by
   // (root_cert_info identity, identity_certs, ssl_session_cache). Other
   // factory inputs (TLS version bounds, verify_server_cert, CRL config, key
-  // exchange groups, key logger) are intentionally NOT part of the cache key
-  // because they are derivable from options_ and therefore invariant across
-  // all connectors built from this credential. If a future change introduces
-  // a per-connector override for any of them, it must be added to the key
-  // (or the cache scope narrowed).
+  // exchange groups, exported keying material label and length, key logger)
+  // are intentionally NOT part of the cache key because they are derivable
+  // from options_ and therefore invariant across all connectors built from
+  // this credential. If a future change introduces a per-connector override
+  // for any of them, it must be added to the key (or the cache scope
+  // narrowed).
   //
   // cached_key_logger_ exists only to DCHECK that invariant for the key
   // logger, which holds for three reasons:
