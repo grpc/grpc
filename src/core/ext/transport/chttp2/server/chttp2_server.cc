@@ -574,7 +574,9 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
   // code, so we can just clean up here without creating a transport.
   bool transport_passed_to_server = false;
   const auto* settings_handshake_result =
-      (*result)->args.GetObject<Http2SettingsHandshakeResult>();
+      result.ok()
+          ? (*result)->args.GetObject<Http2SettingsHandshakeResult>()
+          : nullptr;
   if (handshake_mgr_ != nullptr && result.ok() &&
       (*result)->endpoint != nullptr && settings_handshake_result != nullptr) {
     const bool is_callv3 =
@@ -627,7 +629,8 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
   // Clean up if we didn't create a transport.
   if (!transport_passed_to_server) {
     listener_state_->OnHandshakeDone(
-        this, /*transport=*/nullptr, accepting_pollset_, (*result)->args);
+        this, /*transport=*/nullptr, accepting_pollset_,
+        result.ok() ? (*result)->args : ChannelArgs());
     listener_state_->connection_quota()->ReleaseConnections(1);
   }
 }
