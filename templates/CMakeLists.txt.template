@@ -104,9 +104,6 @@
     # TODO(jtattermusch): extract the metadata to a centralized location.
     if lib_name in ["address_sorting", "utf8_range_lib"]:
       return False
-    if lib_name == "upb" or lib_name.startswith("upb_") or lib_name == "_libupb":
-      # TODO(jtattermusch): Add better detection for what are the "upb" libs.
-      return False
     return True
 
   def get_pkgconfig_requires(lib):
@@ -907,12 +904,6 @@
     % endif
       )
     endif()
-    % endif
-    ## upb from protobuf 33.x requires this flag to compile. See https://github.com/grpc/grpc/issues/41951
-    % if 'upb_' in lib.name:
-    target_compile_options(${lib.name} PRIVATE
-      /Zc:preprocessor
-    )
     % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
