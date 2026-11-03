@@ -1961,19 +1961,32 @@ auto Http2ServerTransport::CloseTransportFactory(
     self->tarpit_manager_.Shutdown();
     self->CloseAllActiveStreams(std::move(stream_list), http2_status, whence);
 
-    // Sleep for kGoawaySendTimeoutSeconds before closing the transport to
-    // let write buffers drain.
-    return Map(
-        Race(AssertResultType<absl::Status>(self->goaway_manager_.RequestGoaway(
-                 http2_status.GetConnectionErrorCode(),
-                 Slice::FromCopiedString(std::string(
-                     http2_status.GetAbslConnectionError().message())),
-                 self->GetLastStreamId(), /*immediate=*/true)),
-             Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
+    return AssertResultType<Empty>(Map(
+        If(
+            self->is_multiplexer_loop_spawned_,
+            [&self, &http2_status]() {
+              // Race the GOAWAY write against kGoawaySendTimeoutSeconds so
+              // a stuck write cannot delay the close forever.
+              return Race(
+                  AssertResultType<absl::Status>(
+                      self->goaway_manager_.RequestGoaway(
+                          http2_status.GetConnectionErrorCode(),
+                          Slice::FromCopiedString(std::string(
+                              http2_status.GetAbslConnectionError().message())),
+                          self->GetLastStreamId(), /*immediate=*/true)),
+                  Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds)));
+            },
+            []() {
+              // MultiplexerLoop was never spawned. No GOAWAY can be written.
+              GRPC_HTTP2_SERVER_DLOG
+                  << "Http2ServerTransport::CloseTransportFactory "
+                     "MultiplexerLoop not spawned. Closing immediately.";
+              return Immediate(absl::OkStatus());
+            }),
         [self](absl::Status) mutable {
           self->CloseTransport();
           return Empty{};
-        });
+        }));
   };
 }
 
@@ -2299,8 +2312,10 @@ void Http2ServerTransport::SpawnTransportLoops() {
   // ReadLoop is spawned after the first write.
   // For Server, read happens before write. So ReadLoop is spawned first.
   SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
+  GRPC_DCHECK(!is_multiplexer_loop_spawned_);
   SpawnGuardedTransportParty("MultiplexerLoop",
                              UntilTransportClosed(MultiplexerLoop()));
+  is_multiplexer_loop_spawned_ = true;
   if (tarpit_manager_.allow_tarpit()) {
     SpawnGuardedTransportParty("TarpitDrainLoop",
                                UntilTransportClosed(MakeTarpitDrainLoop()));

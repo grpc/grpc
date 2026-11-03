@@ -97,6 +97,16 @@ ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
       server_config_selector_provider_(
           std::move(server_config_selector_provider)),
       config_selector_(nullptr) {
+  // In a v3 stack, wrapped_destination() is not set until right before
+  // InterceptionChainBuilder calls Init(), so the watch must not be started
+  // until then.  In a v2 stack, V3InterceptorToV2Bridge has already set
+  // wrapped_destination() and Init() will never be called, so we call it here.
+  if (!args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) {
+    Init(args);
+  }
+}
+
+void ServerConfigSelectorInterceptor::Init(const ChannelArgs& /*args*/) {
   // Start watch for ServerConfigSelector.
   watcher_ = std::make_shared<Watcher>(
       WeakRef().TakeAsSubclass<ServerConfigSelectorInterceptor>());

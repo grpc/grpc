@@ -140,6 +140,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "mock_transport_filter",
+    testonly = 1,
+    srcs = ["mock_transport_filter.cc"],
+    hdrs = ["mock_transport_filter.h"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "//:call_combiner",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:grpc_base",
+        "//src/core:closure",
+        "//src/core:metadata_batch",
+        "//src/core:slice_buffer",
+        "//src/core:unique_type_name",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_test_util",
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],
