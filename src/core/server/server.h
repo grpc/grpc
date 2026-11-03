@@ -86,14 +86,6 @@ class ServerConfigFetcher
    public:
     virtual absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
         const ChannelArgs& args, grpc_endpoint* tcp) = 0;
-
-    static absl::string_view ChannelArgName() {
-      return "grpc.internal.server_connection_manager";
-    }
-    static int ChannelArgsCompare(const ConnectionManager* a,
-                                  const ConnectionManager* b) {
-      return QsortCompare(a, b);
-    }
   };
 
   class WatcherInterface {
@@ -136,6 +128,9 @@ class Server : public ServerInterface,
                public InternallyRefCounted<Server>,
                public channelz::DataSource,
                public CppImplOf<Server, grpc_server> {
+ private:
+  class Connection;
+
  public:
   // Filter vtable.
   static const grpc_channel_filter kServerTopFilter;
@@ -289,6 +284,14 @@ class Server : public ServerInterface,
                          Transport* transport, grpc_pollset* accepting_pollset,
                          const ChannelArgs& args);
 
+    size_t NumOpenConnectionsLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_) {
+      return active_connections_.size();
+    }
+
+    void DrainConnectionsLocked(absl::string_view reason, Duration grace_period)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+
     const MemoryQuotaRefPtr& memory_quota() const { return memory_quota_; }
 
     // TODO(roth): This should probably apply across all listeners, not
@@ -303,6 +306,9 @@ class Server : public ServerInterface,
 
    private:
     friend class grpc_core::testing::ListenerStateTestPeer;
+
+    // FIXME: can we avoid this?
+    friend class Connection;
 
     class ConfigFetcherWatcher : public ServerConfigFetcher::WatcherInterface {
      public:
@@ -337,10 +343,24 @@ class Server : public ServerInterface,
         std::deque<ConnectionsToBeDrained>::iterator it)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+    void DrainConnectionsOnConfigUpdateLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+
+    OrphanablePtr<Connection> ExtractActiveConnectionLocked(
+        Connection* connection)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+
+    void RemoveConnectionLocked(Connection* connection)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+
     RefCountedPtr<Server> const server_;
     MemoryQuotaRefPtr const memory_quota_;
     ConnectionQuotaRefPtr connection_quota_;
+
+    // TODO(roth): Remove this when removing the
+    // server_connection_management experiment.
     grpc_event_engine::experimental::EventEngine* const event_engine_;
+
     OrphanablePtr<ListenerInterface> listener_;
     grpc_closure destroy_done_;
     ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
@@ -349,6 +369,10 @@ class Server : public ServerInterface,
         ABSL_GUARDED_BY(&Server::mu_global_);
     bool is_serving_ ABSL_GUARDED_BY(&Server::mu_global_) = false;
     bool started_ ABSL_GUARDED_BY(&Server::mu_global_) = false;
+    absl::flat_hash_set<OrphanablePtr<Orphanable>> handshaking_connections_
+        ABSL_GUARDED_BY(&Server::mu_global_);
+    absl::flat_hash_set<OrphanablePtr<Connection>> active_connections_
+        ABSL_GUARDED_BY(&Server::mu_global_);
 
     // TODO(roth): Remove these fields as part of removing the
     // server_connection_management experiment.
@@ -652,9 +676,7 @@ class Server : public ServerInterface,
 
   class Connection final : public RefCounted<Connection>, public Orphanable {
    public:
-    Connection(RefCountedPtr<Server> server,
-               RefCountedPtr<ServerConfigFetcher::ConnectionManager>
-                   connection_manager,
+    Connection(RefCountedPtr<ListenerState> listener_state,
                OrphanablePtr<ServerTransport> transport);
 
     void Orphan() override;
@@ -669,17 +691,12 @@ class Server : public ServerInterface,
     void MaybeDisconnectImmediatelyLocked(absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
 
-    ServerConfigFetcher::ConnectionManager* connection_manager() const {
-      return connection_manager_.get();
-    }
-
    private:
     class ConnectivityWatcher;
 
-    RefCountedPtr<Server> const server_;
-    RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_;
+    const RefCountedPtr<ListenerState> listener_state_;
 
-    // Will be unset when the transport is closed.
+    // Will be unset when the connection has been orphaned.
     OrphanablePtr<ServerTransport> transport_
         ABSL_GUARDED_BY(&Server::mu_global_);
   };
@@ -692,18 +709,7 @@ class Server : public ServerInterface,
     grpc_core::Timestamp timestamp;
   };
 
-  void StartDrainingAllConnectionsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
-
-  void StartDrainingAllConnectionsForConnectionManagerLocked(
-      ServerConfigFetcher::ConnectionManager* connection_manager)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
-
-  OrphanablePtr<Connection> ExtractActiveConnectionLocked(
-      Connection* connection)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
-
-  void RemoveActiveConnectionLocked(Connection* connection)
+  void RemoveDrainingConnectionLocked(Connection* connection)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void StartDrainingConnectionLocked(
@@ -723,6 +729,9 @@ class Server : public ServerInterface,
   void DisconnectAllConnectionsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
+  void StartDrainingAllConnectionsLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
   RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
                                         const absl::string_view& path);
   void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
@@ -738,6 +747,11 @@ class Server : public ServerInterface,
 
   void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error_handle error);
   grpc_call_error QueueRequestedCall(size_t cq_idx, RequestedCall* rc);
+
+  bool HasOpenConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+  size_t NumActiveConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+  size_t NumDrainingConnectionsLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void MaybeFinishShutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_)
       ABSL_LOCKS_EXCLUDED(mu_call_);
@@ -863,22 +877,6 @@ class Server : public ServerInterface,
       ABSL_GUARDED_BY(mu_global_);
   size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
 
-  // We track connections by the ConnectionManager that was used to set
-  // up the connection when it was established, so that when the
-  // ConnectionManager is updated, we can start draining all of the
-  // connections that were configured with the old ConnectionManager.
-  struct ConnectionsForConnectionManager {
-    // Connections that are still in the process of handshaking.
-    absl::flat_hash_set<OrphanablePtr<Orphanable>> handshaking_connections;
-    // Connections that are done handshaking.
-    absl::flat_hash_set<OrphanablePtr<Connection>> active_connections;
-  };
-  absl::flat_hash_map<RefCountedPtr<ServerConfigFetcher::ConnectionManager>,
-                      ConnectionsForConnectionManager,
-                      RefCountedPtrHash<ServerConfigFetcher::ConnectionManager>,
-                      RefCountedPtrEq<ServerConfigFetcher::ConnectionManager>>
-      connection_map_ ABSL_GUARDED_BY(mu_global_);
-
   // Tracks connections that are in the process of draining.
   // A connection starts draining when we send a GOAWAY.  Then, some
   // period of time later, we will terminate the connections.
@@ -898,9 +896,6 @@ class Server : public ServerInterface,
 
   std::list<RefCountedPtr<ListenerState>> listener_states_;
   size_t listeners_destroyed_ = 0;
-
-  // The last time we printed a shutdown progress message.
-  gpr_timespec last_shutdown_message_time_;
 
   StreamQuotaRefPtr stream_quota_;
 };

@@ -182,8 +182,7 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
     MutexLock lock(listener_state_->server_->mu_global_);
     connection_manager_to_destroy = listener_state_->connection_manager_;
     listener_state_->connection_manager_ = std::move(connection_manager);
-    listener_state_->server_->StartDrainingAllConnectionsForConnectionManagerLocked(
-        connection_manager_to_destroy.get());
+    listener_state_->DrainConnectionsOnConfigUpdateLocked();
     if (listener_state_->server_->ShutdownCalled()) return;
     listener_state_->is_serving_ = true;
     if (listener_state_->started_) return;
@@ -206,8 +205,7 @@ void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
   Server* server = listener_state_->server_.get();
   MutexLock lock(server->mu_global_);
   listener_state_->is_serving_ = false;
-  server->StartDrainingAllConnectionsForConnectionManagerLocked(
-      listener_state_->connection_manager_.get());
+  listener_state_->DrainConnectionsOnConfigUpdateLocked();
 }
 
 //
@@ -268,6 +266,9 @@ void Server::ListenerState::Stop() {
     connections = std::move(connections_);
     connections_.clear();
     legacy_is_serving_ = false;
+  } else {
+    MutexLock lock(server_->mu_global_);
+    is_serving_ = false;
   }
   if (config_fetcher_watcher_ != nullptr) {
     GRPC_CHECK_NE(server_->config_fetcher(), nullptr);
@@ -394,9 +395,7 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnection(
       return std::nullopt;
     }
     connection_manager = connection_manager_;
-    auto& connections = server_->connection_map_[connection_manager];
-    connections.handshaking_connections.insert(
-        std::move(handshaking_connection));
+    handshaking_connections_.insert(std::move(handshaking_connection));
   }
   // The following section is intentionally outside the critical section. The
   // operation to update channel args for a connection is heavy and complicated.
@@ -412,7 +411,6 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnection(
       // Connection manager not available
       return std::nullopt;
     }
-    new_args = new_args.SetObject(connection_manager);
     absl::StatusOr<ChannelArgs> args_result =
         connection_manager->UpdateChannelArgsForConnection(new_args, endpoint);
     if (!args_result.ok()) {
@@ -442,8 +440,6 @@ bool Server::ListenerState::OnHandshakeDone(
       << "[server " << server_.get() << " listener_state " << this
       << "]: OnHandshakeDone(): handshaking_connection="
       << handshaking_connection << ", transport=" << transport;
-  auto connection_manager =
-      args.GetObjectRef<ServerConfigFetcher::ConnectionManager>();
   absl::StatusOr<OrphanablePtr<ServerTransport>> owned_transport =
       server_->SetupCallLinkageForTransport(transport, accepting_pollset, args);
   const bool transport_initialized = owned_transport.ok();
@@ -454,38 +450,24 @@ bool Server::ListenerState::OnHandshakeDone(
   // a connection failure.
   OrphanablePtr<Connection> connection;
   if (owned_transport.ok()) {
-    connection = MakeOrphanable<Connection>(
-        server_, connection_manager, std::move(*owned_transport));
-    GRPC_TRACE_LOG(server, INFO)
-        << "[server " << server_.get() << " listener_state " << this
-        << "]: created Connection " << connection.get();
+    connection = MakeOrphanable<Connection>(Ref(), std::move(*owned_transport));
+    GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
   }
-  // Get the connection map entry for this ConnectionManager.
-  auto it = server_->connection_map_.find(connection_manager);
   // Find the handshaking connection.
-  if (it != server_->connection_map_.end()) {
-    auto nh =
-        it->second.handshaking_connections.extract(handshaking_connection);
-    if (!nh.empty()) {
-      GRPC_TRACE_LOG(server, INFO)
-          << "[server " << server_.get() << " listener_state " << this
-          << "]: cleaning up handshaking connection";
-      // Found the handshaking connection.  We'll orphan it.
-      handshaking_connection_to_orphan = std::move(nh.value());
-      // If the handshake succeeded, track the new connection as an
-      // active connection.
-      if (connection != nullptr) {
-        GRPC_TRACE_LOG(server, INFO)
-            << "[server " << server_.get() << " listener_state " << this
-            << "]: tracking new active connection";
-        it->second.active_connections.insert(std::move(connection));
-      }
-      return transport_initialized;
+  auto nh = handshaking_connections_.extract(handshaking_connection);
+  if (!nh.empty()) {
+    GRPC_TRACE_LOG(server, INFO) << "cleaning up handshaking connection";
+    // Found the handshaking connection.  We'll orphan it.
+    handshaking_connection_to_orphan = std::move(nh.value());
+    // If the handshake succeeded, track the new connection as an
+    // active connection.
+    if (connection != nullptr) {
+      GRPC_TRACE_LOG(server, INFO) << "tracking new active connection";
+      active_connections_.insert(std::move(connection));
     }
+    return transport_initialized;
   }
-  GRPC_TRACE_LOG(server, INFO)
-      << "[server " << server_.get() << " listener_state " << this
-      << "]: did NOT find handshaking connection";
+  GRPC_TRACE_LOG(server, INFO) << "did NOT find handshaking connection";
   // If the connection succeeded but we didn't find the handshaking
   // connection to orphan, that means that we hit a race condition:
   // we orphaned it while the call to OnHandshakeDone() was in flight.
@@ -493,14 +475,61 @@ bool Server::ListenerState::OnHandshakeDone(
   // may start receiving RPCs, so we need to drain it gracefully.
   if (connection != nullptr) {
     GRPC_TRACE_LOG(server, INFO)
-        << "[server " << server_.get() << " listener_state " << this
-        << "]: immediately draining new active connection";
+        << "immediately draining new active connection";
     server_->StartDrainingConnectionLocked(
         std::move(connection),
         // FIXME: what is the right reason and time to use here?
         "server closing connection", Duration::Infinity());
   }
   return transport_initialized;
+}
+
+void Server::ListenerState::DrainConnectionsOnConfigUpdateLocked() {
+  DrainConnectionsLocked(
+      "server received configuration update",
+      std::max(Duration::Zero(),
+               server_->channel_args_
+                   .GetDurationFromIntMillis(
+                       GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
+                   .value_or(Duration::Minutes(10))));
+}
+
+void Server::ListenerState::DrainConnectionsLocked(
+    absl::string_view reason, Duration grace_period) {
+  GRPC_TRACE_LOG(server, INFO)
+      << "[server " << server_.get() << " listener_state " << this
+      << "]: DrainConnectionsLocked(reason=\"" << reason
+      << "\", grace_period=" << grace_period << ")";
+  // For handshaking connections, orphan them immediately.
+  handshaking_connections_.clear();
+  // If there are any active connections, start draining them.
+  if (active_connections_.empty()) return;
+  server_->StartDrainingConnectionsLocked(
+      std::move(active_connections_), reason, grace_period);
+  active_connections_.clear();
+}
+
+OrphanablePtr<Server::Connection>
+Server::ListenerState::ExtractActiveConnectionLocked(Connection* connection) {
+  auto nh = active_connections_.extract(connection);
+  if (nh.empty()) return nullptr;
+  return std::move(nh.value());
+}
+
+void Server::ListenerState::RemoveConnectionLocked(Connection* connection) {
+  GRPC_TRACE_LOG(server, INFO)
+      << "[server " << server_.get() << " listener_state " << this
+      << "]: RemoveConnectionLocked(connection="
+      << connection << ")";
+  // First, check active connections.
+  OrphanablePtr<Connection> owned_connection =
+      ExtractActiveConnectionLocked(connection);
+  if (owned_connection != nullptr) {
+    GRPC_TRACE_LOG(server, INFO) << "found active connection";
+    return;
+  }
+  // If we didn't find it there, look for a draining connection.
+  server_->RemoveDrainingConnectionLocked(connection);
 }
 
 void Server::ListenerState::DrainConnectionsLocked() {
@@ -585,17 +614,19 @@ class Server::Connection::ConnectivityWatcher final
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& /*status*/) override {
     GRPC_TRACE_LOG(server, INFO)
-        << "[server " << connection_->server_.get() << " connection "
-        << connection_.get()
+        << "[server " << connection_->listener_state_->server_.get()
+        << " listener_state " << connection_->listener_state_.get()
+        << " connection " << connection_.get()
         << "]: ConnectivityWatcher::OnConnectivityStateChange(): state="
         << ConnectivityStateName(new_state);
     // Don't do anything until we are being shut down.
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
     // Shut down channel.
-    MutexLock lock(connection_->server_->mu_global_);
-    connection_->server_->RemoveActiveConnectionLocked(connection_.get());
-    connection_->server_->stream_quota_->DecrementOpenChannels();
-    connection_->server_->MaybeFinishShutdown();
+    MutexLock lock(connection_->listener_state_->server_->mu_global_);
+    connection_->listener_state_->RemoveConnectionLocked(connection_.get());
+    connection_->listener_state_->server_->stream_quota_
+        ->DecrementOpenChannels();
+    connection_->listener_state_->server_->MaybeFinishShutdown();
   }
 
  private:
@@ -607,16 +638,14 @@ class Server::Connection::ConnectivityWatcher final
 //
 
 Server::Connection::Connection(
-    RefCountedPtr<Server> server,
-    RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager,
+    RefCountedPtr<ListenerState> listener_state,
     OrphanablePtr<ServerTransport> transport)
-    : server_(std::move(server)),
-      connection_manager_(std::move(connection_manager)),
+    : listener_state_(std::move(listener_state)),
       transport_(std::move(transport)) {
   // The caller is holding the server's mutex when creating this object,
   // so we do an async hop here before calling into the transport code,
   // just to avoid the possibility of deadlocks.
-  server_->event_engine_->Run(
+  listener_state_->server_->event_engine_->Run(
       [watcher = MakeOrphanable<ConnectivityWatcher>(Ref()),
        transport = transport_->Ref()]() mutable {
         ExecCtx exec_ctx;
@@ -629,7 +658,8 @@ Server::Connection::Connection(
 // compiler can't tell.
 void Server::Connection::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   GRPC_TRACE_LOG(server, INFO)
-      << "[server " << server_.get() << " connection " << this << "]: Orphan()";
+      << "[server " << listener_state_->server_.get() << " listener_state "
+      << listener_state_.get() << " connection " << this << "]: Orphan()";
   transport_.reset();
   Unref();
 }
@@ -637,26 +667,28 @@ void Server::Connection::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
 void Server::Connection::Shutdown(absl::string_view reason,
                                   Duration grace_period) {
   GRPC_TRACE_LOG(server, INFO)
-      << "[server " << server_.get() << " connection " << this
+      << "[server " << listener_state_->server_.get() << " listener_state "
+      << listener_state_.get() << " connection " << this
       << "]: Shutdown(reason=\"" << reason << "\", grace_period="
       << grace_period << ")";
-  MutexLock lock(server_->mu_global_);
+  MutexLock lock(listener_state_->server_->mu_global_);
   if (transport_ == nullptr) return;
   OrphanablePtr<Connection> owned_connection =
-      server_->ExtractActiveConnectionLocked(this);
+      listener_state_->ExtractActiveConnectionLocked(this);
   if (owned_connection == nullptr) return;
-  server_->StartDrainingConnectionLocked(
+  listener_state_->server_->StartDrainingConnectionLocked(
       std::move(owned_connection), reason, grace_period);
 }
 
 void Server::Connection::MaybeSendGoawayLocked(absl::string_view reason) {
   GRPC_TRACE_LOG(server, INFO)
-      << "[server " << server_.get() << " connection " << this
+      << "[server " << listener_state_->server_.get() << " listener_state "
+      << listener_state_.get() << " connection " << this
       << "]: MaybeSendGoawayLocked(reason=\"" << reason << "\")";
   if (transport_ == nullptr) return;
   // Do an async hop here, so that we're not calling into the transport
   // while holding the server's lock.
-  server_->event_engine_->Run(
+  listener_state_->server_->event_engine_->Run(
       [transport = transport_->RefAsSubclass<ServerTransport>(),
        reason = std::string(reason)]() mutable {
         ExecCtx exec_ctx;
@@ -667,12 +699,13 @@ void Server::Connection::MaybeSendGoawayLocked(absl::string_view reason) {
 
 void Server::Connection::MaybeDisconnectImmediatelyLocked(absl::Status status) {
   GRPC_TRACE_LOG(server, INFO)
-      << "[server " << server_.get() << " connection " << this
+      << "[server " << listener_state_->server_.get() << " listener_state "
+      << listener_state_.get() << " connection " << this
       << "]: MaybeDisconnectImmediatelyLocked(status=" << status << ")";
   if (transport_ == nullptr) return;
   // Do an async hop here, so that we're not calling into the transport
   // while holding the server's lock.
-  server_->event_engine_->Run(
+  listener_state_->server_->event_engine_->Run(
       [transport = transport_->RefAsSubclass<ServerTransport>(),
        status = std::move(status)]() mutable {
         ExecCtx exec_ctx;
@@ -1785,86 +1818,44 @@ Server::SetupCallLinkageForTransport(
 
 bool Server::HasOpenConnections() {
   MutexLock lock(mu_global_);
-  return !channels_.empty() || !connections_.empty() ||
-         !connection_map_.empty() || !draining_connections_list_.empty();
+  return HasOpenConnectionsLocked();
 }
 
-void Server::StartDrainingAllConnectionsLocked() {
-  GRPC_TRACE_LOG(server, INFO)
-      << "[server " << this << "]: StartDrainingAllConnectionsLocked()";
-  absl::flat_hash_set<OrphanablePtr<Connection>> connections_to_drain;
-  for (auto& [_, connections] : connection_map_) {
-    // For handshaking connections, orphan them immediately.
-    connections.handshaking_connections.clear();
-    // For active connections, add them to the list.
-    while (!connections.active_connections.empty()) {
-      auto nh = connections.active_connections.extract(
-          connections.active_connections.begin());
-      connections_to_drain.insert(std::move(nh));
-    }
+bool Server::HasOpenConnectionsLocked() {
+  if (!IsServerConnectionManagementEnabled()) {
+    return !channels_.empty() || !connections_.empty();
   }
-  connection_map_.clear();
-  StartDrainingConnectionsLocked(std::move(connections_to_drain),
-                                 "server shutting down", Duration::Infinity());
+  for (const auto& listener_state : listener_states_) {
+    if (listener_state->NumOpenConnectionsLocked() > 0) return true;
+  }
+  return !draining_connections_list_.empty();
 }
 
-void Server::StartDrainingAllConnectionsForConnectionManagerLocked(
-    ServerConfigFetcher::ConnectionManager* connection_manager) {
+size_t Server::NumActiveConnectionsLocked() {
+  size_t num_open_connections = 0;
+  for (const auto& listener_state : listener_states_) {
+    num_open_connections += listener_state->NumOpenConnectionsLocked();
+  }
+  return num_open_connections;
+}
+
+size_t Server::NumDrainingConnectionsLocked() {
+  size_t num_draining_connections = 0;
+  for (const auto& draining_connections : draining_connections_list_) {
+    num_draining_connections += draining_connections.connections.size();
+  }
+  return num_draining_connections;
+}
+
+void Server::RemoveDrainingConnectionLocked(Connection* connection) {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << this
-      << "]: StartDrainingAllConnectionsForConnectionManagerLocked(): "
-         "connection_manager="
-      << connection_manager;
-  auto nh = connection_map_.extract(connection_manager);
-  if (nh.empty()) return;
-  // For handshaking connections, orphan them immediately.
-  nh.mapped().handshaking_connections.clear();
-  // For active connections, start draining them.
-  StartDrainingConnectionsLocked(
-      std::move(nh.mapped().active_connections),
-      "server received configuration update",
-      std::max(Duration::Zero(),
-               channel_args_
-                   .GetDurationFromIntMillis(
-                       GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
-                   .value_or(Duration::Minutes(10))));
-}
-
-OrphanablePtr<Server::Connection> Server::ExtractActiveConnectionLocked(
-    Connection* connection) {
-  auto it = connection_map_.find(connection->connection_manager());
-  if (it != connection_map_.end()) {
-    auto nh = it->second.active_connections.extract(connection);
-    if (!nh.empty()) {
-      if (it->second.handshaking_connections.empty() &&
-          it->second.active_connections.empty()) {
-        connection_map_.erase(it);
-      }
-      return std::move(nh.value());
-    }
-  }
-  return nullptr;
-}
-
-void Server::RemoveActiveConnectionLocked(Connection* connection) {
-  GRPC_TRACE_LOG(server, INFO)
-      << "[server " << this << "]: RemoveActiveConnectionLocked(connection="
-      << connection << ")";
-  // First, check connection_map_.
-  OrphanablePtr<Connection> owned_connection =
-      ExtractActiveConnectionLocked(connection);
-  if (owned_connection != nullptr) {
-    GRPC_TRACE_LOG(server, INFO)
-        << "[server " << this << "]: found active connection";
-    return;
-  }
-  // If we didn't find it there, look at draining_connections_list_.
+      << "]: RemoveDrainingConnectionLocked(connection=" << connection << ")";
   for (auto it = draining_connections_list_.begin();
        it != draining_connections_list_.end(); ++it) {
     auto nh = it->connections.extract(connection);
     if (!nh.empty()) {
-      GRPC_TRACE_LOG(server, INFO)
-          << "[server " << this << "]: found draining connection";
+      GRPC_TRACE_LOG(server, INFO) << "found draining connection";
       // If this set of draining connections is now empty, clean it up.
       if (it->connections.empty()) {
         // If this is the first entry in draining_connections_list_,
@@ -1885,6 +1876,7 @@ void Server::RemoveActiveConnectionLocked(Connection* connection) {
       return;
     }
   }
+  GRPC_TRACE_LOG(server, INFO) << "did NOT find draining connection";
 }
 
 void Server::StartDrainingConnectionLocked(
@@ -1931,6 +1923,7 @@ void Server::OnDrainGraceTimer() {
         absl::UnavailableError(
             "grace time expired, server shutting down connection"));
   }
+  MaybeFinishShutdown();
 }
 
 void Server::MaybeStartNewGraceTimerLocked() {
@@ -1952,6 +1945,13 @@ void Server::DisconnectAllConnectionsLocked() {
       connection->MaybeDisconnectImmediatelyLocked(
           absl::UnavailableError("server shutting down"));
     }
+  }
+}
+
+void Server::StartDrainingAllConnectionsLocked() {
+  for (const auto& listener_state : listener_states_) {
+    listener_state->DrainConnectionsLocked(
+        "server shutting down", Duration::Infinity());
   }
 }
 
@@ -2024,6 +2024,8 @@ void Server::FailCall(size_t cq_idx, RequestedCall* rc,
 // Before calling MaybeFinishShutdown(), we must hold mu_global_ and not
 // hold mu_call_.
 void Server::MaybeFinishShutdown() {
+  GRPC_TRACE_LOG(server, INFO)
+      << "[server " << this << "] MaybeFinishShutdown()";
   if (!ShutdownReady() || shutdown_published_) {
     return;
   }
@@ -2031,21 +2033,33 @@ void Server::MaybeFinishShutdown() {
     MutexLock lock(mu_call_);
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
-  if (!channels_.empty() || connections_open_ > 0 ||
-      !connection_map_.empty() || !draining_connections_list_.empty() ||
-      listeners_destroyed_ < listener_states_.size()) {
-    if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
-                                  last_shutdown_message_time_),
-                     gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
-      last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
-      VLOG(2) << "Waiting for " << channels_.size() << " channels "
-              << connections_open_ << " connections and "
-              << listener_states_.size() - listeners_destroyed_ << "/"
-              << listener_states_.size()
-              << " listeners to be destroyed before shutting down server";
+  const bool has_open_connections =
+      IsServerConnectionManagementEnabled()
+          ? HasOpenConnectionsLocked()
+          : (!channels_.empty() || connections_open_ > 0);
+  if (has_open_connections || listeners_destroyed_ < listener_states_.size()) {
+    if (GRPC_TRACE_FLAG_ENABLED(server)) {
+      LOG(INFO)
+          << "Waiting for " << channels_.size() << " channels, "
+          << connections_open_ << " connections, "
+          << NumActiveConnectionsLocked() << " active connections, "
+          << NumDrainingConnectionsLocked() << " draining connections, and "
+          << listener_states_.size() - listeners_destroyed_ << "/"
+          << listener_states_.size()
+          << " listeners to be destroyed before shutting down server";
+    } else {
+      VLOG_EVERY_N_SEC(2, 1)
+          << "Waiting for " << channels_.size() << " channels, "
+          << connections_open_ << " connections, "
+          << NumActiveConnectionsLocked() << " active connections, "
+          << NumDrainingConnectionsLocked() << " draining connections, and "
+          << listener_states_.size() - listeners_destroyed_ << "/"
+          << listener_states_.size()
+          << " listeners to be destroyed before shutting down server";
     }
     return;
   }
+  GRPC_TRACE_LOG(server, INFO) << "Finishing shutdown";
   shutdown_published_ = true;
   for (auto& shutdown_tag : shutdown_tags_) {
     Ref().release();
@@ -2076,6 +2090,8 @@ std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
 
 void Server::ListenerDestroyDone(void* arg, grpc_error_handle /*error*/) {
   Server* server = static_cast<Server*>(arg);
+  GRPC_TRACE_LOG(server, INFO)
+      << "[server " << server << "] ListenerDestroyDone()";
   MutexLock lock(server->mu_global_);
   server->listeners_destroyed_++;
   server->MaybeFinishShutdown();
@@ -2153,9 +2169,11 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
     if (ShutdownCalled()) {
       return;
     }
-    last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
-    StartDrainingAllConnectionsLocked();
-    broadcaster.FillChannelsLocked(GetChannelsLocked());
+    if (IsServerConnectionManagementEnabled()) {
+      StartDrainingAllConnectionsLocked();
+    } else {
+      broadcaster.FillChannelsLocked(GetChannelsLocked());
+    }
     // Collect all unregistered then registered calls.
     {
       MutexLock lock(mu_call_);
@@ -2191,35 +2209,43 @@ void Server::StopListening() {
 
 void Server::CancelAllCalls() {
   GRPC_TRACE_LOG(server, INFO) << "[server " << this << "]: CancelAllCalls()";
-  ChannelBroadcaster broadcaster;
-  {
-    MutexLock lock(mu_global_);
-    broadcaster.FillChannelsLocked(GetChannelsLocked());
-    if (IsCallv3ServerShutdownBroadcastEnabled()) {
-      // Starts an immediate shutdown on each transport.
-      BroadcastShutdownToConnectionsLocked(
-          connections_, /*send_goaway=*/false,
-          GRPC_ERROR_CREATE("Cancelling all calls"));
+  if (!IsServerConnectionManagementEnabled()) {
+    ChannelBroadcaster broadcaster;
+    {
+      MutexLock lock(mu_global_);
+      broadcaster.FillChannelsLocked(GetChannelsLocked());
+      if (IsCallv3ServerShutdownBroadcastEnabled()) {
+        // Starts an immediate shutdown on each transport.
+        BroadcastShutdownToConnectionsLocked(
+            connections_, /*send_goaway=*/false,
+            GRPC_ERROR_CREATE("Cancelling all calls"));
+      }
     }
-    DisconnectAllConnectionsLocked();
+    broadcaster.BroadcastShutdown(
+        /*send_goaway=*/false, GRPC_ERROR_CREATE("Cancelling all calls"));
+    return;
   }
-  broadcaster.BroadcastShutdown(
-      /*send_goaway=*/false, GRPC_ERROR_CREATE("Cancelling all calls"));
+  MutexLock lock(mu_global_);
+  DisconnectAllConnectionsLocked();
 }
 
 void Server::SendGoaways() {
   GRPC_TRACE_LOG(server, INFO) << "[server " << this << "]: SendGoaways()";
-  ChannelBroadcaster broadcaster;
-  {
-    MutexLock lock(mu_global_);
-    broadcaster.FillChannelsLocked(GetChannelsLocked());
-    if (IsCallv3ServerShutdownBroadcastEnabled()) {
-      BroadcastShutdownToConnectionsLocked(connections_, /*send_goaway=*/true,
-                                           absl::OkStatus());
+  if (!IsServerConnectionManagementEnabled()) {
+    ChannelBroadcaster broadcaster;
+    {
+      MutexLock lock(mu_global_);
+      broadcaster.FillChannelsLocked(GetChannelsLocked());
+      if (IsCallv3ServerShutdownBroadcastEnabled()) {
+        BroadcastShutdownToConnectionsLocked(connections_, /*send_goaway=*/true,
+                                             absl::OkStatus());
+      }
     }
-    StartDrainingAllConnectionsLocked();
+    broadcaster.BroadcastShutdown(/*send_goaway=*/true, absl::OkStatus());
+    return;
   }
-  broadcaster.BroadcastShutdown(/*send_goaway=*/true, absl::OkStatus());
+  MutexLock lock(mu_global_);
+  StartDrainingAllConnectionsLocked();
 }
 
 void Server::Orphan() {
