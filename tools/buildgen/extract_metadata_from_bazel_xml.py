@@ -1270,15 +1270,43 @@ def _is_upb_target(target: str) -> bool:
             return True
     return False
 
-
-def _inject_libupb_target(
+def _add_libupb_target(
     bazel_rules: BuildDict, all_extra_metadata: BuildDict
 ) -> None:
     """Injects a pseudo rule for libupb encompassing the transitive closure of all UPB targets."""
     upb_sub_targets = [name for name in bazel_rules if _is_upb_target(name)]
+    libupb_rule = {
+        "class": "cc_library",
+        "name": "//:_libupb",
+        "srcs": [],
+        "hdrs": [],
+        "textual_hdrs": [],
+        "deps": upb_sub_targets,
+        "data": [],
+        "tags": [],
+        "args": [],
+        "generator_function": None,
+        "size": None,
+        "flaky": False,
+        "actual": None,
+    }
+    bazel_rules["//:_libupb"] = libupb_rule
+    all_extra_metadata[LIBUPB_NAME] = {
+        "language": "c",
+        "build": "private",
+        "cmake_target": "protobuf::libupb",
+    }
+
+
+def _populate_transitive_metadata_for_libupb(
+    bazel_rules: BuildDict, all_extra_metadata: BuildDict
+) -> None:
+    """Injects a pseudo rule for libupb encompassing the transitive closure of all UPB targets."""
+    # upb_sub_targets = [name for name in bazel_rules if _is_upb_target(name)]
+    libupb_rule = bazel_rules["//:_libupb"]
 
     upb_closure = set()
-    upb_queue = list(upb_sub_targets)
+    upb_queue = libupb_rule["deps"].copy()
     all_upb_srcs = []
     all_upb_hdrs = []
     all_upb_textual_hdrs = []
@@ -1305,28 +1333,11 @@ def _inject_libupb_target(
                 if _is_upb_target(dep):
                     upb_queue.append(dep)
 
-    libupb_rule = {
-        "class": "cc_library",
-        "name": "//:_libupb",
+    libupb_rule.update({
         "srcs": all_upb_srcs,
         "hdrs": all_upb_hdrs,
         "textual_hdrs": all_upb_textual_hdrs,
-        "deps": upb_sub_targets,
-        "data": [],
-        "tags": [],
-        "args": [],
-        "generator_function": None,
-        "size": None,
-        "flaky": False,
-        "actual": None,
-    }
-    bazel_rules["//:_libupb"] = libupb_rule
-    all_extra_metadata[LIBUPB_NAME] = {
-        "language": "c",
-        "build": "private",
-        "cmake_target": "protobuf::libupb",
-    }
-
+    })
 
 def _replace_upb_with_libupb(
     bazel_rules: BuildDict, all_extra_metadata: BuildDict
@@ -1705,7 +1716,6 @@ for query in _BAZEL_DEPS_QUERIES:
 # to expand the UPB proto library bazel rules into the generated
 # .upb.h and .upb.c files.
 _expand_upb_proto_library_rules(bazel_rules)
-_prune_upb_experimental_feature_rules(bazel_rules)
 
 
 # Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules
@@ -1770,7 +1780,9 @@ all_extra_metadata.update(
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 
 # Synthetic _libupb pseudo-target to unify all UPB sub-libraries
-_inject_libupb_target(bazel_rules, all_extra_metadata)
+_add_libupb_target(bazel_rules, all_extra_metadata)
+_prune_upb_experimental_feature_rules(bazel_rules)
+_populate_transitive_metadata_for_libupb(bazel_rules, all_extra_metadata)
 _replace_upb_with_libupb(bazel_rules, all_extra_metadata)
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
