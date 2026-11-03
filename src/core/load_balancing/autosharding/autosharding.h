@@ -42,17 +42,12 @@ class AutoShardingLbConfig final : public LoadBalancingPolicy::Config {
 
   absl::string_view name() const override;
 
-  const std::string& channel_factory_key() const {
-    return channel_factory_key_;
-  }
-  const std::string& autosharding_target() const {
-    return autosharding_target_;
-  }
+  absl::string_view channel_factory_key() const { return channel_factory_key_; }
+  absl::string_view autosharding_target() const { return autosharding_target_; }
   const RefCountedStringValue& key_header_name() const {
     return key_header_name_;
   }
   bool enable_fallback() const { return enable_fallback_; }
-  // The autosharding client owns the initial assignment timer (gRFC A119).
   Duration initial_assignment_timeout() const {
     return initial_assignment_timeout_;
   }

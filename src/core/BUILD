@@ -8400,11 +8400,15 @@ grpc_cc_library(
         "load_balancing/autosharding/autosharding_assignment.h",
     ],
     external_deps = [
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
+        "ref_counted",
         "upb_utils",
         "//:autosharding_upb",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -8468,6 +8472,7 @@ grpc_cc_library(
         "grpc_lb_policy_autosharding_assignment",
         "grpc_lb_policy_autosharding_client",
         "grpc_lb_policy_pick_first",
+        "grpc_lb_policy_weighted_target",
         "json",
         "json_args",
         "json_object_loader",

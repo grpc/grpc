@@ -36,6 +36,8 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using ::testing::HasSubstr;
+
 // Parses the JSON form of a loadBalancingConfig array.
 absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>> ParseConfig(
     absl::string_view json_string) {
@@ -155,17 +157,18 @@ TEST(AutoShardingConfigTest, EmptyFields) {
 }
 
 TEST(AutoShardingConfigTest, InvalidKeyHeaderName) {
-  for (const char* key_header_name : {"X-Slice-Key", ":method", "x y"}) {
-    const std::string lb_config_json = absl::StrCat(
-        "[{\"autosharding_experimental\":{"
-        "\"channelFactoryKey\": \"sharding_service\","
-        "\"autoshardingTarget\": \"my_autosharding_target\","
-        "\"keyHeaderName\": \"",
-        key_header_name, "\"}}]");
-    auto config = ParseConfig(lb_config_json);
+  for (absl::string_view key_header_name : {"X-Slice-Key", ":method", "x y"}) {
+    absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>> config =
+        ParseConfig(absl::StrCat("[{\"autosharding_experimental\":{"
+                                 "\"channelFactoryKey\": \"sharding_service\","
+                                 "\"autoshardingTarget\": "
+                                 "\"my_autosharding_target\","
+                                 "\"keyHeaderName\": \"",
+                                 key_header_name, "\"}}]"));
     ASSERT_FALSE(config.ok()) << key_header_name;
-    EXPECT_THAT(config.status().ToString(),
-                ::testing::HasSubstr("field:keyHeaderName"))
+    EXPECT_EQ(config.status().code(), absl::StatusCode::kInvalidArgument)
+        << key_header_name;
+    EXPECT_THAT(config.status().message(), HasSubstr("field:keyHeaderName"))
         << key_header_name;
   }
 }

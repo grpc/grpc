@@ -533,11 +533,15 @@ grpc_cc_test(
     srcs = ["autosharding_assignment_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:autosharding_upb",
+        "//:ref_counted_ptr",
         "//src/core:grpc_lb_policy_autosharding_assignment",
         "//src/core:upb_utils",
         "//test/core/test_util:grpc_test_util",
@@ -631,6 +635,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:channel_factory",
         "//src/core:grpc_lb_policy_autosharding",
+        "//src/core:grpc_lb_policy_weighted_target",
         "//src/core:json",
         "//src/core:lb_policy",
         "//src/core:time",
