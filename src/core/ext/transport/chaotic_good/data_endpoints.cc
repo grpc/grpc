@@ -357,9 +357,15 @@ void OutputBuffers::Write(uint64_t payload_tag,
 
 void SecureFrameQueue::Write(SliceBuffer buffer) {
   ReleasableMutexLock lock(mu_);
-  uint32_t frame_length = buffer.Length();
+  // The frame header only carries a 32 bit payload length: assert instead
+  // of silently truncating, like the other frame serialization sites do.
+  DCHECK_LE(buffer.Length(), std::numeric_limits<uint32_t>::max());
+  uint32_t frame_length = static_cast<uint32_t>(buffer.Length());
   uint32_t frame_padding =
       DataConnectionPadding(frame_length, encode_alignment_);
+  // Mirror the check in Endpoint::ReadLoop: a payload whose length
+  // overflows once alignment padding is added can never be read back.
+  DCHECK_LE(frame_length, std::numeric_limits<uint32_t>::max() - frame_padding);
   uint32_t header_padding = DataConnectionPadding(
       TcpDataFrameHeader::kFrameHeaderSize, encode_alignment_);
   auto slice = MutableSlice::CreateUninitialized(
