@@ -239,6 +239,73 @@ class TestGeneratorToAsyncGenerator(_GeneratorTestBase):
             "thread pool worker leaked",
         )
 
+    async def test_async_generator_closure_does_not_resume_generator(self):
+        executor = _common.DaemonThreadExecutor()
+        closed = threading.Event()
+        resumed_after_closure = threading.Event()
+
+        def items():
+            try:
+                yield b"first"
+                yield b"second"
+                yield b"third"
+                resumed_after_closure.set()
+                yield b"fourth"
+            finally:
+                closed.set()
+
+        agen = cygrpc.generator_to_async_generator(items(), self.loop, executor)
+        self.assertEqual(b"first", await agen.__anext__())
+        self.assertEqual(b"second", await agen.__anext__())
+
+        # The worker holds b"third"
+        await agen.aclose()
+
+        self.assertTrue(
+            await self._in_thread(closed.wait, test_constants.TIME_ALLOWANCE),
+            "generator was not closed",
+        )
+        self.assertTrue(
+            await self._in_thread(
+                executor.workers_finished, test_constants.TIME_ALLOWANCE
+            ),
+            "thread pool worker leaked",
+        )
+        self.assertFalse(
+            resumed_after_closure.is_set(),
+            "generator was resumed after its consumer left",
+        )
+
+    async def test_failing_closure_releases_worker(self):
+        executor = _common.DaemonThreadExecutor()
+        closed = threading.Event()
+
+        def failing_cleanup():
+            try:
+                while True:
+                    yield b"item"
+            finally:
+                closed.set()
+
+        agen = cygrpc.generator_to_async_generator(
+            failing_cleanup(), self.loop, executor
+        )
+        self.assertEqual(b"item", await agen.__anext__())
+
+        # Cleanup error must not keep the worker
+        await agen.aclose()
+
+        self.assertTrue(
+            await self._in_thread(closed.wait, test_constants.TIME_ALLOWANCE),
+            "generator was not closed",
+        )
+        self.assertTrue(
+            await self._in_thread(
+                executor.workers_finished, test_constants.TIME_ALLOWANCE
+            ),
+            "thread pool worker leaked",
+        )
+
 
 class TestWorkerReleasedWhenLoopCloses(unittest.TestCase):
     """Tests that a worker thread is released when the event loop is closed.
