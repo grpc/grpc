@@ -19,7 +19,7 @@ import threading
 from cpython.version cimport PY_MINOR_VERSION
 
 TYPE_METADATA_STRING = "Tuple[Tuple[str, Union[str, bytes]]...]"
-_LOOP_CLOSED_POLL_INTERVAL_S = 0.1
+_LOOP_CLOSED_POLL_INTERVAL_S = 1.0
 
 
 cdef grpc_status_code get_status_code(object code) except *:
@@ -122,7 +122,11 @@ def schedule_coro_threadsafe(object coro, object loop):
         return loop.create_task(coro)
 
     # In the loop's non-owning thread case - schedule a coroutine for the owner
-    return asyncio.run_coroutine_threadsafe(coro, loop)
+    try:
+        return asyncio.run_coroutine_threadsafe(coro, loop)
+    except RuntimeError:
+        coro.close()
+        raise
 
 
 def _run_coro_threadsafe_and_wait(object coro, object loop):
@@ -190,26 +194,33 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
     The thread pool hands each item to the loop through a one slot queue and
     waits until the loop has taken it. If the consumer stops early (the RPC was
     cancelled, or its await raised) or the loop is closed, the thread pool
-    closes the generator and finishes.
+    closes the generator without resuming it again and finishes.
 
     Raises `RuntimeError` if `loop` is closed before the generator is exhausted.
     """
     queue = asyncio.Queue(maxsize=1)
     consumer_gone = threading.Event()
-
     def yield_to_queue():
+        iterator = None
+        exhausted = False
         try:
-            for item in gen:
-                if consumer_gone.is_set():
+            iterator = iter(gen)
+            while not consumer_gone.is_set():
+                try:
+                    item = next(iterator)
+                except StopIteration:
+                    exhausted = True
                     break
                 _run_coro_threadsafe_and_wait(queue.put(item), loop)
         finally:
-            if consumer_gone.is_set() or loop.is_closed():
-                close = getattr(gen, "close", None)
-                if close is not None:
-                    close()
-            else:
-                _run_coro_threadsafe_and_wait(queue.put(EOF), loop)
+            try:
+                if not exhausted:
+                    close = getattr(iterator, "close", None)
+                    if close is not None:
+                        close()
+            finally:
+                if not consumer_gone.is_set() and not loop.is_closed():
+                    _run_coro_threadsafe_and_wait(queue.put(EOF), loop)
 
     future = loop.run_in_executor(
         thread_pool,
@@ -228,6 +239,7 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
         # Releases a queue.put(...) call on a thread pool
         while not queue.empty():
             queue.get_nowait()
+        future.add_done_callback(lambda f: f.cancelled() or f.exception())
 
     # Port the exception if there is any
     await future

@@ -69,6 +69,21 @@ class TestScheduleCoroThreadsafe(unittest.TestCase):
 
         self._loop_thread.run(schedule_on_owning_thread())
 
+    def test_from_closed_loop(self):
+        loop = asyncio.new_event_loop()
+        loop.close()
+
+        async def coro():
+            pass
+
+        pending_coro = coro()
+        with self.assertRaises(RuntimeError):
+            cygrpc.schedule_coro_threadsafe(pending_coro, loop)
+
+        self.assertEqual(
+            inspect.CORO_CLOSED, inspect.getcoroutinestate(pending_coro)
+        )
+
 
 class _GeneratorTestBase(AioTestBase):
     async def _in_thread(self, fn, *args):
@@ -226,7 +241,7 @@ class TestGeneratorToAsyncGenerator(_GeneratorTestBase):
 
 
 class TestWorkerReleasedWhenLoopCloses(unittest.TestCase):
-    """Tests that a worker thread is released when event loop is closed.
+    """Tests that a worker thread is released when the event loop is closed.
 
     A thread blocked on a future that only the loop can resolve has to give
     up once that loop is closed, instead of staying parked forever.

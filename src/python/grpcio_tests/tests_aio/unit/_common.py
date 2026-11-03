@@ -210,7 +210,7 @@ class LoopInThread:
     def stop(self):
         """Stops and closes the loop.
 
-        Returns `True` whether the loop's owning thread returned correctly;
+        Returns `True` if the loop's owning thread returned correctly;
         `False` otherwise (e.g. loop deadlocked).
         """
         if self._thread.is_alive():
