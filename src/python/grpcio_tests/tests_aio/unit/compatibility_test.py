@@ -354,6 +354,52 @@ class TestCompatibility(AioTestBase):
             "thread pool worker leaked",
         )
 
+    async def test_sync_unary_stream_cancel_uses_context_in_finally(self):
+        rpc_finished = threading.Event()
+        closed = threading.Event()
+        peers = []
+        errors = []
+
+        @grpc.unary_stream_rpc_method_handler
+        def endless_unary_stream(request: bytes, context):
+            try:
+                while True:
+                    yield request
+            finally:
+                rpc_finished.wait(test_constants.TIME_ALLOWANCE)
+                try:
+                    peers.append(context.peer())
+                except Exception as error:  # pylint: disable=broad-except
+                    errors.append(error)
+                finally:
+                    closed.set()
+
+        self._adhoc_handlers.set_adhoc_handler(endless_unary_stream)
+        call = self._async_channel.unary_stream(_common.ADHOC_METHOD)(_REQUEST)
+        self.assertEqual(_REQUEST, await call.read())
+        call.cancel()
+        self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
+        await asyncio.sleep(0.5)
+        rpc_finished.set()
+
+        self.assertTrue(
+            await self.loop.run_in_executor(
+                None, closed.wait, test_constants.TIME_ALLOWANCE
+            ),
+            "handler generator was not closed",
+        )
+        self.assertEqual([], errors)
+        self.assertEqual(1, len(peers))
+        self.assertTrue(peers[0])
+        self.assertTrue(
+            await self.loop.run_in_executor(
+                None,
+                self._thread_pool.workers_finished,
+                test_constants.TIME_ALLOWANCE
+            ),
+            "thread pool worker leaked",
+        )
+
     async def test_sync_stream_unary_success(self):
         @grpc.stream_unary_rpc_method_handler
         def echo_stream_unary(
@@ -550,52 +596,6 @@ class TestSyncHandlerInvokedOffLoop(unittest.TestCase):
         self.assertEqual("Test", exception_context.exception.details())
         self.assertTrue(
             self._thread_pool.workers_finished(test_constants.TIME_ALLOWANCE),
-            "thread pool worker leaked",
-        )
-
-    async def test_sync_unary_stream_cancel_uses_context_in_finally(self):
-        rpc_finished = threading.Event()
-        closed = threading.Event()
-        peers = []
-        errors = []
-
-        @grpc.unary_stream_rpc_method_handler
-        def endless_unary_stream(request: bytes, context):
-            try:
-                while True:
-                    yield request
-            finally:
-                rpc_finished.wait(test_constants.TIME_ALLOWANCE)
-                try:
-                    peers.append(context.peer())
-                except Exception as error:  # pylint: disable=broad-except
-                    errors.append(error)
-                finally:
-                    closed.set()
-
-        self._adhoc_handlers.set_adhoc_handler(endless_unary_stream)
-        call = self._async_channel.unary_stream(_common.ADHOC_METHOD)(_REQUEST)
-        self.assertEqual(_REQUEST, await call.read())
-        call.cancel()
-        self.assertEqual(grpc.StatusCode.CANCELLED, await call.code())
-        await asyncio.sleep(0.5)
-        rpc_finished.set()
-
-        self.assertTrue(
-            await self.loop.run_in_executor(
-                None, closed.wait, test_constants.TIME_ALLOWANCE
-            ),
-            "handler generator was not closed",
-        )
-        self.assertEqual([], errors)
-        self.assertEqual(1, len(peers))
-        self.assertTrue(peers[0])
-        self.assertTrue(
-            await self.loop.run_in_executor(
-                None,
-                self._thread_pool.workers_finished,
-                test_constants.TIME_ALLOWANCE
-            ),
             "thread pool worker leaked",
         )
 
