@@ -1253,6 +1253,67 @@ def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
                     )
 
 
+def _inject_libupb_target(
+    bazel_rules: BuildDict, all_extra_metadata: BuildDict
+) -> None:
+    """Injects a synthetic _libupb rule encompassing the transitive closure of all UPB targets."""
+    upb_sub_targets = [
+        _get_bazel_label(t)
+        for t in _BUILD_EXTRA_METADATA.keys()
+        if t.startswith("@com_google_protobuf//upb/")
+        and _get_bazel_label(t) in bazel_rules
+    ]
+
+    upb_closure = set()
+    upb_queue = list(upb_sub_targets)
+    all_upb_srcs = []
+    all_upb_hdrs = []
+    all_upb_textual_hdrs = []
+
+    while upb_queue:
+        target = upb_queue.pop(0)
+        if target in upb_closure:
+            continue
+        upb_closure.add(target)
+        rule = bazel_rules.get(target)
+        if not rule:
+            continue
+        for src in rule.get("srcs", []):
+            if src not in all_upb_srcs:
+                all_upb_srcs.append(src)
+        for hdr in rule.get("hdrs", []):
+            if hdr not in all_upb_hdrs:
+                all_upb_hdrs.append(hdr)
+        for thdr in rule.get("textual_hdrs", []):
+            if thdr not in all_upb_textual_hdrs:
+                all_upb_textual_hdrs.append(thdr)
+        for dep in rule.get("deps", []):
+            if dep not in upb_closure and dep in bazel_rules:
+                if dep.startswith("@com_google_protobuf//upb"):
+                    upb_queue.append(dep)
+
+    bazel_rules["//:_libupb"] = {
+        "class": "cc_library",
+        "name": "//:_libupb",
+        "srcs": all_upb_srcs,
+        "hdrs": all_upb_hdrs,
+        "textual_hdrs": all_upb_textual_hdrs,
+        "deps": upb_sub_targets,
+        "data": [],
+        "tags": [],
+        "args": [],
+        "generator_function": None,
+        "size": None,
+        "flaky": False,
+        "actual": None,
+    }
+    all_extra_metadata["_libupb"] = {
+        "language": "c",
+        "build": "private",
+        "cmake_target": "protobuf::libupb",
+    }
+
+
 # extra metadata that will be used to construct build.yaml
 # there are mostly extra properties that we weren't able to obtain from the bazel build
 # _TYPE: whether this is library, target or test
@@ -1656,6 +1717,9 @@ all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)
 )
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
+
+# Synthetic _libupb pseudo-target to unify all UPB sub-libraries
+_inject_libupb_target(bazel_rules, all_extra_metadata)
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
 # The final build metadata includes transitive dependencies, and sources/headers
