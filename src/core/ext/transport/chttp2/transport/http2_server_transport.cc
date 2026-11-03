@@ -156,8 +156,8 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                                                 channelz::DataSink sink) {
   SpawnInfallible(
       std::move(party), "AddData",
-      [self = RefAsSubclass<Http2ServerTransport>(),
-       sink = std::move(sink)]() mutable {
+      [self = RefAsSubclass<Http2ServerTransport>(), sink = std::move(sink),
+       party = party]() mutable {
         GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnAddChannelzData";
         sink.AddData(
             "Http2ServerTransport",
@@ -171,8 +171,7 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties())
                 .Set("tarpit", self->tarpit_manager_.ChannelzProperties()));
-        self->transport_party_->ExportToChannelz("Http2ServerTransport Party",
-                                                 sink);
+        party->ExportToChannelz("Http2ServerTransport Party", sink);
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::SpawnAddChannelzData End";
         return Empty{};
