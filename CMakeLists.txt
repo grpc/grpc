@@ -39041,6 +39041,7 @@ add_executable(v3_bridge_test
   test/core/channel/v3_bridge_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/mock_transport_filter.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
