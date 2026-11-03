@@ -446,12 +446,19 @@ class Server : public ServerInterface,
                                    grpc_channel_stack_type channel_stack_type)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
+  // TODO(roth): Remove this as part of removing the
+  // server_connection_management experiment.
+  grpc_error_handle LegacySetupTransport(
+      Transport* transport, grpc_pollset* accepting_pollset,
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type)
+      ABSL_LOCKS_EXCLUDED(mu_global_);
+
   // TODO(roth): After the v3 migration, the caller should already have
   // an OrphanablePtr<ServerTransport>, so this can take the parameter as
   // ServerTransport& and just return absl::Status.
   absl::StatusOr<OrphanablePtr<ServerTransport>> SetupCallLinkageForTransport(
       Transport* transport, grpc_pollset* accepting_pollset,
-      const ChannelArgs& args);
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -875,7 +882,9 @@ class Server : public ServerInterface,
   std::list<ChannelData*> channels_ ABSL_GUARDED_BY(mu_global_);
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
       ABSL_GUARDED_BY(mu_global_);
-  size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
+// FIXME: remove this?
+  RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
+      ABSL_GUARDED_BY(mu_global_);
 
   // Tracks connections that are in the process of draining.
   // A connection starts draining when we send a GOAWAY.  Then, some
