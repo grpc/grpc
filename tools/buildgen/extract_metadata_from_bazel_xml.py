@@ -30,6 +30,7 @@
 # format entirely or simplify it to a point where it becomes self-explanatory
 # and doesn't need any detailed documentation.
 
+import pdb
 import collections
 import os
 import subprocess
@@ -1253,6 +1254,21 @@ def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
                     )
 
 
+def _rewrite_upb_deps(build_yaml_like: BuildYaml) -> None:
+    """Rewrite upb dependencies to protobuf::libupb for non-upb targets."""
+    for section in ("libs", "targets", "tests"):
+        for target in build_yaml_like.get(section, []):
+            if not target.get("name", "").startswith("upb_"):
+                new_deps = []
+                for dep in target.get("deps", []):
+                    if dep == "upb" or dep.startswith("upb_"):
+                        if "protobuf::libupb" not in new_deps:
+                            new_deps.append("protobuf::libupb")
+                    else:
+                        new_deps.append(dep)
+                target["deps"] = new_deps
+
+
 # extra metadata that will be used to construct build.yaml
 # there are mostly extra properties that we weren't able to obtain from the bazel build
 # _TYPE: whether this is library, target or test
@@ -1718,6 +1734,9 @@ all_targets_dict = _generate_build_metadata(all_extra_metadata, bazel_rules)
 #   'targets': { TARGET_DICT_FOR_BIN_XYZ, ... },
 #   'tests': { TARGET_DICT_FOR_TEST_XYZ, ...} }
 build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
+
+# Rewrite UPB dependencies to protobuf::libupb for non-UPB targets
+_rewrite_upb_deps(build_yaml_like)
 
 # Step 7: generates build metadata for external ProtoBuf libraries.
 # We only want the ProtoBuf sources from these ProtoBuf dependencies, which may
