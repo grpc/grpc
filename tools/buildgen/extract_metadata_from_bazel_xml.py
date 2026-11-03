@@ -150,6 +150,7 @@ EXTERNAL_SOURCE_PREFIXES = {
 # Placeholder name for a special graph node representing
 # the collection of all libupb targets we use.
 LIBUPB_NAME = "_libupb"
+LIBUPB_BAZEL_NAME = "//:_libupb"
 
 # bazel mod show_repo should return starlark-like output.
 def _bazel_mod_show_repo() -> StarlarkLike:
@@ -1262,8 +1263,6 @@ def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
 
 def _is_upb_target(target: str) -> bool:
     """Returns True if the target belongs to UPB C runtime (not upb_generator)."""
-    if target == "//:_libupb":
-        return False
     for prefix in (
         "@com_google_protobuf//upb/",
         "@com_google_protobuf//upb:",
@@ -1281,7 +1280,7 @@ def _add_libupb_target(
     upb_sub_targets = [name for name in bazel_rules if _is_upb_target(name)]
     libupb_rule = {
         "class": "cc_library",
-        "name": "//:_libupb",
+        "name": LIBUPB_BAZEL_NAME,
         "srcs": [],
         "hdrs": [],
         "textual_hdrs": [],
@@ -1294,7 +1293,7 @@ def _add_libupb_target(
         "flaky": False,
         "actual": None,
     }
-    bazel_rules["//:_libupb"] = libupb_rule
+    bazel_rules[LIBUPB_BAZEL_NAME] = libupb_rule
     all_extra_metadata[LIBUPB_NAME] = {
         "language": "c",
         "build": "private",
@@ -1307,7 +1306,7 @@ def _populate_transitive_metadata_for_libupb(
 ) -> None:
     """Injects a pseudo rule for libupb encompassing the transitive closure of all UPB targets."""
     # upb_sub_targets = [name for name in bazel_rules if _is_upb_target(name)]
-    libupb_rule = bazel_rules["//:_libupb"]
+    libupb_rule = bazel_rules[LIBUPB_BAZEL_NAME]
 
     upb_closure = set()
     upb_queue = libupb_rule["deps"].copy()
@@ -1355,17 +1354,17 @@ def _replace_upb_with_libupb(
             if not _is_upb_target(dep):
                 external_upb_deps.add(dep)
 
-    if "//:_libupb" in bazel_rules:
-        bazel_rules["//:_libupb"]["deps"] = list(sorted(external_upb_deps))
+    if LIBUPB_BAZEL_NAME in bazel_rules:
+        bazel_rules[LIBUPB_BAZEL_NAME]["deps"] = list(sorted(external_upb_deps))
 
     for rule_name, rule in bazel_rules.items():
-        if rule_name == "//:_libupb":
+        if rule_name == LIBUPB_BAZEL_NAME:
             continue
         new_deps = []
         for dep in rule.get("deps", []):
             if _is_upb_target(dep):
-                if "//:_libupb" not in new_deps:
-                    new_deps.append("//:_libupb")
+                if LIBUPB_BAZEL_NAME not in new_deps:
+                    new_deps.append(LIBUPB_BAZEL_NAME)
             else:
                 new_deps.append(dep)
         rule["deps"] = new_deps
