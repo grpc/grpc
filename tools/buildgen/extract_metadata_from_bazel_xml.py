@@ -147,6 +147,9 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@@cel-c+//cel-c": "third_party/cel-c/cel-c",
 }
 
+# Placeholder name for a special graph node representing
+# the collection of all libupb targets we use.
+LIBUPB_NAME = "_libupb"
 
 # bazel mod show_repo should return starlark-like output.
 def _bazel_mod_show_repo() -> StarlarkLike:
@@ -1271,12 +1274,8 @@ def _is_upb_target(target: str) -> bool:
 def _inject_libupb_target(
     bazel_rules: BuildDict, all_extra_metadata: BuildDict
 ) -> None:
-    """Injects a synthetic _libupb rule encompassing the transitive closure of all UPB targets."""
-    upb_sub_targets = [
-        _get_bazel_label(t)
-        for t in _BUILD_EXTRA_METADATA.keys()
-        if _is_upb_target(t) and _get_bazel_label(t) in bazel_rules
-    ]
+    """Injects a pseudo rule for libupb encompassing the transitive closure of all UPB targets."""
+    upb_sub_targets = [name for name in bazel_rules if _is_upb_target(name)]
 
     upb_closure = set()
     upb_queue = list(upb_sub_targets)
@@ -1321,7 +1320,7 @@ def _inject_libupb_target(
         "flaky": False,
         "actual": None,
     }
-    all_extra_metadata["_libupb"] = {
+    all_extra_metadata[LIBUPB_NAME] = {
         "language": "c",
         "build": "private",
         "cmake_target": "protobuf::libupb",
