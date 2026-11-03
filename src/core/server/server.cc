@@ -1512,17 +1512,6 @@ grpc_error_handle Server::LegacySetupTransport(
     // premature destruction if the transport fails concurrently.
     RefCountedPtr<Channel> channel_keep_alive = *channel;
 
-    if (IsServerConnectionManagementEnabled()) {
-      auto channel_transport =
-          MakeOrphanable<ChannelData::V1ChannelTransport>(*channel);
-      channel_transport->StartConnectivityWatch(
-          MakeOrphanable<TransportConnectivityWatcher>(
-              channel_transport->RefAsSubclass<ServerTransport>(), Ref()));
-      MutexLock lock(mu_global_);
-      GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
-      connections_.emplace(std::move(channel_transport));
-    }
-
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport);
 
     auto* parent_arena =
