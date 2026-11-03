@@ -714,7 +714,11 @@ def _prefix_to_strip(proto_src):
 # Better solutions would be using more accurate resolution with `bazel cquery`,
 # and/or use protobuf's official cmake/libupb.cmake for our cmake builds.
 def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
-    UPB_EXCLUDED_TARGETS = "//upb/wire/decode_fast"
+    UPB_EXCLUDED_TARGET_PATTERNS = [
+      "//upb/wire/decode_fast",
+      "stage0",
+      "stage1",
+    ]
     UPB_EXCLUDED_TARGETS_EXCEPTIONS = [
         "//upb/wire/decode_fast:select",
         "//upb/wire/decode_fast:combinations",
@@ -722,7 +726,7 @@ def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
     ]
 
     def _should_include(rule_name):
-        if UPB_EXCLUDED_TARGETS not in rule_name:
+        if not any(pattern in rule_name for pattern in UPB_EXCLUDED_TARGET_PATTERNS):
             return True
         if any(rule_name.endswith(e) for e in UPB_EXCLUDED_TARGETS_EXCEPTIONS):
             return True
