@@ -371,6 +371,20 @@ class Server : public ServerInterface,
                                    grpc_channel_stack_type channel_stack_type)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
+  // TODO(roth): Remove this as part of removing the
+  // server_connection_management experiment.
+  grpc_error_handle LegacySetupTransport(
+      Transport* transport, grpc_pollset* accepting_pollset,
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type)
+      ABSL_LOCKS_EXCLUDED(mu_global_);
+
+  // TODO(roth): After the v3 migration, the caller should already have
+  // an OrphanablePtr<ServerTransport>, so this can take the parameter as
+  // ServerTransport& and just return absl::Status.
+  absl::StatusOr<OrphanablePtr<ServerTransport>> SetupCallLinkageForTransport(
+      Transport* transport, grpc_pollset* accepting_pollset,
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type);
+
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
   // Functions to specify that a specific registered method or the unregistered
@@ -441,7 +455,7 @@ class Server : public ServerInterface,
 
     void InitTransport(RefCountedPtr<Server> server,
                        RefCountedPtr<Channel> channel, size_t cq_idx,
-                       Transport* transport, intptr_t channelz_socket_uuid);
+                       Transport* transport);
 
     RefCountedPtr<Server> server() const { return server_; }
     Channel* channel() const { return channel_.get(); }
@@ -478,7 +492,6 @@ class Server : public ServerInterface,
     std::optional<std::list<ChannelData*>::iterator> list_position_;
 
     grpc_closure finish_destroy_channel_closure_;
-    intptr_t channelz_socket_uuid_;
 
     RefCountedPtr<Arena> parent_arena_;
   };
@@ -732,7 +745,6 @@ class Server : public ServerInterface,
       ABSL_GUARDED_BY(mu_global_);
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
       ABSL_GUARDED_BY(mu_global_);
-  size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
 
   std::list<RefCountedPtr<ListenerState>> listener_states_;
   size_t listeners_destroyed_ = 0;
