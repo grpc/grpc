@@ -395,7 +395,7 @@ class TestCompatibility(AioTestBase):
             await self.loop.run_in_executor(
                 None,
                 self._thread_pool.workers_finished,
-                test_constants.TIME_ALLOWANCE
+                test_constants.TIME_ALLOWANCE,
             ),
             "thread pool worker leaked",
         )
