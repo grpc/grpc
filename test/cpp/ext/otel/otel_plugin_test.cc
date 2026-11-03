@@ -198,6 +198,38 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
   EXPECT_EQ(*status_value, "OK");
 }
 
+TEST_F(OpenTelemetryPluginEnd2EndTest, ClientCallDuration) {
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName})));
+  SendRPC();
+  const char* kMetricName = "grpc.client.call.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data =
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+          &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(point_data->count_, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 3);
+  const auto* method_value =
+      std::get_if<std::string>(&attributes.at("grpc.method"));
+  ASSERT_NE(method_value, nullptr);
+  EXPECT_EQ(*method_value, kMethodName);
+  const auto* target_value =
+      std::get_if<std::string>(&attributes.at("grpc.target"));
+  ASSERT_NE(target_value, nullptr);
+  EXPECT_EQ(*target_value, canonical_server_address_);
+  const auto* status_value =
+      std::get_if<std::string>(&attributes.at("grpc.status"));
+  ASSERT_NE(status_value, nullptr);
+  EXPECT_EQ(*status_value, "OK");
+}
+
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallStarted) {
   Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName})));

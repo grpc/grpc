@@ -298,6 +298,12 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
         std::move(attempt_tracers));
   }
 
+  void RecordEnd(grpc_status_code status_code,
+                 absl::string_view error_string) override {
+    for (auto* tracer : tracers_) {
+      tracer->RecordEnd(status_code, error_string);
+    }
+  }
   void RecordAnnotation(absl::string_view annotation) override {
     for (auto* tracer : tracers_) {
       tracer->RecordAnnotation(annotation);

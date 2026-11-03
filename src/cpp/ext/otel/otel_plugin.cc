@@ -94,6 +94,8 @@ absl::flat_hash_set<std::string> BaseMetrics() {
           grpc::OpenTelemetryPluginBuilder::
               kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName),
       std::string(
+          grpc::OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName),
+      std::string(
           grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName),
       std::string(
           grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName),
@@ -661,6 +663,15 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
               grpc::OpenTelemetryPluginBuilder::
                   kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName),
           "Compressed message bytes received per call attempt", "By");
+    }
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kClientCallDurationInstrumentName)) {
+      client_.call.duration = meter->CreateDoubleHistogram(
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kClientCallDurationInstrumentName),
+          "End-to-end time taken to complete an RPC from the application’s "
+          "perspective",
+          "s");
     }
     if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
                              kServerCallStartedInstrumentName)) {
@@ -1542,6 +1553,8 @@ constexpr absl::string_view OpenTelemetryPluginBuilder::
     kClientAttemptSentTotalCompressedMessageSizeInstrumentName;
 constexpr absl::string_view OpenTelemetryPluginBuilder::
     kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName;
+constexpr absl::string_view
+    OpenTelemetryPluginBuilder::kClientCallDurationInstrumentName;
 constexpr absl::string_view
     OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName;
 constexpr absl::string_view

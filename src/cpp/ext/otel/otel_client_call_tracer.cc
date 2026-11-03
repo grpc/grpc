@@ -467,7 +467,8 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::ClientCallTracerInterface(
       arena_(arena),
       registered_method_(registered_method),
       otel_plugin_(otel_plugin),
-      scope_config_(std::move(scope_config)) {
+      scope_config_(std::move(scope_config)),
+      start_time_(absl::Now()) {
   if (otel_plugin_->tracer_ != nullptr) {
     opentelemetry::trace::StartSpanOptions options;
     // Get the parent span from the parent call if available, otherwise fall
@@ -495,43 +496,32 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::ClientCallTracerInterface(
 
 OpenTelemetryPluginImpl::ClientCallTracerInterface::
     ~ClientCallTracerInterface() {
-  absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
-                                opentelemetry::common::AttributeValue>,
-                      3>
-      attributes = {
-          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryMethodKey()),
-                    opentelemetry::common::AttributeValue(
-                        AbslStringViewToNoStdStringView(MethodForStats()))),
-          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryTargetKey()),
-                    opentelemetry::common::AttributeValue(
-                        AbslStringViewToNoStdStringView(
-                            scope_config_->filtered_target())))};
-  if (otel_plugin_->per_call_optional_label_bits_.test(static_cast<size_t>(
-          grpc_core::ClientCallTracerInterface::CallAttemptTracer::
-              OptionalLabelKey::kTelemetryLabel))) {
-    absl::string_view value{};
-    if (auto* label = arena_->GetContext<grpc_core::TelemetryLabel>();
-        label != nullptr) {
-      value = label->value;
+  const bool record_retries =
+      otel_plugin_->client_.call.retries != nullptr && retries_ > 1;
+  const bool record_transparent_retries =
+      otel_plugin_->client_.call.transparent_retries != nullptr &&
+      transparent_retries_ != 0;
+  const bool record_retry_delay =
+      otel_plugin_->client_.call.retry_delay != nullptr &&
+      retry_delay_ != absl::ZeroDuration() && retries_ > 1;
+  if (record_retries || record_transparent_retries || record_retry_delay) {
+    absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
+                                  opentelemetry::common::AttributeValue>,
+                        4>
+        attributes = GetAttributes();
+    if (record_retries) {
+      otel_plugin_->client_.call.retries->Record(
+          retries_ - 1, attributes, opentelemetry::context::Context{});
     }
-    attributes.emplace_back(
-        AbslStringViewToNoStdStringView(OpenTelemetryCustomLabelKey()),
-        AbslStringViewToNoStdStringView(value));
-  }
-  if (otel_plugin_->client_.call.retries != nullptr && retries_ > 1) {
-    otel_plugin_->client_.call.retries->Record(
-        retries_ - 1, attributes, opentelemetry::context::Context{});
-  }
-  if (otel_plugin_->client_.call.transparent_retries != nullptr &&
-      transparent_retries_ != 0) {
-    otel_plugin_->client_.call.transparent_retries->Record(
-        transparent_retries_, attributes, opentelemetry::context::Context{});
-  }
-  if (otel_plugin_->client_.call.retry_delay != nullptr &&
-      retry_delay_ != absl::ZeroDuration() && retries_ > 1) {
-    otel_plugin_->client_.call.retry_delay->Record(
-        absl::ToDoubleSeconds(retry_delay_), attributes,
-        opentelemetry::context::Context{});
+    if (record_transparent_retries) {
+      otel_plugin_->client_.call.transparent_retries->Record(
+          transparent_retries_, attributes, opentelemetry::context::Context{});
+    }
+    if (record_retry_delay) {
+      otel_plugin_->client_.call.retry_delay->Record(
+          absl::ToDoubleSeconds(retry_delay_), attributes,
+          opentelemetry::context::Context{});
+    }
   }
   if (span_ != nullptr) {
     span_->End();
@@ -594,6 +584,65 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::RecordAnnotation(
 void OpenTelemetryPluginImpl::ClientCallTracerInterface::RecordAnnotation(
     const Annotation& /*annotation*/) {
   // Not implemented
+}
+
+void OpenTelemetryPluginImpl::ClientCallTracerInterface::RecordEnd(
+    grpc_status_code status_code, absl::string_view error_string) {
+  if (span_ != nullptr) {
+    if (status_code == GRPC_STATUS_OK) {
+      span_->SetStatus(opentelemetry::trace::StatusCode::kOk);
+    } else {
+      span_->SetStatus(opentelemetry::trace::StatusCode::kError,
+                       AbslStringViewToNoStdStringView(error_string));
+    }
+  }
+  if (otel_plugin_->client_.call.duration == nullptr) {
+    return;
+  }
+  absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
+                                opentelemetry::common::AttributeValue>,
+                      4>
+      attributes = GetAttributes(status_code);
+  double elapsed_seconds = absl::ToDoubleSeconds(absl::Now() - start_time_);
+  otel_plugin_->client_.call.duration->Record(
+      elapsed_seconds, attributes, opentelemetry::context::Context{});
+}
+
+absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
+                              opentelemetry::common::AttributeValue>,
+                    4>
+OpenTelemetryPluginImpl::ClientCallTracerInterface::GetAttributes(
+    std::optional<grpc_status_code> status_code) const {
+  absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
+                                opentelemetry::common::AttributeValue>,
+                      4>
+      attributes = {
+          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryMethodKey()),
+                    opentelemetry::common::AttributeValue(
+                        AbslStringViewToNoStdStringView(MethodForStats()))),
+          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryTargetKey()),
+                    opentelemetry::common::AttributeValue(
+                        AbslStringViewToNoStdStringView(
+                            scope_config_->filtered_target())))};
+  if (status_code.has_value()) {
+    attributes.emplace_back(
+        AbslStringViewToNoStdStringView(OpenTelemetryStatusKey()),
+        opentelemetry::common::AttributeValue(AbslStringViewToNoStdStringView(
+            grpc_status_code_to_string(*status_code))));
+  }
+  if (otel_plugin_->per_call_optional_label_bits_.test(static_cast<size_t>(
+          grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+              OptionalLabelKey::kTelemetryLabel))) {
+    absl::string_view value{};
+    if (auto* label = arena_->GetContext<grpc_core::TelemetryLabel>();
+        label != nullptr) {
+      value = label->value;
+    }
+    attributes.emplace_back(
+        AbslStringViewToNoStdStringView(OpenTelemetryCustomLabelKey()),
+        AbslStringViewToNoStdStringView(value));
+  }
+  return attributes;
 }
 
 }  // namespace internal

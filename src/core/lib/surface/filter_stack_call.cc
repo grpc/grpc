@@ -387,6 +387,14 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
       }
     }
   }
+  auto* call_tracer = arena()->GetContext<ClientCallTracer>();
+  if (call_tracer != nullptr) {
+    absl::string_view error_string = error.message();
+    if (!error.ok() && final_op_.client.error_string != nullptr) {
+      error_string = absl::string_view(*final_op_.client.error_string);
+    }
+    call_tracer->RecordEnd(*final_op_.client.status, error_string);
+  }
 }
 
 bool FilterStackCall::PrepareApplicationMetadata(size_t count,
