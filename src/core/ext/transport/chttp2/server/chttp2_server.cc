@@ -273,17 +273,15 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
             [connection = connection_->RefAsSubclass<ActiveConnection>()]() {
               connection->OnClose();
             });
-        timer_handle_ =
-            connection_->listener_state_->event_engine()->RunAfter(
-                deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
-                  // HandshakingState deletion might require an active
-                  // ExecCtx.
-                  ExecCtx exec_ctx;
-                  auto* self_ptr = self.get();
-                  self_ptr->connection_->work_serializer_.Run(
-                      [self = std::move(self)]() { self->OnTimeoutLocked(); },
-                      DEBUG_LOCATION);
-                });
+        timer_handle_ = connection_->listener_state_->event_engine()->RunAfter(
+            deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
+              // HandshakingState deletion might require an active ExecCtx.
+              ExecCtx exec_ctx;
+              auto* self_ptr = self.get();
+              self_ptr->connection_->work_serializer_.Run(
+                  [self = std::move(self)]() { self->OnTimeoutLocked(); },
+                  DEBUG_LOCATION);
+            });
       } else {
         // Failed to create channel from transport. Clean up.
         LOG(ERROR) << "Failed to create channel: "
@@ -302,7 +300,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
                                          std::move((*result)->read_buffer));
         std::shared_ptr<EventEngine> event_engine_ptr =
             (*result)->args.GetObjectRef<EventEngine>();
-        absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings;
         // Use notify_on_receive_settings callback to enforce the
         // handshake deadline.
         auto* ph2_transport = new http2::Http2ServerTransport(
@@ -330,9 +327,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
                     ExecCtx exec_ctx;
                     auto* self_ptr = self.get();
                     self_ptr->connection_->work_serializer_.Run(
-                        [self = std::move(self)]() {
-                          self->OnTimeoutLocked();
-                        },
+                        [self = std::move(self)]() { self->OnTimeoutLocked(); },
                         DEBUG_LOCATION);
                   });
         } else {

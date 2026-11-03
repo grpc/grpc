@@ -882,9 +882,6 @@ class Server : public ServerInterface,
   std::list<ChannelData*> channels_ ABSL_GUARDED_BY(mu_global_);
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
       ABSL_GUARDED_BY(mu_global_);
-// FIXME: remove this?
-  RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
-      ABSL_GUARDED_BY(mu_global_);
 
   // Tracks connections that are in the process of draining.
   // A connection starts draining when we send a GOAWAY.  Then, some
