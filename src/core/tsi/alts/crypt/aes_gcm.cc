@@ -161,7 +161,8 @@ static void aes_gcm_format_errors(const char* error_msg, char** error_details) {
   if (error_details == nullptr) {
     return;
   }
-  unsigned long error = ERR_get_error();
+  // Peek, don't pop: aes_gcm_get_openssl_errors() prints the whole queue.
+  unsigned long error = ERR_peek_error();
   if (error == 0 && error_msg != nullptr) {
     *error_details = static_cast<char*>(gpr_malloc(strlen(error_msg) + 1));
     memcpy(*error_details, error_msg, strlen(error_msg) + 1);

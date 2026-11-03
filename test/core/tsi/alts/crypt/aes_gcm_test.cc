@@ -148,8 +148,8 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
           plaintext_length, &plaintext_bytes_written, &error_message);
 
       ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
-          status, GRPC_STATUS_FAILED_PRECONDITION, "Checking tag failed.",
-          error_message));
+          status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
+          "Checking tag failed."));
       ASSERT_EQ(plaintext_bytes_written, 0);
       if (plaintext_length != 0) {
         ASSERT_EQ(memcmp(zero_message, plaintext, plaintext_length), 0);
