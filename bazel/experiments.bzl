@@ -146,6 +146,7 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
                 "secure_endpoint_read_coalescing",
+                "server_connection_management",
                 "use_call_event_engine_in_completion_queue",
                 "wildcard_ip_expansion_restriction",
             ],
@@ -186,6 +187,7 @@ EXPERIMENTS = {
                 "ph2_client_server",
                 "ph2_server",
                 "ring_hash_update_cleanup",
+                "server_connection_management",
             ],
         },
         "on": {
@@ -194,7 +196,6 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "map_host_header_to_authority",
-                "server_connection_management",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -204,7 +205,6 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "map_host_header_to_authority",
-                "server_connection_management",
             ],
         },
     },
