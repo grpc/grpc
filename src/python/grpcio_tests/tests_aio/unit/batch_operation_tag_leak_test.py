@@ -16,7 +16,7 @@
 import asyncio
 import gc
 import logging
-import os
+from pathlib import Path
 import time
 from typing import Optional
 import unittest
@@ -51,6 +51,7 @@ def _count_live_batch_operation_tags(operations: tuple) -> int:
     gc.collect()
     # Compares types directly, as `isinstance()` may access `__class__` of
     # arbitrary objects (e.g. raising `ReferenceError` for dead weakproxies).
+    # pylint: disable=unidiomatic-typecheck
     return sum(
         1
         for obj in gc.get_objects()
@@ -176,7 +177,7 @@ class TestBatchOperationTagLeak(AioTestBase):
             await server.stop(None)
 
     @unittest.skipUnless(
-        os.path.isdir("/proc/self"), "Requires `/proc/self` dir."
+        Path("/proc/self").is_dir(), "Requires `/proc/self` dir."
     )
     async def test_metadata_failing_conversion(self):
         for invalid_position, metadata in (

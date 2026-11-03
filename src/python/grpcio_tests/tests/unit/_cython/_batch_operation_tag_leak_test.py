@@ -15,7 +15,7 @@
 
 import gc
 import logging
-import os
+from pathlib import Path
 import time
 from typing import Optional
 import unittest
@@ -46,6 +46,7 @@ def _count_live_objects(cls: type) -> int:
     gc.collect()
     # Compares types directly, as `isinstance()` may access `__class__` of
     # arbitrary objects (e.g. raising `ReferenceError` for dead weakproxies).
+    # pylint: disable=unidiomatic-typecheck
     return sum(1 for obj in gc.get_objects() if type(obj) is cls)
 
 
@@ -258,7 +259,7 @@ class BatchOperationTagLeakTest(unittest.TestCase):
         server.destroy()
 
     @unittest.skipUnless(
-        os.path.isdir("/proc/self"), "Requires `/proc/self` dir."
+        Path("/proc/self").is_dir(), "Requires `/proc/self` dir."
     )
     def test_call_released_when_its_batch_fails_to_prepare(self):
         metadata = _VALID_METADATA + _INVALID_METADATA
