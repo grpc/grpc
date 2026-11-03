@@ -130,7 +130,8 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
-inline bool IsServerConnectionManagementEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_CONNECTION_MANAGEMENT
+inline bool IsServerConnectionManagementEnabled() { return true; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -214,7 +215,8 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
-inline bool IsServerConnectionManagementEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_CONNECTION_MANAGEMENT
+inline bool IsServerConnectionManagementEnabled() { return true; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -298,7 +300,8 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSecureEndpointReadCoalescingEnabled() { return false; }
-inline bool IsServerConnectionManagementEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_CONNECTION_MANAGEMENT
+inline bool IsServerConnectionManagementEnabled() { return true; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
