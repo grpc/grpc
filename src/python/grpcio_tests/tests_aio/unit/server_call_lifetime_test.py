@@ -98,6 +98,14 @@ class ServerCallLifetimeTest(AioTestBase):
     async def _in_thread(self, fn, *args):
         return await self.loop.run_in_executor(None, fn, *args)
 
+    def _assert_rpc_state_alive(self, probe_ref):
+        self.assertIsNotNone(
+            probe_ref, "Probe was never parked. The handler did not run"
+        )
+        self.assertIsNotNone(
+            probe_ref(), "RPCState released while the handler still runs"
+        )
+
     async def _assert_rpc_state_released(self, probe_ref):
         self.assertIsNotNone(
             probe_ref, "Probe was never parked. The handler did not run"
@@ -400,9 +408,7 @@ class ServerCallLifetimeTest(AioTestBase):
 
         call.cancel()
         await asyncio.sleep(_SETTLE_S)
-        self.assertIsNotNone(
-            probe_ref(), "RPCState released while the handler still runs"
-        )
+        self._assert_rpc_state_alive(probe_ref)
 
         release.set()
         await self._assert_workers_finished()
@@ -433,9 +439,7 @@ class ServerCallLifetimeTest(AioTestBase):
 
         call.cancel()
         await asyncio.sleep(_SETTLE_S)
-        self.assertIsNotNone(
-            probe_ref(), "RPCState released while the handler still runs"
-        )
+        self._assert_rpc_state_alive(probe_ref)
 
         release.set()
         await self._assert_workers_finished()
