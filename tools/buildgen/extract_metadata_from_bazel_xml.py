@@ -1305,7 +1305,7 @@ def _inject_libupb_target(
                 if _is_upb_target(dep):
                     upb_queue.append(dep)
 
-    bazel_rules["//:_libupb"] = {
+    libupb_rule = {
         "class": "cc_library",
         "name": "//:_libupb",
         "srcs": all_upb_srcs,
@@ -1320,6 +1320,7 @@ def _inject_libupb_target(
         "flaky": False,
         "actual": None,
     }
+    bazel_rules["//:_libupb"] = libupb_rule
     all_extra_metadata[LIBUPB_NAME] = {
         "language": "c",
         "build": "private",
