@@ -2324,7 +2324,8 @@ libs:
   - src/core/xds/xds_client/xds_bootstrap.cc
   - src/core/xds/xds_client/xds_client.cc
   deps:
-  - protobuf::libupb
+  - upb_json_lib
+  - upb_textformat_lib
   - re2
   - z
   - absl/algorithm:container
@@ -3529,7 +3530,7 @@ libs:
   - src/core/util/work_serializer.cc
   - src/core/xds/grpc/xds_transport_grpc.cc
   deps:
-  - protobuf::libupb
+  - upb_textformat_lib
   - z
   - absl/algorithm:container
   - absl/base:no_destructor
@@ -5452,7 +5453,7 @@ libs:
   - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
   deps:
-  - protobuf::libupb
+  - upb_textformat_lib
   - re2
   - z
   - absl/base:no_destructor
@@ -5795,7 +5796,7 @@ targets:
   - test/core/promise/activity_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -6191,7 +6192,7 @@ targets:
   - test/core/promise/all_ok_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -6902,7 +6903,7 @@ targets:
   - test/core/xds/blackboard_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -7248,7 +7249,7 @@ targets:
   - test/core/call/call_filters_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -7457,7 +7458,7 @@ targets:
   - test/core/call/call_state_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -8105,7 +8106,7 @@ targets:
   - test/core/call/call_utils_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - z
   - absl/base:no_destructor
   - absl/container:btree
@@ -8345,7 +8346,7 @@ targets:
   - test/core/promise/cancel_callback_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -9407,7 +9408,7 @@ targets:
   - test/core/util/chunked_vector_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -9999,7 +10000,7 @@ targets:
   - test/core/promise/context_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -12743,7 +12744,7 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -13077,7 +13078,7 @@ targets:
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -13925,7 +13926,7 @@ targets:
   - test/core/call/filter_fusion_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - z
   - absl/base:no_destructor
   - absl/container:btree
@@ -14202,7 +14203,7 @@ targets:
   - test/core/transport/chttp2/flow_control_manager_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -14432,7 +14433,7 @@ targets:
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -14661,7 +14662,7 @@ targets:
   - test/core/promise/for_each_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -14928,7 +14929,7 @@ targets:
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -16223,7 +16224,7 @@ targets:
   - test/core/promise/if_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -16878,7 +16879,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - z
   - absl/base:no_destructor
   - absl/container:btree
@@ -17163,7 +17164,7 @@ targets:
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -17395,7 +17396,7 @@ targets:
   - test/core/promise/interceptor_list_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -17670,7 +17671,7 @@ targets:
   - test/core/promise/join_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -17936,7 +17937,7 @@ targets:
   - test/core/promise/latch_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -18194,7 +18195,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -18613,7 +18614,7 @@ targets:
   - test/core/promise/lock_based_mpsc_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -18822,7 +18823,7 @@ targets:
   - test/core/promise/loop_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -18999,7 +19000,7 @@ targets:
   - test/core/util/lru_cache_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -19227,7 +19228,7 @@ targets:
   - test/core/promise/map_pipe_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -19416,7 +19417,7 @@ targets:
   - test/core/promise/match_promise_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -19931,7 +19932,7 @@ targets:
   - test/core/promise/observable_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -20408,7 +20409,7 @@ targets:
   - test/core/resource_quota/periodic_update_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -20661,7 +20662,7 @@ targets:
   - test/core/promise/poll_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21179,7 +21180,7 @@ targets:
   - test/core/promise/prioritized_race_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21396,7 +21397,7 @@ targets:
   - test/core/promise/promise_factory_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21582,7 +21583,7 @@ targets:
   - test/core/promise/map_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21781,7 +21782,7 @@ targets:
   - test/core/promise/promise_mutex_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -21964,7 +21965,7 @@ targets:
   - test/core/promise/promise_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -22026,7 +22027,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:flat_hash_map
   - absl/status:statusor
   - absl/types:span
@@ -22512,7 +22513,7 @@ targets:
   - test/core/event_engine/query_extensions_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -22693,7 +22694,7 @@ targets:
   - test/core/promise/race_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -23096,7 +23097,7 @@ targets:
   - test/core/call/request_buffer_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -23505,7 +23506,7 @@ targets:
   - test/core/promise/seq_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -24292,7 +24293,7 @@ targets:
   - test/core/load_balancing/static_stride_scheduler_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -24481,7 +24482,7 @@ targets:
   - test/core/promise/status_flag_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -24892,7 +24893,7 @@ targets:
   - test/core/promise/switch_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -25217,7 +25218,7 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -25402,7 +25403,7 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -25778,7 +25779,7 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -26664,7 +26665,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - z
   - absl/base:no_destructor
   - absl/container:btree
@@ -26917,7 +26918,7 @@ targets:
   - test/core/promise/try_join_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -27156,7 +27157,7 @@ targets:
   - test/core/promise/try_seq_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -27334,7 +27335,7 @@ targets:
   - test/core/util/unique_ptr_with_bitset_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -28051,7 +28052,7 @@ targets:
   - test/core/channel/v3_bridge_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - z
   - absl/base:no_destructor
   - absl/container:btree
@@ -28271,7 +28272,7 @@ targets:
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -28612,7 +28613,7 @@ targets:
   - test/core/transport/chttp2/write_size_policy_test.cc
   deps:
   - gtest
-  - protobuf::libupb
+  - upb_textformat_lib
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
