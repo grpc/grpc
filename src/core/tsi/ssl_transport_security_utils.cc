@@ -486,7 +486,7 @@ absl::StatusOr<std::string> X509SubjectRfc2253(X509* cert) {
   if (cert == nullptr) {
     return absl::InvalidArgumentError("cert is null");
   }
-  X509_NAME* subject_name = X509_get_subject_name(cert);
+  const X509_NAME* subject_name = X509_get_subject_name(cert);
   if (subject_name == nullptr) {
     return absl::NotFoundError("Could not get subject name from certificate.");
   }
