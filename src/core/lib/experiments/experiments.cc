@@ -182,6 +182,11 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_promise_filter_client_half_close =
+    "Propagate client half-close in promise-based filters and v3 filter "
+    "bridge.";
+const char* const additional_constraints_promise_filter_client_half_close =
+    "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -377,6 +382,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_batch_cleanup_on_cancel",
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
+    {"promise_filter_client_half_close",
+     description_promise_filter_client_half_close,
+     additional_constraints_promise_filter_client_half_close, nullptr, 0, false,
      true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
@@ -602,6 +611,11 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_promise_filter_client_half_close =
+    "Propagate client half-close in promise-based filters and v3 filter "
+    "bridge.";
+const char* const additional_constraints_promise_filter_client_half_close =
+    "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -797,6 +811,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_batch_cleanup_on_cancel",
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
+    {"promise_filter_client_half_close",
+     description_promise_filter_client_half_close,
+     additional_constraints_promise_filter_client_half_close, nullptr, 0, false,
      true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
@@ -1022,6 +1040,11 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_promise_filter_client_half_close =
+    "Propagate client half-close in promise-based filters and v3 filter "
+    "bridge.";
+const char* const additional_constraints_promise_filter_client_half_close =
+    "{}";
 const char* const description_recv_message_filter_bypass_fix =
     "Receive message bypass happen if trailing metadata is received while "
     "Server Initial Metadata is getting processed.";
@@ -1217,6 +1240,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_batch_cleanup_on_cancel",
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
+    {"promise_filter_client_half_close",
+     description_promise_filter_client_half_close,
+     additional_constraints_promise_filter_client_half_close, nullptr, 0, false,
      true},
     {"recv_message_filter_bypass_fix",
      description_recv_message_filter_bypass_fix,
