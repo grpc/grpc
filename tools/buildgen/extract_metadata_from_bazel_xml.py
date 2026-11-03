@@ -1253,6 +1253,21 @@ def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
                     )
 
 
+def _is_upb_target(target: str) -> bool:
+    """Returns True if the target belongs to UPB C runtime (not upb_generator)."""
+    if target == "//:_libupb":
+        return False
+    for prefix in (
+        "@com_google_protobuf//upb/",
+        "@com_google_protobuf//upb:",
+        "@@protobuf+//upb/",
+        "@@protobuf+//upb:",
+    ):
+        if target.startswith(prefix):
+            return True
+    return False
+
+
 def _inject_libupb_target(
     bazel_rules: BuildDict, all_extra_metadata: BuildDict
 ) -> None:
@@ -1260,8 +1275,7 @@ def _inject_libupb_target(
     upb_sub_targets = [
         _get_bazel_label(t)
         for t in _BUILD_EXTRA_METADATA.keys()
-        if t.startswith("@com_google_protobuf//upb/")
-        and _get_bazel_label(t) in bazel_rules
+        if _is_upb_target(t) and _get_bazel_label(t) in bazel_rules
     ]
 
     upb_closure = set()
@@ -1289,7 +1303,7 @@ def _inject_libupb_target(
                 all_upb_textual_hdrs.append(thdr)
         for dep in rule.get("deps", []):
             if dep not in upb_closure and dep in bazel_rules:
-                if dep.startswith("@com_google_protobuf//upb"):
+                if _is_upb_target(dep):
                     upb_queue.append(dep)
 
     bazel_rules["//:_libupb"] = {
@@ -1312,6 +1326,43 @@ def _inject_libupb_target(
         "build": "private",
         "cmake_target": "protobuf::libupb",
     }
+
+
+def _replace_upb_with_libupb(
+    bazel_rules: BuildDict, all_extra_metadata: BuildDict
+) -> None:
+    """Replaces all references to UPB targets with _libupb and deletes UPB targets from bazel_rules."""
+    upb_target_labels = [name for name in bazel_rules if _is_upb_target(name)]
+
+    external_upb_deps = set()
+    for upb_name in upb_target_labels:
+        for dep in bazel_rules[upb_name].get("deps", []):
+            if not _is_upb_target(dep):
+                external_upb_deps.add(dep)
+
+    if "//:_libupb" in bazel_rules:
+        bazel_rules["//:_libupb"]["deps"] = list(sorted(external_upb_deps))
+
+    for rule_name, rule in bazel_rules.items():
+        if rule_name == "//:_libupb":
+            continue
+        new_deps = []
+        for dep in rule.get("deps", []):
+            if _is_upb_target(dep):
+                if "//:_libupb" not in new_deps:
+                    new_deps.append("//:_libupb")
+            else:
+                new_deps.append(dep)
+        rule["deps"] = new_deps
+
+    for upb_name in upb_target_labels:
+        del bazel_rules[upb_name]
+
+    for extra_key in list(all_extra_metadata.keys()):
+        if _is_upb_target(extra_key) or _is_upb_target(
+            _get_bazel_label(extra_key)
+        ):
+            del all_extra_metadata[extra_key]
 
 
 # extra metadata that will be used to construct build.yaml
@@ -1720,6 +1771,7 @@ all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 
 # Synthetic _libupb pseudo-target to unify all UPB sub-libraries
 _inject_libupb_target(bazel_rules, all_extra_metadata)
+_replace_upb_with_libupb(bazel_rules, all_extra_metadata)
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
 # The final build metadata includes transitive dependencies, and sources/headers
