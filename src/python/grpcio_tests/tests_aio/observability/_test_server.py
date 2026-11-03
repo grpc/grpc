@@ -69,8 +69,41 @@ async def stream_stream(request_iterator, servicer_context):
         yield _RESPONSE
 
 
+def sync_unary_unary(unused_request, servicer_context):
+    if ABORT_RPC_METADATA in servicer_context.invocation_metadata():
+        servicer_context.abort(
+            grpc.StatusCode.ABORTED, "Aborting RPC for testing purpose"
+        )
+    if RAISE_EXCEPTION_RPC_METADATA in servicer_context.invocation_metadata():
+        raise RuntimeError("Failing RPC for testing purpose")
+    return _RESPONSE
+
+
+def sync_unary_stream(unused_request, servicer_context):
+    for _ in range(STREAM_LENGTH):
+        yield _RESPONSE
+        if (
+            ABORT_MID_STREAM_RPC_METADATA
+            in servicer_context.invocation_metadata()
+        ):
+            servicer_context.abort(
+                grpc.StatusCode.ABORTED, "Aborting RPC for testing purpose"
+            )
+
+
+def sync_stream_unary(request_iterator, unused_context):
+    for _ in request_iterator:
+        pass
+    return _RESPONSE
+
+
+def sync_stream_stream(request_iterator, unused_context):
+    for _ in request_iterator:
+        yield _RESPONSE
+
+
 class _MethodHandler(grpc.RpcMethodHandler):
-    def __init__(self, request_streaming, response_streaming):
+    def __init__(self, request_streaming, response_streaming, sync=False):
         self.request_streaming = request_streaming
         self.response_streaming = response_streaming
         self.request_deserializer = None
@@ -80,13 +113,13 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_unary = None
         self.stream_stream = None
         if self.request_streaming and self.response_streaming:
-            self.stream_stream = stream_stream
+            self.stream_stream = sync_stream_stream if sync else stream_stream
         elif self.request_streaming:
-            self.stream_unary = stream_unary
+            self.stream_unary = sync_stream_unary if sync else stream_unary
         elif self.response_streaming:
-            self.unary_stream = unary_stream
+            self.unary_stream = sync_unary_stream if sync else unary_stream
         else:
-            self.unary_unary = unary_unary
+            self.unary_unary = sync_unary_unary if sync else unary_unary
 
 
 RPC_METHOD_HANDLERS = {
@@ -113,16 +146,48 @@ REGISTERED_RPC_METHOD_HANDLERS = {
 }
 
 
-async def start_server(register_method=False) -> Tuple[grpc.aio.Server, int]:
+SYNC_RPC_METHOD_HANDLERS = {
+    _UNARY_UNARY: _MethodHandler(False, False, sync=True),
+    _UNARY_UNARY_ALTERNATIVE: _MethodHandler(False, False, sync=True),
+    _UNARY_STREAM: _MethodHandler(False, True, sync=True),
+    _UNARY_STREAM_ALTERNATIVE: _MethodHandler(False, True, sync=True),
+    _STREAM_UNARY: _MethodHandler(True, False, sync=True),
+    _STREAM_UNARY_ALTERNATIVE: _MethodHandler(True, False, sync=True),
+    _STREAM_STREAM: _MethodHandler(True, True, sync=True),
+    _STREAM_STREAM_ALTERNATIVE: _MethodHandler(True, True, sync=True),
+}
+
+
+SYNC_REGISTERED_RPC_METHOD_HANDLERS = {
+    _UNARY_UNARY: _MethodHandler(False, False, sync=True),
+    _UNARY_UNARY_ALTERNATIVE: _MethodHandler(False, False, sync=True),
+    _UNARY_STREAM: _MethodHandler(False, True, sync=True),
+    _UNARY_STREAM_ALTERNATIVE: _MethodHandler(False, True, sync=True),
+    _STREAM_UNARY: _MethodHandler(True, False, sync=True),
+    _STREAM_UNARY_ALTERNATIVE: _MethodHandler(True, False, sync=True),
+    _STREAM_STREAM: _MethodHandler(True, True, sync=True),
+    _STREAM_STREAM_ALTERNATIVE: _MethodHandler(True, True, sync=True),
+}
+
+
+async def start_server(
+    register_method=False, sync_handlers=False
+) -> Tuple[grpc.aio.Server, int]:
     server = grpc.aio.server()
     port = server.add_insecure_port("[::]:0")
+    if sync_handlers:
+        method_handlers = SYNC_RPC_METHOD_HANDLERS
+        registered_method_handlers = SYNC_REGISTERED_RPC_METHOD_HANDLERS
+    else:
+        method_handlers = RPC_METHOD_HANDLERS
+        registered_method_handlers = REGISTERED_RPC_METHOD_HANDLERS
     generic_handler = grpc.method_handlers_generic_handler(
-        _SERVICE_NAME, RPC_METHOD_HANDLERS
+        _SERVICE_NAME, method_handlers
     )
     server.add_generic_rpc_handlers((generic_handler,))
     if register_method:
         server.add_registered_method_handlers(
-            _SERVICE_NAME, REGISTERED_RPC_METHOD_HANDLERS
+            _SERVICE_NAME, registered_method_handlers
         )
     await server.start()
     return server, port
