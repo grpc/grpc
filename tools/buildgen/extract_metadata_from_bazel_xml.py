@@ -1305,42 +1305,15 @@ def _populate_transitive_metadata_for_libupb(
     bazel_rules: BuildDict, all_extra_metadata: BuildDict
 ) -> None:
     """Injects a pseudo rule for libupb encompassing the transitive closure of all UPB targets."""
-    # upb_sub_targets = [name for name in bazel_rules if _is_upb_target(name)]
-    libupb_rule = bazel_rules[LIBUPB_BAZEL_NAME]
-
-    upb_closure = set()
-    upb_queue = libupb_rule["deps"].copy()
-    all_upb_srcs = []
-    all_upb_hdrs = []
-    all_upb_textual_hdrs = []
-
-    while upb_queue:
-        target = upb_queue.pop(0)
-        if target in upb_closure:
-            continue
-        upb_closure.add(target)
-        rule = bazel_rules.get(target)
-        if not rule:
-            continue
-        for src in rule.get("srcs", []):
-            if src not in all_upb_srcs:
-                all_upb_srcs.append(src)
-        for hdr in rule.get("hdrs", []):
-            if hdr not in all_upb_hdrs:
-                all_upb_hdrs.append(hdr)
-        for thdr in rule.get("textual_hdrs", []):
-            if thdr not in all_upb_textual_hdrs:
-                all_upb_textual_hdrs.append(thdr)
-        for dep in rule.get("deps", []):
-            if dep not in upb_closure and dep in bazel_rules:
-                if _is_upb_target(dep):
-                    upb_queue.append(dep)
-
-    libupb_rule.update({
-        "srcs": all_upb_srcs,
-        "hdrs": all_upb_hdrs,
-        "textual_hdrs": all_upb_textual_hdrs,
-    })
+    bazel_label_to_dep_name = {}
+    for dep_name in all_extra_metadata.keys():
+        bazel_label_to_dep_name[_get_bazel_label(dep_name)] = dep_name
+    _compute_transitive_metadata(
+        LIBUPB_BAZEL_NAME, bazel_rules, bazel_label_to_dep_name
+    )
+    libupb = bazel_rules[LIBUPB_BAZEL_NAME]
+    libupb["srcs"] = libupb["_COLLAPSED_SRCS"]
+    libupb["hdrs"] = libupb["_COLLAPSED_HEADERS"]
 
 def _replace_upb_with_libupb(
     bazel_rules: BuildDict, all_extra_metadata: BuildDict
@@ -1377,6 +1350,12 @@ def _replace_upb_with_libupb(
             _get_bazel_label(extra_key)
         ):
             del all_extra_metadata[extra_key]
+
+def _replace_upb_with_pseudo_libupb():
+    _add_libupb_target(bazel_rules, all_extra_metadata)
+    _prune_upb_experimental_feature_rules(bazel_rules)
+    _populate_transitive_metadata_for_libupb(bazel_rules, all_extra_metadata)
+    _replace_upb_with_libupb(bazel_rules, all_extra_metadata)
 
 
 # extra metadata that will be used to construct build.yaml
@@ -1717,11 +1696,8 @@ all_extra_metadata.update(
 )
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 
-# Synthetic _libupb pseudo-target to unify all UPB sub-libraries
-_add_libupb_target(bazel_rules, all_extra_metadata)
-_prune_upb_experimental_feature_rules(bazel_rules)
-_populate_transitive_metadata_for_libupb(bazel_rules, all_extra_metadata)
-_replace_upb_with_libupb(bazel_rules, all_extra_metadata)
+# Add a synthetic _libupb pseudo-target to replace all UPB sub-libraries
+_replace_upb_with_pseudo_libupb()
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
 # The final build metadata includes transitive dependencies, and sources/headers
