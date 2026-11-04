@@ -106,7 +106,8 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     // is disabled and deny_at_disable is true. Note that the proto specifies an
     // HTTP status code, not a gRPC status code; this field stores the gRPC
     // status code determined using the normal HTTP-to-gRPC status conversion
-    // rules.
+    // rules, except that HTTP 200 (which is not in that mapping) is converted
+    // to UNKNOWN, so it is never OK.
     grpc_status_code status_on_error = GRPC_STATUS_PERMISSION_DENIED;
     // Matchers for client request headers that are allowed to be forwarded to
     // the authorization server. An empty list is treated the same as unset.

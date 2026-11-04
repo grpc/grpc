@@ -146,6 +146,11 @@ XdsHttpExtAuthzFilterFactory::ParseTopLevelConfig(
     if (status_on_error_proto != nullptr) {
       config->status_on_error = grpc_http2_status_to_grpc_status(
           envoy_type_v3_HttpStatus_code(status_on_error_proto));
+      // HTTP 200 is not in the HTTP-to-gRPC status mapping, and the RPC must
+      // never be failed with OK, which would let it through instead.
+      if (config->status_on_error == GRPC_STATUS_OK) {
+        config->status_on_error = GRPC_STATUS_UNKNOWN;
+      }
     }
   }
   // include_peer_certificate

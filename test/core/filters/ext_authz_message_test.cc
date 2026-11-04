@@ -1055,6 +1055,20 @@ TEST_F(ParseExtAuthzResponseTest, DeniedResponseHttpStatusMapping) {
                                ::testing::IsEmpty()));
 }
 
+// A denied RPC must never be failed with OK, so HTTP 200 (which is not in the
+// HTTP-to-gRPC status mapping) is converted to UNKNOWN.
+TEST_F(ParseExtAuthzResponseTest, DeniedResponseHttpStatusOkMapsToUnknown) {
+  CheckResponse response;
+  response.mutable_status()->set_code(7);
+  auto* denied = response.mutable_denied_response();
+  denied->mutable_status()->set_code(envoy::type::v3::OK);
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->response,
+              IsDeniedResponse(::testing::Eq(GRPC_STATUS_UNKNOWN),
+                               ::testing::IsEmpty()));
+}
+
 TEST_F(ParseExtAuthzResponseTest, DeniedResponseHeaders) {
   CheckResponse response;
   response.mutable_status()->set_code(7);

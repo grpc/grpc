@@ -436,6 +436,11 @@ absl::StatusOr<ExtAuthzResponse::DeniedResponse> ParseDeniedResponse(
       http_status != nullptr) {
     denied_response.status = grpc_http2_status_to_grpc_status(
         envoy_type_v3_HttpStatus_code(http_status));
+    // HTTP 200 is not in the HTTP-to-gRPC status mapping, and a denied RPC
+    // must never be failed with OK, which would let it through instead.
+    if (denied_response.status == GRPC_STATUS_OK) {
+      denied_response.status = GRPC_STATUS_UNKNOWN;
+    }
   }
   // headers
   size_t size = 0;

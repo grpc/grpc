@@ -3716,6 +3716,24 @@ TEST_F(XdsExtAuthzFilterTest, ParseFullConfig) {
             "case_sensitive=false}]}");
 }
 
+// The RPC must never be failed with OK, so a status_on_error of HTTP 200
+// (which is not in the HTTP-to-gRPC status mapping) is converted to UNKNOWN.
+TEST_F(XdsExtAuthzFilterTest, ParseStatusOnErrorHttpOkMapsToUnknown) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  ext_authz.mutable_status_on_error()->set_code(envoy::type::v3::StatusCode::OK);
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), ExtAuthzFilter::Config::Type());
+  EXPECT_EQ(DownCast<const ExtAuthzFilter::Config&>(*config).status_on_error,
+            GRPC_STATUS_UNKNOWN);
+}
+
 TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigMissingGrpcService) {
   ExtAuthz ext_authz;
   auto* filter_enabled = ext_authz.mutable_filter_enabled();
