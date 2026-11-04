@@ -55,9 +55,6 @@ class FileWatcherCertificateProviderFactory final
     const std::string& spiffe_trust_bundle_map_file() const {
       return spiffe_trust_bundle_map_file_;
     }
-    const std::string& spiffe_bundle_map_file() const {
-      return spiffe_trust_bundle_map_file_;
-    }
 
     Duration refresh_interval() const { return refresh_interval_; }
 
