@@ -35,16 +35,22 @@
 
 zend_class_entry *grpc_ce_channel_credentials;
 PHP_GRPC_DECLARE_OBJECT_HANDLER(channel_credentials_ce_handlers)
+// Shared by every thread of a ZTS process and read by gRPC core threads.
 static char *default_pem_root_certs = NULL;
+static gpr_mu default_pem_root_certs_mu;
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(
     char **pem_root_certs) {
+  grpc_ssl_roots_override_result result = GRPC_SSL_ROOTS_OVERRIDE_OK;
+  gpr_mu_lock(&default_pem_root_certs_mu);
   if (!default_pem_root_certs) {
     *pem_root_certs = NULL;
-    return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+    result = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+  } else {
+    *pem_root_certs = gpr_strdup(default_pem_root_certs);
   }
-  *pem_root_certs = gpr_strdup(default_pem_root_certs);
-  return GRPC_SSL_ROOTS_OVERRIDE_OK;
+  gpr_mu_unlock(&default_pem_root_certs_mu);
+  return result;
 }
 
 /* Frees and destroys an instance of wrapped_grpc_channel_credentials */
@@ -101,8 +107,10 @@ PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
                          "setDefaultRootsPem expects 1 string", 1 TSRMLS_CC);
     return;
   }
+  gpr_mu_lock(&default_pem_root_certs_mu);
   default_pem_root_certs = gpr_realloc(default_pem_root_certs, (pem_roots_length + 1) * sizeof(char));
   memcpy(default_pem_root_certs, pem_roots, pem_roots_length + 1);
+  gpr_mu_unlock(&default_pem_root_certs_mu);
 }
 
 /**
@@ -110,20 +118,22 @@ PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
  * @return TRUE/FALSE
  */
 PHP_METHOD(ChannelCredentials, isDefaultRootsPemSet) {
-  if (default_pem_root_certs) {
-    RETURN_TRUE;
-  }
-  RETURN_FALSE;
+  gpr_mu_lock(&default_pem_root_certs_mu);
+  bool is_set = default_pem_root_certs != NULL;
+  gpr_mu_unlock(&default_pem_root_certs_mu);
+  RETURN_BOOL(is_set);
 }
 
 /**
  * free default roots pem, if it is set
  */
 PHP_METHOD(ChannelCredentials, invalidateDefaultRootsPem) {
+  gpr_mu_lock(&default_pem_root_certs_mu);
   if (default_pem_root_certs) {
     gpr_free(default_pem_root_certs);
     default_pem_root_certs = NULL;
   }
+  gpr_mu_unlock(&default_pem_root_certs_mu);
 }
 
 /**
@@ -346,6 +356,7 @@ void grpc_init_channel_credentials(TSRMLS_D) {
   grpc_ce_channel_credentials = zend_register_internal_class(&ce TSRMLS_CC);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel_credentials,
                         channel_credentials_ce_handlers);
+  gpr_mu_init(&default_pem_root_certs_mu);
 }
 
 void grpc_shutdown_channel_credentials(TSRMLS_D) {
