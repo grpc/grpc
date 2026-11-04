@@ -521,7 +521,7 @@ class Http2ServerTransport final : public ServerTransport,
   Http2Status ValidateIncomingStream(uint32_t stream_id);
 
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
-                             uint32_t stream_id);
+                             uint32_t stream_id, bool end_stream);
 
   // This MUST be called from the transport party only.
   // Recomputes the MAX_CONCURRENT_STREAMS that we advertise to the peer, based
@@ -803,11 +803,6 @@ class Http2ServerTransport final : public ServerTransport,
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
   TarpitManager tarpit_manager_;
 };
-
-// TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two
-// header frames. Which means that the client sent trailing metadata. While we
-// dont expect a gRPC C++ peer to send trailing metadata, not handling it might
-// break interop tests and genuine interop cases.
 
 }  // namespace http2
 }  // namespace grpc_core
