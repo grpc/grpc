@@ -375,14 +375,15 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
   }
 
   // Returns the headers that the filter reported to the ext_authz service in
-  // AttributeContext.HttpRequest.header_map.
+  // AttributeContext.HttpRequest.header_map. Per gRFC A102, the filter always
+  // sets raw_value and never value.
   static std::multimap<std::string, std::string> HeaderMap(
       const CheckRequest& request) {
     std::multimap<std::string, std::string> output;
     for (const auto& header :
          request.attributes().request().http().header_map().headers()) {
-      output.emplace(header.key(), header.value().empty() ? header.raw_value()
-                                                          : header.value());
+      EXPECT_TRUE(header.value().empty()) << header.key();
+      output.emplace(header.key(), header.raw_value());
     }
     return output;
   }

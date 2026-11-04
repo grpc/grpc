@@ -56,6 +56,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -116,13 +117,15 @@ class UpbHeaderMapEncoder {
         envoy_config_core_v3_HeaderMap_add_headers(header_map_, arena_);
     envoy_config_core_v3_HeaderValue_set_key(
         header, CopyStdStringToUpbString(key, arena_));
+    // Per gRFC A102, when writing, we always set the raw_value field and never
+    // the value field, and the values of binary headers are base64-encoded.
+    std::string encoded_value;
     if (absl::EndsWith(key, "-bin")) {
-      envoy_config_core_v3_HeaderValue_set_raw_value(
-          header, CopyStdStringToUpbString(value, arena_));
-    } else {
-      envoy_config_core_v3_HeaderValue_set_value(
-          header, CopyStdStringToUpbString(value, arena_));
+      encoded_value = absl::Base64Escape(value);
+      value = encoded_value;
     }
+    envoy_config_core_v3_HeaderValue_set_raw_value(
+        header, CopyStdStringToUpbString(value, arena_));
   }
 
   envoy_config_core_v3_HeaderMap* header_map_;

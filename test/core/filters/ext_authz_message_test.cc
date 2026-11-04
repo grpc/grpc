@@ -70,6 +70,7 @@ constexpr absl::string_view kCustomTextKey = "custom-text";
 constexpr absl::string_view kCustomTextVal = "plain-text-value";
 constexpr absl::string_view kCustomBinKey = "custom-bin";
 constexpr absl::string_view kCustomBinVal{"\x00\x01\x02\xFF", 4};
+constexpr absl::string_view kCustomBinValBase64 = "AAEC/w==";
 constexpr absl::string_view kAllowMe = "allow-me";
 constexpr absl::string_view kDenyMe = "deny-me";
 constexpr absl::string_view kOther = "other";
@@ -104,16 +105,9 @@ constexpr absl::string_view kEncodedCert =
 // CreateExtAuthzRequest() tests
 //
 
-MATCHER_P2(IsHeaderValue, key_matcher, value_matcher, "") {
-  return ::testing::ExplainMatchResult(key_matcher, arg.key(),
-                                       result_listener) &&
-         ::testing::ExplainMatchResult(value_matcher, arg.value(),
-                                       result_listener) &&
-         ::testing::ExplainMatchResult(::testing::IsEmpty(), arg.raw_value(),
-                                       result_listener);
-}
-
-MATCHER_P2(IsRawHeaderValue, key_matcher, raw_value_matcher, "") {
+// Per gRFC A102, when writing a HeaderValue, the raw_value field is always
+// used and the value field never is.
+MATCHER_P2(IsHeaderValue, key_matcher, raw_value_matcher, "") {
   return ::testing::ExplainMatchResult(key_matcher, arg.key(),
                                        result_listener) &&
          ::testing::ExplainMatchResult(raw_value_matcher, arg.raw_value(),
@@ -559,10 +553,11 @@ TEST_F(CreateExtAuthzRequestTest, HeaderEncodingTextAndBinary) {
   ASSERT_TRUE(request.attributes().request().has_http());
   const auto& http = request.attributes().request().http();
   ASSERT_TRUE(http.has_header_map());
+  // Per gRFC A102, the values of binary headers are base64-encoded.
   EXPECT_THAT(
       http.header_map().headers(),
       ::testing::ElementsAre(IsHeaderValue(kCustomTextKey, kCustomTextVal),
-                             IsRawHeaderValue(kCustomBinKey, kCustomBinVal)));
+                             IsHeaderValue(kCustomBinKey, kCustomBinValBase64)));
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
