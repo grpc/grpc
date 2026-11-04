@@ -103,6 +103,22 @@ TODO(tjagtap) [PH2][P5][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 *   **Testing:** Any changes to PH2 code should be accompanied by relevant tests. Ensure that existing tests in `test/core/transport/chttp2/http2_client_transport_test.cc` and `test/core/transport/chttp2/http2_server_transport_test.cc` pass. Add new tests as needed to cover new functionality.
 *   **Test Comments:** When writing new tests, include comments within each test explaining its purpose and assertions. For large tests, add comments for each step.
 
+### Pragmatic Issue and Nit Guidelines
+
+*   **Surface real issues and helpful nits:** Always flag genuine bugs, data
+    races, memory or lifetime issues, protocol violations, and clean nits that
+    improve readability, consistency, or maintainability.
+*   **Weigh complexity against benefit:** Software can never be completely
+    bug-free. Fixing minor, low-impact, or legacy issues can sometimes introduce
+    new regressions and make the system more complex.
+*   **Avoid net-negative fixes:** When proposing a fix or nit, evaluate whether
+    extra branching, new state, concurrency complexity, or churn in working code
+    outweighs the problem being solved.
+*   **Call out trade-offs:** If an edge case or minor issue only has a complex
+    or invasive fix, still mention the observation, but explicitly note the
+    complexity trade-off (or suggest a comment or `GRPC_DCHECK` instead) rather
+    than insisting on a change that may be a long-term net negative.
+
 ### Key Differences from CHTTP2
 
 *   **Concurrency Model:** Uses `Party` promises instead of `combiner`.
