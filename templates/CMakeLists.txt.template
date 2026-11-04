@@ -96,6 +96,7 @@
       "libssl": "openssl",
       "re2": "re2",
       "z": "zlib",
+      "_libupb": "upb",
     }
     return deps_to_pkgconfig_requires_private.get(lib_name, None)
 
@@ -120,7 +121,7 @@
       if lib_name_to_pkgconfig_requires_private_name(lib_name) is not None:
         # these deps go into Requires.private
         continue
-      if lib_name in ['protobuf', '_libupb']:
+      if lib_name in ['protobuf']:
         # TODO(jtattermusch): add better way of excluding explicit protobuf dependency.
         continue
       if lib_name == 'opentelemetry-cpp::api':
