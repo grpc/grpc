@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/time.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_certificate_provider.h>
@@ -447,6 +448,23 @@ TEST_P(XdsExtAuthzTest, ExtAuthzSuccessBasic) {
   ASSERT_EQ(requests.size(), 1);
   EXPECT_EQ(requests[0].attributes().request().http().method(), "POST");
   EXPECT_EQ(requests[0].attributes().request().http().path(), kEchoMethod);
+}
+
+// AttributeContext.Request.time is set to the RPC's start time (gRFC A92).
+TEST_P(XdsExtAuthzTest, ExtAuthzRequestTime) {
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig());
+  const gpr_timespec before = gpr_now(GPR_CLOCK_REALTIME);
+  CheckRpcSendOk(DEBUG_LOCATION);
+  const gpr_timespec after = gpr_now(GPR_CLOCK_REALTIME);
+  auto requests = ext_authz_server_->service()->requests();
+  ASSERT_EQ(requests.size(), 1);
+  ASSERT_TRUE(requests[0].attributes().request().has_time());
+  // Allow some slack, since the start time is recorded with millisecond
+  // granularity on a monotonic clock and then converted to wall-clock time.
+  const int64_t request_seconds =
+      requests[0].attributes().request().time().seconds();
+  EXPECT_GE(request_seconds, before.tv_sec - 1);
+  EXPECT_LE(request_seconds, after.tv_sec + 1);
 }
 
 // AttributeContext.source and .destination are reported on the server side

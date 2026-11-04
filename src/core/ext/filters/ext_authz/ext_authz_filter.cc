@@ -16,6 +16,8 @@
 
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 
+#include <grpc/support/time.h>
+
 #include <memory>
 #include <optional>
 #include <string>
@@ -34,11 +36,13 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/transport/auth_context.h"
@@ -46,6 +50,8 @@
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/time.h"
+#include "src/core/util/time_precise.h"
 #include "src/core/xds/grpc/streaming_call_promise_wrapper.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_transport.h"
@@ -320,6 +326,20 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
   }
   params.metadata = &md;
   params.is_client_call = filter->is_client_;
+  // AttributeContext.Request.time is the RPC's start time if it is recorded;
+  // otherwise, CreateExtAuthzRequest() uses the current time.
+  // Note that we compute the start time from the time elapsed since the call
+  // was created rather than via Timestamp::FromCycleCounterRoundDown(), since
+  // the latter can be off by up to 2 seconds (the process epoch that it is
+  // relative to is truncated to whole seconds).
+  if (const grpc_core::Call* call = MaybeGetContext<grpc_core::Call>();
+      call != nullptr) {
+    const Duration elapsed = Duration::FromTimespec(
+        gpr_cycle_counter_sub(gpr_get_cycle_counter(), call->start_time()));
+    params.start_time =
+        Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC)) -
+        elapsed;
+  }
   params.allowed_headers = config.allowed_headers;
   params.disallowed_headers = config.disallowed_headers;
   // Populates AttributeContext.source and .destination on the server side.
