@@ -63,9 +63,6 @@ int php_grpc_read_args_array(zval *args_array, grpc_channel_args *args
 
 void generate_sha1_str(char *sha1str, char *str, php_grpc_int len);
 
-void php_grpc_delete_persistent_list_entry(char *key, php_grpc_int key_len
-                                           TSRMLS_DC);
-
 typedef struct _channel_persistent_le {
   grpc_channel_wrapper *channel;
 } channel_persistent_le_t;
