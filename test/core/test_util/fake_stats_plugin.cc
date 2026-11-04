@@ -19,68 +19,6 @@
 
 namespace grpc_core {
 
-class FakeStatsClientFilter : public ChannelFilter {
- public:
-  static const grpc_channel_filter kFilter;
-
-  static absl::string_view TypeName() { return "legacy_fake_stats_client"; }
-
-  explicit FakeStatsClientFilter(
-      FakeClientCallTracerFactory* fake_client_call_tracer_factory);
-
-  static absl::StatusOr<std::unique_ptr<FakeStatsClientFilter>> Create(
-      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
-
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
-
- private:
-  FakeClientCallTracerFactory* const fake_client_call_tracer_factory_;
-};
-
-const grpc_channel_filter FakeStatsClientFilter::kFilter =
-    MakePromiseBasedFilter<FakeStatsClientFilter, FilterEndpoint::kClient>();
-
-absl::StatusOr<std::unique_ptr<FakeStatsClientFilter>>
-FakeStatsClientFilter::Create(const ChannelArgs& args,
-                              ChannelFilter::Args /*filter_args*/) {
-  auto* fake_client_call_tracer_factory =
-      args.GetPointer<FakeClientCallTracerFactory>(
-          GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY);
-  GRPC_CHECK_NE(fake_client_call_tracer_factory, nullptr);
-  return std::make_unique<FakeStatsClientFilter>(
-      fake_client_call_tracer_factory);
-}
-
-ArenaPromise<ServerMetadataHandle> FakeStatsClientFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  FakeClientCallTracer* client_call_tracer =
-      fake_client_call_tracer_factory_->CreateFakeClientCallTracer();
-  if (client_call_tracer != nullptr) {
-    SetContext<CallSpan>(
-        WrapClientCallTracer(client_call_tracer, GetContext<Arena>()));
-  }
-  return next_promise_factory(std::move(call_args));
-}
-
-FakeStatsClientFilter::FakeStatsClientFilter(
-    FakeClientCallTracerFactory* fake_client_call_tracer_factory)
-    : fake_client_call_tracer_factory_(fake_client_call_tracer_factory) {}
-
-void RegisterFakeStatsPlugin() {
-  CoreConfiguration::RegisterEphemeralBuilder(
-      [](CoreConfiguration::Builder* builder) mutable {
-        builder->channel_init()
-            ->RegisterFilter(GRPC_CLIENT_CHANNEL,
-                             &FakeStatsClientFilter::kFilter)
-            .If([](const ChannelArgs& args) {
-              return args.GetPointer<FakeClientCallTracerFactory>(
-                         GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY) !=
-                     nullptr;
-            });
-      });
-}
-
 namespace {
 
 void AddKeyValuePairs(absl::Span<const absl::string_view> keys,
