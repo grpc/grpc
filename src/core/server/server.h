@@ -230,7 +230,7 @@ class Server : public ServerInterface,
   // Note that an alternative implementation would have been to combine the
   // ListenerInterface and ListenerState into a single parent class, but
   // they are being separated to make code simpler to understand.
-  class ListenerState : public RefCounted<ListenerState> {
+  class ListenerState final : public RefCounted<ListenerState> {
    public:
     explicit ListenerState(RefCountedPtr<Server> server,
                            OrphanablePtr<ListenerInterface> l);
@@ -283,6 +283,17 @@ class Server : public ServerInterface,
     bool OnHandshakeDone(Orphanable* handshaking_connection,
                          Transport* transport, grpc_pollset* accepting_pollset,
                          const ChannelArgs& args);
+
+    // Legacy code-path for callers that directly call
+    // Server::SetupTransport() without having a listener.
+    // TODO(roth): When we have time, migrate all callers to store
+    // connections in listeners and remove this method.  This will require
+    // changing the inproc transport to use a listener and migrating
+    // callers from the legacy grpc_server_add_channel_from_fd() API to
+    // the new PassiveListener API, and maybe other changes.
+    absl::Status LegacyAddActiveConnection(
+        Transport* transport, grpc_pollset* accepting_pollset,
+        const ChannelArgs& args);
 
     size_t NumOpenConnectionsLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_) {
