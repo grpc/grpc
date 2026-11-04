@@ -83,10 +83,6 @@ constexpr absl::string_view kFilterConfigNotSetErrorMessage =
     "ext_authz: filter config not set";
 constexpr absl::string_view kNoResponseErrorMessage =
     "No response message received";
-constexpr absl::string_view kDeniedResponseNotPresentErrorMessage =
-    "denied_response not present in CheckResponse";
-constexpr absl::string_view kOkResponseNotPresentErrorMessage =
-    "ok_response not present in CheckResponse";
 constexpr absl::string_view kForbiddenHeaderMutationErrorMessage =
     "Forbidden header mutation: x-custom-header";
 constexpr absl::string_view kForbiddenHeaderRemovalErrorMessage =
@@ -512,7 +508,10 @@ FILTER_TEST(ExtAuthzFilterTest,
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest, NonOkStatusWithOkResponseFails) {
+// Per gRFC A92, CheckResponse.status alone decides whether the RPC is allowed,
+// so a non-OK status denies the RPC even if ok_response is set. In that case,
+// the RPC is failed with the default denied status (PERMISSION_DENIED).
+FILTER_TEST(ExtAuthzFilterTest, NonOkStatusWithOkResponseDenies) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
@@ -531,12 +530,41 @@ FILTER_TEST(ExtAuthzFilterTest, NonOkStatusWithOkResponseFails) {
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_md.ok());
   EXPECT_THAT(**server_trailing_md,
-              HasMetadataResult(absl::PermissionDeniedError(
-                  kDeniedResponseNotPresentErrorMessage)));
+              HasMetadataResult(
+                  absl::PermissionDeniedError(kDeniedNoMessageErrorMessage)));
   WaitForAllPendingWork();
 }
 
-FILTER_TEST(ExtAuthzFilterTest, OkStatusWithDeniedResponseFails) {
+// A deny without a denied_response is still a deny, not a failure, so
+// failure_mode_allow does not let the call through.
+FILTER_TEST(ExtAuthzFilterTest,
+            NonOkStatusWithoutDeniedResponseWithFailureModeAllowStillDenies) {
+  auto config = MakeConfig(/*failure_mode_allow=*/true,
+                           /*failure_mode_allow_header_add=*/true);
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(MakeClientMetadata());
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(7);
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  handler.join();
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md,
+              HasMetadataResult(
+                  absl::PermissionDeniedError(kDeniedNoMessageErrorMessage)));
+  WaitForAllPendingWork();
+}
+
+// Per gRFC A92, CheckResponse.status alone decides whether the RPC is allowed,
+// so an OK status allows the RPC even if ok_response is unset.
+FILTER_TEST(ExtAuthzFilterTest, OkStatusWithoutOkResponseAllows) {
   auto config = MakeConfig();
   ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
   StartCallForFilter(MakeClientMetadata());
@@ -546,19 +574,17 @@ FILTER_TEST(ExtAuthzFilterTest, OkStatusWithDeniedResponseFails) {
         ASSERT_TRUE(msg.has_value());
         envoy::service::auth::v3::CheckResponse response;
         response.mutable_status()->set_code(0);
-        auto* denied = response.mutable_denied_response();
-        denied->mutable_status()->set_code(
-            envoy::type::v3::StatusCode::Unauthorized);
         unary_call->SendMessageToClient(response.SerializeAsString());
       });
-  EXPECT_FALSE(PullClientInitialMetadata().ok());
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
   handler.join();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md, LacksMetadataKey(kFailureModeAllowedHeader));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
   ValueOrFailure<ServerMetadataHandle> server_trailing_md =
       PullServerTrailingMetadata();
   ASSERT_TRUE(server_trailing_md.ok());
-  EXPECT_THAT(**server_trailing_md,
-              HasMetadataResult(absl::PermissionDeniedError(
-                  kOkResponseNotPresentErrorMessage)));
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
   WaitForAllPendingWork();
 }
 
@@ -574,12 +600,7 @@ FILTER_TEST(ExtAuthzFilterTest,
       [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
         auto msg = unary_call->WaitForMessageFromClient();
         ASSERT_TRUE(msg.has_value());
-        envoy::service::auth::v3::CheckResponse response;
-        response.mutable_status()->set_code(0);
-        auto* denied = response.mutable_denied_response();
-        denied->mutable_status()->set_code(
-            envoy::type::v3::StatusCode::Unauthorized);
-        unary_call->SendMessageToClient(response.SerializeAsString());
+        unary_call->SendMessageToClient("\x0a\xff");
       });
   ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
   handler.join();

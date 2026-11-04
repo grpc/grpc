@@ -818,19 +818,11 @@ MATCHER_P2(IsDeniedResponse, status_matcher, headers_matcher, "") {
 
 constexpr absl::string_view kCheckResponseParseErrorMessage =
     "Failed to parse CheckResponse";
-constexpr absl::string_view kStatusNotPresentErrorMessage =
-    "status not present in CheckResponse";
-constexpr absl::string_view kInvalidStatusCodeErrorMessage =
-    "Invalid grpc status code in CheckResponse status: 99";
-constexpr absl::string_view kOkResponseNotPresentErrorMessage =
-    "ok_response not present in CheckResponse";
 constexpr absl::string_view kHeaderOptionMissingValueErrorMessage =
     "either value or raw_value must be set";
 constexpr absl::string_view kAllGood = "all good";
 constexpr absl::string_view kRespHeaderKey = "x-resp-1";
 constexpr absl::string_view kRespHeaderVal = "val-resp-1";
-constexpr absl::string_view kDeniedResponseNotPresentErrorMessage =
-    "denied_response not present in CheckResponse";
 constexpr absl::string_view kDenyReasonHeaderKey = "x-deny-reason";
 constexpr absl::string_view kDenyReasonHeaderVal = "bad-token";
 constexpr absl::string_view kUnauthenticatedRpc = "unauthenticated rpc";
@@ -874,38 +866,53 @@ TEST_F(ParseExtAuthzResponseTest, MalformedProtobufFails) {
                        ::testing::StrEq(kCheckResponseParseErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest, EmptyPayloadFails) {
+// An empty CheckResponse has an unset status, which is treated as OK.
+TEST_F(ParseExtAuthzResponseTest, EmptyPayloadIsOk) {
   auto parsed = ExtAuthzResponse::Parse("");
-  EXPECT_THAT(parsed.status(),
-              StatusIs(absl::StatusCode::kInternal,
-                       ::testing::StrEq(kStatusNotPresentErrorMessage)));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
+  EXPECT_THAT(parsed->status_message, ::testing::IsEmpty());
+  EXPECT_THAT(
+      parsed->response,
+      IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
+                   ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest, MissingStatusFieldFails) {
+// The status field alone determines whether the RPC is allowed, so an unset
+// status is OK even if denied_response is set.
+TEST_F(ParseExtAuthzResponseTest, MissingStatusFieldIsOk) {
   CheckResponse response;
   response.mutable_denied_response();
   auto parsed = ParseResponse(response);
-  EXPECT_THAT(parsed.status(),
-              StatusIs(absl::StatusCode::kInternal,
-                       ::testing::StrEq(kStatusNotPresentErrorMessage)));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
+  EXPECT_THAT(
+      parsed->response,
+      IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
+                   ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest, InvalidStatusCodeFails) {
+TEST_F(ParseExtAuthzResponseTest, InvalidStatusCodeIsDenied) {
   CheckResponse response;
   response.mutable_status()->set_code(99);
   auto parsed = ParseResponse(response);
-  EXPECT_THAT(parsed.status(),
-              StatusIs(absl::StatusCode::kInternal,
-                       ::testing::StrEq(kInvalidStatusCodeErrorMessage)));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_UNKNOWN));
+  EXPECT_THAT(parsed->response,
+              IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
+                               ::testing::IsEmpty()));
 }
 
-TEST_F(ParseExtAuthzResponseTest, StatusOkMissingOkResponseFails) {
+TEST_F(ParseExtAuthzResponseTest, StatusOkMissingOkResponseIsOk) {
   CheckResponse response;
   response.mutable_status()->set_code(0);
   auto parsed = ParseResponse(response);
-  EXPECT_THAT(parsed.status(),
-              StatusIs(absl::StatusCode::kInternal,
-                       ::testing::StrEq(kOkResponseNotPresentErrorMessage)));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_OK));
+  EXPECT_THAT(
+      parsed->response,
+      IsOkResponse(IsHeaderMutation(::testing::IsEmpty(), ::testing::IsEmpty()),
+                   ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtAuthzResponseTest, OkResponseHeaderOptionMissingValueFails) {
@@ -979,14 +986,30 @@ TEST_F(ParseExtAuthzResponseTest, OkResponseInvalidHeaderToRemoveFails) {
                        ::testing::StrEq(kInvalidHeaderKeyErrorMessage)));
 }
 
-TEST_F(ParseExtAuthzResponseTest, StatusNotOkMissingDeniedResponseFails) {
+TEST_F(ParseExtAuthzResponseTest, StatusNotOkMissingDeniedResponseIsDenied) {
   CheckResponse response;
   response.mutable_status()->set_code(16);
   auto parsed = ParseResponse(response);
-  EXPECT_THAT(
-      parsed.status(),
-      StatusIs(absl::StatusCode::kInternal,
-               ::testing::StrEq(kDeniedResponseNotPresentErrorMessage)));
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->status_code, ::testing::Eq(GRPC_STATUS_UNAUTHENTICATED));
+  EXPECT_THAT(parsed->response,
+              IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
+                               ::testing::IsEmpty()));
+}
+
+// The status field alone determines whether the RPC is denied, so a non-OK
+// status with ok_response set is still denied.
+TEST_F(ParseExtAuthzResponseTest, StatusNotOkWithOkResponseIsDenied) {
+  CheckResponse response;
+  response.mutable_status()->set_code(7);
+  response.mutable_ok_response()->add_headers_to_remove(std::string(kKey1));
+  auto parsed = ParseResponse(response);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(parsed->status_code,
+              ::testing::Eq(GRPC_STATUS_PERMISSION_DENIED));
+  EXPECT_THAT(parsed->response,
+              IsDeniedResponse(::testing::Eq(GRPC_STATUS_PERMISSION_DENIED),
+                               ::testing::IsEmpty()));
 }
 
 TEST_F(ParseExtAuthzResponseTest, DeniedResponseHeaderOptionMissingValueFails) {

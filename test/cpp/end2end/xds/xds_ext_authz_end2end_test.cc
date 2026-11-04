@@ -760,9 +760,12 @@ TEST_P(XdsExtAuthzTest, ExtAuthzDeniedWithoutDeniedResponse) {
         response->mutable_status()->set_code(GRPC_STATUS_PERMISSION_DENIED);
         return grpc::Status::OK;
       });
-  SetExtAuthzListenerAndStart(BuildExtAuthzConfig());
+  // The status alone determines that the RPC is denied, so failure_mode_allow
+  // does not apply, and the RPC fails with the default denied status.
+  SetExtAuthzListenerAndStart(BuildExtAuthzConfig(
+      /*failure_mode_allow=*/true, /*failure_mode_allow_header_add=*/true));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::PERMISSION_DENIED,
-                      "denied_response not present in CheckResponse");
+                      "ExtAuthz request is denied");
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 0);
   EXPECT_EQ(ext_authz_server_->service()->request_count(), 1);
 }

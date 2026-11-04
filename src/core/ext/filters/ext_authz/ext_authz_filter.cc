@@ -372,50 +372,42 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
                   absl::StrAppend(&status_message, ", error message: ",
                                   response->status_message);
                 }
-                const auto* denied =
-                    std::get_if<ExtAuthzResponse::DeniedResponse>(
-                        &response->response);
-                grpc_status_code denied_status =
-                    denied != nullptr ? denied->status : response->status_code;
-                if (denied != nullptr) {
-                  auto trailers = GetAllowedAdditions(rules, denied->headers);
-                  if (!trailers.ok()) {
-                    return HandleFailure(*filter, config, *md,
-                                         trailers.status().message());
-                  }
-                  // The denied response headers are applied to the trailing
-                  // metadata in OnServerTrailingMetadata(), which sees the
-                  // metadata synthesized from the status returned below.
-                  response_trailer_to_add = std::move(*trailers);
+                const auto& denied =
+                    std::get<ExtAuthzResponse::DeniedResponse>(
+                        response->response);
+                auto trailers = GetAllowedAdditions(rules, denied.headers);
+                if (!trailers.ok()) {
+                  return HandleFailure(*filter, config, *md,
+                                       trailers.status().message());
                 }
+                // The denied response headers are applied to the trailing
+                // metadata in OnServerTrailingMetadata(), which sees the
+                // metadata synthesized from the status returned below.
+                response_trailer_to_add = std::move(*trailers);
                 filter->RecordDeniedRpc();
                 return absl::Status(
-                    static_cast<absl::StatusCode>(denied_status),
+                    static_cast<absl::StatusCode>(denied.status),
                     status_message);
               }
               // Handle OK response.
-              const auto* ok_resp = std::get_if<ExtAuthzResponse::OkResponse>(
-                  &response->response);
-              if (ok_resp == nullptr) {
-                return HandleFailure(*filter, config, *md,
-                                     "ExtAuthz OK response missing payload");
-              }
+              const auto& ok_resp =
+                  std::get<ExtAuthzResponse::OkResponse>(response->response);
               // Check all of the mutations before applying any of them, so
               // that none of them are applied if any of them fails.
               auto additions = GetAllowedAdditions(
-                  rules, ok_resp->header_mutation.set_headers);
+                  rules, ok_resp.header_mutation.set_headers);
               if (!additions.ok()) {
                 return HandleFailure(*filter, config, *md,
                                      additions.status().message());
               }
               auto removals = GetAllowedRemovals(
-                  rules, ok_resp->header_mutation.remove_headers);
+                  rules, ok_resp.header_mutation.remove_headers);
               if (!removals.ok()) {
                 return HandleFailure(*filter, config, *md,
                                      removals.status().message());
               }
               auto response_headers =
-                  GetAllowedAdditions(rules, ok_resp->response_headers_to_add);
+                  GetAllowedAdditions(rules, ok_resp.response_headers_to_add);
               if (!response_headers.ok()) {
                 return HandleFailure(*filter, config, *md,
                                      response_headers.status().message());

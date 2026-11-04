@@ -75,17 +75,17 @@ struct ExtAuthzResponse {
     std::vector<XdsHeaderValueOption> headers;
   };
 
-  // The variant representing the actual response content.
-  // It can hold OkResponse, DeniedResponse, or std::monostate if no response
-  // is set.
-  using ResponseValue =
-      std::variant<std::monostate, OkResponse, DeniedResponse>;
+  // The variant representing the actual response content. Holds OkResponse
+  // if status_code is OK and DeniedResponse otherwise; if the corresponding
+  // field is unset in the CheckResponse, it holds a default-constructed value.
+  using ResponseValue = std::variant<OkResponse, DeniedResponse>;
 
   ResponseValue response;
 
   // The overall status of the CheckResponse (from CheckResponse.status).
   // If this is an OK status, the data plane RPC will be allowed; otherwise, it
-  // will be rejected.
+  // will be rejected. An unset CheckResponse.status is treated as OK, and a
+  // code that is not a valid gRPC status code is mapped to UNKNOWN.
   // Note that if the RPC is rejected, this field does not indicate the status
   // with which to fail the RPC (which comes from DeniedResponse.status).
   // However, implementations should include the text of this status in the RPC

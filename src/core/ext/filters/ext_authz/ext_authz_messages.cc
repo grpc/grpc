@@ -391,6 +391,61 @@ absl::StatusOr<std::vector<XdsHeaderValueOption>> ParseExtAuthzHeaderOptions(
   return result;
 }
 
+// Parses OkHttpResponse.  An unset message means there are no header
+// mutations to apply.
+absl::StatusOr<ExtAuthzResponse::OkResponse> ParseOkResponse(
+    const envoy_service_auth_v3_OkHttpResponse* ok_resp) {
+  ExtAuthzResponse::OkResponse ok_response;
+  if (ok_resp == nullptr) return ok_response;
+  size_t size = 0;
+  // headers
+  auto headers = ParseExtAuthzHeaderOptions(
+      envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size), size);
+  if (!headers.ok()) return headers.status();
+  ok_response.header_mutation.set_headers = std::move(*headers);
+  // headers_to_remove
+  auto headers_to_remove =
+      envoy_service_auth_v3_OkHttpResponse_headers_to_remove(ok_resp, &size);
+  for (size_t i = 0; i < size; ++i) {
+    absl::string_view key = UpbStringToAbsl(headers_to_remove[i]);
+    if (ValidateHeaderKeyIsLegal(key) != ValidateMetadataResult::kOk) {
+      return absl::InvalidArgumentError(
+          absl::StrCat("Invalid header name to remove: ", key));
+    }
+    ok_response.header_mutation.remove_headers.push_back(std::string(key));
+  }
+  // response_headers_to_add
+  auto response_headers_to_add = ParseExtAuthzHeaderOptions(
+      envoy_service_auth_v3_OkHttpResponse_response_headers_to_add(ok_resp,
+                                                                   &size),
+      size);
+  if (!response_headers_to_add.ok()) return response_headers_to_add.status();
+  ok_response.response_headers_to_add = std::move(*response_headers_to_add);
+  return ok_response;
+}
+
+// Parses DeniedHttpResponse.  An unset message means the RPC is failed with
+// the default status and no trailer mutations.
+absl::StatusOr<ExtAuthzResponse::DeniedResponse> ParseDeniedResponse(
+    const envoy_service_auth_v3_DeniedHttpResponse* denied) {
+  ExtAuthzResponse::DeniedResponse denied_response;
+  if (denied == nullptr) return denied_response;
+  // status
+  if (const auto* http_status =
+          envoy_service_auth_v3_DeniedHttpResponse_status(denied);
+      http_status != nullptr) {
+    denied_response.status = grpc_http2_status_to_grpc_status(
+        envoy_type_v3_HttpStatus_code(http_status));
+  }
+  // headers
+  size_t size = 0;
+  auto headers = ParseExtAuthzHeaderOptions(
+      envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size), size);
+  if (!headers.ok()) return headers.status();
+  denied_response.headers = std::move(*headers);
+  return denied_response;
+}
+
 }  // namespace
 
 absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
@@ -402,75 +457,32 @@ absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
     return absl::InternalError("Failed to parse CheckResponse");
   }
   // status
-  const auto* status = envoy_service_auth_v3_CheckResponse_status(response);
-  if (status == nullptr) {
-    return absl::InternalError("status not present in CheckResponse");
-  }
+  // Per gRFC A92, this field alone determines whether the data plane RPC is
+  // allowed: OK allows it and anything else denies it. As in Envoy, an unset
+  // status is treated as a google.rpc.Status with its default code, which is
+  // OK, and a code that is not a valid gRPC status code denies the RPC.
   ExtAuthzResponse ext_authz_response;
-  int32_t code_int = google_rpc_Status_code(status);
-  if (!grpc_status_code_from_int(code_int, &ext_authz_response.status_code)) {
-    return absl::InternalError(absl::StrCat(
-        "Invalid grpc status code in CheckResponse status: ", code_int));
+  if (const auto* status = envoy_service_auth_v3_CheckResponse_status(response);
+      status != nullptr) {
+    int32_t code_int = google_rpc_Status_code(status);
+    if (!grpc_status_code_from_int(code_int,
+                                   &ext_authz_response.status_code)) {
+      ext_authz_response.status_code = GRPC_STATUS_UNKNOWN;
+    }
+    ext_authz_response.status_message =
+        UpbStringToStdString(google_rpc_Status_message(status));
   }
-  ext_authz_response.status_message =
-      UpbStringToStdString(google_rpc_Status_message(status));
-  // ok_response
+  // ok_response or denied_response
   if (ext_authz_response.status_code == GRPC_STATUS_OK) {
-    const auto* ok_resp =
-        envoy_service_auth_v3_CheckResponse_ok_response(response);
-    if (ok_resp == nullptr) {
-      return absl::InternalError("ok_response not present in CheckResponse");
-    }
-    ExtAuthzResponse::OkResponse ok_response;
-    size_t size = 0;
-    // headers
-    auto headers = ParseExtAuthzHeaderOptions(
-        envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size), size);
-    if (!headers.ok()) return headers.status();
-    ok_response.header_mutation.set_headers = std::move(*headers);
-    // headers_to_remove
-    auto headers_to_remove =
-        envoy_service_auth_v3_OkHttpResponse_headers_to_remove(ok_resp, &size);
-    for (size_t i = 0; i < size; ++i) {
-      absl::string_view key = UpbStringToAbsl(headers_to_remove[i]);
-      if (ValidateHeaderKeyIsLegal(key) != ValidateMetadataResult::kOk) {
-        return absl::InvalidArgumentError(
-            absl::StrCat("Invalid header name to remove: ", key));
-      }
-      ok_response.header_mutation.remove_headers.push_back(std::string(key));
-    }
-    // response_headers_to_add
-    auto response_headers_to_add = ParseExtAuthzHeaderOptions(
-        envoy_service_auth_v3_OkHttpResponse_response_headers_to_add(ok_resp,
-                                                                     &size),
-        size);
-    if (!response_headers_to_add.ok()) return response_headers_to_add.status();
-    ok_response.response_headers_to_add = std::move(*response_headers_to_add);
-    ext_authz_response.response = std::move(ok_response);
+    auto ok_response = ParseOkResponse(
+        envoy_service_auth_v3_CheckResponse_ok_response(response));
+    if (!ok_response.ok()) return ok_response.status();
+    ext_authz_response.response = std::move(*ok_response);
   } else {
-    // denied_response
-    const auto* denied =
-        envoy_service_auth_v3_CheckResponse_denied_response(response);
-    if (denied == nullptr) {
-      return absl::InternalError(
-          "denied_response not present in CheckResponse");
-    }
-    ExtAuthzResponse::DeniedResponse denied_response;
-    denied_response.status = GRPC_STATUS_PERMISSION_DENIED;
-    // status
-    if (const auto* http_status =
-            envoy_service_auth_v3_DeniedHttpResponse_status(denied);
-        http_status != nullptr) {
-      denied_response.status = grpc_http2_status_to_grpc_status(
-          envoy_type_v3_HttpStatus_code(http_status));
-    }
-    // headers
-    size_t size = 0;
-    auto headers = ParseExtAuthzHeaderOptions(
-        envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size), size);
-    if (!headers.ok()) return headers.status();
-    denied_response.headers = std::move(*headers);
-    ext_authz_response.response = std::move(denied_response);
+    auto denied_response = ParseDeniedResponse(
+        envoy_service_auth_v3_CheckResponse_denied_response(response));
+    if (!denied_response.ok()) return denied_response.status();
+    ext_authz_response.response = std::move(*denied_response);
   }
   return ext_authz_response;
 }
