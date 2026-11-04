@@ -7514,7 +7514,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:function_ref",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -7532,6 +7531,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_grpc"],
     deps = [
+        "grpc_check",
         "no_destruct",
         "protobuf_any_upbdefs",
         "protobuf_duration_upbdefs",

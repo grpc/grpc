@@ -40,6 +40,7 @@
 #include "google/protobuf/timestamp.upbdefs.h"
 #include "google/protobuf/wrappers.upbdefs.h"
 #include "re2/re2.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/upb_utils.h"
 #include "upb/base/string_view.h"
@@ -47,7 +48,6 @@
 #include "upb/reflection/def.hpp"
 #include "upb/wire/encode.h"
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -313,7 +313,7 @@ class SharedCelRuntime final {
     CelStatus status;
     runtime_ = cel_Runtime_New(cel_DefaultAllocator, def_pool_.ptr(),
                                /*opts=*/nullptr, status.get());
-    CHECK(runtime_ != nullptr)
+    GRPC_CHECK(runtime_ != nullptr)
         << "failed to create CEL runtime: " << status.ToAbsl();
   }
 
@@ -338,7 +338,7 @@ void Evaluate(const cel_Program* program, const cel_VariableResolver& resolver,
   // be reused across evaluations.  It fails only if allocation fails.
   ActivationPtr activation(
       cel_Program_Activate(program, &resolver, /*opts=*/nullptr));
-  CHECK_NE(activation.get(), nullptr);
+  GRPC_CHECK_NE(activation.get(), nullptr);
   // Holds values created during evaluation.  Its initial block is on the
   // stack, so that evaluations needing little memory don't allocate.
   char initial_block[kEvaluationArenaInitialBlockSize];
