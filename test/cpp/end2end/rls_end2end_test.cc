@@ -32,10 +32,12 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include <atomic>
 #include <deque>
 #include <map>
 #include <optional>
 #include <thread>
+#include <vector>
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
@@ -44,6 +46,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/load_balancing/rls/rls.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/env.h"
@@ -72,6 +75,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/span.h"
 
 using ::grpc::lookup::v1::RouteLookupRequest;
 
@@ -143,10 +147,11 @@ class FakeResolverResponseGeneratorWrapper {
       : response_generator_(grpc_core::MakeRefCounted<
                             grpc_core::FakeResolverResponseGenerator>()) {}
 
-  void SetNextResolution(absl::string_view service_config_json) {
+  void SetNextResolution(absl::string_view service_config_json,
+                         absl::Span<const int> backend_ports = {}) {
     grpc_core::ExecCtx exec_ctx;
     response_generator_->SetResponseSynchronously(
-        BuildFakeResults(service_config_json));
+        BuildFakeResults(service_config_json, backend_ports));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {
@@ -155,8 +160,20 @@ class FakeResolverResponseGeneratorWrapper {
 
  private:
   static grpc_core::Resolver::Result BuildFakeResults(
-      absl::string_view service_config_json) {
+      absl::string_view service_config_json,
+      absl::Span<const int> backend_ports) {
     grpc_core::Resolver::Result result;
+    if (!backend_ports.empty()) {
+      grpc_core::EndpointAddressesList endpoints;
+      for (int port : backend_ports) {
+        auto uri = grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
+        GRPC_CHECK_OK(uri);
+        grpc_resolved_address address;
+        GRPC_CHECK(grpc_parse_uri(*uri, &address));
+        endpoints.emplace_back(address, grpc_core::ChannelArgs());
+      }
+      result.addresses = std::move(endpoints);
+    }
     result.service_config =
         grpc_core::ServiceConfigImpl::Create(result.args, service_config_json);
     EXPECT_TRUE(result.service_config.ok()) << result.service_config.status();
@@ -241,6 +258,7 @@ class RlsEnd2endTest : public ::testing::Test {
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
     std::string telemetry_label;
+    bool skip_cancelled_check = false;
 
     RpcOptions() {}
 
@@ -262,6 +280,11 @@ class RlsEnd2endTest : public ::testing::Test {
 
     RpcOptions& set_telemetry_label(absl::string_view label) {
       telemetry_label = std::string(label);
+      return *this;
+    }
+
+    RpcOptions& set_skip_cancelled_check(bool rpc_skip_cancelled_check) {
+      skip_cancelled_check = rpc_skip_cancelled_check;
       return *this;
     }
 
@@ -289,6 +312,9 @@ class RlsEnd2endTest : public ::testing::Test {
     rpc_options.SetupRpc(&context);
     EchoRequest request;
     request.set_message(kRequestMessage);
+    if (rpc_options.skip_cancelled_check) {
+      request.mutable_param()->set_skip_cancelled_check(true);
+    }
     return stub_->Echo(&context, request, response);
   }
 
@@ -417,8 +443,10 @@ class RlsEnd2endTest : public ::testing::Test {
     return ServiceConfigBuilder(rls_server_target_);
   }
 
-  void SetNextResolution(absl::string_view service_config_json) {
-    resolver_response_generator_->SetNextResolution(service_config_json);
+  void SetNextResolution(absl::string_view service_config_json,
+                         absl::Span<const int> backend_ports = {}) {
+    resolver_response_generator_->SetNextResolution(service_config_json,
+                                                    backend_ports);
   }
 
   template <typename T>
@@ -515,6 +543,43 @@ TEST_F(RlsEnd2endTest, Basic) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   // No RLS header seen by the backend, since the RLS response didn't set any.
   EXPECT_THAT(backends_[0]->service_.rls_data(), ::testing::ElementsAre());
+}
+
+// The RLS policy compares the previous and new resolver address lists on each
+// update. When the new list is longer than the old one, the comparison used to
+// read past the end of the old list. Deliver a one-endpoint list and then a
+// two-endpoint list; ASan reports the out-of-bounds read on the second update
+// without the fix. Note that this only fails under ASan.
+TEST_F(RlsEnd2endTest, LongerResolverAddressListDoesNotReadOutOfBounds) {
+  StartBackends(2);
+  const std::string service_config =
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build();
+  rls_server_->service_.SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue}}),
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
+  // First resolution: a one-endpoint address list.
+  SetNextResolution(service_config, {backends_[0]->port_});
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  // Second resolution: a longer, two-endpoint address list. Applying it drives
+  // the RLS address-list comparison with a longer new list.
+  SetNextResolution(service_config, {backends_[0]->port_, backends_[1]->port_});
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
 }
 
 TEST_F(RlsEnd2endTest, DuplicateHeadersAreMerged) {
@@ -996,6 +1061,58 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
+}
+
+// Regression test for the default target's child policy being unreffed
+// outside of the WorkSerializer when the channel releases the last ref to
+// an old picker on a data plane thread.  Changes the default target
+// repeatedly while RPCs are in flight.
+TEST_F(RlsEnd2endTest, UpdateDefaultTargetWithRpcsInFlight) {
+  StartBackends(2);
+  auto service_config_builder =
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .set_default_target(grpc_core::LocalIpUri(backends_[0]->port_));
+  SetNextResolution(service_config_builder.Build());
+  // Don't give the RLS server a response, so the RLS request will fail.
+  // The data plane RPC should be sent to the default target.
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  // Now send RPCs from several threads while changing the default target.
+  // RPCs may fail or be cancelled while the default target is changing, so
+  // we don't check their status, and the backends don't check that they
+  // were not cancelled.
+  std::atomic<bool> done{false};
+  std::vector<std::thread> threads;
+  for (size_t i = 0; i < 4; ++i) {
+    threads.emplace_back([&]() {
+      while (!done.load()) {
+        (void)SendRpc(RpcOptions()
+                          .set_timeout_ms(1000)
+                          .set_metadata({{"key1", kTestValue}})
+                          .set_skip_cancelled_check(true));
+      }
+    });
+  }
+  for (size_t i = 1; i <= 100; ++i) {
+    service_config_builder.set_default_target(
+        grpc_core::LocalIpUri(backends_[i % 2]->port_));
+    SetNextResolution(service_config_builder.Build());
+  }
+  done.store(true);
+  for (auto& thread : threads) thread.join();
 }
 
 TEST_F(RlsEnd2endTest, CachedResponse) {

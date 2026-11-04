@@ -118,3 +118,19 @@ accessible to the AIs
 *   The `CallFilters` class is responsible for managing the filters for a call.
     See the [channel documentation](../lib/channel/AGENTS.md) for more
     information about filters.
+
+## Pragmatic Issue and Nit Guidelines
+
+*   **Surface real issues and helpful nits:** Always flag genuine bugs, data
+    races, memory or lifetime issues, protocol violations, and clean nits that
+    improve readability, consistency, or maintainability.
+*   **Weigh complexity against benefit:** Software can never be completely
+    bug-free. Fixing minor, low-impact, or legacy issues can sometimes introduce
+    new regressions and make the system more complex.
+*   **Avoid net-negative fixes:** When proposing a fix or nit, evaluate whether
+    extra branching, new state, concurrency complexity, or churn in working code
+    outweighs the problem being solved.
+*   **Call out trade-offs:** If an edge case or minor issue only has a complex
+    or invasive fix, still mention the observation, but explicitly note the
+    complexity trade-off (or suggest a comment or `GRPC_DCHECK` instead) rather
+    than insisting on a change that may be a long-term net negative.

@@ -5222,6 +5222,7 @@ grpc_cc_library(
         "src/cpp/util/status.cc",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/status",
         "absl/strings",
     ],
