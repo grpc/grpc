@@ -181,6 +181,32 @@ def async_generator_to_generator(object agen, object loop):
         pass
 
 
+def _yield_to_queue(
+    object gen, object loop, object queue, object consumer_gone
+):
+    """Iterates `gen` in the thread poll and forwards its items to `queue`."""
+    iterator = None
+    exhausted = False
+    try:
+        iterator = iter(gen)
+        while not consumer_gone.is_set():
+            try:
+                item = next(iterator)
+            except StopIteration:
+                exhausted = True
+                break
+            _run_coro_threadsafe_and_wait(queue.put(item), loop)
+    finally:
+        try:
+            if not exhausted:
+                close = getattr(iterator, "close", None)
+                if close is not None:
+                    close()
+        finally:
+            if not consumer_gone.is_set() and not loop.is_closed():
+                _run_coro_threadsafe_and_wait(queue.put(EOF), loop)
+
+
 async def generator_to_async_generator(object gen, object loop, object thread_pool):
     """Converts a generator into async generator.
 
@@ -200,31 +226,13 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
     """
     queue = asyncio.Queue(maxsize=1)
     consumer_gone = threading.Event()
-    def yield_to_queue():
-        iterator = None
-        exhausted = False
-        try:
-            iterator = iter(gen)
-            while not consumer_gone.is_set():
-                try:
-                    item = next(iterator)
-                except StopIteration:
-                    exhausted = True
-                    break
-                _run_coro_threadsafe_and_wait(queue.put(item), loop)
-        finally:
-            try:
-                if not exhausted:
-                    close = getattr(iterator, "close", None)
-                    if close is not None:
-                        close()
-            finally:
-                if not consumer_gone.is_set() and not loop.is_closed():
-                    _run_coro_threadsafe_and_wait(queue.put(EOF), loop)
-
     future = loop.run_in_executor(
         thread_pool,
-        yield_to_queue,
+        _yield_to_queue,
+        gen,
+        loop,
+        queue,
+        consumer_gone,
     )
 
     try:

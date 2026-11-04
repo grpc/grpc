@@ -323,7 +323,7 @@ class ServerCallLifetimeTest(AioTestBase):
         self.assertTrue(outcome.get("callback_peer"), outcome)
         await self._assert_rpc_state_released(probe_ref)
 
-    async def test_released_after_async_aborted_rpc(self):
+    async def test_released_after_async_unary_unary_aborted_rpc(self):
         probe_ref = None
 
         @grpc.unary_unary_rpc_method_handler
@@ -341,7 +341,7 @@ class ServerCallLifetimeTest(AioTestBase):
         )
         await self._assert_rpc_state_released(probe_ref)
 
-    async def test_released_after_sync_aborted_rpc(self):
+    async def test_released_after_sync_unary_unary_aborted_rpc(self):
         probe_ref = None
 
         @grpc.unary_unary_rpc_method_handler
@@ -357,6 +357,77 @@ class ServerCallLifetimeTest(AioTestBase):
         self.assertEqual(
             grpc.StatusCode.ABORTED, exception_context.exception.code()
         )
+        await self._assert_workers_finished()
+        await self._assert_rpc_state_released(probe_ref)
+
+    async def test_released_after_sync_unary_stream_aborted_rpc(self):
+        probe_ref = None
+
+        @grpc.unary_stream_rpc_method_handler
+        def aborted_unary_stream_handler(unused_request, context):
+            nonlocal probe_ref
+            probe, probe_ref = _abort_probe()
+            # Aborts before the first message. Aborting right after a `yield`
+            # would race the server's in-flight write of that message.
+            context.abort(probe, "aborted")
+            yield b""
+
+        self._adhoc_handlers.set_adhoc_handler(aborted_unary_stream_handler)
+        multi_callable = self._channel.unary_stream(_common.ADHOC_METHOD)
+        call = multi_callable(b"")
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            async for _ in call:
+                pass
+        self.assertEqual(
+            grpc.StatusCode.ABORTED, exception_context.exception.code()
+        )
+        await self._assert_workers_finished()
+        await self._assert_rpc_state_released(probe_ref)
+
+    async def test_released_after_sync_unary_stream_raising_rpc(self):
+        probe_ref = None
+
+        @grpc.unary_stream_rpc_method_handler
+        def raising_unary_stream_handler(unused_request, context):
+            nonlocal probe_ref
+            probe_ref = _park_probe(context)
+            yield b""
+            raise RuntimeError("Failing mid-stream for testing purpose")
+
+        self._adhoc_handlers.set_adhoc_handler(raising_unary_stream_handler)
+        multi_callable = self._channel.unary_stream(_common.ADHOC_METHOD)
+        call = multi_callable(b"")
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            async for _ in call:
+                pass
+        self.assertEqual(
+            grpc.StatusCode.UNKNOWN, exception_context.exception.code()
+        )
+        await self._assert_workers_finished()
+        await self._assert_rpc_state_released(probe_ref)
+
+    async def test_sync_stream_handler_raising_after_client_cancel(self):
+        release = threading.Event()
+        probe_ref = None
+
+        @grpc.unary_stream_rpc_method_handler
+        def unary_stream_handler(unused_request, context):
+            nonlocal probe_ref
+            probe_ref = _park_probe(context)
+            yield b"first"
+            release.wait(test_constants.TIME_ALLOWANCE)
+            raise RuntimeError("Raised after the client cancelled")
+
+        self._adhoc_handlers.set_adhoc_handler(unary_stream_handler)
+        multi_callable = self._channel.unary_stream(_common.ADHOC_METHOD)
+        call = multi_callable(b"")
+        self.assertEqual(b"first", await call.read())
+
+        call.cancel()
+        # Not a correctness dependency. Whether or not the server processed the
+        # cancel before the handler raises, `RPCState` must be released.
+        await asyncio.sleep(_SETTLE_S)
+        release.set()
         await self._assert_workers_finished()
         await self._assert_rpc_state_released(probe_ref)
 
