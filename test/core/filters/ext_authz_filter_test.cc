@@ -64,6 +64,9 @@ constexpr absl::string_view kCustomHeaderKey = "x-custom-header";
 constexpr absl::string_view kCustomHeaderValue = "custom-value";
 constexpr absl::string_view kCustomHeaderKey2 = "x-custom-header-2";
 constexpr absl::string_view kCustomHeaderValue2 = "custom-value-2";
+constexpr absl::string_view kHostHeaderKey = "host";
+constexpr absl::string_view kHostHeaderValue = "example.com";
+constexpr absl::string_view kGrpcCustomHeaderKey = "grpc-custom";
 constexpr absl::string_view kServerHeaderKey = "server-header-key";
 constexpr absl::string_view kServerHeaderValue = "server-header-value";
 constexpr absl::string_view kTrailerKey = "trailer-key";
@@ -687,6 +690,43 @@ FILTER_TEST(ExtAuthzFilterTest, OkResponseAdditionsBeforeRemovals) {
   ASSERT_TRUE(server_initial_md->has_value());
   EXPECT_THAT(***server_initial_md,
               HasMetadataKeyValue(kServerHeaderKey, kServerHeaderValue));
+  PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
+  ValueOrFailure<ServerMetadataHandle> server_trailing_md =
+      PullServerTrailingMetadata();
+  ASSERT_TRUE(server_trailing_md.ok());
+  EXPECT_THAT(**server_trailing_md, HasMetadataResult(absl::OkStatus()));
+  WaitForAllPendingWork();
+}
+
+// Even without decoder_header_mutation_rules, gRPC never allows the "host"
+// header or headers starting with "grpc-" to be removed (see gRFC A102), so
+// those removals are ignored while the others are still applied.
+FILTER_TEST(ExtAuthzFilterTest, OkResponseRemovalOfReservedHeadersIgnored) {
+  auto config = MakeConfig();
+  ASSERT_TRUE(CreateFilterChain<ExtAuthzFilter>(ChannelArgs(), config).ok());
+  StartCallForFilter(
+      MakeClientMetadata({{kHostHeaderKey, kHostHeaderValue},
+                          {kGrpcCustomHeaderKey, kTrue},
+                          {kCustomHeaderKey, kCustomHeaderValue}}));
+  auto handler = HandleUnaryCall(
+      [](FakeXdsTransportFactory::FakeStreamingCall* unary_call) {
+        auto msg = unary_call->WaitForMessageFromClient();
+        ASSERT_TRUE(msg.has_value());
+        envoy::service::auth::v3::CheckResponse response;
+        response.mutable_status()->set_code(0);
+        auto* ok = response.mutable_ok_response();
+        ok->add_headers_to_remove(std::string(kHostHeaderKey));
+        ok->add_headers_to_remove(std::string(kGrpcCustomHeaderKey));
+        ok->add_headers_to_remove(std::string(kCustomHeaderKey));
+        unary_call->SendMessageToClient(response.SerializeAsString());
+      });
+  ValueOrFailure<ClientMetadataHandle> client_md = PullClientInitialMetadata();
+  handler.join();
+  ASSERT_TRUE(client_md.ok());
+  EXPECT_THAT(**client_md,
+              AllOf(HasMetadataKeyValue(kHostHeaderKey, kHostHeaderValue),
+                    HasMetadataKeyValue(kGrpcCustomHeaderKey, kTrue),
+                    LacksMetadataKey(kCustomHeaderKey)));
   PushServerTrailingMetadata(NewServerMetadata({{kGrpcStatus, kZero}}));
   ValueOrFailure<ServerMetadataHandle> server_trailing_md =
       PullServerTrailingMetadata();

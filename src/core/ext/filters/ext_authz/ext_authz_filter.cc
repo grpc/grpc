@@ -52,6 +52,7 @@
 #include "absl/random/distributions.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -231,7 +232,14 @@ absl::Status HandleFailure(const ExtAuthzFilter& filter,
 absl::StatusOr<bool> IsMutationAllowed(const HeaderMutationRules* rules,
                                        absl::string_view header_name,
                                        absl::string_view mutation_type) {
-  if (rules == nullptr) return true;
+  // Even without mutation rules, gRPC never allows certain headers to be
+  // mutated (see gRFC A102), so such mutations are ignored. (Additions of
+  // these headers are already rejected when parsing the CheckResponse, so in
+  // practice this affects only removals.)
+  if (rules == nullptr) {
+    return !absl::StartsWith(header_name, ":") &&
+           !absl::StartsWith(header_name, "grpc-") && header_name != "host";
+  }
   if (rules->IsMutationAllowed(std::string(header_name))) return true;
   if (rules->disallow_is_error) {
     return absl::InternalError(
