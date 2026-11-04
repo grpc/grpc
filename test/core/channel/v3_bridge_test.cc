@@ -366,11 +366,13 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
   // A transport batch and everything it points to.
   struct Batch {
     grpc_call_element* elem;
+    CallCombiner* call_combiner;
     grpc_transport_stream_op_batch op{};
     grpc_transport_stream_op_batch_payload payload{};
     SliceBuffer message;
     grpc_closure on_complete;
     grpc_closure start;
+    bool completed = false;
   };
 
   ClientHalfClosePropagationTest() {
@@ -430,8 +432,9 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
   Batch& NewBatch() {
     Batch& batch = *batches_.emplace_back(std::make_unique<Batch>());
     batch.elem = grpc_call_stack_element(call_stack_, 0);
+    batch.call_combiner = &call_combiner_;
     batch.op.payload = &batch.payload;
-    GRPC_CLOSURE_INIT(&batch.on_complete, OnComplete, &call_combiner_, nullptr);
+    GRPC_CLOSURE_INIT(&batch.on_complete, OnComplete, &batch, nullptr);
     batch.op.on_complete = &batch.on_complete;
     return batch;
   }
@@ -509,7 +512,9 @@ class ClientHalfClosePropagationTest : public ::testing::Test {
   }
 
   static void OnComplete(void* arg, grpc_error_handle) {
-    GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(arg), "on_complete");
+    auto* batch = static_cast<Batch*>(arg);
+    GRPC_CALL_COMBINER_STOP(batch->call_combiner, "on_complete");
+    batch->completed = true;
   }
 
   static void RecvTrailingMetadataReady(void* arg, grpc_error_handle) {
@@ -641,6 +646,30 @@ TEST_F(ClientHalfClosePropagationTest,
   EXPECT_THAT(recorder_.events,
               ::testing::ElementsAre("msg:msg1", "cancelled"));
   FinishCall(GRPC_STATUS_CANCELLED);
+}
+
+// send_message after the client half-closed, e.g. a C++ Write() after
+// WritesDone(). The filter must not crash, must not pass the message to v3
+// (the message stream already ended), and must leave the batch alone so it
+// continues down the stack and completes there.
+TEST_F(ClientHalfClosePropagationTest,
+       SendMessageAfterHalfCloseIsNotInterceptedAndCompletes) {
+  Batch& batch1 = NewBatch();
+  AddStartCall(batch1);
+  AddSendMessage(batch1, "msg1");
+  AddSendTrailingMetadata(batch1);
+  StartBatch(batch1);
+  EXPECT_THAT(recorder_.events,
+              ::testing::ElementsAre("msg:msg1", "half_close"));
+  Batch& batch2 = NewBatch();
+  AddSendMessage(batch2, "late");
+  StartBatch(batch2);
+  EXPECT_THAT(recorder_.events,
+              ::testing::ElementsAre("msg:msg1", "half_close"));
+  // The filter did not take the payload: the batch went down unchanged.
+  EXPECT_EQ(batch2.message.JoinIntoString(), "late");
+  EXPECT_TRUE(batch2.completed);
+  FinishCall();
 }
 
 }  // namespace
