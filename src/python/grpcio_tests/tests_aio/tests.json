@@ -24,6 +24,7 @@
   "tests_aio.unit.client_stream_stream_interceptor_test.TestStreamStreamClientInterceptor",
   "tests_aio.unit.client_stream_unary_interceptor_test.TestInterceptedStreamUnaryCallWithRegisteredMethods",
   "tests_aio.unit.client_stream_unary_interceptor_test.TestStreamUnaryClientInterceptor",
+  "tests_aio.unit.client_stream_unary_interceptor_test.TestWriteToIteratorQueueInterruptibleTaskLeak",
   "tests_aio.unit.client_unary_stream_interceptor_test.TestInterceptedUnaryStreamCallWithRegisteredMethods",
   "tests_aio.unit.client_unary_stream_interceptor_test.TestUnaryStreamClientInterceptor",
   "tests_aio.unit.client_unary_stream_interceptor_test.TestUnaryStreamClientInterceptorCustomException",
