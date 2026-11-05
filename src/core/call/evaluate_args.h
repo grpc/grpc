@@ -100,6 +100,8 @@ class EvaluateArgs final {
   // Describes the LOCAL endpoint's certificate, not the peer's; see
   // PerChannelArgs::local_principal.
   absl::string_view GetLocalPrincipal() const;
+  // Iterates over all metadata entries, invoking encoder->Encode() for each
+  // one.  See grpc_metadata_batch::Encode() for details.
   template <typename Encoder>
   void EncodeHeaders(Encoder* encoder) const {
     if (metadata_ != nullptr) metadata_->Encode(encoder);
