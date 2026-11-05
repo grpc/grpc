@@ -1114,6 +1114,7 @@ libs:
   - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
+  - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -9071,7 +9072,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -9567,7 +9567,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/join.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - test/core/transport/client_initial_metadata_outstanding_token_test.cc
@@ -10282,7 +10281,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -10414,7 +10412,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -10635,7 +10632,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -10763,7 +10759,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -10891,7 +10886,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -11108,7 +11102,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -11325,7 +11318,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -11453,7 +11445,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -11670,7 +11661,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -11798,7 +11788,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -12015,7 +12004,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -12143,7 +12131,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -12384,7 +12371,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -12513,7 +12499,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -15640,7 +15625,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -18358,7 +18342,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -20588,7 +20571,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/join.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - test/core/promise/pipe_test.cc
@@ -21316,7 +21298,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/join.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - test/core/transport/promise_endpoint_test.cc
@@ -22240,7 +22221,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -22370,7 +22350,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
@@ -24712,7 +24691,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/join.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -27881,7 +27859,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/join.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/transport/util/transport_test.h
@@ -30082,6 +30059,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/end2end_test_utils.h
@@ -30228,6 +30206,7 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - test/core/test_util/fake_stats_plugin.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_ext_authz_end2end_test.cc

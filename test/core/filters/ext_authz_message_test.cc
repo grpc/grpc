@@ -554,10 +554,10 @@ TEST_F(CreateExtAuthzRequestTest, HeaderEncodingTextAndBinary) {
   const auto& http = request.attributes().request().http();
   ASSERT_TRUE(http.has_header_map());
   // Per gRFC A102, the values of binary headers are base64-encoded.
-  EXPECT_THAT(
-      http.header_map().headers(),
-      ::testing::ElementsAre(IsHeaderValue(kCustomTextKey, kCustomTextVal),
-                             IsHeaderValue(kCustomBinKey, kCustomBinValBase64)));
+  EXPECT_THAT(http.header_map().headers(),
+              ::testing::ElementsAre(
+                  IsHeaderValue(kCustomTextKey, kCustomTextVal),
+                  IsHeaderValue(kCustomBinKey, kCustomBinValBase64)));
 }
 
 TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
@@ -574,16 +574,18 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringAllowedAndDisallowed) {
   params.is_client_call = true;
   params.path = kPath;
   params.metadata = &batch;
-  params.disallowed_headers = {
+  const std::vector<StringMatcher> disallowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kExact, kDenyMe, false)
           .value(),
   };
-  params.allowed_headers = {
+  params.disallowed_headers = disallowed_headers;
+  const std::vector<StringMatcher> allowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kExact, kAllowMe, false)
           .value(),
       StringMatcher::Create(StringMatcher::Type::kPrefix, kAllowPrefix, false)
           .value(),
   };
+  params.allowed_headers = allowed_headers;
   std::string serialized = CreateExtAuthzRequest(params).value();
   auto request = ParseRequest(serialized);
   ASSERT_TRUE(request.has_attributes());
@@ -604,13 +606,15 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringDisallowedTakesPrecedence) {
   params.is_client_call = true;
   params.path = kPath;
   params.metadata = &batch;
-  params.allowed_headers = {
+  const std::vector<StringMatcher> allowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kPrefix, kKeyPrefix, false)
           .value(),
   };
-  params.disallowed_headers = {
+  params.allowed_headers = allowed_headers;
+  const std::vector<StringMatcher> disallowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kExact, kKey1, false).value(),
   };
+  params.disallowed_headers = disallowed_headers;
   std::string serialized = CreateExtAuthzRequest(params).value();
   auto request = ParseRequest(serialized);
   ASSERT_TRUE(request.has_attributes());
@@ -631,9 +635,10 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyAllowed) {
   params.is_client_call = true;
   params.path = kPath;
   params.metadata = &batch;
-  params.allowed_headers = {
+  const std::vector<StringMatcher> allowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kExact, kKey1, false).value(),
   };
+  params.allowed_headers = allowed_headers;
   std::string serialized = CreateExtAuthzRequest(params).value();
   auto request = ParseRequest(serialized);
   ASSERT_TRUE(request.has_attributes());
@@ -655,9 +660,10 @@ TEST_F(CreateExtAuthzRequestTest, HeaderFilteringOnlyDisallowed) {
   params.is_client_call = true;
   params.path = kPath;
   params.metadata = &batch;
-  params.disallowed_headers = {
+  const std::vector<StringMatcher> disallowed_headers = {
       StringMatcher::Create(StringMatcher::Type::kExact, kKey1, false).value(),
   };
+  params.disallowed_headers = disallowed_headers;
   std::string serialized = CreateExtAuthzRequest(params).value();
   auto request = ParseRequest(serialized);
   ASSERT_TRUE(request.has_attributes());

@@ -1770,6 +1770,7 @@ let package = Package(
         "src/core/lib/promise/inter_activity_mutex.h",
         "src/core/lib/promise/inter_activity_pipe.h",
         "src/core/lib/promise/interceptor_list.h",
+        "src/core/lib/promise/join.h",
         "src/core/lib/promise/latch.h",
         "src/core/lib/promise/loop.h",
         "src/core/lib/promise/map.h",

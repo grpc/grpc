@@ -322,7 +322,7 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
   // configuration.
   ExtAuthzRequest params;
   if (const auto* path = md.get_pointer(HttpPathMetadata())) {
-    params.path = std::string(path->as_string_view());
+    params.path = path->as_string_view();
   }
   params.metadata = &md;
   params.is_client_call = filter->is_client_;

@@ -33,6 +33,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 
@@ -118,7 +119,9 @@ struct ExtAuthzRequest {
   bool is_client_call = false;
 
   // RPC path (AttributeContext.HttpRequest.path). Always set.
-  std::string path;
+  // This is a non-owning view; the caller must keep the underlying string
+  // alive for the duration of the CreateExtAuthzRequest() call.
+  absl::string_view path;
 
   // Metadata batch from the data plane RPC. Used to populate
   // AttributeContext.HttpRequest.header_map subject to header filtering rules.
@@ -156,8 +159,11 @@ struct ExtAuthzRequest {
   // - If matched by disallowed_headers, it will not be added.
   // - Otherwise, if allowed_headers is unset or matches, it will be added.
   // - Otherwise, excluded.
-  std::vector<StringMatcher> allowed_headers;
-  std::vector<StringMatcher> disallowed_headers;
+  // These are non-owning views of the filter config's matchers, so that they
+  // are not copied on every RPC; the caller must keep the underlying matchers
+  // alive for the duration of the CreateExtAuthzRequest() call.
+  absl::Span<const StringMatcher> allowed_headers;
+  absl::Span<const StringMatcher> disallowed_headers;
 
   // Value for AttributeContext.source.certificate, as returned by
   // GetUrlEncodedPemPeerCertificate(). Must be left empty unless the ext_authz

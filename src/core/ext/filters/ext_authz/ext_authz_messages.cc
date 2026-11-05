@@ -72,8 +72,8 @@ class UpbHeaderMapEncoder {
  public:
   UpbHeaderMapEncoder(envoy_config_core_v3_HeaderMap* header_map,
                       upb_Arena* arena,
-                      const std::vector<StringMatcher>& allowed_headers,
-                      const std::vector<StringMatcher>& disallowed_headers)
+                      absl::Span<const StringMatcher> allowed_headers,
+                      absl::Span<const StringMatcher> disallowed_headers)
       : header_map_(header_map),
         arena_(arena),
         allowed_headers_(allowed_headers),
@@ -90,7 +90,7 @@ class UpbHeaderMapEncoder {
 
  private:
   ABSL_ATTRIBUTE_NOINLINE static bool HeaderInMatcher(
-      absl::string_view key, const std::vector<StringMatcher>& matchers) {
+      absl::string_view key, absl::Span<const StringMatcher> matchers) {
     for (const auto& matcher : matchers) {
       if (matcher.Match(key)) return true;
     }
@@ -130,8 +130,8 @@ class UpbHeaderMapEncoder {
 
   envoy_config_core_v3_HeaderMap* header_map_;
   upb_Arena* arena_;
-  const std::vector<StringMatcher>& allowed_headers_;
-  const std::vector<StringMatcher>& disallowed_headers_;
+  absl::Span<const StringMatcher> allowed_headers_;
+  absl::Span<const StringMatcher> disallowed_headers_;
 };
 
 // Returns the value for AttributeContext.Peer.principal, given the identity
