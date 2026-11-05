@@ -18,6 +18,7 @@ import time
 import unittest
 
 import grpc
+from grpc.aio import _channel as _aio_channel
 from grpc.experimental import aio
 
 from tests.unit import resources
@@ -993,8 +994,39 @@ class TestServer(AioTestBase):
                     await channel.unary_unary(generic_method)(_REQUEST),
                 )
 
+            # A method name that is not valid UTF-8. Channel.unary_unary()
+            # only accepts str, so build the multicallable with raw bytes.
+            # A strict decode() would raise UnicodeDecodeError in the accept
+            # loop and crash the server; with 'replace' the call is just
+            # unimplemented.
+            invalid_method = b"/test/Generic\xff\xfe"
+            with self.assertRaises(aio.AioRpcError) as exception_ctx:
+                await asyncio.wait_for(
+                    _aio_channel.UnaryUnaryMultiCallable(
+                        channel._channel,
+                        invalid_method,
+                        None,
+                        None,
+                        None,
+                        [channel],
+                        asyncio.get_running_loop(),
+                    )(_REQUEST),
+                    test_constants.SHORT_TIMEOUT,
+                )
+            self.assertEqual(
+                grpc.StatusCode.UNIMPLEMENTED, exception_ctx.exception.code()
+            )
+
+            # The server is still serving.
+            self.assertEqual(
+                _RESPONSE,
+                await channel.unary_unary(generic_method)(_REQUEST),
+            )
+
         self.assertEqual(
-            [registered_method, generic_method] * 2, recorded_methods
+            [registered_method, generic_method] * 2
+            + [invalid_method.decode("utf-8", "replace"), generic_method],
+            recorded_methods,
         )
         for method in recorded_methods:
             self.assertIsInstance(method, str)

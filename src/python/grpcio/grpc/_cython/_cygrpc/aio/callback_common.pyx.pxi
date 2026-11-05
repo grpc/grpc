@@ -32,7 +32,7 @@ cdef class CallbackFailureHandler:
 
 cdef class CallbackWrapper:
 
-    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler, object tag=None):
+    def __cinit__(self, object future, object loop, CallbackFailureHandler failure_handler, object tag):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>future
         self.context.loop = <cpython.PyObject*>loop
@@ -86,7 +86,8 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
         loop,
-        CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
+        CallbackFailureHandler('execute_batch', operations, ExecuteBatchError),
+        None)
     cdef grpc_call_error error = grpc_call_start_batch(
         grpc_call_wrapper.call,
         batch_operation_tag.c_ops,

@@ -959,7 +959,8 @@ cdef class AioServer:
         self._shutdown_callback_wrapper = CallbackWrapper(
             self._shutdown_completed,
             self._loop,
-            SERVER_SHUTDOWN_FAILURE_HANDLER)
+            SERVER_SHUTDOWN_FAILURE_HANDLER,
+            None)
         self._crash_exception = None
 
         if interceptors:
@@ -1198,8 +1199,10 @@ cdef class AioServer:
             self._shutdown_callback_wrapper.c_functor())
 
         # Ensures the serving task (coroutine) exits.
-        await self._serving_task
-
+        try:
+            await self._serving_task
+        except _RequestCallError:
+            pass
 
     async def shutdown(self, grace):
         """Gracefully shutdown the Core server.
