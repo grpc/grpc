@@ -5976,8 +5976,6 @@ grpc_cc_library(
         "grpc_check",
         "grpc_matchers",
         "instrument",
-        "join",
-        "map",
         "match",
         "metadata",
         "metadata_batch",

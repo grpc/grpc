@@ -160,10 +160,10 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
    private:
     std::optional<std::vector<XdsHeaderValueOption>> response_headers_to_add;
     std::optional<std::vector<XdsHeaderValueOption>> response_trailer_to_add;
+    // The serialized CheckResponse received from the authorization service,
+    // held until the side-channel call's status is received.
+    std::optional<std::string> check_response_;
   };
-
-  RefCountedPtr<ExtAuthzChannel> channel() const { return config_->channel(); }
-  bool is_client() const { return is_client_; }
 
   // Metrics, as described in gRFC A92.
   void RecordAllowedRpc() const;

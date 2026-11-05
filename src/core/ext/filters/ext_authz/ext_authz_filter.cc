@@ -21,7 +21,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -37,8 +36,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/join.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -313,8 +310,8 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
     }
   }
   // Fail if the ext_authz side-channel or transport is unavailable.
-  if (filter->channel() == nullptr ||
-      filter->channel()->transport() == nullptr) {
+  const RefCountedPtr<ExtAuthzChannel> channel = config.channel();
+  if (channel == nullptr || channel->transport() == nullptr) {
     return Immediate(HandleFailure(
         *filter, config, md, "ext_authz channel or transport not available"));
   }
@@ -361,97 +358,100 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
   // Start the call to the external authorization service.
   GRPC_TRACE_LOG(ext_authz_filter, INFO) << "starting ext_authz call";
   auto call = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
-      *filter->channel()->transport(),
-      "/envoy.service.auth.v3.Authorization/Check",
+      *channel->transport(), "/envoy.service.auth.v3.Authorization/Check",
       XdsTransport::CallOptions().set_start_upon_send_message(true));
+  // Start the read before the send, so that a read is already pending when
+  // the response arrives.
+  auto pull_message = call->PullMessage();
   return Seq(
-      Join(call->PushMessage(std::move(*payload), /*send_half_close=*/true),
-           call->PullMessage()),
-      [this, md = &md, filter,
-       call](std::tuple<StatusFlag, std::optional<std::string>> results) {
-        return Map(
-            call->PullServerTrailingMetadata(),
-            // Holds a ref to call until its status is received, since
-            // dropping the last ref cancels it.
-            [this, md, filter, call, result = std::move(std::get<1>(results))](
-                absl::Status status) -> absl::Status {
-              const auto& config = *filter->config_;
-              if (!status.ok()) {
-                return HandleFailure(*filter, config, *md, status.message());
-              }
-              if (!result.has_value()) {
-                return HandleFailure(*filter, config, *md,
-                                     "No response message received");
-              }
-              // Parse the received CheckResponse.
-              auto response = ExtAuthzResponse::Parse(*result);
-              if (!response.ok()) {
-                return HandleFailure(*filter, config, *md,
-                                     response.status().message());
-              }
-              const HeaderMutationRules* rules =
-                  config.decoder_header_mutation_rules.has_value()
-                      ? &*config.decoder_header_mutation_rules
-                      : nullptr;
-              // Handle non-OK status (denied response).
-              if (response->status_code != GRPC_STATUS_OK) {
-                std::string status_message = "ExtAuthz request is denied";
-                if (!response->status_message.empty()) {
-                  absl::StrAppend(&status_message, ", error message: ",
-                                  response->status_message);
-                }
-                const auto& denied =
-                    std::get<ExtAuthzResponse::DeniedResponse>(
-                        response->response);
-                auto trailers = GetAllowedAdditions(rules, denied.headers);
-                if (!trailers.ok()) {
-                  return HandleFailure(*filter, config, *md,
-                                       trailers.status().message());
-                }
-                // The denied response headers are applied to the trailing
-                // metadata in OnServerTrailingMetadata(), which sees the
-                // metadata synthesized from the status returned below.
-                response_trailer_to_add = std::move(*trailers);
-                filter->RecordDeniedRpc();
-                return absl::Status(
-                    static_cast<absl::StatusCode>(denied.status),
-                    status_message);
-              }
-              // Handle OK response.
-              const auto& ok_resp =
-                  std::get<ExtAuthzResponse::OkResponse>(response->response);
-              // Check all of the mutations before applying any of them, so
-              // that none of them are applied if any of them fails.
-              auto additions = GetAllowedAdditions(
-                  rules, ok_resp.header_mutation.set_headers);
-              if (!additions.ok()) {
-                return HandleFailure(*filter, config, *md,
-                                     additions.status().message());
-              }
-              auto removals = GetAllowedRemovals(
-                  rules, ok_resp.header_mutation.remove_headers);
-              if (!removals.ok()) {
-                return HandleFailure(*filter, config, *md,
-                                     removals.status().message());
-              }
-              auto response_headers =
-                  GetAllowedAdditions(rules, ok_resp.response_headers_to_add);
-              if (!response_headers.ok()) {
-                return HandleFailure(*filter, config, *md,
-                                     response_headers.status().message());
-              }
-              // Apply the request header mutations. Header additions should be
-              // applied before header removals.
-              AddHeaders(*additions, *md);
-              for (const auto& header : *removals) {
-                md->Remove(absl::string_view(header));
-              }
-              // Store any response headers to inject into server initial
-              // metadata later.
-              response_headers_to_add = std::move(*response_headers);
-              filter->RecordAllowedRpc();
-              return absl::OkStatus();
-            });
+      call->PushMessage(std::move(*payload), /*send_half_close=*/true),
+      // The send result is ignored: if the send failed, the call fails, and
+      // its status is handled below.
+      [pull_message = std::move(pull_message)](StatusFlag) mutable {
+        return std::move(pull_message);
+      },
+      // Stores the response until the call's status is received.
+      [this, call](std::optional<std::string> result) {
+        check_response_ = std::move(result);
+        return call->PullServerTrailingMetadata();
+      },
+      // Holds a ref to call until its status is received, since dropping the
+      // last ref cancels it.
+      [this, &md, filter, call](absl::Status status) -> absl::Status {
+        const auto& config = *filter->config_;
+        if (!status.ok()) {
+          return HandleFailure(*filter, config, md, status.message());
+        }
+        if (!check_response_.has_value()) {
+          return HandleFailure(*filter, config, md,
+                               "No response message received");
+        }
+        // Parse the received CheckResponse.
+        auto response = ExtAuthzResponse::Parse(*check_response_);
+        if (!response.ok()) {
+          return HandleFailure(*filter, config, md,
+                               response.status().message());
+        }
+        const HeaderMutationRules* rules =
+            config.decoder_header_mutation_rules.has_value()
+                ? &*config.decoder_header_mutation_rules
+                : nullptr;
+        // Handle non-OK status (denied response).
+        if (response->status_code != GRPC_STATUS_OK) {
+          std::string status_message = "ExtAuthz request is denied";
+          if (!response->status_message.empty()) {
+            absl::StrAppend(&status_message,
+                            ", error message: ", response->status_message);
+          }
+          const auto& denied =
+              std::get<ExtAuthzResponse::DeniedResponse>(response->response);
+          auto trailers = GetAllowedAdditions(rules, denied.headers);
+          if (!trailers.ok()) {
+            return HandleFailure(*filter, config, md,
+                                 trailers.status().message());
+          }
+          // The denied response headers are applied to the trailing
+          // metadata in OnServerTrailingMetadata(), which sees the
+          // metadata synthesized from the status returned below.
+          response_trailer_to_add = std::move(*trailers);
+          filter->RecordDeniedRpc();
+          return absl::Status(static_cast<absl::StatusCode>(denied.status),
+                              status_message);
+        }
+        // Handle OK response.
+        const auto& ok_resp =
+            std::get<ExtAuthzResponse::OkResponse>(response->response);
+        // Check all of the mutations before applying any of them, so
+        // that none of them are applied if any of them fails.
+        auto additions =
+            GetAllowedAdditions(rules, ok_resp.header_mutation.set_headers);
+        if (!additions.ok()) {
+          return HandleFailure(*filter, config, md,
+                               additions.status().message());
+        }
+        auto removals =
+            GetAllowedRemovals(rules, ok_resp.header_mutation.remove_headers);
+        if (!removals.ok()) {
+          return HandleFailure(*filter, config, md,
+                               removals.status().message());
+        }
+        auto response_headers =
+            GetAllowedAdditions(rules, ok_resp.response_headers_to_add);
+        if (!response_headers.ok()) {
+          return HandleFailure(*filter, config, md,
+                               response_headers.status().message());
+        }
+        // Apply the request header mutations. Header additions should be
+        // applied before header removals.
+        AddHeaders(*additions, md);
+        for (const auto& header : *removals) {
+          md.Remove(absl::string_view(header));
+        }
+        // Store any response headers to inject into server initial
+        // metadata later.
+        response_headers_to_add = std::move(*response_headers);
+        filter->RecordAllowedRpc();
+        return absl::OkStatus();
       });
 }
 
