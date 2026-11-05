@@ -48,7 +48,7 @@ class Reader final : public grpc::ClientReadReactor<helloworld::HelloReply> {
   }
 
   grpc::Status WaitForDone() {
-    absl::MutexLock lock(&mu_);
+    absl::MutexLock lock(mu_);
     mu_.Await(absl::Condition(
         +[](Reader* reader) { return reader->result_.has_value(); }, this));
     return *result_;
@@ -67,7 +67,7 @@ class Reader final : public grpc::ClientReadReactor<helloworld::HelloReply> {
   }
 
   void OnDone(const grpc::Status& status) override {
-    absl::MutexLock lock(&mu_);
+    absl::MutexLock lock(mu_);
     result_ = status;
   }
 

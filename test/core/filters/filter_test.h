@@ -118,19 +118,6 @@ class FilterTest : public YodelTest {
   // implicit initiator and handler. May be called only once per test.
   void StartCallForFilter(ClientMetadataHandle client_initial_metadata);
 
-  // As StartCallForFilter(), but for filters that defer creating their child
-  // call (e.g. until an external service has seen the client's headers): sets
-  // only the implicit initiator. Call WaitForHandler() at the point where the
-  // filter is expected to have created its child call. May be called only once
-  // per test, and not together with StartCallForFilter().
-  void StartCallWithDeferredHandler(
-      ClientMetadataHandle client_initial_metadata);
-
-  // Sets the implicit handler to the next call started against the bottom of
-  // the stack. Returns false if none shows up within `timeout`.
-  bool WaitForHandler(grpc_event_engine::experimental::EventEngine::Duration
-                          timeout = std::chrono::seconds(30));
-
   // Driving the six call operations.
   //
   // Push*() is asynchronous and serializes operations onto the call's party in

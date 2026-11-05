@@ -24,6 +24,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 
+#include <chrono>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -42,11 +43,13 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -56,6 +59,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/transport_test.h"
@@ -268,8 +272,10 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -816,6 +822,48 @@ TEST_F(Http2ServerTransportTest, TestServerInitiatedGoAway) {
   step->Wait();
 }
 
+TEST_F(Http2ServerTransportTest,
+       TestCloseBeforeClientPrefaceClosesImmediately) {
+  // Test to validate that closing the transport before receiving the client
+  // preface completes immediately without sending GOAWAY or waiting for
+  // kGoawaySendTimeoutSeconds.
+  ExecCtx ctx;
+  std::shared_ptr<std::optional<absl::Status>> on_receive_settings_status =
+      std::make_shared<std::optional<absl::Status>>();
+
+  // 1. Initialize and start the transport without sending the client preface.
+  InitTransport(GetChannelArgs(),
+                [on_receive_settings_status](absl::StatusOr<uint32_t> status) {
+                  *on_receive_settings_status = status.status();
+                });
+  // Empty step parks the preface read and fails on any write.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  server_transport()->SetCallDestination(
+      MakeRefCounted<TestCallDestination>(this));
+  event_engine()->TickUntilIdle();
+  ASSERT_FALSE(on_receive_settings_status->has_value());
+
+  // 2. Disconnect the transport.
+  grpc_transport_op* op = grpc_make_transport_op(/*on_complete=*/nullptr);
+  op->disconnect_with_error = absl::UnavailableError(
+      "Did not receive HTTP/2 settings before handshake timeout");
+  server_transport()->PerformOp(op);
+
+  // 3. Verify the close completes without waiting kGoawaySendTimeoutSeconds.
+  const grpc_event_engine::experimental::FuzzingEventEngine::Time
+      close_start_time = event_engine()->Now();
+  event_engine()->TickUntilIdle();
+  ASSERT_TRUE(on_receive_settings_status->has_value());
+  EXPECT_EQ(on_receive_settings_status->value().code(),
+            absl::StatusCode::kUnavailable);
+  const int64_t close_elapsed_ms =
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          event_engine()->Now() - close_start_time)
+          .count();
+  EXPECT_LT(close_elapsed_ms,
+            static_cast<int64_t>(kGoawaySendTimeoutSeconds) * 1000);
+}
+
 TEST_F(Http2ServerTransportTest, TestKeepAliveTimeout) {
   // Test to validate that the transport is closed when keepalive ping times
   // out. This test asserts the following:
@@ -1158,8 +1206,10 @@ TEST_F(Http2ServerTransportTest, TestBdpPingIsSentWithStreamWithoutAck) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1266,8 +1316,10 @@ TEST_F(Http2ServerTransportTest, TestBdpProbeEnabledWithAck) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1501,8 +1553,10 @@ TEST_F(Http2ServerTransportTest, ReadGoawayWithActiveStream) {
             return call_handler.PushMessage(std::move(message));
           },
           [call_handler]() mutable {
-            return call_handler.PushServerTrailingMetadata(
-                ServerMetadataFromStatus(absl::CancelledError()));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(
+                    ServerMetadataFromStatus(absl::CancelledError()));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };
@@ -1652,7 +1706,9 @@ TEST_F(Http2ServerTransportTest, ServerTrailingMetadataTarpitTest) {
                 Arena::MakePooledForOverwrite<ServerMetadata>();
             trailers->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
             trailers->Set(GrpcTarPit(), Empty());
-            return call_handler.PushServerTrailingMetadata(std::move(trailers));
+            const StatusFlag push_status =
+                call_handler.PushServerTrailingMetadata(std::move(trailers));
+            EXPECT_TRUE(push_status.ok());
           });
     };
   };

@@ -77,6 +77,36 @@ UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)
 CEL_C_INCLUDE = (os.path.join("third_party", "cel-c"),)
 ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
+# In a clean checkout, third_party/zlib/zconf.h is present and bundled zlib
+# builds succeed. However, if an out-of-source CMake build was previously
+# executed in the repository, zlib's CMake script renames zconf.h to
+# zconf.h.included in the source tree, see
+# https://github.com/grpc/grpc/issues/11581
+#
+# When zconf.h is missing, compiling bundled zlib falls back to the host
+# system/SDK header. On macOS, Apple's SDK defines z_off64_t as off_t
+# (long long), which conflicts with zutil.h (long), breaking subsequent
+# Python builds with:
+#   "error: conflicting types for 'adler32_combine64'"
+# On platforms without system zlib, it causes missing header errors.
+#
+# Because this failure depends on whether a CMake build was previously run in
+# the workspace, auto-restore zconf.h from zconf.h.included if it is missing.
+_zconf = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "third_party",
+    "zlib",
+    "zconf.h",
+)
+_zconf_included = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "third_party",
+    "zlib",
+    "zconf.h.included",
+)
+if not os.path.exists(_zconf) and os.path.exists(_zconf_included):
+    shutil.copyfile(_zconf_included, _zconf)
+
 README = os.path.join(PYTHON_STEM, "README.rst")
 
 # Ensure we're in the proper directory whether or not we're being used by pip.

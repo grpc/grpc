@@ -64,7 +64,7 @@ class HelloReactor final
   }
 
   void Write() {
-    absl::MutexLock lock(&mu_);
+    absl::MutexLock lock(mu_);
     StartWrite(&res_);
     --messages_to_send_;
     write_start_time_ = absl::Now();
@@ -73,7 +73,7 @@ class HelloReactor final
   void OnWriteDone(bool ok) override {
     bool more = false;
     {
-      absl::MutexLock lock(&mu_);
+      absl::MutexLock lock(mu_);
       std::cout << "Write #" << messages_to_send_ << " done (Ok: " << ok
                 << "): " << absl::Now() - *write_start_time_ << "\n";
       write_start_time_ = std::nullopt;
