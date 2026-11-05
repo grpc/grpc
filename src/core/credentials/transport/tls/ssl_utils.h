@@ -98,6 +98,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     const std::vector<grpc_tls_signature_algorithm>& signature_algorithms,
+    std::string exported_keying_material_label,
+    size_t exported_keying_material_length,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
@@ -110,6 +112,8 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     const std::vector<grpc_tls_signature_algorithm>& signature_algorithms,
+    std::string exported_keying_material_label,
+    size_t exported_keying_material_length,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 // Exposed for testing only.

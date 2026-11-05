@@ -431,10 +431,10 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
-    https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
-    ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855
-    data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz
+    https://github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz
+    40ba505a3c8e0d56f10ad5b95c05d54138228ff521cff22393276bb67188dfc3
+    data-plane-api-005c18a923f166a793a1c227171398dab883cc5d
   )
 endif()
 # Setup external proto library at third_party/googleapis if it doesn't exist
@@ -1174,6 +1174,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto envoy/type/v3/ratelimit_unit.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/envoy-api/envoy/type/v3/scope.proto envoy/type/v3/scope.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/type/v3/semantic_version.proto envoy/type/v3/semantic_version.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1405,6 +1408,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx channelz_v2_service_test)
   add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
   add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
+  add_dependencies(buildtests_cxx chttp2_security_frame_test)
   add_dependencies(buildtests_cxx chttp2_server_listener_test)
   add_dependencies(buildtests_cxx chunked_vector_test)
   add_dependencies(buildtests_cxx cli_call_test)
@@ -1589,6 +1593,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx http2_settings_test)
   add_dependencies(buildtests_cxx http2_status_test)
+  add_dependencies(buildtests_cxx http2_transport_stats_test)
   add_dependencies(buildtests_cxx http2_transport_test)
   add_dependencies(buildtests_cxx http_proxy_mapper_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1747,7 +1752,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx race_test)
   add_dependencies(buildtests_cxx random_early_detection_test)
   add_dependencies(buildtests_cxx raw_end2end_test)
-  add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx read_context_test)
   add_dependencies(buildtests_cxx recv_message_filter_bypass_test)
@@ -2299,6 +2303,7 @@ add_library(grpc
   src/core/channelz/v2tov1/property_list.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
+  src/core/client_channel/channel_factory.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -2307,6 +2312,7 @@ add_library(grpc
   src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
+  src/core/client_channel/lame_channel.cc
   src/core/client_channel/lb_metadata.cc
   src/core/client_channel/load_balanced_call_destination.cc
   src/core/client_channel/local_subchannel_pool.cc
@@ -2396,7 +2402,6 @@ add_library(grpc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
-  src/core/ext/filters/rbac/rbac_service_config_parser.cc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/chttp2_plugin.cc
@@ -2569,6 +2574,7 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
   src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
@@ -2744,6 +2750,7 @@ add_library(grpc
   src/core/ext/upbdefs-gen/envoy/type/v3/range.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_strategy.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/v3/ratelimit_unit.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/type/v3/scope.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/v3/semantic_version.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/type/v3/token_bucket.upbdefs.c
   src/core/ext/upbdefs-gen/google/api/annotations.upbdefs.c
@@ -3019,6 +3026,7 @@ add_library(grpc
   src/core/load_balancing/lb_policy_registry.cc
   src/core/load_balancing/oob_backend_metric.cc
   src/core/load_balancing/outlier_detection/outlier_detection.cc
+  src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc
   src/core/load_balancing/pick_first/pick_first.cc
   src/core/load_balancing/priority/priority.cc
   src/core/load_balancing/ring_hash/ring_hash.cc
@@ -3051,9 +3059,7 @@ add_library(grpc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
   src/core/server/server_config_selector_filter.cc
-  src/core/server/xds_channel_stack_modifier.cc
   src/core/server/xds_server_config_fetcher.cc
-  src/core/server/xds_server_config_fetcher_legacy.cc
   src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
@@ -3180,6 +3186,7 @@ add_library(grpc
   src/core/xds/grpc/xds_server_grpc.cc
   src/core/xds/grpc/xds_tls_context.cc
   src/core/xds/grpc/xds_tls_context_parser.cc
+  src/core/xds/grpc/xds_transport_factory_grpc.cc
   src/core/xds/grpc/xds_transport_grpc.cc
   src/core/xds/xds_client/lrs_client.cc
   src/core/xds/xds_client/xds_api.cc
@@ -3264,6 +3271,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
+  include/grpc/channel_factory.h
   include/grpc/compression.h
   include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
@@ -3504,6 +3512,7 @@ add_library(grpc_unsecure
   src/core/channelz/text_encode.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
+  src/core/client_channel/channel_factory.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -3512,6 +3521,7 @@ add_library(grpc_unsecure
   src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
+  src/core/client_channel/lame_channel.cc
   src/core/client_channel/lb_metadata.cc
   src/core/client_channel/load_balanced_call_destination.cc
   src/core/client_channel/local_subchannel_pool.cc
@@ -3849,6 +3859,7 @@ add_library(grpc_unsecure
   src/core/load_balancing/lb_policy_registry.cc
   src/core/load_balancing/oob_backend_metric.cc
   src/core/load_balancing/outlier_detection/outlier_detection.cc
+  src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc
   src/core/load_balancing/pick_first/pick_first.cc
   src/core/load_balancing/priority/priority.cc
   src/core/load_balancing/ring_hash/ring_hash.cc
@@ -3925,6 +3936,7 @@ add_library(grpc_unsecure
   src/core/util/validation_errors.cc
   src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
+  src/core/xds/grpc/xds_transport_grpc.cc
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -4001,6 +4013,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
+  include/grpc/channel_factory.h
   include/grpc/compression.h
   include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
@@ -6468,6 +6481,7 @@ target_link_libraries(grpc_authorization_provider
 foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
+  include/grpc/channel_factory.h
   include/grpc/compression.h
   include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
@@ -7489,6 +7503,10 @@ add_executable(admin_services_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -10969,6 +10987,7 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
   src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
@@ -11648,6 +11667,10 @@ add_executable(channel_creds_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -12415,6 +12438,49 @@ target_include_directories(check_gcp_environment_windows_test
 )
 
 target_link_libraries(check_gcp_environment_windows_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(chttp2_security_frame_test
+  test/core/transport/chttp2/chttp2_security_frame_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(chttp2_security_frame_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(chttp2_security_frame_test PUBLIC cxx_std_17)
+target_include_directories(chttp2_security_frame_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(chttp2_security_frame_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
@@ -17962,6 +18028,10 @@ add_executable(ext_proc_message_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -22394,6 +22464,56 @@ target_include_directories(http2_status_test
 )
 
 target_link_libraries(http2_status_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(http2_transport_stats_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/transport/chttp2/http2_transport_stats_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(http2_transport_stats_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(http2_transport_stats_test PUBLIC cxx_std_17)
+target_include_directories(http2_transport_stats_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_CEL_C_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(http2_transport_stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -27613,6 +27733,7 @@ add_executable(outlier_detection_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/load_balancing/outlier_detection_test.cc
+  test/core/test_util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29278,6 +29399,10 @@ add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -31018,49 +31143,6 @@ target_link_libraries(raw_end2end_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(rbac_service_config_parser_test
-  test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(rbac_service_config_parser_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(rbac_service_config_parser_test PUBLIC cxx_std_17)
-target_include_directories(rbac_service_config_parser_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_CEL_C_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(rbac_service_config_parser_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(rbac_translator_test
   test/core/security/rbac_translator_test.cc
 )
@@ -31158,6 +31240,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(recv_message_filter_bypass_test
   test/core/filters/recv_message_filter_bypass_test.cc
+  test/core/test_util/mock_transport_filter.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -38958,279 +39041,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(v3_bridge_test
-  src/core/call/call_arena_allocator.cc
-  src/core/call/call_filters.cc
-  src/core/call/call_spine.cc
-  src/core/call/call_state.cc
-  src/core/call/client_call.cc
-  src/core/call/interception_chain.cc
-  src/core/call/message.cc
-  src/core/call/metadata.cc
-  src/core/call/metadata_batch.cc
-  src/core/call/parsed_metadata.cc
-  src/core/call/server_call.cc
-  src/core/call/status_util.cc
-  src/core/channelz/channel_trace.cc
-  src/core/channelz/channelz.cc
-  src/core/channelz/channelz_registry.cc
-  src/core/channelz/property_list.cc
-  src/core/channelz/text_encode.cc
-  src/core/config/core_configuration.cc
-  src/core/credentials/transport/alts/check_gcp_environment.cc
-  src/core/credentials/transport/alts/check_gcp_environment_linux.cc
-  src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
-  src/core/credentials/transport/alts/check_gcp_environment_windows.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
-  src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
-  src/core/credentials/transport/tls/certificate_provider_registry.cc
-  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
-  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
-  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/ext/upb-gen/grpc/gcp/altscontext.upb_minitable.c
-  src/core/ext/upb-gen/grpc/gcp/handshaker.upb_minitable.c
-  src/core/ext/upb-gen/grpc/gcp/transport_security_common.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
-  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
-  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
-  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
-  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
-  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/handshaker/handshaker_registry.cc
-  src/core/handshaker/proxy_mapper_registry.cc
-  src/core/lib/address_utils/parse_address.cc
-  src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/channel/channel_args_preconditioning.cc
-  src/core/lib/channel/channel_stack.cc
-  src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_stack_builder_impl.cc
-  src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/compression/compression.cc
-  src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/message_compress.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/debug/trace_flags.cc
-  src/core/lib/event_engine/ares_resolver.cc
-  src/core/lib/event_engine/cf_engine/cf_engine.cc
-  src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
-  src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
-  src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
-  src/core/lib/event_engine/channel_args_endpoint_config.cc
-  src/core/lib/event_engine/default_event_engine.cc
-  src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/event_engine.cc
-  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
-  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
-  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
-  src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
-  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
-  src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
-  src/core/lib/event_engine/posix_engine/posix_endpoint.cc
-  src/core/lib/event_engine/posix_engine/posix_engine.cc
-  src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
-  src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
-  src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
-  src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
-  src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
-  src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/posix_engine/timer.cc
-  src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/lib/event_engine/posix_engine/timer_manager.cc
-  src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
-  src/core/lib/event_engine/resolved_address.cc
-  src/core/lib/event_engine/shim.cc
-  src/core/lib/event_engine/slice.cc
-  src/core/lib/event_engine/slice_buffer.cc
-  src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/thread_count.cc
-  src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
-  src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
-  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
-  src/core/lib/event_engine/time_util.cc
-  src/core/lib/event_engine/utils.cc
-  src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
-  src/core/lib/event_engine/windows/iocp.cc
-  src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
-  src/core/lib/event_engine/windows/win_socket.cc
-  src/core/lib/event_engine/windows/windows_endpoint.cc
-  src/core/lib/event_engine/windows/windows_engine.cc
-  src/core/lib/event_engine/windows/windows_listener.cc
-  src/core/lib/event_engine/work_queue/basic_work_queue.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/iomgr/buffer_list.cc
-  src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/dualstack_socket_posix.cc
-  src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
-  src/core/lib/iomgr/endpoint_pair_posix.cc
-  src/core/lib/iomgr/endpoint_pair_windows.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_cfstream.cc
-  src/core/lib/iomgr/ev_apple.cc
-  src/core/lib/iomgr/ev_epoll1_linux.cc
-  src/core/lib/iomgr/ev_poll_posix.cc
-  src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/event_engine_shims/closure.cc
-  src/core/lib/iomgr/event_engine_shims/endpoint.cc
-  src/core/lib/iomgr/event_engine_shims/tcp_client.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/fork_posix.cc
-  src/core/lib/iomgr/fork_windows.cc
-  src/core/lib/iomgr/internal_errqueue.cc
-  src/core/lib/iomgr/iocp_windows.cc
-  src/core/lib/iomgr/iomgr.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/iomgr/iomgr_posix.cc
-  src/core/lib/iomgr/iomgr_posix_cfstream.cc
-  src/core/lib/iomgr/iomgr_windows.cc
-  src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset.cc
-  src/core/lib/iomgr/pollset_set.cc
-  src/core/lib/iomgr/pollset_set_windows.cc
-  src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/sockaddr_utils_posix.cc
-  src/core/lib/iomgr/socket_factory_posix.cc
-  src/core/lib/iomgr/socket_mutator.cc
-  src/core/lib/iomgr/socket_utils_common_posix.cc
-  src/core/lib/iomgr/socket_utils_linux.cc
-  src/core/lib/iomgr/socket_utils_posix.cc
-  src/core/lib/iomgr/socket_utils_windows.cc
-  src/core/lib/iomgr/socket_windows.cc
-  src/core/lib/iomgr/systemd_utils.cc
-  src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
-  src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_windows.cc
-  src/core/lib/iomgr/tcp_posix.cc
-  src/core/lib/iomgr/tcp_server.cc
-  src/core/lib/iomgr/tcp_server_posix.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_common.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_windows.cc
-  src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/timer.cc
-  src/core/lib/iomgr/timer_generic.cc
-  src/core/lib/iomgr/timer_heap.cc
-  src/core/lib/iomgr/timer_manager.cc
-  src/core/lib/iomgr/unix_sockets_posix.cc
-  src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/vsock.cc
-  src/core/lib/iomgr/wakeup_fd_eventfd.cc
-  src/core/lib/iomgr/wakeup_fd_nospecial.cc
-  src/core/lib/iomgr/wakeup_fd_pipe.cc
-  src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/resource_quota/api.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/stream_quota.cc
-  src/core/lib/resource_quota/telemetry.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_tracker/resource_tracker.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/byte_buffer.cc
-  src/core/lib/surface/byte_buffer_reader.cc
-  src/core/lib/surface/call.cc
-  src/core/lib/surface/call_details.cc
-  src/core/lib/surface/call_log_batch.cc
-  src/core/lib/surface/call_utils.cc
-  src/core/lib/surface/channel.cc
-  src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/completion_queue.cc
-  src/core/lib/surface/completion_queue_factory.cc
-  src/core/lib/surface/event_string.cc
-  src/core/lib/surface/filter_stack_call.cc
-  src/core/lib/surface/init_internally.cc
-  src/core/lib/surface/lame_client.cc
-  src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/validate_metadata.cc
-  src/core/lib/surface/version.cc
-  src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/connectivity_state.cc
-  src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/status_conversion.cc
-  src/core/lib/transport/timeout_encoding.cc
-  src/core/lib/transport/transport.cc
-  src/core/lib/transport/transport_op_string.cc
-  src/core/load_balancing/lb_policy.cc
-  src/core/load_balancing/lb_policy_registry.cc
-  src/core/net/socket_mutator.cc
-  src/core/resolver/endpoint_addresses.cc
-  src/core/resolver/resolver.cc
-  src/core/resolver/resolver_registry.cc
-  src/core/service_config/service_config_parser.cc
-  src/core/telemetry/call_tracer.cc
-  src/core/telemetry/context_list_entry.cc
-  src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
-  src/core/telemetry/metrics.cc
-  src/core/telemetry/stats.cc
-  src/core/telemetry/stats_data.cc
-  src/core/telemetry/tcp_tracer.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/util/address_sorting_init.cc
-  src/core/util/backoff.cc
-  src/core/util/dump_args.cc
-  src/core/util/event_log.cc
-  src/core/util/gethostname_fallback.cc
-  src/core/util/gethostname_host_name_max.cc
-  src/core/util/gethostname_sysconf.cc
-  src/core/util/glob.cc
-  src/core/util/grpc_check.cc
-  src/core/util/grpc_if_nametoindex_posix.cc
-  src/core/util/grpc_if_nametoindex_unsupported.cc
-  src/core/util/json/json_object_loader.cc
-  src/core/util/json/json_reader.cc
-  src/core/util/json/json_writer.cc
-  src/core/util/latent_see.cc
-  src/core/util/load_file.cc
-  src/core/util/per_cpu.cc
-  src/core/util/postmortem_emit.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/shared_bit_gen.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
-  src/core/util/time_averaged_stats.cc
-  src/core/util/uri.cc
-  src/core/util/validation_errors.cc
-  src/core/util/wait_for_single_owner.cc
-  src/core/util/work_serializer.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/channel/v3_bridge_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/mock_transport_filter.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
     target_compile_definitions(v3_bridge_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -39258,23 +39083,8 @@ target_include_directories(v3_bridge_test
 target_link_libraries(v3_bridge_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_textformat_lib
-  ${_gRPC_ZLIB_LIBRARIES}
-  absl::no_destructor
-  absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
-  absl::node_hash_map
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::string_view
-  absl::span
-  absl::utility
-  ${_gRPC_CARES_LIBRARIES}
-  gpr
-  ${_gRPC_ADDRESS_SORTING_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -39901,6 +39711,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(write_cycle_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/transport/chttp2/write_cycle_test.cc
 )
 if(WIN32 AND MSVC)
@@ -39936,6 +39752,7 @@ target_include_directories(write_cycle_test
 target_link_libraries(write_cycle_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -40343,6 +40160,10 @@ add_executable(xds_audit_logger_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -41074,6 +40895,10 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -41447,6 +41272,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -41623,6 +41456,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -41963,6 +41800,14 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.pb.h
@@ -42163,6 +42008,10 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -42533,6 +42382,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -42713,6 +42570,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -43124,6 +42985,10 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -43240,6 +43105,38 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/cel.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/domain.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/http_inputs.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/ip.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/matcher.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/range.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/regex.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/type/matcher/v3/string.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/cel.pb.h
@@ -43252,6 +43149,8 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
+  src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
   src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
@@ -43297,9 +43196,12 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c
+  src/core/ext/upb-gen/envoy/type/v3/scope.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
   src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
   src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -43328,6 +43230,17 @@ add_executable(xds_common_types_test
   src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
   src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   test/core/xds/xds_common_types_test.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc
@@ -43550,6 +43463,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -43738,6 +43659,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -44110,6 +44035,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -44286,6 +44219,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -45042,6 +44979,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -45414,6 +45355,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -45590,6 +45539,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -45968,6 +45921,10 @@ add_executable(xds_endpoint_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -46286,6 +46243,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -46366,14 +46331,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h
@@ -46486,6 +46443,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -46858,6 +46819,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -47034,6 +47003,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -47405,6 +47378,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -47589,6 +47570,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -47960,6 +47945,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -48140,6 +48133,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -48511,6 +48508,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -48691,6 +48696,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -49210,6 +49219,10 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -49546,6 +49559,14 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.pb.h
@@ -49666,6 +49687,10 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -49995,6 +50020,14 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -50187,6 +50220,10 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -50592,6 +50629,10 @@ add_executable(xds_matcher_parse_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -51032,6 +51073,10 @@ add_executable(xds_metadata_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -51341,6 +51386,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -51525,6 +51578,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -51681,6 +51738,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
     ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
+    test/core/test_util/fake_stats_plugin.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_outlier_detection_end2end_test.cc
@@ -51896,6 +51954,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -52080,6 +52146,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -52544,6 +52614,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -52728,6 +52806,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -53100,6 +53182,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -53280,6 +53370,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -53652,6 +53746,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -53828,6 +53930,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -54251,6 +54357,10 @@ add_executable(xds_route_config_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -54629,6 +54739,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -54813,6 +54931,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -55235,6 +55357,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -55435,6 +55565,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -55593,6 +55727,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
     test/core/test_util/audit_logging_utils.cc
     test/core/test_util/fake_stats_plugin.cc
+    test/core/test_util/raw_http2_client.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_security_end2end_test.cc
@@ -55809,6 +55944,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -56009,6 +56152,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -56609,6 +56756,10 @@ add_executable(xds_stats_watcher_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
@@ -57020,6 +57171,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/metrics_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/metrics/v3/stats.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/config/rbac/v3/rbac.pb.h
@@ -57208,6 +57367,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/scope.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h

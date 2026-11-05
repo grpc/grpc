@@ -21,6 +21,7 @@
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/support/port_platform.h>
 
+#include <cstring>
 #include <memory>
 
 #include "src/core/lib/debug/trace.h"
@@ -189,4 +190,17 @@ void grpc_tls_credentials_options_set_signature_algorithms(
   } else {
     options->set_signature_algorithms({});
   }
+}
+
+void grpc_tls_credentials_options_set_exported_keying_material_options(
+    grpc_tls_credentials_options* options, const char* label, size_t length) {
+  GRPC_CHECK_NE(options, nullptr);
+  // The label is the input used to derive the exported keying material, and the
+  // length is the size of the derived exported keying material. Both must be
+  // valid.
+  GRPC_CHECK_NE(label, nullptr);
+  GRPC_CHECK_GT(strlen(label), 0u);
+  GRPC_CHECK_GT(length, 0u);
+  options->set_exported_keying_material_label(label);
+  options->set_exported_keying_material_length(length);
 }

@@ -1,0 +1,11 @@
+--- a/bazel/api_build_system.bzl
++++ b/bazel/api_build_system.bzl
+@@ -103,8 +103,6 @@
+             "@googleapis//google/rpc:status_cc_proto",
+         ],
+         deps = [relative_name],
+-        protobuf = "@protobuf//:protobuf",
+-        re2 = "@re2",
+         visibility = ["//visibility:public"],
+     )
+ 

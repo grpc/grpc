@@ -140,6 +140,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "mock_transport_filter",
+    testonly = 1,
+    srcs = ["mock_transport_filter.cc"],
+    hdrs = ["mock_transport_filter.h"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "//:call_combiner",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:grpc_base",
+        "//src/core:closure",
+        "//src/core:metadata_batch",
+        "//src/core:slice_buffer",
+        "//src/core:unique_type_name",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_test_util",
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],
@@ -196,6 +217,41 @@ grpc_cc_library(
         "//test/core/event_engine:test_init",
     ],
     alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "raw_http2_client",
+    testonly = 1,
+    srcs = ["raw_http2_client.cc"],
+    hdrs = ["raw_http2_client.h"],
+    external_deps = [
+        "absl/random",
+        "absl/random:bit_gen_ref",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/time",
+    ],
+    deps = [
+        "grpc_test_util",
+        "grpc_test_util_base",
+        "//:chttp2_frame",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:hpack_parser",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
+        "//src/core:metadata_batch",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+        "//src/core:slice",
+    ],
 )
 
 grpc_cc_library(

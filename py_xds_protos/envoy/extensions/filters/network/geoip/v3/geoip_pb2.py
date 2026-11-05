@@ -28,7 +28,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n5envoy/extensions/filters/network/geoip/v3/geoip.proto\x12)envoy.extensions.filters.network.geoip.v3\x1a$envoy/config/core/v3/extension.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"d\n\x05Geoip\x12\x13\n\x0bstat_prefix\x18\x01 \x01(\t\x12\x46\n\x08provider\x18\x02 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x42\xb1\x01\n7io.envoyproxy.envoy.extensions.filters.network.geoip.v3B\nGeoipProtoP\x01ZXgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/geoip/v3;geoipv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n5envoy/extensions/filters/network/geoip/v3/geoip.proto\x12)envoy.extensions.filters.network.geoip.v3\x1a$envoy/config/core/v3/extension.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"w\n\x05Geoip\x12\x13\n\x0bstat_prefix\x18\x01 \x01(\t\x12\x46\n\x08provider\x18\x02 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12\x11\n\tclient_ip\x18\x03 \x01(\tB\xb1\x01\n7io.envoyproxy.envoy.extensions.filters.network.geoip.v3B\nGeoipProtoP\x01ZXgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/geoip/v3;geoipv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -39,5 +39,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GEOIP'].fields_by_name['provider']._loaded_options = None
   _globals['_GEOIP'].fields_by_name['provider']._serialized_options = b'\372B\005\212\001\002\020\001'
   _globals['_GEOIP']._serialized_start=227
-  _globals['_GEOIP']._serialized_end=327
+  _globals['_GEOIP']._serialized_end=346
 # @@protoc_insertion_point(module_scope)

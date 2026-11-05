@@ -60,6 +60,32 @@ Promise<absl::Status> PingManager::PingPromiseCallbacks::WaitForPingAck() {
   return Map(latch->Wait(), [latch](Empty) { return absl::OkStatus(); });
 }
 
+std::optional<PingManager::PingTimeoutArgs>
+PingManager::PingPromiseCallbacks::ArmPingTimeout(const uint64_t opaque_data,
+                                                  const Duration ping_timeout) {
+  std::shared_ptr<InterActivityLatch<void>> timeout_latch =
+      std::make_shared<InterActivityLatch<void>>();
+  const std::optional<uint64_t> id = ping_callbacks_.OnPingTimeout(
+      ping_timeout, event_engine_.get(),
+      [timeout_latch]() { timeout_latch->Set(); });
+  if (!id.has_value()) {
+    // No inflight ping, e.g. the ack for this ping was received before the
+    // timeout could be armed. There is nothing to wait for.
+    GRPC_HTTP2_PING_LOG << "No inflight ping for id=" << opaque_data
+                        << ". Not waiting for ping timeout.";
+    return std::nullopt;
+  }
+  GRPC_DCHECK_EQ(*id, opaque_data);
+  GRPC_HTTP2_PING_LOG << "Ping timeout of duration: " << ping_timeout
+                      << " armed for ping id=" << opaque_data;
+  // Register the ack callback only after confirming the ping is still in
+  // flight. Otherwise it would attach to the next ping instead.
+  std::shared_ptr<Latch<void>> ack_latch = std::make_shared<Latch<void>>();
+  ping_callbacks_.OnPingAck([ack_latch]() { ack_latch->Set(); });
+  return PingTimeoutArgs{opaque_data, std::move(timeout_latch),
+                         std::move(ack_latch)};
+}
+
 // Ping System implementation
 PingManager::PingManager(const ChannelArgs& channel_args, const bool is_client,
                          Duration ping_timeout,
@@ -134,13 +160,13 @@ std::optional<Duration> PingManager::MaybeGetSerializedPingFrames(
   return trigger_ping_args.delayed_ping_wait;
 }
 
-std::optional<uint64_t> PingManager::NotifyPingSent() {
-  if (opaque_data_.has_value()) {
-    SentPing();
-    return std::exchange(opaque_data_, std::nullopt);
+std::optional<PingManager::PingTimeoutArgs> PingManager::NotifyPingSent() {
+  if (!opaque_data_.has_value()) {
+    return std::nullopt;
   }
-
-  return std::nullopt;
+  SentPing();
+  return ping_callbacks_.ArmPingTimeout(
+      *std::exchange(opaque_data_, std::nullopt), ping_timeout_);
 }
 
 void PingManager::AddPendingPingAck(const uint64_t opaque_data) {

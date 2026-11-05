@@ -74,8 +74,11 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
   std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
       stats_plugin_group;
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
+    // For server channels, just grab the plugin group from the server's
+    // channel args.  We don't want to have a separate set of stats
+    // plugins for each connection on a server.
     stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+        args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
   } else {
     std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
                                 .value_or(CoreConfiguration::Get()

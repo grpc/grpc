@@ -34,7 +34,6 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 
-extern grpc_tcp_server_vtable grpc_windows_tcp_server_vtable;
 extern grpc_tcp_server_vtable grpc_windows_event_engine_tcp_server_vtable;
 extern grpc_tcp_client_vtable grpc_windows_tcp_client_vtable;
 extern grpc_timer_vtable grpc_generic_timer_vtable;
@@ -92,11 +91,7 @@ static grpc_iomgr_platform_vtable vtable = {
 
 void grpc_set_default_iomgr_platform() {
   grpc_set_tcp_client_impl(&grpc_windows_tcp_client_vtable);
-  if (grpc_core::IsEventEngineListenerEnabled()) {
-    grpc_set_tcp_server_impl(&grpc_windows_event_engine_tcp_server_vtable);
-  } else {
-    grpc_set_tcp_server_impl(&grpc_windows_tcp_server_vtable);
-  }
+  grpc_set_tcp_server_impl(&grpc_windows_event_engine_tcp_server_vtable);
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
   grpc_set_pollset_vtable(&grpc_windows_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_windows_pollset_set_vtable);

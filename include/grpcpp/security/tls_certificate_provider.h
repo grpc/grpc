@@ -175,6 +175,7 @@ class GRPCXX_DLL InMemoryCertificateProvider
   // Users should verify the status retuned to confirm that the update was
   // successful.
   absl::Status UpdateRoot(const std::string& root_certificate);
+  [[deprecated("Use IdentityKeyOrSignerCertPair overload instead")]]
   absl::Status UpdateIdentityKeyCertPair(
       std::vector<IdentityKeyCertPair> identity_key_cert_pairs);
   absl::Status UpdateIdentityKeyCertPair(

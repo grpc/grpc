@@ -6,6 +6,18 @@
 
 See also: [gRPC Transports overview](../../../transport/AGENTS.md)
 
+## Keep This Document Current
+
+**Keep this document in sync with the code it describes. This is mandatory.**
+
+*   **Trigger:** Your CL adds, renames, moves, or deletes a file, BUILD target,
+    class, function, experiment, or date that this document references.
+*   **Action:** Search this document for the old name and fix every hit, in
+    the same CL. Add new items to the relevant table or list. Remove deleted
+    ones.
+*   **Verify:** Before finishing, re-check every table, list, and count you
+    touched against the source. Do not leave stale references behind.
+
 ## Overarching Purpose
 
 This directory houses the C++ implementations of gRPC's HTTP/2 transports.
@@ -28,10 +40,10 @@ and the underlying endpoint.
 
 ## Subdirectories
 
-*   **`alpn`**: Contains code for ALPN (Application-Layer Protocol Negotiation), which is used to select the HTTP/2 protocol during the TLS handshake.
+*   **`alpn`**: Contains code for ALPN (Application-Layer Protocol Negotiation), which is used to select the HTTP/2 protocol during the TLS handshake. Consumed by TLS credentials code (`ssl_utils.cc`), not by the transports.
 *   **`client`**: Contains the client-side implementation of the CHTTP2 transport.
 *   **`server`**: Contains the server-side implementation of the CHTTP2 transport.
-*   **`transport`**: Contains the core implementation of the CHTTP2 and PH2 transport.
+*   **`transport`**: Contains the core implementation of the CHTTP2 and PH2 transports.
 *   Code in directories [`alpn`](./alpn), [`client`](./client) and [`server`](./server) is shared by PH2 and CHTTP2.
 
 ## 1. CHTTP2 (Legacy)
@@ -44,7 +56,7 @@ and the underlying endpoint.
 ### CHTTP2 File Structure
 
 <!--
-TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
+TODO(tjagtap) [PH2][P5][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 -->
 
 *   General Transport Files:
@@ -68,7 +80,8 @@ TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 *   PH2 is compatible with the Call V3 Stack.
 *   PH2 utilizes the gRPC promise framework (`src/core/lib/promise`) for asynchronous operations.
 *   **Status:** Under Development.
-*   **Rollout:** Expected to begin in November 2026.
+*   **Server Rollout:** Expected to begin in June 2027.
+*   **Client Rollout:** Expected to begin in August 2027.
 *   **Experiments:**
     *   Enable Client: `IsPh2ClientEnabled()`.
     *   Enable Server: `IsPh2ServerEnabled()`.
@@ -89,6 +102,74 @@ TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 *   **Asynchronous Operations:** All asynchronous operations *must* use the gRPC Promise library (`src/core/lib/promise`), particularly leveraging `Party` for concurrency. See the `Dependencies for PH2` section.
 *   **Testing:** Any changes to PH2 code should be accompanied by relevant tests. Ensure that existing tests in `test/core/transport/chttp2/http2_client_transport_test.cc` and `test/core/transport/chttp2/http2_server_transport_test.cc` pass. Add new tests as needed to cover new functionality.
 *   **Test Comments:** When writing new tests, include comments within each test explaining its purpose and assertions. For large tests, add comments for each step.
+
+### PH2 TODO Tags
+
+All PH2 TODOs carry the tag `[PH2][Pn]` right after the owner ldap, where
+n = 0 to 5. The priority tag is mandatory. This helps to maintain the
+uniformity for quick lookup and fixing.
+
+*   Priority tags:
+    *   `[PH2][P0]` MUST be fixed before the current PR is submitted.
+    *   `[PH2][P1]` MUST be fixed before the current sub-project is considered
+        complete.
+    *   `[PH2][P2]` MUST be fixed before the current Milestone is considered
+        complete.
+    *   `[PH2][P3]` MUST be fixed before Milestone 3 is considered complete.
+    *   `[PH2][P4]` Can be fixed after roll out begins. Evaluate these during
+        Milestone 4. Either do the TODOs or delete them.
+    *   `[PH2][P5]` Can be fixed after roll out begins. Evaluate these during
+        Milestone 4. Either do the TODOs or delete them.
+*   Optional category tags follow the priority tag:
+    *   `[PH2][Pn][Client]` Affects only the PH2 client.
+    *   `[PH2][Pn][Server]` Affects only the PH2 server.
+    *   `[PH2][Pn][EXT]` A TODO related to a project unrelated to PH2 but
+        happening in parallel.
+    *   `[PH2][Pn][CHTTP2]` A TODO that is a part of CHTTP2 deletion.
+    *   `[PH2][Pn][FCV3]` A TODO related to Flow Control plumbing with the
+        Application and the Call V3 stack.
+    *   `[PH2][Pn][Retry]` A TODO related to Retry support for PH2. Retry is a
+        separate feature that lands after the PH2 roll out.
+*   Skipped tests use fixed priorities:
+    *   `SKIP_TEST_FOR_PH2_SERVER` messages are currently `[PH2][P1]`.
+    *   `SKIP_TEST_FOR_PH2_CLIENT` messages are currently `[PH2][P3]`.
+    *   `SKIP_RETRY_TEST_FOR_PH2_CLIENT` messages are currently
+        `[PH2][P5][Retry]`.
+
+### Pragmatic Issue and Nit Guidelines
+
+*   **Surface real issues and helpful nits:** Always flag genuine bugs, data
+    races, memory or lifetime issues, protocol violations, and clean nits that
+    improve readability, consistency, or maintainability.
+*   **Weigh complexity against benefit:** Software can never be completely
+    bug-free. Fixing minor, low-impact, or legacy issues can sometimes introduce
+    new regressions and make the system more complex.
+*   **Avoid net-negative fixes:** When proposing a fix or nit, evaluate whether
+    extra branching, new state, concurrency complexity, or churn in working code
+    outweighs the problem being solved.
+*   **Call out trade-offs:** If an edge case or minor issue only has a complex
+    or invasive fix, still mention the observation, but explicitly note the
+    complexity trade-off (or suggest a comment or `GRPC_DCHECK` instead) rather
+    than insisting on a change that may be a long-term net negative.
+
+### Known Issues, Bugs, TODOs, and WIP CLs
+
+Before reporting bugs or nits, or filing new issues, check whether the issue is
+already known or in progress:
+
+*   **Check in-code `TODO`s:** Inspect nearby `TODO` comments (such as `[PH2]`
+    tags) in the relevant source and test files.
+*   **Check Existing Bugs:** Search open and recently closed issues in
+    component ID: 2228830.
+*   **Check pending WIP CLs:** Check pending CLs authored by `tjagtap`,
+    `akshitpatel`, `roth`, `vidhikpatel`, and `ritulb` for work-in-progress
+    fixes.
+*   **Mention existing bugs briefly:** If a matching bug already exists, just
+    mention its bug link instead of re-reporting the full issue.
+*   **Avoid duplicate bugs:** Never create a new bug if a matching issue already
+    exists.
+*   **Mention WIP fixes briefly:** If a pending CL or `TODO` covers the issue,
+    note it instead of re-flagging it.
 
 ### Key Differences from CHTTP2
 
@@ -122,7 +203,8 @@ TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 *   Flow Control Helper : `flow_control_manager.h`
 *   Stream : `stream.h` representation of each HTTP2 stream in the HTTP2 transport.
 *   GoAway : `goaway.{h,cc}` for implementation of HTTP2 GOAWAY
-*   Metadata: `read_context.h`
+*   Read State : `read_context.h`
+    *   Owns the header assembler, and read-cycle limits.
 *   Security Frame : `security_frame.h`
 *   Resource Quota Reclaimer : `reclaimer.{h,cc}`
     *   Owns the memory quota reclamation state for a PH2 transport.
@@ -130,11 +212,13 @@ TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
-*   **`alpn`**: Contains code for ALPN (Application-Layer Protocol Negotiation), which is used to select the HTTP/2 protocol during the TLS handshake.
+*   **`alpn`**: Contains code for ALPN (Application-Layer Protocol Negotiation), which is used to select the HTTP/2 protocol during the TLS handshake. Consumed by TLS credentials code (`ssl_utils.cc`), not by the transports.
 *   **`client/chttp2_connector.h`, `client/chttp2_connector.cc`**:
     *   These files define the client-side connector, which is responsible for creating a new HTTP2 transport.
-    *   This connector creates either PH2 and CHTTP2 transport.
-*   **`server/chttp2_server.h`, `server/chttp2_server.cc`**: These files define the server-side listener, which is responsible for accepting new connections and creating new HTTP2 transports.
+    *   This connector creates either a PH2 or a CHTTP2 transport.
+*   **`server/chttp2_server.h`, `server/chttp2_server.cc`**:
+    *   These files define the server-side listener, which is responsible for accepting new connections and creating new HTTP2 transports.
+    *   This listener creates either a PH2 or a CHTTP2 transport.
 *   Files in `transport/`:
     *   HPACK implementation:
         *   `hpack_constants.h`
@@ -154,10 +238,9 @@ TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 
 ## 4. Unused or TBD Files
 
-*   TBD (ETA 2025-10-30):
+*   TBD (ETA 2026-12-31):
     *   `call_tracer_wrapper.{h,cc}`
     *   `http2_stats_collector.{h,cc}`
-    *   `http2_stats_collector.github.cc`
 
 ## Key classes in CHTTP2 and their PH2 equivalents
 
@@ -165,19 +248,19 @@ This section maps the core functionalities and classes from the legacy CHTTP2
 transport to their counterparts in the newer Promise-based PH2 transport.
 
 *   **Transport Object**:
-    *   CHTTP2: `grpc_chttp2_transport` struct defined in `chttp2_transport.cc`.
+    *   CHTTP2: `grpc_chttp2_transport` struct defined in `internal.h`. Methods are implemented in `chttp2_transport.cc`.
     *   PH2: `Http2ClientTransport` class in `http2_client_transport.h` for clients, and `Http2ServerTransport` class in `http2_server_transport.h` for servers.
 
 *   **Stream Object**:
-    *   CHTTP2: `grpc_chttp2_stream` struct defined in `chttp2_transport.cc`.
-    *   PH2: `Http2ClientTransport::Stream` inner class for clients, and `Http2ServerTransport::Stream` inner class for servers.
+    *   CHTTP2: `grpc_chttp2_stream` struct defined in `internal.h`. Methods are implemented in `chttp2_transport.cc`.
+    *   PH2: `Stream` class in `stream.h` (namespace `grpc_core::http2`). Shared by client and server.
 
 *   **Transport Creation**:
     *   CHTTP2: `grpc_create_chttp2_transport()` in `chttp2_transport.cc`.
     *   PH2: Constructors of `Http2ClientTransport` and `Http2ServerTransport`.
 
 *   **Stream Initiation/Handling**:
-    *   CHTTP2: Functions like `init_stream`, `chttp2_perform_stream_op_locked`, etc., in `chttp2_transport.cc`.
+    *   CHTTP2: Functions like `InitStream`, `PerformStreamOp`, `perform_stream_op_locked`, etc., in `chttp2_transport.cc`.
     *   PH2: Handled within `Http2ClientTransport::StartCall` for clients, and
         `Http2ServerTransport::IncomingStream` for servers.
 
@@ -187,48 +270,20 @@ transport to their counterparts in the newer Promise-based PH2 transport.
 
 ## Test Files
 
-Key test files include:
+The full test inventory lives in
+[test/core/transport/chttp2/AGENTS.md](../../../../../test/core/transport/chttp2/AGENTS.md).
 
-*   **PH2 Specific Tests:**
+*   **Must-Run PH2 Tests:** Run these after any PH2 code change.
     *   `test/core/transport/chttp2/http2_client_transport_test.cc`: Main test suite for the PH2 client transport.
     *   `test/core/transport/chttp2/http2_server_transport_test.cc`: Main test suite for the PH2 server transport.
-    *   `test/core/transport/chttp2/http2_transport_test.cc`: Common to PH2 Client and Server Transport. Tests code in `http2_transport.{h,cc}`.
-    *   `test/core/transport/chttp2/frame_test.cc`
-    *   `test/core/transport/chttp2/goaway_test.cc`
-    *   `test/core/transport/chttp2/header_assembler_test.cc`
-    *   `test/core/transport/chttp2/http2_status_test.cc`
-    *   `test/core/transport/chttp2/keepalive_test.cc`
-    *   `test/core/transport/chttp2/message_assembler_fuzz_test.cc`
-    *   `test/core/transport/chttp2/message_assembler_test.cc`
-    *   `test/core/transport/chttp2/ping_promise_test.cc`
-    *   `test/core/transport/chttp2/settings_timeout_manager_test.cc`
-    *   `test/core/transport/chttp2/settings_timeout_test.cc`
-    *   `test/core/transport/chttp2/stream_data_queue_fuzz_test.cc`
-    *   `test/core/transport/chttp2/stream_data_queue_test.cc`
-    *   `test/core/transport/chttp2/writable_streams_fuzz_test.cc`
-    *   `test/core/transport/chttp2/writable_streams_test.cc`
-    *   `test/core/transport/chttp2/read_context_test.cc`
-    *   `test/core/transport/chttp2/http2_security_frame_test.cc`
-    *   `test/core/transport/chttp2/write_cycle_test.cc`
-    *   `test/core/transport/chttp2/stream_test.cc`
-
-*   **Common Component Tests:**
-    *   `test/core/transport/chttp2/flow_control_fuzzer.cc`
-    *   `test/core/transport/chttp2/flow_control_manager_test.cc`
-    *   `test/core/transport/chttp2/flow_control_test.cc`
-    *   `test/core/transport/chttp2/hpack_encoder_test.cc`
-    *   `test/core/transport/chttp2/hpack_parser_test.cc`
-    *   `test/core/transport/chttp2/http2_settings_test.cc`
-    *   `test/core/transport/chttp2/write_size_policy_fuzztest.cc`
-    *   `test/core/transport/chttp2/write_size_policy_test.cc`
 
 *   **PH2 End-to-end Tests:**
     *   `test/core/end2end/end2end_ph2_config.cc`: This file defines the test
     configuration for running end-to-end tests with PH2 transport.
     It enables/disables specific tests. It tests :
         1. PH2 client vs CHTTP2 server. (Done)
-        1. CHTTP2 client vs PH2 server. (Coming Soon)
-        1. PH2 client vs PH2 server. (Coming Soon)
+        1. CHTTP2 client vs PH2 server. (Done. Insecure fixture only.)
+        1. PH2 client vs PH2 server. (Done. Insecure fixture only.)
 
 ## Dependencies for PH2
 
@@ -245,8 +300,8 @@ PH2 shares several architectural similarities with the [Chaotic Good transport](
 *   **Call V3 Stack:** Both are designed to work with the newer Call V3 stack.
 *   **Client Transport Implementation:** The client transport implementations in PH2 (`http2_client_transport.h`) and Chaotic Good (`client_transport.h`) show conceptual similarities in how they handle stream creation, frame sending/receiving, and interaction with the promise-based event loop.
 *   **Framing Concepts:** While the specific frame types and serialization differ (HTTP/2 vs. custom proto-based for Chaotic Good), the underlying concepts of defining frame structures (e.g., `frame.h` in both transports) and managing their serialization/deserialization are present in both.
-*   **Endpoint Interaction:** Both transports use the `PromiseEndpoint` abstraction or reading from and writing to the network, making the core transport logic independent of the underlying I/O mechanism.
-*   **Stream Initiation:** In PH2, `Http2ClientTransport::StartCall` initiates a new stream. It acquires a lock, assigns a new stream ID, creates a `Stream` object, and spawns the `CallOutboundLoop` to handle the stream's outgoing messages. Chaotic Good follows a similar pattern in `ChaoticGoodClientTransport::StartCall`, where it calls `StreamDispatch::MakeStream` to allocate a stream ID and create a `Stream` object, and then spawns `CallOutboundLoop` for the stream's lifecycle.
+*   **Endpoint Interaction:** Both transports use the `PromiseEndpoint` abstraction for reading from and writing to the network, making the core transport logic independent of the underlying I/O mechanism.
+*   **Stream Initiation:** In PH2, `Http2ClientTransport::StartCall` initiates a new stream. It acquires a lock, creates a `Stream` object, and spawns the `CallOutboundLoop` to handle the stream's outgoing messages. The stream ID is assigned later by `MultiplexerLoop` via `InitializeStream` and `NextStreamId`. Chaotic Good follows a similar pattern in `ChaoticGoodClientTransport::StartCall`, where it calls `StreamDispatch::MakeStream` to allocate a stream ID and create a `Stream` object, and then spawns `CallOutboundLoop` for the stream's lifecycle.
 
 # Thread Safety in PH2
 
@@ -290,7 +345,7 @@ Last checked on 24-September-2026
 ## PH2 Client Party Slots Usage
 
 <!--
-TODO(tjagtap) [PH2][P2][Client] Validate this before roll out begins.
+TODO(tjagtap) [PH2][P3][Client] Validate this before roll out begins.
 Last checked on 24-September-2026
 -->
 
@@ -307,7 +362,7 @@ Last checked on 24-September-2026
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
 | GracefulGoaway | Misc | | 1 | Sending a graceful Goaway | As long as it takes to complete the graceful goaway process | |
-| TarpitDrainLoop | Loop | Tarpit Drain Loop | 1 | Transport start | Lifetime of transport | Transport Close |
+| TarpitDrainLoop | Loop | Tarpit Drain Loop | Default - 1 (0 if GRPC_ARG_HTTP_ALLOW_TARPIT is explicitly set to false) | Transport start | Lifetime of transport | Transport Close |
 | PingOnResetStream | Misc | Ping On Reset Stream | 1 | When receiving RST_STREAM | Till ping ack/ping timeout | Till ping ack/ping timeout |
 | | | **Total** | 3 | | | |
 

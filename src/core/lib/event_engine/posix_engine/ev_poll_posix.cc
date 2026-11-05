@@ -253,7 +253,7 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done,
                                    absl::string_view /*reason*/) {
   ForceRemoveHandleFromPoller();
   {
-    grpc_core::ReleasableMutexLock lock(&mu_);
+    grpc_core::ReleasableMutexLock lock(mu_);
     on_done_ = on_done;
     released_ = release_fd != nullptr;
     if (release_fd != nullptr) {
@@ -355,7 +355,7 @@ void PollEventHandle::NotifyOnRead(PosixEngineClosure* on_read) {
   // poller->Shutdown() prematurely.
   Ref();
   {
-    grpc_core::ReleasableMutexLock lock(&mu_);
+    grpc_core::ReleasableMutexLock lock(mu_);
     if (NotifyOnLocked(&read_closure_, on_read)) {
       lock.Release();
       // NotifyOnLocked immediately scheduled some closure. It would have set
@@ -377,7 +377,7 @@ void PollEventHandle::NotifyOnWrite(PosixEngineClosure* on_write) {
   // poller->Shutdown() prematurely.
   Ref();
   {
-    grpc_core::ReleasableMutexLock lock(&mu_);
+    grpc_core::ReleasableMutexLock lock(mu_);
     if (NotifyOnLocked(&write_closure_, on_write)) {
       lock.Release();
       // NotifyOnLocked immediately scheduled some closure. It would have set
@@ -530,7 +530,7 @@ Poller::WorkResult PollPoller::Work(
   pending_events.clear();
   int timeout_ms =
       static_cast<int>(grpc_event_engine::experimental::Milliseconds(timeout));
-  mu_.Lock();
+  mu_.lock();
   // Start polling, and keep doing so while we're being asked to
   // re-evaluate our pollers (this allows poll() based pollers to
   // ensure they don't miss wakeups).
@@ -593,7 +593,7 @@ Poller::WorkResult PollPoller::Work(
       }
       head = head->PollerHandlesListPos().next;
     }
-    mu_.Unlock();
+    mu_.unlock();
     if (!use_phony_poll_ || timeout_ms == 0 || pfd_count == 1) {
       // If use_phony_poll is true and pfd_count == 1, it implies only the
       // wakeup_fd is present. Allow the call to get blocked in this case as
@@ -618,7 +618,7 @@ Poller::WorkResult PollPoller::Work(
       for (i = 1; i < pfd_count; i++) {
         PollEventHandle* head = watchers[i];
         int watch_mask;
-        grpc_core::ReleasableMutexLock lock(head->mu());
+        grpc_core::ReleasableMutexLock lock(*head->mu());
         if (head->IsWatched(watch_mask)) {
           head->SetWatched(-1);
           // This fd was Watched with a watch mask > 0.
@@ -657,7 +657,7 @@ Poller::WorkResult PollPoller::Work(
       for (i = 1; i < pfd_count; i++) {
         PollEventHandle* head = watchers[i];
         int watch_mask;
-        grpc_core::ReleasableMutexLock lock(head->mu());
+        grpc_core::ReleasableMutexLock lock(*head->mu());
         if (!head->IsWatched(watch_mask) || watch_mask == 0) {
           // IsWatched will be false if an orphan was invoked on the
           // handle while it was being polled. If watch_mask is 0, then the fd
@@ -692,7 +692,7 @@ Poller::WorkResult PollPoller::Work(
 
     // End of poll iteration. Update how much time is remaining.
     timeout_ms -= PollElapsedTimeToMillis(start);
-    mu_.Lock();
+    mu_.lock();
     if (std::exchange(was_kicked_, false) &&
         std::exchange(was_kicked_ext_, false)) {
       // External kick. Need to break out.
@@ -700,7 +700,7 @@ Poller::WorkResult PollPoller::Work(
       break;
     }
   }
-  mu_.Unlock();
+  mu_.unlock();
   if (pending_events.empty()) {
     if (was_kicked_ext) {
       return Poller::WorkResult::kKicked;
