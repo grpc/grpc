@@ -1074,6 +1074,22 @@ TEST(X509SubjectRfc2253, MultipleAttributesInSubject) {
 TEST(X509SubjectRfc2253, PrintExFailure) {
   X509* cert = X509_new();
   ASSERT_NE(cert, nullptr);
+#if !defined(OPENSSL_IS_BORINGSSL) && OPENSSL_VERSION_NUMBER >= 0x40000000L
+  // OpenSSL 4 makes ASN1_STRING opaque and rejects odd-length BMPStrings on
+  // construction, and X509_set_subject_name() re-validates via DER. A lone
+  // UTF-16 surrogate, added to the cert's own (const-returned but mutable)
+  // subject as an unvalidated V_ASN1_* type, still makes
+  // X509_NAME_print_ex fail.
+  const unsigned char lone_surrogate_bmp[] = {0xd8, 0x00};
+  X509_NAME* name = const_cast<X509_NAME*>(X509_get_subject_name(cert));
+  ASSERT_NE(name, nullptr);
+  ASSERT_EQ(X509_NAME_add_entry_by_txt(name, "CN", V_ASN1_BMPSTRING,
+                                       lone_surrogate_bmp,
+                                       sizeof(lone_surrogate_bmp), -1, 0),
+            1);
+#else
+  // BoringSSL validates string contents on every construction path, so the
+  // malformed value is written into an already-added entry.
   X509_NAME* name = X509_get_subject_name(cert);
   ASSERT_NE(name, nullptr);
   ASSERT_EQ(X509_NAME_add_entry_by_txt(
@@ -1090,6 +1106,7 @@ TEST(X509SubjectRfc2253, PrintExFailure) {
   const unsigned char odd_length_bmp[] = {0x00, 0x41, 0x00};
   ASSERT_EQ(ASN1_STRING_set(val, odd_length_bmp, sizeof(odd_length_bmp)), 1);
   val->type = V_ASN1_BMPSTRING;
+#endif
   EXPECT_EQ(X509SubjectRfc2253(cert).status().code(),
             absl::StatusCode::kInternal);
   X509_free(cert);
@@ -1107,10 +1124,15 @@ absl::StatusOr<std::string> PrincipalOfCert(const std::vector<TestSan>& sans,
   X509* cert = X509_new();
   EXPECT_NE(cert, nullptr);
   if (with_subject) {
+    // Built separately: OpenSSL 4's X509_get_subject_name() returns const.
+    X509_NAME* name = X509_NAME_new();
+    EXPECT_NE(name, nullptr);
     EXPECT_EQ(X509_NAME_add_entry_by_txt(
-                  X509_get_subject_name(cert), "CN", MBSTRING_ASC,
+                  name, "CN", MBSTRING_ASC,
                   reinterpret_cast<const unsigned char*>("test"), 4, -1, 0),
               1);
+    EXPECT_EQ(X509_set_subject_name(cert, name), 1);
+    X509_NAME_free(name);
   }
   if (!sans.empty()) {
     GENERAL_NAMES* subject_alt_names = sk_GENERAL_NAME_new_null();

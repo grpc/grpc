@@ -2327,6 +2327,13 @@ static tsi_result ssl_handshaker_result_extract_peer(
   int nid = SSL_get_negotiated_group(impl->ssl);
   const char* negotiated_group_name =
       (nid != NID_undef && nid != 0) ? OBJ_nid2sn(nid) : nullptr;
+#if !defined(OPENSSL_IS_BORINGSSL)
+  // Groups without an OpenSSL NID (e.g. X25519MLKEM768, MLKEM1024) come back
+  // as TLSEXT_nid_unknown | group_id, for which OBJ_nid2sn() returns nullptr.
+  if (negotiated_group_name == nullptr && (nid & TLSEXT_nid_unknown) != 0) {
+    negotiated_group_name = SSL_group_to_name(impl->ssl, nid);
+  }
+#endif
   if (negotiated_group_name != nullptr) new_property_count++;
 #endif
   tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(

@@ -1938,6 +1938,14 @@ TEST_P(SslTransportSecurityTest,
   DoHandshake();
 }
 
+// BoringSSL reports the short name of NID_ML_KEM_1024; OpenSSL has no NID for
+// the TLS group and reports its group name instead.
+#if defined(OPENSSL_IS_BORINGSSL)
+constexpr char kMlkem1024GroupName[] = "id-alg-ml-kem-1024";
+#else
+constexpr char kMlkem1024GroupName[] = "MLKEM1024";
+#endif
+
 TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMlkem1024) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
@@ -1945,7 +1953,7 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeMlkem1024) {
   if (tls_version == TSI_TLS1_3) {
     ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_MLKEM1024});
     ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_MLKEM1024});
-    ssl_fixture_->SetExpectedNegotiatedGroup("id-alg-ml-kem-1024");
+    ssl_fixture_->SetExpectedNegotiatedGroup(kMlkem1024GroupName);
   }
   DoHandshake();
 }

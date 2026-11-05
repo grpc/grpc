@@ -151,7 +151,17 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   /// Overridden writev API for c-ares
   static ares_ssize_t WriteV(ares_socket_t as, const struct iovec* iov,
                              int iovec_count, void* /*user_data*/) {
-    return writev(as, iov, iovec_count);
+    // Not writev(): when a DNS server has closed a TCP connection, that
+    // raises SIGPIPE and kills the process. c-ares' own default socket
+    // functions send with MSG_NOSIGNAL for the same reason.
+    struct msghdr msg = {};
+    msg.msg_iov = const_cast<struct iovec*>(iov);
+    msg.msg_iovlen = iovec_count;
+#ifdef GRPC_HAVE_MSG_NOSIGNAL
+    return sendmsg(as, &msg, MSG_NOSIGNAL);
+#else
+    return sendmsg(as, &msg, 0);
+#endif
   }
 
   /// Overridden recvfrom API for c-ares
