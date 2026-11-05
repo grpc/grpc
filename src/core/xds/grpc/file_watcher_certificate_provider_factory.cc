@@ -109,7 +109,8 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
   if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE")) {
     if (json.object().find("certificate_file") == json.object().end() &&
         json.object().find("ca_certificate_file") == json.object().end() &&
-        json.object().find("spiffe_trust_bundle_map_file") == json.object().end()) {
+        json.object().find("spiffe_trust_bundle_map_file") ==
+            json.object().end()) {
       errors->AddError(
           "at least one of \"certificate_file\", \"ca_certificate_file\", and "
           "\"spiffe_trust_bundle_map_file\" must be specified");
