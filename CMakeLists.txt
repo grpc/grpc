@@ -26,7 +26,7 @@ cmake_minimum_required(VERSION 3.22)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.86.0-dev")
-set(gRPC_CORE_VERSION     "58.0.0")
+set(gRPC_CORE_VERSION     "58.1.0")
 set(gRPC_CORE_SOVERSION   "58")
 set(gRPC_CPP_VERSION      "1.86.0-dev")
 set(gRPC_CPP_SOVERSION    "1.86")
