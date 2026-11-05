@@ -48,7 +48,7 @@ cdef class _AioCall(GrpcCallWrapper):
     def __cinit__(self, AioChannel channel, object deadline,
                   bytes method, CallCredentials call_credentials, object wait_for_ready,
                   object registered_call_handle):
-        ref_grpc_aio()
+        init_grpc_aio()
         self.call = NULL
         self._channel = channel
         self._loop = channel.loop
@@ -149,15 +149,11 @@ cdef class _AioCall(GrpcCallWrapper):
         self._maybe_set_client_call_tracer_on_call(method)
 
     cdef void _maybe_save_registered_method(self, bytes method) except *:
-        if _observability._OBSERVABILITY_PLUGIN is None:
-            return
         with _observability.get_plugin() as plugin:
             if plugin and plugin.observability_enabled:
                 plugin.save_registered_method(method)
 
     cdef void _maybe_set_client_call_tracer_on_call(self, bytes method) except *:
-        if _observability._OBSERVABILITY_PLUGIN is None:
-            return
         # TODO(zgoda): use channel args to exclude those metrics.
         for exclude_prefix in _observability._SERVICES_TO_EXCLUDE:
             if exclude_prefix in method:

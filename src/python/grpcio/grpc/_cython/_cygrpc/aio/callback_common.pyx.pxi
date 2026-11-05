@@ -74,12 +74,6 @@ class ExecuteBatchError(InternalError):
     """Raised when execute batch returns a failure from Core."""
 
 
-cdef CallbackFailureHandler EXECUTE_BATCH_FAILURE_HANDLER = CallbackFailureHandler(
-    'execute_batch',
-    None,
-    ExecuteBatchError)
-
-
 async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
                                tuple operations,
                                object loop):
@@ -91,7 +85,7 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
         loop,
-        EXECUTE_BATCH_FAILURE_HANDLER)
+        CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
     cdef grpc_call_error error = grpc_call_start_batch(
         grpc_call_wrapper.call,
         batch_operation_tag.c_ops,

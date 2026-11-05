@@ -102,13 +102,6 @@ cpdef init_grpc_aio():
         _initialize_per_loop()
 
 
-cdef ref_grpc_aio():
-    """Increments the gRPC AsyncIO refcount when a parent channel/server is already initialized."""
-    with _global_aio_state.lock:
-        assert _global_aio_state.refcount > 0
-        _global_aio_state.refcount += 1
-
-
 cpdef shutdown_grpc_aio():
     """Shuts down the gRPC AsyncIO module.
 
