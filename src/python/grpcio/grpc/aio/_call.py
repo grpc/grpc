@@ -51,6 +51,7 @@ _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 _GC_CANCELLATION_DETAILS = "Cancelled upon garbage collection!"
 _RPC_ALREADY_FINISHED_DETAILS = "RPC already finished."
 _RPC_HALF_CLOSED_DETAILS = 'RPC is half closed after calling "done_writing".'
+_INTERNAL_ERROR_DETAILS = "Internal error from Core"
 _API_STYLE_ERROR = (
     "The iterator and read/write APIs may not be mixed on a single RPC."
 )
@@ -220,8 +221,21 @@ class Call(Generic[RequestType, ResponseType]):
 
     def __del__(self) -> None:
         # The '_cython_call' object might be destructed before Call object
-        if hasattr(self, "_cython_call") and not self._cython_call.done():
-            self._cancel(_GC_CANCELLATION_DETAILS)
+        if not hasattr(self, "_cython_call") or self._cython_call.done():
+            return
+
+        # `__del__` might be executed by any thread. Cancelling the call
+        # ends in `_AioCall.cancel()`, which must be executed on a loop's owning
+        # thread, since it resolves loop-related futures: status waiters and
+        # initial metadata waiters. Hand it to the loop even when already on its
+        # thread.
+        try:
+            self._loop.call_soon_threadsafe(
+                self._cancel, _GC_CANCELLATION_DETAILS
+            )
+        except RuntimeError:
+            # Event loop is closed
+            pass
 
     def cancelled(self) -> bool:
         return self._cython_call.cancelled()
@@ -449,7 +463,10 @@ class _StreamRequestMixin(Call[RequestType, ResponseType]):
                 async for request in request_iterator:
                     try:
                         await self._write(request)
-                    except AioRpcError as rpc_error:
+                    except (
+                        AioRpcError,
+                        asyncio.InvalidStateError,
+                    ) as rpc_error:
                         _LOGGER.debug(
                             (
                                 "Exception while consuming the"
@@ -462,7 +479,10 @@ class _StreamRequestMixin(Call[RequestType, ResponseType]):
                 for request in request_iterator:
                     try:
                         await self._write(request)
-                    except AioRpcError as rpc_error:
+                    except (
+                        AioRpcError,
+                        asyncio.InvalidStateError,
+                    ) as rpc_error:
                         _LOGGER.debug(
                             (
                                 "Exception while consuming the"
@@ -499,8 +519,20 @@ class _StreamRequestMixin(Call[RequestType, ResponseType]):
         try:
             await self._cython_call.send_serialized_message(serialized_request)
         except cygrpc.InternalError as err:
-            self._cython_call.set_internal_error(str(err))
+            # `send_serialized_message` batch was refused or failed by the Core.
+            # The RPC's status comes from the Core through the pending receive
+            # status operation. Cancelling in the Core makes sure that the
+            # operation completes.
+            self._cython_call.cancel_in_core(
+                cygrpc.StatusCode.internal, _INTERNAL_ERROR_DETAILS
+            )
             await self._raise_for_status()
+            # `_raise_for_status` returned, so Core's status is OK. It means
+            # that the server finished the RPC successfully without receiving
+            # this message.
+            raise asyncio.InvalidStateError(
+                _RPC_ALREADY_FINISHED_DETAILS
+            ) from err
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()

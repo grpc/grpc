@@ -170,6 +170,10 @@ cdef class _AioCall(GrpcCallWrapper):
 
     cdef void _set_status(self, AioRpcStatus status) except *:
         cdef list waiters
+        if self._status is not None:
+            # The status is published once and never replaced. The first writer
+            # is final (as per sync stack).
+            return
 
         # No more waiters should be expected since status has been set.
         self._status = status
@@ -218,35 +222,41 @@ cdef class _AioCall(GrpcCallWrapper):
         else:
             return max(0, self._deadline - time.time())
 
-    def cancel(self, str details):
+    def cancel_in_core(self, grpc_status_code code, str details):
         """Cancels the RPC in Core with given RPC status.
 
-        Above abstractions must invoke this method to set Core objects into
-        proper state.
+        The status arrives through the pending receive status operation. A call
+        that already has its final status is left as is.
         """
+        cdef object details_bytes = str_to_bytes(details)
+
+        # By implementation, grpc_call_cancel_with_status always return OK
+        cdef grpc_call_error error = grpc_call_cancel_with_status(
+            self.call,
+            code,
+            <char *>details_bytes,
+            NULL,
+        )
+        assert error == GRPC_CALL_OK
+
+    def cancel(self, str details):
+        """Cancels the RPC with given RPC status.
+
+        Must be invoked on the loop's owning thread: it resolves loop-bound
+        futures (status and initial metadata waiters) and runs done callbacks.
+        """
+        if self._status is not None:
+            return
+
         self._is_locally_cancelled = True
 
-        cdef object details_bytes
-        cdef char *c_details
-        cdef grpc_call_error error
-
+        self.cancel_in_core(StatusCode.cancelled, details)
         self._set_status(AioRpcStatus(
             StatusCode.cancelled,
             details,
             None,
             None,
         ))
-
-        details_bytes = str_to_bytes(details)
-        c_details = <char *>details_bytes
-        # By implementation, grpc_call_cancel_with_status always return OK
-        error = grpc_call_cancel_with_status(
-            self.call,
-            StatusCode.cancelled,
-            c_details,
-            NULL,
-        )
-        assert error == GRPC_CALL_OK
 
     def done(self):
         """Returns if the RPC call has finished.
@@ -322,14 +332,6 @@ cdef class _AioCall(GrpcCallWrapper):
             return True
 
         return False
-
-    def set_internal_error(self, str error_str):
-        self._set_status(AioRpcStatus(
-            StatusCode.internal,
-            'Internal error from Core',
-            (),
-            error_str,
-        ))
 
     async def unary_unary(self,
                           bytes request,
