@@ -80,8 +80,8 @@ TODO(tjagtap) [PH2][P5][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 *   PH2 is compatible with the Call V3 Stack.
 *   PH2 utilizes the gRPC promise framework (`src/core/lib/promise`) for asynchronous operations.
 *   **Status:** Under Development.
-*   **Server Rollout:** Expected to begin in March 2027.
-*   **Client Rollout:** Expected to begin in May 2027.
+*   **Server Rollout:** Expected to begin in June 2027.
+*   **Client Rollout:** Expected to begin in August 2027.
 *   **Experiments:**
     *   Enable Client: `IsPh2ClientEnabled()`.
     *   Enable Server: `IsPh2ServerEnabled()`.
@@ -151,6 +151,25 @@ uniformity for quick lookup and fixing.
     or invasive fix, still mention the observation, but explicitly note the
     complexity trade-off (or suggest a comment or `GRPC_DCHECK` instead) rather
     than insisting on a change that may be a long-term net negative.
+
+### Known Issues, Bugs, TODOs, and WIP CLs
+
+Before reporting bugs or nits, or filing new issues, check whether the issue is
+already known or in progress:
+
+*   **Check in-code `TODO`s:** Inspect nearby `TODO` comments (such as `[PH2]`
+    tags) in the relevant source and test files.
+*   **Check Existing Bugs:** Search open and recently closed issues in
+    component ID: 2228830.
+*   **Check pending WIP CLs:** Check pending CLs authored by `tjagtap`,
+    `akshitpatel`, `roth`, `vidhikpatel`, and `ritulb` for work-in-progress
+    fixes.
+*   **Mention existing bugs briefly:** If a matching bug already exists, just
+    mention its bug link instead of re-reporting the full issue.
+*   **Avoid duplicate bugs:** Never create a new bug if a matching issue already
+    exists.
+*   **Mention WIP fixes briefly:** If a pending CL or `TODO` covers the issue,
+    note it instead of re-flagging it.
 
 ### Key Differences from CHTTP2
 
