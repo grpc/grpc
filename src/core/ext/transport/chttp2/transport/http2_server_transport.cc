@@ -2250,7 +2250,6 @@ void Http2ServerTransport::SetCallDestination(
   GRPC_CHECK(call_destination_ == nullptr);
   GRPC_CHECK(unstarted_call_destination != nullptr);
   call_destination_ = std::move(unstarted_call_destination);
-  InitializeAndSpawnTransportLoops();
 }
 
 // PerformOp() can be invoked on any thread. So all processing in this function
@@ -2327,19 +2326,38 @@ void Http2ServerTransport::SpawnTransportLoops() {
 }
 
 void Http2ServerTransport::InitializeAndSpawnTransportLoops() {
-  SpawnGuardedTransportParty(
-      "SpawnTransportLoops", [self = RefAsSubclass<Http2ServerTransport>()] {
-        return Map(self->EndpointReadSlice(GRPC_CHTTP2_CLIENT_CONNECT_STRLEN),
-                   [self](absl::StatusOr<Slice> status) -> absl::Status {
-                     Http2Status result =
-                         ValidateIncomingConnectionPreface(status);
-                     if (!result.IsOk()) {
-                       return self->HandleError(nullptr, std::move(result));
-                     }
-                     self->SpawnTransportLoops();
-                     return absl::OkStatus();
-                   });
-      });
+  GRPC_CHECK(call_destination_ != nullptr);
+  event_engine_->Run([self = RefAsSubclass<Http2ServerTransport>()]() mutable {
+    RefCountedPtr<Party> party = self->GetTransportPartyIfNotShutdown();
+    ExecCtx exec_ctx;
+    if (GPR_UNLIKELY(party == nullptr)) {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::InitializeAndSpawnTransportLoops: "
+             "Transport is closed.";
+    } else {
+      self->SpawnGuarded(
+          party, "SpawnTransportLoops", [self]() {
+            return self->UntilTransportClosed(Map(
+                self->EndpointReadSlice(GRPC_CHTTP2_CLIENT_CONNECT_STRLEN),
+                [self](absl::StatusOr<Slice> status) -> absl::Status {
+                  if (GPR_UNLIKELY(
+                          self->shutdown_tracker_.IsPartyShutdownInitiated())) {
+                    return absl::OkStatus();
+                  }
+                  Http2Status result =
+                      ValidateIncomingConnectionPreface(status);
+                  if (GPR_UNLIKELY(!result.IsOk())) {
+                    return self->HandleError(nullptr, std::move(result));
+                  }
+                  self->SpawnTransportLoops();
+                  return absl::OkStatus();
+                }));
+          });
+    }
+    // Cleanup with exec_ctx in scope.
+    party.reset();
+    self.reset();
+  });
 }
 
 }  // namespace http2
