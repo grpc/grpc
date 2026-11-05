@@ -26,6 +26,9 @@ cdef grpc_completion_queue *global_completion_queue()
 cpdef init_grpc_aio()
 
 
+cdef ref_grpc_aio()
+
+
 cpdef shutdown_grpc_aio()
 
 

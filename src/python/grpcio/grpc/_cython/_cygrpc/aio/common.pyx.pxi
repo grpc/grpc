@@ -180,9 +180,7 @@ def _loop_policy_try_to_get_default_loop(policy):
         # Convert DeprecationWarning to errors so we can capture them with except
         try:
             warnings.simplefilter("error", DeprecationWarning)
-            loop = policy.get_event_loop()
-            _LOGGER.debug(f"[_cygrpc] Loaded policy loop: {id(loop)=}")
-            return loop
+            return policy.get_event_loop()
         except DeprecationWarning:
             # Since version 3.12, DeprecationWarning is emitted if there is no
             # current event loop.
@@ -201,7 +199,7 @@ def _loop_policy_try_to_get_default_loop(policy):
                 raise
 
             _LOGGER.debug(
-                f"[_cygrpc] Python 3.14+ loop in main thread custom behavior"
+                "[_cygrpc] Python 3.14+ loop in main thread custom behavior"
             )
             return None
 
@@ -211,7 +209,7 @@ def _loop_policy_create_new_loop(policy):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         loop = policy.new_event_loop()
-        _LOGGER.debug(f"[_cygrpc] Created policy loop: {id(loop)=}")
+        _LOGGER.debug("[_cygrpc] Created policy loop: id(loop)=%s", id(loop))
         # TODO(#40748): set the new loop via asyncio.set_event_loop().
         return loop
 
@@ -239,9 +237,7 @@ def _get_or_create_default_loop():
 
 def _get_running_loop():
     try:
-        loop = asyncio.get_running_loop()
-        _LOGGER.debug(f"[_cygrpc] Loaded running loop: {id(loop)=}")
-        return loop
+        return asyncio.get_running_loop()
     except RuntimeError:
         return None
 
