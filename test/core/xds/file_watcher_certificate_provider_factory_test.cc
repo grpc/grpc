@@ -65,14 +65,15 @@ TEST(FileWatcherConfigTest, Basic) {
       "  \"spiffe_trust_bundle_map_file\": \"%s\","
       "  \"refresh_interval\": \"%ds\""
       "}",
-      kIdentityCertFile, kPrivateKeyFile, kRootCertFile, kSpiffeTrustBundleMapFile,
-      kRefreshInterval);
+      kIdentityCertFile, kPrivateKeyFile, kRootCertFile,
+      kSpiffeTrustBundleMapFile, kRefreshInterval);
   auto config = ParseConfig(json_str);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ((*config)->identity_cert_file(), kIdentityCertFile);
   EXPECT_EQ((*config)->private_key_file(), kPrivateKeyFile);
   EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
-  EXPECT_EQ((*config)->spiffe_trust_bundle_map_file(), kSpiffeTrustBundleMapFile);
+  EXPECT_EQ((*config)->spiffe_trust_bundle_map_file(),
+            kSpiffeTrustBundleMapFile);
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(kRefreshInterval));
 }
 
@@ -85,8 +86,8 @@ TEST(FileWatcherConfigTest, SpiffeEnvVarDisables) {
       "  \"spiffe_trust_bundle_map_file\": \"%s\","
       "  \"refresh_interval\": \"%ds\""
       "}",
-      kIdentityCertFile, kPrivateKeyFile, kRootCertFile, kSpiffeTrustBundleMapFile,
-      kRefreshInterval);
+      kIdentityCertFile, kPrivateKeyFile, kRootCertFile,
+      kSpiffeTrustBundleMapFile, kRefreshInterval);
   auto config = ParseConfig(json_str);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ((*config)->identity_cert_file(), kIdentityCertFile);
@@ -140,7 +141,8 @@ TEST(FileWatcherConfigTest, OnlySpiffeBundleMapProvided) {
   EXPECT_EQ((*config)->identity_cert_file(), "");
   EXPECT_EQ((*config)->private_key_file(), "");
   EXPECT_EQ((*config)->root_cert_file(), "");
-  EXPECT_EQ((*config)->spiffe_trust_bundle_map_file(), kSpiffeTrustBundleMapFile);
+  EXPECT_EQ((*config)->spiffe_trust_bundle_map_file(),
+            kSpiffeTrustBundleMapFile);
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
 }
 
@@ -157,7 +159,8 @@ TEST(FileWatcherConfigTest, RootAndSpiffeBundleMapProvided) {
   EXPECT_EQ((*config)->identity_cert_file(), "");
   EXPECT_EQ((*config)->private_key_file(), "");
   EXPECT_EQ((*config)->root_cert_file(), kRootCertFile);
-  EXPECT_EQ((*config)->spiffe_trust_bundle_map_file(), kSpiffeTrustBundleMapFile);
+  EXPECT_EQ((*config)->spiffe_trust_bundle_map_file(),
+            kSpiffeTrustBundleMapFile);
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
 }
 
