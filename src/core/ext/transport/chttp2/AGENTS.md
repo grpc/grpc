@@ -103,6 +103,39 @@ TODO(tjagtap) [PH2][P5][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
 *   **Testing:** Any changes to PH2 code should be accompanied by relevant tests. Ensure that existing tests in `test/core/transport/chttp2/http2_client_transport_test.cc` and `test/core/transport/chttp2/http2_server_transport_test.cc` pass. Add new tests as needed to cover new functionality.
 *   **Test Comments:** When writing new tests, include comments within each test explaining its purpose and assertions. For large tests, add comments for each step.
 
+### PH2 TODO Tags
+
+All PH2 TODOs carry the tag `[PH2][Pn]` right after the owner ldap, where
+n = 0 to 5. The priority tag is mandatory. This helps to maintain the
+uniformity for quick lookup and fixing.
+
+*   Priority tags:
+    *   `[PH2][P0]` MUST be fixed before the current PR is submitted.
+    *   `[PH2][P1]` MUST be fixed before the current sub-project is considered
+        complete.
+    *   `[PH2][P2]` MUST be fixed before the current Milestone is considered
+        complete.
+    *   `[PH2][P3]` MUST be fixed before Milestone 3 is considered complete.
+    *   `[PH2][P4]` Can be fixed after roll out begins. Evaluate these during
+        Milestone 4. Either do the TODOs or delete them.
+    *   `[PH2][P5]` Can be fixed after roll out begins. Evaluate these during
+        Milestone 4. Either do the TODOs or delete them.
+*   Optional category tags follow the priority tag:
+    *   `[PH2][Pn][Client]` Affects only the PH2 client.
+    *   `[PH2][Pn][Server]` Affects only the PH2 server.
+    *   `[PH2][Pn][EXT]` A TODO related to a project unrelated to PH2 but
+        happening in parallel.
+    *   `[PH2][Pn][CHTTP2]` A TODO that is a part of CHTTP2 deletion.
+    *   `[PH2][Pn][FCV3]` A TODO related to Flow Control plumbing with the
+        Application and the Call V3 stack.
+    *   `[PH2][Pn][Retry]` A TODO related to Retry support for PH2. Retry is a
+        separate feature that lands after the PH2 roll out.
+*   Skipped tests use fixed priorities:
+    *   `SKIP_TEST_FOR_PH2_SERVER` messages are currently `[PH2][P1]`.
+    *   `SKIP_TEST_FOR_PH2_CLIENT` messages are currently `[PH2][P3]`.
+    *   `SKIP_RETRY_TEST_FOR_PH2_CLIENT` messages are currently
+        `[PH2][P5][Retry]`.
+
 ### Pragmatic Issue and Nit Guidelines
 
 *   **Surface real issues and helpful nits:** Always flag genuine bugs, data

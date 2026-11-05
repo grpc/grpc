@@ -33,9 +33,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
-// TODO(tjagtap) TODO(akshitpatel): [PH2][P4] : Write micro benchmarks for
-// framing code
-
 using grpc_core::http2::Http2ErrorCode;
 using grpc_core::http2::Http2Status;
 using grpc_core::http2::ValueOrHttp2Status;
