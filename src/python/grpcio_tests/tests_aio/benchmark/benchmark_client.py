@@ -169,10 +169,10 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
     async def _one_streaming_call(self):
         call = self._stub.StreamingCall()
         while self._running:
-            start_time = time.time()
+            start_time = time.monotonic()
             await call.write(self._request)
             await call.read()
-            self._record_query_time(time.time() - start_time)
+            self._record_query_time(time.monotonic() - start_time)
         await call.done_writing()
 
     async def run(self):
@@ -202,9 +202,9 @@ class ServerStreamingAsyncBenchmarkClient(BenchmarkClient):
     async def _one_server_streaming_call(self):
         call = self._stub.StreamingFromServer(self._request)
         while self._running:
-            start_time = time.time()
+            start_time = time.monotonic()
             await call.read()
-            self._record_query_time(time.time() - start_time)
+            self._record_query_time(time.monotonic() - start_time)
 
     async def run(self):
         await super().run()
