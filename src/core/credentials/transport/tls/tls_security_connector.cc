@@ -581,7 +581,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->crl_provider(), options_->key_exchange_groups(),
-      &client_handshaker_factory_);
+      options_->signature_algorithms(), &client_handshaker_factory_);
 }
 
 // -------------------server security connector-------------------
@@ -856,7 +856,8 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->max_tls_version()),
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->send_client_ca_list(), options_->crl_provider(),
-      options_->key_exchange_groups(), &server_handshaker_factory_);
+      options_->key_exchange_groups(), options_->signature_algorithms(),
+      &server_handshaker_factory_);
 }
 
 }  // namespace grpc_core

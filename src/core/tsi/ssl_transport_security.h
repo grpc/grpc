@@ -256,6 +256,10 @@ struct tsi_ssl_client_handshaker_options {
   // the handshaker, in order of preference.
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups;
 
+  // The list of signature algorithms that will be negotiated by the handshaker,
+  // in order of preference.
+  std::vector<grpc_tls_signature_algorithm> signature_algorithms;
+
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_client_handshaker_options()
@@ -430,6 +434,10 @@ struct tsi_ssl_server_handshaker_options {
   // The list of key exchange groups (TLS curves) that will be negotiated by
   // the handshaker, in order of preference.
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups;
+
+  // The list of signature algorithms that will be negotiated by the handshaker,
+  // in order of preference.
+  std::vector<grpc_tls_signature_algorithm> signature_algorithms;
 
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662

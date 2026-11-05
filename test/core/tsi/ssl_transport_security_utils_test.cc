@@ -534,6 +534,71 @@ TEST(ConvertKeyExchangeGroupToStringTest, InvalidCases) {
             absl::StatusCode::kInvalidArgument);
 }
 
+TEST(ConvertSignatureAlgorithmToStringTest, ValidCases) {
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA256),
+            "rsa_pkcs1_sha256");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA384),
+            "rsa_pkcs1_sha384");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA512),
+            "rsa_pkcs1_sha512");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256),
+            "ecdsa_secp256r1_sha256");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP384R1_SHA384),
+            "ecdsa_secp384r1_sha384");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP521R1_SHA512),
+            "ecdsa_secp521r1_sha512");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256),
+            "rsa_pss_rsae_sha256");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA384),
+            "rsa_pss_rsae_sha384");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA512),
+            "rsa_pss_rsae_sha512");
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44),
+            "mldsa44");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65),
+            "mldsa65");
+  EXPECT_EQ(*tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87),
+            "mldsa87");
+#else
+  EXPECT_EQ(tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+#endif
+}
+
+TEST(ConvertSignatureAlgorithmToStringTest, InvalidCases) {
+  EXPECT_EQ(tsi::ConvertSignatureAlgorithmToString(
+                GRPC_TLS_SIGNATURE_ALGORITHM_UNSPECIFIED)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+}
+
 class CrlUtils : public ::testing::Test {
  public:
   static void SetUpTestSuite() {

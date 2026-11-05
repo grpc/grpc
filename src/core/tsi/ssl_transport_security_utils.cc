@@ -85,6 +85,13 @@ tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
       LOG(ERROR)
           << "Peer tried to renegotiate SSL connection. This is unsupported.";
       return TSI_UNIMPLEMENTED;
+    } else if (ssl_write_result == SSL_ERROR_WANT_WRITE) {
+      // The underlying BIO write buffer is full (for example, when TLS 1.3
+      // flushes deferred post-handshake NewSessionTicket messages containing a
+      // large post-quantum client certificate chain that exceeds the 17 KB
+      // default BIO ring buffer). Signal the caller to drain network_io and
+      // retry SSL_write.
+      return TSI_DRAIN_BUFFER;
     } else {
       LOG(ERROR) << "SSL_write failed with error "
                  << SslErrorString(ssl_write_result);
@@ -162,9 +169,14 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   }
 
   // If we can, prepare the buffer, send it to SSL_write and read.
-  memcpy(buffer + buffer_offset, unprotected_bytes, available);
+  // When retrying after a previous TSI_DRAIN_BUFFER, buffer_offset ==
+  // buffer_size (so available == 0) and buffer already holds the frame to be
+  // written.
+  if (available > 0) {
+    memcpy(buffer + buffer_offset, unprotected_bytes, available);
+  }
   result = DoSslWrite(ssl, buffer, buffer_size);
-  if (result != TSI_OK) return result;
+  if (result != TSI_OK && result != TSI_DRAIN_BUFFER) return result;
 
   GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
@@ -175,7 +187,10 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   *unprotected_bytes_size = available;
-  buffer_offset = 0;
+  // If DoSslWrite returned TSI_DRAIN_BUFFER, keep buffer_offset at buffer_size
+  // so subsequent Protect/ProtectFlush calls retry DoSslWrite after draining
+  // network_io.
+  buffer_offset = (result == TSI_DRAIN_BUFFER) ? buffer_size : 0;
   return TSI_OK;
 }
 
@@ -191,13 +206,21 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
 
   if (buffer_offset != 0) {
     result = DoSslWrite(ssl, buffer, buffer_offset);
-    if (result != TSI_OK) return result;
-    buffer_offset = 0;
+    if (result == TSI_OK) {
+      buffer_offset = 0;
+    } else if (result != TSI_DRAIN_BUFFER) {
+      return result;
+    }
+    // On TSI_DRAIN_BUFFER, retain buffer_offset so we retry DoSslWrite on the
+    // next flush iteration after draining network_io below.
   }
 
   pending = static_cast<int>(BIO_pending(network_io));
   GRPC_CHECK_GE(pending, 0);
-  *still_pending_size = static_cast<size_t>(pending);
+  // Include any unwritten bytes remaining in buffer_offset in
+  // still_pending_size so the caller continues flushing until both the BIO and
+  // the internal buffer are completely drained.
+  *still_pending_size = static_cast<size_t>(pending) + buffer_offset;
   if (*still_pending_size == 0) return TSI_OK;
 
   GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
@@ -210,7 +233,7 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   pending = static_cast<int>(BIO_pending(network_io));
   GRPC_CHECK_GE(pending, 0);
-  *still_pending_size = static_cast<size_t>(pending);
+  *still_pending_size = static_cast<size_t>(pending) + buffer_offset;
   return TSI_OK;
 }
 
@@ -482,6 +505,58 @@ absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
       return absl::InvalidArgumentError("Unspecified key exchange group.");
     default:
       return absl::InvalidArgumentError("Unknown key exchange group.");
+  }
+}
+
+absl::StatusOr<absl::string_view> ConvertSignatureAlgorithmToString(
+    grpc_tls_signature_algorithm algorithm) {
+  switch (algorithm) {
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA256:
+      return "rsa_pkcs1_sha256";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA384:
+      return "rsa_pkcs1_sha384";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PKCS1_SHA512:
+      return "rsa_pkcs1_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP256R1_SHA256:
+      return "ecdsa_secp256r1_sha256";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP384R1_SHA384:
+      return "ecdsa_secp384r1_sha384";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ECDSA_SECP521R1_SHA512:
+      return "ecdsa_secp521r1_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA256:
+      return "rsa_pss_rsae_sha256";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA384:
+      return "rsa_pss_rsae_sha384";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_RSA_PSS_RSAE_SHA512:
+      return "rsa_pss_rsae_sha512";
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_44:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "mldsa44";
+#else
+      return absl::InvalidArgumentError(
+          "ML_DSA_44 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_sigalgs_list.");
+#endif
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_65:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "mldsa65";
+#else
+      return absl::InvalidArgumentError(
+          "ML_DSA_65 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_sigalgs_list.");
+#endif
+    case GRPC_TLS_SIGNATURE_ALGORITHM_ML_DSA_87:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "mldsa87";
+#else
+      return absl::InvalidArgumentError(
+          "ML_DSA_87 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_sigalgs_list.");
+#endif
+    case GRPC_TLS_SIGNATURE_ALGORITHM_UNSPECIFIED:
+      return absl::InvalidArgumentError("Unspecified signature algorithm.");
+    default:
+      return absl::InvalidArgumentError("Unknown signature algorithm.");
   }
 }
 
