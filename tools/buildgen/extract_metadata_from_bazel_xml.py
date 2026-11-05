@@ -1370,7 +1370,7 @@ def _replace_upb_with_libupb(
                 external_upb_deps.add(dep)
 
     if LIBUPB_BAZEL_NAME in bazel_rules:
-        bazel_rules[LIBUPB_BAZEL_NAME]["deps"] = list(sorted(external_upb_deps))
+        bazel_rules[LIBUPB_BAZEL_NAME]["deps"] = sorted(external_upb_deps)
 
     # Re-point any non-libupb rule's dependency on UPB sub-targets to //:_libupb.
     for rule_name, rule in bazel_rules.items():
