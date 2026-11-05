@@ -39,6 +39,38 @@ constexpr size_t kMaxKeyLength = 512;
 
 }  // namespace
 
+std::optional<AutoshardingAssignmentBuilder::Result>
+AutoshardingAssignmentBuilder::ProcessResponseMessage(
+    const google_cloud_autosharding_v1_WatchShardingAssignmentResponse*
+        response) {
+  if (const auto* chunk =
+          google_cloud_autosharding_v1_WatchShardingAssignmentResponse_chunk(
+              response);
+      chunk != nullptr) {
+    AddChunk(chunk);
+    return std::nullopt;
+  }
+  if (const auto* metadata =
+          google_cloud_autosharding_v1_WatchShardingAssignmentResponse_metadata(
+              response);
+      metadata != nullptr) {
+    Result result = Build(
+        google_cloud_autosharding_v1_AssignmentMetadata_generation(metadata));
+    if (result.assignment.ok()) last_accepted_generation_ = result.generation;
+    return result;
+  }
+  // LoadReportingConfig is ignored for now (gRFC A119).
+  return std::nullopt;
+}
+
+void AutoshardingAssignmentBuilder::ResetPartialAssignment() {
+  num_chunks_ = 0;
+  num_slice_assignments_ = 0;
+  slices_.clear();
+  endpoint_names_.clear();
+  issue_counts_ = {};
+}
+
 void AutoshardingAssignmentBuilder::AddChunk(
     const google_cloud_autosharding_v1_AssignmentChunk* chunk) {
   ++num_chunks_;
@@ -139,24 +171,23 @@ std::string AutoshardingAssignmentBuilder::IssueMessages(
   return absl::StrJoin(issues, "; ");
 }
 
-absl::StatusOr<AutoshardingAssignmentBuilder::Result>
-AutoshardingAssignmentBuilder::Build(int64_t generation,
-                                     int64_t last_accepted_generation) {
+AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
+    int64_t generation) {
   const size_t num_chunks = std::exchange(num_chunks_, 0);
   const size_t num_slice_assignments = std::exchange(num_slice_assignments_, 0);
   std::vector<PendingSlice> slices = std::exchange(slices_, {});
   std::vector<std::string> endpoint_names = std::exchange(endpoint_names_, {});
   IssueCounts counts = std::exchange(issue_counts_, {});
-  if (generation <= last_accepted_generation) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("received generation ", generation,
-                     " is not greater than the latest generation ",
-                     last_accepted_generation));
+  if (generation <= last_accepted_generation_) {
+    return {generation, absl::InvalidArgumentError(absl::StrCat(
+                            "received generation ", generation,
+                            " is not greater than the latest generation ",
+                            last_accepted_generation_))};
   }
   if (num_chunks == 0) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("received metadata with generation ", generation,
-                     ", but no chunks were received"));
+    return {generation, absl::InvalidArgumentError(absl::StrCat(
+                            "received metadata with generation ", generation,
+                            ", but no chunks were received"))};
   }
   std::sort(slices.begin(), slices.end(),
             [](const PendingSlice& a, const PendingSlice& b) {
@@ -218,13 +249,11 @@ AutoshardingAssignmentBuilder::Build(int64_t generation,
     append_candidate();
   }
   if (assignment->slices.empty()) {
-    return num_slice_assignments == 0
-               ? absl::InvalidArgumentError(absl::StrCat(
-                     "no valid slice assignments in generation ", generation,
-                     ": no slice assignments received"))
-               : absl::InvalidArgumentError(absl::StrCat(
-                     "no valid slice assignments in generation ", generation,
-                     ": ", IssueMessages(counts, num_gaps)));
+    return {generation,
+            absl::InvalidArgumentError(absl::StrCat(
+                "no valid slice assignments in generation ", generation, ": ",
+                num_slice_assignments == 0 ? "no slice assignments received"
+                                           : IssueMessages(counts, num_gaps)))};
   }
   // Fill the gap at the end of the keyspace, if any.
   if (!assignment->slices.back().end_key.empty()) {
@@ -232,7 +261,7 @@ AutoshardingAssignmentBuilder::Build(int64_t generation,
     ++num_gaps;
   }
   assignment->endpoint_names = std::move(endpoint_names);
-  return Result{std::move(assignment), IssueMessages(counts, num_gaps)};
+  return {generation, std::move(assignment), IssueMessages(counts, num_gaps)};
 }
 
 }  // namespace grpc_core

@@ -540,11 +540,12 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:autosharding_cc_proto",
         "//:autosharding_upb",
         "//:ref_counted_ptr",
         "//src/core:grpc_lb_policy_autosharding_assignment",
-        "//src/core:upb_utils",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//upb/mem",
     ],
 )
@@ -554,7 +555,6 @@ grpc_cc_test(
     srcs = ["autosharding_client_test.cc"],
     external_deps = [
         "gtest",
-        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -567,7 +567,6 @@ grpc_cc_test(
         "//:iomgr_timer",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:work_serializer",
         "//:xds_client",
         "//src/core:grpc_lb_policy_autosharding_assignment",
         "//src/core:grpc_lb_policy_autosharding_client",

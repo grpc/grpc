@@ -8912,6 +8912,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(autosharding_assignment_test
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
   test/core/load_balancing/autosharding_assignment_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8947,6 +8955,7 @@ target_include_directories(autosharding_assignment_test
 target_link_libraries(autosharding_assignment_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 

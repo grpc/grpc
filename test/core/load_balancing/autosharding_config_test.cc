@@ -25,7 +25,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -35,8 +34,6 @@
 namespace grpc_core {
 namespace testing {
 namespace {
-
-using ::testing::HasSubstr;
 
 // Parses the JSON form of a loadBalancingConfig array.
 absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>> ParseConfig(
@@ -64,8 +61,7 @@ TEST(AutoShardingConfigTest, ValidConfig) {
   EXPECT_EQ(autosharding_config->channel_factory_key(), "sharding_service");
   EXPECT_EQ(autosharding_config->autosharding_target(),
             "my_autosharding_target");
-  EXPECT_EQ(autosharding_config->key_header_name().as_string_view(),
-            "x-slice-key");
+  EXPECT_EQ(autosharding_config->key_header_name(), "x-slice-key");
   // The optional fields get their default values.
   EXPECT_FALSE(autosharding_config->enable_fallback());
   EXPECT_EQ(autosharding_config->initial_assignment_timeout(),
@@ -91,8 +87,7 @@ TEST(AutoShardingConfigTest, ValidConfigWithOptionalFields) {
   EXPECT_EQ(autosharding_config->channel_factory_key(), "sharding_service");
   EXPECT_EQ(autosharding_config->autosharding_target(),
             "my_autosharding_target");
-  EXPECT_EQ(autosharding_config->key_header_name().as_string_view(),
-            "x-slice-key");
+  EXPECT_EQ(autosharding_config->key_header_name(), "x-slice-key");
   EXPECT_TRUE(autosharding_config->enable_fallback());
   EXPECT_EQ(autosharding_config->initial_assignment_timeout(),
             Duration::Seconds(10));
@@ -156,21 +151,41 @@ TEST(AutoShardingConfigTest, EmptyFields) {
                 "field:keyHeaderName error:must be non-empty]"));
 }
 
-TEST(AutoShardingConfigTest, InvalidKeyHeaderName) {
-  for (absl::string_view key_header_name : {"X-Slice-Key", ":method", "x y"}) {
-    absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>> config =
-        ParseConfig(absl::StrCat("[{\"autosharding_experimental\":{"
-                                 "\"channelFactoryKey\": \"sharding_service\","
-                                 "\"autoshardingTarget\": "
-                                 "\"my_autosharding_target\","
-                                 "\"keyHeaderName\": \"",
-                                 key_header_name, "\"}}]"));
-    ASSERT_FALSE(config.ok()) << key_header_name;
-    EXPECT_EQ(config.status().code(), absl::StatusCode::kInvalidArgument)
-        << key_header_name;
-    EXPECT_THAT(config.status().message(), HasSubstr("field:keyHeaderName"))
-        << key_header_name;
-  }
+absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+ParseConfigWithKeyHeaderName(absl::string_view key_header_name) {
+  return ParseConfig(
+      absl::StrCat("[{\"autosharding_experimental\":{"
+                   "\"channelFactoryKey\": \"sharding_service\","
+                   "\"autoshardingTarget\": \"my_autosharding_target\","
+                   "\"keyHeaderName\": \"",
+                   key_header_name, "\"}}]"));
+}
+
+TEST(AutoShardingConfigTest, UppercaseKeyHeaderName) {
+  auto config = ParseConfigWithKeyHeaderName("X-Slice-Key");
+  ASSERT_FALSE(config.ok());
+  EXPECT_EQ(config.status(),
+            absl::InvalidArgumentError(
+                "errors validating autosharding LB policy config: "
+                "[field:keyHeaderName error:Illegal header key]"));
+}
+
+TEST(AutoShardingConfigTest, PseudoHeaderKeyHeaderName) {
+  auto config = ParseConfigWithKeyHeaderName(":method");
+  ASSERT_FALSE(config.ok());
+  EXPECT_EQ(config.status(),
+            absl::InvalidArgumentError(
+                "errors validating autosharding LB policy config: "
+                "[field:keyHeaderName error:Illegal header key]"));
+}
+
+TEST(AutoShardingConfigTest, KeyHeaderNameWithSpace) {
+  auto config = ParseConfigWithKeyHeaderName("x y");
+  ASSERT_FALSE(config.ok());
+  EXPECT_EQ(config.status(),
+            absl::InvalidArgumentError(
+                "errors validating autosharding LB policy config: "
+                "[field:keyHeaderName error:Illegal header key]"));
 }
 
 TEST(AutoShardingConfigTest, ZeroInitialAssignmentTimeout) {

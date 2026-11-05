@@ -6523,9 +6523,12 @@ targets:
   language: c++
   headers: []
   src:
+  - third_party/autosharding/proto/autosharding/v1/autosharding.proto
+  - third_party/googleapis/google/api/field_behavior.proto
   - test/core/load_balancing/autosharding_assignment_test.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: autosharding_client_test

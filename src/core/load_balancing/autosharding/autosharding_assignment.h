@@ -37,7 +37,7 @@ namespace grpc_core {
 // implicitly starts at -infinity (the empty key); each subsequent slice
 // implicitly starts at the previous slice's end_key.
 struct AutoshardingAssignment final
-    : public RefCounted<AutoshardingAssignment, NonPolymorphicRefCount> {
+    : public RefCounted<AutoshardingAssignment> {
   struct Slice {
     // Exclusive end key.  Empty for +infinity.
     std::string end_key;
@@ -52,15 +52,17 @@ struct AutoshardingAssignment final
   std::vector<std::string> endpoint_names;
 };
 
-// Reassembles and validates an AutoshardingAssignment from AssignmentChunk
-// messages (gRFC A119).
+// Builds validated AutoshardingAssignments from WatchShardingAssignmentResponse
+// messages, and tracks the latest accepted generation (gRFC A119).
 class AutoshardingAssignmentBuilder final {
  public:
   struct Result {
-    RefCountedPtr<AutoshardingAssignment> assignment;
-    // AssignmentAck.error_message when accepted with dropped slices or gaps,
-    // or empty if there were no issues.
-    std::string error_message;
+    int64_t generation = 0;
+    // The new assignment, or the reason for rejecting it.
+    absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>> assignment;
+    // Issues in an accepted assignment (dropped slices or gaps), or empty if
+    // there were no issues.
+    std::string issues;
   };
 
   AutoshardingAssignmentBuilder() = default;
@@ -69,14 +71,18 @@ class AutoshardingAssignmentBuilder final {
   AutoshardingAssignmentBuilder& operator=(
       const AutoshardingAssignmentBuilder&) = delete;
 
-  void AddChunk(const google_cloud_autosharding_v1_AssignmentChunk* chunk);
+  // Processes a response message.  Returns a result to ACK or NACK if the
+  // message completes an assignment, or std::nullopt otherwise.
+  std::optional<Result> ProcessResponseMessage(
+      const google_cloud_autosharding_v1_WatchShardingAssignmentResponse*
+          response);
 
-  // Builds and validates the assignment from buffered chunks, resetting the
-  // builder state regardless of outcome.  Fails (with the NACK error message)
-  // if generation <= last_accepted_generation or if no valid slices remain.
-  // Pass last_accepted_generation = 0 if no assignment has been accepted yet.
-  absl::StatusOr<Result> Build(int64_t generation,
-                               int64_t last_accepted_generation);
+  // Drops the chunks of a partially received assignment.  Call this when the
+  // stream ends.
+  void ResetPartialAssignment();
+
+  // Returns the generation of the latest accepted assignment, or 0 if none.
+  int64_t last_accepted_generation() const { return last_accepted_generation_; }
 
  private:
   struct PendingSlice {
@@ -97,6 +103,14 @@ class AutoshardingAssignmentBuilder final {
   // Formats the issues as a semicolon-separated string.
   static std::string IssueMessages(const IssueCounts& counts, size_t num_gaps);
 
+  void AddChunk(const google_cloud_autosharding_v1_AssignmentChunk* chunk);
+
+  // Builds and validates the assignment from buffered chunks, and then drops
+  // the chunks.  Rejects the assignment if generation is not greater than
+  // last_accepted_generation_ or if no valid slices remain.
+  Result Build(int64_t generation);
+
+  int64_t last_accepted_generation_ = 0;
   size_t num_chunks_ = 0;
   size_t num_slice_assignments_ = 0;
   std::vector<PendingSlice> slices_;

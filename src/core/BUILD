@@ -8421,6 +8421,7 @@ grpc_cc_library(
         "load_balancing/autosharding/autosharding_client.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log",
         "absl/status",
@@ -8430,6 +8431,7 @@ grpc_cc_library(
     deps = [
         "grpc_check",
         "grpc_lb_policy_autosharding_assignment",
+        "sync",
         "time",
         "upb_utils",
         "//:autosharding_upb",
@@ -8440,7 +8442,6 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:work_serializer",
         "//:xds_transport",
         "@com_google_protobuf//upb/mem",
     ],
@@ -8481,7 +8482,6 @@ grpc_cc_library(
         "lb_policy_registry",
         "pollset_set",
         "ref_counted",
-        "ref_counted_string",
         "resolved_address",
         "shared_bit_gen",
         "time",
