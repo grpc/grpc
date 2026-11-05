@@ -360,7 +360,7 @@ void Mpsc::Close(bool wake_reader) {
 }
 
 void Mpsc::ReleaseTokens(Node* node) {
-  auto prev_queued =
+  [[maybe_unused]] auto prev_queued =
       queued_tokens_.fetch_sub(node->tokens_, std::memory_order_relaxed);
   GRPC_DCHECK_GE(prev_queued, node->tokens_);
   ReleaseActiveTokens(true, node->tokens_);
@@ -369,7 +369,7 @@ void Mpsc::ReleaseTokens(Node* node) {
 
 void Mpsc::ReleaseTokensAndClose(Node* node) {
   GRPC_DCHECK_NE(node, &stub_);
-  auto prev_queued =
+  [[maybe_unused]] auto prev_queued =
       queued_tokens_.fetch_sub(node->tokens_, std::memory_order_relaxed);
   GRPC_DCHECK_GE(prev_queued, node->tokens_);
   // Called when the node has not yet been dequeued -- so we don't need to
