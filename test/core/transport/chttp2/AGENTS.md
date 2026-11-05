@@ -16,6 +16,22 @@ For transport internals, see
 *   **Verify:** Before finishing, re-check every table, list, and count you
     touched against the source. Do not leave stale references behind.
 
+## Pragmatic Issue and Nit Guidelines
+
+*   **Surface real issues and helpful nits:** Always flag genuine bugs, data
+    races, memory or lifetime issues, protocol violations, and clean nits that
+    improve readability, consistency, or maintainability.
+*   **Weigh complexity against benefit:** Software can never be completely
+    bug-free. Fixing minor, low-impact, or legacy issues can sometimes introduce
+    new regressions and make the system more complex.
+*   **Avoid net-negative fixes:** When proposing a fix or nit, evaluate whether
+    extra branching, new state, concurrency complexity, or churn in working code
+    outweighs the problem being solved.
+*   **Call out trade-offs:** If an edge case or minor issue only has a complex
+    or invasive fix, still mention the observation, but explicitly note the
+    complexity trade-off (or suggest a comment or `GRPC_DCHECK` instead) rather
+    than insisting on a change that may be a long-term net negative.
+
 ## Must-Run PH2 Tests
 
 Run these after any PH2 code change:
