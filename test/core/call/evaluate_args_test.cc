@@ -157,8 +157,8 @@ TEST_F(EvaluateArgsTest, TestUnsetAddresses) {
   EXPECT_TRUE(args.GetPeerAddressString().empty());
 }
 
-// Same for an address that cannot be resolved to a sockaddr, such as a unix
-// domain socket.
+// Same for an address that is not an IPv4 or IPv6 address, such as a unix
+// domain socket, which EvaluateArgs does not convert to a sockaddr.
 TEST_F(EvaluateArgsTest, TestNonIpAddresses) {
   util_.SetLocalEndpoint("unix:/tmp/grpc-evaluate-args-test.sock");
   util_.SetPeerEndpoint("unix:/tmp/grpc-evaluate-args-test.sock");
@@ -281,16 +281,15 @@ TEST_F(EvaluateArgsTest, GetTlsVersionFailDuplicateProperty) {
   EXPECT_TRUE(args.GetTlsVersion().empty());
 }
 
-TEST_F(EvaluateArgsTest, GetLocalPrincipalSuccess) {
+TEST_F(EvaluateArgsTest, GetLocalPrincipalSuccessOneProperty) {
   util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
                                  "spiffe://foo.com/server");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetLocalPrincipal(), "spiffe://foo.com/server");
 }
 
-// The local identity is unrelated to the peer's: setting one must not affect
-// the other in either direction.
-TEST_F(EvaluateArgsTest, LocalPrincipalIsSeparateFromPeer) {
+// The peer's identity properties must not be reported as the local principal.
+TEST_F(EvaluateArgsTest, GetLocalPrincipalIgnoresPeerProperties) {
   util_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
                                  "spiffe://foo.com/client");
   util_.AddPropertyToAuthContext(GRPC_PEER_DNS_PROPERTY_NAME,
@@ -298,9 +297,18 @@ TEST_F(EvaluateArgsTest, LocalPrincipalIsSeparateFromPeer) {
   util_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
                                  "CN=client,OU=Google");
   EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_THAT(args.GetUriSans(),
-              ::testing::ElementsAre("spiffe://foo.com/client"));
   EXPECT_TRUE(args.GetLocalPrincipal().empty());
+}
+
+// The local principal must not be reported as any of the peer's identities.
+TEST_F(EvaluateArgsTest, PeerAccessorsIgnoreLocalPrincipal) {
+  util_.AddPropertyToAuthContext(GRPC_X509_LOCAL_PRINCIPAL_PROPERTY_NAME,
+                                 "spiffe://foo.com/server");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetSpiffeId().empty());
+  EXPECT_TRUE(args.GetUriSans().empty());
+  EXPECT_TRUE(args.GetDnsSans().empty());
+  EXPECT_TRUE(args.GetSubject().empty());
 }
 
 TEST_F(EvaluateArgsTest, GetLocalPrincipalFailDuplicateProperty) {

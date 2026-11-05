@@ -89,7 +89,6 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-using ::envoy::config::core::v3::GrpcService;
 using ::envoy::extensions::common::matching::v3::ExtensionWithMatcher;
 using ::envoy::extensions::common::matching::v3::ExtensionWithMatcherPerRoute;
 using ::envoy::extensions::filters::common::matcher::action::v3::SkipFilter;
@@ -3722,7 +3721,8 @@ TEST_F(XdsExtAuthzFilterTest, ParseStatusOnErrorHttpOkMapsToUnknown) {
   ExtAuthz ext_authz;
   auto* grpc_service = ext_authz.mutable_grpc_service();
   grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
-  ext_authz.mutable_status_on_error()->set_code(envoy::type::v3::StatusCode::OK);
+  ext_authz.mutable_status_on_error()->set_code(
+      envoy::type::v3::StatusCode::OK);
   XdsExtension extension = MakeXdsExtension(ext_authz);
   auto config =
       factory_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
