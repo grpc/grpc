@@ -1401,7 +1401,9 @@ def _replace_upb_with_libupb(
 #
 # Modern Protobuf (v33+) provides a unified `protobuf::libupb` target. So we no longer
 # have to generate our own internal libs.
-def _replace_upb_with_pseudo_libupb():
+def _replace_upb_with_pseudo_libupb(
+    bazel_rules: BuildDict, all_extra_metadata: BuildDict
+) -> None:
     _add_libupb_target(bazel_rules, all_extra_metadata)
     _prune_upb_experimental_feature_rules(bazel_rules)
     _populate_transitive_metadata_for_libupb(bazel_rules, all_extra_metadata)
