@@ -1747,7 +1747,7 @@ all_extra_metadata.update(
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 
 # Add a synthetic _libupb pseudo-target to replace all UPB sub-libraries
-_replace_upb_with_pseudo_libupb()
+_replace_upb_with_pseudo_libupb(bazel_rules, all_extra_metadata)
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
 # The final build metadata includes transitive dependencies, and sources/headers
