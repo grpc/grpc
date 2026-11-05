@@ -16,6 +16,10 @@
 
 # Print basic info about the mac worker
 { set +x; } 2>/dev/null
+
+# Example: + [13:25:45 PDT] prepare_build_macos_rc:41	mount
+export PS4='+ [\D{%H:%M:%S %Z}] ${BASH_SOURCE[0]##*/}:${LINENO}\011 '
+
 echo "-- Kokoro worker info --"
 echo "Kokoro pool: ${KOKORO_JOB_POOL:-undefined}"
 if [[ -f /VERSION ]]; then
@@ -69,6 +73,31 @@ export HOMEBREW_CURL_RETRIES=8
 export HOMEBREW_DOWNLOAD_CONCURRENCY=1
 export HOMEBREW_CURLRC=1
 
+# Configure pip to retry on transient connection drops and cache wheels on
+# tmpfs to reduce network round-trips and avoid CDN rate-limiting across test
+# virtualenvs. These settings also apply to downstream pip invocations outside
+# this script, including but not limited to build_python.sh.
+export PIP_RETRIES=5
+export PIP_DEFAULT_TIMEOUT=60
+# Skip pip's self-update check: its state is kept per interpreter/venv in
+# PIP_CACHE_DIR, which starts empty on each job, so it costs a PyPI request
+# for every interpreter and venv that runs pip.
+export PIP_DISABLE_PIP_VERSION_CHECK=1
+# PIP_CACHE_DIR is pip's internal cache, keyed by download URL and pip version.
+# PIP_FIND_LINKS is needed for pip to discover loose wheel files pre-built with
+# `pip wheel --wheel-dir` (see Python 3.10 pre-warming below).
+export PIP_CACHE_DIR="/tmpfs/grpc-caches/pip-cache"
+export PIP_FIND_LINKS="/tmpfs/grpc-caches/pip-wheels"
+mkdir -p "${PIP_CACHE_DIR}" "${PIP_FIND_LINKS}"
+
+# Configure Git to use HTTP/1.1 to avoid libcurl HTTP/2 multiplexing stalls on
+# macOS, and increase lowSpeedTime to 90s to accommodate server-side packfile
+# assembly for large repos.
+git config --global http.version HTTP/1.1
+git config --global http.postBuffer 524288000
+git config --global http.lowSpeedLimit 1000
+git config --global http.lowSpeedTime 90
+
 # Instruct curl to retry on all errors including TCP connection resets (code 56)
 cat << 'EOF' > ~/.curlrc
 retry = 5
@@ -76,21 +105,29 @@ retry-all-errors
 retry-delay = 1
 EOF
 
-# Helper function to retry brew install on transient network failures.
-brew_install_with_retry() {
+# Helper function to retry commands on transient network failures.
+retry_with_backoff() {
   local max_attempts=5
   local attempt=1
   local sleep_time=5
-  until brew install "$@"; do
+  until "$@"; do
+    local status=$?
     if [ "${attempt}" -ge "${max_attempts}" ]; then
-      echo "Failed to install $* after ${max_attempts} attempts." >&2
-      return 1
+      echo "Command '$*' failed after ${max_attempts} attempts (exit code ${status})." >&2
+      return "${status}"
     fi
-    echo "brew install $* failed (attempt ${attempt}/${max_attempts}). Retrying in ${sleep_time} seconds..." >&2
-    sleep "${sleep_time}"
+    local jitter=$((10 + RANDOM % 21))
+    local total_sleep=$((sleep_time + jitter))
+    echo "Command '$*' failed with exit code ${status} (attempt ${attempt}/${max_attempts}). Retrying in ${total_sleep} seconds..." >&2
+    sleep "${total_sleep}"
     sleep_time=$((sleep_time * 2))
     attempt=$((attempt + 1))
   done
+}
+
+# Helper function to retry brew install on transient network failures.
+brew_install_with_retry() {
+  retry_with_backoff brew install "$@"
 }
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
@@ -103,13 +140,15 @@ if $is_sonoma; then
 
   # Pin Homebrew to version 5.0.5 and homebrew/core to the matching Sonoma snapshot
   HOMEBREW_REPO="$(brew --repository)"
-  git -C "${HOMEBREW_REPO}" fetch --depth 1 https://github.com/Homebrew/brew.git tag 5.0.5
-  git -C "${HOMEBREW_REPO}" checkout -f 5.0.5
+  git -C "${HOMEBREW_REPO}" checkout -f 5.0.5 2>/dev/null || {
+    retry_with_backoff git -C "${HOMEBREW_REPO}" fetch --depth 1 https://github.com/Homebrew/brew.git tag 5.0.5
+    git -C "${HOMEBREW_REPO}" checkout -f 5.0.5
+  }
 
   HOMEBREW_CORE_DIR="${HOMEBREW_REPO}/Library/Taps/homebrew/homebrew-core"
   mkdir -p "${HOMEBREW_CORE_DIR}"
   git -C "${HOMEBREW_CORE_DIR}" init
-  git -C "${HOMEBREW_CORE_DIR}" fetch --depth 1 https://github.com/Homebrew/homebrew-core.git 3aa5cf1d47f4fda4decbfc999ea919cd499a204e
+  retry_with_backoff git -C "${HOMEBREW_CORE_DIR}" fetch --depth 1 https://github.com/Homebrew/homebrew-core.git 3aa5cf1d47f4fda4decbfc999ea919cd499a204e
   git -C "${HOMEBREW_CORE_DIR}" checkout -f FETCH_HEAD
 
   brew config
@@ -120,7 +159,7 @@ if $is_sonoma; then
 fi
 
 # Add GCP credentials for BQ access
-pip install --user google-api-python-client oauth2client six==1.16.0
+retry_with_backoff pip install --user google-api-python-client oauth2client
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 echo $DIR
@@ -195,10 +234,10 @@ export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
 
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
-  time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
+  time retry_with_backoff bash -c 'rm -rf ~/.cocoapods/repos/master && git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master'
 
   # Needed for ios-binary-size
-  time pip install --user -r $DIR/requirements.macos.txt
+  time retry_with_backoff pip install --user -r "${DIR}/requirements.macos.txt"
 
   # Store intermediate build files of ObjC tests into /tmpfs
   # TODO(jtattermusch): this has likely been done to avoid running
@@ -217,9 +256,12 @@ then
   # add /usr/local/bin to path to override built in Python version
   export PATH="/usr/local/bin::${PATH}"
 
-  # python
-  time pip install --user -r $DIR/requirements.macos.txt
-  time pip install --user --upgrade virtualenv Mako tox setuptools==77.0.1 twisted
+  # Host tools for the default Python (version printed in the worker info
+  # section at the top of this script): ios-binary-size PR checks
+  # (requirements.macos.txt), optional HTML test reports (Mako), and twisted
+  # for test/cpp/naming/utils and test/http2_test.
+  time retry_with_backoff pip install --user -r "${DIR}/requirements.macos.txt"
+  time retry_with_backoff pip install --user --upgrade pip wheel Mako tox setuptools==77.0.1 twisted
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then
@@ -228,6 +270,37 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.10.5-macos11.pkg -target /
   fi
+
+  # Pre-warm pip for Python 3.10 with retries, so that downstream
+  # build_python.sh installs from local disk instead of PyPI.
+  #
+  # WARNING: tools/run_tests/run_tests.py restricts basic Python testing on
+  # macOS to gRPC's minimum supported Python version (currently Python 3.10).
+  # When gRPC bumps the minimum supported Python version in run_tests.py,
+  # this pre-warming target MUST be updated to match that version.
+  #
+  # Mirror build_python.sh in a throwaway venv: a new venv starts with the
+  # interpreter's old bundled pip, and pip changed its cache format in 23.3.
+  # Upgrading pip with the bundled pip caches the new pip in the format the
+  # bundled pip reads. The upgraded pip then caches the remaining packages in
+  # the format build_python.sh's venv reads after upgrading its own pip.
+  PY310_PREWARM_VENV="/tmpfs/grpc-caches/py310-prewarm-venv"
+  /usr/local/bin/python3.10 -m venv "${PY310_PREWARM_VENV}"
+  time retry_with_backoff "${PY310_PREWARM_VENV}/bin/python" -m pip install \
+      --upgrade pip
+  time retry_with_backoff "${PY310_PREWARM_VENV}/bin/python" -m pip wheel \
+      --wheel-dir "${PIP_FIND_LINKS}" \
+      wheel 'setuptools==77.0.1' 'cython==3.2.8' 'protobuf>=7.35.1,<8.0.0'
+
+  # NOTE: For Python 3.10, gevent has to be built from source because upstream
+  # does not publish 3.10 macOS wheels. This triggers PEP 517 build isolation,
+  # generating extra requests to PyPI and increasing the chances of network
+  # drops. Pre-building the wheel into PIP_FIND_LINKS with retries avoids those.
+  # Since Python 3.10 is EOL, this workaround won't be needed once gRPC updates
+  # the minimum Python version to 3.11.
+  time retry_with_backoff "${PY310_PREWARM_VENV}/bin/python" -m pip wheel \
+      --wheel-dir "${PIP_FIND_LINKS}" \
+      gevent
 
   # Install Python 3.11 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.11" ]; then
@@ -348,4 +421,4 @@ fi
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
 date
 
-time git submodule update --init
+time retry_with_backoff git submodule update --init

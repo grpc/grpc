@@ -280,8 +280,6 @@ bool PrivateGenerator::PrintBetaServerFactory(
       method_dict["Method"] = name_and_implementation_constructor->first;
       method_dict["Constructor"] = name_and_implementation_constructor->second;
       IndentScope raii_descriptions_indent(out);
-      const std::string method_name =
-          name_and_implementation_constructor->first;
       out->Print(method_dict,
                  "(\'$PackageQualifiedServiceName$\', \'$Method$\'): "
                  "face_utilities.$Constructor$(servicer.$Method$),\n");

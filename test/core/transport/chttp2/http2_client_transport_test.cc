@@ -80,7 +80,7 @@ using EventSequenceEndpoint = util::testing::EventSequenceEndpoint;
 class Http2ClientTransportTest : public Http2TransportTest {
  public:
   Http2ClientTransportTest() = default;
-  // Http2TransportTest is not copyable or movable.
+
   Http2ClientTransportTest(const Http2ClientTransportTest&) = delete;
   Http2ClientTransportTest& operator=(const Http2ClientTransportTest&) = delete;
   Http2ClientTransportTest(Http2ClientTransportTest&&) = delete;

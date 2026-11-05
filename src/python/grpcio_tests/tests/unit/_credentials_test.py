@@ -67,6 +67,15 @@ class CredentialsTest(unittest.TestCase):
             certificate_chain=None,
         )
 
+    def test_compute_engine_channel_credentials_with_none_call_credentials(
+        self,
+    ):
+        # Regression test for https://github.com/grpc/grpc/issues/43480:
+        # a wrapper with no underlying credential must raise instead of
+        # crashing the interpreter.
+        with self.assertRaises(ValueError):
+            grpc.compute_engine_channel_credentials(grpc.CallCredentials(None))
+
 
 if __name__ == "__main__":
     logging.basicConfig()

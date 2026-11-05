@@ -29,7 +29,6 @@
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
-#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -310,7 +309,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, AggregateClusterTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(AggregateClusterTest, Basic) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -362,7 +360,6 @@ TEST_P(AggregateClusterTest, Basic) {
 }
 
 TEST_P(AggregateClusterTest, LoadBalancingPolicyComesFromUnderlyingCluster) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(4);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -431,76 +428,6 @@ TEST_P(AggregateClusterTest, LoadBalancingPolicyComesFromUnderlyingCluster) {
   EXPECT_EQ(backends_[3]->backend_service()->request_count(), 50);
 }
 
-// TODO(roth): Remove this after the 1.63 release.
-TEST_P(AggregateClusterTest, LoadBalancingPolicyComesFromAggregateCluster) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
-  CreateAndStartBackends(4);
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  // Populate new EDS resources.
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(0, 2)},
-  });
-  EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(2, 4)},
-  });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsService1Name));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsService2Name));
-  // Populate new CDS resources.
-  // First cluster uses RING_HASH, second cluster uses ROUND_ROBIN.
-  Cluster new_cluster1 = default_cluster_;
-  new_cluster1.set_name(kNewCluster1Name);
-  new_cluster1.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService1Name);
-  new_cluster1.set_lb_policy(Cluster::RING_HASH);
-  balancer_->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = default_cluster_;
-  new_cluster2.set_name(kNewCluster2Name);
-  new_cluster2.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService2Name);
-  new_cluster2.set_lb_policy(Cluster::RING_HASH);
-  balancer_->ads_service()->SetCdsResource(new_cluster2);
-  // Create Aggregate Cluster
-  auto cluster = default_cluster_;
-  auto* custom_cluster = cluster.mutable_cluster_type();
-  custom_cluster->set_name("envoy.clusters.aggregate");
-  ClusterConfig cluster_config;
-  cluster_config.add_clusters(kNewCluster1Name);
-  cluster_config.add_clusters(kNewCluster2Name);
-  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
-  cluster.set_lb_policy(Cluster::ROUND_ROBIN);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Set up route with channel id hashing, so that if we use ring_hash,
-  // all RPCs will go to the same endpoint.
-  auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
-  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // We should initially use the first cluster.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
-  // Traffic should be evenly split between the two backends in the
-  // first cluster, because we're using ROUND_ROBIN.
-  CheckRpcSendOk(DEBUG_LOCATION, 100);
-  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 50);
-  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 50);
-  // Now shut down backends 0 and 1, so that we fail over to the second cluster.
-  backends_[0]->StopListeningAndSendGoaways();
-  backends_[1]->StopListeningAndSendGoaways();
-  WaitForAllBackends(DEBUG_LOCATION, 2, 4);
-  // Traffic should be evenly split between the two backends in the
-  // second cluster as well.
-  CheckRpcSendOk(DEBUG_LOCATION, 100);
-  EXPECT_EQ(backends_[2]->backend_service()->request_count(), 50);
-  EXPECT_EQ(backends_[3]->backend_service()->request_count(), 50);
-}
-
 // This test covers a bug found in the following scenario:
 // 1. P0 reports TRANSIENT_FAILURE, so we start connecting to P1.
 // 2. While P1 is still in CONNECTING, P0 goes back to READY, so we
@@ -510,7 +437,6 @@ TEST_P(AggregateClusterTest, LoadBalancingPolicyComesFromAggregateCluster) {
 // CONNECTING (because the failover timer was not running), so we
 // incorrectly failed the RPCs.
 TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(2);
   const char* kClusterName1 = "cluster1";
   const char* kClusterName2 = "cluster2";
@@ -577,7 +503,6 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
 }
 
 TEST_P(AggregateClusterTest, EdsToLogicalDns) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -637,7 +562,6 @@ TEST_P(AggregateClusterTest, EdsToLogicalDns) {
 }
 
 TEST_P(AggregateClusterTest, LogicalDnsToEds) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(2);
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
@@ -876,7 +800,6 @@ TEST_P(AggregateClusterTest, UpdateOfChildCluster) {
 }
 
 TEST_P(AggregateClusterTest, DiamondDependency) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   const char* kNewClusterName1 = "new_cluster_1";
   const char* kNewEdsServiceName1 = "new_eds_service_name_1";
   const char* kNewClusterName2 = "new_cluster_2";
@@ -1035,7 +958,6 @@ TEST_P(AggregateClusterTest, RecursionMaxDepth) {
 }
 
 TEST_P(AggregateClusterTest, UnderlyingClusterDoesNotExist) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(1);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";

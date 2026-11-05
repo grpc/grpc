@@ -369,6 +369,7 @@ TEST_F(RingHashTest, PickFailsWithoutRequestHashAttribute) {
 }
 
 TEST_F(RingHashTest, RequestHashHeaderNotEnabled) {
+  ScopedEnvVar env("GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY", "false");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   EXPECT_EQ(
@@ -382,8 +383,6 @@ TEST_F(RingHashTest, RequestHashHeaderNotEnabled) {
 }
 
 TEST_F(RingHashTest, RequestHashHeader) {
-  ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   EXPECT_EQ(
@@ -412,8 +411,6 @@ TEST_F(RingHashTest, RequestHashHeader) {
 }
 
 TEST_F(RingHashTest, RequestHashHeaderNotPresent) {
-  ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_RING_HASH_SET_REQUEST_HASH_KEY");
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   EXPECT_EQ(

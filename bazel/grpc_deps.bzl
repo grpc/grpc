@@ -33,11 +33,11 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            sha256 = "0db063f7484f25492a8e9ce149f1a2fc18e795f57086d528ae6dda6e08969ad8",
-            strip_prefix = "boringssl-3adc3d1aba162a578e2547f329fcce8659b8e89c",
+            sha256 = "54f6eacb3121a1bf7690e185f987ee5c30a6aa0b42b6dad17872992be113cd9b",
+            strip_prefix = "boringssl-427ec40cc8edc545253289232e885708c409e5ea",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/3adc3d1aba162a578e2547f329fcce8659b8e89c.tar.gz",
-                "https://github.com/google/boringssl/archive/3adc3d1aba162a578e2547f329fcce8659b8e89c.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/427ec40cc8edc545253289232e885708c409e5ea.tar.gz",
+                "https://github.com/google/boringssl/archive/427ec40cc8edc545253289232e885708c409e5ea.tar.gz",
             ],
         )
 
@@ -390,6 +390,12 @@ def grpc_deps():
     if "cel_c" not in native.existing_rules():
         http_archive(
             name = "cel_c",
+            # Same source fix that the BCR cel-c module applies, needed to
+            # build against the protobuf (upb) version used by gRPC.
+            patches = [
+                "@com_github_grpc_grpc//third_party:cel-c.patch",
+            ],
+            patch_args = ["-p1"],
             # cel-c's BUILD files use the bzlmod module names of its
             # dependencies, which differ from the repo names used here.
             repo_mapping = {
@@ -398,12 +404,13 @@ def grpc_deps():
                 "@googleapis": "@com_google_googleapis",
                 "@googletest": "@com_google_googletest",
                 "@protobuf": "@com_google_protobuf",
+                "@re2": "@com_googlesource_code_re2",
             },
-            sha256 = "4ac93b6424dddebde797226c096607756b17e688efbd6f0574ff9dd3b091a76c",
-            strip_prefix = "cel-c-bbdb358f202b275731a0d7ee3162fd211886c945",
+            sha256 = "15f5079ede81208eac938fc0f5808bb30acd9d0937cd90528c65dc9710bc1a23",
+            strip_prefix = "cel-c-7c739eed27b702b45f664143540f76bd75d7bdd6",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cel-expr/cel-c/archive/bbdb358f202b275731a0d7ee3162fd211886c945.tar.gz",
-                "https://github.com/cel-expr/cel-c/archive/bbdb358f202b275731a0d7ee3162fd211886c945.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cel-expr/cel-c/archive/7c739eed27b702b45f664143540f76bd75d7bdd6.tar.gz",
+                "https://github.com/cel-expr/cel-c/archive/7c739eed27b702b45f664143540f76bd75d7bdd6.tar.gz",
             ],
         )
 

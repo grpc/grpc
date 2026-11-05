@@ -74,10 +74,7 @@ class ActiveConnectionTestPeer {
       NewChttp2ServerListener::ActiveConnection* connection)
       : connection_(connection) {}
 
-  void OnClose() {
-    NewChttp2ServerListener::ActiveConnection::OnClose(connection_,
-                                                       absl::OkStatus());
-  }
+  void OnClose() { connection_->OnClose(); }
 
   NewChttp2ServerListener::ActiveConnection::HandshakingState*
   handshaking_state() {
@@ -358,8 +355,6 @@ TEST_F(Chttp2ActiveConnectionTest, CloseWithoutHandshakeStarting) {
   EXPECT_EQ(
       listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
       1);
-  connection->RefAsSubclass<NewChttp2ServerListener::ActiveConnection>()
-      .release();  // Ref for OnClose
   // On close, the connection count should go back to 0.
   ActiveConnectionTestPeer(connection.get()).OnClose();
   EXPECT_EQ(
@@ -412,8 +407,6 @@ TEST_F(Chttp2ActiveConnectionTest, CloseDuringHandshake) {
   EXPECT_EQ(
       listener_state_->connection_quota()->TestOnlyActiveIncomingConnections(),
       1);
-  connection->RefAsSubclass<NewChttp2ServerListener::ActiveConnection>()
-      .release();  // Ref for OnClose
   // On close, the connection count should go back to 0.
   ActiveConnectionTestPeer(connection.get()).OnClose();
   EXPECT_EQ(

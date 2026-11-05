@@ -68,6 +68,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/channelz/v2tov1/property_list.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/buffered_call.cc \
+    src/core/client_channel/channel_factory.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
@@ -76,6 +77,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_channel/direct_channel.cc \
     src/core/client_channel/dynamic_filters.cc \
     src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/lame_channel.cc \
     src/core/client_channel/lb_metadata.cc \
     src/core/client_channel/load_balanced_call_destination.cc \
     src/core/client_channel/local_subchannel_pool.cc \
@@ -168,7 +170,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
-    src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/chttp2_plugin.cc \
@@ -828,9 +829,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/server/server.cc \
     src/core/server/server_call_tracer_filter.cc \
     src/core/server/server_config_selector_filter.cc \
-    src/core/server/xds_channel_stack_modifier.cc \
     src/core/server/xds_server_config_fetcher.cc \
-    src/core/server/xds_server_config_fetcher_legacy.cc \
     src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
@@ -993,6 +992,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_server_grpc.cc \
     src/core/xds/grpc/xds_tls_context.cc \
     src/core/xds/grpc/xds_tls_context_parser.cc \
+    src/core/xds/grpc/xds_transport_factory_grpc.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/lrs_client.cc \
     src/core/xds/xds_client/xds_api.cc \
@@ -1270,7 +1270,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/crypto/fuzzer_mode.cc \
     third_party/boringssl-with-bazel/crypto/hpke/hpke.cc \
     third_party/boringssl-with-bazel/crypto/hrss/hrss.cc \
-    third_party/boringssl-with-bazel/crypto/kyber/kyber.cc \
     third_party/boringssl-with-bazel/crypto/lhash/lhash.cc \
     third_party/boringssl-with-bazel/crypto/md4/md4.cc \
     third_party/boringssl-with-bazel/crypto/md5/md5.cc \
@@ -1370,6 +1369,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/crypto/x509/x509_def.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_ext.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_lu.cc \
+    third_party/boringssl-with-bazel/crypto/x509/x509_mtc.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_obj.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_req.cc \
     third_party/boringssl-with-bazel/crypto/x509/x509_set.cc \
@@ -1812,7 +1812,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/fipsmodule)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/hpke)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/hrss)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/kyber)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/lhash)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/md4)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/crypto/md5)
