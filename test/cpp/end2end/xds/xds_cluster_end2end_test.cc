@@ -37,7 +37,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::config::core::v3::RoutingPriority;
 using ::envoy::type::v3::FractionalPercent;
@@ -202,7 +201,6 @@ TEST_P(CdsTest, CircuitBreaking) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Update CDS resource to set max concurrent request.
-  CircuitBreakers circuit_breaks;
   Cluster cluster = default_cluster_;
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
@@ -247,7 +245,6 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Update CDS resource to set max concurrent request.
-  CircuitBreakers circuit_breaks;
   Cluster cluster = default_cluster_;
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
   threshold->set_priority(RoutingPriority::DEFAULT);
@@ -312,8 +309,19 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
 }
 
 TEST_P(CdsTest, MetricLabels) {
-  // Injects a fake client call tracer factory. Try keep this at top.
+  // Create a channel using a stats plugin.
   grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
+  auto stats_plugin_list =
+      std::make_shared<std::vector<std::shared_ptr<grpc_core::StatsPlugin>>>();
+  stats_plugin_list->emplace_back(
+      grpc_core::FakeStatsPluginBuilder()
+          .SetClientCallTracerFactory(&fake_client_call_tracer_factory)
+          .Build());
+  ChannelArguments channel_args;
+  channel_args.SetPointerWithVtable(
+      GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS, &stats_plugin_list,
+      grpc_core::ChannelArgTypeTraits<decltype(stats_plugin_list)>::VTable());
+  ResetStub(/*failover_timeout_ms=*/0, &channel_args);
   CreateAndStartBackends(2);
   // Populates EDS resources.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
@@ -327,10 +335,6 @@ TEST_P(CdsTest, MetricLabels) {
   *label_map["service_name"].mutable_string_value() = "myservice";
   *label_map["service_namespace"].mutable_string_value() = "mynamespace";
   balancer_->ads_service()->SetCdsResource(cluster);
-  ChannelArguments channel_args;
-  channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
-                          &fake_client_call_tracer_factory);
-  ResetStub(/*failover_timeout_ms=*/0, &channel_args);
   // Send an RPC to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Verify that the optional labels are recorded in the call tracer.
@@ -348,8 +352,7 @@ TEST_P(CdsTest, MetricLabels) {
                           kDefaultClusterName)));
   // Send an RPC to backend 1.
   WaitForBackend(DEBUG_LOCATION, 1);
-  // Verify that the optional labels are recorded in the call
-  // tracer.
+  // Verify that the optional labels are recorded in the call tracer.
   EXPECT_THAT(
       fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
           ->GetLastCallAttemptTracer()
@@ -2435,7 +2438,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-  grpc_core::RegisterFakeStatsPlugin();
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();
