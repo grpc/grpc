@@ -193,6 +193,11 @@ bool grpc_combiner_continue_exec_ctx() {
     return true;
   }
 
+  if(lock->time_to_execute_final_list &&
+     grpc_closure_list_empty(lock->final_list)) {
+    lock->time_to_execute_final_list = false;
+  }
+
   if (!lock->time_to_execute_final_list ||
       // peek to see if something new has shown up, and execute that with
       // priority
@@ -217,6 +222,7 @@ bool grpc_combiner_continue_exec_ctx() {
     cl->cb(cl->cb_arg, std::move(cl_err));
   } else {
     grpc_closure* c = lock->final_list.head;
+    CHECK_NE(c, nullptr);
     grpc_closure_list_init(&lock->final_list);
     int loops = 0;
     while (c != nullptr) {
