@@ -3792,6 +3792,7 @@ grpc_cc_library(
         "//src/core:util/grpc_if_nametoindex.h",
     ],
     external_deps = [
+        "absl/algorithm:container",
         "absl/log:check",
         "absl/log:log",
         "absl/status",
