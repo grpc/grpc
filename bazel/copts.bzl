@@ -174,4 +174,8 @@ GRPC_DEFAULT_COPTS = select({
     "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
     "//:use_strict_warning_windows": GRPC_LLVM_WINDOWS_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
     "//conditions:default": [],
+}) + select({
+    # cel-c headers require the standards-conforming MSVC preprocessor.
+    "@rules_cc//cc/compiler:msvc-cl": ["/Zc:preprocessor"],
+    "//conditions:default": [],
 })
