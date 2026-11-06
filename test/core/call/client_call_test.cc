@@ -17,11 +17,22 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
+#include <memory>
+#include <optional>
+#include <utility>
+
 #include "src/core/call/metadata.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 
 namespace grpc_core {
@@ -46,9 +57,28 @@ class ClientCallTest : public YodelTest {
     grpc_compression_options compression_options() const {
       return compression_options_;
     }
+    GlobalStatsPluginRegistry::StatsPluginGroup* stats_plugin_group() const {
+      return stats_plugin_group_;
+    }
 
     CallOptions& SetTimeout(Duration timeout) {
       timeout_ = timeout;
+      return *this;
+    }
+
+    CallOptions& SetRegisteredMethod(bool registered_method) {
+      registered_method_ = registered_method;
+      return *this;
+    }
+
+    CallOptions& SetPath(Slice path) {
+      path_ = std::move(path);
+      return *this;
+    }
+
+    CallOptions& SetStatsPluginGroup(
+        GlobalStatsPluginRegistry::StatsPluginGroup* stats_plugin_group) {
+      stats_plugin_group_ = stats_plugin_group;
       return *this;
     }
 
@@ -62,17 +92,19 @@ class ClientCallTest : public YodelTest {
         {0, GRPC_COMPRESS_LEVEL_NONE},
         {0, GRPC_COMPRESS_NONE},
     };
+    GlobalStatsPluginRegistry::StatsPluginGroup* stats_plugin_group_ = nullptr;
   };
 
   grpc_call* InitCall(const CallOptions& options) {
     CHECK_EQ(call_, nullptr);
-    auto arena = SimpleArenaAllocator()->MakeArena();
+    RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine().get());
-    call_ = MakeClientCall(
-        nullptr, 0, cq_, options.path(), options.authority(),
-        options.registered_method(), options.timeout() + Timestamp::Now(),
-        options.compression_options(), std::move(arena), destination_);
+    call_ = MakeClientCall(nullptr, 0u, cq_, options.path(),
+                           options.authority(), options.registered_method(),
+                           options.timeout() + Timestamp::Now(),
+                           options.compression_options(), std::move(arena),
+                           destination_, options.stats_plugin_group());
     return call_;
   }
 
@@ -104,6 +136,10 @@ class ClientCallTest : public YodelTest {
   CallHandler& handler() {
     CHECK(handler_.has_value());
     return *handler_;
+  }
+
+  FakeClientCallTracerFactory& client_call_tracer_factory() {
+    return client_call_tracer_factory_;
   }
 
  private:
@@ -143,6 +179,8 @@ class ClientCallTest : public YodelTest {
     grpc_completion_queue_destroy(cq_);
   }
 
+  // Declared before call_ so created tracers outlive the call during teardown.
+  FakeClientCallTracerFactory client_call_tracer_factory_;
   grpc_completion_queue* cq_ = nullptr;
   grpc_call* call_ = nullptr;
   RefCountedPtr<TestCallDestination> destination_ =
@@ -277,6 +315,60 @@ CLIENT_CALL_TEST(NegativeDeadline) {
   EXPECT_LE(now - start, Duration::Milliseconds(100))
       << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
+}
+
+// Verifies that when a StatsPluginGroup is passed to MakeClientCall(),
+// ClientCall requests a client call tracer from its stats plugins and installs
+// the resulting CallSpan on the call's arena.
+CLIENT_CALL_TEST(StatsPluginGroupAddsClientCallTracer) {
+  // 1. Build a FakeStatsPlugin backed by client_call_tracer_factory() and add
+  // it to a local StatsPluginGroup.
+  const std::shared_ptr<FakeStatsPlugin> plugin =
+      FakeStatsPluginBuilder()
+          .SetClientCallTracerFactory(&client_call_tracer_factory())
+          .Build();
+  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group;
+  stats_plugin_group.AddStatsPlugin(plugin, nullptr);
+
+  // 2. Create the ClientCall and pass it the StatsPluginGroup.
+  grpc_call* const call =
+      InitCall(CallOptions()
+                   .SetPath(Slice::FromCopiedString("/test/service/method"))
+                   .SetRegisteredMethod(true)
+                   .SetStatsPluginGroup(&stats_plugin_group));
+
+  // 3. Assert that ClientCall created a tracer with the correct method path
+  // and registration and installed it on the call's arena.
+  const FakeClientCallTracer* const tracer =
+      client_call_tracer_factory().GetLastFakeClientCallTracer();
+  ASSERT_NE(tracer, nullptr);
+  EXPECT_EQ(tracer->path(), "/test/service/method");
+  EXPECT_TRUE(tracer->registered_method());
+  EXPECT_NE(grpc_call_get_arena(call)->GetContext<CallSpan>(), nullptr);
+}
+
+// Verifies that when no StatsPluginGroup is passed (as for DirectChannel and
+// LameChannel), ClientCall is created cleanly without creating or installing a
+// client call tracer.
+CLIENT_CALL_TEST(NoStatsPluginGroup) {
+  // 1. Build an unattached FakeStatsPlugin backed by
+  // client_call_tracer_factory().
+  const std::shared_ptr<FakeStatsPlugin> plugin =
+      FakeStatsPluginBuilder()
+          .SetClientCallTracerFactory(&client_call_tracer_factory())
+          .Build();
+  (void)plugin;
+
+  // 2. Create the ClientCall without a StatsPluginGroup.
+  grpc_call* const call =
+      InitCall(CallOptions()
+                   .SetPath(Slice::FromCopiedString("/test/service/method"))
+                   .SetRegisteredMethod(false));
+
+  // 3. Assert that no call tracer was created or installed on the call's arena.
+  EXPECT_EQ(client_call_tracer_factory().GetLastFakeClientCallTracer(),
+            nullptr);
+  EXPECT_EQ(grpc_call_get_arena(call)->GetContext<CallSpan>(), nullptr);
 }
 
 TEST(ClientCallTest, NoOpRegression1) {
