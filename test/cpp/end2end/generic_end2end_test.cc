@@ -17,6 +17,7 @@
 //
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -30,6 +31,22 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
+
+#ifdef GPR_APPLE
+#include <TargetConditionals.h>
+#if TARGET_OS_OSX
+#include <arpa/inet.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <string>
+#endif
+#endif
 
 #include <memory>
 #include <thread>
@@ -440,6 +457,142 @@ TEST_F(GenericEnd2endTest, ShortDeadline) {
   ShutDownServerAndCQs();
   driver.join();
 }
+
+#ifdef GPR_APPLE
+#if TARGET_OS_OSX
+struct StalledWriteSocket {
+  int fd;
+  ~StalledWriteSocket() {
+    if (fd >= 0) {
+      close(fd);
+    }
+  }
+};
+
+TEST(GenericStalledWriteTest, DeadlineCompletesBeforePeerCloses) {
+  if (!grpc_core::IsEventEngineClientEnabled()) {
+    GTEST_SKIP() << "Requires an EventEngine client endpoint";
+  }
+  const auto slowdown = grpc_test_slowdown_factor();
+  StalledWriteSocket listener{socket(AF_INET, SOCK_STREAM, 0)};
+  ASSERT_GE(listener.fd, 0);
+  int receive_buffer = 4096;
+  ASSERT_EQ(setsockopt(listener.fd, SOL_SOCKET, SO_RCVBUF, &receive_buffer,
+                       sizeof(receive_buffer)),
+            0);
+  sockaddr_in address{};
+  address.sin_family = AF_INET;
+  address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  ASSERT_EQ(
+      bind(listener.fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)),
+      0);
+  ASSERT_EQ(listen(listener.fd, 1), 0);
+  socklen_t address_size = sizeof(address);
+  ASSERT_EQ(getsockname(listener.fd, reinterpret_cast<sockaddr*>(&address),
+                        &address_size),
+            0);
+
+  std::atomic<bool> peer_ready{false};
+  std::mutex mutex;
+  std::condition_variable wake;
+  bool stop = false;
+  std::thread peer([&] {
+    pollfd incoming{listener.fd, POLLIN, 0};
+    if (poll(&incoming, 1, static_cast<int>(10000 * slowdown)) != 1) {
+      return;
+    }
+    StalledWriteSocket connection{accept(listener.fd, nullptr, nullptr)};
+    if (connection.fd < 0) {
+      return;
+    }
+    timeval timeout{static_cast<time_t>(5 * slowdown), 0};
+    int no_signal = 1;
+    if (setsockopt(connection.fd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+                   sizeof(timeout)) != 0 ||
+        setsockopt(connection.fd, SOL_SOCKET, SO_NOSIGPIPE, &no_signal,
+                   sizeof(no_signal)) != 0) {
+      return;
+    }
+    char preface[24];
+    if (recv(connection.fd, preface, sizeof(preface), MSG_WAITALL) !=
+        static_cast<ssize_t>(sizeof(preface))) {
+      return;
+    }
+
+    // Advertise large HTTP/2 windows so the request stalls in a socket write,
+    // rather than waiting for HTTP/2 flow control. Stop reading after setup.
+    const unsigned char settings[] = {
+        0,    0,    12,   4,    0,    0,    0, 0, 0,  // SETTINGS
+        0,    4,    0x7f, 0xff, 0xff, 0xff,           // INITIAL_WINDOW_SIZE
+        0,    3,    0,    0,    0,    100,            // MAX_CONCURRENT_STREAMS
+        0,    0,    4,    8,    0,    0,    0, 0, 0,
+        0x7f, 0xff, 0,    0,                         // connection WINDOW_UPDATE
+        0,    0,    0,    4,    1,    0,    0, 0, 0  // SETTINGS ACK
+    };
+    if (send(connection.fd, settings, sizeof(settings), 0) !=
+        static_cast<ssize_t>(sizeof(settings))) {
+      return;
+    }
+    peer_ready = true;
+    std::unique_lock<std::mutex> lock(mutex);
+    wake.wait_for(lock, std::chrono::seconds(30 * slowdown),
+                  [&] { return stop; });
+  });
+
+  auto channel = grpc::CreateChannel(
+      "127.0.0.1:" + std::to_string(ntohs(address.sin_port)),
+      grpc::InsecureChannelCredentials());
+  grpc::GenericStub stub(channel);
+  grpc::ClientContext context;
+  context.set_deadline(std::chrono::system_clock::now() +
+                       std::chrono::seconds(2 * slowdown));
+  std::string payload(16 * 1024 * 1024, 'x');
+  grpc::Slice slice(payload);
+  grpc::ByteBuffer request(&slice, 1), response;
+  grpc::CompletionQueue queue;
+  auto rpc =
+      stub.PrepareUnaryCall(&context, "/test.Service/Call", request, &queue);
+  grpc::Status status;
+  const auto start = std::chrono::steady_clock::now();
+  rpc->StartCall();
+  rpc->Finish(&response, &status, &context);
+
+  void* tag = nullptr;
+  bool ok = false;
+  auto result = queue.AsyncNext(
+      &tag, &ok,
+      std::chrono::system_clock::now() + std::chrono::seconds(6 * slowdown));
+
+  const auto elapsed = std::chrono::steady_clock::now() - start;
+  const bool completed_ok = ok;
+  void* const completed_tag = tag;
+
+  // Release the peer even on failure, so the regression reports a failure
+  // instead of leaving the test process stuck in gRPC cleanup.
+  {
+    std::lock_guard<std::mutex> lock(mutex);
+    stop = true;
+  }
+  wake.notify_one();
+  peer.join();
+  if (result != grpc::CompletionQueue::GOT_EVENT) {
+    context.TryCancel();
+    queue.Next(&tag, &ok);
+  }
+  queue.Shutdown();
+  while (queue.Next(&tag, &ok)) {
+  }
+
+  ASSERT_TRUE(peer_ready);
+  ASSERT_EQ(result, grpc::CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(completed_ok);
+  EXPECT_EQ(completed_tag, &context);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::DEADLINE_EXCEEDED);
+  EXPECT_LT(elapsed, std::chrono::milliseconds(2250 * slowdown));
+}
+
+#endif  // TARGET_OS_OSX
+#endif  // GPR_APPLE
 
 }  // namespace
 }  // namespace testing
