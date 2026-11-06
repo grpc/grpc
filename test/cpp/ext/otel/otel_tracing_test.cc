@@ -25,7 +25,11 @@
 #include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/synchronization/notification.h"
@@ -34,6 +38,7 @@
 #endif  // GRPC_POSIX_SOCKET_TCP
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/host_port.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/test_util/fail_first_call_filter.h"
 #include "test/core/test_util/fake_stats_plugin.h"
@@ -883,6 +888,119 @@ TEST(OTelTracingPluginTest, OTelSpanIdAndTraceIdToStringTest) {
               StrEq("30313233343536373839414243444546"));
   EXPECT_THAT(grpc::internal::OTelSpanSpanIdToString(span.get()),
               StrEq("3031323334353637"));
+}
+
+// Channel arg holding a CensusContextRecordingFilter::Recorder* for the
+// CensusContextRecordingFilter to record into.
+constexpr char kCensusContextRecorderArg[] =
+    "grpc.testing.census_context_recorder";
+
+// Records the span that a client call's census_context points to when the
+// call's filters see its client initial metadata.  Calls made on behalf of
+// the call (e.g., the side-channel calls made by xDS ext_authz and ext_proc
+// filters) use that span as their parent.
+class CensusContextRecordingFilter final
+    : public grpc_core::ImplementChannelFilter<CensusContextRecordingFilter> {
+ public:
+  // Holds the ID of the span recorded for the most recent call.
+  class Recorder {
+   public:
+    void Record(opentelemetry::trace::SpanId span_id) {
+      grpc_core::MutexLock lock(&mu_);
+      last_span_id_ = span_id;
+    }
+
+    // Returns the ID of the span recorded for the most recent call, or an
+    // invalid ID if that call had no census_context.
+    opentelemetry::trace::SpanId LastSpanId() {
+      grpc_core::MutexLock lock(&mu_);
+      return last_span_id_;
+    }
+
+   private:
+    grpc_core::Mutex mu_;
+    opentelemetry::trace::SpanId last_span_id_ ABSL_GUARDED_BY(mu_);
+  };
+
+  static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "census_context_recording"; }
+
+  static absl::StatusOr<std::unique_ptr<CensusContextRecordingFilter>> Create(
+      const grpc_core::ChannelArgs& args, grpc_core::ChannelFilter::Args) {
+    return std::make_unique<CensusContextRecordingFilter>(
+        args.GetPointer<Recorder>(kCensusContextRecorderArg));
+  }
+
+  explicit CensusContextRecordingFilter(Recorder* recorder)
+      : recorder_(recorder) {}
+
+  class Call {
+   public:
+    void OnClientInitialMetadata(grpc_core::ClientMetadata&,
+                                 CensusContextRecordingFilter* filter) {
+      auto* span = reinterpret_cast<opentelemetry::trace::Span*>(
+          grpc_core::GetContext<grpc_core::Arena>()
+              ->GetContext<census_context>());
+      filter->recorder_->Record(span == nullptr ? opentelemetry::trace::SpanId()
+                                                : span->GetContext().span_id());
+    }
+    static inline const grpc_core::NoInterceptor OnServerInitialMetadata;
+    static inline const grpc_core::NoInterceptor OnServerTrailingMetadata;
+    static inline const grpc_core::NoInterceptor OnClientToServerMessage;
+    static inline const grpc_core::NoInterceptor OnClientToServerHalfClose;
+    static inline const grpc_core::NoInterceptor OnServerToClientMessage;
+    static inline const grpc_core::NoInterceptor OnFinalize;
+    grpc_core::channelz::PropertyList ChannelzProperties() {
+      return grpc_core::channelz::PropertyList();
+    }
+  };
+
+ private:
+  Recorder* const recorder_;
+};
+
+const grpc_channel_filter CensusContextRecordingFilter::kFilter =
+    grpc_core::MakePromiseBasedFilter<CensusContextRecordingFilter,
+                                      grpc_core::FilterEndpoint::kClient>();
+
+class OTelTracingTestWithCensusContextRecording : public OTelTracingTest {
+ protected:
+  void SetUp() override {
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          builder->channel_init()
+              ->RegisterFilter<CensusContextRecordingFilter>(
+                  GRPC_CLIENT_CHANNEL)
+              .If([](const grpc_core::ChannelArgs& args) {
+                return args.GetPointer<CensusContextRecordingFilter::Recorder>(
+                           kCensusContextRecorderArg) != nullptr;
+              });
+        });
+    OTelTracingTest::SetUp();
+    ChannelArguments args;
+    args.SetPointer(kCensusContextRecorderArg, &recorder_);
+    stub_ = EchoTestService::NewStub(grpc::CreateCustomChannel(
+        server_address_, grpc::InsecureChannelCredentials(), args));
+  }
+
+  CensusContextRecordingFilter::Recorder recorder_;
+};
+
+// The client call publishes its span as its census_context, so that calls
+// made on behalf of it are traced as its children.
+TEST_F(OTelTracingTestWithCensusContextRecording,
+       ClientCallPublishesSpanAsCensusContext) {
+  SendRPC(stub_.get());
+  auto spans = GetSpans(3);
+  const SpanData* client_span = nullptr;
+  for (const auto& span : spans) {
+    if (span->GetName() == "Sent.grpc.testing.EchoTestService/Echo") {
+      client_span = span.get();
+    }
+  }
+  ASSERT_NE(client_span, nullptr);
+  EXPECT_EQ(recorder_.LastSpanId(), client_span->GetSpanId());
 }
 
 class OTelTracingTestForTransparentRetries : public OTelTracingTest {

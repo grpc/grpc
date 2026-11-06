@@ -33118,8 +33118,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/fake_stats_plugin.h
   src:
+  - test/core/test_util/fake_stats_plugin.cc
   - test/core/xds/xds_transport_grpc_test.cc
   deps:
   - gtest

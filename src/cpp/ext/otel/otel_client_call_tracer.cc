@@ -490,6 +490,13 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::ClientCallTracerInterface(
     }
     span_ = otel_plugin_->tracer_->StartSpan(
         absl::StrCat("Sent.", GetMethodFromPath(path_)), options);
+    // Publish this call's span as its census_context, as the server call
+    // tracer does, so that calls made on behalf of this call (e.g., the
+    // ext_authz and ext_proc side-channel calls made by xDS filters) are
+    // traced as its children.  The span lives as long as this tracer, which
+    // lives as long as the call.
+    arena->SetContext<census_context>(
+        reinterpret_cast<census_context*>(span_.get()));
   }
 }
 

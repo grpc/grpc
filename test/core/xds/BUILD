@@ -373,6 +373,7 @@ grpc_cc_test(
         "//src/core:xds_server_grpc_interface",
         "//src/core:xds_transport_factory_grpc",
         "//src/core:xds_transport_grpc",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
     ],
 )
