@@ -52,6 +52,7 @@ where = ["src/python/grpcio"]
 "" = "src/python/grpcio"
 
 [tool.setuptools.package-data]
+"grpc" = ["py.typed"]
 # Binaries that may or may not be present in the final installation, but are
 # mentioned here for completeness.
 "grpc._cython" = [
