@@ -26,6 +26,8 @@ _Metadatum = collections.namedtuple('_Metadatum', ('key', 'value',))
 
 cdef void _store_c_metadata(
     metadata, grpc_metadata **c_metadata, size_t *c_count) except *:
+  cdef grpc_metadata *c_array
+  cdef size_t stored = 0
   if metadata is None:
     c_count[0] = 0
     c_metadata[0] = NULL
@@ -35,27 +37,34 @@ cdef void _store_c_metadata(
       c_count[0] = 0
       c_metadata[0] = NULL
     else:
-      c_count[0] = metadatum_count
-      c_metadata[0] = <grpc_metadata *>gpr_malloc(
+      c_array = <grpc_metadata *>gpr_malloc(
           metadatum_count * sizeof(grpc_metadata))
-      for index, (key, value) in enumerate(metadata):
-        encoded_key = _encode(key)
-        encoded_value = value if encoded_key[-4:] == b'-bin' else _encode(value)
-        if not isinstance(encoded_value, bytes):
-          raise TypeError('Binary metadata key="%s" expected bytes, got %s' % (
-            key,
-            type(encoded_value)
-          ))
-        c_metadata[0][index].key = _slice_from_bytes(encoded_key)
-        c_metadata[0][index].value = _slice_from_bytes(encoded_value)
+      try:
+        for index, (key, value) in enumerate(metadata):
+          encoded_key = _encode(key)
+          encoded_value = value if encoded_key[-4:] == b'-bin' else _encode(value)
+          if not isinstance(encoded_value, bytes):
+            raise TypeError('Binary metadata key="%s" expected bytes, got %s' % (
+              key,
+              type(encoded_value)
+            ))
+          c_array[index].key = _slice_from_bytes(encoded_key)
+          c_array[index].value = _slice_from_bytes(encoded_value)
+          stored += 1
+      except:
+        _release_c_metadata(c_array, stored)
+        raise
+      c_count[0] = metadatum_count
+      c_metadata[0] = c_array
 
 
 cdef void _release_c_metadata(grpc_metadata *c_metadata, int count) except *:
-  if 0 < count:
-    for index in range(count):
-      grpc_slice_unref(c_metadata[index].key)
-      grpc_slice_unref(c_metadata[index].value)
-    gpr_free(c_metadata)
+  for index in range(count):
+    grpc_slice_unref(c_metadata[index].key)
+    grpc_slice_unref(c_metadata[index].value)
+  # The array is freed even if no entry was stored in it (e.g. when
+  # _store_c_metadata() fails on the first entry). gpr_free(NULL) is a no-op.
+  gpr_free(c_metadata)
 
 
 cdef tuple _metadatum(grpc_slice key_slice, grpc_slice value_slice):

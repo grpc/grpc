@@ -955,10 +955,6 @@ cdef class AioServer:
 
         self._shutdown_lock = asyncio.Lock()
         self._shutdown_completed = self._loop.create_future()
-        self._shutdown_callback_wrapper = CallbackWrapper(
-            self._shutdown_completed,
-            self._loop,
-            SERVER_SHUTDOWN_FAILURE_HANDLER)
         self._crash_exception = None
 
         if interceptors:
@@ -995,13 +991,14 @@ cdef class AioServer:
 
     async def _request_registered_call(self, bytes method):
         cdef grpc_call_error error
+        cdef RegisteredMethod registered_method = self._server.registered_methods[method]
         cdef RPCState rpc_state = RPCState(self)
         cdef object future = self._loop.create_future()
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             self._loop,
-            REQUEST_REGISTERED_CALL_FAILURE_HANDLER)
-        cdef RegisteredMethod registered_method = self._server.registered_methods[method]
+            REQUEST_REGISTERED_CALL_FAILURE_HANDLER,
+            rpc_state)
         error = grpc_server_request_registered_call(
             self._server.c_server, 
             registered_method.c_registered_method,
@@ -1014,6 +1011,7 @@ cdef class AioServer:
             wrapper.c_functor()
         )
         if error != GRPC_CALL_OK:
+            wrapper.deregister()
             raise InternalError("Error in grpc_server_request_registered_call: %s" % error)
 
         await future
@@ -1026,7 +1024,8 @@ cdef class AioServer:
         cdef CallbackWrapper wrapper = CallbackWrapper(
             future,
             self._loop,
-            REQUEST_CALL_FAILURE_HANDLER)
+            REQUEST_CALL_FAILURE_HANDLER,
+            rpc_state)
         error = grpc_server_request_call(
             self._server.c_server, &rpc_state.call, &rpc_state.details,
             &rpc_state.request_metadata,
@@ -1034,6 +1033,7 @@ cdef class AioServer:
             wrapper.c_functor()
         )
         if error != GRPC_CALL_OK:
+            wrapper.deregister()
             raise InternalError("Error in grpc_server_request_call: %s" % error)
 
         await future
@@ -1192,10 +1192,16 @@ cdef class AioServer:
         This coroutine function is NOT coroutine-safe.
         """
         # The shutdown callback won't be called until there is no live RPC.
+        cdef CallbackWrapper wrapper = CallbackWrapper(
+            self._shutdown_completed,
+            self._loop,
+            SERVER_SHUTDOWN_FAILURE_HANDLER,
+            None
+        )
         grpc_server_shutdown_and_notify(
             self._server.c_server,
             global_completion_queue(),
-            self._shutdown_callback_wrapper.c_functor())
+            wrapper.c_functor())
 
         # Ensures the serving task (coroutine) exits.
         try:

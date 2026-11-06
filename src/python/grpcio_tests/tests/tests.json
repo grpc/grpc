@@ -52,6 +52,7 @@
   "tests.unit._compression_test.CompressionTest",
   "tests.unit._contextvars_propagation_test.ContextVarsPropagationTest",
   "tests.unit._credentials_test.CredentialsTest",
+  "tests.unit._cython._batch_operation_tag_leak_test.BatchOperationTagLeakTest",
   "tests.unit._cython._cancel_many_calls_test.CancelManyCallsTest",
   "tests.unit._cython._channel_test.ChannelTest",
   "tests.unit._cython._fork_test.ForkPosixTester",
