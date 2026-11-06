@@ -65,6 +65,35 @@ class ChannelTest(unittest.TestCase):
         # NOTE(lidiz) The negative timeout should not trigger SIGABRT.
         # Bug report: https://github.com/grpc/grpc/issues/18244
 
+    def test_close_with_outstanding_connectivity_watch(self):
+        channel = _channel()
+        connectivity = channel.check_connectivity_state(False)
+        watch_finished = threading.Event()
+
+        def watch_target():
+            channel.watch_connectivity_state(connectivity, time.time() + 300)
+            watch_finished.set()
+
+        watch_thread = threading.Thread(target=watch_target)
+        watch_thread.daemon = True
+        watch_thread.start()
+
+        # Allow the watch to be armed in Core.
+        time.sleep(0.1)
+
+        channel_closed = threading.Event()
+
+        def close_target():
+            channel.close(cygrpc.StatusCode.ok, "Channel close!")
+            channel_closed.set()
+
+        close_thread = threading.Thread(target=close_target)
+        close_thread.daemon = True
+        close_thread.start()
+
+        self.assertTrue(channel_closed.wait(timeout=5))
+        self.assertTrue(watch_finished.wait(timeout=5))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
