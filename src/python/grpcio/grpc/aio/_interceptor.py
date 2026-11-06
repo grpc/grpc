@@ -38,6 +38,7 @@ from typing import (
     Sequence,
     Union,
 )
+import weakref
 
 import grpc
 from grpc._cython import cygrpc
@@ -375,21 +376,27 @@ class InterceptedCall:
             for callback in self._pending_add_done_callbacks:
                 callback(self)
         elif call is not None:
+            self_ref = weakref.ref(self)
             for callback in self._pending_add_done_callbacks:
-                callback = functools.partial(
-                    self._wrap_add_done_callback, callback
+                wrapped_cb = functools.partial(
+                    self._wrap_add_done_callback, self_ref, callback
                 )
-                call.add_done_callback(callback)
+                call.add_done_callback(wrapped_cb)
         else:
             err_msg = "Call not available"
             raise RuntimeError(err_msg)
 
         self._pending_add_done_callbacks = []
 
+    @staticmethod
     def _wrap_add_done_callback(
-        self, callback: DoneCallbackType, unused_call: _base_call.Call
+        call_ref: weakref.ReferenceType[Any],
+        callback: DoneCallbackType,
+        _unused_call: _base_call.Call,
     ) -> None:
-        callback(self)
+        call = call_ref()
+        if call is not None:
+            callback(call)
 
     def cancel(self) -> bool:
         if self._interceptors_task.cancelled():
@@ -453,8 +460,11 @@ class InterceptedCall:
         if call.done():
             callback(self)
         else:
-            callback = functools.partial(self._wrap_add_done_callback, callback)
-            call.add_done_callback(callback)
+            self_ref = weakref.ref(self)
+            wrapped_cb = functools.partial(
+                self._wrap_add_done_callback, self_ref, callback
+            )
+            call.add_done_callback(wrapped_cb)
 
     def time_remaining(self) -> Optional[float]:
         raise NotImplementedError()
