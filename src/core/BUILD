@@ -9935,6 +9935,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "chttp2_flow_control",
         "http2_stats_collector",
         "stats_data",
         "time",
