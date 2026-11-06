@@ -218,6 +218,7 @@ TEST_F(OTelTracingTest, Basic) {
     } else {
       client_span = span.get();
       EXPECT_EQ(span->GetName(), "Sent.grpc.testing.EchoTestService/Echo");
+      EXPECT_EQ(span->GetStatus(), opentelemetry::trace::StatusCode::kOk);
     }
   }
   // Check parent-child relationship
@@ -464,6 +465,15 @@ TEST_F(OTelTracingTest, FailedStatus) {
             opentelemetry::trace::StatusCode::kError);
   EXPECT_THAT((*server_span)->GetDescription(),
               MatchesRegex("UNAVAILABLE:.*test message.*"));
+  const auto client_span = std::find_if(
+      spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Sent.grpc.testing.EchoTestService/Echo";
+      });
+  ASSERT_NE(client_span, spans.end());
+  EXPECT_EQ((*client_span)->GetStatus(),
+            opentelemetry::trace::StatusCode::kError);
+  EXPECT_THAT((*client_span)->GetDescription(),
+              MatchesRegex("UNAVAILABLE:.*test message.*"));
 }
 
 TEST_F(OTelTracingTest, Streaming) {
@@ -573,6 +583,13 @@ TEST_F(OTelTracingTest, Retries) {
   }
   EXPECT_THAT(attempt_seq_nums, ElementsAre(0, 1, 2));
   EXPECT_EQ(server_span_count, 3);
+  const auto client_span = std::find_if(
+      spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Sent.grpc.testing.EchoTestService/Echo";
+      });
+  ASSERT_NE(client_span, spans.end());
+  EXPECT_EQ((*client_span)->GetStatus(),
+            opentelemetry::trace::StatusCode::kError);
 }
 
 // An Echo Service that propagates an Echo request to another server.
@@ -935,6 +952,12 @@ TEST_F(OTelTracingTestForTransparentRetries, TransparentRetries) {
         << attempt_attributes[i].PrettyPrint();
   }
   EXPECT_EQ(server_span_count, 1);
+  const auto client_span = std::find_if(
+      spans.begin(), spans.end(), [](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Sent.grpc.testing.EchoTestService/Echo";
+      });
+  ASSERT_NE(client_span, spans.end());
+  EXPECT_EQ((*client_span)->GetStatus(), opentelemetry::trace::StatusCode::kOk);
 }
 
 }  // namespace

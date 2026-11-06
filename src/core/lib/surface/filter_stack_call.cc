@@ -361,19 +361,30 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
   ResetDeadline();
   if (is_client()) {
     std::string status_details;
-    grpc_error_get_status(error, send_deadline(), final_op_.client.status,
-                          &status_details, nullptr,
-                          final_op_.client.error_string);
+    grpc_status_code status = GRPC_STATUS_UNKNOWN;
+    grpc_error_get_status(error, send_deadline(), &status, &status_details,
+                          nullptr, final_op_.client.error_string);
+    if (final_op_.client.status != nullptr) {
+      *final_op_.client.status = status;
+    }
     *final_op_.client.status_details =
         grpc_slice_from_cpp_string(std::move(status_details));
     status_error_.set(error);
     channelz::ChannelNode* channelz_channel = channel()->channelz_node();
     if (channelz_channel != nullptr) {
-      if (*final_op_.client.status != GRPC_STATUS_OK) {
+      if (status != GRPC_STATUS_OK) {
         channelz_channel->RecordCallFailed();
       } else {
         channelz_channel->RecordCallSucceeded();
       }
+    }
+    auto* call_tracer = arena()->GetContext<ClientCallTracer>();
+    if (call_tracer != nullptr) {
+      absl::string_view error_string = error.message();
+      if (!error.ok() && final_op_.client.error_string != nullptr) {
+        error_string = absl::string_view(*final_op_.client.error_string);
+      }
+      call_tracer->RecordEnd(status, error_string);
     }
   } else {
     *final_op_.server.cancelled =
