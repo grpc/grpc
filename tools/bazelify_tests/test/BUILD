@@ -88,7 +88,7 @@ grpc_run_tests_harness_test(
 
 # PHP
 grpc_run_tests_harness_test(
-    name = "runtests_php_linux_dbg",
+    name = "runtests_php82_linux_dbg",
     size = "enormous",
     args = [
         "-l php8 -c dbg",
@@ -97,12 +97,30 @@ grpc_run_tests_harness_test(
 )
 
 grpc_run_tests_harness_test(
-    name = "runtests_php_linux_opt",
+    name = "runtests_php82_linux_opt",
     size = "enormous",
     args = [
         "-l php8 -c opt",
     ],
     docker_image_version = "tools/dockerfile/test/php8_debian12_x64.current_version",
+)
+
+grpc_run_tests_harness_test(
+    name = "runtests_php_linux_dbg",
+    size = "enormous",
+    args = [
+        "-l php8 -c dbg",
+    ],
+    docker_image_version = "tools/dockerfile/test/php85_debian13_x64.current_version",
+)
+
+grpc_run_tests_harness_test(
+    name = "runtests_php_linux_opt",
+    size = "enormous",
+    args = [
+        "-l php8 -c opt",
+    ],
+    docker_image_version = "tools/dockerfile/test/php85_debian13_x64.current_version",
 )
 
 # Python
@@ -143,6 +161,8 @@ test_suite(
         ":runtests_cpp_linux_opt_build_only",
         ":runtests_csharp_linux_dbg",
         ":runtests_csharp_linux_opt",
+        ":runtests_php82_linux_dbg",
+        ":runtests_php82_linux_opt",
         ":runtests_php_linux_dbg",
         ":runtests_php_linux_opt",
         ":runtests_python_linux_opt",
@@ -279,7 +299,7 @@ grpc_build_artifact_task(
 grpc_build_artifact_task(
     name = "artifact_php_linux_x64",
     build_script = "build_artifact_php_linux.sh",
-    docker_image_version = "tools/dockerfile/test/php8_zts_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/php8_zts_debian13_x64.current_version",
 )
 
 # Python artifact build tasks
@@ -399,10 +419,22 @@ grpc_run_distribtest_test(
     docker_run_as_root = True,
 )
 
+grpc_run_distribtest_test(
+    name = "distribtest_php_linux_x64_debian13_php85",
+    size = "enormous",
+    artifact_deps = [
+        "artifact_php_linux_x64",
+    ],
+    build_script = "run_distribtest_php_linux.sh",
+    docker_image_version = "tools/dockerfile/distribtest/php8_debian13_php85_x64.current_version",
+    docker_run_as_root = True,
+)
+
 test_suite(
     name = "php_distribtests_linux",
     tests = [
         ":distribtest_php_linux_x64_debian12",
+        ":distribtest_php_linux_x64_debian13_php85",
     ],
 )
 

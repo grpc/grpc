@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=linux/arm64/v8 arm64v8/debian:12
+FROM php:8.5-cli-trixie
 
-{% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps_pep668.include" %}
-RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
-{% include "../../php_valgrind.include" %}
-{% include "../../cmake.include" %}
-RUN apt-get update && apt-get install -y ccache && apt-get clean
-{% include "../../run_tests_addons.include" %}
-# Define the default command.
-CMD ["bash"]
+RUN apt-get update && apt-get install -y \
+  autoconf automake build-essential libtool pkg-config wget zlib1g-dev \
+  && apt-get clean
+
+RUN wget https://phar.phpunit.de/phpunit-8.5.8.phar && \
+  mv phpunit-8.5.8.phar /usr/local/bin/phpunit && \
+  chmod +x /usr/local/bin/phpunit
