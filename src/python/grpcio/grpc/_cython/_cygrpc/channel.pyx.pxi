@@ -14,6 +14,8 @@
 
 from grpc import _observability
 
+from libc.stdio cimport fflush, fprintf, stderr  # DEBUG ONLY, do not submit.
+
 _INTERNAL_CALL_ERROR_MESSAGE_FORMAT = (
     'Internal gRPC call error %d. ' +
     'Please report to https://github.com/grpc/grpc/issues')
@@ -490,11 +492,28 @@ cdef _close(Channel channel, grpc_status_code code, object details,
 cdef _calls_drained(_ChannelState state):
   return not (state.integrated_call_states or state.segregated_call_states)
 
+
+# ---- DEBUG ONLY (fork hang investigation), do not submit ----
+cdef void _fork_debug(
+    const char *what, int iteration, _ChannelState state) except *:
+  fprintf(stderr,
+          b"[fork-debug pid=%d t=%.3f] %s iteration=%d "
+          b"segregated_call_states=%d integrated_call_states=%d\n",
+          <int>os.getpid(), <double>time.time(), what, iteration,
+          <int>len(state.segregated_call_states),
+          <int>len(state.integrated_call_states))
+  fflush(stderr)
+# ---- end DEBUG ONLY ----
+
+
 cdef _cancel_all_calls(Channel channel, grpc_status_code code, object details):
   cdef _ChannelState state = channel._state
   cdef _CallState call_state
+  cdef int iteration = 0  # DEBUG ONLY
   encoded_details = _encode(details)
+  _fork_debug(b"_cancel_all_calls: acquiring channel lock", iteration, state)  # DEBUG ONLY
   with state.condition:
+    _fork_debug(b"_cancel_all_calls: lock acquired", iteration, state)  # DEBUG ONLY
     for call_state in set(state.integrated_call_states.values()):
       grpc_call_cancel_with_status(
           call_state.c_call, code, encoded_details, NULL)
@@ -503,9 +522,13 @@ cdef _cancel_all_calls(Channel channel, grpc_status_code code, object details):
           call_state.c_call, code, encoded_details, NULL)
     while not _calls_drained(state):
       event = channel.next_call_event()
+      iteration += 1  # DEBUG ONLY
       if event.completion_type == CompletionType.queue_timeout:
+          _fork_debug(b"drain loop: channel CQ -> queue_timeout", iteration, state)  # DEBUG ONLY
           continue
+      _fork_debug(b"drain loop: channel CQ -> event", iteration, state)  # DEBUG ONLY
       event.tag(event)
+    _fork_debug(b"_cancel_all_calls: drain loop exited", iteration, state)  # DEBUG ONLY
 
 
 cdef class Channel:
