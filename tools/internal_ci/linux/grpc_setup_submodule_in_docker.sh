@@ -94,3 +94,6 @@ tools/buildgen/generate_projects.sh
 git add -A
 git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
 
+# Restore file ownership to the host user's UID/GID
+chown -R "$(stat -c '%u:%g' .)" .
+
