@@ -20,6 +20,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
+
 grpc_tcp_client_vtable* grpc_tcp_client_impl;
 
 int64_t grpc_tcp_client_connect(
@@ -27,14 +30,29 @@ int64_t grpc_tcp_client_connect(
     grpc_pollset_set* interested_parties,
     const grpc_event_engine::experimental::EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::event_engine_tcp_client_connect(
+        on_connect, endpoint, config, addr, deadline);
+  }
   return grpc_tcp_client_impl->connect(on_connect, endpoint, interested_parties,
                                        config, addr, deadline);
 }
 
 bool grpc_tcp_client_cancel_connect(int64_t connection_handle) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::
+        event_engine_tcp_client_cancel_connect(connection_handle);
+  }
   return grpc_tcp_client_impl->cancel_connect(connection_handle);
 }
 
 void grpc_set_tcp_client_impl(grpc_tcp_client_vtable* impl) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    LOG(WARNING)
+        << "You can no longer override the tcp client implementation with "
+           "internal iomgr code. Please use a custom EventEngine instead.";
+    grpc_tcp_client_impl = nullptr;
+    return;
+  }
   grpc_tcp_client_impl = impl;
 }
