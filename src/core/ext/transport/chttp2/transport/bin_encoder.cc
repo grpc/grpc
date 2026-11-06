@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <array>
+
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 #include "src/core/util/grpc_check.h"
 
@@ -32,7 +34,7 @@ struct b64_huff_sym {
   uint16_t bits;
   uint8_t length;
 };
-static const b64_huff_sym huff_alphabet[64] = {
+static constexpr b64_huff_sym huff_alphabet[64] = {
     {0x21, 6}, {0x5d, 7}, {0x5e, 7},   {0x5f, 7}, {0x60, 7}, {0x61, 7},
     {0x62, 7}, {0x63, 7}, {0x64, 7},   {0x65, 7}, {0x66, 7}, {0x67, 7},
     {0x68, 7}, {0x69, 7}, {0x6a, 7},   {0x6b, 7}, {0x6c, 7}, {0x6d, 7},
@@ -44,6 +46,29 @@ static const b64_huff_sym huff_alphabet[64] = {
     {0x78, 7}, {0x79, 7}, {0x7a, 7},   {0x7b, 7}, {0x0, 5},  {0x1, 5},
     {0x2, 5},  {0x19, 6}, {0x1a, 6},   {0x1b, 6}, {0x1c, 6}, {0x1d, 6},
     {0x1e, 6}, {0x1f, 6}, {0x7fb, 11}, {0x18, 6}};
+
+struct b64_huff_sym_pair {
+  uint32_t bits : 26;
+  uint32_t length : 6;
+};
+
+static constexpr std::array<b64_huff_sym_pair, 4096>
+GenerateHuffAlphabetTable() {
+  std::array<b64_huff_sym_pair, 4096> table{};
+  for (size_t a = 0; a < 64; ++a) {
+    for (size_t b = 0; b < 64; ++b) {
+      auto sa = huff_alphabet[a];
+      auto sb = huff_alphabet[b];
+      uint32_t bits = (static_cast<uint32_t>(sa.bits) << sb.length) | sb.bits;
+      uint8_t length = sa.length + sb.length;
+      table[(a << 6) | b] = b64_huff_sym_pair{bits, length};
+    }
+  }
+  return table;
+}
+
+static constexpr std::array<b64_huff_sym_pair, 4096> huff_alphabet_pair =
+    GenerateHuffAlphabetTable();
 
 static const uint8_t tail_xtra[3] = {0, 2, 3};
 
@@ -149,12 +174,9 @@ static void enc_flush_some(huff_out* out) {
 
 static void enc_add2(huff_out* out, uint8_t a, uint8_t b, uint32_t* wire_size) {
   *wire_size += 2;
-  b64_huff_sym sa = huff_alphabet[a];
-  b64_huff_sym sb = huff_alphabet[b];
-  out->temp = (out->temp << (sa.length + sb.length)) |
-              (static_cast<uint32_t>(sa.bits) << sb.length) | sb.bits;
-  out->temp_length +=
-      static_cast<uint32_t>(sa.length) + static_cast<uint32_t>(sb.length);
+  auto s = huff_alphabet_pair[(static_cast<size_t>(a) << 6) | b];
+  out->temp = (out->temp << s.length) | s.bits;
+  out->temp_length += s.length;
   enc_flush_some(out);
 }
 
