@@ -69,6 +69,64 @@ TEST(HostPortTest, SplitHostPortInvalid) {
   split_host_port_expect("[a:b]30", nullptr, nullptr, false);
 }
 
+TEST(HostPortTest, SplitHostPortViewClearsOutvarsOnFailure) {
+  absl::string_view host = "original_host";
+  absl::string_view port = "original_port";
+
+  // Unmatched [
+  EXPECT_FALSE(grpc_core::SplitHostPort("[a:b", &host, &port));
+  EXPECT_EQ(host, "");
+  EXPECT_EQ(port, "");
+
+  // Junk after bracket
+  host = "original_host";
+  port = "original_port";
+  EXPECT_FALSE(grpc_core::SplitHostPort("[a:b]30", &host, &port));
+  EXPECT_EQ(host, "");
+  EXPECT_EQ(port, "");
+
+  // IPv6 literal without colon inside brackets
+  host = "original_host";
+  port = "original_port";
+  EXPECT_FALSE(grpc_core::SplitHostPort("[a]", &host, &port));
+  EXPECT_EQ(host, "");
+  EXPECT_EQ(port, "");
+}
+
+TEST(HostPortTest, SplitHostPortStringClearsOutvarsOnFailure) {
+  std::string host;
+  std::string port;
+
+  // Unmatched [
+  EXPECT_FALSE(grpc_core::SplitHostPort("[a:b", &host, &port));
+  EXPECT_EQ(host, "");
+  EXPECT_EQ(port, "");
+
+  // Junk after bracket
+  host.clear();
+  port.clear();
+  EXPECT_FALSE(grpc_core::SplitHostPort("[a:b]30", &host, &port));
+  EXPECT_EQ(host, "");
+  EXPECT_EQ(port, "");
+
+  // IPv6 literal without colon inside brackets
+  host.clear();
+  port.clear();
+  EXPECT_FALSE(grpc_core::SplitHostPort("[a]", &host, &port));
+  EXPECT_EQ(host, "");
+  EXPECT_EQ(port, "");
+
+#ifdef NDEBUG
+  // In release builds where DCHECK is disabled, we should also verify that
+  // pre-existing non-empty strings are successfully cleared on failure.
+  host = "original_host";
+  port = "original_port";
+  EXPECT_FALSE(grpc_core::SplitHostPort("[a:b", &host, &port));
+  EXPECT_EQ(host, "");
+  EXPECT_EQ(port, "");
+#endif
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
