@@ -45,6 +45,7 @@ cdef class _BatchOperationTag(_Tag):
   cdef size_t c_nops
 
   cdef void prepare(self) except *
+  cdef void release(self) except *
   cdef BatchOperationEvent event(self, grpc_event c_event)
 
 
