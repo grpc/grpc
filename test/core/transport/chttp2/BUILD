@@ -1116,6 +1116,7 @@ grpc_cc_test(
         "//src/core:transport_common",
         "//src/core:try_join",
         "//src/core:try_seq",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
