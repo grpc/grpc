@@ -23,7 +23,7 @@ import grpc
 from tests.interop import server as interop_server_lib
 from tests_aio.unit import _test_server
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, force=True)
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
