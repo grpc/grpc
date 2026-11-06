@@ -2,16 +2,66 @@
 # - Darwin (arm64-darwin, x86_64-darwin): Clang 14.0.6
 # - Linux GNU (x86_64-linux-gnu, aarch64-linux-gnu, x86-linux-gnu): GCC 10.5.0
 # - Linux Musl (x86_64-linux-musl, aarch64-linux-musl, x86-linux-musl): GCC 10.3.0
-# - MinGW (x86-mingw32, x64-mingw-ucrt): GCC 10.2.1 (POSIX thread model)
+# - MinGW (x86-mingw32): GCC 10.2.1 (POSIX thread model)
+# - MinGW UCRT (x64-mingw-ucrt): GCC 10.5.0 (POSIX thread model), built from Ubuntu 22.04
+#   sources against UCRT via `rake prepare:mingw64-ucrt` (local image, not pushed)
 diff --git a/Dockerfile.mri.erb b/Dockerfile.mri.erb
-index 1bf488e..aed2eab 100644
+index 1bf488e..adaff39 100644
 --- a/Dockerfile.mri.erb
 +++ b/Dockerfile.mri.erb
-@@ -75,51 +75,89 @@ USER root
- ##
+@@ -1,4 +1,4 @@
+-<% image = "ubuntu:20.04" %>
++<% image = platform =~ /x64-mingw-ucrt/ ? "ubuntu:22.04" : "ubuntu:20.04" %>
+ FROM <%= image %>
+ 
+ ARG TARGETPLATFORM
+@@ -76,50 +76,102 @@ USER root
  ## Install cross compilers
  ##
-+<% if platform =~ /mingw/ %>
+ <% if platform =~ /x64-mingw-ucrt/ %>
+-COPY --from=larskanis/mingw64-ucrt:20.04 \
++# Built locally by `rake prepare:mingw64-ucrt`
++COPY --from=grpc-local/mingw64-ucrt:22.04 \
+     /build/binutils-mingw-w64-x86-64_*.deb \
+-    /build/g++-mingw-w64-x86-64_*.deb \
++    /build/g++-mingw-w64-x86-64*.deb \
+     /build/gcc-mingw-w64-base_*.deb \
+-    /build/gcc-mingw-w64-x86-64_*.deb \
++    /build/gcc-mingw-w64-x86-64*.deb \
+     /build/mingw-w64-common_*.deb \
+     /build/mingw-w64-x86-64-dev_*.deb \
+     /debs/
+-RUN dpkg -i /debs/*.deb
+-
+-<% elsif platform =~ /aarch64-mingw-ucrt/ %>
+-
+-RUN <<EOF
+-    if [ "$TARGETPLATFORM" = "linux/amd64" ]; then
+-        DOWNLOAD_PLATFORM="x86_64";
+-    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then
+-        DOWNLOAD_PLATFORM="aarch64";
+-    else
+-        echo "Unsupported platform $TARGETPLATFORM";
+-        exit 1;
+-    fi &&
+-    wget https://github.com/mstorsjo/llvm-mingw/releases/download/20250114/llvm-mingw-20250114-ucrt-ubuntu-20.04-$DOWNLOAD_PLATFORM.tar.xz &&
+-    tar xf llvm-mingw*.tar.xz &&
+-    mv `ls -d llvm-mingw-*/` /llvm-mingw &&
+-    echo "export PATH=/llvm-mingw/bin:\$PATH" >> /etc/rubybashrc &&
+-    rm -r /llvm-mingw/bin/i686-w64* /llvm-mingw/bin/armv7-w64* /llvm-mingw/bin/x86_64-w64* /llvm-mingw/i686-w64* /llvm-mingw/armv7-w64* /llvm-mingw/x86_64-w64*
+-EOF
++RUN dpkg -i /debs/*.deb && rm -rf /debs && \
++    update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix && \
++    update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
++
++# Verify GCC >= 10 and a pure UCRT toolchain
++RUN test "$(echo __GNUC__ | x86_64-w64-mingw32-g++ -E -P - | tail -1)" -ge 10 && \
++    printf '#include <thread>\n#include <string>\nint main(){std::string s("x");std::thread t([]{});t.join();return (int)s.size()-1;}\n' > /tmp/t.cc && \
++    x86_64-w64-mingw32-g++ -std=c++17 -O2 -static /tmp/t.cc -o /tmp/t.exe && \
++    ! x86_64-w64-mingw32-objdump -p /tmp/t.exe | grep -qiE 'msvcrt\.dll|libstdc\+\+|libgcc_s|libwinpthread' && \
++    rm -f /tmp/t.cc /tmp/t.exe
++
++<% elsif platform =~ /mingw/ %>
 +
 +RUN echo "Package: *\nPin: release n=bullseye\nPin-Priority: 100" > /etc/apt/preferences.d/bullseye.pref && \
 +    echo "deb [trusted=yes] https://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list && \
@@ -32,40 +82,6 @@ index 1bf488e..aed2eab 100644
 +    update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix && \
 +    rm -rf /var/lib/apt/lists/*
 +
- <% if platform =~ /x64-mingw-ucrt/ %>
--COPY --from=larskanis/mingw64-ucrt:20.04 \
--    /build/binutils-mingw-w64-x86-64_*.deb \
--    /build/g++-mingw-w64-x86-64_*.deb \
--    /build/gcc-mingw-w64-base_*.deb \
--    /build/gcc-mingw-w64-x86-64_*.deb \
--    /build/mingw-w64-common_*.deb \
--    /build/mingw-w64-x86-64-dev_*.deb \
--    /debs/
--RUN dpkg -i /debs/*.deb
--
--<% elsif platform =~ /aarch64-mingw-ucrt/ %>
--
--RUN <<EOF
--    if [ "$TARGETPLATFORM" = "linux/amd64" ]; then
--        DOWNLOAD_PLATFORM="x86_64";
--    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then
--        DOWNLOAD_PLATFORM="aarch64";
--    else
--        echo "Unsupported platform $TARGETPLATFORM";
--        exit 1;
--    fi &&
--    wget https://github.com/mstorsjo/llvm-mingw/releases/download/20250114/llvm-mingw-20250114-ucrt-ubuntu-20.04-$DOWNLOAD_PLATFORM.tar.xz &&
--    tar xf llvm-mingw*.tar.xz &&
--    mv `ls -d llvm-mingw-*/` /llvm-mingw &&
--    echo "export PATH=/llvm-mingw/bin:\$PATH" >> /etc/rubybashrc &&
--    rm -r /llvm-mingw/bin/i686-w64* /llvm-mingw/bin/armv7-w64* /llvm-mingw/bin/x86_64-w64* /llvm-mingw/i686-w64* /llvm-mingw/armv7-w64* /llvm-mingw/x86_64-w64*
--EOF
-+RUN x86_64-w64-mingw32-gcc -dumpspecs > specs && \
-+    sed -i 's/-lmsvcrt/-lucrt/g' specs && \
-+    sed -i '/\*cpp:/!b;n;s/$/ -D__MSVCRT_VERSION__=0x1400 -D_UCRT/' specs && \
-+    cp specs /usr/lib/gcc/x86_64-w64-mingw32/10-posix/specs && \
-+    rm specs
-+<% end %>
  
  <% elsif platform =~ /linux-musl/ %>
  COPY build/mk_musl_cross.sh /tmp
@@ -131,7 +147,7 @@ index 1bf488e..aed2eab 100644
  
  <% if platform =~ /darwin/ %>
  COPY build/mk_osxcross.sh /tmp
-@@ -237,8 +275,8 @@ RUN mv /usr/bin/<%= target %>-strip /usr/bin/<%= target %>-strip.bin && \
+@@ -237,8 +289,8 @@ RUN mv /usr/bin/<%= target %>-strip /usr/bin/<%= target %>-strip.bin && \
  # Use posix pthread for mingw so that C++ standard library for thread could be
  # available such as std::thread, std::mutex, so on.
  # https://sourceware.org/pthreads-win32/
@@ -142,6 +158,20 @@ index 1bf488e..aed2eab 100644
  <% end %>
  
  <% if platform =~ /aarch64-mingw/ %>
+diff --git a/Rakefile b/Rakefile
+index 598a913..aa85d86 100644
+--- a/Rakefile
++++ b/Rakefile
+@@ -192,7 +192,8 @@ end
+ namespace :prepare do
+   desc "Build cross compiler for x64-mingw-ucrt aka RubyInstaller-3.1+"
+   task "mingw64-ucrt" do
+-    sh(*RakeCompilerDock.docker_build_cmd, "-t", "larskanis/mingw64-ucrt:20.04", ".",
++    sh(*RakeCompilerDock.docker_build_cmd, "--platform", "linux/amd64", "--load",
++       "-t", "grpc-local/mingw64-ucrt:22.04", ".",
+        chdir: "mingw64-ucrt")
+   end
+ end
 diff --git a/build/mk_musl_cross.sh b/build/mk_musl_cross.sh
 index e2dfce9..4e6e2e7 100755
 --- a/build/mk_musl_cross.sh
@@ -193,3 +223,118 @@ index b1964f7..c407022 100755
  
  # install /usr/bin/codesign and make a symlink for codesign_allocate (the architecture doesn't matter)
  git clone -q --depth=1 https://github.com/flavorjones/sigtool --branch flavorjones-fix-link-line-library-order
+diff --git a/mingw64-ucrt/Dockerfile b/mingw64-ucrt/Dockerfile
+index 0f3cd97..09b1006 100644
+--- a/mingw64-ucrt/Dockerfile
++++ b/mingw64-ucrt/Dockerfile
+@@ -1,4 +1,4 @@
+-FROM ubuntu:20.04
++FROM ubuntu:22.04
+ 
+ ARG DEBIAN_FRONTEND=noninteractive
+ 
+@@ -27,13 +27,14 @@ ADD mingw-w64-*.patch ./
+ RUN cd mingw-w64-* && \
+     cat debian/rules && \
+     ls ../mingw-w64-*.patch | xargs -n1 patch --verbose -p1 -i && \
++    rm -f *build-deps* && \
+     dpkg-buildpackage -b && \
+     rm -rf ../*.ddeb ../*i686* `pwd`
+ 
+ # Install UCRT enabled deb-packages
+-RUN dpkg -i mingw-w64-common_7.0.0-2_all.deb \
+-    mingw-w64-tools_7.0.0-2_*.deb \
+-    mingw-w64-x86-64-dev_7.0.0-2_all.deb
++RUN dpkg -i mingw-w64-common_*_all.deb \
++    mingw-w64-tools_*.deb \
++    mingw-w64-x86-64-dev_*_all.deb
+ 
+ # Download gcc-binutils sources for mingw
+ RUN apt-get source binutils-mingw-w64 && \
+@@ -44,6 +45,7 @@ RUN apt-get source binutils-mingw-w64 && \
+ ADD binutils-mingw-w64-*.patch ./
+ RUN cd binutils-mingw-w64-* && \
+     ls ../binutils-mingw-w64-*.patch | xargs -n1 patch --verbose -p1 -i && \
++    rm -f *build-deps* && \
+     dpkg-buildpackage -b --jobs=auto && \
+     rm -rf ../*.ddeb ../*i686* `pwd`
+ 
+@@ -52,14 +54,12 @@ RUN apt-get source gcc-mingw-w64 && \
+     cd gcc-mingw-w64-* && \
+     mk-build-deps -ir -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends"
+ 
+-# Add version based alias
+-RUN ln -s `which autoconf` `which autoconf`2.69 && \
+-    ln -s `which autom4te` `which autom4te`2.69
+-
+ # Build gcc (only C and C++) based on UCRT headers and crt
+ ADD gcc-mingw-w64-*.patch ./
+ RUN cd gcc-mingw-w64-* && \
+     ls ../gcc-mingw-w64-*.patch | xargs -n1 patch --verbose -p1 -i && \
++    rm -f *build-deps* && \
++    sed -i /adalib/d debian/*-runtime.install && \
+     dpkg-buildpackage -b --jobs=auto && \
+     rm -rf ../*.ddeb ../*i686* `pwd`
+ 
+diff --git a/mingw64-ucrt/README.md b/mingw64-ucrt/README.md
+index efd2d55..fb558a6 100644
+--- a/mingw64-ucrt/README.md
++++ b/mingw64-ucrt/README.md
+@@ -6,9 +6,10 @@ It takes the mingw compiler provided by Debian/Ubuntu and configures and compile
+ Outputs are *.deb files of binutils, gcc and g++.
+ Rake-compiler-dock reads them from this image as part of its build process for the x64-mingw-ucrt platform.
+ 
+-The image is provided for arm64 and amd64 architectures.
+-They are built by the following command:
++The image is built locally for amd64 and is not pushed to a registry:
+ 
+ ```sh
+-docker buildx build . -t larskanis/mingw64-ucrt:20.04 --platform linux/arm64,linux/amd64 --push
++bundle exec rake prepare:mingw64-ucrt
+ ```
++
++This requires the buildx `docker` driver (`docker buildx use default`), so that `Dockerfile.mri.erb` can read the local `grpc-local/mingw64-ucrt:22.04` image.
+diff --git a/mingw64-ucrt/binutils-mingw-w64-ignore-check-errors.patch b/mingw64-ucrt/binutils-mingw-w64-ignore-check-errors.patch
+index 636ca09..282893a 100644
+--- a/mingw64-ucrt/binutils-mingw-w64-ignore-check-errors.patch
++++ b/mingw64-ucrt/binutils-mingw-w64-ignore-check-errors.patch
+@@ -1,13 +1,11 @@
+-diff --git a/debian/rules b/debian/rules
+-index 4401493..62c8fe4 100755
+ --- a/debian/rules
+ +++ b/debian/rules
+-@@ -91,7 +91,7 @@ override_dh_auto_test-arch:
++@@ -107,7 +107,7 @@
++ 	set -e; \
+  	unset CFLAGS CPPFLAGS LDFLAGS; \
+- 	env > $(build_dir)/env; \
+  	for target in $(targets); do \
+--		dh_auto_test -B$(build_dir)/$$target; \
+-+		dh_auto_test -B$(build_dir)/$$target || true; \
++-		dh_auto_test --no-parallel -B$(build_dir)/$$target; \
+++		dh_auto_test --no-parallel -B$(build_dir)/$$target || true; \
+  	done
+  
+  override_dh_auto_install-arch:
+diff --git a/mingw64-ucrt/gcc-mingw-w64-only-c-c++.patch b/mingw64-ucrt/gcc-mingw-w64-only-c-c++.patch
+index 203d9e1..5e69a45 100644
+--- a/mingw64-ucrt/gcc-mingw-w64-only-c-c++.patch
++++ b/mingw64-ucrt/gcc-mingw-w64-only-c-c++.patch
+@@ -1,12 +1,13 @@
+-diff --git a/debian/rules b/debian/rules
+-index 9e7e40c..fa9a8a2 100755
+ --- a/debian/rules
+ +++ b/debian/rules
+-@@ -58,7 +58,7 @@ ifneq ($(filter stage1,$(DEB_BUILD_PROFILES)),)
++@@ -67,11 +67,8 @@
+      INSTALL_TARGET := install-gcc
+  else
+  # Build the full GCC.
+--    languages := c,c++,fortran,objc,obj-c++,ada
++-    languages := c,c++,fortran,objc,obj-c++
++-ifneq ($(filter $(DEB_HOST_ARCH),$(gnat_arches)),)
++-    languages := $(languages),ada
++-endif
+ +    languages := c,c++
+      BUILD_TARGET :=
+      INSTALL_TARGET := install install-lto-plugin
