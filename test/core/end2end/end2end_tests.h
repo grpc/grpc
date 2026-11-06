@@ -787,7 +787,7 @@ inline bool IsPh2Test() {
          IsPh2ClientServerEnabled();
 }
 
-// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+// TODO(akshitpatel) : [PH2][P4] : Remove once all the PH2 E2E tests are fixed.
 inline void EnableLoggingForPH2Tests() {
   if (IsPh2Test()) {
     grpc_tracer_set_enabled("http2_ph2_transport", true);
@@ -796,7 +796,7 @@ inline void EnableLoggingForPH2Tests() {
   }
 }
 
-// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+// TODO(akshitpatel) : [PH2][P4] : Remove once all the PH2 E2E tests are fixed.
 inline void DisableLoggingForPH2Tests() {
   if (IsPh2Test()) {
     absl::SetGlobalVLogLevel(-1);
@@ -929,7 +929,7 @@ inline bool IsTestSampledInPr(const CoreTestConfiguration* config) {
                       core_end2end_test_fuzzer::Msg msg) {                     \
     if (config == nullptr) return;                                             \
     if (absl::StartsWith(#name, "DISABLED_")) GTEST_SKIP() << "disabled test"; \
-    if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled()) {    \
+    if (!IsEventEngineClientEnabled()) {                                       \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
     SKIP_IF_DISABLED_IN_CONFIG(config, #suite, #name);                         \

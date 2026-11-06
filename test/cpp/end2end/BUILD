@@ -201,6 +201,9 @@ grpc_cc_test(
         "absl/time",
         "gtest",
     ],
+    tags = [
+        "cpp_end2end_test",
+    ],
     deps = [
         ":end2end_test_utils",
         "//:config",
@@ -264,6 +267,9 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "gtest",
+    ],
+    tags = [
+        "cpp_end2end_test",
     ],
     deps = [
         "//:gpr",
@@ -922,6 +928,7 @@ grpc_cc_test(
         "absl/log:check",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:span",
         "gtest",
     ],
     flaky = True,
@@ -935,6 +942,7 @@ grpc_cc_test(
         ":rls_server",
         ":test_service_impl",
         "//:config_vars",
+        "//:endpoint_addresses",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -1604,6 +1612,9 @@ grpc_cc_test(
         "absl/strings",
         "absl/time",
     ],
+    tags = [
+        "cpp_end2end_test",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -1635,7 +1646,10 @@ grpc_cc_test(
         "absl/log",
         "absl/synchronization",
     ],
-    tags = ["ssl_credentials_test"],
+    tags = [
+        "cpp_end2end_test",
+        "ssl_credentials_test",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -1668,7 +1682,10 @@ grpc_cc_test(
         "absl/strings:string_view",
         "absl/synchronization",
     ],
-    tags = ["tls_credentials_test"],
+    tags = [
+        "cpp_end2end_test",
+        "tls_credentials_test",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -1703,7 +1720,10 @@ grpc_cc_test(
         "absl/synchronization",
         "gtest",
     ],
-    tags = ["crl_provider_test"],
+    tags = [
+        "cpp_end2end_test",
+        "crl_provider_test",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -1746,8 +1766,12 @@ grpc_cc_test(
         "absl/synchronization",
         "gtest",
     ],
-    tags = ["crl_provider_test"],
+    tags = [
+        "cpp_end2end_test",
+        "crl_provider_test",
+    ],
     deps = [
+        ":end2end_test_utils",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -1813,7 +1837,10 @@ grpc_cc_test(
         "libcrypto",
         "libssl",
     ],
-    tags = ["tls_private_key_signer_test"],
+    tags = [
+        "cpp_end2end_test",
+        "tls_private_key_signer_test",
+    ],
     deps = [
         ":test_service_impl",
         ":tls_test_private_key_signer",
@@ -1880,7 +1907,10 @@ grpc_cc_test(
         "libcrypto",
         "libssl",
     ],
-    tags = ["tls_cert_selection_offload_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "tls_cert_selection_offload_end2end_test",
+    ],
     deps = [
         ":test_service_impl",
         ":tls_test_certificate_selector",

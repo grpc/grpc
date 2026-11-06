@@ -188,9 +188,7 @@ CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
 
 // TODO(hork): remove when the listener flake is identified
 #ifdef GPR_WINDOWS
-  if (IsEventEngineListenerEnabled()) {
-    GTEST_SKIP() << "not for windows + event engine listener";
-  }
+  GTEST_SKIP() << "not for windows + event engine listener";
 #endif
   VerifyLogNoiseLogSink nolog_verifier(absl::LogSeverityAtLeast::kInfo, 2);
   // Allow info logs, but not error logs on the first request.

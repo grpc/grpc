@@ -58,6 +58,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
+#include "test/core/test_util/mock_transport_filter.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
@@ -179,99 +180,6 @@ class AppendSuffixAFilter final : public ChannelFilter {
 const grpc_channel_filter kFilterA =
     MakePromiseBasedFilter<AppendSuffixAFilter, FilterEndpoint::kClient,
                            kFilterExaminesInboundMessages>();
-
-// Encapsulates the mock transport filter implementation and its call state.
-class MockTransportFilter {
- public:
-  struct State {
-    struct RawPointerChannelArgTag {};
-    static absl::string_view ChannelArgName() {
-      return "grpc.test.mock_transport";
-    }
-
-    CallCombiner* call_combiner = nullptr;
-
-    grpc_metadata_batch* recv_initial_metadata = nullptr;
-    grpc_closure* recv_initial_metadata_ready = nullptr;
-
-    std::optional<SliceBuffer>* recv_message = nullptr;
-    uint32_t* recv_message_flags = nullptr;
-    grpc_closure* recv_message_ready = nullptr;
-
-    grpc_metadata_batch* recv_trailing_metadata = nullptr;
-    grpc_closure* recv_trailing_metadata_ready = nullptr;
-  };
-
-  static const grpc_channel_filter kFilter;
-
- private:
-  static void StartBatch(grpc_call_element* elem,
-                         grpc_transport_stream_op_batch* op) {
-    auto* mock_transport = *static_cast<State**>(elem->channel_data);
-    if (op->recv_initial_metadata) {
-      mock_transport->recv_initial_metadata =
-          op->payload->recv_initial_metadata.recv_initial_metadata;
-      mock_transport->recv_initial_metadata_ready =
-          op->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    }
-    if (op->recv_message) {
-      mock_transport->recv_message = op->payload->recv_message.recv_message;
-      mock_transport->recv_message_flags = op->payload->recv_message.flags;
-      mock_transport->recv_message_ready =
-          op->payload->recv_message.recv_message_ready;
-    }
-    if (op->recv_trailing_metadata) {
-      mock_transport->recv_trailing_metadata =
-          op->payload->recv_trailing_metadata.recv_trailing_metadata;
-      mock_transport->recv_trailing_metadata_ready =
-          op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    }
-    // The mock has no async sends, so complete any non-recv work immediately.
-    if (op->on_complete != nullptr) {
-      GRPC_CALL_COMBINER_START(mock_transport->call_combiner, op->on_complete,
-                               absl::OkStatus(), "mock_on_complete");
-    }
-    // As the terminal transport, relinquish the call combiner that was passed
-    // down with this batch (mirrors connected_channel.cc).
-    GRPC_CALL_COMBINER_STOP(mock_transport->call_combiner,
-                            "mock passed batch to transport");
-  }
-
-  static void StartTransportOp(grpc_channel_element*, grpc_transport_op* op) {
-    if (op->on_consumed != nullptr) {
-      ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
-    }
-  }
-
-  static grpc_error_handle InitCallElem(grpc_call_element*,
-                                        const grpc_call_element_args*) {
-    return absl::OkStatus();
-  }
-  static void DestroyCallElem(grpc_call_element*, const grpc_call_final_info*,
-                              grpc_closure*) {}
-  static grpc_error_handle InitChannelElem(grpc_channel_element* elem,
-                                           grpc_channel_element_args* args) {
-    *static_cast<State**>(elem->channel_data) =
-        args->channel_args.GetObject<State>();
-    return absl::OkStatus();
-  }
-  static void DestroyChannelElem(grpc_channel_element*) {}
-};
-
-const grpc_channel_filter MockTransportFilter::kFilter = {
-    MockTransportFilter::StartBatch,
-    MockTransportFilter::StartTransportOp,
-    0,  // sizeof_call_data
-    MockTransportFilter::InitCallElem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    MockTransportFilter::DestroyCallElem,
-    sizeof(MockTransportFilter::State*),  // sizeof_channel_data
-    MockTransportFilter::InitChannelElem,
-    grpc_channel_stack_no_post_init,
-    MockTransportFilter::DestroyChannelElem,
-    grpc_channel_next_get_info,
-    GRPC_UNIQUE_TYPE_NAME_HERE("mock_transport"),
-};
 
 // Encapsulates the application-side callbacks and state.
 class AppCallbacks {

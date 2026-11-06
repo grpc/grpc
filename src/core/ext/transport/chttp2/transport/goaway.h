@@ -141,11 +141,6 @@ class GoawayManager {
           /*debug_data=*/std::move(goaway_args.debug_data)};
     }
 
-    void AddWaker(Waker&& waker) {
-      wakers.AddPending(std::move(waker));
-      GRPC_HTTP2_GOAWAY_LOG << "AddWaker: " << wakers.ToString();
-    }
-
     void SetGoawayArgs(const uint32_t error_code, Slice&& debug_data,
                        const uint32_t last_good_stream_id) {
       GRPC_HTTP2_GOAWAY_LOG << "SetGoawayArgs: "
