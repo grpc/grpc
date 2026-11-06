@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-load("//bazel:cython_library.bzl", "pyx_library")
+load("@cython//Tools:rules.bzl", "pyx_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -31,8 +31,7 @@ pyx_library(
         "cygrpc.pxd",
         "cygrpc.pyx",
     ],
-    data = [":copy_roots_pem"],
-    deps = [
+    cc_deps = [
         "//:grpc",
         "//src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing:private_key_signer_py_wrapper",
         "@com_google_absl//absl/base:log_severity",
@@ -40,4 +39,5 @@ pyx_library(
         "@com_google_absl//absl/log:initialize",
         "@com_google_absl//absl/status",
     ],
+    data = [":copy_roots_pem"],
 )
