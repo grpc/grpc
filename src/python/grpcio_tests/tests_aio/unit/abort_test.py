@@ -31,6 +31,8 @@ _ABORT_AFTER_REPLY = "/test/AbortAfterReply"
 _STREAM_UNARY_ABORT_AFTER_FIRST_REQ = "/test/StreamUnaryAbortAfterFirstReq"
 _STREAM_STREAM_ABORT_AFTER_FIRST_REQ = "/test/StreamStreamAbortAfterFirstReq"
 _STREAM_UNARY_REPLY_AFTER_FIRST_REQ = "/test/StreamUnaryReplyAfterFirstReq"
+_STREAM_STREAM_NEVER_READ = "/test/StreamStreamNeverRead"
+_STREAM_UNARY_NEVER_READ = "/test/StreamUnaryNeverRead"
 
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x01\x01\x01"
@@ -42,6 +44,8 @@ _READER_ROUNDS = 40
 
 _ABORT_CODE = grpc.StatusCode.RESOURCE_EXHAUSTED
 _ABORT_DETAILS = "Phony error details"
+# Mirrors grpc.aio._call._INTERNAL_ERROR_DETAILS
+_INTERNAL_ERROR_DETAILS = "Internal error from Core"
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -90,6 +94,12 @@ class _GenericHandler(grpc.GenericRpcHandler):
             break
         return _RESPONSE
 
+    @staticmethod
+    async def _never_read(unused_request_iterator, unused_context):
+        # Keeps the RPC open without consuming requests, so the client's flow
+        # control window fills up and a large write stays pending in Core.
+        await asyncio.Event().wait()
+
     def service(self, handler_details):
         if handler_details.method == _UNARY_UNARY_ABORT:
             return grpc.unary_unary_rpc_method_handler(self._unary_unary_abort)
@@ -115,6 +125,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return grpc.stream_unary_rpc_method_handler(
                 self._reply_after_first_request
             )
+        if handler_details.method == _STREAM_STREAM_NEVER_READ:
+            return grpc.stream_stream_rpc_method_handler(self._never_read)
+        if handler_details.method == _STREAM_UNARY_NEVER_READ:
+            return grpc.stream_unary_rpc_method_handler(self._never_read)
 
 
 async def _large_requests():
@@ -128,8 +142,8 @@ def _record_repr_when_done(call):
     return reprs
 
 
-async def _start_test_server():
-    server = aio.server()
+async def _start_test_server(options=None):
+    server = aio.server(options=options)
     port = server.add_insecure_port("[::]:0")
     server.add_generic_rpc_handlers((_GenericHandler(),))
     await server.start()
@@ -252,6 +266,57 @@ class TestAbort(AioTestBase):
             self.assertEqual(_RESPONSE, await call)
             self.assertEqual(grpc.StatusCode.OK, await call.code())
             self.assertEqual([repr(call)], reprs_when_done)
+
+    async def _assert_refused_write_reports_internal(self, call):
+        reprs_when_done = _record_repr_when_done(call)
+        await call.wait_for_connection()
+
+        results = await asyncio.gather(
+            call.write(_LARGE_REQUEST),
+            call.write(_LARGE_REQUEST),
+            return_exceptions=True,
+        )
+
+        for result in results:
+            self.assertIsInstance(result, aio.AioRpcError)
+            self.assertEqual(grpc.StatusCode.INTERNAL, result.code())
+            self.assertEqual(_INTERNAL_ERROR_DETAILS, result.details())
+        self.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
+        self.assertEqual(_INTERNAL_ERROR_DETAILS, await call.details())
+        self.assertFalse(call.cancelled())
+        self.assertEqual([repr(call)], reprs_when_done)
+
+    async def test_refused_write_reports_internal(self):
+        """Tests the status of an RPC whose send batch is refused by Core.
+
+        Unlike a server abort, nothing else finishes the RPC here, so the
+        status the client asks Core to cancel with is the one that must be
+        observed. Concurrent writes make `grpc_call_start_batch` refuse the
+        second send with TOO_MANY_OPERATIONS while the first one is pending.
+        """
+        # Without BDP probing the server keeps the HTTP/2 default 64 KiB
+        # stream window instead of advertising 4 MiB, so a 1 MiB write to a
+        # never-reading server stays pending in Core.
+        address, server = await _start_test_server(
+            options=(("grpc.http2.bdp_probe", 0),)
+        )
+        channel = aio.insecure_channel(address)
+        try:
+            with self.subTest(arity="stream_stream"):
+                await self._assert_refused_write_reports_internal(
+                    channel.stream_stream(_STREAM_STREAM_NEVER_READ)()
+                )
+            with self.subTest(arity="stream_unary"):
+                call = channel.stream_unary(_STREAM_UNARY_NEVER_READ)()
+                await self._assert_refused_write_reports_internal(call)
+                with self.assertRaises(aio.AioRpcError) as exc_ctx:
+                    await call
+                self.assertEqual(
+                    grpc.StatusCode.INTERNAL, exc_ctx.exception.code()
+                )
+        finally:
+            await channel.close()
+            await server.stop(None)
 
     @unittest.skipIf(
         getattr(sys, "_is_gil_enabled", lambda: True)(),
