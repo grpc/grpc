@@ -972,6 +972,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/api/annotations.upb_minitable.c \
     src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c \
     src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c \
+    src/core/ext/upb-gen/google/api/field_behavior.upb_minitable.c \
     src/core/ext/upb-gen/google/api/http.upb_minitable.c \
     src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c \
@@ -990,6 +991,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/grpc/lb/v1/load_balancer.upb_minitable.c \
     src/core/ext/upb-gen/grpc/lookup/v1/rls.upb_minitable.c \
     src/core/ext/upb-gen/grpc/lookup/v1/rls_config.upb_minitable.c \
+    src/core/ext/upb-gen/proto/autosharding/v1/autosharding.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
@@ -1407,6 +1409,8 @@ LIBGRPC_SRC = \
     src/core/lib/transport/transport_op_string.cc \
     src/core/load_balancing/address_filtering.cc \
     src/core/load_balancing/autosharding/autosharding.cc \
+    src/core/load_balancing/autosharding/autosharding_assignment.cc \
+    src/core/load_balancing/autosharding/autosharding_client.cc \
     src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
