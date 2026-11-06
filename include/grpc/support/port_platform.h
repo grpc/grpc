@@ -710,6 +710,14 @@ typedef unsigned __int64 uint64_t;
 #if defined(GPR_FORBID_UNREACHABLE_CODE) && GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)
 #else
+#ifdef __has_builtin
+#if __has_builtin(__builtin_unreachable)
+#ifdef NDEBUG
+#define GPR_UNREACHABLE_CODE(STATEMENT) __builtin_unreachable()
+#endif /* NDEBUG */
+#endif /* __has_builtin(__builtin_unreachable) */
+#endif /* __has_builtin */
+#ifndef GPR_UNREACHABLE_CODE
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -723,6 +731,7 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
     gpr_unreachable_code(#STATEMENT, __FILE__, __LINE__); \
     STATEMENT;                                            \
   } while (0)
+#endif /* GPR_UNREACHABLE_CODE */
 #endif /* GPR_FORBID_UNREACHABLE_CODE */
 
 #ifndef GPRAPI
