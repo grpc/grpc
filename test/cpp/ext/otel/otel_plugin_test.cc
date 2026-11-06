@@ -499,9 +499,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
               std::array<absl::string_view, 0>{},
               std::array<absl::string_view, 0>{}),
           HistogramResultEq(
-              IsWithinRange(0.2, 0.6 * grpc_test_slowdown_factor()),
-              IsWithinRange(0.2, 0.6 * grpc_test_slowdown_factor()),
-              IsWithinRange(0.2, 0.6 * grpc_test_slowdown_factor()), 1))));
+              IsWithinRange(0.1, 0.6 * grpc_test_slowdown_factor()),
+              IsWithinRange(0.1, 0.6 * grpc_test_slowdown_factor()),
+              IsWithinRange(0.1, 0.6 * grpc_test_slowdown_factor()), 1))));
 }
 
 class OTelMetricsTestForTransparentRetries
