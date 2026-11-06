@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
 genrule(
     name = "copy_six",
     srcs = ["six-1.16.0/six.py"],
@@ -11,4 +13,3 @@ py_library(
     srcs_version = "PY2AND3",
     visibility = ["//visibility:public"],
 )
-

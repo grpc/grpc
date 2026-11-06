@@ -27,6 +27,7 @@
 Contains macros used throughout the repo.
 """
 
+load("@rules_cc//cc:objc_library.bzl", "objc_library")
 load("@build_bazel_apple_support//rules:universal_binary.bzl", "universal_binary")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
@@ -307,7 +308,7 @@ def ios_cc_test(
         device_type = "iPhone X",
     )
     if not any([t for t in tags if t.startswith("no_test_ios")]):
-        native.objc_library(
+        objc_library(
             name = test_lib_ios,
             srcs = kwargs.get("srcs"),
             deps = kwargs.get("deps"),
@@ -876,8 +877,7 @@ def grpc_objc_library(
         deps: dependencies
         visibility: visibility, default to public
     """
-
-    native.objc_library(
+    objc_library(
         name = name,
         hdrs = hdrs,
         srcs = srcs,
