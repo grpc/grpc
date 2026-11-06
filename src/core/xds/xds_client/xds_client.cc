@@ -920,7 +920,8 @@ void XdsClient::XdsChannel::AdsCall::SendMessageLocked(
       << " version=" << xds_channel()->resource_type_version_map_[type]
       << " nonce=" << state.nonce << " error=" << state.status;
   state.status = absl::OkStatus();
-  streaming_call_->SendMessage(std::move(serialized_message));
+  streaming_call_->SendMessage(std::move(serialized_message),
+                               /*send_half_close=*/false);
   send_message_pending_ = type;
 }
 

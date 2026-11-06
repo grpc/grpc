@@ -650,7 +650,8 @@ void LrsClient::LrsChannel::LrsCall::SendReportLocked() {
 
 void LrsClient::LrsChannel::LrsCall::SendMessageLocked(std::string payload) {
   send_message_pending_ = true;
-  streaming_call_->SendMessage(std::move(payload));
+  streaming_call_->SendMessage(std::move(payload),
+                               /*send_half_close=*/false);
 }
 
 void LrsClient::LrsChannel::LrsCall::OnRequestSent() {

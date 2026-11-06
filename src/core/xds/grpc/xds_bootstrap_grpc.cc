@@ -38,6 +38,16 @@ bool XdsExtProcOnClientEnabled() {
   return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
 }
 
+// TODO(rishesh): Remove this once the feature passes interop tests.
+bool XdsExtAuthzOnClientEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT");
+}
+
+// TODO(rishesh): Remove this once the feature passes interop tests.
+bool XdsExtAuthzOnServerEnabled() {
+  return IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_SERVER");
+}
+
 //
 // GrpcXdsBootstrap::GrpcNode::Locality
 //
@@ -217,7 +227,10 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
    public:
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();
-      if (key == "grpc_service") return XdsExtProcOnClientEnabled();
+      if (key == "grpc_service") {
+        return XdsExtProcOnClientEnabled() || XdsExtAuthzOnClientEnabled() ||
+               XdsExtAuthzOnServerEnabled();
+      }
       return true;
     }
   };
