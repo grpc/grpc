@@ -157,6 +157,8 @@ struct grpc_server_credentials
 
   virtual grpc_core::UniqueTypeName type() const = 0;
 
+  virtual bool replaces_server_auth_filter() const { return false; }
+
   const grpc_auth_metadata_processor& auth_metadata_processor() const {
     return processor_;
   }

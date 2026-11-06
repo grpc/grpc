@@ -30,6 +30,7 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/filter/auth/auth_filters.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
@@ -39,6 +40,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
+#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/fork.h"
@@ -66,6 +68,7 @@ static grpc_core::CondVar* g_shutting_down_cv;
 static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 namespace grpc_core {
+
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
@@ -75,7 +78,8 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
-      .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
+      .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG)
+      .IfNot(ServerAuthFilter::IsReplacedByServerCredentials);
   ChannelInit::FilterRegistration& authz_registration =
       builder->channel_init()
           ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)

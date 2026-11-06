@@ -172,6 +172,11 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
   static absl::StatusOr<std::unique_ptr<ServerAuthFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 
+  // True if the server credentials in `args` supply their own auth filter.
+  // Shared by the registration code that skips or replaces this filter.
+  // Internal to gRPC core. Not a public API; may change without notice.
+  static bool IsReplacedByServerCredentials(const ChannelArgs& args);
+
   class Call {
    public:
     explicit Call(ServerAuthFilter* filter);
