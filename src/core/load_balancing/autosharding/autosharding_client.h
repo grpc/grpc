@@ -45,13 +45,14 @@ namespace grpc_core {
 class AutoshardingClient final
     : public InternallyRefCounted<AutoshardingClient> {
  public:
-  // Receives each valid assignment, or an error before the first valid
-  // assignment.  Never invoked after Orphan(), and destroyed with the client.
-  // Invoked while holding the client's lock, so it must not call into the
-  // client.  It must hop into another context (such as a WorkSerializer) to
-  // do any real work.
+  // Receives a ref to the reporting client, and each valid assignment or an
+  // error before the first valid assignment.  Never invoked after Orphan(),
+  // and destroyed with the client.  Invoked while holding the client's lock,
+  // so it must not call into the client.  It must hop into another context
+  // (such as a WorkSerializer) to do any real work.
   using ResultCallback = absl::AnyInvocable<void(
-      absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>>)>;
+      RefCountedPtr<AutoshardingClient>,
+      absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>>) const>;
 
   static constexpr char kMethod[] =
       "/google.cloud.autosharding.v1.AutoshardingService/"
@@ -64,6 +65,8 @@ class AutoshardingClient final
           event_engine,
       ResultCallback on_result);
 
+  ~AutoshardingClient() override;
+
   void Orphan() override;
 
   // Resets the stream retry backoff and the transport's connection backoff.
@@ -73,21 +76,21 @@ class AutoshardingClient final
  private:
   class StreamCall;
 
-  void StartStreamLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+  void StartStreamLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void OnStreamFinishedLocked(bool seen_valid_assignment, absl::Status status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-  void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void OnRetryTimer();
   void OnInitialAssignmentTimer();
-  void CancelInitialAssignmentTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+  void CancelInitialAssignmentTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void ReportAssignmentLocked(
       RefCountedPtr<const AutoshardingAssignment> assignment)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void ReportErrorLocked(absl::Status status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  bool HasReportedAssignmentLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
+  bool HasReportedAssignmentLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return builder_.last_accepted_generation() > 0;
   }
 
@@ -96,18 +99,18 @@ class AutoshardingClient final
   const std::string client_uuid_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
+  const ResultCallback on_result_;
 
   Mutex mu_;
-  ResultCallback on_result_ ABSL_GUARDED_BY(&mu_);
-  bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
+  bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
   // Kept across streams for InitialClientConfig.latest_generation.
-  AutoshardingAssignmentBuilder builder_ ABSL_GUARDED_BY(&mu_);
-  BackOff backoff_ ABSL_GUARDED_BY(&mu_);
-  OrphanablePtr<StreamCall> stream_ ABSL_GUARDED_BY(&mu_);
+  AutoshardingAssignmentBuilder builder_ ABSL_GUARDED_BY(mu_);
+  BackOff backoff_ ABSL_GUARDED_BY(mu_);
+  OrphanablePtr<StreamCall> stream_ ABSL_GUARDED_BY(mu_);
   std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      retry_timer_handle_ ABSL_GUARDED_BY(&mu_);
+      retry_timer_handle_ ABSL_GUARDED_BY(mu_);
   std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
-      initial_assignment_timer_handle_ ABSL_GUARDED_BY(&mu_);
+      initial_assignment_timer_handle_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

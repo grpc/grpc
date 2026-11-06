@@ -8920,6 +8920,8 @@ add_executable(autosharding_assignment_test
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
+  src/cpp/util/status.cc
   test/core/load_balancing/autosharding_assignment_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8955,6 +8957,13 @@ target_include_directories(autosharding_assignment_test
 target_link_libraries(autosharding_assignment_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::dynamic_annotations
+  absl::prefetch
+  absl::layout
+  absl::absl_check
+  absl::absl_log
+  absl::charset
+  absl::strings_internal
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -8976,6 +8985,8 @@ add_executable(autosharding_client_test
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
+  src/cpp/util/status.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/load_balancing/autosharding_client_test.cc
@@ -9014,6 +9025,13 @@ target_include_directories(autosharding_client_test
 target_link_libraries(autosharding_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::dynamic_annotations
+  absl::prefetch
+  absl::layout
+  absl::absl_check
+  absl::absl_log
+  absl::charset
+  absl::strings_internal
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -9070,9 +9088,20 @@ add_executable(autosharding_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/autosharding/v1/autosharding.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/field_behavior.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
+  src/cpp/util/status.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/load_balancing/autosharding_test.cc
+  test/core/xds/xds_transport_fake.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9107,6 +9136,13 @@ target_include_directories(autosharding_test
 target_link_libraries(autosharding_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::dynamic_annotations
+  absl::prefetch
+  absl::layout
+  absl::absl_check
+  absl::absl_log
+  absl::charset
+  absl::strings_internal
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )

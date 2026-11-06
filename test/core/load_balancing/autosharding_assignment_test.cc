@@ -42,20 +42,56 @@ namespace {
 using ::google::cloud::autosharding::v1::WatchShardingAssignmentResponse;
 using ::testing::ElementsAre;
 using ::testing::FieldsAre;
+using ::testing::Optional;
 using Result = AutoshardingAssignmentBuilder::Result;
 
-auto SliceIs(absl::string_view end_key, std::vector<size_t> endpoints,
+// Matches an absl::StatusOr<> that holds a value that matches value_matcher.
+MATCHER_P(IsOkAndHolds, value_matcher, "") {
+  if (!arg.ok()) {
+    *result_listener << "status is " << arg.status();
+    return false;
+  }
+  return ::testing::ExplainMatchResult(value_matcher, *arg, result_listener);
+}
+
+// Matches an absl::StatusOr<> whose status is equal to status.
+MATCHER_P(HasStatus, status, "") {
+  *result_listener << "status is " << arg.status();
+  return arg.status() == status;
+}
+
+auto IsSlice(absl::string_view end_key, std::vector<size_t> endpoints,
              bool fallback_disabled) {
   return FieldsAre(end_key, std::move(endpoints), fallback_disabled);
 }
 
+// Matches a RefCountedPtr<const AutoshardingAssignment>.
+MATCHER_P2(IsAssignment, slices_matcher, endpoint_names_matcher, "") {
+  if (arg == nullptr) {
+    *result_listener << "assignment is null";
+    return false;
+  }
+  return ::testing::ExplainMatchResult(slices_matcher, arg->slices,
+                                       result_listener) &&
+         ::testing::ExplainMatchResult(endpoint_names_matcher,
+                                       arg->endpoint_names, result_listener);
+}
+
+// Matches the result of ProcessResponse() for an accepted assignment.
+template <typename AssignmentMatcher>
+auto IsAccepted(int64_t generation, AssignmentMatcher assignment,
+                absl::string_view issues) {
+  return Optional(
+      FieldsAre(generation, IsOkAndHolds(assignment), std::string(issues)));
+}
+
+// Matches the result of ProcessResponse() for a rejected assignment.
+auto IsRejected(int64_t generation, absl::Status status) {
+  return Optional(FieldsAre(generation, HasStatus(std::move(status)), ""));
+}
+
 class AutoshardingAssignmentBuilderTest : public ::testing::Test {
  protected:
-  struct BuildResult {
-    RefCountedPtr<const AutoshardingAssignment> assignment;
-    std::string issues;
-  };
-
   // Parses textproto as a WatchShardingAssignmentResponse with the protobuf
   // library, and passes it to the builder as a upb message.
   std::optional<Result> ProcessResponse(absl::string_view textproto) {
@@ -71,509 +107,641 @@ class AutoshardingAssignmentBuilderTest : public ::testing::Test {
     return builder_.ProcessResponseMessage(response);
   }
 
-  // Sends an AssignmentChunk, given in textproto form.
-  void AddChunk(absl::string_view chunk_textproto) {
-    EXPECT_FALSE(ProcessResponse(absl::StrCat("chunk {", chunk_textproto, "}"))
-                     .has_value());
-  }
-
-  // Sends AssignmentMetadata, and returns the accepted assignment or the
-  // reason for rejecting it.
-  absl::StatusOr<BuildResult> Build(int64_t generation) {
-    std::optional<Result> result = ProcessResponse(
-        absl::StrCat("metadata { generation: ", generation, " }"));
-    if (!result.has_value()) return absl::InternalError("no result");
-    EXPECT_EQ(result->generation, generation);
-    if (!result->assignment.ok()) return result->assignment.status();
-    return BuildResult{*std::move(result->assignment),
-                       std::move(result->issues)};
-  }
-
   upb::Arena arena_;
   AutoshardingAssignmentBuilder builder_;
 };
 
-TEST_F(AutoshardingAssignmentBuilderTest, SingleSliceCoversKeyspace) {
-  AddChunk(R"pb(
+constexpr absl::string_view kSingleSliceChunk = R"pb(
+  chunk {
     slice_assignments {
       slice { start_key: "" }
       endpoints { endpoint_index: 0 }
-      endpoints { endpoint_index: 1 }
     }
     endpoints { endpoint: "host0" }
-    endpoints { endpoint: "host1" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(/*generation=*/1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues, "");
-  EXPECT_THAT(result->assignment->endpoint_names,
-              ElementsAre("host0", "host1"));
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("", {0, 1}, false)));
+  }
+)pb";
+
+TEST_F(AutoshardingAssignmentBuilderTest, SingleSliceCoversKeyspace) {
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" }
+                  endpoints { endpoint_index: 0 }
+                  endpoints { endpoint_index: 1 }
+                }
+                endpoints { endpoint: "host0" }
+                endpoints { endpoint: "host1" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(/*generation=*/1,
+                         IsAssignment(ElementsAre(IsSlice("", {0, 1}, false)),
+                                      ElementsAre("host0", "host1")),
+                         /*issues=*/""));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, MissingSliceCoversKeyspace) {
-  AddChunk(R"pb(
-    slice_assignments { endpoints { endpoint_index: 0 } }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues, "");
-  EXPECT_THAT(result->assignment->slices, ElementsAre(SliceIs("", {0}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments { endpoints { endpoint_index: 0 } }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("", {0}, false)),
+                                      ElementsAre("host0")),
+                         ""));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, SlicesAreSorted) {
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "m" }
-      endpoints { endpoint_index: 1 }
-    }
-    slice_assignments {
-      slice { start_key: "" end_key: "m" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-    endpoints { endpoint: "host1" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues, "");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("m", {0}, false), SliceIs("", {1}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "m" }
+                  endpoints { endpoint_index: 1 }
+                }
+                slice_assignments {
+                  slice { start_key: "" end_key: "m" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+                endpoints { endpoint: "host1" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("m", {0}, false),
+                                                  IsSlice("", {1}, false)),
+                                      ElementsAre("host0", "host1")),
+                         ""));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest,
        EndpointNamesConcatenatedInChunkOrder) {
-  // Slices refer to endpoints in later chunks, and slices are spread across
+  // Slices refer to endpoints in other chunks, and slices are spread across
   // chunks.
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "" end_key: "m" }
-      endpoints { endpoint_index: 2 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "m" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host1" }
-    endpoints { endpoint: "host2" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_THAT(result->assignment->endpoint_names,
-              ElementsAre("host0", "host1", "host2"));
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("m", {2}, false), SliceIs("", {0}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" end_key: "m" }
+                  endpoints { endpoint_index: 2 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "m" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host1" }
+                endpoints { endpoint: "host2" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("m", {2}, false),
+                                                  IsSlice("", {0}, false)),
+                                      ElementsAre("host0", "host1", "host2")),
+                         ""));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, DuplicateEndpointIndicesAreKept) {
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "" }
-      endpoints { endpoint_index: 0 }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("", {0, 0}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" }
+                  endpoints { endpoint_index: 0 }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("", {0, 0}, false)),
+                                      ElementsAre("host0")),
+                         ""));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, EmptyEndpointListDisablesFallback) {
-  AddChunk(R"pb(
-    slice_assignments { slice { start_key: "" end_key: "a" } }
-    slice_assignments {
-      slice { start_key: "a" end_key: "b" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments { slice { start_key: "b" } }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues, "");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("a", {}, true), SliceIs("b", {0}, false),
-                          SliceIs("", {}, true)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments { slice { start_key: "" end_key: "a" } }
+                slice_assignments {
+                  slice { start_key: "a" end_key: "b" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments { slice { start_key: "b" } }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("a", {}, true),
+                                                  IsSlice("b", {0}, false),
+                                                  IsSlice("", {}, true)),
+                                      ElementsAre("host0")),
+                         ""));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest,
        GapNextToSliceWithoutEndpointsKeepsFallbackEnabled) {
-  AddChunk(R"pb(
-    slice_assignments { slice { start_key: "b" end_key: "c" } }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues, "encountered 2 gap(s) in the assignment");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("b", {}, false), SliceIs("c", {}, true),
-                          SliceIs("", {}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments { slice { start_key: "b" end_key: "c" } }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("b", {}, false),
+                                                  IsSlice("c", {}, true),
+                                                  IsSlice("", {}, false)),
+                                      ElementsAre("host0")),
+                         "encountered 2 gap(s) in the assignment"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, GapsAreFilled) {
   // Gaps at the start, in the middle, and at the end of the keyspace.
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "b" end_key: "c" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "d" end_key: "e" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues, "encountered 3 gap(s) in the assignment");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("b", {}, false), SliceIs("c", {0}, false),
-                          SliceIs("d", {}, false), SliceIs("e", {0}, false),
-                          SliceIs("", {}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "b" end_key: "c" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "d" end_key: "e" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("b", {}, false),
+                                                  IsSlice("c", {0}, false),
+                                                  IsSlice("d", {}, false),
+                                                  IsSlice("e", {0}, false),
+                                                  IsSlice("", {}, false)),
+                                      ElementsAre("host0")),
+                         "encountered 3 gap(s) in the assignment"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, InvalidSlicesBecomeGaps) {
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "" end_key: "b" }
-      endpoints { endpoint_index: 0 }
-    }
-    # Explicit empty end_key is not +infinity.
-    slice_assignments {
-      slice { start_key: "" end_key: "" }
-      endpoints { endpoint_index: 0 }
-    }
-    # start_key not less than end_key.
-    slice_assignments {
-      slice { start_key: "c" end_key: "c" }
-      endpoints { endpoint_index: 0 }
-    }
-    # endpoint_index out of range.
-    slice_assignments {
-      slice { start_key: "b" end_key: "c" }
-      endpoints { endpoint_index: 1 }
-    }
-    # Negative endpoint_index.
-    slice_assignments {
-      slice { start_key: "c" end_key: "d" }
-      endpoints { endpoint_index: -1 }
-    }
-    slice_assignments {
-      slice { start_key: "d" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues,
-            "2 slice(s) with start_key >= end_key; "
-            "2 slice(s) with invalid endpoint indices; "
-            "encountered 1 gap(s) in the assignment");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("b", {0}, false), SliceIs("d", {}, false),
-                          SliceIs("", {0}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" end_key: "b" }
+                  endpoints { endpoint_index: 0 }
+                }
+                # Explicit empty end_key is not +infinity.
+                slice_assignments {
+                  slice { start_key: "" end_key: "" }
+                  endpoints { endpoint_index: 0 }
+                }
+                # start_key not less than end_key.
+                slice_assignments {
+                  slice { start_key: "c" end_key: "c" }
+                  endpoints { endpoint_index: 0 }
+                }
+                # endpoint_index out of range.
+                slice_assignments {
+                  slice { start_key: "b" end_key: "c" }
+                  endpoints { endpoint_index: 1 }
+                }
+                # Negative endpoint_index.
+                slice_assignments {
+                  slice { start_key: "c" end_key: "d" }
+                  endpoints { endpoint_index: -1 }
+                }
+                slice_assignments {
+                  slice { start_key: "d" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("b", {0}, false),
+                                                  IsSlice("d", {}, false),
+                                                  IsSlice("", {0}, false)),
+                                      ElementsAre("host0")),
+                         "2 slice(s) with start_key >= end_key; "
+                         "2 slice(s) with invalid endpoint indices; "
+                         "encountered 1 gap(s) in the assignment"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, LongKeysAreDropped) {
   const std::string kLongStartKey(513, 'a');
   const std::string kLongEndKey(513, 'b');
   const std::string kMaxLengthKey(512, 'c');
-  AddChunk(
-      absl::StrCat("slice_assignments { slice { start_key: \"", kLongStartKey,
-                   "\" } ", "endpoints { endpoint_index: 0 } } ",
-                   "slice_assignments { slice { start_key: \"\" end_key: \"",
-                   kLongEndKey, "\" } endpoints { endpoint_index: 0 } } ",
-                   "slice_assignments { slice { start_key: \"", kMaxLengthKey,
-                   "\" } ", "endpoints { endpoint_index: 0 } } ",
-                   "endpoints { endpoint: \"host0\" }"));
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues,
-            "1 slice(s) with start_key longer than 512 bytes; "
-            "1 slice(s) with end_key longer than 512 bytes; "
-            "encountered 1 gap(s) in the assignment");
+  EXPECT_EQ(ProcessResponse(absl::StrCat(
+                "chunk { ", "slice_assignments { slice { start_key: \"",
+                kLongStartKey, "\" } endpoints { endpoint_index: 0 } } ",
+                "slice_assignments { slice { start_key: \"\" end_key: \"",
+                kLongEndKey, "\" } endpoints { endpoint_index: 0 } } ",
+                "slice_assignments { slice { start_key: \"", kMaxLengthKey,
+                "\" } endpoints { endpoint_index: 0 } } ",
+                "endpoints { endpoint: \"host0\" } }")),
+            std::nullopt);
   EXPECT_THAT(
-      result->assignment->slices,
-      ElementsAre(SliceIs(kMaxLengthKey, {}, false), SliceIs("", {0}, false)));
+      ProcessResponse("metadata { generation: 1 }"),
+      IsAccepted(1,
+                 IsAssignment(ElementsAre(IsSlice(kMaxLengthKey, {}, false),
+                                          IsSlice("", {0}, false)),
+                              ElementsAre("host0")),
+                 "1 slice(s) with start_key longer than 512 bytes; "
+                 "1 slice(s) with end_key longer than 512 bytes; "
+                 "encountered 1 gap(s) in the assignment"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, OverlappingSlicesAreAllDropped) {
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "" end_key: "m" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "k" end_key: "z" }
-      endpoints { endpoint_index: 1 }
-    }
-    slice_assignments {
-      slice { start_key: "z" }
-      endpoints { endpoint_index: 1 }
-    }
-    endpoints { endpoint: "host0" }
-    endpoints { endpoint: "host1" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues,
-            "2 overlapping slices; encountered 1 gap(s) in the assignment");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("z", {}, false), SliceIs("", {1}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" end_key: "m" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "k" end_key: "z" }
+                  endpoints { endpoint_index: 1 }
+                }
+                slice_assignments {
+                  slice { start_key: "z" }
+                  endpoints { endpoint_index: 1 }
+                }
+                endpoints { endpoint: "host0" }
+                endpoints { endpoint: "host1" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(
+      ProcessResponse("metadata { generation: 1 }"),
+      IsAccepted(
+          1,
+          IsAssignment(
+              ElementsAre(IsSlice("z", {}, false), IsSlice("", {1}, false)),
+              ElementsAre("host0", "host1")),
+          "2 overlapping slices; encountered 1 gap(s) in the assignment"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest,
        ChainedOverlappingSlicesAreAllDropped) {
   // The third slice overlaps the second slice, which overlaps the first
   // slice, even though the third slice does not overlap the first slice.
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "a" end_key: "d" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "c" end_key: "f" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "e" end_key: "h" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "h" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues,
-            "3 overlapping slices; encountered 1 gap(s) in the assignment");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("h", {}, false), SliceIs("", {0}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "a" end_key: "d" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "c" end_key: "f" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "e" end_key: "h" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "h" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(
+      ProcessResponse("metadata { generation: 1 }"),
+      IsAccepted(
+          1,
+          IsAssignment(
+              ElementsAre(IsSlice("h", {}, false), IsSlice("", {0}, false)),
+              ElementsAre("host0")),
+          "3 overlapping slices; encountered 1 gap(s) in the assignment"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, ContainedSlicesAreAllDropped) {
   // The first slice contains the next two, which do not overlap each other.
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "" end_key: "z" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "b" end_key: "c" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "d" end_key: "e" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "z" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues,
-            "3 overlapping slices; encountered 1 gap(s) in the assignment");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("z", {}, false), SliceIs("", {0}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" end_key: "z" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "b" end_key: "c" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "d" end_key: "e" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "z" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(
+      ProcessResponse("metadata { generation: 1 }"),
+      IsAccepted(
+          1,
+          IsAssignment(
+              ElementsAre(IsSlice("z", {}, false), IsSlice("", {0}, false)),
+              ElementsAre("host0")),
+          "3 overlapping slices; encountered 1 gap(s) in the assignment"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, SlicesWithSameStartKeyOverlap) {
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "" end_key: "m" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  EXPECT_EQ(Build(1).status(),
-            absl::InvalidArgumentError(
-                "no valid slice assignments in generation 1: 2 overlapping "
-                "slices"));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" end_key: "m" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsRejected(1, absl::InvalidArgumentError(
+                                "no valid slice assignments in generation 1: "
+                                "2 overlapping slices")));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest,
        InfiniteEndKeyBeforeLaterSliceOverlaps) {
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "" end_key: "d" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "d" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "m" end_key: "z" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues,
-            "2 overlapping slices; encountered 1 gap(s) in the assignment");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("d", {0}, false), SliceIs("", {}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" end_key: "d" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "d" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "m" end_key: "z" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(
+      ProcessResponse("metadata { generation: 1 }"),
+      IsAccepted(
+          1,
+          IsAssignment(
+              ElementsAre(IsSlice("d", {0}, false), IsSlice("", {}, false)),
+              ElementsAre("host0")),
+          "2 overlapping slices; encountered 1 gap(s) in the assignment"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, InvalidSliceDoesNotCauseOverlap) {
   // The second slice has an invalid endpoint index, so it is dropped before
   // the overlap check, and the other slices are kept.
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "" end_key: "m" }
-      endpoints { endpoint_index: 0 }
-    }
-    slice_assignments {
-      slice { start_key: "k" end_key: "z" }
-      endpoints { endpoint_index: 1 }
-    }
-    slice_assignments {
-      slice { start_key: "m" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(1);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(result->issues, "1 slice(s) with invalid endpoint indices");
-  EXPECT_THAT(result->assignment->slices,
-              ElementsAre(SliceIs("m", {0}, false), SliceIs("", {0}, false)));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" end_key: "m" }
+                  endpoints { endpoint_index: 0 }
+                }
+                slice_assignments {
+                  slice { start_key: "k" end_key: "z" }
+                  endpoints { endpoint_index: 1 }
+                }
+                slice_assignments {
+                  slice { start_key: "m" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("m", {0}, false),
+                                                  IsSlice("", {0}, false)),
+                                      ElementsAre("host0")),
+                         "1 slice(s) with invalid endpoint indices"));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, NoChunksIsRejected) {
-  EXPECT_EQ(Build(1).status(),
-            absl::InvalidArgumentError(
-                "received metadata with generation 1, but no chunks were "
-                "received"));
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsRejected(1, absl::InvalidArgumentError(
+                                "received metadata with generation 1, but no "
+                                "chunks were received")));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, NoSlicesIsRejected) {
-  AddChunk(R"pb(endpoints { endpoint: "host0" })pb");
-  EXPECT_EQ(Build(1).status(),
-            absl::InvalidArgumentError(
-                "no valid slice assignments in generation 1: no slice "
-                "assignments received"));
+  EXPECT_EQ(ProcessResponse(R"pb(chunk { endpoints { endpoint: "host0" } })pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsRejected(1, absl::InvalidArgumentError(
+                                "no valid slice assignments in generation 1: "
+                                "no slice assignments received")));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, AllSlicesInvalidIsRejected) {
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "b" end_key: "a" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host0" }
-  )pb");
-  EXPECT_EQ(Build(1).status(),
-            absl::InvalidArgumentError(
-                "no valid slice assignments in generation 1: 1 slice(s) with "
-                "start_key >= end_key"));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "b" end_key: "a" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsRejected(1, absl::InvalidArgumentError(
+                                "no valid slice assignments in generation 1: "
+                                "1 slice(s) with start_key >= end_key")));
 }
 
-constexpr absl::string_view kSingleSliceChunk = R"pb(
-  slice_assignments {
-    slice { start_key: "" }
-    endpoints { endpoint_index: 0 }
-  }
-  endpoints { endpoint: "host0" }
-)pb";
-
 TEST_F(AutoshardingAssignmentBuilderTest, StaleGeneration) {
-  AddChunk(kSingleSliceChunk);
-  ASSERT_TRUE(Build(/*generation=*/5).ok());
-  AddChunk(kSingleSliceChunk);
-  EXPECT_EQ(Build(5).status(),
-            absl::InvalidArgumentError(
-                "received generation 5 is not greater than the latest "
-                "generation 5"));
-  AddChunk(kSingleSliceChunk);
-  EXPECT_TRUE(Build(6).ok());
+  const auto kSingleSliceAssignment =
+      IsAssignment(ElementsAre(IsSlice("", {0}, false)), ElementsAre("host0"));
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 5 }"),
+              IsAccepted(5, kSingleSliceAssignment, ""));
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 5 }"),
+              IsRejected(5, absl::InvalidArgumentError(
+                                "received generation 5 is not greater than "
+                                "the latest generation 5")));
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 6 }"),
+              IsAccepted(6, kSingleSliceAssignment, ""));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, ZeroGenerationIsStale) {
-  AddChunk(kSingleSliceChunk);
-  EXPECT_EQ(Build(0).status(),
-            absl::InvalidArgumentError(
-                "received generation 0 is not greater than the latest "
-                "generation 0"));
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 0 }"),
+              IsRejected(0, absl::InvalidArgumentError(
+                                "received generation 0 is not greater than "
+                                "the latest generation 0")));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, NegativeGenerationIsStale) {
-  AddChunk(kSingleSliceChunk);
-  EXPECT_EQ(Build(-1).status(),
-            absl::InvalidArgumentError(
-                "received generation -1 is not greater than the latest "
-                "generation 0"));
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: -1 }"),
+              IsRejected(-1, absl::InvalidArgumentError(
+                                 "received generation -1 is not greater than "
+                                 "the latest generation 0")));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, TracksLastAcceptedGeneration) {
   EXPECT_EQ(builder_.last_accepted_generation(), 0);
-  AddChunk(kSingleSliceChunk);
-  ASSERT_TRUE(Build(2).ok());
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 2 }"),
+              IsAccepted(2,
+                         IsAssignment(ElementsAre(IsSlice("", {0}, false)),
+                                      ElementsAre("host0")),
+                         ""));
   EXPECT_EQ(builder_.last_accepted_generation(), 2);
   // A rejected assignment does not change the latest accepted generation.
-  EXPECT_FALSE(Build(3).ok());
+  EXPECT_THAT(ProcessResponse("metadata { generation: 3 }"),
+              IsRejected(3, absl::InvalidArgumentError(
+                                "received metadata with generation 3, but no "
+                                "chunks were received")));
   EXPECT_EQ(builder_.last_accepted_generation(), 2);
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, ResetPartialAssignmentDropsChunks) {
-  AddChunk(kSingleSliceChunk);
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
   builder_.ResetPartialAssignment();
-  EXPECT_EQ(Build(1).status(),
-            absl::InvalidArgumentError(
-                "received metadata with generation 1, but no chunks were "
-                "received"));
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsRejected(1, absl::InvalidArgumentError(
+                                "received metadata with generation 1, but no "
+                                "chunks were received")));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest,
        ResponsesWithoutAssignmentAreIgnored) {
-  EXPECT_FALSE(ProcessResponse("").has_value());
-  EXPECT_FALSE(ProcessResponse("config {}").has_value());
+  EXPECT_EQ(ProcessResponse(""), std::nullopt);
+  EXPECT_EQ(ProcessResponse("config {}"), std::nullopt);
+}
+
+TEST_F(AutoshardingAssignmentBuilderTest, ChunkPrecedesMetadataWhenBothAreSet) {
+  // A response with both fields set is handled as a chunk only.
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+              metadata { generation: 1 }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("", {0}, false)),
+                                      ElementsAre("host0")),
+                         ""));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, BuildClearsChunks) {
-  AddChunk(kSingleSliceChunk);
-  EXPECT_TRUE(Build(1).ok());
-  EXPECT_EQ(Build(2).status(),
-            absl::InvalidArgumentError(
-                "received metadata with generation 2, but no chunks were "
-                "received"));
-  AddChunk(kSingleSliceChunk);
-  EXPECT_TRUE(Build(2).ok());
+  const auto kSingleSliceAssignment =
+      IsAssignment(ElementsAre(IsSlice("", {0}, false)), ElementsAre("host0"));
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1, kSingleSliceAssignment, ""));
+  EXPECT_THAT(ProcessResponse("metadata { generation: 2 }"),
+              IsRejected(2, absl::InvalidArgumentError(
+                                "received metadata with generation 2, but no "
+                                "chunks were received")));
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 2 }"),
+              IsAccepted(2, kSingleSliceAssignment, ""));
 }
 
 TEST_F(AutoshardingAssignmentBuilderTest, StaleBuildClearsChunks) {
-  AddChunk(kSingleSliceChunk);
-  EXPECT_TRUE(Build(1).ok());
-  AddChunk(kSingleSliceChunk);
-  EXPECT_FALSE(Build(1).ok());
-  AddChunk(R"pb(
-    slice_assignments {
-      slice { start_key: "" }
-      endpoints { endpoint_index: 0 }
-    }
-    endpoints { endpoint: "host1" }
-  )pb");
-  absl::StatusOr<BuildResult> result = Build(2);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_THAT(result->assignment->endpoint_names, ElementsAre("host1"));
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("", {0}, false)),
+                                      ElementsAre("host0")),
+                         ""));
+  EXPECT_EQ(ProcessResponse(kSingleSliceChunk), std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsRejected(1, absl::InvalidArgumentError(
+                                "received generation 1 is not greater than "
+                                "the latest generation 1")));
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host1" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 2 }"),
+              IsAccepted(2,
+                         IsAssignment(ElementsAre(IsSlice("", {0}, false)),
+                                      ElementsAre("host1")),
+                         ""));
+}
+
+TEST_F(AutoshardingAssignmentBuilderTest, RejectedBuildClearsChunks) {
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "b" end_key: "a" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host0" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsRejected(1, absl::InvalidArgumentError(
+                                "no valid slice assignments in generation 1: "
+                                "1 slice(s) with start_key >= end_key")));
+  EXPECT_EQ(builder_.last_accepted_generation(), 0);
+  // The same generation is accepted next, without the rejected chunk.
+  EXPECT_EQ(ProcessResponse(R"pb(
+              chunk {
+                slice_assignments {
+                  slice { start_key: "" }
+                  endpoints { endpoint_index: 0 }
+                }
+                endpoints { endpoint: "host1" }
+              }
+            )pb"),
+            std::nullopt);
+  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
+              IsAccepted(1,
+                         IsAssignment(ElementsAre(IsSlice("", {0}, false)),
+                                      ElementsAre("host1")),
+                         ""));
 }
 
 }  // namespace

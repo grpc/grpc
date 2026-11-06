@@ -6525,9 +6525,18 @@ targets:
   src:
   - third_party/autosharding/proto/autosharding/v1/autosharding.proto
   - third_party/googleapis/google/api/field_behavior.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
   - test/core/load_balancing/autosharding_assignment_test.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/strings:charset
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -6543,12 +6552,21 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - third_party/autosharding/proto/autosharding/v1/autosharding.proto
   - third_party/googleapis/google/api/field_behavior.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/load_balancing/autosharding_client_test.cc
   - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/strings:charset
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -6571,13 +6589,26 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
+  - test/core/xds/xds_transport_fake.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - third_party/autosharding/proto/autosharding/v1/autosharding.proto
+  - third_party/googleapis/google/api/field_behavior.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/load_balancing/autosharding_test.cc
+  - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/strings:charset
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false

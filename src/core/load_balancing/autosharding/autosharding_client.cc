@@ -112,12 +112,12 @@ class AutoshardingClient::StreamCall final
   explicit StreamCall(RefCountedPtr<AutoshardingClient> client);
 
   // Must be called while holding client_->mu_.
-  void Orphan() override;
+  void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
  private:
   class EventHandler;
 
-  bool IsCurrentLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&client_->mu_) {
+  bool IsCurrentLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(client_->mu_) {
     return client_->stream_.get() == this;
   }
 
@@ -126,16 +126,17 @@ class AutoshardingClient::StreamCall final
   void OnStatusReceived(absl::Status status);
 
   void HandleResultLocked(AutoshardingAssignmentBuilder::Result result)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&client_->mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(client_->mu_);
   void SendMessageLocked(std::string payload)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&client_->mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(client_->mu_);
 
   const RefCountedPtr<AutoshardingClient> client_;
-  OrphanablePtr<XdsTransport::StreamingCall> streaming_call_;
-  bool seen_valid_assignment_ ABSL_GUARDED_BY(&client_->mu_) = false;
-  bool send_in_flight_ ABSL_GUARDED_BY(&client_->mu_) = false;
+  OrphanablePtr<XdsTransport::StreamingCall> streaming_call_
+      ABSL_GUARDED_BY(client_->mu_);
+  bool seen_valid_assignment_ ABSL_GUARDED_BY(client_->mu_) = false;
+  bool send_in_flight_ ABSL_GUARDED_BY(client_->mu_) = false;
   // The latest AssignmentAck to send when the in-flight send completes.
-  std::optional<std::string> pending_ack_ ABSL_GUARDED_BY(&client_->mu_);
+  std::optional<std::string> pending_ack_ ABSL_GUARDED_BY(client_->mu_);
 };
 
 class AutoshardingClient::StreamCall::EventHandler final
@@ -166,7 +167,6 @@ AutoshardingClient::StreamCall::StreamCall(
   GRPC_TRACE_LOG(autosharding_lb, INFO)
       << "[autosharding_client " << client_.get() << "] starting stream "
       << this << " for target \"" << client_->target_ << "\"";
-  client_->mu_.AssertHeld();
   SendMessageLocked(CreateInitialClientConfigRequest(
       client_->target_, client_->client_uuid_,
       client_->builder_.last_accepted_generation()));
@@ -238,7 +238,7 @@ void AutoshardingClient::StreamCall::HandleResultLocked(
   if (accepted) {
     seen_valid_assignment_ = true;
     client_->ReportAssignmentLocked(*std::move(result.assignment));
-  } else if (result.generation > client_->builder_.last_accepted_generation()) {
+  } else {
     client_->ReportErrorLocked(absl::UnavailableError(absl::StrCat(
         "autosharding server sent an invalid assignment: ", error_message)));
   }
@@ -275,19 +275,20 @@ AutoshardingClient::AutoshardingClient(
   MutexLock lock(&mu_);
   initial_assignment_timer_handle_ = event_engine_->RunAfter(
       initial_assignment_timeout,
-      [self = Ref(DEBUG_LOCATION, "InitialAssignmentTimer")]() {
+      [self = Ref(DEBUG_LOCATION, "InitialAssignmentTimer")]() mutable {
         ExecCtx exec_ctx;
         self->OnInitialAssignmentTimer();
+        self.reset();
       });
   StartStreamLocked();
 }
 
+// Defined here, where StreamCall is a complete type.
+AutoshardingClient::~AutoshardingClient() = default;
+
 void AutoshardingClient::Orphan() {
   {
     MutexLock lock(&mu_);
-    // Retaining on_result_ until ~AutoshardingClient() keeps its captured
-    // state alive for any callback in progress; orphaned_ prevents further
-    // callbacks.
     orphaned_ = true;
     stream_.reset();
     if (retry_timer_handle_.has_value()) {
@@ -339,9 +340,10 @@ void AutoshardingClient::StartRetryTimerLocked() {
       << "[autosharding_client " << this << "] restarting stream in "
       << delay.millis() << "ms";
   retry_timer_handle_ = event_engine_->RunAfter(
-      delay, [self = Ref(DEBUG_LOCATION, "RetryTimer")]() {
+      delay, [self = Ref(DEBUG_LOCATION, "RetryTimer")]() mutable {
         ExecCtx exec_ctx;
         self->OnRetryTimer();
+        self.reset();
       });
 }
 
@@ -369,7 +371,7 @@ void AutoshardingClient::CancelInitialAssignmentTimerLocked() {
 void AutoshardingClient::ReportAssignmentLocked(
     RefCountedPtr<const AutoshardingAssignment> assignment) {
   CancelInitialAssignmentTimerLocked();
-  if (!orphaned_) on_result_(std::move(assignment));
+  if (!orphaned_) on_result_(Ref(), std::move(assignment));
 }
 
 void AutoshardingClient::ReportErrorLocked(absl::Status status) {
@@ -377,7 +379,7 @@ void AutoshardingClient::ReportErrorLocked(absl::Status status) {
   // The first result, whether an assignment or an error, ends the wait for
   // the initial assignment (gRFC A119).
   CancelInitialAssignmentTimerLocked();
-  if (!orphaned_) on_result_(std::move(status));
+  if (!orphaned_) on_result_(Ref(), std::move(status));
 }
 
 }  // namespace grpc_core

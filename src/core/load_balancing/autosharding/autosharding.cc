@@ -27,7 +27,6 @@
 #include <cstdint>
 #include <map>
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -284,7 +283,7 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   void ReportBadResolverStateLocked(absl::Status status);
 
   void OnAssignmentReceivedLocked(
-      uint64_t client_id,
+      RefCountedPtr<AutoshardingClient> client,
       absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>> result);
 
   void UpdateSliceMapLocked();
@@ -297,14 +296,11 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   std::string effective_target_;
   // Recreated when channel_factory_key() or effective_target_ changes.
   OrphanablePtr<AutoshardingClient> client_;
-  // Identifies client_, so that results from a replaced client that are still
-  // queued in the WorkSerializer are ignored.
-  uint64_t client_id_ = 0;
   // Latest result from client_, retained across client recreations until the
-  // new client reports.  nullopt queues picks until the first result
+  // new client reports.  nullptr queues picks until the first result
   // (gRFC A119).
-  std::optional<absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>>>
-      assignment_;
+  absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>> assignment_ =
+      nullptr;
   RefCountedPtr<SliceMap> slice_map_;
   RefCountedPtr<AutoShardingLbConfig> config_;
   std::string resolution_note_;
@@ -636,7 +632,7 @@ void AutoshardingLbPolicy::ShutdownLocked() {
   client_.reset();
   endpoint_map_.clear();
   slice_map_.reset();
-  assignment_.reset();
+  assignment_ = nullptr;
 }
 
 void AutoshardingLbPolicy::ResetBackoffLocked() {
@@ -659,7 +655,7 @@ void AutoshardingLbPolicy::ReportBadResolverStateLocked(absl::Status status) {
   config_.reset();
   effective_target_.clear();
   resolution_note_.clear();
-  assignment_.reset();
+  assignment_ = nullptr;
   slice_map_.reset();
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, status,
@@ -690,8 +686,9 @@ absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
       absl::Status status =
           resolution_note_.empty()
               ? absl::UnavailableError("no channel factory in channel args")
-              : absl::UnavailableError(absl::StrCat(
-                    "no channel factory in channel args: ", resolution_note_));
+              : absl::UnavailableError(
+                    absl::StrCat("no channel factory in channel args (",
+                                 resolution_note_, ")"));
       ReportBadResolverStateLocked(status);
       return status;
     }
@@ -779,32 +776,33 @@ void AutoshardingLbPolicy::CreateAutoshardingClientLocked(
       effective_target_, uuid_, config_->initial_assignment_timeout(),
       channel_control_helper()->GetEventEngine()->shared_from_this(),
       [self = RefAsSubclass<AutoshardingLbPolicy>(DEBUG_LOCATION,
-                                                  "AutoshardingClient"),
-       client_id = ++client_id_](
-          absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>>
-              result) mutable {
+                                                  "AutoshardingClient")](
+          RefCountedPtr<AutoshardingClient> client,
+          absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>> result) {
         // The client invokes this while holding its lock, so hop into the
         // WorkSerializer.
         self->work_serializer()->Run(
-            [self, client_id, result = std::move(result)]() mutable {
-              self->OnAssignmentReceivedLocked(client_id, std::move(result));
+            [self, client = std::move(client),
+             result = std::move(result)]() mutable {
+              self->OnAssignmentReceivedLocked(std::move(client),
+                                               std::move(result));
             },
             DEBUG_LOCATION);
       });
 }
 
 void AutoshardingLbPolicy::OnAssignmentReceivedLocked(
-    uint64_t client_id,
+    RefCountedPtr<AutoshardingClient> client,
     absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>> result) {
-  if (shutdown_ || client_id != client_id_) return;
+  if (shutdown_ || client.get() != client_.get()) return;
   assignment_ = std::move(result);
   UpdateSliceMapLocked();
   UpdateAggregatedConnectivityStateLocked(absl::OkStatus());
 }
 
 void AutoshardingLbPolicy::UpdateSliceMapLocked() {
-  slice_map_ = assignment_.has_value() && assignment_->ok()
-                   ? MakeRefCounted<SliceMap>(**assignment_, endpoint_map_)
+  slice_map_ = assignment_.ok() && *assignment_ != nullptr
+                   ? MakeRefCounted<SliceMap>(*assignment_, endpoint_map_)
                    : nullptr;
 }
 
@@ -820,20 +818,19 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
   // this when the gRFC decides.
   // TODO(bpawan): Set delay_type to "autosharding_assignment_pending" per
   // gRFC A121 once it is supported in C++.
-  if (!assignment_.has_value()) {
+  if (assignment_.ok() && *assignment_ == nullptr) {
     channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                                           MakeRefCounted<QueuePicker>(nullptr));
     return;
   }
   // If there is no assignment and fallback is disabled, we cannot route any
   // pick, so report TRANSIENT_FAILURE.
-  if (!assignment_->ok() && !config_->enable_fallback()) {
+  if (!assignment_.ok() && !config_->enable_fallback()) {
     absl::Status pick_status =
         resolution_note_.empty()
-            ? absl::UnavailableError(assignment_->status().message())
-            : absl::UnavailableError(
-                  absl::StrCat(assignment_->status().message(), " (",
-                               resolution_note_, ")"));
+            ? absl::UnavailableError(assignment_.status().message())
+            : absl::UnavailableError(absl::StrCat(
+                  assignment_.status().message(), " (", resolution_note_, ")"));
     GRPC_TRACE_LOG(autosharding_lb, INFO)
         << "[AS " << this << "] no assignment and fallback disabled, failing "
         << "picks: " << pick_status;

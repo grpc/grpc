@@ -179,15 +179,19 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
   std::vector<std::string> endpoint_names = std::exchange(endpoint_names_, {});
   IssueCounts counts = std::exchange(issue_counts_, {});
   if (generation <= last_accepted_generation_) {
-    return {generation, absl::InvalidArgumentError(absl::StrCat(
-                            "received generation ", generation,
-                            " is not greater than the latest generation ",
-                            last_accepted_generation_))};
+    return {generation,
+            absl::InvalidArgumentError(
+                absl::StrCat("received generation ", generation,
+                             " is not greater than the latest generation ",
+                             last_accepted_generation_)),
+            ""};
   }
   if (num_chunks == 0) {
-    return {generation, absl::InvalidArgumentError(absl::StrCat(
-                            "received metadata with generation ", generation,
-                            ", but no chunks were received"))};
+    return {generation,
+            absl::InvalidArgumentError(
+                absl::StrCat("received metadata with generation ", generation,
+                             ", but no chunks were received")),
+            ""};
   }
   std::sort(slices.begin(), slices.end(),
             [](const PendingSlice& a, const PendingSlice& b) {
@@ -253,7 +257,8 @@ AutoshardingAssignmentBuilder::Result AutoshardingAssignmentBuilder::Build(
             absl::InvalidArgumentError(absl::StrCat(
                 "no valid slice assignments in generation ", generation, ": ",
                 num_slice_assignments == 0 ? "no slice assignments received"
-                                           : IssueMessages(counts, num_gaps)))};
+                                           : IssueMessages(counts, num_gaps))),
+            ""};
   }
   // Fill the gap at the end of the keyspace, if any.
   if (!assignment->slices.back().end_key.empty()) {
