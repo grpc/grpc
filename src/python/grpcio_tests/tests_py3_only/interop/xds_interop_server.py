@@ -85,6 +85,27 @@ class TestService(test_pb2_grpc.TestServiceServicer):
         return response
 
 
+class XdsUpdateHealthService(test_pb2_grpc.XdsUpdateHealthServiceServicer):
+
+    def __init__(self, health_servicer, service_names):
+        self._health_servicer = health_servicer
+        self._service_names = service_names
+
+    def SetServing(self, request, context):
+        for service in self._service_names:
+            self._health_servicer.set(
+                service, health_pb2.HealthCheckResponse.SERVING
+            )
+        return empty_pb2.Empty()
+
+    def SetNotServing(self, request, context):
+        for service in self._service_names:
+            self._health_servicer.set(
+                service, health_pb2.HealthCheckResponse.NOT_SERVING
+            )
+        return empty_pb2.Empty()
+
+
 def _configure_maintenance_server(
     server: grpc.Server, maintenance_port: int
 ) -> None:
@@ -108,6 +129,9 @@ def _configure_maintenance_server(
     for service in SERVICE_NAMES:
         health_servicer.set(service, health_pb2.HealthCheckResponse.SERVING)
     reflection.enable_server_reflection(SERVICE_NAMES, server)
+    test_pb2_grpc.add_XdsUpdateHealthServiceServicer_to_server(
+        XdsUpdateHealthService(health_servicer, SERVICE_NAMES), server
+    )
 
 
 def _configure_test_server(
