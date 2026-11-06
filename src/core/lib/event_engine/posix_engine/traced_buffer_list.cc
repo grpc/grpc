@@ -21,6 +21,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <list>
 #include <utility>
 
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
@@ -220,6 +221,9 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
   absl::Time timestamp = absl::TimeFromTimespec(tss->ts[0]);
   grpc_core::Timestamp core_timestamp = grpc_core::Timestamp::Now();
   auto metrics = ExtractOptStatsFromCmsg(opt_stats);
+  // Declared before the lock so that erased buffers are destroyed after mu_ is
+  // released: destroying a sink may add a new entry to this list.
+  std::list<TracedBuffer> erased;
   grpc_core::MutexLock lock(mu_);
   auto it = list_.begin();
   while (it != list_.end()) {
@@ -242,7 +246,7 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
         case SCM_TSTAMP_ACK:
           it->sink_.RecordEvent(EventEngine::Endpoint::WriteEvent::kAcked,
                                 timestamp, metrics);
-          it = list_.erase(it);
+          erased.splice(erased.end(), list_, it++);
           break;
         default:
           grpc_core::Crash(
@@ -261,7 +265,7 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
     } else {
       LOG(ERROR) << "No timestamp received for TracedBuffer in "
                  << g_max_pending_ack_time << ". Removing.";
-      it = list_.erase(it);
+      erased.splice(erased.end(), list_, it++);
     }
   }
 }
@@ -273,6 +277,8 @@ void TracedBufferList::Shutdown(
     sink.RecordEvent(EventEngine::Endpoint::WriteEvent::kClosed, absl::Now(),
                      PosixWriteEventSink::ConnectionMetrics());
   }
+  // See ProcessTimestamp.
+  std::list<TracedBuffer> erased;
   grpc_core::MutexLock lock(mu_);
   if (list_.empty()) return;
   auto curr_time = absl::Now();
@@ -280,7 +286,7 @@ void TracedBufferList::Shutdown(
     it->sink_.RecordEvent(EventEngine::Endpoint::WriteEvent::kClosed, curr_time,
                           PosixWriteEventSink::ConnectionMetrics());
   }
-  list_.clear();
+  erased.splice(erased.end(), list_);
 }
 
 void TracedBufferList::TestOnlySetMaxPendingAckTime(
