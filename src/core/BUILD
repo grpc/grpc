@@ -3870,6 +3870,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/strings",
     ],
     visibility = ["//bazel:client_channel_internal_header"],
     deps = [

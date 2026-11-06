@@ -23,7 +23,10 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
@@ -379,9 +382,43 @@ CLIENT_CHANNEL_TEST(ConfigSelectorWithDynamicFilters) {
   WaitForAllPendingWork();
 }
 
+CLIENT_CHANNEL_TEST(ResolverFailedThenValid) {
+  auto& channel = InitChannel(ChannelArgs());
+  auto arena = channel.call_arena_allocator()->MakeArena();
+  arena->SetContext<EventEngine>(channel.event_engine());
+  std::vector<std::string> annotation_logger;
+  FakeClientCallTracer call_tracer(&annotation_logger);
+  SetClientCallTracer(arena.get(), {&call_tracer});
+  auto md = MakeClientInitialMetadata();
+  md->GetOrCreatePointer(WaitForReady())->value = true;
+  auto call = MakeCallPair(std::move(md), std::move(arena));
+  channel.StartCall(std::move(call.handler));
+  Resolver::Result error_result;
+  error_result.addresses = absl::UnavailableError("DNS lookup failed");
+  error_result.service_config = absl::UnavailableError("DNS lookup failed");
+  QueueNameResolutionResult(std::move(error_result));
+  TickUntilTrue(
+      [&annotation_logger]() { return annotation_logger.size() >= 2; });
+  QueueNameResolutionResult(
+      MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
+  auto call_handler = TickUntilCallStarted();
+  EXPECT_THAT(
+      annotation_logger,
+      ::testing::ElementsAre(
+          "RecordDelayStart: type=resolving reason=waiting for initial "
+          "resolver result",
+          "RecordDelayReasonChanged: type=resolving reason=UNAVAILABLE: DNS "
+          "lookup failed",
+          "RecordDelayEnd: type=resolving reason=UNAVAILABLE: DNS lookup "
+          "failed",
+          "Delayed name resolution complete."));
+  SpawnTestSeq(
+      call.initiator, "cancel",
+      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
+  WaitForAllPendingWork();
+}
+
 // TODO(ctiller, roth): MANY more test cases
-// - Resolver returns an error for the initial result, then returns a valid
-// result.
 // - Resolver returns a service config (various permutations).
 
 }  // namespace grpc_core
