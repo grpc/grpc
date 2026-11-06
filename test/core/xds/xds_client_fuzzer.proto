@@ -120,6 +120,7 @@ message Action {
 
 message Msg {
   string bootstrap = 1;
+  string xds_client_key = 4;
   repeated Action actions = 2;
   fuzzing_event_engine.Actions fuzzing_event_engine_actions = 3;
 }

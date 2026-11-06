@@ -2225,6 +2225,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/certificate_provider_store_interface.h )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.cc )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.h )
+  s.files += %w( src/core/xds/grpc/grpc_xds_decode_context.h )
   s.files += %w( src/core/xds/grpc/streaming_call_promise_wrapper.cc )
   s.files += %w( src/core/xds/grpc/streaming_call_promise_wrapper.h )
   s.files += %w( src/core/xds/grpc/xds_audit_logger_registry.cc )

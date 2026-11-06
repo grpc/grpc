@@ -277,6 +277,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
           stream_->Write(envoy::service::status::v3::ClientStatusRequest()));
       EXPECT_TRUE(stream_->Read(&response));
     }
+    LOG(INFO) << "Got CSDS response: " << response.DebugString();
     return response;
   }
 
@@ -429,7 +430,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
             ClientResourceStatus::NACKED,
             EqUpdateFailureState(
                 ::testing::HasSubstr(
-                    "Listener has neither address nor ApiListener"),
+                    "[field:api_listener error:field not present]"),
                 "2"))));
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(

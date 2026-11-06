@@ -45,6 +45,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/grpc_xds_decode_context.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc_builder.h"
 #include "src/core/xds/grpc/xds_transport_factory_grpc.h"
@@ -343,12 +344,17 @@ GrpcXdsClient::GrpcXdsClient(
     RefCountedPtr<XdsTransportFactory> transport_factory,
     RefCountedPtr<CertificateProviderStore> certificate_provider_store,
     std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-        stats_plugin_group)
+        stats_plugin_group,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : XdsClient(
           bootstrap, transport_factory,
-          grpc_event_engine::experimental::GetDefaultEventEngine(),
-          std::make_unique<MetricsReporter>(*this), UserAgentName(),
-          UserAgentVersion(),
+          event_engine == nullptr
+              ? grpc_event_engine::experimental::GetDefaultEventEngine()
+              : std::move(event_engine),
+          stats_plugin_group == nullptr
+              ? nullptr
+              : std::make_unique<MetricsReporter>(*this),
+          UserAgentName(), UserAgentVersion(),
           std::max(Duration::Zero(),
                    args.GetDurationFromIntMillis(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)
@@ -356,15 +362,18 @@ GrpcXdsClient::GrpcXdsClient(
       key_(key),
       certificate_provider_store_(std::move(certificate_provider_store)),
       stats_plugin_group_(std::move(stats_plugin_group)),
-      registered_metric_callback_(stats_plugin_group_->RegisterCallback(
-          [this](CallbackMetricReporter& reporter) {
-            ReportCallbackMetrics(reporter);
-          },
-          Duration::Seconds(5), kMetricConnected, kMetricResources)),
       lrs_client_(MakeRefCounted<LrsClient>(
           std::move(bootstrap), UserAgentName(), UserAgentVersion(),
           std::move(transport_factory),
-          grpc_event_engine::experimental::GetDefaultEventEngine())) {}
+          grpc_event_engine::experimental::GetDefaultEventEngine())) {
+  if (stats_plugin_group_ != nullptr) {
+    registered_metric_callback_ = stats_plugin_group_->RegisterCallback(
+        [this](CallbackMetricReporter& reporter) {
+          ReportCallbackMetrics(reporter);
+        },
+        Duration::Seconds(5), kMetricConnected, kMetricResources);
+  }
+}
 
 void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
@@ -387,6 +396,15 @@ void GrpcXdsClient::ResetBackoff() {
 grpc_pollset_set* GrpcXdsClient::interested_parties() const {
   return reinterpret_cast<GrpcXdsTransportFactory*>(transport_factory())
       ->interested_parties();
+}
+
+std::unique_ptr<XdsResourceType::DecodeContext>
+GrpcXdsClient::CreateDecodeContext(const XdsBootstrap::XdsServer& server,
+                                   upb_DefPool* def_pool, upb_Arena* arena) {
+  return std::make_unique<GrpcXdsDecodeContext>(
+      this, server, def_pool, arena,
+      key_ == kServerKey ? GrpcXdsDecodeContext::Component::kServer
+                         : GrpcXdsDecodeContext::Component::kClient);
 }
 
 namespace {

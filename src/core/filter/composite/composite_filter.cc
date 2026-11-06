@@ -103,8 +103,6 @@ class InterceptionChainBuilderWrapper final : public FilterChainBuilder {
 void CompositeFilter::Init(const ChannelArgs& args) {
   if (config_->matcher == nullptr) return;
   // Populate filter_chain_map_ from config_.
-  const bool is_server =
-      args.GetBool(GRPC_ARG_IS_SERVER_FILTER_STACK).value_or(false);
   config_->matcher->ForEachAction([&](const XdsMatcher::Action& action) {
     if (action.type() != ExecuteFilterAction::Type()) return;
     const auto& execute_filter_action =
@@ -119,33 +117,6 @@ void CompositeFilter::Init(const ChannelArgs& args) {
     for (size_t i = 0; i < merged_configs.size(); ++i) {
       const auto* factory = execute_filter_action.filter_chain()[i].factory;
       const auto& filter_config = merged_configs[i];
-      // If a filter is not supported on the client or server side
-      // (whichever one we're constructing a filter stack for), then we
-      // need to fail filter chain construction.  This means that any
-      // RPC that uses that filter chain will fail.
-      //
-      // Ideally, we would catch this case at xDS resource validation
-      // time, so that we can reject the invalid update instead of
-      // failing RPCs.  Unfortunately, the composite filter config can
-      // be overridden in an RDS resource, and we don't know at RDS
-      // resource validation time whether the RDS resource will be used
-      // on the client side or server side, so we can't always catch the
-      // problem at resource validation time.
-      if (is_server) {
-        if (!factory->IsSupportedOnServers()) {
-          filter_chain_map_[&execute_filter_action] = absl::UnavailableError(
-              absl::StrCat(factory->ConfigProtoName(),
-                           " filter not supported on servers"));
-          return;
-        }
-      } else {
-        if (!factory->IsSupportedOnClients()) {
-          filter_chain_map_[&execute_filter_action] = absl::UnavailableError(
-              absl::StrCat(factory->ConfigProtoName(),
-                           " filter not supported on clients"));
-          return;
-        }
-      }
       factory->AddFilter(builder_wrapper, filter_config);
     }
     filter_chain_map_[&execute_filter_action] =
