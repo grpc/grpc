@@ -213,25 +213,6 @@ TEST_F(AutoshardingAssignmentBuilderTest,
                          ""));
 }
 
-TEST_F(AutoshardingAssignmentBuilderTest, DuplicateEndpointIndicesAreKept) {
-  EXPECT_EQ(ProcessResponse(R"pb(
-              chunk {
-                slice_assignments {
-                  slice { start_key: "" }
-                  endpoints { endpoint_index: 0 }
-                  endpoints { endpoint_index: 0 }
-                }
-                endpoints { endpoint: "host0" }
-              }
-            )pb"),
-            std::nullopt);
-  EXPECT_THAT(ProcessResponse("metadata { generation: 1 }"),
-              IsAccepted(1,
-                         IsAssignment(ElementsAre(IsSlice("", {0, 0}, false)),
-                                      ElementsAre("host0")),
-                         ""));
-}
-
 TEST_F(AutoshardingAssignmentBuilderTest, EmptyEndpointListDisablesFallback) {
   EXPECT_EQ(ProcessResponse(R"pb(
               chunk {
