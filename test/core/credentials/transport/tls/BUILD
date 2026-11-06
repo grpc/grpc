@@ -83,6 +83,7 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/synchronization",
         "gtest",
     ],
     deps = [
