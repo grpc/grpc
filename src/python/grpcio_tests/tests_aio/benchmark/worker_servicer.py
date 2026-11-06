@@ -234,10 +234,9 @@ async def _create_sub_worker() -> _SubWorker:
     port = _pick_an_unused_port()
 
     _LOGGER.info("Creating sub worker at port [%d]...", port)
-    cmd = [sys.executable, _WORKER_ENTRY_FILE, "--driver_port", str(port)]
-    if "--uvloop" in sys.argv:
-        cmd.append("--uvloop")
-    process = await asyncio.create_subprocess_exec(*cmd)
+    process = await asyncio.create_subprocess_exec(
+        sys.executable, _WORKER_ENTRY_FILE, "--driver_port", str(port)
+    )
     _LOGGER.info(
         "Created sub worker process for port [%d] at pid [%d]",
         port,
