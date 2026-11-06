@@ -160,6 +160,24 @@ TEST_F(URIParserTest, QueryParamMapRemainsValidAfterCopyingTheURI) {
   ASSERT_THAT(uri_copy2.query_parameter_map(), Contains(Pair("a", "2")));
 }
 
+TEST_F(URIParserTest, QueryParamMapRemainsValidAfterAssigningOverPopulatedURI) {
+  // query_parameter_map_ points into the strings owned by
+  // query_parameter_pairs_. operator= must rebuild the map from scratch so it
+  // never keeps entries pointing into the previous, now replaced, pairs.
+  // Assign over a URI that already has query parameters. {a,m}san catches the
+  // use-after-free if the old map entries are left behind.
+  absl::StatusOr<URI> first = URI::Parse("http://foo/path?a=2&b=1&c=3");
+  ASSERT_TRUE(first.ok()) << first.status().ToString();
+  URI uri = *first;
+  {
+    absl::StatusOr<URI> second = URI::Parse("http://bar/other?x=9&y=8");
+    ASSERT_TRUE(second.ok()) << second.status().ToString();
+    uri = *second;
+  }
+  EXPECT_THAT(uri.query_parameter_map(),
+              ElementsAre(Pair("x", "9"), Pair("y", "8")));
+}
+
 TEST_F(URIParserTest, AWSExternalAccountRegressionTest) {
   TestSucceeds(
       "https://foo.com:5555/v1/"
