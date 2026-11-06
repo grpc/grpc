@@ -45,6 +45,19 @@ using InstrumentIndexTest = InstrumentTest;
 using DomainStorageTest = InstrumentTest;
 using CollectionScopeTest = InstrumentTest;
 
+class MockInstrumentRecorder : public InstrumentRecorder {
+ public:
+  virtual ~MockInstrumentRecorder() = default;
+  MOCK_METHOD(void, RecordHistogram,
+              (const InstrumentMetadata::Description* description,
+               int64_t value, absl::Span<const std::string> label_values),
+              (override));
+  MOCK_METHOD(void, RecordHistogram,
+              (const InstrumentMetadata::Description* description, double value,
+               absl::Span<const std::string> label_values),
+              (override));
+};
+
 class MockMetricsSink : public MetricsSink {
  public:
   virtual ~MockMetricsSink() = default;
@@ -214,6 +227,9 @@ class FanOutDomain final : public InstrumentDomain<FanOutDomain> {
       RegisterUpDownCounter("fan_out_up_down", "Desc", "unit");
   static inline const auto kDoubleGauge =
       RegisterDoubleGauge("fan_out_double", "Desc", "unit");
+  static inline const auto kExponentialHistogram =
+      RegisterInt64Histogram<ExponentialInt64HistogramShape>(
+          "fan_out_histogram", "Desc", "unit", 1024, 20);
 };
 
 using InstrumentIndexDeathTest = InstrumentTest;
@@ -360,7 +376,7 @@ TEST_F(MetricsQueryTest, LowContentionHistogram) {
   ASSERT_FALSE(value_before.empty());
   std::vector<uint64_t> expect_value = value_before;
   expect_value[0] += 1;
-  storage->Increment(LowContentionDomain::kExponentialHistogram, 0);
+  storage->Increment(LowContentionDomain::kExponentialHistogram, 0, nullptr);
   EXPECT_CALL(
       sink, Int64Histogram(InstrumentLabelListElementsAreArray(label_keys),
                            absl::MakeConstSpan(label), "exponential_histogram",
@@ -396,7 +412,8 @@ TEST_F(MetricsQueryTest, LowContentionDoubleHistogram) {
   ASSERT_FALSE(value_before.empty());
   std::vector<uint64_t> expect_value = value_before;
   expect_value[0] += 1;
-  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5);
+  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5,
+                     nullptr);
   EXPECT_CALL(sink,
               DoubleHistogram(InstrumentLabelListElementsAreArray(label_keys),
                               absl::MakeConstSpan(label),
@@ -751,7 +768,7 @@ TEST_F(MetricsQueryTest, ThreadStress) {
       absl::BitGen gen;
       while (!done.load(std::memory_order_relaxed)) {
         storage->Increment(LowContentionDomain::kExponentialHistogram,
-                           absl::Uniform(gen, 0, 1024));
+                           absl::Uniform(gen, 0, 1024), nullptr);
       }
     });
     threads.emplace_back([&]() {
@@ -814,83 +831,29 @@ TEST_F(MetricsQueryTest, ThreadStress) {
   }
 }
 
-// Tests that a registered histogram collection hook is called when a histogram
-// is incremented.
-TEST_F(InstrumentTest, HistogramHook) {
-  auto scope = CreateCollectionScope({}, {});
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, int64_t value)>
-      hook;
-  RegisterInstrumentCollectionHook<int64_t>(hook.AsStdFunction());
+TEST_F(InstrumentTest, InstrumentRecorder) {
+  auto scope = CreateCollectionScope({}, {"grpc.target"});
   auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label = {std::string(kOmittedLabel)};
-  EXPECT_CALL(hook, Call(::testing::_, ::testing::ElementsAreArray(label), 10));
-  storage->Increment(LowContentionDomain::kExponentialHistogram, 10);
-  ::testing::Mock::VerifyAndClearExpectations(&hook);
-}
+  ::testing::StrictMock<MockInstrumentRecorder> recorder;
 
-// Tests that multiple registered histogram collection hooks are all called when
-// a histogram is incremented.
-TEST_F(InstrumentTest, MultipleHistogramHooks) {
-  auto scope = CreateCollectionScope({}, {});
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, int64_t value)>
-      hook1;
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, int64_t value)>
-      hook2;
-  RegisterInstrumentCollectionHook<int64_t>(hook1.AsStdFunction());
-  RegisterInstrumentCollectionHook<int64_t>(hook2.AsStdFunction());
-  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label = {std::string(kOmittedLabel)};
-  EXPECT_CALL(hook1,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10));
-  EXPECT_CALL(hook2,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10));
-  storage->Increment(LowContentionDomain::kExponentialHistogram, 10);
-  ::testing::Mock::VerifyAndClearExpectations(&hook1);
-  ::testing::Mock::VerifyAndClearExpectations(&hook2);
-}
+  EXPECT_CALL(
+      recorder,
+      RecordHistogram(InstrumentIndex::Get().Find(
+                          LowContentionDomain::kExponentialHistogram.name()),
+                      ::testing::Matcher<int64_t>(int64_t{0}),
+                      ::testing::ElementsAre("example.com")));
+  storage->Increment(LowContentionDomain::kExponentialHistogram, 0, &recorder);
 
-TEST_F(InstrumentTest, DoubleHistogramHook) {
-  auto scope = CreateCollectionScope({}, {});
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, double value)>
-      hook;
-  RegisterInstrumentCollectionHook<double>(hook.AsStdFunction());
-  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label = {std::string(kOmittedLabel)};
-  EXPECT_CALL(hook,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10.5));
-  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 10.5);
-  ::testing::Mock::VerifyAndClearExpectations(&hook);
-}
+  EXPECT_CALL(recorder,
+              RecordHistogram(
+                  InstrumentIndex::Get().Find(
+                      LowContentionDomain::kExponentialDoubleHistogram.name()),
+                  ::testing::Matcher<double>(0.5),
+                  ::testing::ElementsAre("example.com")));
+  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 0.5,
+                     &recorder);
 
-TEST_F(InstrumentTest, MultipleDoubleHistogramHooks) {
-  auto scope = CreateCollectionScope({}, {});
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, double value)>
-      hook1;
-  ::testing::MockFunction<void(
-      const InstrumentMetadata::Description* instrument,
-      absl::Span<const std::string> labels, double value)>
-      hook2;
-  RegisterInstrumentCollectionHook<double>(hook1.AsStdFunction());
-  RegisterInstrumentCollectionHook<double>(hook2.AsStdFunction());
-  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
-  std::vector<std::string> label = {std::string(kOmittedLabel)};
-  EXPECT_CALL(hook1,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10.5));
-  EXPECT_CALL(hook2,
-              Call(::testing::_, ::testing::ElementsAreArray(label), 10.5));
-  storage->Increment(LowContentionDomain::kExponentialDoubleHistogram, 10.5);
-  ::testing::Mock::VerifyAndClearExpectations(&hook1);
-  ::testing::Mock::VerifyAndClearExpectations(&hook2);
+  storage->Increment(LowContentionDomain::kExponentialHistogram, 0, nullptr);
 }
 
 TEST_F(InstrumentLabelListTest, FixedToList) {

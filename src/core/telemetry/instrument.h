@@ -208,7 +208,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_map.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/hash/hash.h"
 #include "absl/log/log.h"
@@ -427,19 +426,23 @@ class InstrumentMetadata {
 class MetricsQuery;
 class MetricsSink;
 
-// OpenTelemetry has no facility to export histogram data in the API (though
-// there is a facility in the SDK). To cover this gap, if we are accessed via
-// the OpenTelemetry API without the SDK being known to gRPC, we register a hook
-// to be called when histogram data is collected.
-// This comes with a relatively sever performance penalty. We'd like to be able
-// to remove this in the future.
-template <typename T>
-using InstrumentCollectionHook =
-    absl::AnyInvocable<void(const InstrumentMetadata::Description* instrument,
-                            absl::Span<const std::string> labels, T value)>;
-
-template <typename T>
-void RegisterInstrumentCollectionHook(InstrumentCollectionHook<T> hook);
+// Interface for dispatching push-based metrics to stats plugins that
+// manage their own instrument instances, such as OpenTelemetry histograms.
+//
+// All non-per-call metrics are accumulated in DomainStorage and pulled
+// asynchronously by MetricsQuery. This interface is passed to
+// Storage::Increment() when updates must also be pushed to plugins
+// that manage their own instruments.
+class InstrumentRecorder {
+ public:
+  virtual ~InstrumentRecorder() = default;
+  virtual void RecordHistogram(
+      const InstrumentMetadata::Description* description, int64_t value,
+      absl::Span<const std::string> label_values) = 0;
+  virtual void RecordHistogram(
+      const InstrumentMetadata::Description* description, double value,
+      absl::Span<const std::string> label_values) = 0;
+};
 
 // Defines a scope for collecting metrics, identified by a set of labels of
 // interest. Metric collection via GetStorage+Increment will be filtered
@@ -498,11 +501,6 @@ class CollectionScope : public RefCounted<CollectionScope> {
 };
 
 namespace instrument_detail {
-
-template <typename T>
-void CallInstrumentCollectionHooks(
-    const InstrumentMetadata::Description* instrument,
-    absl::Span<const std::string> labels, T value);
 
 class GaugeStorage {
  public:
@@ -1026,18 +1024,29 @@ class InstrumentDomainImpl final : public QueryableDomain {
       }
     }
 
+    // Records a measurement of `value` into the histogram specified by
+    // `handle`.
+    //
+    // `recorder` is a pointer to an InstrumentRecorder (typically obtained via
+    // `stats_plugin_group.get()`) to push metric updates to stats plugins like
+    // OpenTelemetry that manage their own Histogram storage. If the histogram
+    // is not used by any such plugin, recorder can be set to nullptr and
+    // external pushes will be skipped.
     template <typename Shape, typename T>
-    void Increment(const HistogramHandle<Shape>& handle, T value) {
+    void Increment(const HistogramHandle<Shape>& handle, T value,
+                   InstrumentRecorder* recorder) {
       GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
-      if constexpr (std::is_same_v<Shape, LinearDoubleHistogramShape> ||
-                    std::is_same_v<Shape, ExponentialDoubleHistogramShape>) {
-        CallInstrumentCollectionHooks<double>(handle.description_, label(),
-                                              static_cast<double>(value));
-      } else {
-        CallInstrumentCollectionHooks<int64_t>(handle.description_, label(),
-                                               static_cast<int64_t>(value));
-      }
       backend_.Add(handle.offset_ + handle.shape_->BucketFor(value), 1);
+      if (recorder != nullptr) {
+        if constexpr (std::is_same_v<Shape, LinearDoubleHistogramShape> ||
+                      std::is_same_v<Shape, ExponentialDoubleHistogramShape>) {
+          recorder->RecordHistogram(handle.description_,
+                                    static_cast<double>(value), label());
+        } else {
+          recorder->RecordHistogram(handle.description_,
+                                    static_cast<int64_t>(value), label());
+        }
+      }
     }
 
     uint64_t SumCounter(size_t offset) override { return backend_.Sum(offset); }

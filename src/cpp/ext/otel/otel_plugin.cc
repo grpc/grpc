@@ -779,10 +779,18 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                   LOG(FATAL) << "Uint gauge shape is not supported yet";
                 },
                 [&](grpc_core::InstrumentMetadata::Int64HistogramShape) {
-                  LOG(FATAL) << "Histogram shape is not supported yet";
+                  uint64_histograms_.emplace(
+                      description, meter->CreateUInt64Histogram(
+                                       std::string(description->name),
+                                       std::string(description->description),
+                                       std::string(description->unit)));
                 },
                 [&](grpc_core::InstrumentMetadata::DoubleHistogramShape) {
-                  LOG(FATAL) << "Double histogram shape is not supported yet";
+                  double_histograms_.emplace(
+                      description, meter->CreateDoubleHistogram(
+                                       std::string(description->name),
+                                       std::string(description->description),
+                                       std::string(description->unit)));
                 });
           });
       grpc_core::InstrumentLabelSet label_set;
@@ -1132,6 +1140,68 @@ void OpenTelemetryPluginImpl::RecordHistogram(
                      instrument_data.optional_labels_bits),
                  opentelemetry::context::Context{});
   }
+}
+
+// Filters labels based on the collection scope and records value in the stored
+// histogram. Returns if no histogram with this description exists.
+// OpenTelemetry only has uint64 histograms so negative values are stored in the
+// "0" bucket.
+void OpenTelemetryPluginImpl::RecordHistogram(
+    const grpc_core::InstrumentMetadata::Description* description,
+    int64_t value, absl::Span<const std::string> label_values) {
+  if (meter_provider_ == nullptr || description == nullptr ||
+      collection_scope_ == nullptr) {
+    return;
+  }
+  auto hist = uint64_histograms_.find(description);
+  if (hist == uint64_histograms_.end() || hist->second == nullptr) return;
+  const grpc_core::InstrumentLabelList domain_labels =
+      description->domain->label_names();
+  GRPC_CHECK_EQ(domain_labels.size(), label_values.size());
+  std::vector<std::string> filtered_label_keys;
+  std::vector<std::string> filtered_label_values;
+  filtered_label_keys.reserve(domain_labels.size());
+  filtered_label_values.reserve(domain_labels.size());
+  for (size_t i = 0; i < domain_labels.size(); ++i) {
+    if (collection_scope_->ObservesLabel(domain_labels[i])) {
+      filtered_label_keys.emplace_back(domain_labels[i].label());
+      filtered_label_values.emplace_back(label_values[i]);
+    }
+  }
+  ExportedMetricKeyValueIterable labels_iterable(filtered_label_keys,
+                                                 filtered_label_values);
+  hist->second->Record(static_cast<uint64_t>(value < 0 ? 0 : value),
+                       labels_iterable, opentelemetry::context::Context{});
+}
+
+// Filters labels based on the collection scope and records value in the stored
+// histogram. Returns if no histogram with this description exists.
+void OpenTelemetryPluginImpl::RecordHistogram(
+    const grpc_core::InstrumentMetadata::Description* description, double value,
+    absl::Span<const std::string> label_values) {
+  if (meter_provider_ == nullptr || description == nullptr ||
+      collection_scope_ == nullptr) {
+    return;
+  }
+  auto hist = double_histograms_.find(description);
+  if (hist == double_histograms_.end() || hist->second == nullptr) return;
+  const grpc_core::InstrumentLabelList domain_labels =
+      description->domain->label_names();
+  GRPC_CHECK_EQ(domain_labels.size(), label_values.size());
+  std::vector<std::string> filtered_label_keys;
+  std::vector<std::string> filtered_label_values;
+  filtered_label_keys.reserve(domain_labels.size());
+  filtered_label_values.reserve(domain_labels.size());
+  for (size_t i = 0; i < domain_labels.size(); ++i) {
+    if (collection_scope_->ObservesLabel(domain_labels[i])) {
+      filtered_label_keys.emplace_back(domain_labels[i].label());
+      filtered_label_values.emplace_back(label_values[i]);
+    }
+  }
+  ExportedMetricKeyValueIterable labels_iterable(filtered_label_keys,
+                                                 filtered_label_values);
+  hist->second->Record(value, labels_iterable,
+                       opentelemetry::context::Context{});
 }
 
 void OpenTelemetryPluginImpl::AddCallback(
