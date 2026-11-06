@@ -16,6 +16,7 @@
 
 #include <cstdint>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/grpc_check.h"
@@ -46,6 +47,16 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
 
 TEST(FrameTest, SettingsFrameRoundTrips) {
   AssertRoundTrips(SettingsFrame{}, FrameType::kSettings);
+}
+
+TEST(FrameTest, ServerMetadataGrpcFromProtoOutOfRangeStatus) {
+  chaotic_good_frame::ServerMetadata proto;
+  proto.set_status(4294967295u);
+  auto md = ServerMetadataGrpcFromProto(proto);
+  ASSERT_TRUE(md.ok()) << md.status();
+  auto status = (*md)->get(GrpcStatusMetadata());
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(*status, GRPC_STATUS_UNKNOWN);
 }
 
 }  // namespace

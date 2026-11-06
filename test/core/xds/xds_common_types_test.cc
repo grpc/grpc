@@ -202,7 +202,8 @@ TEST_F(DurationTest, ValuesTooHigh) {
 using FractionalPercentTest = XdsCommonTypesTest;
 
 TEST_F(FractionalPercentTest, AlwaysIfUnset) {
-  EXPECT_EQ(1000000, ParseFractionalPercent(nullptr));
+  ValidationErrors errors;
+  EXPECT_EQ(1000000, ParseFractionalPercent(nullptr, &errors));
 }
 
 TEST_F(FractionalPercentTest, PerHundred) {
@@ -211,7 +212,8 @@ TEST_F(FractionalPercentTest, PerHundred) {
   envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
   envoy_type_v3_FractionalPercent_set_denominator(
       proto, envoy_type_v3_FractionalPercent_HUNDRED);
-  EXPECT_EQ(300000, ParseFractionalPercent(proto));
+  ValidationErrors errors;
+  EXPECT_EQ(300000, ParseFractionalPercent(proto, &errors));
 }
 
 TEST_F(FractionalPercentTest, PerTenThousand) {
@@ -220,7 +222,8 @@ TEST_F(FractionalPercentTest, PerTenThousand) {
   envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
   envoy_type_v3_FractionalPercent_set_denominator(
       proto, envoy_type_v3_FractionalPercent_TEN_THOUSAND);
-  EXPECT_EQ(3000, ParseFractionalPercent(proto));
+  ValidationErrors errors;
+  EXPECT_EQ(3000, ParseFractionalPercent(proto, &errors));
 }
 
 TEST_F(FractionalPercentTest, PerMillion) {
@@ -229,7 +232,8 @@ TEST_F(FractionalPercentTest, PerMillion) {
   envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
   envoy_type_v3_FractionalPercent_set_denominator(
       proto, envoy_type_v3_FractionalPercent_MILLION);
-  EXPECT_EQ(30, ParseFractionalPercent(proto));
+  ValidationErrors errors;
+  EXPECT_EQ(30, ParseFractionalPercent(proto, &errors));
 }
 
 TEST_F(FractionalPercentTest, ClampsValue) {
@@ -238,7 +242,23 @@ TEST_F(FractionalPercentTest, ClampsValue) {
   envoy_type_v3_FractionalPercent_set_numerator(proto, 105);
   envoy_type_v3_FractionalPercent_set_denominator(
       proto, envoy_type_v3_FractionalPercent_HUNDRED);
-  EXPECT_EQ(1000000, ParseFractionalPercent(proto));
+  ValidationErrors errors;
+  EXPECT_EQ(1000000, ParseFractionalPercent(proto, &errors));
+}
+
+TEST_F(FractionalPercentTest, InvalidDenominator) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(proto, 99);
+  ValidationErrors errors;
+  EXPECT_EQ(300000, ParseFractionalPercent(proto, &errors));
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed");
+  EXPECT_EQ(status.message(),
+            "validation failed: ["
+            "field:denominator error:invalid denominator: 99]")
+      << status;
 }
 
 //
