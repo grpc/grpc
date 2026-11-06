@@ -201,6 +201,26 @@ def grpc_cc_library(
         linkstatic = linkstatic,
     )
 
+def _plugin_binary_impl(ctx):
+    # The build metadata generators read unconfigured query XML. A label list
+    # exposes both branches of the select there. Each build selects one file.
+    [src] = ctx.files.srcs
+    ctx.actions.symlink(
+        output = ctx.outputs.out,
+        target_file = src,
+        is_executable = True,
+    )
+    return [DefaultInfo(executable = ctx.outputs.out)]
+
+_plugin_binary = rule(
+    implementation = _plugin_binary_impl,
+    executable = True,
+    attrs = {
+        "srcs": attr.label_list(allow_files = True, mandatory = True),
+        "out": attr.output(mandatory = True),
+    },
+)
+
 def grpc_proto_plugin(name, srcs = [], deps = []):
     cc_binary(
         name = name + "_native",
@@ -212,16 +232,14 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         binary = name + "_native",
     )
 
-    # In order to avoid warnings from Bazel, names of the rule and its output file must differ.
-    native.genrule(
+    _plugin_binary(
         name = name,
         srcs = select({
             "@platforms//os:macos": [name + "_universal"],
             "//conditions:default": [name + "_native"],
         }),
-        outs = [name + "_binary"],
-        cmd = "cp $< $@",
-        executable = True,
+        # In order to avoid warnings from Bazel, names of the rule and its output file must differ.
+        out = name + "_binary",
     )
 
 def grpc_internal_proto_library(

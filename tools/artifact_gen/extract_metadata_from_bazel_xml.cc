@@ -422,7 +422,7 @@ class ArtifactGen {
             bazel_rule.clazz == "upb_c_proto_library" ||
             bazel_rule.clazz == "upb_proto_reflection_library" ||
             bazel_rule.clazz == "alias" || bazel_rule.clazz == "bind" ||
-            bazel_rule.clazz == "genrule") {
+            bazel_rule.clazz == "genrule" || bazel_rule.clazz == "_plugin_binary") {
           rules_[bazel_rule.name] = bazel_rule;
         }
       }

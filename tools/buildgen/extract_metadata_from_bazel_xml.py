@@ -265,6 +265,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
                 "alias",
                 "bind",
                 "genrule",
+                "_plugin_binary",
             ]:
                 if rule_name in result:
                     raise Exception("Rule %s already present" % rule_name)
