@@ -13,10 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -ex
+
 # Build portability tests with an updated submodule
 
 # Submodule name is passed as the RUN_TESTS_FLAGS variable
 SUBMODULE_NAME="${RUN_TESTS_FLAGS}"
+if [ -z "${SUBMODULE_NAME}" ]; then
+  echo "Error: SUBMODULE_NAME (RUN_TESTS_FLAGS) is not set." >&2
+  exit 1
+fi
 
 # Name of branch to checkout is passed as BAZEL_FLAGS variable
 # If unset, "master" is used by default.
@@ -89,4 +95,7 @@ tools/buildgen/generate_projects.sh
 # passed to tools/run_tests/run_tests_matrix.py.
 git add -A
 git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
+
+# Restore file ownership to the host user's UID/GID
+chown -R "$(stat -c '%u:%g' .)" .
 
