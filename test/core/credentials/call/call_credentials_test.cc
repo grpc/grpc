@@ -3078,8 +3078,6 @@ TEST_F(ExternalAccountCredentialsTest, Success) {
 }
 
 TEST_F(ExternalAccountCredentialsTest, SuccessWithUrlEncode) {
-  std::map<std::string, std::string> emd = {
-      {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -3427,8 +3425,6 @@ TEST_F(ExternalAccountCredentialsTest,
 
 TEST_F(ExternalAccountCredentialsTest,
        UrlExternalAccountCredsSuccessWithQueryParamsFormatText) {
-  std::map<std::string, std::string> emd = {
-      {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_with_query_params_format_text);
@@ -4159,8 +4155,6 @@ TEST_F(ExternalAccountCredentialsTest,
 
 TEST_F(ExternalAccountCredentialsTest,
        AwsExternalAccountCredsSuccessPathDefaultRegionEnvKeysEnv) {
-  std::map<std::string, std::string> emd = {
-      {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
   SetEnv("AWS_DEFAULT_REGION", "test_regionz");
   SetEnv("AWS_ACCESS_KEY_ID", "test_access_key_id");

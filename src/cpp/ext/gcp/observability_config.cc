@@ -50,7 +50,6 @@ namespace {
 // GRPC_GCP_OBSERVABILITY_CONFIG.
 absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
   // First, try GRPC_GCP_OBSERVABILITY_CONFIG_FILE
-  std::string contents_str;
   auto path = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
   if (path.has_value() && !path.value().empty()) {
     auto contents = grpc_core::LoadFile(*path);

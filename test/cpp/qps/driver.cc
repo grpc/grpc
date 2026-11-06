@@ -426,7 +426,6 @@ std::unique_ptr<ScenarioResult> RunScenario(const RunScenarioOptions& options) {
 
   // Start servers
   std::vector<ServerData> servers(options.num_servers);
-  std::unordered_map<string, std::deque<int>> hosts_cores;
   ChannelArguments channel_args;
 
   for (size_t i = 0; i < options.num_servers; i++) {

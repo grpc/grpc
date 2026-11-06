@@ -310,7 +310,7 @@ TEST_P(ChannelzRegistryTest, ServerWithChildren) {
   }
   std::shuffle(sockets.begin(), sockets.end(), SharedBitGen());
   sockets.resize(10000);
-  auto child_sockets = server->child_sockets();
+  [[maybe_unused]] auto child_sockets = server->child_sockets();
   server.reset();
   sockets.clear();
 }
