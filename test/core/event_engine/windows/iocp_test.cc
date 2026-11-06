@@ -140,6 +140,59 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   thread_pool->Quiesce();
 }
 
+TEST_F(IOCPTest, SocketShutdownWhenPendingOperation) {
+  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
+  SOCKET sockpair[2];
+  CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
+  AnyInvocableClosure* on_read;
+  grpc_core::Notification read_called;
+  {
+    auto wrapped_client_socket = iocp.Watch(sockpair[0]);
+    std::shared_ptr<WinSocket> shared_client_socket(
+        wrapped_client_socket.release());
+    DWORD flags = 0;
+    {
+      // When the client gets some data, ensure it matches what we expect.
+      WSABUF read_wsabuf;
+      read_wsabuf.len = 2048;
+      char read_char_buffer[2048];
+      read_wsabuf.buf = read_char_buffer;
+      DWORD bytes_rcvd;
+      int status = WSARecv(
+          shared_client_socket->raw_socket(), &read_wsabuf, 1, &bytes_rcvd,
+          &flags, shared_client_socket->read_info()->overlapped(), NULL);
+      // Expecting error 997, WSA_IO_PENDING
+      EXPECT_EQ(status, -1);
+      int last_error = WSAGetLastError();
+      EXPECT_EQ(last_error, WSA_IO_PENDING);
+      if (last_error != WSA_IO_PENDING) {
+        LogErrorMessage(last_error, "WSARecv");
+      }
+      on_read = new AnyInvocableClosure(
+          [win_socket = shared_client_socket, &read_called]() {
+            gpr_log(GPR_DEBUG, "Notified on read");
+            EXPECT_EQ(win_socket->read_info()->result().wsa_error,
+                      WSA_OPERATION_ABORTED);
+            read_called.Notify();
+          });
+      shared_client_socket->NotifyOnRead(on_read);
+    }
+    shared_client_socket->Shutdown();
+  }
+  bool cb_invoked = false;
+  auto work_result = iocp.Work(std::chrono::seconds(10),
+                               [&cb_invoked]() { cb_invoked = true; });
+  ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
+  ASSERT_TRUE(cb_invoked);
+  // wait for the callbacks to run
+  read_called.WaitForNotification();
+
+  delete on_read;
+  iocp.Shutdown();
+  thread_pool->Quiesce();
+}
+
 TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
   IOCP iocp(thread_pool.get());
