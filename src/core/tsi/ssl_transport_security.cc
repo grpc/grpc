@@ -571,6 +571,40 @@ tsi_result SetKeyExchangeGroups(
   }
   return TSI_OK;
 }
+
+// Populates the signature algorithms.
+// Prefers the signature algorithms (input argument) configured by the user,
+// otherwise preserves the underlying SSL library's default signature
+// algorithms.
+tsi_result SetSignatureAlgorithms(
+    [[maybe_unused]] SSL_CTX* context,
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
+  if (!signature_algorithms.empty()) {
+    std::vector<absl::string_view> algorithm_names;
+    algorithm_names.reserve(signature_algorithms.size());
+    for (const auto& algorithm : signature_algorithms) {
+      auto algorithm_name = tsi::ConvertSignatureAlgorithmToString(algorithm);
+      if (!algorithm_name.ok()) {
+        LOG(ERROR) << "Could not convert signature algorithm to string: "
+                   << algorithm;
+        return TSI_INVALID_ARGUMENT;
+      }
+      algorithm_names.push_back(*algorithm_name);
+    }
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    std::string sigalg_list_str = absl::StrJoin(algorithm_names, ":");
+    if (!SSL_CTX_set1_sigalgs_list(context, sigalg_list_str.c_str())) {
+      LOG(ERROR) << "Could not set signature algorithms: " << sigalg_list_str;
+      return TSI_INTERNAL_ERROR;
+    }
+#else
+    LOG(ERROR) << "Setting TLS signature algorithms is not supported when "
+                  "building against OpenSSL versions < 1.1.1.";
+    return TSI_FAILED_PRECONDITION;
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10101000
+  }
+  return TSI_OK;
+}
 }  // namespace
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
@@ -1540,11 +1574,12 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
 }
 
 // Populates the SSL context with a private key and a cert chain, and sets the
-// cipher list and the ephemeral ECDH key.
+// cipher list, the ephemeral ECDH key, and the signature algorithms.
 static tsi_result populate_ssl_context(
     SSL_CTX* context, const grpc_core::PemKeyCertPair* key_cert_pair,
     const char* cipher_list,
-    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
     if (!key_cert_pair->cert_chain().empty()) {
@@ -1589,6 +1624,10 @@ static tsi_result populate_ssl_context(
     return TSI_INVALID_ARGUMENT;
   }
   result = SetKeyExchangeGroups(context, key_exchange_groups);
+  if (result != TSI_OK) {
+    return result;
+  }
+  result = SetSignatureAlgorithms(context, signature_algorithms);
   if (result != TSI_OK) {
     return result;
   }
@@ -3473,9 +3512,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
-    result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
-                                  options->cipher_suites,
-                                  options->key_exchange_groups);
+    result = populate_ssl_context(
+        ssl_context, options->pem_key_cert_pair, options->cipher_suites,
+        options->key_exchange_groups, options->signature_algorithms);
     if (result != TSI_OK) break;
 
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -3645,9 +3684,9 @@ tsi_result tsi_configure_server_ssl_context(
       ssl_context.ssl_ctx, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
 
-  result = populate_ssl_context(ssl_context.ssl_ctx, pem_key_cert_pair,
-                                options->cipher_suites,
-                                options->key_exchange_groups);
+  result = populate_ssl_context(
+      ssl_context.ssl_ctx, pem_key_cert_pair, options->cipher_suites,
+      options->key_exchange_groups, options->signature_algorithms);
 #if defined(OPENSSL_IS_BORINGSSL)
   if (pem_key_cert_pair != nullptr) {
     grpc_core::Match(

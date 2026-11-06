@@ -260,6 +260,9 @@ struct tsi_ssl_client_handshaker_options {
   // the handshaker, in order of preference.
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups;
 
+  // The list of signature algorithms that will be negotiated by the handshaker,
+  // in order of preference.
+  std::vector<grpc_tls_signature_algorithm> signature_algorithms;
   // The label for TLS Exported Keying Material.
   std::string exported_keying_material_label;
   // The length of TLS Exported Keying Material.
@@ -441,6 +444,9 @@ struct tsi_ssl_server_handshaker_options {
   // the handshaker, in order of preference.
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups;
 
+  // The list of signature algorithms that will be negotiated by the handshaker,
+  // in order of preference.
+  std::vector<grpc_tls_signature_algorithm> signature_algorithms;
   // The label for TLS Exported Keying Material.
   std::string exported_keying_material_label;
   // The length of TLS Exported Keying Material.
