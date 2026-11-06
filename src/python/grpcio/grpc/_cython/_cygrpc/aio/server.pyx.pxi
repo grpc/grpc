@@ -167,7 +167,7 @@ cdef class _ServicerContext:
               tuple trailing_metadata=_IMMUTABLE_EMPTY_METADATA):
         if self._rpc_state.abort_exception is not None:
             raise UsageError('Abort already called!')
-        elif self._rpc_state.status_sent:
+        elif self._rpc_state.status_sent or self._rpc_state.client_closed:
             # The final status already went out (the handler returned, or the
             # RPC was aborted or cancelled). A late abort must not start another
             # batch on the finished call.
@@ -341,8 +341,6 @@ cdef class _SyncServicerContext:
         with self._callbacks_lock:
             callbacks = self._callbacks
             self._callbacks = None
-        if callbacks is None:
-            return
         for callback in callbacks:
             try:
                 callback()
@@ -350,7 +348,7 @@ cdef class _SyncServicerContext:
                 _LOGGER.exception('Error in sync-stack callback')
 
     def add_callback(self, object callback):
-        # runs on a worker thread
+        # Runs on a worker thread
         with self._callbacks_lock:
             if self._callbacks is None:
                 # The RPC already finished
