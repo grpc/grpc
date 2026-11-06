@@ -40760,19 +40760,19 @@ add_executable(xds_cel_test
   third_party/cel-c/cel-c/assert.cc
   third_party/cel-c/cel-c/ast.cc
   third_party/cel-c/cel-c/ast_proto.cc
-  third_party/cel-c/cel-c/ast_traverse.cc
-  third_party/cel-c/cel-c/constant.cc
-  third_party/cel-c/cel-c/constant_proto.cc
   third_party/cel-c/cel-c/cstring_view.cc
-  third_party/cel-c/cel-c/decl.cc
   third_party/cel-c/cel-c/duration.cc
   third_party/cel-c/cel-c/duration_proto.cc
   third_party/cel-c/cel-c/error.cc
   third_party/cel-c/cel-c/error_code.cc
   third_party/cel-c/cel-c/error_space.cc
   third_party/cel-c/cel-c/internal/any.cc
+  third_party/cel-c/cel-c/internal/ast_traverse.cc
+  third_party/cel-c/cel-c/internal/attribute.cc
   third_party/cel-c/cel-c/internal/bitset.cc
   third_party/cel-c/cel-c/internal/charconv.cc
+  third_party/cel-c/cel-c/internal/constant.cc
+  third_party/cel-c/cel-c/internal/constant_proto.cc
   third_party/cel-c/cel-c/internal/durationconv.cc
   third_party/cel-c/cel-c/internal/empty_list_value.cc
   third_party/cel-c/cel-c/internal/empty_map_value.cc
@@ -40780,7 +40780,6 @@ add_executable(xds_cel_test
   third_party/cel-c/cel-c/internal/generic_deque.cc
   third_party/cel-c/cel-c/internal/generic_flat_hash.cc
   third_party/cel-c/cel-c/internal/generic_string.cc
-  third_party/cel-c/cel-c/internal/hash.cc
   third_party/cel-c/cel-c/internal/list_value.cc
   third_party/cel-c/cel-c/internal/malloc.cc
   third_party/cel-c/cel-c/internal/map_value.cc
@@ -40793,6 +40792,8 @@ add_executable(xds_cel_test
   third_party/cel-c/cel-c/internal/parsed_map_field_value.cc
   third_party/cel-c/cel-c/internal/parsed_message_value.cc
   third_party/cel-c/cel-c/internal/parsed_repeated_field_value.cc
+  third_party/cel-c/cel-c/internal/ref.cc
+  third_party/cel-c/cel-c/internal/ref_proto.cc
   third_party/cel-c/cel-c/internal/regexp.cc
   third_party/cel-c/cel-c/internal/runtime/activation.cc
   third_party/cel-c/cel-c/internal/runtime/interpretable.cc
@@ -40804,8 +40805,6 @@ add_executable(xds_cel_test
   third_party/cel-c/cel-c/internal/utf8.cc
   third_party/cel-c/cel-c/internal/value.cc
   third_party/cel-c/cel-c/operators.cc
-  third_party/cel-c/cel-c/ref.cc
-  third_party/cel-c/cel-c/ref_proto.cc
   third_party/cel-c/cel-c/status.cc
   third_party/cel-c/cel-c/status_absl.cc
   third_party/cel-c/cel-c/status_code.cc
@@ -40857,7 +40856,6 @@ target_link_libraries(xds_cel_test
   absl::function_ref
   absl::hash
   absl::type_traits
-  absl::int128
   absl::statusor
   absl::string_view
   absl::span

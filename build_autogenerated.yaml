@@ -28896,13 +28896,8 @@ targets:
   - third_party/cel-c/cel-c/assert.h
   - third_party/cel-c/cel-c/ast.h
   - third_party/cel-c/cel-c/ast_proto.h
-  - third_party/cel-c/cel-c/ast_traverse.h
-  - third_party/cel-c/cel-c/ast_visitor.h
   - third_party/cel-c/cel-c/config.h
-  - third_party/cel-c/cel-c/constant.h
-  - third_party/cel-c/cel-c/constant_proto.h
   - third_party/cel-c/cel-c/cstring_view.h
-  - third_party/cel-c/cel-c/decl.h
   - third_party/cel-c/cel-c/duration.h
   - third_party/cel-c/cel-c/duration_proto.h
   - third_party/cel-c/cel-c/error.h
@@ -28915,12 +28910,18 @@ targets:
   - third_party/cel-c/cel-c/internal/arc.h
   - third_party/cel-c/cel-c/internal/array.h
   - third_party/cel-c/cel-c/internal/asan.h
+  - third_party/cel-c/cel-c/internal/ast.h
+  - third_party/cel-c/cel-c/internal/ast_traverse.h
+  - third_party/cel-c/cel-c/internal/ast_visitor.h
+  - third_party/cel-c/cel-c/internal/attribute.h
   - third_party/cel-c/cel-c/internal/bit.h
   - third_party/cel-c/cel-c/internal/bitset.h
   - third_party/cel-c/cel-c/internal/charconv.h
   - third_party/cel-c/cel-c/internal/ckdint.h
   - third_party/cel-c/cel-c/internal/compare.h
   - third_party/cel-c/cel-c/internal/config.h
+  - third_party/cel-c/cel-c/internal/constant.h
+  - third_party/cel-c/cel-c/internal/constant_proto.h
   - third_party/cel-c/cel-c/internal/container.h
   - third_party/cel-c/cel-c/internal/ctype.h
   - third_party/cel-c/cel-c/internal/deque.h
@@ -28932,7 +28933,6 @@ targets:
   - third_party/cel-c/cel-c/internal/generic_deque.h
   - third_party/cel-c/cel-c/internal/generic_flat_hash.h
   - third_party/cel-c/cel-c/internal/generic_string.h
-  - third_party/cel-c/cel-c/internal/hash.h
   - third_party/cel-c/cel-c/internal/malloc.h
   - third_party/cel-c/cel-c/internal/map_value.h
   - third_party/cel-c/cel-c/internal/memory.h
@@ -28943,6 +28943,8 @@ targets:
   - third_party/cel-c/cel-c/internal/parsed_map_field_value.h
   - third_party/cel-c/cel-c/internal/parsed_message_value.h
   - third_party/cel-c/cel-c/internal/parsed_repeated_field_value.h
+  - third_party/cel-c/cel-c/internal/ref.h
+  - third_party/cel-c/cel-c/internal/ref_proto.h
   - third_party/cel-c/cel-c/internal/regexp.h
   - third_party/cel-c/cel-c/internal/runtime/activation.h
   - third_party/cel-c/cel-c/internal/runtime/instr.h
@@ -28955,13 +28957,10 @@ targets:
   - third_party/cel-c/cel-c/internal/string.h
   - third_party/cel-c/cel-c/internal/timestampconv.h
   - third_party/cel-c/cel-c/internal/trivial_relocation.hpp
-  - third_party/cel-c/cel-c/internal/unaligned.h
   - third_party/cel-c/cel-c/internal/unicode.h
   - third_party/cel-c/cel-c/internal/utf8.h
   - third_party/cel-c/cel-c/operators.h
   - third_party/cel-c/cel-c/program.h
-  - third_party/cel-c/cel-c/ref.h
-  - third_party/cel-c/cel-c/ref_proto.h
   - third_party/cel-c/cel-c/runtime.h
   - third_party/cel-c/cel-c/source.h
   - third_party/cel-c/cel-c/status.h
@@ -29054,19 +29053,19 @@ targets:
   - third_party/cel-c/cel-c/assert.cc
   - third_party/cel-c/cel-c/ast.cc
   - third_party/cel-c/cel-c/ast_proto.cc
-  - third_party/cel-c/cel-c/ast_traverse.cc
-  - third_party/cel-c/cel-c/constant.cc
-  - third_party/cel-c/cel-c/constant_proto.cc
   - third_party/cel-c/cel-c/cstring_view.cc
-  - third_party/cel-c/cel-c/decl.cc
   - third_party/cel-c/cel-c/duration.cc
   - third_party/cel-c/cel-c/duration_proto.cc
   - third_party/cel-c/cel-c/error.cc
   - third_party/cel-c/cel-c/error_code.cc
   - third_party/cel-c/cel-c/error_space.cc
   - third_party/cel-c/cel-c/internal/any.cc
+  - third_party/cel-c/cel-c/internal/ast_traverse.cc
+  - third_party/cel-c/cel-c/internal/attribute.cc
   - third_party/cel-c/cel-c/internal/bitset.cc
   - third_party/cel-c/cel-c/internal/charconv.cc
+  - third_party/cel-c/cel-c/internal/constant.cc
+  - third_party/cel-c/cel-c/internal/constant_proto.cc
   - third_party/cel-c/cel-c/internal/durationconv.cc
   - third_party/cel-c/cel-c/internal/empty_list_value.cc
   - third_party/cel-c/cel-c/internal/empty_map_value.cc
@@ -29074,7 +29073,6 @@ targets:
   - third_party/cel-c/cel-c/internal/generic_deque.cc
   - third_party/cel-c/cel-c/internal/generic_flat_hash.cc
   - third_party/cel-c/cel-c/internal/generic_string.cc
-  - third_party/cel-c/cel-c/internal/hash.cc
   - third_party/cel-c/cel-c/internal/list_value.cc
   - third_party/cel-c/cel-c/internal/malloc.cc
   - third_party/cel-c/cel-c/internal/map_value.cc
@@ -29087,6 +29085,8 @@ targets:
   - third_party/cel-c/cel-c/internal/parsed_map_field_value.cc
   - third_party/cel-c/cel-c/internal/parsed_message_value.cc
   - third_party/cel-c/cel-c/internal/parsed_repeated_field_value.cc
+  - third_party/cel-c/cel-c/internal/ref.cc
+  - third_party/cel-c/cel-c/internal/ref_proto.cc
   - third_party/cel-c/cel-c/internal/regexp.cc
   - third_party/cel-c/cel-c/internal/runtime/activation.cc
   - third_party/cel-c/cel-c/internal/runtime/interpretable.cc
@@ -29098,8 +29098,6 @@ targets:
   - third_party/cel-c/cel-c/internal/utf8.cc
   - third_party/cel-c/cel-c/internal/value.cc
   - third_party/cel-c/cel-c/operators.cc
-  - third_party/cel-c/cel-c/ref.cc
-  - third_party/cel-c/cel-c/ref_proto.cc
   - third_party/cel-c/cel-c/status.cc
   - third_party/cel-c/cel-c/status_absl.cc
   - third_party/cel-c/cel-c/status_code.cc
@@ -29120,7 +29118,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/numeric:int128
   - absl/status:statusor
   - absl/strings:string_view
   - absl/types:span
