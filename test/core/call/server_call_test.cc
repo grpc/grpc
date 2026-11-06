@@ -205,4 +205,31 @@ SERVER_CALL_TEST(SendStatusFromServerAfterCancelFails) {
   WaitForAllPendingWork();
 }
 
+// Asserts that Completed() becomes true only after the final op completes,
+// not when the server has merely sent its status.
+SERVER_CALL_TEST(CompletedAfterRecvClose) {
+  grpc_call* const call = InitCall(MakeClientInitialMetadata({}));
+  EXPECT_FALSE(Call::FromC(call)->Completed());
+  NewBatch(1).SendStatusFromServer(GRPC_STATUS_OK, "ok", {});
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_FALSE(Call::FromC(call)->Completed());
+  IncomingCloseOnServer close;
+  NewBatch(2).RecvCloseOnServer(close);
+  Expect(2, true);
+  TickThroughCqExpectations();
+  EXPECT_FALSE(close.was_cancelled());
+  EXPECT_TRUE(Call::FromC(call)->Completed());
+  WaitForAllPendingWork();
+}
+
+// Asserts that cancelling the call marks it as completed immediately.
+SERVER_CALL_TEST(CompletedAfterCancel) {
+  grpc_call* const call = InitCall(MakeClientInitialMetadata({}));
+  EXPECT_FALSE(Call::FromC(call)->Completed());
+  EXPECT_EQ(grpc_call_cancel(call, nullptr), GRPC_CALL_OK);
+  EXPECT_TRUE(Call::FromC(call)->Completed());
+  WaitForAllPendingWork();
+}
+
 }  // namespace grpc_core
