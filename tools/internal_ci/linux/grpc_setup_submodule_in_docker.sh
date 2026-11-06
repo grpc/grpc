@@ -17,6 +17,10 @@
 
 # Submodule name is passed as the RUN_TESTS_FLAGS variable
 SUBMODULE_NAME="${RUN_TESTS_FLAGS}"
+if [ -z "${SUBMODULE_NAME}" ]; then
+  echo "Error: SUBMODULE_NAME (RUN_TESTS_FLAGS) is not set." >&2
+  exit 1
+fi
 
 # Name of branch to checkout is passed as BAZEL_FLAGS variable
 # If unset, "master" is used by default.
