@@ -439,7 +439,11 @@ void WeightedTargetLb::UpdateStateLocked() {
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
-      picker = MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
+      picker = MakeRefCounted<QueuePicker>(
+          Ref(DEBUG_LOCATION, "QueuePicker"), kDelayTypeConnecting,
+          absl::StrCat("weighted_target: connecting to targets (num_targets=",
+                       config_->target_map().size(), " num_connecting=",
+                       num_connecting, " num_idle=", num_idle, ")"));
       break;
     default:
       picker = MakeRefCounted<WeightedPicker>(std::move(tf_picker_list));
@@ -495,9 +499,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked() {
 WeightedTargetLb::WeightedChild::WeightedChild(
     RefCountedPtr<WeightedTargetLb> weighted_target_policy,
     const std::string& name)
-    : weighted_target_policy_(std::move(weighted_target_policy)),
-      name_(name),
-      picker_(MakeRefCounted<QueuePicker>(nullptr)) {
+    : weighted_target_policy_(std::move(weighted_target_policy)), name_(name) {
   GRPC_TRACE_LOG(weighted_target_lb, INFO)
       << "[weighted_target_lb " << weighted_target_policy_.get()
       << "] created WeightedChild " << this << " for " << name_;

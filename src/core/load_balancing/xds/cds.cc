@@ -164,6 +164,7 @@ void CdsChildNameState::Update(
 namespace {
 
 constexpr absl::string_view kCds = "cds_experimental";
+constexpr char kDelayTypeCdsDynamicDiscovery[] = "cds_dynamic_discovery";
 
 // Config for this LB policy.
 class CdsLbConfig final : public LoadBalancingPolicy::Config {
@@ -361,6 +362,12 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           << cluster_name_.as_string_view()
           << ", waiting for subsequent update";
       // Stay in CONNECTING until we get an update that has the cluster.
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+          MakeRefCounted<QueuePicker>(
+              nullptr, kDelayTypeCdsDynamicDiscovery,
+              absl::StrCat("cds: waiting for CDS resource ",
+                           cluster_name_.as_string_view())));
       return absl::OkStatus();
     }
     // Not a dynamic cluster.  This should never happen.
