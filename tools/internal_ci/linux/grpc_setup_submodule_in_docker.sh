@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -ex
+
 # Build portability tests with an updated submodule
 
 # Submodule name is passed as the RUN_TESTS_FLAGS variable
