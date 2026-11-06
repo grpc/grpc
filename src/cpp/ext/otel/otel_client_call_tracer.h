@@ -166,11 +166,13 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
                  absl::string_view error_string) override;
 
  private:
+  using AttributeVector =
+      absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
+                                    opentelemetry::common::AttributeValue>,
+                          4>;
+
   absl::string_view MethodForStats() const;
-  absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
-                                opentelemetry::common::AttributeValue>,
-                      4>
-  GetAttributes(
+  AttributeVector GetAttributes(
       std::optional<grpc_status_code> status_code = std::nullopt) const;
 
   // Client method.

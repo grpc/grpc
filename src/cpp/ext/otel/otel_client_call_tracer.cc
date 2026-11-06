@@ -505,10 +505,7 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::
       otel_plugin_->client_.call.retry_delay != nullptr &&
       retry_delay_ != absl::ZeroDuration() && retries_ > 1;
   if (record_retries || record_transparent_retries || record_retry_delay) {
-    absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
-                                  opentelemetry::common::AttributeValue>,
-                        4>
-        attributes = GetAttributes();
+    AttributeVector attributes = GetAttributes();
     if (record_retries) {
       otel_plugin_->client_.call.retries->Record(
           retries_ - 1, attributes, opentelemetry::context::Context{});
@@ -599,31 +596,23 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::RecordEnd(
   if (otel_plugin_->client_.call.duration == nullptr) {
     return;
   }
-  absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
-                                opentelemetry::common::AttributeValue>,
-                      4>
-      attributes = GetAttributes(status_code);
+  AttributeVector attributes = GetAttributes(status_code);
   double elapsed_seconds = absl::ToDoubleSeconds(absl::Now() - start_time_);
   otel_plugin_->client_.call.duration->Record(
       elapsed_seconds, attributes, opentelemetry::context::Context{});
 }
 
-absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
-                              opentelemetry::common::AttributeValue>,
-                    4>
+OpenTelemetryPluginImpl::ClientCallTracerInterface::AttributeVector
 OpenTelemetryPluginImpl::ClientCallTracerInterface::GetAttributes(
     std::optional<grpc_status_code> status_code) const {
-  absl::InlinedVector<std::pair<opentelemetry::nostd::string_view,
-                                opentelemetry::common::AttributeValue>,
-                      4>
-      attributes = {
-          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryMethodKey()),
-                    opentelemetry::common::AttributeValue(
-                        AbslStringViewToNoStdStringView(MethodForStats()))),
-          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryTargetKey()),
-                    opentelemetry::common::AttributeValue(
-                        AbslStringViewToNoStdStringView(
-                            scope_config_->filtered_target())))};
+  AttributeVector attributes = {
+      std::pair(AbslStringViewToNoStdStringView(OpenTelemetryMethodKey()),
+                opentelemetry::common::AttributeValue(
+                    AbslStringViewToNoStdStringView(MethodForStats()))),
+      std::pair(
+          AbslStringViewToNoStdStringView(OpenTelemetryTargetKey()),
+          opentelemetry::common::AttributeValue(AbslStringViewToNoStdStringView(
+              scope_config_->filtered_target())))};
   if (status_code.has_value()) {
     attributes.emplace_back(
         AbslStringViewToNoStdStringView(OpenTelemetryStatusKey()),
