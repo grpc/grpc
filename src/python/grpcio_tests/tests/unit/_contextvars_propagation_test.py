@@ -14,12 +14,15 @@
 """Test of propagation of contextvars to AuthMetadataPlugin threads."""
 
 import contextlib
+import gc
 import logging
 import os
 import queue
 import tempfile
 import threading
+import time
 import unittest
+import weakref
 
 import grpc
 
@@ -103,9 +106,11 @@ else:
             callback((), None)
 
 
-# TODO(https://github.com/grpc/grpc/issues/22257)
-@unittest.skipIf(os.name == "nt", "LocalCredentials not supported on Windows.")
 class ContextVarsPropagationTest(unittest.TestCase):
+    # TODO(https://github.com/grpc/grpc/issues/22257)
+    @unittest.skipIf(
+        os.name == "nt", "LocalCredentials not supported on Windows."
+    )
     def test_propagation_to_auth_plugin(self):
         set_up_expected_context()
         with _server() as uds_path:
@@ -114,7 +119,9 @@ class ContextVarsPropagationTest(unittest.TestCase):
             )
             test_call_credentials = TestCallCredentials()
             call_credentials = grpc.metadata_call_credentials(
-                test_call_credentials, "test call credentials"
+                test_call_credentials,
+                "test call credentials",
+                propagate_context=True,
             )
             composite_credentials = grpc.composite_channel_credentials(
                 local_credentials, call_credentials
@@ -131,6 +138,10 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 response = stub(_REQUEST, wait_for_ready=True)
                 self.assertEqual(_REQUEST, response)
 
+    # TODO(https://github.com/grpc/grpc/issues/22257)
+    @unittest.skipIf(
+        os.name == "nt", "LocalCredentials not supported on Windows."
+    )
     def test_concurrent_propagation(self):
         _THREAD_COUNT = 32
         _RPC_COUNT = 32
@@ -142,7 +153,9 @@ class ContextVarsPropagationTest(unittest.TestCase):
             )
             test_call_credentials = TestCallCredentials()
             call_credentials = grpc.metadata_call_credentials(
-                test_call_credentials, "test call credentials"
+                test_call_credentials,
+                "test call credentials",
+                propagate_context=True,
             )
             composite_credentials = grpc.composite_channel_credentials(
                 local_credentials, call_credentials
@@ -181,6 +194,115 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 thread.join()
                 if not q.empty():
                     raise q.get()
+
+    # TODO(https://github.com/grpc/grpc/issues/22257)
+    @unittest.skipUnless(contextvars_supported(), "contextvars not supported")
+    @unittest.skipIf(
+        os.name == "nt", "LocalCredentials not supported on Windows."
+    )
+    def test_default_no_propagation(self):
+        set_up_expected_context()
+        seen = []
+
+        class DefaultCallCredentials(grpc.AuthMetadataPlugin):
+            def __call__(self, context, callback):
+                seen.append(test_var.get())
+                callback((), None)
+
+        with _server() as uds_path:
+            local_credentials = grpc.local_channel_credentials(
+                grpc.LocalConnectionType.UDS
+            )
+            call_credentials = grpc.metadata_call_credentials(
+                DefaultCallCredentials(), "test call credentials"
+            )
+            composite_credentials = grpc.composite_channel_credentials(
+                local_credentials, call_credentials
+            )
+            with grpc.secure_channel(
+                f"unix:{uds_path}", composite_credentials
+            ) as channel:
+                stub = channel.unary_unary(
+                    grpc._common.fully_qualified_method(
+                        _SERVICE_NAME, _UNARY_UNARY
+                    ),
+                    _registered_method=True,
+                )
+                response = stub(_REQUEST, wait_for_ready=True)
+                self.assertEqual(_REQUEST, response)
+                self.assertEqual(seen, [None])
+
+    @unittest.skipUnless(contextvars_supported(), "contextvars not supported")
+    def test_per_request_channel_no_context_pinning_by_default(self):
+        alive = weakref.WeakSet()
+        req_var = contextvars.ContextVar("req_var")
+
+        class RequestState:
+            def __init__(self):
+                self.channel = None
+                alive.add(self)
+
+        def auth_plugin(context, callback):
+            callback((), None)
+
+        def handle_request():
+            state = RequestState()
+            token = req_var.set(state)
+            try:
+                creds = grpc.composite_channel_credentials(
+                    grpc.ssl_channel_credentials(),
+                    grpc.metadata_call_credentials(auth_plugin),
+                )
+                state.channel = grpc.secure_channel("localhost:50051", creds)
+            finally:
+                req_var.reset(token)
+
+        for _ in range(10):
+            handle_request()
+
+        gc.collect()
+        self.assertEqual(0, len(alive))
+
+    @unittest.skipUnless(contextvars_supported(), "contextvars not supported")
+    def test_opt_in_context_pinning(self):
+        alive = weakref.WeakSet()
+        req_var = contextvars.ContextVar("req_var_opt_in")
+
+        class RequestState:
+            def __init__(self):
+                self.channel = None
+                alive.add(self)
+
+        def auth_plugin(context, callback):
+            callback((), None)
+
+        def handle_request():
+            state = RequestState()
+            token = req_var.set(state)
+            try:
+                creds = grpc.composite_channel_credentials(
+                    grpc.ssl_channel_credentials(),
+                    grpc.metadata_call_credentials(
+                        auth_plugin, propagate_context=True
+                    ),
+                )
+                state.channel = grpc.secure_channel("localhost:50051", creds)
+            finally:
+                req_var.reset(token)
+
+        for _ in range(10):
+            handle_request()
+
+        gc.collect()
+        self.assertEqual(10, len(alive))
+
+        channels = [s.channel for s in alive if s.channel is not None]
+        for ch in channels:
+            ch.close()
+        del channels
+        time.sleep(0.5)
+        gc.collect()
+        self.assertEqual(0, len(alive))
 
 
 if __name__ == "__main__":
