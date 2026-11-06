@@ -52,20 +52,14 @@ void Timepoint2Timespec(const system_clock::time_point& from,
   to->clock_type = GPR_CLOCK_REALTIME;
 }
 
-void TimepointHR2Timespec(const high_resolution_clock::time_point& from,
-                          gpr_timespec* to) {
-  high_resolution_clock::duration deadline = from.time_since_epoch();
-  seconds secs = duration_cast<seconds>(deadline);
-  if (from == high_resolution_clock::time_point::max() ||
-      secs.count() >= gpr_inf_future(GPR_CLOCK_REALTIME).tv_sec ||
-      secs.count() < 0) {
+void TimepointHR2Timespec(const high_resolution_clock::time_point& from,  gpr_timespec* to) {
+  if (from == high_resolution_clock::time_point::max()) {
     *to = gpr_inf_future(GPR_CLOCK_REALTIME);
     return;
   }
-  nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
-  to->tv_sec = static_cast<int64_t>(secs.count());
-  to->tv_nsec = static_cast<int32_t>(nsecs.count());
-  to->clock_type = GPR_CLOCK_REALTIME;
+  Timepoint2Timespec(
+      system_clock::now() + duration_cast<system_clock::duration>( from - high_resolution_clock::now()),
+      to);
 }
 
 system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
