@@ -17,6 +17,7 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <memory>
 #include <vector>
@@ -38,6 +39,19 @@ namespace {
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
+// All benchmark threads share the default engine. A distant deadline keeps
+// expiration out of the measurement and exercises timer registration/cancel
+// contention (as on the successful RPC deadline cancellation path).
+void BM_EventEngine_RunAfterCancel(benchmark::State& state) {
+  auto engine = GetDefaultEventEngine();
+  for (auto _ : state) {
+    auto handle = engine->RunAfter(std::chrono::hours(24), [] {});
+    GRPC_CHECK(engine->Cancel(handle));
+  }
+  state.SetItemsProcessed(state.iterations());
+}
+BENCHMARK(BM_EventEngine_RunAfterCancel)->ThreadRange(1, 16)->UseRealTime();
 
 struct FanoutParameters {
   int depth;

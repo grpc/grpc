@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -201,11 +202,26 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 
  private:
   friend class AresResolverTest;
+  friend class PosixEventEngineTimerTest;
   struct ClosureData;
 
   explicit PosixEventEngine(const Options& options);
 
-  bool CancelInternal(TaskHandle handle) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  struct TimerShard {
+    grpc_core::Mutex mu;
+    bool disallow_new_timers ABSL_GUARDED_BY(mu) = false;
+    TaskHandleSet known_handles ABSL_GUARDED_BY(mu);
+  } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
+
+  TimerShard& TimerShardForHandle(TaskHandle handle) {
+    // Select the shard without dereferencing the pointer: Cancel() may receive
+    // a handle whose ClosureData has already been deleted.
+    return timer_shards_[grpc_core::HashPointer(
+        reinterpret_cast<void*>(handle.keys[0]), timer_shards_.size())];
+  }
+
+  bool CancelInternal(TaskHandle handle, TimerShard& shard)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(shard.mu);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   // Constructs an EventEngine which has a shared ownership of the poller. Use
@@ -270,8 +286,9 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 #endif
 
   grpc_core::Mutex mu_;
-  bool disallow_new_timers_ ABSL_GUARDED_BY(mu_) = false;
-  TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
+  // Timer registration, cancellation, and completion only lock the handle's
+  // shard. The timer queue below this layer is also sharded.
+  std::array<TimerShard, 32> timer_shards_;
   std::atomic<intptr_t> aba_token_{0};
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 

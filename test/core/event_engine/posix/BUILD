@@ -96,6 +96,7 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:common_event_engine_closures",
         "//src/core:event_engine_thread_pool",
+        "//src/core:posix_event_engine",
         "//src/core:posix_event_engine_timer",
         "//src/core:posix_event_engine_timer_manager",
         "//test/core/test_util:grpc_test_util",
