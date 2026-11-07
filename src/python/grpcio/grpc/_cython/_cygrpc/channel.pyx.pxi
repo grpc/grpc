@@ -506,6 +506,7 @@ cdef _cancel_all_calls(Channel channel, grpc_status_code code, object details):
       grpc_call_cancel_with_status(
           call_state.c_call, code, encoded_details, NULL)
       call_state.delete_call()
+      call_state.due.clear()
     # Segregated calls complete on their own completion queues, which only the
     # threads that started them poll, so the loop below would never see them
     # finish. Those threads don't exist in the fork child: stop tracking them.
