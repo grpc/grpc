@@ -543,6 +543,10 @@ class ServerTransport;
 class Transport : public InternallyRefCounted<Transport> {
  public:
   // An interface used by channels or servers to watch the transport's state.
+  //
+  // TODO(roth): When the v3 migration is done, consider changing this
+  // to be a ClientTransport-specific type, and have a separate, simpler
+  // API for ServerTransport (maybe just a single on_close callback).
   class StateWatcher : public RefCounted<StateWatcher> {
    public:
     ~StateWatcher() override = default;
@@ -712,6 +716,15 @@ class ServerTransport : public Transport {
   // Called once slightly after transport setup to register the accept function.
   virtual void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) = 0;
+
+  void SendGoaway(absl::string_view reason) {
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    // Set an HTTP2 error of NO_ERROR to do graceful GOAWAYs.
+    op->goaway_error = grpc_error_set_int(
+        absl::UnavailableError(reason), StatusIntProperty::kHttp2Error,
+        static_cast<intptr_t>(http2::Http2ErrorCode::kNoError));
+    PerformOp(op);
+  }
 
  protected:
   ~ServerTransport() override = default;

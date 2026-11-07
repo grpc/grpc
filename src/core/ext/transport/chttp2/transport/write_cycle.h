@@ -352,6 +352,8 @@ class TransportWriteContext {
     return is_first_write_;
   }
 
+  void SetFirstWriteCompleted() { is_first_write_ = false; }
+
   static PromiseEndpoint::WriteArgs GetWriteArgs(
       const Http2Settings& peer_settings);
 

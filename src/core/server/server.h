@@ -128,6 +128,9 @@ class Server : public ServerInterface,
                public InternallyRefCounted<Server>,
                public channelz::DataSource,
                public CppImplOf<Server, grpc_server> {
+ private:
+  class Connection;
+
  public:
   // Filter vtable.
   static const grpc_channel_filter kServerTopFilter;
@@ -186,6 +189,9 @@ class Server : public ServerInterface,
     // 24 bytes based on the chttp2 implementation. This complexity causes
     // weirdness for our interfaces. Figure out a way to combine these two
     // tracking systems, without increasing memory utilization.
+    //
+    // TODO(roth): Remove this as part of removing the
+    // server_connection_management experiment.
     class LogicalConnection : public InternallyRefCounted<LogicalConnection> {
      public:
       explicit LogicalConnection(const char* trace = nullptr)
@@ -224,7 +230,7 @@ class Server : public ServerInterface,
   // Note that an alternative implementation would have been to combine the
   // ListenerInterface and ListenerState into a single parent class, but
   // they are being separated to make code simpler to understand.
-  class ListenerState : public RefCounted<ListenerState> {
+  class ListenerState final : public RefCounted<ListenerState> {
    public:
     explicit ListenerState(RefCountedPtr<Server> server,
                            OrphanablePtr<ListenerInterface> l);
@@ -239,22 +245,68 @@ class Server : public ServerInterface,
 
     // Adds a LogicalConnection to the listener and updates the channel args if
     // needed, and returns ChannelArgs if successful.
+    // TODO(roth): Remove this as part of removing the
+    // server_connection_management experiment.
     std::optional<ChannelArgs> AddLogicalConnection(
         OrphanablePtr<ListenerInterface::LogicalConnection> connection,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
 
+    // TODO(roth): Remove this as part of removing the
+    // server_connection_management experiment.
     void OnHandshakeDone(ListenerInterface::LogicalConnection* connection);
 
     // Removes the logical connection from being tracked. This could happen for
     // reasons such as the connection being closed, or the connection has been
     // established (including handshake) and doesn't have a server config
     // fetcher.
+    // TODO(roth): Remove this as part of removing the
+    // server_connection_management experiment.
     void RemoveLogicalConnection(
         ListenerInterface::LogicalConnection* connection);
 
+// FIXME: document
+    std::optional<ChannelArgs> AddHandshakingConnection(
+        OrphanablePtr<Orphanable> handshaking_connection,
+        const ChannelArgs& args, grpc_endpoint* endpoint);
+
+    // Tells the server that 'handshaking_connection' is done with
+    // handshaking.  The server will orphan the connection.
+    //
+    // If 'transport' is non-null, the server takes ownership of the
+    // transport, sets up the necessary linkage to handle RPCs that come
+    // in on the transport, and tracks it as an active connection.
+    //
+    // TODO(roth): After the v3 migration, change this API to take the
+    // transport argument as OrphanablePtr<ServerTransport> instead of
+    // Transport*, and to return void.
+    bool OnHandshakeDone(Orphanable* handshaking_connection,
+                         Transport* transport, grpc_pollset* accepting_pollset,
+                         const ChannelArgs& args);
+
+    // Legacy code-path for callers that directly call
+    // Server::SetupTransport() without having a listener.
+    // TODO(roth): When we have time, migrate all callers to store
+    // connections in listeners and remove this method.  This will require
+    // changing the inproc transport to use a listener and migrating
+    // callers from the legacy grpc_server_add_channel_from_fd() API to
+    // the new PassiveListener API, and maybe other changes.
+    absl::Status LegacyAddActiveConnection(
+        Transport* transport, grpc_pollset* accepting_pollset,
+        const ChannelArgs& args);
+
+    size_t NumOpenConnectionsLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_) {
+      return active_connections_.size();
+    }
+
+    void DrainConnectionsLocked(absl::string_view reason, Duration grace_period)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+
     const MemoryQuotaRefPtr& memory_quota() const { return memory_quota_; }
 
+    // TODO(roth): This should probably apply across all listeners, not
+    // per-listener.
     const ConnectionQuotaRefPtr& connection_quota() const {
       return connection_quota_;
     }
@@ -265,6 +317,9 @@ class Server : public ServerInterface,
 
    private:
     friend class grpc_core::testing::ListenerStateTestPeer;
+
+    // FIXME: can we avoid this?
+    friend class Connection;
 
     class ConfigFetcherWatcher : public ServerConfigFetcher::WatcherInterface {
      public:
@@ -299,20 +354,51 @@ class Server : public ServerInterface,
         std::deque<ConnectionsToBeDrained>::iterator it)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+    void DrainConnectionsOnConfigUpdateLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+
+    OrphanablePtr<Connection> ExtractActiveConnectionLocked(
+        Connection* connection)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+
+    void RemoveConnectionLocked(Connection* connection)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+
     RefCountedPtr<Server> const server_;
     MemoryQuotaRefPtr const memory_quota_;
+
+    // TODO(roth): This should ideally be instantiated once for the
+    // entire server, not once per listener.  Doing it once per listener
+    // means that we will have a separate quota for each listener, which
+    // is almost certainly not what we want.
     ConnectionQuotaRefPtr connection_quota_;
+
+    // TODO(roth): Remove this when removing the
+    // server_connection_management experiment.
     grpc_event_engine::experimental::EventEngine* const event_engine_;
+
     OrphanablePtr<ListenerInterface> listener_;
     grpc_closure destroy_done_;
     ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
+
+    RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
+        ABSL_GUARDED_BY(&Server::mu_global_);
+    bool is_serving_ ABSL_GUARDED_BY(&Server::mu_global_) = false;
+    bool started_ ABSL_GUARDED_BY(&Server::mu_global_) = false;
+    absl::flat_hash_set<OrphanablePtr<Orphanable>> handshaking_connections_
+        ABSL_GUARDED_BY(&Server::mu_global_);
+    absl::flat_hash_set<OrphanablePtr<Connection>> active_connections_
+        ABSL_GUARDED_BY(&Server::mu_global_);
+
+    // TODO(roth): Remove these fields as part of removing the
+    // server_connection_management experiment.
     Mutex mu_;  // We could share this mutex with Listener implementations. It's
                 // a tradeoff between increased memory requirement and more
                 // granular critical regions.
-    RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
-        ABSL_GUARDED_BY(mu_);
-    bool is_serving_ ABSL_GUARDED_BY(mu_) = false;
-    bool started_ ABSL_GUARDED_BY(mu_) = false;
+    RefCountedPtr<ServerConfigFetcher::ConnectionManager>
+        legacy_connection_manager_ ABSL_GUARDED_BY(mu_);
+    bool legacy_is_serving_ ABSL_GUARDED_BY(mu_) = false;
+    bool legacy_started_ ABSL_GUARDED_BY(mu_) = false;
     absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
         connections_ ABSL_GUARDED_BY(mu_);
     std::deque<ConnectionsToBeDrained> connections_to_be_drained_list_
@@ -358,6 +444,11 @@ class Server : public ServerInterface,
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
   // Takes ownership of a ref on resource_user from the caller.
+  // TODO(roth): When we have time, migrate all callers to store
+  // connections in listeners and remove this method.  This will require
+  // changing the inproc transport to use a listener and migrating
+  // callers from the legacy grpc_server_add_channel_from_fd() API to
+  // the new PassiveListener API, and maybe other changes.
   grpc_error_handle SetupTransport(Transport* transport,
                                    grpc_pollset* accepting_pollset,
                                    const ChannelArgs& args)
@@ -370,6 +461,20 @@ class Server : public ServerInterface,
                                    const ChannelArgs& args,
                                    grpc_channel_stack_type channel_stack_type)
       ABSL_LOCKS_EXCLUDED(mu_global_);
+
+  // TODO(roth): Remove this as part of removing the
+  // server_connection_management experiment.
+  grpc_error_handle LegacySetupTransport(
+      Transport* transport, grpc_pollset* accepting_pollset,
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type)
+      ABSL_LOCKS_EXCLUDED(mu_global_);
+
+  // TODO(roth): After the v3 migration, the caller should already have
+  // an OrphanablePtr<ServerTransport>, so this can take the parameter as
+  // ServerTransport& and just return absl::Status.
+  absl::StatusOr<OrphanablePtr<ServerTransport>> SetupCallLinkageForTransport(
+      Transport* transport, grpc_pollset* accepting_pollset,
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -434,12 +539,14 @@ class Server : public ServerInterface,
 
   class ChannelData final {
    public:
+    class V1ChannelTransport;
+
     ChannelData() = default;
     ~ChannelData();
 
     void InitTransport(RefCountedPtr<Server> server,
                        RefCountedPtr<Channel> channel, size_t cq_idx,
-                       Transport* transport, intptr_t channelz_socket_uuid);
+                       Transport* transport);
 
     RefCountedPtr<Server> server() const { return server_; }
     Channel* channel() const { return channel_.get(); }
@@ -470,9 +577,12 @@ class Server : public ServerInterface,
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;
+
+    // TODO(roth): Remove this when removing the
+    // server_connection_management experiment.
     std::optional<std::list<ChannelData*>::iterator> list_position_;
+
     grpc_closure finish_destroy_channel_closure_;
-    intptr_t channelz_socket_uuid_;
 
     RefCountedPtr<Arena> parent_arena_;
   };
@@ -587,6 +697,64 @@ class Server : public ServerInterface,
 
   class TransportConnectivityWatcher;
 
+  class Connection final : public RefCounted<Connection>, public Orphanable {
+   public:
+    Connection(RefCountedPtr<ListenerState> listener_state,
+               OrphanablePtr<ServerTransport> transport);
+
+    void Orphan() override;
+
+    void Shutdown(absl::string_view reason, Duration grace_period);
+
+    absl::string_view peer_address() const;
+
+    // FIXME: maybe use http2 status code here?
+    void MaybeSendGoawayLocked(absl::string_view reason)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+    void MaybeDisconnectImmediatelyLocked(absl::Status status)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+
+   private:
+    class ConnectivityWatcher;
+
+    const RefCountedPtr<ListenerState> listener_state_;
+
+    // Will be unset when the connection has been orphaned.
+    OrphanablePtr<ServerTransport> transport_
+        ABSL_GUARDED_BY(&Server::mu_global_);
+  };
+
+  // A set of connections that are currently draining (i.e., a GOAWAY
+  // has been sent but the connection has not yet been closed).
+  struct DrainingConnections {
+    absl::flat_hash_set<OrphanablePtr<Connection>> connections;
+    // The timestamp at which the connections will be closed.
+    grpc_core::Timestamp timestamp;
+  };
+
+  void RemoveDrainingConnectionLocked(Connection* connection)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
+  void StartDrainingConnectionLocked(
+      OrphanablePtr<Connection> connections,
+      absl::string_view reason, Duration grace_period)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
+  void StartDrainingConnectionsLocked(
+      absl::flat_hash_set<OrphanablePtr<Connection>> connections,
+      absl::string_view reason, Duration grace_period)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
+  void OnDrainGraceTimer();
+  void MaybeStartNewGraceTimerLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
+  void DisconnectAllConnectionsLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
+  void StartDrainingAllConnectionsLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+
   RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
                                         const absl::string_view& path);
   void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
@@ -602,6 +770,11 @@ class Server : public ServerInterface,
 
   void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error_handle error);
   grpc_call_error QueueRequestedCall(size_t cq_idx, RequestedCall* rc);
+
+  bool HasOpenConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+  size_t NumActiveConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
+  size_t NumDrainingConnectionsLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void MaybeFinishShutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_)
       ABSL_LOCKS_EXCLUDED(mu_call_);
@@ -718,18 +891,33 @@ class Server : public ServerInterface,
               .value_or(3000)))};
   const Duration max_time_in_pending_queue_;
 
+  grpc_event_engine::experimental::EventEngine* const event_engine_;
+
+  // TODO(roth): Remove these fields as part of removing the
+  // server_connection_management experiment.
   std::list<ChannelData*> channels_ ABSL_GUARDED_BY(mu_global_);
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
       ABSL_GUARDED_BY(mu_global_);
-  RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
+
+  // Tracks connections that are in the process of draining.
+  // A connection starts draining when we send a GOAWAY.  Then, some
+  // period of time later, we will terminate the connections.
+  //
+  // There can be multiple sets of draining connections in progress at
+  // the same time, each with a different disconnection time.  This list
+  // is ordered by the timestamps of the draining connections.  Whenever
+  // the list is non-empty, there will be a timer pending for the time
+  // of the first entry.  When the timer fires, we terminate the connections
+  // in the first entry, remove the first entry from the list, and, if the
+  // list is non-empty, schedule a timer for the next timestamp.
+  std::deque<DrainingConnections> draining_connections_list_
       ABSL_GUARDED_BY(mu_global_);
-  size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
+  grpc_event_engine::experimental::EventEngine::TaskHandle
+      drain_grace_timer_handle_ ABSL_GUARDED_BY(mu_global_) =
+          grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
 
   std::list<RefCountedPtr<ListenerState>> listener_states_;
   size_t listeners_destroyed_ = 0;
-
-  // The last time we printed a shutdown progress message.
-  gpr_timespec last_shutdown_message_time_;
 
   StreamQuotaRefPtr stream_quota_;
 };
