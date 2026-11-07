@@ -21,6 +21,7 @@ import sys
 import threading
 import time
 import types
+import weakref
 from typing import (
     Any,
     Callable,
@@ -118,6 +119,11 @@ def _unknown_code_details(
     )
 
 
+# The _RPCStates of live RPCs, tracked only when fork support is enabled so that
+# a fork child can replace their conditions (see Channel._postfork_child).
+_POSTFORK_RPC_STATES = weakref.WeakSet()
+
+
 class _RPCState:
     condition: threading.Condition
     due: Set[cygrpc.OperationType]
@@ -174,6 +180,8 @@ class _RPCState:
         self.cancelled = False
         self.callbacks = []
         self.fork_epoch = cygrpc.get_fork_epoch()
+        if cygrpc.is_fork_support_enabled():
+            _POSTFORK_RPC_STATES.add(self)
 
     def reset_postfork_child(self):
         self.condition = threading.Condition()
@@ -1707,6 +1715,7 @@ class _ChannelCallState:
         self.threading = False
 
     def reset_postfork_child(self) -> None:
+        self.lock = threading.Lock()
         self.managed_calls = 0
 
     def __del__(self):
@@ -1828,6 +1837,7 @@ class _ChannelConnectivityState:
         self.delivering = False
 
     def reset_postfork_child(self) -> None:
+        self.lock = threading.RLock()
         self.polling = False
         self.connectivity = None
         self.delivering = False
@@ -2225,6 +2235,14 @@ class Channel(grpc.Channel):
             cygrpc.gevent_decrement_channel_count()
 
     def _postfork_child(self) -> None:
+        # Only the forking thread survives fork(). A lock that another thread
+        # held at that moment can never be released, so replace every lock that
+        # the cleanup below (or later use of this channel) may take.
+        self._call_state.reset_postfork_child()
+        self._connectivity_state.reset_postfork_child()
+        for rpc_state in tuple(_POSTFORK_RPC_STATES):
+            rpc_state.reset_postfork_child()
+        _observability.reset_postfork_child()
         self._channel.cancel_calls_on_fork(
             cygrpc.StatusCode.cancelled, "Call cancelled in fork child"
         )

@@ -315,7 +315,13 @@ cdef void _call(
 
 cdef void _process_integrated_call_tag(
     _ChannelState state, _BatchOperationTag tag) except *:
-  cdef _CallState call_state = state.integrated_call_states.pop(tag)
+  cdef _CallState call_state = state.integrated_call_states.pop(tag, None)
+  if call_state is None:
+    # Tags are registered under the channel lock right after their batch
+    # starts. In a fork child, the thread that started this batch may have been
+    # stopped by fork() before registering it. The caller still delivers the
+    # event to the tag's handler.
+    return
   call_state.due.remove(tag)
   if not call_state.due:
     call_state.delete_call()
