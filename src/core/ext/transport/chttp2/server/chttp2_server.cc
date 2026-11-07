@@ -592,6 +592,8 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
         grpc_chttp2_transport_start_reading(
             transport.get(), (*result)->read_buffer.c_slice_buffer(),
             /*notify_on_receive_settings=*/nullptr, nullptr,
+// FIXME: do this in server code instead of here, so that we
+// can remove the on_close callback from the transport
             [connection_quota = listener_state_->connection_quota()]() {
               connection_quota->ReleaseConnections(1);
             });
@@ -613,6 +615,8 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
         auto* ph2_transport = new http2::Http2ServerTransport(
             std::move(promise_endpoint), (*result)->args,
             std::move(event_engine_ptr), /*on_receive_settings=*/nullptr,
+// FIXME: do this in server code instead of here, so that we
+// can remove the on_close callback from the transport
             [connection_quota = listener_state_->connection_quota()]() {
               connection_quota->ReleaseConnections(1);
             });
