@@ -366,6 +366,11 @@ class Server : public ServerInterface,
 
     RefCountedPtr<Server> const server_;
     MemoryQuotaRefPtr const memory_quota_;
+
+    // TODO(roth): This should ideally be instantiated once for the
+    // entire server, not once per listener.  Doing it once per listener
+    // means that we will have a separate quota for each listener, which
+    // is almost certainly not what we want.
     ConnectionQuotaRefPtr connection_quota_;
 
     // TODO(roth): Remove this when removing the
