@@ -174,6 +174,16 @@ class ForkInteropTest(unittest.TestCase):
             methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL
         )
 
+    def testInProgressAllRpcTypesSameChannel(self):
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_ALL_RPC_TYPES_SAME_CHANNEL
+        )
+
+    def testInProgressAllRpcTypesNewChannel(self):
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_ALL_RPC_TYPES_NEW_CHANNEL
+        )
+
     def tearDown(self):
         self._server_process.kill()
         for stream in self._streams:
