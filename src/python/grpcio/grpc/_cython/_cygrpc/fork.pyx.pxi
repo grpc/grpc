@@ -14,6 +14,7 @@
 
 import os
 import sys
+import weakref
 
 _AWAIT_THREADS_TIMEOUT_SECONDS = 5
 
@@ -211,7 +212,8 @@ class _ForkState:
         self.fork_handler_registered = False
         self.active_thread_count = _ActiveThreadCount()
         self.fork_epoch = 0
-        self.channels = set()
+        # Weak, so that unclosed channels can still be garbage collected.
+        self.channels = weakref.WeakSet()
 
 
 _fork_state = _ForkState()
