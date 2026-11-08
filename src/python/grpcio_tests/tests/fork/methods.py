@@ -608,7 +608,7 @@ class _InProgressCalls:
         }
         self._stop = threading.Event()
         self._errors = []
-        self._checked = collections.Counter({name: 0 for name in self._calls})
+        self._checked = collections.Counter(dict.fromkeys(self._calls, 0))
         self._threads = {}
         self.bidi_call = None  # The long-lived bidi call, set by start().
         self._gate = threading.Condition()  # Guards the three fields below.
