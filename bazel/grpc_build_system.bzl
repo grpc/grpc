@@ -192,8 +192,6 @@ def grpc_cc_library(
         linkopts = linkopts,
         includes = [
             include_prefix + "include",
-            include_prefix + "src/core/ext/upb-gen",  # Once upb code-gen issue is resolved, remove this.
-            include_prefix + "src/core/ext/upbdefs-gen",  # Once upb code-gen issue is resolved, remove this.
         ],
         alwayslink = alwayslink,
         data = data,
