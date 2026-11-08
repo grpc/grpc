@@ -21,7 +21,6 @@ import sys
 import threading
 import time
 import types
-import weakref
 from typing import (
     Any,
     Callable,
@@ -34,6 +33,7 @@ from typing import (
     Tuple,
     Union,
 )
+import weakref
 
 import grpc
 from grpc import _common
