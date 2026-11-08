@@ -82,7 +82,7 @@ cdef void __postfork_child() noexcept nogil:
                 state_to_reset.reset_postfork_child()
             _fork_state.postfork_states_to_reset = []
             _fork_state.fork_epoch += 1
-            for channel in _fork_state.channels:
+            for channel in tuple(_fork_state.channels):
                 channel._postfork_child()
             with _fork_state.fork_in_progress_condition:
                 _fork_state.fork_in_progress = False
