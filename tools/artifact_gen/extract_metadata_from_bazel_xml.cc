@@ -490,8 +490,10 @@ class ArtifactGen {
   // source files that we don't need are excluded (see kZlibExcludeFiles).
   void PruneZlib() {
     constexpr char kZlibTarget[] = "@zlib//:z";
-    // These files are used for decoding/encoding .gz files and
-    // requires use of autotools. Exclude them.
+    // These files are not directly used by gRPC. They're
+    // used for decoding/encoding .gz files and
+    // require an extra pass to generate platform-dependent zconf.h
+    // using autotools. Exclude them to simplify the process.
     const std::set<absl::string_view> kZlibExcludeFiles = {
         "gzwrite.c", "gzlib.c", "gzread.c", "gzclose.c"};
     auto it = rules_.find(kZlibTarget);

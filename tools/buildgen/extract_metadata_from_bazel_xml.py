@@ -731,14 +731,27 @@ def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
         rule["deps"] = [dep for dep in rule["deps"] if _should_include(dep)]
 
 
+# Rewrite zlib 1.3.2 bazel rule.
+#
+# "@zlib//:z" don't directly expose header files since 1.3.2,
+# but instead have .h files as a part of its private `srcs` list.
+# The public header files are dynamically generated and copied into
+# a "zlib/include" folder.
+#
+# To work around this for our wrapper langauges , rewrite the BazelRule
+# object such that headers are directly exposed, and
+# source files that we don't need are excluded (see kZlibExcludeFiles).
 def _prune_zlib_rules(bazel_rules: BuildDict):
     # @zlib//:zlib is an alias to @zlib//:z
     ZLIB_TARGET = "@zlib//:z"
+    # These files are not directly used by gRPC. They're
+    # used for decoding/encoding .gz files and
+    # requires an extra pass to generate platform-dependent zconf.h
+    # using autotools. Exclude them to simplify the process.
     ZLIB_EXCLUDE_FILES = set(["gzwrite.c", "gzlib.c", "gzread.c", "gzclose.c"])
     zlib_rule = bazel_rules[ZLIB_TARGET]
     srcs = zlib_rule["srcs"]
 
-    # breakpoint()
     def _should_keep_src(src):
         file_name = src.split("//:")[-1]
         return file_name.endswith(".c") and not file_name in ZLIB_EXCLUDE_FILES
