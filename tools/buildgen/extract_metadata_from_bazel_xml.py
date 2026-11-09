@@ -730,19 +730,25 @@ def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
     for rule_name, rule in bazel_rules.items():
         rule["deps"] = [dep for dep in rule["deps"] if _should_include(dep)]
 
+
 def _prune_zlib_rules(bazel_rules: BuildDict):
     # @zlib//:zlib is an alias to @zlib//:z
     ZLIB_TARGET = "@zlib//:z"
     ZLIB_EXCLUDE_FILES = set(["gzwrite.c", "gzlib.c", "gzread.c", "gzclose.c"])
     zlib_rule = bazel_rules[ZLIB_TARGET]
     srcs = zlib_rule["srcs"]
+
     # breakpoint()
     def _should_keep_src(src):
         file_name = src.split("//:")[-1]
         return file_name.endswith(".c") and not file_name in ZLIB_EXCLUDE_FILES
+
     zlib_rule["srcs"] = [src for src in srcs if _should_keep_src(src)]
-    zlib_rule["hdrs"] = [src.replace("zlib/include/", "") for src in srcs if src.endswith(".h")]
+    zlib_rule["hdrs"] = [
+        src.replace("zlib/include/", "") for src in srcs if src.endswith(".h")
+    ]
     return
+
 
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
