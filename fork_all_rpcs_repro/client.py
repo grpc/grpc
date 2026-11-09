@@ -50,9 +50,6 @@ BIDI = "/forkdebug.Echo/Bidi"
 FOREVER = b"1000000000"  # Messages to ask for in a long-lived server stream.
 THREE = [b"0", b"1", b"2"]  # What a server stream asked for 3 must deliver.
 UPLOAD = (b"a", b"b", b"c")  # A short client stream; the server counts it.
-# Server-streaming calls on a channel with this option are polled by the
-# calling thread instead of the channel's polling thread.
-SINGLE_THREADED = ((grpc.experimental.ChannelOptions.SingleThreadedUnaryStream, 1),)
 
 # gRPC's own logger only has a NullHandler, which would hide post-fork errors.
 logging.basicConfig(format="[pid %(process)d] %(levelname)s %(name)s: %(message)s")
@@ -65,7 +62,7 @@ checked = collections.Counter()  # Responses checked in the parent, per variant.
 live = {}  # In-flight calls, inherited by the children.
 
 channel = grpc.insecure_channel(TARGET)
-single_threaded_channel = grpc.insecure_channel(TARGET, options=SINGLE_THREADED)
+single_threaded_channel = grpc.insecure_channel(TARGET)
 unary = channel.unary_unary(UNARY)
 server_stream = channel.unary_stream(SERVER_STREAM)
 single_threaded_server_stream = single_threaded_channel.unary_stream(SERVER_STREAM)
