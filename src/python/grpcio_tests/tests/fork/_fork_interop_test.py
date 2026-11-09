@@ -184,6 +184,11 @@ class ForkInteropTest(unittest.TestCase):
             methods.TestCase.IN_PROGRESS_ALL_RPC_TYPES_NEW_CHANNEL
         )
 
+    def testInProgressSingleThreadedStreamContinueCall(self):
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_SINGLE_THREADED_STREAM_CONTINUE_CALL
+        )
+
     def tearDown(self):
         self._server_process.kill()
         for stream in self._streams:

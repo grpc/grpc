@@ -365,7 +365,9 @@ cdef object _process_segregated_call_tag(
   if not call_state.due:
     #TODO(xuanwn): Expand the scope of nogil
     call_state.delete_call()
-    state.segregated_call_states.remove(call_state)
+    # discard(): a fork child stops tracking segregated calls (see
+    # _cancel_all_calls), but the forking thread may still own one.
+    state.segregated_call_states.discard(call_state)
     _destroy_c_completion_queue(c_completion_queue)
     return True
   else:
@@ -392,7 +394,7 @@ cdef class SegregatedCall:
     def on_failure():
       self._call_state.due.clear()
       self._call_state.delete_call()
-      self._channel_state.segregated_call_states.remove(self._call_state)
+      self._channel_state.segregated_call_states.discard(self._call_state)
       _destroy_c_completion_queue(self._c_completion_queue)
     return _next_call_event(
         self._channel_state, self._c_completion_queue, on_success, on_failure, None)
@@ -505,17 +507,16 @@ cdef _cancel_all_calls(Channel channel, grpc_status_code code, object details):
       grpc_call_cancel_with_status(
           call_state.c_call, code, encoded_details, NULL)
     for call_state in state.segregated_call_states:
-      if not call_state.due:
-        # The call already finished: the thread that owned it (which does not
-        # exist in the fork child) may have been deleting it at fork() time.
-        continue
-      grpc_call_cancel_with_status(
-          call_state.c_call, code, encoded_details, NULL)
-      call_state.delete_call()
-      call_state.due.clear()
+      # A call with nothing due already finished: the thread that owned it may
+      # have been deleting it at fork() time, so don't touch it.
+      if call_state.due:
+        grpc_call_cancel_with_status(
+            call_state.c_call, code, encoded_details, NULL)
     # Segregated calls complete on their own completion queues, which only the
     # threads that started them poll, so the loop below would never see them
-    # finish. Those threads don't exist in the fork child: stop tracking them.
+    # finish: stop tracking them. If the forking thread owns one, it still gets
+    # the cancellation from next_event() and releases the call itself. Calls
+    # owned by threads that don't exist in the child are abandoned.
     state.segregated_call_states.clear()
     while not _calls_drained(state):
       event = channel.next_call_event()

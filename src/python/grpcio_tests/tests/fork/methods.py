@@ -158,7 +158,9 @@ class _ChildProcess:
             self._exceptions.put("RpcError: %s" % rpc_error)
         except Exception as e:  # pylint: disable=broad-except
             traceback.print_exc()
-            self._exceptions.put(e)
+            # Send a string: an exception that can't be pickled (e.g. one that
+            # holds a Cython object) would be dropped, hiding the failure.
+            self._exceptions.put(repr(e))
         sys.exit(0)
 
     def _orchestrate_child_gdb(self):
@@ -875,6 +877,47 @@ def _in_progress_all_rpc_types_new_channel(channel, args):
     _in_progress_all_rpc_types(channel, args, child_rpcs)
 
 
+def _in_progress_single_threaded_stream_continue_call(args):
+    """The forking thread owns an in-flight single-threaded server stream.
+
+    The child keeps reading the stream it inherited, which gRPC must end with
+    CANCELLED. The parent reads the rest of the stream.
+    """
+    single_threaded_channel = _channel(
+        args,
+        options=(
+            (grpc.experimental.ChannelOptions.SingleThreadedUnaryStream, 1),
+        ),
+    )
+    stub = test_pb2_grpc.TestServiceStub(single_threaded_channel)
+    responses = stub.StreamingOutputCall(
+        _streaming_output_request(_CHILD_RPC_SIZES, _STREAM_INTERVAL_US),
+        timeout=_RPC_TIMEOUT_S,
+    )
+    _validate_payload_type_and_length(
+        next(responses), messages_pb2.COMPRESSABLE, _CHILD_RPC_SIZES[0]
+    )
+
+    def child_target():
+        try:
+            for _ in responses:
+                pass
+        except grpc.RpcError as rpc_error:
+            if rpc_error.code() not in (
+                grpc.StatusCode.CANCELLED,
+                grpc.StatusCode.UNAVAILABLE,
+            ):
+                raise ValueError("Unexpected status code") from rpc_error
+        else:
+            raise ValueError("The inherited stream did not end with an error")
+
+    child_process = _ChildProcess(child_target)
+    child_process.start()
+    _validate_streamed_sizes(responses, _CHILD_RPC_SIZES[1:])
+    child_process.finish()
+    single_threaded_channel.close()
+
+
 @enum.unique
 class TestCase(enum.Enum):
     CONNECTIVITY_WATCH = "connectivity_watch"
@@ -901,6 +944,9 @@ class TestCase(enum.Enum):
     )
     IN_PROGRESS_ALL_RPC_TYPES_NEW_CHANNEL = (
         "in_progress_all_rpc_types_new_channel"
+    )
+    IN_PROGRESS_SINGLE_THREADED_STREAM_CONTINUE_CALL = (
+        "in_progress_single_threaded_stream_continue_call"
     )
 
     def run_test(self, args):
@@ -932,6 +978,8 @@ class TestCase(enum.Enum):
             _in_progress_all_rpc_types_same_channel(channel, args)
         elif self is TestCase.IN_PROGRESS_ALL_RPC_TYPES_NEW_CHANNEL:
             _in_progress_all_rpc_types_new_channel(channel, args)
+        elif self is TestCase.IN_PROGRESS_SINGLE_THREADED_STREAM_CONTINUE_CALL:
+            _in_progress_single_threaded_stream_continue_call(args)
         else:
             raise NotImplementedError(
                 'Test case "%s" not implemented!' % self.name
