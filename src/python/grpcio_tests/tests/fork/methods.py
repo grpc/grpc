@@ -579,11 +579,10 @@ def _all_rpc_types(stub):
 class _InProgressCalls:
     """Keeps calls of all four RPC types in flight from background threads.
 
-    Every response is checked. Blocking unary, blocking client-streaming and
-    single-threaded server-streaming calls are segregated: each completes on
-    its own completion queue, polled by the calling thread. The others are
-    integrated: they complete on the channel's shared completion queue, polled
-    by a gRPC thread.
+    Every response is checked. Blocking unary and blocking client-streaming
+    calls are segregated: each completes on its own completion queue, polled
+    by the calling thread. The others are integrated: they complete on the
+    channel's shared completion queue, polled by a gRPC thread.
 
     Fork support requires that no other application thread is calling into
     gRPC when fork() is called. So pause() makes each background thread wait
@@ -591,18 +590,13 @@ class _InProgressCalls:
     stream, until resume(). The long-lived streams stay in flight meanwhile.
     """
 
-    def __init__(self, channel, single_threaded_channel):
+    def __init__(self, channel):
         self._stub = test_pb2_grpc.TestServiceStub(channel)
-        self._single_threaded_stub = test_pb2_grpc.TestServiceStub(
-            single_threaded_channel
-        )
         self._calls = {
             "unary": self._unary,
             "unary_future": self._unary_future,
             "server_stream": self._server_stream,
-            "server_stream_single_threaded": (
-                self._server_stream_single_threaded
-            ),
+            "server_stream_short": self._server_stream_short,
             "client_stream": self._client_stream,
             "client_stream_future": self._client_stream_future,
             "bidi": self._bidi,
@@ -737,9 +731,9 @@ class _InProgressCalls:
                 return
             self._safe_point()
 
-    def _server_stream_single_threaded(self, checked):
+    def _server_stream_short(self, checked):
         while not self._stop.is_set():
-            responses = self._single_threaded_stub.StreamingOutputCall(
+            responses = self._stub.StreamingOutputCall(
                 _streaming_output_request(
                     _CHILD_RPC_SIZES, _STREAM_INTERVAL_US
                 ),
@@ -813,7 +807,7 @@ class _InProgressCalls:
             checked()
 
 
-def _in_progress_all_rpc_types(channel, args, child_rpcs):
+def _in_progress_all_rpc_types(channel, child_rpcs):
     """Forks a child while calls of all four RPC types are in flight.
 
     Background threads keep calls of every kind in flight. This thread pauses
@@ -821,13 +815,7 @@ def _in_progress_all_rpc_types(channel, args, child_rpcs):
     checks that gRPC cancelled the long-lived bidi call it inherited, then
     runs child_rpcs().
     """
-    single_threaded_channel = _channel(
-        args,
-        options=(
-            (grpc.experimental.ChannelOptions.SingleThreadedUnaryStream, 1),
-        ),
-    )
-    calls = _InProgressCalls(channel, single_threaded_channel)
+    calls = _InProgressCalls(channel)
 
     def child_target():
         # gRPC must end the calls the child inherited: cancelled by its
@@ -850,10 +838,9 @@ def _in_progress_all_rpc_types(channel, args, child_rpcs):
     calls.resume()
     child_process.finish()
     calls.stop(checked_before_fork)
-    single_threaded_channel.close()
 
 
-def _in_progress_all_rpc_types_same_channel(channel, args):
+def _in_progress_all_rpc_types_same_channel(channel):
     def child_rpcs():
         try:
             _all_rpc_types(stub)
@@ -866,7 +853,7 @@ def _in_progress_all_rpc_types_same_channel(channel, args):
             _all_rpc_types(stub)
 
     stub = test_pb2_grpc.TestServiceStub(channel)
-    _in_progress_all_rpc_types(channel, args, child_rpcs)
+    _in_progress_all_rpc_types(channel, child_rpcs)
 
 
 def _in_progress_all_rpc_types_new_channel(channel, args):
@@ -874,7 +861,7 @@ def _in_progress_all_rpc_types_new_channel(channel, args):
         with _channel(args) as child_channel:
             _all_rpc_types(test_pb2_grpc.TestServiceStub(child_channel))
 
-    _in_progress_all_rpc_types(channel, args, child_rpcs)
+    _in_progress_all_rpc_types(channel, child_rpcs)
 
 
 def _in_progress_single_threaded_stream_continue_call(args):
@@ -975,7 +962,7 @@ class TestCase(enum.Enum):
         elif self is TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL:
             _in_progress_bidi_new_channel_blocking_call(channel, args)
         elif self is TestCase.IN_PROGRESS_ALL_RPC_TYPES_SAME_CHANNEL:
-            _in_progress_all_rpc_types_same_channel(channel, args)
+            _in_progress_all_rpc_types_same_channel(channel)
         elif self is TestCase.IN_PROGRESS_ALL_RPC_TYPES_NEW_CHANNEL:
             _in_progress_all_rpc_types_new_channel(channel, args)
         elif self is TestCase.IN_PROGRESS_SINGLE_THREADED_STREAM_CONTINUE_CALL:
