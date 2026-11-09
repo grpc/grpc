@@ -529,6 +529,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           address, args.RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
+        // Note: For subchannels created by the LB policy, address() comes
+        // from grpc_sockaddr_to_uri(), which shows IPv4-mapped IPv6
+        // addresses as IPv4.  So the address that ExpectPickComplete()
+        // returns for an IPv4-mapped IPv6 address looks like an IPv4
+        // address; compare SubchannelState pointers to tell them apart.
         auto address_uri = grpc_sockaddr_to_uri(&address);
         GRPC_CHECK(address_uri.ok());
         it = test_->subchannel_pool_
@@ -1102,9 +1107,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       for (size_t i = 0; i < endpoint.addresses().size(); ++i) {
         const grpc_resolved_address& address = endpoint.addresses()[i];
         std::string address_str = grpc_sockaddr_to_uri(&address).value();
-        auto* subchannel = FindSubchannel(address_str);
+        // Look up the subchannel by address rather than by address_str,
+        // because the URI shows an IPv4-mapped IPv6 address as IPv4.  The
+        // pick checks below still compare address_str, so an IPv4 address
+        // and an IPv4-mapped IPv6 address with the same host and port
+        // can't both be passed in.
+        auto* subchannel = FindSubchannel(address);
         EXPECT_NE(subchannel, nullptr)
-            << address_str << "\n"
+            << address_str << " ("
+            << grpc_sockaddr_to_string(&address, false).value_or("<invalid>")
+            << ")\n"
             << location.file() << ":" << location.line();
         if (subchannel == nullptr) return nullptr;
         endpoint_subchannels.back().push_back(subchannel);
@@ -1292,9 +1304,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Returns the entry in the subchannel pool, or null if not present.
-  SubchannelState* FindSubchannel(absl::string_view address,
+  SubchannelState* FindSubchannel(const grpc_resolved_address& address,
                                   const ChannelArgs& args = ChannelArgs()) {
-    SubchannelKey key(MakeAddress(address), args);
+    SubchannelKey key(address, args);
     SubchannelState* subchannel = nullptr;
     TickUntil([&]() {
       auto it = subchannel_pool_.find(key);
@@ -1303,6 +1315,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return true;
     });
     return subchannel;
+  }
+  SubchannelState* FindSubchannel(absl::string_view address,
+                                  const ChannelArgs& args = ChannelArgs()) {
+    return FindSubchannel(MakeAddress(address), args);
   }
 
   // Creates and returns an entry in the subchannel pool.
