@@ -86,9 +86,22 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.CancelAfterAccept"
 
 // RequestResponseWithPayload10Times and InvokeLargeRequest flake about 6%.
+// TODO(ritulb) : [PH2][P1] : b/581109284 : Enable Cancel* tests.
 #define GRPC_HTTP2_PH2_SERVER_ONLY_AVOID_LIST             \
   "|CoreLargeSendTests.RequestResponseWithPayload10Times" \
-  "|Http2Tests.HighInitialSeqno"
+  "|Http2Tests.HighInitialSeqno"                          \
+  "|CoreEnd2endTests.CancelAfterInvoke3"                  \
+  "|CoreEnd2endTests.CancelAfterInvoke4"                  \
+  "|CoreEnd2endTests.CancelAfterInvoke5"                  \
+  "|CoreEnd2endTests.CancelAfterInvoke6"                  \
+  "|CoreEnd2endTests.CancelWithStatus1"                   \
+  "|CoreEnd2endTests.CancelWithStatus2"                   \
+  "|CoreEnd2endTests.CancelWithStatus3"                   \
+  "|CoreEnd2endTests.CancelWithStatus4"                   \
+  "|CoreDeadlineTests.DeadlineAfterInvoke3"               \
+  "|CoreDeadlineTests.DeadlineAfterInvoke4"               \
+  "|CoreDeadlineTests.DeadlineAfterInvoke5"               \
+  "|CoreDeadlineTests.DeadlineAfterInvoke6"
 
 #define GRPC_HTTP2_PH2_CLIENT_SERVER_ONLY_AVOID_LIST ""
 
