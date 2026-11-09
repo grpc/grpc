@@ -478,8 +478,20 @@ class ArtifactGen {
     }
   }
 
+  // Rewrite zlib 1.3.2 bazel rule.
+  //
+  // "@zlib//:z" don't directly expose header files since 1.3.2,
+  // but instead have .h files as a part of its private `srcs` list.
+  // The public header files are dynamically generated and copied into
+  // a "zlib/include" folder.
+  //
+  // To work around this for our wrapper langauges , rewrite the BazelRule
+  // object such that headers are directly exposed, and
+  // source files that we don't need are excluded (see kZlibExcludeFiles).
   void PruneZlib() {
     constexpr char kZlibTarget[] = "@zlib//:z";
+    // These files are used for decoding/encoding .gz files and
+    // requires use of autotools. Exclude them.
     const std::set<absl::string_view> kZlibExcludeFiles = {
         "gzwrite.c", "gzlib.c", "gzread.c", "gzclose.c"};
     auto it = rules_.find(kZlibTarget);
