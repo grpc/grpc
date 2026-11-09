@@ -23,6 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -563,6 +564,13 @@ class Http2ClientTransport final : public ClientTransport,
       absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>&& stream_list,
       const Http2Status& http2_status, DebugLocation whence);
 
+  // Returns true if MultiplexerLoop has been spawned and has not yet exited.
+  // Must be called on transport_party_.
+  bool IsMultiplexerLoopActive() const {
+    return is_multiplexer_loop_spawned_.load(std::memory_order_acquire) &&
+           !multiplexer_loop_done_.is_set();
+  }
+
   // This function MUST run on the transport party.
   void CloseTransport();
 
@@ -695,6 +703,11 @@ class Http2ClientTransport final : public ClientTransport,
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
+  // Set in SpawnTransportLoops(), which may be called off-party and read on
+  // transport_party_.
+  std::atomic<bool> is_multiplexer_loop_spawned_{false};
+  // Only accessed on the transport party.
+  Latch<void> multiplexer_loop_done_;
   bool should_reset_ping_clock_;
   Http2TransportStats http2_transport_stats_;
   ReadContext read_context_;
