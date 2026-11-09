@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 #include <limits.h>
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -61,6 +62,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -1255,14 +1257,22 @@ void Http2ClientTransport::SpawnTransportLoops() {
   if (!TriggerWriteCycleOrHandleError()) {
     return;
   }
+  GRPC_DCHECK(!is_multiplexer_loop_spawned_.load(std::memory_order_relaxed));
+  is_multiplexer_loop_spawned_.store(true, std::memory_order_release);
   // For Client, write happens before read. So MultiplexerLoop is spawned first.
   // ReadLoop is spawned after the first write.
   // For Server, read happens before write. So ReadLoop is spawned first.
   SpawnGuardedTransportParty(
-      "MultiplexerLoop",
-
-      [self = RefAsSubclass<Http2ClientTransport>()]() {
-        return self->UntilTransportClosed(self->MultiplexerLoop());
+      "MultiplexerLoop", [self = RefAsSubclass<Http2ClientTransport>()]() {
+        return Map(self->UntilTransportClosed(self->MultiplexerLoop()),
+                   [self](absl::Status status) {
+                     GRPC_HTTP2_CLIENT_DLOG
+                         << "Http2ClientTransport::MultiplexerLoop exited with "
+                            "status: "
+                         << status;
+                     self->multiplexer_loop_done_.Set();
+                     return status;
+                   });
       });
   if (flow_control_.bdp_probe()) {
     SpawnGuardedTransportParty(
@@ -1459,22 +1469,40 @@ auto Http2ClientTransport::CloseTransportFactory(
     // the connection; a receiver of a GOAWAY that has no more use for the
     // connection SHOULD still send a GOAWAY frame before terminating the
     // connection.
-    return Map(
-        // TODO(akshitpatel) : [PH2][P4] : This is creating a copy of
-        // the debug data. Verify if this is causing a performance
-        // issue.
-        Race(AssertResultType<absl::Status>(self->goaway_manager_.RequestGoaway(
-                 http2_status.GetConnectionErrorCode(),
-                 /*debug_data=*/
-                 Slice::FromCopiedString(
-                     http2_status.GetAbslConnectionError().message()),
-                 kLastIncomingStreamIdClient, /*immediate=*/true)),
-             // Failsafe to close.
-             Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
-        [self](auto) mutable {
+    return AssertResultType<Empty>(Map(
+        If(
+            self->IsMultiplexerLoopActive(),
+            [&self, &http2_status]() {
+              // TODO(akshitpatel) : [PH2][P4] : This is creating a copy of
+              // the debug data. Verify if this is causing a performance
+              // issue.
+              // Race the GOAWAY write against MultiplexerLoop exiting and
+              // kGoawaySendTimeoutSeconds so a failed or stuck write cannot
+              // delay the close.
+              return Race(
+                  AssertResultType<absl::Status>(
+                      self->goaway_manager_.RequestGoaway(
+                          http2_status.GetConnectionErrorCode(),
+                          /*debug_data=*/
+                          Slice::FromCopiedString(
+                              http2_status.GetAbslConnectionError().message()),
+                          kLastIncomingStreamIdClient, /*immediate=*/true)),
+                  Map(self->multiplexer_loop_done_.Wait(),
+                      [](Empty) { return absl::OkStatus(); }),
+                  Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds)));
+            },
+            []() {
+              // MultiplexerLoop was never spawned or has already exited. No
+              // GOAWAY can be written.
+              GRPC_HTTP2_CLIENT_DLOG
+                  << "Http2ClientTransport::CloseTransportFactory "
+                     "MultiplexerLoop not active. Closing immediately.";
+              return Immediate(absl::OkStatus());
+            }),
+        [self](absl::Status) mutable {
           self->CloseTransport();
           return Empty{};
-        });
+        }));
   };
 }
 

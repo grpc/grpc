@@ -608,8 +608,15 @@ class Http2ServerTransport final : public ServerTransport,
   // bool CanCloseTransportLocked() const
   //     ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
 
+  // Returns true if MultiplexerLoop has been spawned and has not yet exited.
+  // Must be called on transport_party_.
+  bool IsMultiplexerLoopActive() const {
+    return is_multiplexer_loop_spawned_ && !multiplexer_loop_done_.is_set();
+  }
+
   // This function MUST run on the transport party.
-  void CloseTransport();
+  void CloseTransport(const absl::Status& disconnect_status,
+                      const char* disconnect_reason);
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
@@ -768,6 +775,7 @@ class Http2ServerTransport final : public ServerTransport,
   bool is_goaway_received_;
   // Only accessed on the transport party.
   bool is_multiplexer_loop_spawned_ = false;
+  Latch<void> multiplexer_loop_done_;
   bool should_reset_ping_clock_;
   bool max_concurrent_streams_overload_protection_ = false;
   Http2TransportStats http2_transport_stats_;
