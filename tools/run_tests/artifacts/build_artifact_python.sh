@@ -143,7 +143,7 @@ tar xzf "${GRPCIO_TAR_GZ}" -C "${GRPCIO_STRIP_TEMPDIR}"
   for dir in */third_party/*; do
     clean_non_source_files "${dir}" || true
   done
-  tar czf "${GRPCIO_STRIPPED_TAR_GZ}" -- *
+  tar --format=pax -czf "${GRPCIO_STRIPPED_TAR_GZ}" -- *
   chmod ugo+r "${GRPCIO_STRIPPED_TAR_GZ}"
 )
 mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
