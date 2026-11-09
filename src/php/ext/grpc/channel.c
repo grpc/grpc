@@ -419,10 +419,11 @@ PHP_METHOD(Channel, __construct) {
     key_len += strlen(creds->hashstr);
   }
   char *key = malloc(key_len + 1);
-  strcpy(key, target);
-  strcat(key, sha1str);
+  memcpy(key, target, target_length);
+  memcpy(key + target_length, sha1str, strlen(sha1str) + 1);
   if (creds != NULL && creds->hashstr != NULL) {
-    strcat(key, creds->hashstr);
+    php_grpc_int sha1str_len = strlen(sha1str);
+    memcpy(key + target_length + sha1str_len, creds->hashstr, strlen(creds->hashstr) + 1);
   }
   channel->wrapper = malloc(sizeof(grpc_channel_wrapper));
   channel->wrapper->ref_count = 0;
@@ -435,7 +436,7 @@ PHP_METHOD(Channel, __construct) {
   if (creds != NULL && creds->hashstr != NULL) {
     php_grpc_int creds_hashstr_len = strlen(creds->hashstr);
     char *channel_creds_hashstr = malloc(creds_hashstr_len + 1);
-    strcpy(channel_creds_hashstr, creds->hashstr);
+    memcpy(channel_creds_hashstr, creds->hashstr, creds_hashstr_len + 1);
     channel->wrapper->creds_hashstr = channel_creds_hashstr;
   }
 
