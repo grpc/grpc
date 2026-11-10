@@ -54,6 +54,7 @@ grpc_fuzz_test(
         "absl/strings",
     ],
     deps = [
+        "//:call_tracer",
         "//:config",
         "//:grpc",
         "//:grpc_base",
@@ -61,6 +62,7 @@ grpc_fuzz_test(
         "//:grpc_service_config_impl",
         "//:parse_address",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/test_util:fake_stats_plugin",
     ],
 )
 
@@ -94,9 +96,12 @@ grpc_fuzz_test(
         "absl/strings",
     ],
     deps = [
+        "//:call_tracer",
         "//:grpc",
         "//:grpc_client_channel",
+        "//src/core:client_channel_internal_header",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/test_util:fake_stats_plugin",
     ],
 )
 

@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <variant>
 
 #include "src/core/call/message.h"
@@ -35,6 +36,7 @@
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/ref_counted_string.h"
+#include "absl/base/optimization.h"
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -230,6 +232,11 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
     // the attempt.
     virtual void SetOptionalLabel(OptionalLabelKey key,
                                   RefCountedStringValue value) = 0;
+
+    virtual void RecordDelayStart(absl::string_view /*delay_type*/,
+                                  absl::string_view /*delay_reason*/) {}
+    virtual void RecordDelayReasonChanged(absl::string_view /*delay_reason*/) {}
+    virtual void RecordDelayEnd() {}
   };
 
   ~ClientCallTracerInterface() override {}
@@ -242,6 +249,11 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
   // RecordEnd() serves as an indication that the call stack is done with all
   // API calls, and the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
+
+  virtual void RecordDelayStart(absl::string_view /*delay_type*/,
+                                absl::string_view /*delay_reason*/) {}
+  virtual void RecordDelayReasonChanged(absl::string_view /*delay_reason*/) {}
+  virtual void RecordDelayEnd() {}
 };
 
 // Interface for a tracer that records activities on a server call.
@@ -366,6 +378,46 @@ class CallTracer : public CallSpan {
   CallTracerInterface* interface_;
 };
 
+// Interface to track delay type and reason.
+class CallDelayTracker {
+ public:
+  // Record a delay.
+  // New delay type: End the current delay and start a delay.
+  // Same delay type, new delay reason: Update the reason.
+  // Same delay type and reason: No-op.
+  template <typename TracerInterface>
+  void RecordDelay(TracerInterface* interface, absl::string_view delay_type,
+                   std::string delay_reason) {
+    // An empty delay type is used to check whether there is an ongoing delay.
+    // So an empty delay type can never be set.
+    if (ABSL_PREDICT_FALSE(delay_type.empty())) delay_type = "unknown";
+    if (current_delay_type_ != delay_type) {
+      if (!current_delay_type_.empty()) {
+        interface->RecordDelayEnd();
+      }
+      current_delay_type_ = std::string(delay_type);
+      current_delay_reason_ = std::move(delay_reason);
+      interface->RecordDelayStart(current_delay_type_, current_delay_reason_);
+    } else if (current_delay_reason_ != delay_reason) {
+      current_delay_reason_ = std::move(delay_reason);
+      interface->RecordDelayReasonChanged(current_delay_reason_);
+    }
+  }
+
+  template <typename TracerInterface>
+  void MaybeRecordDelayEnd(TracerInterface* interface) {
+    if (!current_delay_type_.empty()) {
+      interface->RecordDelayEnd();
+      current_delay_type_.clear();
+      current_delay_reason_.clear();
+    }
+  }
+
+ private:
+  std::string current_delay_type_;
+  std::string current_delay_reason_;
+};
+
 // Concrete class for a client call tracer.
 // Wraps a ClientCallTracerInterface.
 class ClientCallTracer final : public CallSpan {
@@ -377,9 +429,14 @@ class ClientCallTracer final : public CallSpan {
       bool is_transparent_retry) {
     return interface_->StartNewAttempt(is_transparent_retry);
   }
+  void RecordDelay(absl::string_view delay_type, std::string delay_reason) {
+    delay_tracker_.RecordDelay(interface_, delay_type, std::move(delay_reason));
+  }
+  void MaybeRecordDelayEnd() { delay_tracker_.MaybeRecordDelayEnd(interface_); }
 
  private:
   ClientCallTracerInterface* interface_;
+  CallDelayTracker delay_tracker_;
 };
 
 // Concrete class for a client call attempt tracer.
@@ -402,9 +459,14 @@ class CallAttemptTracer final : public CallTracer {
       RefCountedStringValue value) {
     interface_->SetOptionalLabel(key, value);
   }
+  void RecordDelay(absl::string_view delay_type, std::string delay_reason) {
+    delay_tracker_.RecordDelay(interface_, delay_type, std::move(delay_reason));
+  }
+  void MaybeRecordDelayEnd() { delay_tracker_.MaybeRecordDelayEnd(interface_); }
 
  private:
   ClientCallTracerInterface::CallAttemptTracer* interface_;
+  CallDelayTracker delay_tracker_;
 };
 
 // Concrete class for a server call tracer.

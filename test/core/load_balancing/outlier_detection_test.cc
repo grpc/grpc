@@ -46,6 +46,7 @@
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
@@ -240,7 +241,9 @@ TEST_F(OutlierDetectionTest, Basic) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate();
+  ExpectConnectingUpdate(
+      "round_robin: connecting to endpoints (num_children=1 num_ready=0 "
+      "num_connecting=1 num_transient_failure=0)");
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
@@ -494,7 +497,8 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate();
+  ExpectConnectingUpdate(absl::StrCat("pick_first: connecting to ",
+                                      kAddresses[0], " (subchannel 1 of 3)"));
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
