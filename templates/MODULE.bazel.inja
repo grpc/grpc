@@ -43,7 +43,7 @@ bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20260929.0")
-bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
+bazel_dep(name = "c-ares", version = "1.34.5.bcr.5", repo_name = "com_github_cares_cares")
 
 # -- CEL (Common Expression Language) C implementation.
 # Pinning version to be consistent with third_party/cel-c.
@@ -62,14 +62,17 @@ bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
-bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
+bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.3", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
-bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
+bazel_dep(name = "opentelemetry-cpp", version = "1.19.0.bcr.1", repo_name = "io_opentelemetry_cpp")
 
 # --- Protobuf related packages.
 bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.2", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
+
+# rules_apple 4.3.3 is the first version whose xctestrunner loads py_library
+# from rules_python, which Bazel 9 requires.
+bazel_dep(name = "rules_apple", version = "4.3.3", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
 
@@ -212,6 +215,43 @@ bazel_dep(name = "fuzztest", version = "20260629.0", dev_dependency = True, repo
 # See also https://bazel.build/external/module#version-selection.
 bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
 
+# These packages are not directly used by grpc, but requested by riegeli.
+#
+# The reason for version bump is that the versions requested by riegeli do not
+# load rules_cc, which Bazel 9 requires.
+bazel_dep(name = "brotli", version = "1.2.0.bcr.1", dev_dependency = True, repo_name = None)
+bazel_dep(name = "bzip2", version = "1.0.8.bcr.3", dev_dependency = True, repo_name = None)
+bazel_dep(name = "highwayhash", version = "0.0.0-20240305-5ad3bf8.bcr.1", dev_dependency = True, repo_name = None)
+bazel_dep(name = "lz4", version = "1.9.4.bcr.1", dev_dependency = True, repo_name = None)
+bazel_dep(name = "snappy", version = "1.2.2.bcr.2", dev_dependency = True, repo_name = None)
+bazel_dep(name = "xz", version = "5.4.5.bcr.6", dev_dependency = True, repo_name = None)
+
+# This package is not directly used by grpc, but requested by fuzztest.
+#
+# The reason for version bump is that flatbuffers@25.12.19 depends on
+# aspect_rules_esbuild@0.21.0, which does not load with Bazel 9.
+bazel_dep(name = "flatbuffers", version = "25.12.19.bcr.1", dev_dependency = True, repo_name = None)
+
+# This package is not directly used by grpc, but requested by opentelemetry-cpp.
+#
+# The reason for version bump is that prometheus-cpp@1.3.0 does not load
+# rules_cc, which Bazel 9 requires.
+bazel_dep(name = "prometheus-cpp", version = "1.3.0.bcr.3", repo_name = None)
+
+# This package is not directly used by grpc, but requested by prometheus-cpp.
+#
+# The reason for version bump is that civetweb@1.16.bcr.1 does not load
+# rules_cc, which Bazel 9 requires.
+bazel_dep(name = "civetweb", version = "1.16.bcr.4", repo_name = None)
+
+# These packages are not directly used by grpc, but requested by
+# opentelemetry-cpp and google_cloud_cpp.
+#
+# The reason for version bump is that curl@8.8.0.bcr.2 and nlohmann_json@3.11.3
+# do not load rules_cc, which Bazel 9 requires.
+bazel_dep(name = "curl", version = "8.11.0.bcr.2", repo_name = None)
+bazel_dep(name = "nlohmann_json", version = "3.12.0.bcr.1", repo_name = None)
+
 # --- Provide repo @grpc_custom_exec_properties.
 http_archive(
     name = "bazel_toolchains",
@@ -249,6 +289,11 @@ bazel_dep(name = "google_cloud_cpp", version = "2.35.0", dev_dependency = True)
 archive_override(
     module_name = "google_cloud_cpp",
     integrity = "sha256-geooz55bsDLTVrAYdAnzCxA1+OpbUwZ16iSMimwAcKo=",
+    # Add rules_cc load() statements, which Bazel 9 requires.
+    patch_strip = 1,
+    patches = [
+        "//bazel:google_cloud_cpp_bazel9.patch",
+    ],
     strip_prefix = "google-cloud-cpp-2.35.0",
     urls = [
         "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",

@@ -20,6 +20,8 @@ This file declares two macros:
 - objc_grpc_library
 """
 
+load("@rules_cc//cc:objc_library.bzl", "objc_library")
+
 def _lower_underscore_to_upper_camel(str):
     humps = []
     for hump in str.split("_"):
@@ -73,7 +75,7 @@ def objc_proto_library(name, srcs, visibility = None):
         outs = h_files + m_files,
         cmd = _protoc_invocation(srcs, protoc_flags),
     )
-    native.objc_library(
+    objc_library(
         name = name,
         hdrs = h_files,
         includes = ["."],
@@ -114,7 +116,7 @@ def objc_grpc_library(name, services, other_messages, visibility = None):
         outs = h_files + m_files,
         cmd = _protoc_invocation(services, protoc_flags),
     )
-    native.objc_library(
+    objc_library(
         name = name,
         hdrs = h_files,
         includes = ["."],
