@@ -140,6 +140,7 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
   bool IsSampled() override { return false; }
 
   FakeClientCallAttemptTracer* GetLastCallAttemptTracer() const {
+    if (call_attempt_tracers_.empty()) return nullptr;
     return call_attempt_tracers_.back().get();
   }
 
