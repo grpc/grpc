@@ -95,7 +95,7 @@
   platforms: ["all"]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2026/10/30
+  expiry: 2027/01/30
   owner: mlumish@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
   uses_polling: true
@@ -281,7 +281,7 @@
   description:
     Code outside iomgr that relies directly on pollsets will use non-pollset alternatives when
     enabled.
-  expiry: 2026/10/30
+  expiry: 2027/01/30
   owner: mlumish@google.com
   test_tags: ["core_end2end_test"]
   requires: ["event_engine_client"]
