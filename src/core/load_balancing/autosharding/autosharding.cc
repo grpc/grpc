@@ -404,6 +404,7 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
   size_t first_index = absl::Uniform<size_t>(SharedBitGen(), 0, indices.size());
   bool requested_connection = false;
   std::optional<size_t> connecting_or_idle_index;
+  const absl::Status* last_failure = nullptr;
   for (size_t i = 0; i < indices.size(); ++i) {
     const size_t index = indices[(first_index + i) % indices.size()];
     const auto& endpoint_info = endpoints_[index];
@@ -424,6 +425,9 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
           connecting_or_idle_index = index;
         }
         break;
+      case GRPC_CHANNEL_TRANSIENT_FAILURE:
+        last_failure = &endpoint_info.status;
+        break;
       default:
         break;
     }
@@ -433,15 +437,20 @@ AutoshardingLbPolicy::Picker::PickFromEndpointIndices(
   // the first endpoint's picker to yield a detailed error message.
   const auto& endpoint_info =
       endpoints_[connecting_or_idle_index.value_or(indices[first_index])];
-  if (endpoint_info.picker == nullptr) {
-    return PickResult::Queue(
-        kDelayTypeConnecting,
-        "autosharding: child policy has not yet returned a picker");
-  }
-  PickResult result = endpoint_info.picker->Pick(args);
+  PickResult result =
+      endpoint_info.picker == nullptr
+          ? PickResult::Queue(kDelayTypeConnecting,
+                              "child policy has not yet returned a picker")
+          : endpoint_info.picker->Pick(args);
   auto* queue = std::get_if<PickResult::Queue>(&result.result);
   if (queue != nullptr) {
-    queue->delay_reason = absl::StrCat("autosharding: ", queue->delay_reason);
+    if (last_failure != nullptr && !last_failure->ok()) {
+      queue->delay_reason = absl::StrCat(
+          "autosharding: ", queue->delay_reason,
+          " (recent endpoint failure: ", last_failure->ToString(), ")");
+    } else {
+      queue->delay_reason = absl::StrCat("autosharding: ", queue->delay_reason);
+    }
   }
   return result;
 }

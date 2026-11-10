@@ -454,16 +454,15 @@ void RingHash::Picker::MaybeModifyDelayReason(bool is_first_index,
                                               PickResult& child_pick) {
   auto* queue = std::get_if<PickResult::Queue>(&child_pick.result);
   if (queue == nullptr) return;
-  if (is_first_index) {
+  absl::string_view prefix = is_first_index
+                                 ? "ring_hash: primary endpoint connecting: "
+                                 : "ring_hash: fallback endpoint connecting: ";
+  if (last_failure != nullptr && !last_failure->ok()) {
     queue->delay_reason = absl::StrCat(
-        "ring_hash: primary endpoint connecting: ", queue->delay_reason);
-  } else if (last_failure != nullptr && !last_failure->ok()) {
-    queue->delay_reason = absl::StrCat(
-        "ring_hash: fallback endpoint connecting: ", queue->delay_reason,
+        prefix, queue->delay_reason,
         " (recent endpoint failure: ", last_failure->ToString(), ")");
   } else {
-    queue->delay_reason = absl::StrCat(
-        "ring_hash: fallback endpoint connecting: ", queue->delay_reason);
+    queue->delay_reason = absl::StrCat(prefix, queue->delay_reason);
   }
 }
 

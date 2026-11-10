@@ -28,6 +28,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/config/core_configuration.h"
@@ -267,7 +268,13 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
   if (index == 0) index = start_index;
   GRPC_CHECK(pickers_[index].first > key);
   // Delegate to the child picker.
-  return pickers_[index].second->Pick(args);
+  PickResult result = pickers_[index].second->Pick(args);
+  auto* queue = std::get_if<PickResult::Queue>(&result.result);
+  if (queue != nullptr) {
+    queue->delay_reason =
+        absl::StrCat("weighted_target: ", queue->delay_reason);
+  }
+  return result;
 }
 
 //
@@ -369,13 +376,15 @@ void WeightedTargetLb::UpdateStateLocked() {
   GRPC_TRACE_LOG(weighted_target_lb, INFO)
       << "[weighted_target_lb " << this
       << "] scanning children to determine connectivity state";
-  // Construct lists of child pickers with associated weights, one for
-  // children that are in state READY and another for children that are
-  // in state TRANSIENT_FAILURE.  Each child is represented by a portion of
-  // the range proportional to its weight, such that the total range is the
-  // sum of the weights of all children.
+  // Construct lists of child pickers with associated weights: one for
+  // children in state READY, one for children in state CONNECTING or IDLE, and
+  // one for children in state TRANSIENT_FAILURE.  Each child is represented by
+  // a portion of the range proportional to its weight, such that the total
+  // range is the sum of the weights of all children.
   WeightedPicker::PickerList ready_picker_list;
   uint64_t ready_end = 0;
+  WeightedPicker::PickerList connecting_or_idle_picker_list;
+  uint64_t connecting_or_idle_end = 0;
   WeightedPicker::PickerList tf_picker_list;
   uint64_t tf_end = 0;
   // Also count the number of children in CONNECTING and IDLE, to determine
@@ -401,10 +410,18 @@ void WeightedTargetLb::UpdateStateLocked() {
       }
       case GRPC_CHANNEL_CONNECTING: {
         ++num_connecting;
+        GRPC_CHECK_GT(child->weight(), 0u);
+        connecting_or_idle_end += child->weight();
+        connecting_or_idle_picker_list.emplace_back(connecting_or_idle_end,
+                                                    std::move(child_picker));
         break;
       }
       case GRPC_CHANNEL_IDLE: {
         ++num_idle;
+        GRPC_CHECK_GT(child->weight(), 0u);
+        connecting_or_idle_end += child->weight();
+        connecting_or_idle_picker_list.emplace_back(connecting_or_idle_end,
+                                                    std::move(child_picker));
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
@@ -439,11 +456,8 @@ void WeightedTargetLb::UpdateStateLocked() {
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
-      picker = MakeRefCounted<QueuePicker>(
-          Ref(DEBUG_LOCATION, "QueuePicker"), kDelayTypeConnecting,
-          absl::StrCat("weighted_target: connecting to targets (num_targets=",
-                       config_->target_map().size(), " num_connecting=",
-                       num_connecting, " num_idle=", num_idle, ")"));
+      picker = MakeRefCounted<WeightedPicker>(
+          std::move(connecting_or_idle_picker_list));
       break;
     default:
       picker = MakeRefCounted<WeightedPicker>(std::move(tf_picker_list));
@@ -499,7 +513,11 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked() {
 WeightedTargetLb::WeightedChild::WeightedChild(
     RefCountedPtr<WeightedTargetLb> weighted_target_policy,
     const std::string& name)
-    : weighted_target_policy_(std::move(weighted_target_policy)), name_(name) {
+    : weighted_target_policy_(std::move(weighted_target_policy)),
+      name_(name),
+      picker_(MakeRefCounted<QueuePicker>(
+          nullptr, kDelayTypeConnecting,
+          "child policy has not yet returned a picker")) {
   GRPC_TRACE_LOG(weighted_target_lb, INFO)
       << "[weighted_target_lb " << weighted_target_policy_.get()
       << "] created WeightedChild " << this << " for " << name_;
