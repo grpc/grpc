@@ -674,6 +674,7 @@ grpc_cc_test(
     deps = [
         ":lb_policy_test_lib",
         "//:autosharding_cc_proto",
+        "//:debug_location",
         "//:endpoint_addresses",
         "//:gpr",
         "//:grpc++_codegen_proto",

@@ -41,6 +41,8 @@
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -53,7 +55,9 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::testing::AllOf;
 using ::testing::ElementsAre;
+using ::testing::FieldsAre;
 using ::testing::Ge;
+using ::testing::IsEmpty;
 using ::testing::Le;
 using ::testing::Optional;
 
@@ -146,12 +150,6 @@ MATCHER_P3(IsAck, generation, accepted, error_message, "") {
          request.assignment_ack().error_message() == error_message;
 }
 
-// Matches an absl::StatusOr<> that holds a value.
-MATCHER(IsOk, "") {
-  *result_listener << "status is " << arg.status();
-  return arg.ok();
-}
-
 // Matches an absl::StatusOr<> that holds a value that matches value_matcher.
 MATCHER_P(IsOkAndHolds, value_matcher, "") {
   if (!arg.ok()) {
@@ -179,10 +177,26 @@ MATCHER_P2(IsAssignment, slices_matcher, endpoint_names_matcher, "") {
                                        arg->endpoint_names, result_listener);
 }
 
+using Result = absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>>;
+
+std::string ResultToString(const Result& result) {
+  if (!result.ok()) return result.status().ToString();
+  if (*result == nullptr) return "null assignment";
+  std::vector<std::string> slices;
+  for (const AutoshardingAssignment::Slice& slice : (*result)->slices) {
+    slices.push_back(absl::StrCat(
+        "{end_key=\"", slice.end_key, "\" endpoints=[",
+        absl::StrJoin(slice.endpoints, ","), "] fallback_disabled=",
+        slice.fallback_disabled ? "true" : "false", "}"));
+  }
+  return absl::StrCat("slices=[", absl::StrJoin(slices, ", "),
+                      "] endpoint_names=[",
+                      absl::StrJoin((*result)->endpoint_names, ","), "]");
+}
+
 class AutoshardingClientTest : public ::testing::Test {
  protected:
   using Stream = FakeXdsTransportFactory::FakeStreamingCall;
-  using Result = absl::StatusOr<RefCountedPtr<const AutoshardingAssignment>>;
 
   void SetUp() override {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
@@ -202,7 +216,9 @@ class AutoshardingClientTest : public ::testing::Test {
     event_engine_->UnsetGlobalHooks();
     WaitForSingleOwner(std::move(event_engine_));
     grpc_shutdown_blocking();
-    EXPECT_FALSE(result_.has_value()) << "unexpected result";
+    EXPECT_FALSE(result_.has_value())
+        << "result queue not drained at end of test: "
+        << ResultToString(*result_);
   }
 
   void CreateClient(Duration initial_assignment_timeout = Duration::Hours(1)) {
@@ -213,8 +229,12 @@ class AutoshardingClientTest : public ::testing::Test {
         transport_, std::string(kTarget), std::string(kClientUuid),
         initial_assignment_timeout, event_engine_,
         [this](RefCountedPtr<AutoshardingClient> /*client*/, Result result) {
-          EXPECT_FALSE(result_.has_value()) << "unexpected result";
-          result_ = std::move(result);
+          EXPECT_FALSE(result_.has_value())
+              << "result generated before test processed previous result; "
+                 "dropping new result: "
+              << ResultToString(result);
+          // Keep the previous result, and drop the new one.
+          if (!result_.has_value()) result_ = std::move(result);
         });
   }
 
@@ -223,7 +243,8 @@ class AutoshardingClientTest : public ::testing::Test {
   void RecordRunAfterDelays() {
     event_engine_->SetRunAfterDurationCallback(
         [this](EventEngine::Duration delay) {
-          EXPECT_FALSE(run_after_delay_.has_value()) << "unexpected timer";
+          EXPECT_FALSE(run_after_delay_.has_value())
+              << "RunAfter() called before test processed previous delay";
           run_after_delay_ = delay;
         });
   }
@@ -280,8 +301,10 @@ TEST_F(AutoshardingClientTest, ReportsValidAssignmentAndSendsAck) {
   EXPECT_THAT(stream->WaitForMessageFromClient(),
               IsAck(/*generation=*/1, /*accepted=*/true, /*error_message=*/""));
   EXPECT_THAT(WaitForResult(),
-              Optional(IsOkAndHolds(
-                  IsAssignment(::testing::_, ElementsAre("host0", "host1")))));
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("m", ElementsAre(0), false),
+                              FieldsAre("", ElementsAre(1), false)),
+                  ElementsAre("host0", "host1")))));
 }
 
 TEST_F(AutoshardingClientTest, AckIncludesIssuesForPartlyValidAssignment) {
@@ -293,7 +316,12 @@ TEST_F(AutoshardingClientTest, AckIncludesIssuesForPartlyValidAssignment) {
   Send(stream.get(), MakeMetadata(1));
   EXPECT_THAT(stream->WaitForMessageFromClient(),
               IsAck(1, true, "encountered 1 gap(s) in the assignment"));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  // The gap before "m" is filled with a slice that has no endpoints.
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("m", IsEmpty(), false),
+                              FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
 }
 
 TEST_F(AutoshardingClientTest, RejectedAssignmentReportsError) {
@@ -323,7 +351,10 @@ TEST_F(AutoshardingClientTest, StaleGenerationIsNacked) {
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(2));
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(2, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(2));
   EXPECT_THAT(stream->WaitForMessageFromClient(),
@@ -331,6 +362,64 @@ TEST_F(AutoshardingClientTest, StaleGenerationIsNacked) {
                     "received generation 2 is not greater than the latest "
                     "generation 2"));
   EXPECT_FALSE(WaitForResult().has_value());
+}
+
+TEST_F(AutoshardingClientTest, MultipleAssignmentsOnOneStream) {
+  CreateClient();
+  RefCountedPtr<Stream> stream = WaitForStream();
+  ASSERT_NE(stream, nullptr);
+  EXPECT_THAT(stream->WaitForMessageFromClient(), IsInitialClientConfig(0));
+  Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
+  Send(stream.get(), MakeMetadata(1));
+  EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(1, true, ""));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
+  // A stale generation on the same stream is NACKed and not reported.
+  Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host1"}));
+  Send(stream.get(), MakeMetadata(1));
+  EXPECT_THAT(stream->WaitForMessageFromClient(),
+              IsAck(1, false,
+                    "received generation 1 is not greater than the latest "
+                    "generation 1"));
+  EXPECT_FALSE(WaitForResult().has_value());
+  // A newer generation on the same stream is accepted and reported.  It has
+  // only its own chunks, not the chunks of the stale assignment.
+  Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host2"}));
+  Send(stream.get(), MakeMetadata(2));
+  EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(2, true, ""));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host2")))));
+}
+
+TEST_F(AutoshardingClientTest, RejectedThenValidAssignmentOnOneStream) {
+  CreateClient();
+  RefCountedPtr<Stream> stream = WaitForStream();
+  ASSERT_NE(stream, nullptr);
+  EXPECT_THAT(stream->WaitForMessageFromClient(), IsInitialClientConfig(0));
+  Send(stream.get(), MakeChunk({{"b", "a", {0}}}, {"host0"}));
+  Send(stream.get(), MakeMetadata(1));
+  EXPECT_THAT(stream->WaitForMessageFromClient(),
+              IsAck(1, false,
+                    "no valid slice assignments in generation 1: 1 slice(s) "
+                    "with start_key >= end_key"));
+  EXPECT_THAT(WaitForResult(),
+              Optional(HasStatus(absl::UnavailableError(
+                  "autosharding server sent an invalid assignment: no valid "
+                  "slice assignments in generation 1: 1 slice(s) with "
+                  "start_key >= end_key"))));
+  // The rejected generation was not stored, so generation 1 is accepted on
+  // the same stream.  The chunk of the rejected assignment is not reused.
+  Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host1"}));
+  Send(stream.get(), MakeMetadata(1));
+  EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(1, true, ""));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host1")))));
 }
 
 TEST_F(AutoshardingClientTest, ErrorIsNotReportedAfterValidAssignment) {
@@ -341,7 +430,10 @@ TEST_F(AutoshardingClientTest, ErrorIsNotReportedAfterValidAssignment) {
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(1));
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(1, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   Send(stream.get(), MakeChunk({{"b", "a", {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(2));
   EXPECT_THAT(stream->WaitForMessageFromClient(),
@@ -362,7 +454,10 @@ TEST_F(AutoshardingClientTest, IgnoresLoadReportingConfig) {
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(1));
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(1, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
 }
 
 TEST_F(AutoshardingClientTest, StreamFailureReportsErrorAndRestartsStream) {
@@ -381,7 +476,10 @@ TEST_F(AutoshardingClientTest, StreamFailureReportsErrorAndRestartsStream) {
   Send(stream2.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream2.get(), MakeMetadata(1));
   EXPECT_THAT(stream2->WaitForMessageFromClient(), IsAck(1, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
 }
 
 TEST_F(AutoshardingClientTest,
@@ -393,7 +491,10 @@ TEST_F(AutoshardingClientTest,
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(5));
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(5, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   // Send part of the next assignment, and then fail the stream.
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host1"}));
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
@@ -423,7 +524,10 @@ TEST_F(AutoshardingClientTest, InitialAssignmentTimerReportsError) {
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(1));
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(1, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
 }
 
 TEST_F(AutoshardingClientTest, ValidAssignmentCancelsInitialAssignmentTimer) {
@@ -434,7 +538,10 @@ TEST_F(AutoshardingClientTest, ValidAssignmentCancelsInitialAssignmentTimer) {
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(1));
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(1, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   // The timer was cancelled, so it does not report an error.
   EXPECT_FALSE(WaitForResult().has_value());
 }
@@ -472,7 +579,10 @@ TEST_F(AutoshardingClientTest, BackoffIsResetAfterValidAssignment) {
   Send(stream3.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream3.get(), MakeMetadata(1));
   EXPECT_THAT(stream3->WaitForMessageFromClient(), IsAck(1, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   stream3->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   EXPECT_EQ(TakeRunAfterDelay(), std::nullopt);
   RefCountedPtr<Stream> stream4 = WaitForStream();
@@ -591,10 +701,16 @@ TEST_F(AutoshardingClientTest, ReadsDoNotWaitForSends) {
   // reports assignments.
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(1));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(2));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   // The ACKs wait for the in-flight send.
   EXPECT_EQ(stream->WaitForMessageFromClient(), std::nullopt);
   // When the send completes, only the latest ACK is sent.
@@ -612,7 +728,10 @@ TEST_F(AutoshardingClientTest, FailedSendDropsPendingAck) {
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsInitialClientConfig(0));
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(1));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   // The stream is ending, so the pending ACK is not sent.
   stream->CompleteSendMessageFromClient(/*ok=*/false);
   EXPECT_EQ(stream->WaitForMessageFromClient(), std::nullopt);
@@ -701,7 +820,10 @@ TEST_F(AutoshardingClientTest, StaleGenerationOnRestartedStream) {
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(3));
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(3, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   EXPECT_TRUE(stream->IsOrphaned());
   RefCountedPtr<Stream> stream2 = WaitForStream();
@@ -724,7 +846,10 @@ TEST_F(AutoshardingClientTest, GenerationAcceptedOnRestartedStreamIsKept) {
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(5));
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(5, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   EXPECT_TRUE(stream->IsOrphaned());
   RefCountedPtr<Stream> stream2 = WaitForStream();
@@ -733,7 +858,10 @@ TEST_F(AutoshardingClientTest, GenerationAcceptedOnRestartedStreamIsKept) {
   Send(stream2.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream2.get(), MakeMetadata(6));
   EXPECT_THAT(stream2->WaitForMessageFromClient(), IsAck(6, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   stream2->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   EXPECT_TRUE(stream2->IsOrphaned());
   RefCountedPtr<Stream> stream3 = WaitForStream();
@@ -772,7 +900,10 @@ TEST_F(AutoshardingClientTest,
   Send(stream.get(), MakeChunk({{"", std::nullopt, {0}}}, {"host0"}));
   Send(stream.get(), MakeMetadata(1));
   EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(1, true, ""));
-  EXPECT_THAT(WaitForResult(), Optional(IsOk()));
+  EXPECT_THAT(WaitForResult(),
+              Optional(IsOkAndHolds(IsAssignment(
+                  ElementsAre(FieldsAre("", ElementsAre(0), false)),
+                  ElementsAre("host0")))));
   stream->SendMessageToClient(
       absl::string_view("\x0a\x05"
                         "ab",

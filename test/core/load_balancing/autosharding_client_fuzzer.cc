@@ -17,8 +17,6 @@
 #include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 
-#include <algorithm>
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -110,12 +108,6 @@ class Fuzzer {
       case autosharding_client_fuzzer::Action::kSendStatusToClient:
         SendStatusToClient(
             ToAbslStatus(action.send_status_to_client().status()));
-        break;
-      case autosharding_client_fuzzer::Action::kTick:
-        LOG(INFO) << "### Tick(" << action.tick().ms() << "ms)";
-        event_engine_->TickForDuration(Duration::Milliseconds(
-            // Cap to 10 hours.
-            std::min<uint64_t>(action.tick().ms(), 36000000)));
         break;
       case autosharding_client_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
@@ -270,7 +262,7 @@ constexpr char kInvalidAndStaleAssignments[] = R"pb(
   actions { read_message_from_client { ok: true } }
 )pb";
 
-// Unparseable bytes, then a stream failure, ResetBackoff, and time passing.
+// Unparseable bytes, then a stream failure, and ResetBackoff.
 constexpr char kStreamFailures[] = R"pb(
   initial_assignment_timeout_ms: 5000
   actions { send_message_to_client { raw_bytes: "\xff\xff\xff" } }
@@ -280,8 +272,6 @@ constexpr char kStreamFailures[] = R"pb(
   actions { reset_backoff {} }
   actions { read_message_from_client { ok: false } }
   actions { send_status_to_client { status { code: 13 message: "internal" } } }
-  actions { tick { ms: 2000 } }
-  actions { tick { ms: 5000 } }
 )pb";
 
 autosharding_client_fuzzer::Msg ParseTestProto(const std::string& proto) {

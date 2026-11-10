@@ -58,16 +58,7 @@ message SendStatusToClient {
   Status status = 1;
 }
 
-//
-// interactions with the EventEngine
-//
-
-// Advances time, which fires any timers that are due.
-message Tick {
-  uint64 ms = 1;
-}
-
-// Next free field: 6
+// Next free field: 5
 message Action {
   oneof action_type {
     // interactions with AutoshardingClient API
@@ -76,8 +67,6 @@ message Action {
     ReadMessageFromClient read_message_from_client = 2;
     SendMessageToClient send_message_to_client = 3;
     SendStatusToClient send_status_to_client = 4;
-    // interactions with the EventEngine
-    Tick tick = 5;
   }
 }
 

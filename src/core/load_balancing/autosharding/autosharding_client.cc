@@ -108,8 +108,10 @@ std::string CreateAssignmentAckRequest(int64_t generation, bool accepted,
 class AutoshardingClient::StreamCall final
     : public InternallyRefCounted<StreamCall> {
  public:
-  // Must be called while holding client->mu_.
   explicit StreamCall(RefCountedPtr<AutoshardingClient> client);
+
+  // Sends InitialClientConfig and starts reads. Call after setting stream_.
+  void StartLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(client_->mu_);
 
   // Must be called while holding client_->mu_.
   void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
@@ -167,6 +169,9 @@ AutoshardingClient::StreamCall::StreamCall(
   GRPC_TRACE_LOG(autosharding_lb, INFO)
       << "[autosharding_client " << client_.get() << "] starting stream "
       << this << " for target \"" << client_->target_ << "\"";
+}
+
+void AutoshardingClient::StreamCall::StartLocked() {
   SendMessageLocked(CreateInitialClientConfigRequest(
       client_->target_, client_->client_uuid_,
       client_->builder_.last_accepted_generation()));
@@ -318,6 +323,7 @@ void AutoshardingClient::ResetBackoff() {
 void AutoshardingClient::StartStreamLocked() {
   GRPC_CHECK(stream_ == nullptr);
   stream_ = MakeOrphanable<StreamCall>(Ref(DEBUG_LOCATION, "StreamCall"));
+  stream_->StartLocked();
 }
 
 void AutoshardingClient::OnStreamFinishedLocked(bool seen_valid_assignment,
