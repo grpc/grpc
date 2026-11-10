@@ -111,7 +111,7 @@ class AutoshardingClient::StreamCall final
   explicit StreamCall(RefCountedPtr<AutoshardingClient> client);
 
   // Sends InitialClientConfig and starts reads. Call after setting stream_.
-  void StartLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(client_->mu_);
+  void StartLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AutoshardingClient::mu_);
 
   // Must be called while holding client_->mu_.
   void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
@@ -119,7 +119,8 @@ class AutoshardingClient::StreamCall final
  private:
   class EventHandler;
 
-  bool IsCurrentLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(client_->mu_) {
+  bool IsCurrentLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AutoshardingClient::mu_) {
     return client_->stream_.get() == this;
   }
 
@@ -128,17 +129,18 @@ class AutoshardingClient::StreamCall final
   void OnStatusReceived(absl::Status status);
 
   void HandleResultLocked(AutoshardingAssignmentBuilder::Result result)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(client_->mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AutoshardingClient::mu_);
   void SendMessageLocked(std::string payload)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(client_->mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AutoshardingClient::mu_);
 
   const RefCountedPtr<AutoshardingClient> client_;
   OrphanablePtr<XdsTransport::StreamingCall> streaming_call_
-      ABSL_GUARDED_BY(client_->mu_);
-  bool seen_valid_assignment_ ABSL_GUARDED_BY(client_->mu_) = false;
-  bool send_in_flight_ ABSL_GUARDED_BY(client_->mu_) = false;
+      ABSL_GUARDED_BY(&AutoshardingClient::mu_);
+  bool seen_valid_assignment_ ABSL_GUARDED_BY(&AutoshardingClient::mu_) = false;
+  bool send_in_flight_ ABSL_GUARDED_BY(&AutoshardingClient::mu_) = false;
   // The latest AssignmentAck to send when the in-flight send completes.
-  std::optional<std::string> pending_ack_ ABSL_GUARDED_BY(client_->mu_);
+  std::optional<std::string> pending_ack_
+      ABSL_GUARDED_BY(&AutoshardingClient::mu_);
 };
 
 class AutoshardingClient::StreamCall::EventHandler final
@@ -196,7 +198,7 @@ void AutoshardingClient::StreamCall::SendMessageLocked(std::string payload) {
 }
 
 void AutoshardingClient::StreamCall::OnRequestSent(bool ok) {
-  MutexLock lock(&client_->mu_);
+  MutexLock lock(client_->mu_);
   if (!IsCurrentLocked()) return;
   send_in_flight_ = false;
   // If the send failed, the stream is ending, and OnStatusReceived() will
@@ -210,7 +212,7 @@ void AutoshardingClient::StreamCall::OnRecvMessage(absl::string_view payload) {
   const auto* response =
       google_cloud_autosharding_v1_WatchShardingAssignmentResponse_parse(
           payload.data(), payload.size(), arena.ptr());
-  MutexLock lock(&client_->mu_);
+  MutexLock lock(client_->mu_);
   if (!IsCurrentLocked()) return;
   // A lost message can be a chunk, so the next assignment would be
   // incomplete.  Fail the stream, so that the server resends everything.
@@ -250,7 +252,7 @@ void AutoshardingClient::StreamCall::HandleResultLocked(
 }
 
 void AutoshardingClient::StreamCall::OnStatusReceived(absl::Status status) {
-  MutexLock lock(&client_->mu_);
+  MutexLock lock(client_->mu_);
   if (!IsCurrentLocked()) return;
   GRPC_TRACE_LOG(autosharding_lb, INFO)
       << "[autosharding_client " << client_.get() << "] stream " << this
@@ -277,7 +279,7 @@ AutoshardingClient::AutoshardingClient(
                    .set_multiplier(kBackoffMultiplier)
                    .set_jitter(kBackoffJitter)
                    .set_max_backoff(kMaxBackoff)) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   initial_assignment_timer_handle_ = event_engine_->RunAfter(
       initial_assignment_timeout,
       [self = Ref(DEBUG_LOCATION, "InitialAssignmentTimer")]() mutable {
@@ -293,7 +295,7 @@ AutoshardingClient::~AutoshardingClient() = default;
 
 void AutoshardingClient::Orphan() {
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     orphaned_ = true;
     stream_.reset();
     if (retry_timer_handle_.has_value()) {
@@ -307,7 +309,7 @@ void AutoshardingClient::Orphan() {
 
 void AutoshardingClient::ResetBackoff() {
   {
-    MutexLock lock(&mu_);
+    MutexLock lock(mu_);
     backoff_.Reset();
     if (retry_timer_handle_.has_value()) {
       // If the timer callback is already running, it sees that the handle is
@@ -354,14 +356,14 @@ void AutoshardingClient::StartRetryTimerLocked() {
 }
 
 void AutoshardingClient::OnRetryTimer() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!retry_timer_handle_.has_value()) return;
   retry_timer_handle_.reset();
   StartStreamLocked();
 }
 
 void AutoshardingClient::OnInitialAssignmentTimer() {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!initial_assignment_timer_handle_.has_value()) return;
   initial_assignment_timer_handle_.reset();
   ReportErrorLocked(absl::UnavailableError(

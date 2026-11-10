@@ -286,8 +286,7 @@ TEST_F(AutoshardingClientTest, SendsInitialClientConfig) {
   RefCountedPtr<Stream> stream = WaitForStream();
   ASSERT_NE(stream, nullptr);
   EXPECT_TRUE(stream->wait_for_ready());
-  EXPECT_THAT(stream->WaitForMessageFromClient(),
-              IsInitialClientConfig(/*latest_generation=*/0));
+  EXPECT_THAT(stream->WaitForMessageFromClient(), IsInitialClientConfig(0));
 }
 
 TEST_F(AutoshardingClientTest, ReportsValidAssignmentAndSendsAck) {
@@ -298,8 +297,7 @@ TEST_F(AutoshardingClientTest, ReportsValidAssignmentAndSendsAck) {
   Send(stream.get(), MakeChunk({{"", "m", {0}}}, {"host0"}));
   Send(stream.get(), MakeChunk({{"m", std::nullopt, {1}}}, {"host1"}));
   Send(stream.get(), MakeMetadata(1));
-  EXPECT_THAT(stream->WaitForMessageFromClient(),
-              IsAck(/*generation=*/1, /*accepted=*/true, /*error_message=*/""));
+  EXPECT_THAT(stream->WaitForMessageFromClient(), IsAck(1, true, ""));
   EXPECT_THAT(WaitForResult(),
               Optional(IsOkAndHolds(IsAssignment(
                   ElementsAre(FieldsAre("m", ElementsAre(0), false),
