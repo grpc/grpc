@@ -134,13 +134,17 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
     using PickerList =
         std::vector<std::pair<uint64_t, RefCountedPtr<SubchannelPicker>>>;
 
-    explicit WeightedPicker(PickerList pickers)
-        : pickers_(std::move(pickers)) {}
+    explicit WeightedPicker(
+        PickerList pickers,
+        std::string delay_reason_prefix = "weighted_target: ")
+        : pickers_(std::move(pickers)),
+          delay_reason_prefix_(std::move(delay_reason_prefix)) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
     PickerList pickers_;
+    std::string delay_reason_prefix_;
   };
 
   // Each WeightedChild holds a ref to its parent WeightedTargetLb.
@@ -272,7 +276,7 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
   auto* queue = std::get_if<PickResult::Queue>(&result.result);
   if (queue != nullptr) {
     queue->delay_reason =
-        absl::StrCat("weighted_target: ", queue->delay_reason);
+        absl::StrCat(delay_reason_prefix_, queue->delay_reason);
   }
   return result;
 }
@@ -457,7 +461,10 @@ void WeightedTargetLb::UpdateStateLocked() {
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
       picker = MakeRefCounted<WeightedPicker>(
-          std::move(connecting_or_idle_picker_list));
+          std::move(connecting_or_idle_picker_list),
+          absl::StrCat("weighted_target: connecting to targets (num_targets=",
+                       config_->target_map().size(), " num_connecting=",
+                       num_connecting, " num_idle=", num_idle, "): "));
       break;
     default:
       picker = MakeRefCounted<WeightedPicker>(std::move(tf_picker_list));
