@@ -229,12 +229,11 @@ class AutoshardingClientTest : public ::testing::Test {
         transport_, std::string(kTarget), std::string(kClientUuid),
         initial_assignment_timeout, event_engine_,
         [this](RefCountedPtr<AutoshardingClient> /*client*/, Result result) {
-          EXPECT_FALSE(result_.has_value())
+          ASSERT_FALSE(result_.has_value())
               << "result generated before test processed previous result; "
                  "dropping new result: "
               << ResultToString(result);
-          // Keep the previous result, and drop the new one.
-          if (!result_.has_value()) result_ = std::move(result);
+          result_ = std::move(result);
         });
   }
 
@@ -243,8 +242,11 @@ class AutoshardingClientTest : public ::testing::Test {
   void RecordRunAfterDelays() {
     event_engine_->SetRunAfterDurationCallback(
         [this](EventEngine::Duration delay) {
-          EXPECT_FALSE(run_after_delay_.has_value())
-              << "RunAfter() called before test processed previous delay";
+          ASSERT_FALSE(run_after_delay_.has_value())
+              << "RunAfter() called before test processed previous delay; "
+                 "dropping new delay: "
+              << Duration::NanosecondsRoundDown(
+                     std::chrono::nanoseconds(delay).count());
           run_after_delay_ = delay;
         });
   }
