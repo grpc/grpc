@@ -279,14 +279,24 @@ void Server::ListenerState::Stop() {
     GRPC_CHECK_NE(server_->config_fetcher(), nullptr);
     server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
   }
-  GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, server_.get(),
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&destroy_done_, OnDestroyDone, this, nullptr);
   if (listener_ == nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, &destroy_done_, absl::OkStatus());
     return;
   }
   listener_->SetOnDestroyDone(&destroy_done_);
   listener_.reset();
+}
+
+void Server::ListenerState::OnDestroyDone(
+    void* arg, grpc_error_handle /*error*/) {
+  ListenerState* self = static_cast<ListenerState*>(arg);
+  GRPC_TRACE_LOG(server, INFO)
+      << "[server " << self->server_.get() << " listener_state "
+      << self << "] ListenerState::OnDestroyDone()";
+  MutexLock lock(self->server_->mu_global_);
+  self->server_->listeners_destroyed_++;
+  self->server_->MaybeFinishShutdown();
 }
 
 std::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
@@ -1670,9 +1680,12 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
 }
 
 void Server::Start() {
-  // Add an extra ListenerState with no underlying listener, to track
-  // connections added using the legacy code-path in SetupTransport().
-  listener_states_.emplace_back(MakeRefCounted<ListenerState>(Ref(), nullptr));
+  if (IsServerConnectionManagementEnabled()) {
+    // Add an extra ListenerState with no underlying listener, to track
+    // connections added using the legacy code-path in SetupTransport().
+    listener_states_.emplace_back(
+        MakeRefCounted<ListenerState>(Ref(), nullptr));
+  }
   started_ = true;
   for (grpc_completion_queue* cq : cqs_) {
     if (grpc_cq_can_listen(cq)) {
@@ -2135,15 +2148,6 @@ std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
     channels.push_back(chand->channel()->RefAsSubclass<Channel>());
   }
   return channels;
-}
-
-void Server::ListenerDestroyDone(void* arg, grpc_error_handle /*error*/) {
-  Server* server = static_cast<Server*>(arg);
-  GRPC_TRACE_LOG(server, INFO)
-      << "[server " << server << "] ListenerDestroyDone()";
-  MutexLock lock(server->mu_global_);
-  server->listeners_destroyed_++;
-  server->MaybeFinishShutdown();
 }
 
 namespace {

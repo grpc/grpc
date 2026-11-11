@@ -364,6 +364,8 @@ class Server : public ServerInterface,
     void RemoveConnectionLocked(Connection* connection)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
 
+    static void OnDestroyDone(void* arg, grpc_error_handle error);
+
     RefCountedPtr<Server> const server_;
     MemoryQuotaRefPtr const memory_quota_;
 
@@ -758,8 +760,6 @@ class Server : public ServerInterface,
   RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
                                         const absl::string_view& path);
   void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
-
-  static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
   static void DoneShutdownEvent(void* server,
                                 grpc_cq_completion* /*completion*/) {
