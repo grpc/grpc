@@ -17,6 +17,8 @@
 
 #include <grpc/support/time.h>
 
+#include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <tuple>
 #include <type_traits>
@@ -220,7 +222,8 @@ class ZTraceCollector {
     Instance(ZTrace::Args args,
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine)
-        : memory_cap_(IntFromArgs(args, "memory_cap").value_or(1024 * 1024)),
+        : memory_cap_(std::max<int64_t>(
+              0, IntFromArgs(args, "memory_cap").value_or(1024 * 1024))),
           config_(std::move(args)),
           event_engine_(std::move(event_engine)) {}
     using Collections = std::tuple<Collection<Data>...>;
@@ -236,8 +239,10 @@ class ZTraceCollector {
           return;
       }
       if (state_ == State::kDone) return;
+      size_t incoming_usage = MemoryUsageOf(value.second);
+      if (incoming_usage > memory_cap_) return;
       ++items_matched_;
-      memory_used_ += MemoryUsageOf(value.second);
+      memory_used_ += incoming_usage;
       while (memory_used_ > memory_cap_) {
         auto memory_used_before = memory_used_;
         RemoveMostRecent();

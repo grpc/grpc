@@ -94,7 +94,6 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 inline bool IsHeaderDataFrameEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() { return true; }
-inline bool IsInternalFixEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAP_HOST_HEADER_TO_AUTHORITY
@@ -192,7 +191,6 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 inline bool IsHeaderDataFrameEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() { return true; }
-inline bool IsInternalFixEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAP_HOST_HEADER_TO_AUTHORITY
@@ -290,7 +288,6 @@ inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
 inline bool IsHeaderDataFrameEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() { return true; }
-inline bool IsInternalFixEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAP_HOST_HEADER_TO_AUTHORITY
@@ -373,7 +370,6 @@ enum ExperimentIds {
   kExperimentIdH2MaxDeallocatingStreamsHeadroom,
   kExperimentIdHeaderDataFrame,
   kExperimentIdInprocCancelStream,
-  kExperimentIdInternalFix,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMapHostHeaderToAuthority,
@@ -502,10 +498,6 @@ inline bool IsHeaderDataFrameEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
 inline bool IsInprocCancelStreamEnabled() {
   return IsExperimentEnabled<kExperimentIdInprocCancelStream>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_INTERNAL_FIX
-inline bool IsInternalFixEnabled() {
-  return IsExperimentEnabled<kExperimentIdInternalFix>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {
