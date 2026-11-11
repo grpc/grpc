@@ -16,8 +16,10 @@
 //
 //
 
+#include <grpc/grpc_security_constants.h>
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
 
 #include "opentelemetry/exporters/memory/in_memory_span_exporter_factory.h"
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
@@ -88,8 +90,8 @@ class OTelTracingTest : public ::testing::Test {
     port_ = grpc_pick_unused_port_or_die();
     server_address_ = absl::StrCat("localhost:", port_);
     RestartServer();
-    auto channel = grpc::CreateChannel(server_address_,
-                                       grpc::InsecureChannelCredentials());
+    auto channel = grpc::CreateChannel(
+        server_address_, grpc::experimental::LocalCredentials(LOCAL_TCP));
     stub_ = EchoTestService::NewStub(channel);
   }
 
