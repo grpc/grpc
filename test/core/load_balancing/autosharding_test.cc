@@ -232,14 +232,11 @@ class AutoShardingTest : public LoadBalancingPolicyTest {
     return request;
   }
 
-  // Waits for the connection attempt that a queued pick triggers.  The first
-  // flush runs the picker's request to connect, which creates the child
-  // policy and its subchannel.  The second flush delivers the subchannel's
+  // Waits for the connection attempt that a queued pick triggers.  Draining
+  // pending work runs the picker's request to connect, which creates the
+  // child policy and its subchannel, and then delivers the subchannel's
   // initial connectivity state to the child policy.
-  void WaitForConnectionAttemptTriggeredByPick() {
-    WaitForWorkSerializerToFlush();
-    WaitForWorkSerializerToFlush();
-  }
+  void WaitForConnectionAttemptTriggeredByPick() { DrainPendingWork(); }
 
   void SendAssignment(
       const std::vector<std::pair<absl::string_view, std::vector<int32_t>>>&
@@ -262,7 +259,7 @@ class AutoShardingTest : public LoadBalancingPolicyTest {
       grpc_connectivity_state expected_state,
       absl::Status expected_status = absl::OkStatus(),
       SourceLocation location = SourceLocation()) {
-    WaitForWorkSerializerToFlush();
+    DrainPendingWork();
     return LoadBalancingPolicyTest::ExpectState(
         expected_state, std::move(expected_status), location);
   }
@@ -393,7 +390,7 @@ TEST_F(AutoShardingTest, StartupFallback) {
   // Before the stream fails, picks are queued without creating subchannels.
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("some_key"));
-  WaitForWorkSerializerToFlush();
+  DrainPendingWork();
   for (absl::string_view address : kAddresses) {
     EXPECT_EQ(FindSubchannel(address, args), nullptr);
   }
@@ -832,7 +829,7 @@ TEST_F(AutoShardingTest, InitialAssignmentTimeoutUsesFallbackWhenEnabled) {
   // fallback is enabled.
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("some_key"));
-  WaitForWorkSerializerToFlush();
+  DrainPendingWork();
   for (absl::string_view address : kAddresses) {
     EXPECT_EQ(FindSubchannel(address, args), nullptr);
   }
