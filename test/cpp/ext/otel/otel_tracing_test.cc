@@ -983,7 +983,8 @@ class OTelTracingTestWithCensusContextRecording : public OTelTracingTest {
     ChannelArguments args;
     args.SetPointer(kCensusContextRecorderArg, &recorder_);
     stub_ = EchoTestService::NewStub(grpc::CreateCustomChannel(
-        server_address_, grpc::InsecureChannelCredentials(), args));
+        server_address_, grpc::experimental::LocalCredentials(LOCAL_TCP),
+        args));
   }
 
   CensusContextRecordingFilter::Recorder recorder_;
