@@ -1,0 +1,35 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 610e183..e57c1d7 100755
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1,3 +1,4 @@
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+ 
+ config_setting(
+@@ -173,7 +174,10 @@ cc_library(
+         "//conditions:default": [],
+     }),
+     defines = ["CARES_STATICLIB"],
+-    includes = ["include", "."],
++    includes = [
++        "include",
++        ".",
++    ],
+     linkopts = select({
+         ":windows": ["-defaultlib:ws2_32.lib"],
+         "//conditions:default": [],
+@@ -184,4 +188,3 @@ cc_library(
+     ],
+     alwayslink = 1,
+ )
+-
+diff --git a/MODULE.bazel b/MODULE.bazel
+index 6643d7b..7f7ff56 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -6,3 +6,4 @@ module(
+ )
+ bazel_dep(name = "bazel_skylib", version = "1.0.3")
+ bazel_dep(name = "platforms", version = "0.0.4")
++bazel_dep(name = "rules_cc", version = "0.2.15")

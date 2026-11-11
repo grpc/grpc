@@ -1,4 +1,4 @@
-# Patch to fix a windows rbe related regression with bazel 8.7.0 + rules_go
+# Patch to fix a windows rbe related regression with bazel 9.2.0 + rules_go
 #
 # Rationale: The gotmp folder is a temporary working directory declared as a tree
 # artifact. `rules_go` repo build some artifcats inside that folder and then
