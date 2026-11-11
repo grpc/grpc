@@ -124,6 +124,9 @@ constexpr bool kIsElement<Needle, H, Haystack...> =
 
 }  // namespace ztrace_collector_detail
 
+constexpr int64_t kDefaultZTraceMemoryCap = 1024 * 1024;
+constexpr int64_t kMaxZTraceMemoryCap = 16 * 1024 * 1024;
+
 inline std::optional<int64_t> IntFromArgs(const ZTrace::Args& args,
                                           const std::string& name) {
   auto it = args.find(name);
@@ -222,8 +225,9 @@ class ZTraceCollector {
     Instance(ZTrace::Args args,
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine)
-        : memory_cap_(std::max<int64_t>(
-              0, IntFromArgs(args, "memory_cap").value_or(1024 * 1024))),
+        : memory_cap_(std::clamp<int64_t>(
+              IntFromArgs(args, "memory_cap").value_or(1024 * 1024), 0,
+              16 * 1024 * 1024)),
           config_(std::move(args)),
           event_engine_(std::move(event_engine)) {}
     using Collections = std::tuple<Collection<Data>...>;
