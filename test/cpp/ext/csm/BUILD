@@ -30,13 +30,13 @@ grpc_cc_test(
     srcs = [
         "csm_observability_test.cc",
     ],
-    linkstatic = True,
     external_deps = [
         "google_cloud_cpp:opentelemetry",
         "gtest",
         "otel/sdk:headers",
         "otel/sdk/src/metrics",
     ],
+    linkstatic = True,
     tags = [
         # TODO(b/406886630): Remove after fixing
         "grpc:broken-internally",
@@ -57,7 +57,6 @@ grpc_cc_test(
     srcs = [
         "metadata_exchange_test.cc",
     ],
-    linkstatic = True,
     external_deps = [
         "absl/functional:any_invocable",
         "google_cloud_cpp:opentelemetry",
@@ -66,6 +65,7 @@ grpc_cc_test(
         "otel/sdk:headers",
         "otel/sdk/src/metrics",
     ],
+    linkstatic = True,
     tags = [
         # TODO(b/406886630): Remove after fixing
         "grpc:broken-internally",
