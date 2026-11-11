@@ -55,6 +55,19 @@ list_local_web_assets() {
   echo
 }
 
+upload_web_assets() {
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+
+  cp -p "${SYNC_WEB_ASSETS[@]}" "${tmp_dir}/"
+
+  set -x
+  gcloud storage rsync --checksums-only "${tmp_dir}" "${GCS_WEB_ASSETS}"
+  { set +x; } 2>/dev/null
+
+  rm -r "${tmp_dir}"
+}
+
 main() {
   echo "${GCS_WEB_ASSETS} path contents:"
   list_remote_web_assets
@@ -65,7 +78,11 @@ main() {
   # GCS -> local sync.
   if (( REVERSE )); then
     set -x
-    gcloud storage cp "${SYNC_WEB_ASSETS[@]/#/${GCS_WEB_ASSETS}}" .
+    # --preserve-posix applies goog-reserved-file-mtime from GCS onto local
+    # files so a subsequent rsync upload does not patch mtime metadata on
+    # unchanged objects.
+    gcloud storage cp --preserve-posix \
+      "${SYNC_WEB_ASSETS[@]/#/${GCS_WEB_ASSETS}}" .
     { set +x; } 2>/dev/null
 
     echo
@@ -81,9 +98,7 @@ main() {
     return 1
   fi
 
-  set -x
-  gcloud storage cp "${SYNC_WEB_ASSETS[@]}" "${GCS_WEB_ASSETS}"
-  { set +x; } 2>/dev/null
+  upload_web_assets
 
   echo
   echo "${GCS_WEB_ASSETS} path contents after upload:"
