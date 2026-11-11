@@ -59,15 +59,69 @@ def _py_proto_library_provider_contents_test_impl(ctx):
 
 _py_proto_library_provider_contents_test = analysistest.make(_py_proto_library_provider_contents_test_impl)
 
+_PyInfoAspectVisitedInfo = provider(
+    "Marker indicating an aspect requiring PyInfo visited the target.",
+    fields = ["visited"],
+)
+
+def _require_pyinfo_aspect_impl(_target, _ctx):
+    return [_PyInfoAspectVisitedInfo(visited = True)]
+
+_require_pyinfo_aspect = aspect(
+    implementation = _require_pyinfo_aspect_impl,
+    required_providers = [PyInfo],
+)
+
+# Tests that the 'py_grpc_library' rule advertises 'PyInfo' to aspects with
+# 'required_providers = [PyInfo]' and forwards generated '.py' sources and
+# transitive '.pyi' type stubs in its 'PyInfo' provider.
+def _py_grpc_library_provider_contents_test_impl(ctx):
+    env = analysistest.begin(ctx)
+
+    target = analysistest.target_under_test(env)
+
+    asserts.true(
+        env,
+        _PyInfoAspectVisitedInfo in target,
+        "Expected aspect with required_providers = [PyInfo] to visit py_grpc_library",
+    )
+
+    py_info_transitive_sources = [
+        file.short_path
+        for file in target[PyInfo].transitive_sources.to_list()
+    ]
+    py_info_transitive_pyi_files = [
+        file.short_path
+        for file in target[PyInfo].transitive_pyi_files.to_list()
+    ]
+
+    _assert_in(env, "helloworld_pb2_grpc.py", py_info_transitive_sources)
+    _assert_in(env, "helloworld_pb2.py", py_info_transitive_sources)
+    _assert_in(env, "helloworld_pb2.pyi", py_info_transitive_pyi_files)
+    _assert_in(env, "subdir/hello_dep_pb2.pyi", py_info_transitive_pyi_files)
+
+    return analysistest.end(env)
+
+_py_grpc_library_provider_contents_test = analysistest.make(
+    _py_grpc_library_provider_contents_test_impl,
+    extra_target_under_test_aspects = [_require_pyinfo_aspect],
+)
+
 def python_rules_test_suite(name):
     _py_proto_library_provider_contents_test(
         name = "py_proto_library_provider_contents_test",
         target_under_test = ":helloworld_py_pb2",
     )
 
+    _py_grpc_library_provider_contents_test(
+        name = "py_grpc_library_provider_contents_test",
+        target_under_test = ":helloworld_py_pb2_grpc",
+    )
+
     native.test_suite(
         name = name,
         tests = [
             "py_proto_library_provider_contents_test",
+            "py_grpc_library_provider_contents_test",
         ],
     )
