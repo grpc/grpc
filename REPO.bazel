@@ -16,4 +16,6 @@
 # instead of -isystem (https://github.com/bazelbuild/bazel/pull/25750).
 # Keep the Bazel 8 behavior: headers in src/core/ext/upb-gen and
 # src/core/ext/upbdefs-gen must not take precedence over generated headers.
+
+# buildifier: disable=module-docstring
 repo(features = ["system_include_paths"])
