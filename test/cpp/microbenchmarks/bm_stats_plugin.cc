@@ -52,7 +52,7 @@ class BenchmarkDomain : public grpc_core::InstrumentDomain<BenchmarkDomain> {
  public:
   using Backend = grpc_core::HighContentionBackend;
   static constexpr absl::string_view kName = "benchmark_domain";
-  GRPC_INSTRUMENT_DOMAIN_LABELS("key1", "key2", "key3");
+  GRPC_INSTRUMENT_DOMAIN_LABELS("testing very very very long labels one", "testing very very very long labels two", "testing very very very long labels three");
   static inline const auto kHistogram =
       RegisterInt64Histogram<grpc_core::ExponentialInt64HistogramShape>(
           "grpc.benchmark.histogram", "Desc", "ms", 1024, 20);

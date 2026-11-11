@@ -1142,6 +1142,54 @@ void OpenTelemetryPluginImpl::RecordHistogram(
   }
 }
 
+namespace {
+
+// ScopedKeyValueIterable filters label keys and values based on a collection
+// scope.
+class ScopedKeyValueIterable final
+    : public opentelemetry::common::KeyValueIterable {
+ public:
+  ScopedKeyValueIterable(const grpc_core::InstrumentLabelList& domain_labels,
+                         absl::Span<const std::string> label_values,
+                         const grpc_core::CollectionScope& collection_scope)
+      : domain_labels_(domain_labels),
+        label_values_(label_values),
+        collection_scope_(collection_scope) {
+    GRPC_CHECK_EQ(domain_labels_.size(), label_values_.size());
+  }
+
+  bool ForEachKeyValue(opentelemetry::nostd::function_ref<
+                       bool(opentelemetry::nostd::string_view,
+                            opentelemetry::common::AttributeValue)>
+                           callback) const noexcept override {
+    for (size_t i = 0; i < domain_labels_.size(); ++i) {
+      if (collection_scope_.ObservesLabel(domain_labels_[i])) {
+        if (!callback(
+                AbslStrViewToOpenTelemetryStrView(domain_labels_[i].label()),
+                AbslStrViewToOpenTelemetryStrView(label_values_[i]))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  size_t size() const noexcept override {
+    size_t count = 0;
+    for (const grpc_core::InstrumentLabel label : domain_labels_) {
+      if (collection_scope_.ObservesLabel(label)) ++count;
+    }
+    return count;
+  }
+
+ private:
+  const grpc_core::InstrumentLabelList& domain_labels_;
+  const absl::Span<const std::string> label_values_;
+  const grpc_core::CollectionScope& collection_scope_;
+};
+
+}  // namespace
+
 // Filters labels based on the collection scope and records value in the stored
 // histogram. Returns if no histogram with this description exists.
 // OpenTelemetry only has uint64 histograms so negative values are stored in the
@@ -1157,21 +1205,15 @@ void OpenTelemetryPluginImpl::RecordHistogram(
   if (hist == uint64_histograms_.end() || hist->second == nullptr) return;
   const grpc_core::InstrumentLabelList domain_labels =
       description->domain->label_names();
-  GRPC_CHECK_EQ(domain_labels.size(), label_values.size());
-  std::vector<std::string> filtered_label_keys;
-  std::vector<std::string> filtered_label_values;
-  filtered_label_keys.reserve(domain_labels.size());
-  filtered_label_values.reserve(domain_labels.size());
-  for (size_t i = 0; i < domain_labels.size(); ++i) {
-    if (collection_scope_->ObservesLabel(domain_labels[i])) {
-      filtered_label_keys.emplace_back(domain_labels[i].label());
-      filtered_label_values.emplace_back(label_values[i]);
-    }
+  if (domain_labels.empty()) {
+    hist->second->Record(static_cast<uint64_t>(value < 0 ? 0 : value),
+                         opentelemetry::context::Context{});
+  } else {
+    hist->second->Record(
+        static_cast<uint64_t>(value < 0 ? 0 : value),
+        ScopedKeyValueIterable(domain_labels, label_values, *collection_scope_),
+        opentelemetry::context::Context{});
   }
-  ExportedMetricKeyValueIterable labels_iterable(filtered_label_keys,
-                                                 filtered_label_values);
-  hist->second->Record(static_cast<uint64_t>(value < 0 ? 0 : value),
-                       labels_iterable, opentelemetry::context::Context{});
 }
 
 // Filters labels based on the collection scope and records value in the stored
@@ -1187,21 +1229,14 @@ void OpenTelemetryPluginImpl::RecordHistogram(
   if (hist == double_histograms_.end() || hist->second == nullptr) return;
   const grpc_core::InstrumentLabelList domain_labels =
       description->domain->label_names();
-  GRPC_CHECK_EQ(domain_labels.size(), label_values.size());
-  std::vector<std::string> filtered_label_keys;
-  std::vector<std::string> filtered_label_values;
-  filtered_label_keys.reserve(domain_labels.size());
-  filtered_label_values.reserve(domain_labels.size());
-  for (size_t i = 0; i < domain_labels.size(); ++i) {
-    if (collection_scope_->ObservesLabel(domain_labels[i])) {
-      filtered_label_keys.emplace_back(domain_labels[i].label());
-      filtered_label_values.emplace_back(label_values[i]);
-    }
+  if (domain_labels.empty()) {
+    hist->second->Record(value, opentelemetry::context::Context{});
+  } else {
+    hist->second->Record(
+        value,
+        ScopedKeyValueIterable(domain_labels, label_values, *collection_scope_),
+        opentelemetry::context::Context{});
   }
-  ExportedMetricKeyValueIterable labels_iterable(filtered_label_keys,
-                                                 filtered_label_values);
-  hist->second->Record(value, labels_iterable,
-                       opentelemetry::context::Context{});
 }
 
 void OpenTelemetryPluginImpl::AddCallback(

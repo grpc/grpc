@@ -63,8 +63,14 @@ void BM_IncrementHighContentionInstrument(benchmark::State& state) {
 }
 BENCHMARK(BM_IncrementHighContentionInstrument)->ThreadRange(1, 64);
 
+RefCountedPtr<CollectionScope> SharedCollectionScope() {
+  static const auto* const scope =
+      new RefCountedPtr<CollectionScope>(CreateCollectionScope({}, {}));
+  return *scope;
+}
+
 void BM_IncrementLowContentionHistogram(benchmark::State& state) {
-  auto storage = LowContentionDomain::GetStorage(CreateCollectionScope({}, {}));
+  auto storage = LowContentionDomain::GetStorage(SharedCollectionScope());
   for (auto _ : state) {
     storage->Increment(LowContentionDomain::kHistogram, 100, nullptr);
   }
@@ -72,8 +78,7 @@ void BM_IncrementLowContentionHistogram(benchmark::State& state) {
 BENCHMARK(BM_IncrementLowContentionHistogram)->ThreadRange(1, 64);
 
 void BM_IncrementHighContentionHistogram(benchmark::State& state) {
-  auto storage =
-      HighContentionDomain::GetStorage(CreateCollectionScope({}, {}));
+  auto storage = HighContentionDomain::GetStorage(SharedCollectionScope());
   for (auto _ : state) {
     storage->Increment(HighContentionDomain::kHistogram, 100, nullptr);
   }
