@@ -498,7 +498,7 @@ void NewChttp2ServerListener::ActiveConnection::
 NewChttp2ServerListener::HandshakingConnection::HandshakingConnection(
     RefCountedPtr<Server::ListenerState> listener_state,
     grpc_tcp_server* tcp_server, grpc_pollset* accepting_pollset,
-    AcceptorPtr acceptor, const ChannelArgs& args, MemoryOwner memory_owner,
+    AcceptorPtr acceptor, const ChannelArgs& args,
     OrphanablePtr<grpc_endpoint> endpoint)
     : InternallyRefCounted(
           GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
@@ -831,8 +831,7 @@ void NewChttp2ServerListener::OnAccept(
   }
   auto connection = memory_owner.MakeOrphanable<HandshakingConnection>(
       self->listener_state_, self->tcp_server_, accepting_pollset,
-      std::move(acceptor), self->args_, std::move(memory_owner),
-      std::move(endpoint));
+      std::move(acceptor), self->args_, std::move(endpoint));
   RefCountedPtr<HandshakingConnection> connection_ref = connection->Ref();
   std::optional<ChannelArgs> new_args =
       self->listener_state_->AddHandshakingConnection(std::move(connection),

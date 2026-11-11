@@ -147,7 +147,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     HandshakingConnection(RefCountedPtr<Server::ListenerState> listener_state,
                           grpc_tcp_server* tcp_server,
                           grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
-                          const ChannelArgs& args, MemoryOwner memory_owner,
+                          const ChannelArgs& args,
                           OrphanablePtr<grpc_endpoint> endpoint);
 
     ~HandshakingConnection() override;
