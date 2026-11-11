@@ -81,7 +81,7 @@ var pythonRepo = pythonRepoLink.href;
 document.write("<p><code>" +
 "$ pip install --pre --upgrade --force-reinstall --extra-index-url \\<br />" +
 "&nbsp;&nbsp;&nbsp;&nbsp;<a href='" +  pythonRepo + "'>" + pythonRepo + "</a> \\<br />" +
-"&nbsp;&nbsp;&nbsp;&nbsp;grpcio grpcio-{tools,health-checking,reflection,testing}</code></p>");
+"&nbsp;&nbsp;&nbsp;&nbsp;grpcio grpcio-tools</code></p>");
 // ]]>
 </script>
 <table>
