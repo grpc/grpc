@@ -414,7 +414,6 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnection(
       return std::nullopt;
     }
     connection_manager = connection_manager_;
-    handshaking_connections_.insert(std::move(handshaking_connection));
   }
   // The following section is intentionally outside the critical section. The
   // operation to update channel args for a connection is heavy and complicated.
@@ -449,6 +448,16 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnection(
     }
     new_args = (*args_result).SetObject(security_connector);
   }
+  MutexLock lock(server_->mu_global_);
+  // Since we let go of the lock earlier, we need to protect ourselves against
+  // time-of-check-to-time-of-use cases. The server may have stopped serving
+  // or the connection manager may have changed before we add the connection
+  // to the list of tracked connections.
+  if (!is_serving_ || connection_manager != connection_manager_) {
+    // Not serving
+    return std::nullopt;
+  }
+  handshaking_connections_.emplace(std::move(handshaking_connection));
   return new_args;
 }
 
