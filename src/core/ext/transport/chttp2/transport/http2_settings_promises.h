@@ -475,7 +475,10 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // Data Members for SETTINGS being received from the peer.
   const bool is_client_;
 
+  // TODO(roth): Remove this parameter as part of removing the
+  // server_connection_management experiment.
   absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_first_settings_;
+
   absl::flat_hash_map<uint16_t, uint32_t> pending_peer_settings_;
   // Number of incoming SETTINGS frames that we have received but not ACKed yet.
   uint32_t num_acks_to_send_ = 0;

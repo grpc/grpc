@@ -265,7 +265,23 @@ class Server : public ServerInterface,
     void RemoveLogicalConnection(
         ListenerInterface::LogicalConnection* connection);
 
-// FIXME: document
+    // Adds a handle for a connection that has just been accepted.
+    //
+    // Before calling this, the caller must have obtained quota for
+    // the connection via connection_quota().  This method assumes
+    // ownership of that previously obtained quota.
+    //
+    // Upon success, holds ownership of the connection and returns the
+    // channel args to use for the handshake.  The caller is expected to
+    // start the handshake on the connection.
+    //
+    // Upon failure, orphans the connection and returns nullopt.
+    //
+    // TODO(roth): When we eventually need to support transports that
+    // are not endpoint-based, we'll need to change this API to not take
+    // the endpoint as a parameter.  At minimum, we could pass in the local
+    // and peer addresses instead of the whole endpoint, but even that
+    // might not apply for a non-endpoint-based transport.
     std::optional<ChannelArgs> AddHandshakingConnection(
         OrphanablePtr<Orphanable> handshaking_connection,
         const ChannelArgs& args, grpc_endpoint* endpoint);
@@ -286,11 +302,16 @@ class Server : public ServerInterface,
 
     // Legacy code-path for callers that directly call
     // Server::SetupTransport() without having a listener.
+    //
     // TODO(roth): When we have time, migrate all callers to store
     // connections in listeners and remove this method.  This will require
-    // changing the inproc transport to use a listener and migrating
-    // callers from the legacy grpc_server_add_channel_from_fd() API to
-    // the new PassiveListener API, and maybe other changes.
+    // changing at least the following callers:
+    // - the legacy grpc_server_add_channel_from_fd() API (should
+    //   migrate to the new PassiveListener API)
+    // - the inproc transport (needs to use a listener as part of the
+    //   transport selection work)
+    // - the chaotic_good transport (needs to be changed to use the
+    //   ListenerState APIs)
     absl::Status LegacyAddActiveConnection(
         Transport* transport, grpc_pollset* accepting_pollset,
         const ChannelArgs& args);
@@ -300,13 +321,13 @@ class Server : public ServerInterface,
       return active_connections_.size();
     }
 
+    // Immediately orphans all handshaking connections, and starts a
+    // graceful drain of all active connections.
     void DrainConnectionsLocked(absl::string_view reason, Duration grace_period)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
 
     const MemoryQuotaRefPtr& memory_quota() const { return memory_quota_; }
 
-    // TODO(roth): This should probably apply across all listeners, not
-    // per-listener.
     const ConnectionQuotaRefPtr& connection_quota() const {
       return connection_quota_;
     }
@@ -343,6 +364,10 @@ class Server : public ServerInterface,
           connections;
       grpc_core::Timestamp timestamp;
     };
+
+    std::optional<ChannelArgs> AddHandshakingConnectionImpl(
+        OrphanablePtr<Orphanable> handshaking_connection,
+        const ChannelArgs& args, grpc_endpoint* endpoint);
 
     void DrainConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
@@ -702,6 +727,7 @@ class Server : public ServerInterface,
   class Connection final : public RefCounted<Connection>, public Orphanable {
    public:
     Connection(RefCountedPtr<ListenerState> listener_state,
+               bool hold_connection_quota,
                OrphanablePtr<ServerTransport> transport);
 
     void Orphan() override;
@@ -720,6 +746,7 @@ class Server : public ServerInterface,
     class ConnectivityWatcher;
 
     const RefCountedPtr<ListenerState> listener_state_;
+    const bool hold_connection_quota_;
 
     // Will be unset when the connection has been orphaned.
     OrphanablePtr<ServerTransport> transport_

@@ -404,8 +404,17 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnection(
     const ChannelArgs& args, grpc_endpoint* endpoint) {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
-      << "]: AddHandshakingConnection(): handshaking_connection="
-      << handshaking_connection.get();
+      << "]: AddHandshakingConnection(handshaking_connection="
+      << handshaking_connection.get() << ")";
+  auto retval = AddHandshakingConnectionImpl(
+      std::move(handshaking_connection), args, endpoint);
+  if (!retval.has_value()) connection_quota_->ReleaseConnections(1);
+  return retval;
+}
+
+std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnectionImpl(
+    OrphanablePtr<Orphanable> handshaking_connection,
+    const ChannelArgs& args, grpc_endpoint* endpoint) {
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager;
   {
     MutexLock lock(server_->mu_global_);
@@ -473,42 +482,48 @@ bool Server::ListenerState::OnHandshakeDone(
                                             GRPC_SERVER_CHANNEL);
   const bool transport_initialized = owned_transport.ok();
   OrphanablePtr<Orphanable> handshaking_connection_to_orphan;
-  MutexLock lock(server_->mu_global_);
-  // Create Connection object while holding the mutex.  This ensures
-  // that there's no race condition if the transport immediately reports
-  // a connection failure.
-  OrphanablePtr<Connection> connection;
-  if (owned_transport.ok()) {
-    connection = MakeOrphanable<Connection>(Ref(), std::move(*owned_transport));
-    GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
-  }
-  // Find the handshaking connection.
-  auto nh = handshaking_connections_.extract(handshaking_connection);
-  if (!nh.empty()) {
-    GRPC_TRACE_LOG(server, INFO) << "cleaning up handshaking connection";
-    // Found the handshaking connection.  We'll orphan it.
-    handshaking_connection_to_orphan = std::move(nh.value());
-    // If the handshake succeeded, track the new connection as an
-    // active connection.
-    if (connection != nullptr) {
-      GRPC_TRACE_LOG(server, INFO) << "tracking new active connection";
-      active_connections_.insert(std::move(connection));
+  {
+    MutexLock lock(server_->mu_global_);
+    // Create Connection object while holding the mutex.  This ensures
+    // that there's no race condition if the transport immediately reports
+    // a connection failure.
+    OrphanablePtr<Connection> connection;
+    if (owned_transport.ok()) {
+      connection = MakeOrphanable<Connection>(
+          Ref(), /*hold_connection_quota=*/true, std::move(*owned_transport));
+      GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
     }
-    return transport_initialized;
+    // Find the handshaking connection.
+    auto nh = handshaking_connections_.extract(handshaking_connection);
+    if (!nh.empty()) {
+      GRPC_TRACE_LOG(server, INFO) << "cleaning up handshaking connection";
+      // Found the handshaking connection.  We'll orphan it.
+      handshaking_connection_to_orphan = std::move(nh.value());
+      // If the handshake succeeded, track the new connection as an
+      // active connection.
+      if (connection != nullptr) {
+        GRPC_TRACE_LOG(server, INFO) << "tracking new active connection";
+        active_connections_.insert(std::move(connection));
+      }
+      return transport_initialized;
+    }
+    GRPC_TRACE_LOG(server, INFO) << "did NOT find handshaking connection";
+    // If the connection succeeded but we didn't find the handshaking
+    // connection to orphan, that means that we hit a race condition:
+    // we orphaned it while the call to OnHandshakeDone() was in flight.
+    // At this point, the connection has finished handshaking and therefore
+    // may start receiving RPCs, so we need to drain it gracefully.
+    // FIXME: what if this is called after MaybeFinishShutdown() has
+    // already thought there were no connections and has started shutdown?
+    if (connection != nullptr) {
+      GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
+      server_->StartDrainingConnectionLocked(
+          std::move(connection),
+          // FIXME: what is the right reason and time to use here?
+          "server closing connection", Duration::Infinity());
+    }
   }
-  GRPC_TRACE_LOG(server, INFO) << "did NOT find handshaking connection";
-  // If the connection succeeded but we didn't find the handshaking
-  // connection to orphan, that means that we hit a race condition:
-  // we orphaned it while the call to OnHandshakeDone() was in flight.
-  // At this point, the connection has finished handshaking and therefore
-  // may start receiving RPCs, so we need to drain it gracefully.
-  if (connection != nullptr) {
-    GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
-    server_->StartDrainingConnectionLocked(
-        std::move(connection),
-        // FIXME: what is the right reason and time to use here?
-        "server closing connection", Duration::Infinity());
-  }
+  if (!transport_initialized) connection_quota_->ReleaseConnections(1);
   return transport_initialized;
 }
 
@@ -526,8 +541,8 @@ absl::Status Server::ListenerState::LegacyAddActiveConnection(
   // Create Connection object while holding the mutex.  This ensures
   // that there's no race condition if the transport immediately reports
   // a connection failure.
-  auto connection =
-      MakeOrphanable<Connection>(Ref(), std::move(*owned_transport));
+  auto connection = MakeOrphanable<Connection>(
+      Ref(), /*hold_connection_quota=*/false, std::move(*owned_transport));
   GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
   if (is_serving_ == false) {
     GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
@@ -696,9 +711,10 @@ class Server::Connection::ConnectivityWatcher final
 //
 
 Server::Connection::Connection(
-    RefCountedPtr<ListenerState> listener_state,
+    RefCountedPtr<ListenerState> listener_state, bool hold_connection_quota,
     OrphanablePtr<ServerTransport> transport)
     : listener_state_(std::move(listener_state)),
+      hold_connection_quota_(hold_connection_quota),
       transport_(std::move(transport)) {
   // The caller is holding the server's mutex when creating this object,
   // so we do an async hop here before calling into the transport code,
@@ -719,6 +735,9 @@ void Server::Connection::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
       << "[server " << listener_state_->server_.get() << " listener_state "
       << listener_state_.get() << " connection " << this << "]: Orphan()";
   transport_.reset();
+  if (hold_connection_quota_) {
+    listener_state_->connection_quota_->ReleaseConnections(1);
+  }
   Unref();
 }
 

@@ -594,11 +594,7 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
         grpc_chttp2_transport_start_reading(
             transport.get(), (*result)->read_buffer.c_slice_buffer(),
             /*notify_on_receive_settings=*/nullptr, nullptr,
-// FIXME: do this in server code instead of here, so that we
-// can remove the on_close callback from the transport
-            [connection_quota = listener_state_->connection_quota()]() {
-              connection_quota->ReleaseConnections(1);
-            });
+            /*on_close=*/nullptr);
       }
       transport_passed_to_server = true;
     } else {
@@ -617,11 +613,7 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
         auto* ph2_transport = new http2::Http2ServerTransport(
             std::move(promise_endpoint), args,
             std::move(event_engine_ptr), /*on_receive_settings=*/nullptr,
-// FIXME: do this in server code instead of here, so that we
-// can remove the on_close callback from the transport
-            [connection_quota = listener_state_->connection_quota()]() {
-              connection_quota->ReleaseConnections(1);
-            });
+            /*on_close=*/nullptr);
         // OnHandshakeDone() will spawn the initial transport promises.
         listener_state_->OnHandshakeDone(
             this, ph2_transport, accepting_pollset_, args);
@@ -636,7 +628,6 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
   if (!transport_passed_to_server) {
     listener_state_->OnHandshakeDone(
         this, /*transport=*/nullptr, accepting_pollset_, args);
-    listener_state_->connection_quota()->ReleaseConnections(1);
   }
 }
 
@@ -846,11 +837,7 @@ void NewChttp2ServerListener::OnAccept(
   std::optional<ChannelArgs> new_args =
       self->listener_state_->AddHandshakingConnection(std::move(connection),
                                                       self->args_, tcp);
-  if (new_args.has_value()) {
-    connection_ref->Start(*new_args);
-  } else {
-    self->listener_state_->connection_quota()->ReleaseConnections(1);
-  }
+  if (new_args.has_value()) connection_ref->Start(*new_args);
 }
 
 void NewChttp2ServerListener::TcpServerShutdownComplete(
