@@ -30,6 +30,7 @@ grpc_cc_test(
     srcs = [
         "csm_observability_test.cc",
     ],
+    linkstatic = True,
     external_deps = [
         "google_cloud_cpp:opentelemetry",
         "gtest",
@@ -56,6 +57,7 @@ grpc_cc_test(
     srcs = [
         "metadata_exchange_test.cc",
     ],
+    linkstatic = True,
     external_deps = [
         "absl/functional:any_invocable",
         "google_cloud_cpp:opentelemetry",
