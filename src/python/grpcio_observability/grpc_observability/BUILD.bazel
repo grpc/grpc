@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@cython//Tools:rules.bzl", "pyx_library")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:cython_library.bzl", "pyx_library")
 
 package(
     default_visibility = ["//visibility:private"],
@@ -60,7 +60,7 @@ pyx_library(
         "_cyobservability.pxd",
         "_cyobservability.pyx",
     ],
-    deps = [
+    cc_deps = [
         ":observability",
         "//:call_tracer",
     ],

@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@cython//Tools:rules.bzl", "pyx_library")
 load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:cython_library.bzl", "pyx_library")
 load("grpcio_tools.bzl", "internal_copied_filegroup")
 
 package(
@@ -47,7 +47,7 @@ cc_library(
 pyx_library(
     name = "cyprotoc",
     srcs = ["grpc_tools/_protoc_compiler.pyx"],
-    deps = [":protoc_lib"],
+    cc_deps = [":protoc_lib"],
 )
 
 internal_copied_filegroup(
