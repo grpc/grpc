@@ -728,9 +728,6 @@ class Server : public ServerInterface,
   std::list<RefCountedPtr<ListenerState>> listener_states_;
   size_t listeners_destroyed_ = 0;
 
-  // The last time we printed a shutdown progress message.
-  gpr_timespec last_shutdown_message_time_;
-
   StreamQuotaRefPtr stream_quota_;
 };
 
