@@ -226,8 +226,8 @@ class ZTraceCollector {
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine)
         : memory_cap_(std::clamp<int64_t>(
-              IntFromArgs(args, "memory_cap").value_or(1024 * 1024), 0,
-              16 * 1024 * 1024)),
+              IntFromArgs(args, "memory_cap").value_or(kDefaultZTraceMemoryCap),
+              0, kMaxZTraceMemoryCap)),
           config_(std::move(args)),
           event_engine_(std::move(event_engine)) {}
     using Collections = std::tuple<Collection<Data>...>;
