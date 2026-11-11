@@ -47,6 +47,18 @@ class _StreamUnaryInterceptorEmpty(aio.StreamUnaryClientInterceptor):
         pass
 
 
+class _StreamUnaryInterceptorNotAwaitingContinuation(
+    aio.StreamUnaryClientInterceptor
+):
+    async def intercept_stream_unary(
+        self, continuation, client_call_details, request_iterator
+    ):
+        return continuation(client_call_details, request_iterator)
+
+    def assert_in_final_state(self, test: unittest.TestCase):
+        pass
+
+
 class _StreamUnaryInterceptorWithRequestIterator(
     aio.StreamUnaryClientInterceptor
 ):
@@ -73,6 +85,7 @@ class TestStreamUnaryClientInterceptor(AioTestBase):
     async def test_intercepts(self):
         for interceptor_class in (
             _StreamUnaryInterceptorEmpty,
+            _StreamUnaryInterceptorNotAwaitingContinuation,
             _StreamUnaryInterceptorWithRequestIterator,
         ):
             with self.subTest(name=interceptor_class):
