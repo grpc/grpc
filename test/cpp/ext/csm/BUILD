@@ -36,6 +36,13 @@ grpc_cc_test(
         "otel/sdk:headers",
         "otel/sdk/src/metrics",
     ],
+    # linkstatic = True is required because transitive dependency google_cloud_cpp
+    # depends on @curl//:curl, which compiles with hidden symbol visibility (-fvisibility=hidden).
+    # Under dynamic test linking (linkstatic = False), google_cloud_cpp_rest_internal
+    # is built as a DSO that cannot resolve hidden curl_* symbols from static curl objects.
+    # To view the dependency chain, you can run:
+    #
+    #   bazel query 'somepath("//test/cpp/ext/csm:csm_observability_test@poller=poll", "@@curl+//:curl")
     linkstatic = True,
     tags = [
         # TODO(b/406886630): Remove after fixing
@@ -65,6 +72,13 @@ grpc_cc_test(
         "otel/sdk:headers",
         "otel/sdk/src/metrics",
     ],
+    # linkstatic = True is required because transitive dependency google_cloud_cpp
+    # depends on @curl//:curl, which compiles with hidden symbol visibility (-fvisibility=hidden).
+    # Under dynamic test linking (linkstatic = False), google_cloud_cpp_rest_internal
+    # is built as a DSO that cannot resolve hidden curl_* symbols from static curl objects.
+    # To view the dependency chain, you can run:
+    #
+    #   bazel query 'somepath("//test/cpp/ext/csm:csm_observability_test@poller=poll", "@@curl+//:curl")
     linkstatic = True,
     tags = [
         # TODO(b/406886630): Remove after fixing
