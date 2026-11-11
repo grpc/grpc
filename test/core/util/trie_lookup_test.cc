@@ -58,6 +58,19 @@ TEST_F(TrieLookupTreeTest, LookupPrefixWithoutValue) {
   EXPECT_THAT(trie_.Lookup("app"), ::testing::IsNull());
 }
 
+TEST_F(TrieLookupTreeTest, LookupEmptyKey) {
+  trie_.AddNode("", "empty");
+  trie_.AddNode("a", "first");
+  EXPECT_THAT(trie_.Lookup(""), ::testing::Pointee(std::string("empty")));
+  EXPECT_THAT(trie_.Lookup("a"), ::testing::Pointee(std::string("first")));
+  EXPECT_THAT(trie_.Lookup("x"), ::testing::IsNull());
+}
+
+TEST_F(TrieLookupTreeTest, LookupEmptyKeyWithoutValue) {
+  trie_.AddNode("a", "first");
+  EXPECT_THAT(trie_.Lookup(""), ::testing::IsNull());
+}
+
 // === Tests for LookupLongestPrefix ===
 
 TEST_F(TrieLookupTreeTest, LongestPrefixExactMatch) {
@@ -90,6 +103,22 @@ TEST_F(TrieLookupTreeTest, LongestPrefixPathExistsButNoValue) {
   EXPECT_THAT(trie_.LookupLongestPrefix("a/b"), ::testing::IsNull());
 }
 
+TEST_F(TrieLookupTreeTest, LongestPrefixEmptyKey) {
+  trie_.AddNode("", "empty");
+  trie_.AddNode("a", "first");
+  EXPECT_THAT(trie_.LookupLongestPrefix(""),
+              ::testing::Pointee(std::string("empty")));
+  EXPECT_THAT(trie_.LookupLongestPrefix("x"),
+              ::testing::Pointee(std::string("empty")));
+  EXPECT_THAT(trie_.LookupLongestPrefix("ab"),
+              ::testing::Pointee(std::string("first")));
+}
+
+TEST_F(TrieLookupTreeTest, LongestPrefixEmptyInputWithoutEmptyKey) {
+  trie_.AddNode("a", "first");
+  EXPECT_THAT(trie_.LookupLongestPrefix(""), ::testing::IsNull());
+}
+
 TEST_F(TrieLookupTreeTest, ForEachPrefixMatch) {
   trie_.AddNode("a", "first");
   trie_.AddNode("a/b/c", "second");
@@ -112,6 +141,33 @@ TEST_F(TrieLookupTreeTest, ForEachPrefixMatch) {
   EXPECT_THAT(matches_3, ::testing::ElementsAre("first", "third", "second"));
 }
 
+TEST_F(TrieLookupTreeTest, ForEachPrefixMatchIncludesEmptyKeyFirst) {
+  trie_.AddNode("", "empty");
+  trie_.AddNode("a", "first");
+  std::vector<std::string> matches;
+  trie_.ForEachPrefixMatch("ab",
+                           [&](const std::string& v) { matches.push_back(v); });
+  EXPECT_THAT(matches, ::testing::ElementsAre("empty", "first"));
+}
+
+TEST_F(TrieLookupTreeTest, ForEachPrefixMatchEmptyInputMatchesEmptyKey) {
+  trie_.AddNode("", "empty");
+  trie_.AddNode("a", "first");
+  std::vector<std::string> matches;
+  trie_.ForEachPrefixMatch("",
+                           [&](const std::string& v) { matches.push_back(v); });
+  EXPECT_THAT(matches, ::testing::ElementsAre("empty"));
+}
+
+TEST_F(TrieLookupTreeTest, ForEachPrefixMatchOnlyEmptyKeyMatches) {
+  trie_.AddNode("", "empty");
+  trie_.AddNode("a", "first");
+  std::vector<std::string> matches;
+  trie_.ForEachPrefixMatch("x",
+                           [&](const std::string& v) { matches.push_back(v); });
+  EXPECT_THAT(matches, ::testing::ElementsAre("empty"));
+}
+
 TEST_F(TrieLookupTreeTest, ForEachTest) {
   trie_.AddNode("a", "first");
   trie_.AddNode("a/b/c", "second");
@@ -126,6 +182,18 @@ TEST_F(TrieLookupTreeTest, ForEachTest) {
                        ::testing::Pair("a/b/c", "second"),
                        ::testing::Pair("a/b", "third"),
                        ::testing::Pair("a/e", "unrelated")));
+}
+
+TEST_F(TrieLookupTreeTest, ForEachIncludesEmptyKey) {
+  trie_.AddNode("", "empty");
+  trie_.AddNode("a", "first");
+  std::unordered_map<std::string, std::string> map;
+  trie_.ForEach([&](const std::string_view key, const std::string& value) {
+    map[std::string(key)] = value;
+  });
+  EXPECT_THAT(map,
+              ::testing::UnorderedElementsAre(::testing::Pair("", "empty"),
+                                              ::testing::Pair("a", "first")));
 }
 
 TEST_F(TrieLookupTreeTest, EqualsTest) {

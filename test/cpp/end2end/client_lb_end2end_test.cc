@@ -2731,7 +2731,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
   SKIP_RETRY_TEST_FOR_PH2_CLIENT(
-      "TODO (tjagtap) [PH2][P5][Retry] Test with Retry-PH2 feature");
+      "TODO(tjagtap) [PH2][P5][Retry] Test with Retry-PH2 feature");
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
