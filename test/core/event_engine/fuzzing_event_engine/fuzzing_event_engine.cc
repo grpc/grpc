@@ -189,6 +189,7 @@ void FuzzingEventEngine::Tick(Duration max_time) {
         auto& task = *tasks_by_time_.begin()->second;
         tasks_by_id_.erase(task.id);
         if (task.closure != nullptr) {
+          if (task.is_immediate) --num_immediate_tasks_;
           to_run.push_back(std::move(task.closure));
         }
         tasks_by_time_.erase(tasks_by_time_.begin());
@@ -234,6 +235,7 @@ void FuzzingEventEngine::Tick(Duration max_time) {
           auto& task = *tasks_by_time_.begin()->second;
           tasks_by_id_.erase(task.id);
           if (task.closure != nullptr) {
+            if (task.is_immediate) --num_immediate_tasks_;
             to_run.push_back(std::move(task.closure));
           }
           tasks_by_time_.erase(tasks_by_time_.begin());
@@ -262,13 +264,34 @@ void FuzzingEventEngine::TickUntilIdle() {
   }
 }
 
+void FuzzingEventEngine::TickUntilIdleIgnoringTimers() {
+  while (true) {
+    {
+      grpc_core::MutexLock lock(*mu_);
+      if (IsIdleIgnoringTimersLocked()) return;
+    }
+    Tick();
+  }
+}
+
 bool FuzzingEventEngine::IsIdle() {
   grpc_core::MutexLock lock(*mu_);
   return IsIdleLocked();
 }
 
+bool FuzzingEventEngine::IsIdleIgnoringTimers() {
+  grpc_core::MutexLock lock(*mu_);
+  return IsIdleIgnoringTimersLocked();
+}
+
 bool FuzzingEventEngine::IsIdleLocked() {
   return tasks_by_id_.empty() &&
+         outstanding_writes_.load(std::memory_order_relaxed) == 0 &&
+         outstanding_reads_.load(std::memory_order_relaxed) == 0;
+}
+
+bool FuzzingEventEngine::IsIdleIgnoringTimersLocked() {
+  return num_immediate_tasks_ == 0 &&
          outstanding_writes_.load(std::memory_order_relaxed) == 0 &&
          outstanding_reads_.load(std::memory_order_relaxed) == 0;
 }
@@ -855,6 +878,8 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
     RunType run_type, Duration when, absl::AnyInvocable<void()> closure) {
   const intptr_t id = next_task_id_;
   ++next_task_id_;
+  const bool is_immediate = when <= Duration::zero();
+  if (is_immediate) ++num_immediate_tasks_;
   Duration delay_taken = Duration::zero();
   when = std::max(when, Duration::zero());
   if (run_type != RunType::kExact) {
@@ -870,7 +895,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
     }
     when += delay_taken;
   }
-  auto task = std::make_shared<Task>(id, std::move(closure));
+  auto task = std::make_shared<Task>(id, std::move(closure), is_immediate);
   tasks_by_id_.emplace(id, task);
   Time final_time;
   Time now;
@@ -901,6 +926,7 @@ bool FuzzingEventEngine::Cancel(TaskHandle handle) {
     return false;
   }
   GRPC_TRACE_LOG(fuzzing_ee_timers, INFO) << "Cancel timer " << id;
+  if (it->second->is_immediate) --num_immediate_tasks_;
   it->second->closure = nullptr;
   return true;
 }
