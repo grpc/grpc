@@ -184,6 +184,16 @@ def grpc_deps():
             ],
         )
 
+    if "package_metadata" not in native.existing_rules():
+        http_archive(
+            name = "package_metadata",
+            integrity = "sha256-dVvWyKN1GYLiVV2WyRPsBwlUyp0B+TVWM5IlXaTrrXI=",
+            strip_prefix = "package_metadata-0.0.13/metadata",
+            urls = [
+                "https://github.com/bazel-contrib/supply-chain/releases/download/package_metadata-0.0.13/package_metadata-0.0.13.tar.gz",
+            ],
+        )
+
     if "bazel_compdb" not in native.existing_rules():
         http_archive(
             name = "bazel_compdb",

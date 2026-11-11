@@ -16,6 +16,10 @@
 
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@package_metadata//licenses/rules:license.bzl", "license")
+load("@package_metadata//licenses/rules:license_kind.bzl", "license_kind")
+load("@package_metadata//purl:purl.bzl", "purl")
+load("@package_metadata//rules:package_metadata.bzl", "package_metadata")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_add_well_known_proto_upb_targets",
@@ -39,6 +43,29 @@ package(
         "layering_check",
         "parse_headers",
     ],
+)
+
+license(
+    name = "license",
+    kind = ":license_kind",
+    text = "LICENSE",
+    visibility = ["//visibility:public"],
+)
+
+license_kind(
+    name = "license_kind",
+    full_name = "Apache License 2.0 and BSD 3-Clause License and Mozilla Public License 2.0",
+    identifier = "Apache-2.0 AND BSD-3-Clause AND MPL-2.0",
+)
+
+package_metadata(
+    name = "package_metadata",
+    attributes = [":license"],
+    purl = purl.bazel(
+        "grpc",
+        module_version(),
+    ),
+    visibility = ["//visibility:public"],
 )
 
 exports_files([
