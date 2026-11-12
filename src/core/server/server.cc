@@ -271,8 +271,6 @@ void Server::ListenerState::Stop() {
     legacy_is_serving_ = false;
   } else {
     MutexLock lock(server_->mu_global_);
-    if (!started_) return;
-    started_ = false;
     is_serving_ = false;
   }
   if (listener_ != nullptr && config_fetcher_watcher_ != nullptr) {
