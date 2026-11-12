@@ -107,6 +107,13 @@
 const size_t kMaxChainLength = 100;
 const char kDefaultBoringSSLKeyExchangeGroups[] =
     "X25519MLKEM768:X25519:P-256:P-384:P-521";
+// Matches the BoringSSL default verify signature algorithms list:
+// https://github.com/google/boringssl/blob/fbb876dcee91c83a78d930dc9fab79db0c12053e/ssl/extensions.cc#L286-L302
+[[maybe_unused]] const char kDefaultBoringSSLSignatureAlgorithms[] =
+    "ecdsa_secp256r1_sha256:rsa_pss_rsae_sha256:rsa_pkcs1_sha256:"
+    "ecdsa_secp384r1_sha384:rsa_pss_rsae_sha384:rsa_pkcs1_sha384:"
+    "rsa_pss_rsae_sha512:rsa_pkcs1_sha512:"
+    "rsa_pkcs1_sha1";
 [[maybe_unused]] const char kDefaultOpenSSL1_1_1KeyExchangeGroups[] =
     "X25519:P-256:P-384:P-521";
 [[maybe_unused]] const char kDefaultOpenSSL1_0_2KeyExchangeGroups[] =
@@ -574,8 +581,7 @@ tsi_result SetKeyExchangeGroups(
 
 // Populates the signature algorithms.
 // Prefers the signature algorithms (input argument) configured by the user,
-// otherwise preserves the underlying SSL library's default signature
-// algorithms.
+// otherwise uses our defaults.
 tsi_result SetSignatureAlgorithms(
     [[maybe_unused]] SSL_CTX* context,
     const std::vector<grpc_tls_signature_algorithm>& signature_algorithms) {
@@ -602,6 +608,15 @@ tsi_result SetSignatureAlgorithms(
                   "building against OpenSSL versions < 1.1.1.";
     return TSI_FAILED_PRECONDITION;
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10101000
+  } else {
+// Use defaults
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    if (!SSL_CTX_set1_sigalgs_list(context,
+                                   kDefaultBoringSSLSignatureAlgorithms)) {
+      LOG(ERROR) << "Could not set default signature algorithms for BoringSSL.";
+      return TSI_INTERNAL_ERROR;
+    }
+#endif
   }
   return TSI_OK;
 }
