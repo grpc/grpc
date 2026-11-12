@@ -613,7 +613,7 @@ tsi_result SetSignatureAlgorithms(
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
     if (!SSL_CTX_set1_sigalgs_list(context,
                                    kDefaultBoringSSLSignatureAlgorithms)) {
-      LOG(ERROR) << "Could not set default signature algorithms for BoringSSL.";
+      LOG(ERROR) << "Could not set default signature algorithms.";
       return TSI_INTERNAL_ERROR;
     }
 #endif
