@@ -39,7 +39,6 @@ SYNC_WEB_ASSETS=(
   dirindex.css
   home.xsl
   style.css
-  xslt-polyfill.min.js
 )
 
 
