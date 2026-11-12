@@ -30,6 +30,5 @@ def preprocess(session: nox.Session):
     """
     session.log("Running preprocess for grpcio_testing...")
 
-    session.cd(GRPC_ROOT_ABS_PATH)
     if os.path.isfile(LICENSE):
         shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))

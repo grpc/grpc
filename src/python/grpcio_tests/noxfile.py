@@ -41,8 +41,6 @@ def preprocess(session: nox.Session):
     """
     session.log("Running preprocess for grpcio_tests...")
 
-    session.cd(GRPC_ROOT_ABS_PATH)
-
     shutil.rmtree(PROTO_STEM, ignore_errors=True)
     shutil.copytree(GRPC_PROTO_STEM, PROTO_STEM)
     for root, _, _ in os.walk(PYTHON_PROTO_TOP_LEVEL):
@@ -68,6 +66,8 @@ def test_lite(session: nox.Session):
     """
     session.log("Running test_lite for grpcio_tests")
 
+    # Tests rely on cwd being the repo root (e.g. relative proto paths in
+    # _python_plugin_test.py). session.cd() calls os.chdir().
     session.cd(GRPC_ROOT_ABS_PATH)
     _prepend_root_to_sys_path()
 
@@ -88,6 +88,7 @@ def test_aio(session: nox.Session):
     """
     session.log("Running test_aio for grpcio_tests")
 
+    # Keep cwd at the repo root, consistent with test_lite.
     session.cd(GRPC_ROOT_ABS_PATH)
     _prepend_root_to_sys_path()
 
@@ -138,6 +139,7 @@ def run_interop(session: nox.Session):
     elif not parsed_args.client and not parsed_args.server:
         session.error("no client and no server given")
 
+    # Relative paths in --args (e.g. credential files) are resolved from the repo root.
     session.cd(GRPC_ROOT_ABS_PATH)
     _prepend_root_to_sys_path()
 

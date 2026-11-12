@@ -34,7 +34,6 @@ def preprocess(session: nox.Session):
     """
     session.log("Running preprocess for grpcio_status...")
 
-    session.cd(GRPC_ROOT_ABS_PATH)
     target_proto_dir = os.path.join(ROOT_DIR, PACKAGE_STATUS_PROTO_DIR)
     os.makedirs(target_proto_dir, exist_ok=True)
     if os.path.isfile(STATUS_PROTO_ABS_PATH):

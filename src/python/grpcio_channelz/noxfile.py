@@ -34,7 +34,6 @@ def preprocess(session: nox.Session):
     """
     session.log("Running preprocess for grpcio_channelz...")
 
-    session.cd(GRPC_ROOT_ABS_PATH)
     target_proto_dir = os.path.join(ROOT_DIR, "grpc_channelz", "v1")
     os.makedirs(target_proto_dir, exist_ok=True)
 
