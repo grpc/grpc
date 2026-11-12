@@ -111,28 +111,15 @@ class Server::ChannelData::V1ChannelTransport final : public ServerTransport {
   // This is always called while holding the server's mu_global_, but the
   // compiler can't tell.
   void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS {
-    {
-      MutexLock lock(mu_);
-      ChannelData* chand = static_cast<ChannelData*>(
-          grpc_channel_stack_element(channel_->channel_stack(), 0)
-              ->channel_data);
-      chand->Destroy();
-      channel_.reset();
-    }
+    ChannelData* chand = static_cast<ChannelData*>(
+        grpc_channel_stack_element(channel_->channel_stack(), 0)
+            ->channel_data);
+    chand->Destroy();
     Unref();
   }
 
   void PerformOp(grpc_transport_op* op) override {
-    RefCountedPtr<Channel> channel;
-    {
-      MutexLock lock(mu_);
-      channel = channel_;
-    }
-    if (channel == nullptr) {
-      ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
-      return;
-    }
-    auto* elem = grpc_channel_stack_element(channel->channel_stack(), 0);
+    auto* elem = grpc_channel_stack_element(channel_->channel_stack(), 0);
     elem->filter->start_transport_op(elem, op);
   }
 
@@ -147,8 +134,7 @@ class Server::ChannelData::V1ChannelTransport final : public ServerTransport {
   }
 
  private:
-  Mutex mu_;
-  RefCountedPtr<Channel> channel_ ABSL_GUARDED_BY(mu_);
+  const RefCountedPtr<Channel> channel_;
 };
 
 //
@@ -488,7 +474,7 @@ bool Server::ListenerState::OnHandshakeDone(
     OrphanablePtr<Connection> connection;
     if (owned_transport.ok()) {
       connection = MakeOrphanable<Connection>(
-          Ref(), /*hold_connection_quota=*/true, std::move(*owned_transport));
+          Ref(), std::move(*owned_transport), /*hold_connection_quota=*/true);
       GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
     }
     // Find the handshaking connection.
@@ -540,7 +526,7 @@ absl::Status Server::ListenerState::LegacyAddActiveConnection(
   // that there's no race condition if the transport immediately reports
   // a connection failure.
   auto connection = MakeOrphanable<Connection>(
-      Ref(), /*hold_connection_quota=*/false, std::move(*owned_transport));
+      Ref(), std::move(*owned_transport), /*hold_connection_quota=*/false);
   GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
   if (is_serving_ == false) {
     GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
@@ -711,11 +697,15 @@ class Server::Connection::ConnectivityWatcher final
 //
 
 Server::Connection::Connection(
-    RefCountedPtr<ListenerState> listener_state, bool hold_connection_quota,
-    OrphanablePtr<ServerTransport> transport)
+    RefCountedPtr<ListenerState> listener_state,
+    OrphanablePtr<ServerTransport> transport, bool hold_connection_quota)
     : listener_state_(std::move(listener_state)),
-      hold_connection_quota_(hold_connection_quota),
-      transport_(std::move(transport)) {
+      transport_(std::move(transport)),
+      hold_connection_quota_(hold_connection_quota) {
+  GRPC_TRACE_LOG(server, INFO)
+      << "[server " << listener_state_->server_.get() << " listener_state "
+      << listener_state_.get() << " connection " << this
+      << "]: created with transport " << transport_.get();
   // The caller is holding the server's mutex when creating this object,
   // so we do an async hop here before calling into the transport code,
   // just to avoid the possibility of deadlocks.
@@ -728,16 +718,17 @@ Server::Connection::Connection(
       });
 }
 
-// This is always called while holding Server::mu_global_, but the
-// compiler can't tell.
-void Server::Connection::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  GRPC_TRACE_LOG(server, INFO)
-      << "[server " << listener_state_->server_.get() << " listener_state "
-      << listener_state_.get() << " connection " << this << "]: Orphan()";
-  transport_.reset();
+Server::Connection::~Connection() {
   if (hold_connection_quota_) {
     listener_state_->connection_quota_->ReleaseConnections(1);
   }
+}
+
+void Server::Connection::Orphan() {
+  GRPC_TRACE_LOG(server, INFO)
+      << "[server " << listener_state_->server_.get() << " listener_state "
+      << listener_state_.get() << " connection " << this << "]: Orphan()";
+  DisconnectImmediately(absl::UnavailableError("server closing connection"));
   Unref();
 }
 
@@ -747,9 +738,8 @@ void Server::Connection::Shutdown(absl::string_view reason,
       << "[server " << listener_state_->server_.get() << " listener_state "
       << listener_state_.get() << " connection " << this
       << "]: Shutdown(reason=\"" << reason << "\", grace_period="
-      << grace_period << ")";
+      << grace_period << "): transport_=" << transport_.get();
   MutexLock lock(listener_state_->server_->mu_global_);
-  if (transport_ == nullptr) return;
   OrphanablePtr<Connection> owned_connection =
       listener_state_->ExtractActiveConnectionLocked(this);
   if (owned_connection == nullptr) return;
@@ -757,12 +747,12 @@ void Server::Connection::Shutdown(absl::string_view reason,
       std::move(owned_connection), reason, grace_period);
 }
 
-void Server::Connection::MaybeSendGoawayLocked(absl::string_view reason) {
+void Server::Connection::SendGoaway(absl::string_view reason) {
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << listener_state_->server_.get() << " listener_state "
       << listener_state_.get() << " connection " << this
-      << "]: MaybeSendGoawayLocked(reason=\"" << reason << "\")";
-  if (transport_ == nullptr) return;
+      << "]: SendGoaway(reason=\"" << reason << "\"): transport="
+      << transport_.get();
   // Do an async hop here, so that we're not calling into the transport
   // while holding the server's lock.
   listener_state_->server_->event_engine_->Run(
@@ -774,12 +764,13 @@ void Server::Connection::MaybeSendGoawayLocked(absl::string_view reason) {
       });
 }
 
-void Server::Connection::MaybeDisconnectImmediatelyLocked(absl::Status status) {
+void Server::Connection::DisconnectImmediately(absl::Status status) {
+  if (disconnected_.exchange(true)) return;
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << listener_state_->server_.get() << " listener_state "
       << listener_state_.get() << " connection " << this
-      << "]: MaybeDisconnectImmediatelyLocked(status=" << status << ")";
-  if (transport_ == nullptr) return;
+      << "]: DisconnectImmediately(status=" << status << "): transport="
+      << transport_.get();
   // Do an async hop here, so that we're not calling into the transport
   // while holding the server's lock.
   listener_state_->server_->event_engine_->Run(
@@ -1986,7 +1977,7 @@ void Server::StartDrainingConnectionsLocked(
       << "\", grace_period=" << grace_period << ")";
   // Send a GOAWAY on each connection.
   for (auto& connection : connections) {
-    connection->MaybeSendGoawayLocked(reason);
+    connection->SendGoaway(reason);
   }
   // Add to the draining list.
   auto& draining_connections = draining_connections_list_.emplace_back();
@@ -2003,15 +1994,12 @@ void Server::OnDrainGraceTimer() {
   if (draining_connections_list_.empty()) return;
   connections_to_be_drained =
       std::move(draining_connections_list_.front().connections);
-// FIXME: need a better story for how these get cleaned up.  ideally
-// don't want this to happen until we get notified by the transport that
-// the connection has been closed.
   draining_connections_list_.pop_front();
   MaybeStartNewGraceTimerLocked();
   for (auto& connection : connections_to_be_drained) {
-    connection->MaybeDisconnectImmediatelyLocked(
+    connection->DisconnectImmediately(
         absl::UnavailableError(
-            "grace time expired, server shutting down connection"));
+            "Drain grace time expired. Closing connection immediately."));
   }
   MaybeFinishShutdown();
 }
@@ -2028,11 +2016,11 @@ void Server::MaybeStartNewGraceTimerLocked() {
       });
 }
 
-void Server::DisconnectAllConnectionsLocked() {
+void Server::DisconnectAllDrainingConnectionsLocked() {
   if (draining_connections_list_.empty()) return;
   for (auto& draining_connections : draining_connections_list_) {
     for (auto& connection : draining_connections.connections) {
-      connection->MaybeDisconnectImmediatelyLocked(
+      connection->DisconnectImmediately(
           absl::UnavailableError("server shutting down"));
     }
   }
@@ -2119,7 +2107,6 @@ void Server::MaybeFinishShutdown() {
   if (!ShutdownReady() || shutdown_published_) {
     return;
   }
-LOG(INFO) << "HERE 0";
   {
     MutexLock lock(mu_call_);
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
@@ -2311,7 +2298,7 @@ void Server::CancelAllCalls() {
     return;
   }
   MutexLock lock(mu_global_);
-  DisconnectAllConnectionsLocked();
+  DisconnectAllDrainingConnectionsLocked();
 }
 
 void Server::SendGoaways() {

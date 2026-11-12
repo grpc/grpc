@@ -724,11 +724,13 @@ class Server : public ServerInterface,
 
   class TransportConnectivityWatcher;
 
-  class Connection final : public RefCounted<Connection>, public Orphanable {
+  class Connection final : public InternallyRefCounted<Connection> {
    public:
     Connection(RefCountedPtr<ListenerState> listener_state,
-               bool hold_connection_quota,
-               OrphanablePtr<ServerTransport> transport);
+               OrphanablePtr<ServerTransport> transport,
+               bool hold_connection_quota);
+
+    ~Connection() override;
 
     void Orphan() override;
 
@@ -737,20 +739,16 @@ class Server : public ServerInterface,
     absl::string_view peer_address() const;
 
     // FIXME: maybe use http2 status code here?
-    void MaybeSendGoawayLocked(absl::string_view reason)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
-    void MaybeDisconnectImmediatelyLocked(absl::Status status)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Server::mu_global_);
+    void SendGoaway(absl::string_view reason);
+    void DisconnectImmediately(absl::Status status);
 
    private:
     class ConnectivityWatcher;
 
     const RefCountedPtr<ListenerState> listener_state_;
+    const OrphanablePtr<ServerTransport> transport_;
     const bool hold_connection_quota_;
-
-    // Will be unset when the connection has been orphaned.
-    OrphanablePtr<ServerTransport> transport_
-        ABSL_GUARDED_BY(&Server::mu_global_);
+    std::atomic<bool> disconnected_{false};
   };
 
   // A set of connections that are currently draining (i.e., a GOAWAY
@@ -778,7 +776,7 @@ class Server : public ServerInterface,
   void MaybeStartNewGraceTimerLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
-  void DisconnectAllConnectionsLocked()
+  void DisconnectAllDrainingConnectionsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   void StartDrainingAllConnectionsLocked()
