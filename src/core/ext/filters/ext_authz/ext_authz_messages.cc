@@ -473,8 +473,7 @@ absl::StatusOr<ExtAuthzResponse> ExtAuthzResponse::Parse(
   if (const auto* status = envoy_service_auth_v3_CheckResponse_status(response);
       status != nullptr) {
     int32_t code_int = google_rpc_Status_code(status);
-    if (!grpc_status_code_from_int(code_int,
-                                   &ext_authz_response.status_code)) {
+    if (!grpc_status_code_from_int(code_int, &ext_authz_response.status_code)) {
       ext_authz_response.status_code = GRPC_STATUS_UNKNOWN;
     }
     ext_authz_response.status_message =

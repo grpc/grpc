@@ -1727,7 +1727,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_mutex.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/interceptor_list.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/loop.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/map.h" role="src" />
