@@ -489,6 +489,8 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       c_conn_cq = state.c_connectivity_completion_queue
       c_channel = state.c_channel
       state.c_channel = NULL
+      state.c_call_completion_queue = NULL
+      state.c_connectivity_completion_queue = NULL
       with nogil:
         _destroy_c_completion_queue(c_call_cq)
         _destroy_c_completion_queue(c_conn_cq)
