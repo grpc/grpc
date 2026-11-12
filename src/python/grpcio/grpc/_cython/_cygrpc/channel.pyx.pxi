@@ -479,13 +479,11 @@ cdef _close(Channel channel, grpc_status_code code, object details,
         while state.connectivity_due:
           state.condition.wait()
 
-      # grpc_channel_destroy can synchronously run ~PosixEventEngine ->
-      # Quiesce when this channel_stack holds the last
-      # shared_ptr<EventEngine> (channel_stack.cc:221), and grpc_shutdown can
-      # do similar global teardown. Both must release the GIL: an EventEngine
-      # worker may be inside cygrpc._destroy's `with gil:`
-      # (credentials.pyx.pxi) running Python __del__ code, and Quiesce will
-      # wait for that worker to exit.
+      # Releasing the GIL is required here: destroying the channel (and
+      # shutting down gRPC) may block until gRPC's internal threads finish
+      # their work, and those threads may need the GIL to run Python
+      # callbacks (e.g. cleanup of call credentials plugins). Holding the
+      # GIL while waiting for them would deadlock.
       c_call_cq = state.c_call_completion_queue
       c_conn_cq = state.c_connectivity_completion_queue
       c_channel = state.c_channel
