@@ -29,6 +29,7 @@ BUILD_BRANCH_NAME=master
 BUILD_GIT_COMMIT=${KOKORO_GIT_COMMIT:-unknown}
 BUILD_TIMESTAMP=$(date -Iseconds)
 BUILD_RELPATH=$(date "+%Y/%m")/$BUILD_GIT_COMMIT-$BUILD_ID/
+BUILD_YEAR="$(date "+%Y")"
 
 GCS_ROOT=gs://packages.grpc.io/
 GCS_ARCHIVE_PREFIX=archive/
@@ -38,6 +39,9 @@ GCS_INDEX=$GCS_ROOT$INDEX_FILENAME
 LOCAL_STAGING_TEMPDIR=$(mktemp -d)
 LOCAL_BUILD_ROOT=$LOCAL_STAGING_TEMPDIR/$BUILD_RELPATH
 LOCAL_BUILD_INDEX=$LOCAL_BUILD_ROOT$INDEX_FILENAME
+
+# Log the version of gcloud and its components.
+gcloud --version
 
 mkdir -p "$LOCAL_BUILD_ROOT"
 
@@ -223,8 +227,43 @@ cat <<EOF
 EOF
 }
 
-# Upload the current build artifacts
-gcloud storage cp --recursive "$LOCAL_STAGING_TEMPDIR/${BUILD_RELPATH%%/*}" "$GCS_ARCHIVE_ROOT"
+# Upload the current build artifacts.
+#
+# For DESTINATION, ${GCS_ARCHIVE_ROOT%/} strips the trailing '/' from
+# "gs://packages.grpc.io/archive/" so gcloud storage cp resolves only the
+# "archive/" prefix instead of also matching the 0-byte "archive/" UI
+# placeholder object in GCS (which crashes older gcloud versions with
+# "Destination ... must match exactly one URL").
+#
+# This issue can be demonstrated by listing with and without the trailing slash:
+#
+# Without:
+#
+#     $ gcloud storage ls -l gs://packages.grpc.io/archive
+#              0  2018-07-06T07:22:14Z  gs://packages.grpc.io/archive/
+#                                       gs://packages.grpc.io/archive/2018/
+#                                       gs://packages.grpc.io/archive/2019/
+#                                       ...
+#
+# With:
+#
+#     $ gcloud storage ls -l gs://packages.grpc.io/archive/
+#              0  2018-07-06T07:22:14Z  gs://packages.grpc.io/archive/
+#
+#     gs://packages.grpc.io/archive/:
+#              0  2018-07-06T07:22:14Z  gs://packages.grpc.io/archive/
+#                                       gs://packages.grpc.io/archive/2018/
+#                                       gs://packages.grpc.io/archive/2019/
+#                                       ...
+#
+# Note that with the slash it lists gs://packages.grpc.io/archive/ first,
+# then separately its contents. This happens because "Create folder" in the
+# Cloud Console UI creates a 0-byte "archive/" object that coexists with the
+# regular "archive/" key prefix.
+# You can also compare "gcloud storage objects describe" for
+# gs://packages.grpc.io/archive/ (shows the object) and a regular key prefix,
+# f.e. gs://packages.grpc.io/web-assets/ (shows 404).
+gcloud storage cp --recursive "${LOCAL_STAGING_TEMPDIR}/${BUILD_YEAR}" "${GCS_ARCHIVE_ROOT%/}"
 # Upload directory indices for subdirectories
 (
   cd "$LOCAL_BUILD_ROOT"

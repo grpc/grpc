@@ -12242,7 +12242,6 @@ grpc_cc_library(
     ],
     deps = [
         "channelz_text_encode",
-        "experiments",
         "function_signature",
         "json_writer",
         "latent_see",
