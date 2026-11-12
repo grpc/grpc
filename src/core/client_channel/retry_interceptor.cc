@@ -251,24 +251,24 @@ auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
       committed,
       [&]() {
         call_->call_handler()->SpawnPushServerInitialMetadata(std::move(md));
-        return Seq(ForEach(MessagesFrom(initiator_),
-                           [call = call_](MessageHandle message) {
-                             GRPC_TRACE_LOG(retry, INFO)
-                                 << call->DebugTag() << " got server message "
-                                 << message->DebugString();
-                             return call->call_handler()->SpawnPushMessage(
-                                 std::move(message));
-                           }),
-                   initiator_.PullServerTrailingMetadata(),
-                   [call = call_](ServerMetadataHandle md) {
-                     GRPC_TRACE_LOG(retry, INFO)
-                         << call->DebugTag()
-                         << " got server trailing metadata: "
-                         << md->DebugString();
-                     call->call_handler()->SpawnPushServerTrailingMetadata(
-                         std::move(md));
-                     return absl::OkStatus();
-                   });
+        return Seq(
+            ForEach(MessagesFrom(initiator_),
+                    [call = call_](MessageHandle message) {
+                      GRPC_TRACE_LOG(retry, INFO)
+                          << call->DebugTag() << " got server message "
+                          << message->DebugString();
+                      return call->call_handler()->SpawnPushMessageWithWaiting(
+                          std::move(message));
+                    }),
+            initiator_.PullServerTrailingMetadata(),
+            [call = call_](ServerMetadataHandle md) {
+              GRPC_TRACE_LOG(retry, INFO)
+                  << call->DebugTag()
+                  << " got server trailing metadata: " << md->DebugString();
+              call->call_handler()->SpawnPushServerTrailingMetadata(
+                  std::move(md));
+              return absl::OkStatus();
+            });
       },
       [&]() { return []() { return absl::CancelledError(); }; });
 }
@@ -347,7 +347,8 @@ auto RetryInterceptor::Attempt::ClientToServer() {
             MessagesFrom(&self->reader_), [self](MessageHandle message) {
               // A failure to push onto this attempt must not fail the
               // parent call, since we may still retry on another attempt.
-              return Map(self->initiator_.SpawnPushMessage(std::move(message)),
+              return Map(self->initiator_.SpawnPushMessageWithWaiting(
+                             std::move(message)),
                          [](StatusFlag) { return Success{}; });
             });
       });

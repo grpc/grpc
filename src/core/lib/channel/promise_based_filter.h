@@ -1369,7 +1369,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                             return Seq(
                                 // Step 1: Push the message onto the v3
                                 // initiator in its activity.
-                                initiator.SpawnPushMessage(std::move(message)),
+                                initiator.SpawnPushMessageWithWaiting(
+                                    std::move(message)),
                                 [pipe_owner](StatusFlag) {
                                   // Step 3: Here in the v2 activity, read the
                                   // message from the inter-activity pipe and
@@ -1465,7 +1466,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                         return Seq(
                             // Step 1: Push the message onto the v3 handler in
                             // its activity.
-                            handler.SpawnPushMessage(std::move(message)),
+                            handler.SpawnPushMessageWithWaiting(
+                                std::move(message)),
                             [pipe_owner](StatusFlag) {
                               // Step 3: Here in the v2 activity, read from the
                               // inter-activity pipe and return the messages.

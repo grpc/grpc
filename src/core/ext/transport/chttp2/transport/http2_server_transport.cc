@@ -358,9 +358,8 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     if (message != nullptr) {
       GRPC_HTTP2_SERVER_DLOG
           << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
-             "SpawnPushMessageWithoutWaiting";
-      stream->GetCallInitiator().SpawnPushMessageWithoutWaiting(
-          std::move(message));
+             "SpawnPushMessage ";
+      stream->GetCallInitiator().SpawnPushMessage(std::move(message));
       continue;
     }
     GRPC_HTTP2_SERVER_DLOG
