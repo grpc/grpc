@@ -92,15 +92,44 @@ void BM_AddCounterWithLabelsWithFakeStatsPlugin(benchmark::State& state) {
 }
 BENCHMARK(BM_AddCounterWithLabelsWithFakeStatsPlugin);
 
+const std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>&
+SharedFakeStatsPluginGroup() {
+  static const auto* const group = new std::shared_ptr<
+      grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>([]() {
+    grpc_core::GlobalStatsPluginRegistryTestPeer::
+        ResetGlobalStatsPluginRegistry();
+    grpc_core::FakeStatsPluginBuilder().BuildAndRegister();
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
+    return grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+        grpc_core::experimental::StatsPluginChannelScope("", "",
+                                                         endpoint_config));
+  }());
+  return *group;
+}
+
+const std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>&
+SharedOTelStatsPluginGroup() {
+  static const auto* const group = new std::shared_ptr<
+      grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>([]() {
+    grpc_core::GlobalStatsPluginRegistryTestPeer::
+        ResetGlobalStatsPluginRegistry();
+    auto meter_provider =
+        std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+    auto status = grpc::OpenTelemetryPluginBuilder()
+                      .EnableMetrics({"grpc.benchmark.histogram"})
+                      .SetMeterProvider(std::move(meter_provider))
+                      .BuildAndRegisterGlobal();
+    CHECK(status.ok());
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
+    return grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+        grpc_core::experimental::StatsPluginChannelScope("", "",
+                                                         endpoint_config));
+  }());
+  return *group;
+}
+
 void BM_IncrementHistogramWithFakeStatsPlugin(benchmark::State& state) {
-  grpc_core::GlobalStatsPluginRegistryTestPeer::
-      ResetGlobalStatsPluginRegistry();
-  grpc_core::FakeStatsPluginBuilder().BuildAndRegister();
-  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
-  auto stats_plugin_group =
-      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::experimental::StatsPluginChannelScope("", "",
-                                                           endpoint_config));
+  const auto& stats_plugin_group = SharedFakeStatsPluginGroup();
   auto storage = BenchmarkDomain::GetStorage(
       stats_plugin_group->GetCollectionScope(), "v1", "v2", "v3");
   for (auto _ : state) {
@@ -108,7 +137,7 @@ void BM_IncrementHistogramWithFakeStatsPlugin(benchmark::State& state) {
                        stats_plugin_group.get());
   }
 }
-BENCHMARK(BM_IncrementHistogramWithFakeStatsPlugin);
+BENCHMARK(BM_IncrementHistogramWithFakeStatsPlugin)->ThreadRange(1, 64);
 
 void BM_AddCounterWithOTelPlugin(benchmark::State& state) {
   grpc_core::GlobalStatsPluginRegistryTestPeer::
@@ -155,21 +184,7 @@ void BM_AddCounterWithLabelsWithOTelPlugin(benchmark::State& state) {
 BENCHMARK(BM_AddCounterWithLabelsWithOTelPlugin);
 
 void BM_IncrementHistogramWithOTelPlugin(benchmark::State& state) {
-  grpc_core::ForceEnableExperiment("otel_export_telemetry_domains", true);
-  grpc_core::GlobalStatsPluginRegistryTestPeer::
-      ResetGlobalStatsPluginRegistry();
-  auto meter_provider =
-      std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
-  auto status = grpc::OpenTelemetryPluginBuilder()
-                    .EnableMetrics({"grpc.benchmark.histogram"})
-                    .SetMeterProvider(std::move(meter_provider))
-                    .BuildAndRegisterGlobal();
-  CHECK(status.ok());
-  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
-  auto stats_plugin_group =
-      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::experimental::StatsPluginChannelScope("", "",
-                                                           endpoint_config));
+  const auto& stats_plugin_group = SharedOTelStatsPluginGroup();
   auto storage = BenchmarkDomain::GetStorage(
       stats_plugin_group->GetCollectionScope(), "v1", "v2", "v3");
   for (auto _ : state) {
@@ -177,7 +192,7 @@ void BM_IncrementHistogramWithOTelPlugin(benchmark::State& state) {
                        stats_plugin_group.get());
   }
 }
-BENCHMARK(BM_IncrementHistogramWithOTelPlugin);
+BENCHMARK(BM_IncrementHistogramWithOTelPlugin)->ThreadRange(1, 64);
 
 void BM_AddCounterWithNoPlugin(benchmark::State& state) {
   grpc_core::GlobalStatsPluginRegistryTestPeer::
@@ -218,6 +233,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  grpc_core::ForceEnableExperiment("otel_export_telemetry_domains", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
