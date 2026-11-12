@@ -39,6 +39,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
@@ -357,9 +358,14 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
   }
   // Start the call to the external authorization service.
   GRPC_TRACE_LOG(ext_authz_filter, INFO) << "starting ext_authz call";
+  // Pass the data plane RPC's tracing context, so that the ext_authz call is
+  // traced as its child.
   auto call = MakeRefCounted<XdsStreamingCallPromiseWrapper>(
       *channel->transport(), "/envoy.service.auth.v3.Authorization/Check",
-      XdsTransport::CallOptions().set_start_upon_send_message(true));
+      XdsTransport::CallOptions()
+          .set_start_upon_send_message(true)
+          .set_parent_census_context(
+              GetContext<Arena>()->GetContext<census_context>()));
   // Start the read before the send, so that a read is already pending when
   // the response arrives.
   auto pull_message = call->PullMessage();

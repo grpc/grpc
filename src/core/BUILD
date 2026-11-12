@@ -5963,6 +5963,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "arena",
         "arena_promise",
         "blackboard",
         "channel_args",
