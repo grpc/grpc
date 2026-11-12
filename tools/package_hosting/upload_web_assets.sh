@@ -51,7 +51,7 @@ list_remote_web_assets() {
 }
 
 list_local_web_assets() {
-  md5sum "${SYNC_WEB_ASSETS[@]}"
+  md5sum "${SYNC_WEB_ASSETS[@]}" || true
   echo
 }
 
