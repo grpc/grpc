@@ -132,9 +132,9 @@ void BM_IncrementHistogramWithFakeStatsPlugin(benchmark::State& state) {
   const auto& stats_plugin_group = SharedFakeStatsPluginGroup();
   auto storage = BenchmarkDomain::GetStorage(
       stats_plugin_group->GetCollectionScope(), "v1", "v2", "v3");
+  auto* recorder = stats_plugin_group->GetInstrumentRecorder();
   for (auto _ : state) {
-    storage->Increment(BenchmarkDomain::kHistogram, 100,
-                       stats_plugin_group.get());
+    storage->Increment(BenchmarkDomain::kHistogram, 100, recorder);
   }
 }
 BENCHMARK(BM_IncrementHistogramWithFakeStatsPlugin)->ThreadRange(1, 64);
@@ -187,9 +187,9 @@ void BM_IncrementHistogramWithOTelPlugin(benchmark::State& state) {
   const auto& stats_plugin_group = SharedOTelStatsPluginGroup();
   auto storage = BenchmarkDomain::GetStorage(
       stats_plugin_group->GetCollectionScope(), "v1", "v2", "v3");
+  auto* recorder = stats_plugin_group->GetInstrumentRecorder();
   for (auto _ : state) {
-    storage->Increment(BenchmarkDomain::kHistogram, 100,
-                       stats_plugin_group.get());
+    storage->Increment(BenchmarkDomain::kHistogram, 100, recorder);
   }
 }
 BENCHMARK(BM_IncrementHistogramWithOTelPlugin)->ThreadRange(1, 64);

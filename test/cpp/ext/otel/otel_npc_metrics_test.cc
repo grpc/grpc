@@ -328,7 +328,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordExportedInt64Histogram) {
   for (auto v : kHistogramValues) {
     storage->Increment(
         OpenTelemetryIntegrationTestInstrumentDomain::kTestInt64Histogram, v,
-        stats_plugins.get());
+        stats_plugins->GetInstrumentRecorder());
   }
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -387,7 +387,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordExportedDoubleHistogram) {
   for (auto v : kHistogramValues) {
     storage->Increment(
         OpenTelemetryIntegrationTestInstrumentDomain::kTestDoubleHistogram, v,
-        stats_plugins.get());
+        stats_plugins->GetInstrumentRecorder());
   }
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<

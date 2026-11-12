@@ -1968,14 +1968,14 @@ void ExtProcFilter::RecordDuration(ClientTelemetryDomain::DoubleHistogramHandle<
        client_metric](const InstrumentStorageRefPtr<ClientTelemetryDomain>& s) {
         if (s != nullptr) {
           s->Increment(client_metric, duration_seconds,
-                       stats_plugin_group_.get());
+                       stats_plugin_group_->GetInstrumentRecorder());
         }
       },
       [this, duration_seconds,
        server_metric](const InstrumentStorageRefPtr<ServerTelemetryDomain>& s) {
         if (s != nullptr) {
           s->Increment(server_metric, duration_seconds,
-                       stats_plugin_group_.get());
+                       stats_plugin_group_->GetInstrumentRecorder());
         }
       });
 }

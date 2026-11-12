@@ -1028,10 +1028,10 @@ class InstrumentDomainImpl final : public QueryableDomain {
     // `handle`.
     //
     // `recorder` is a pointer to an InstrumentRecorder (typically obtained via
-    // `stats_plugin_group.get()`) to push metric updates to stats plugins like
-    // OpenTelemetry that manage their own Histogram storage. If the histogram
-    // is not used by any such plugin, recorder can be set to nullptr and
-    // external pushes will be skipped.
+    // `stats_plugin_group->GetInstrumentRecorder()`) to push metric updates to
+    // stats plugins like OpenTelemetry that manage their own Histogram storage.
+    // If the histogram is not used by any such plugin, recorder can be set to
+    // nullptr and external pushes will be skipped.
     template <typename Shape, typename T>
     void Increment(const HistogramHandle<Shape>& handle, T value,
                    InstrumentRecorder* recorder) {
