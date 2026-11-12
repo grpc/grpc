@@ -73,11 +73,14 @@ ALL_DOCKERFILE_DIRS=(
 # These Docker directories contain obsolete images that cannot be built.
 # They are excluded from build processes, but the Dockerfiles are retained for archival purposes.
 EXCLUDE_DIRS=(
+  tools/dockerfile/distribtest/csharp_debian11_x64
   tools/dockerfile/distribtest/csharp_dotnet31_x64
   tools/dockerfile/distribtest/csharp_dotnet5_x64
   tools/dockerfile/interoptest/grpc_interop_go1.8
   tools/dockerfile/interoptest/grpc_interop_go1.11
   tools/dockerfile/interoptest/grpc_interop_go1.16 # uses debian bullseye
+  tools/dockerfile/test/csharp_debian11_arm64
+  tools/dockerfile/test/csharp_debian11_x64
 )
 
 # a list of docker directories that are based on ARM64 base images
@@ -87,7 +90,6 @@ ARM_DOCKERFILE_DIRS=(
   tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64
   tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64
   tools/dockerfile/test/bazel_arm64
-  tools/dockerfile/test/csharp_debian11_arm64
   tools/dockerfile/test/php8_debian12_arm64
   tools/dockerfile/test/python_debian13_default_arm64
   tools/dockerfile/test/ruby_debian12_arm64

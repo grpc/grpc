@@ -1616,10 +1616,13 @@ grpc_cc_test(
         "cpp_end2end_test",
     ],
     deps = [
+        ":end2end_test_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_base",
+        "//:grpc++_public_hdrs",
+        "//:grpc_public_hdrs",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
         "//src/core:grpc_fake_credentials",
@@ -1842,6 +1845,7 @@ grpc_cc_test(
         "tls_private_key_signer_test",
     ],
     deps = [
+        ":end2end_test_utils",
         ":test_service_impl",
         ":tls_test_private_key_signer",
         "//:channel_arg_names",

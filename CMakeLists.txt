@@ -57908,6 +57908,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_transport_grpc_test
+  test/core/test_util/fake_stats_plugin.cc
   test/core/xds/xds_transport_grpc_test.cc
 )
 if(WIN32 AND MSVC)

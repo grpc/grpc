@@ -1143,6 +1143,9 @@ void XdsClient::XdsChannel::AdsCall::HandleServerReportedResourceError(
     return;  // Skip resource -- we don't have a subscription for it.
   }
   AuthorityState& authority_state = authority_it->second;
+  // Make sure we're receiving the resource error from a server that is
+  // configured for this authority.
+  if (!authority_state.ContainsChannel(xds_channel())) return;
   // Found authority, so look up type.
   auto type_it = authority_state.type_map.find(context->type);
   if (type_it == authority_state.type_map.end()) {

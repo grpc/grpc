@@ -66,7 +66,7 @@ namespace http2 {
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
-// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code when
+// TODO(tjagtap) : [PH2][P5] : Update the experimental status of the code when
 // CHTTP2 is deleted.
 
 #define GRPC_HTTP2_CLIENT_DLOG \

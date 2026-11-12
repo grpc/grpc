@@ -104,8 +104,6 @@ TEST_F(AutoShardingTest, StartupFallback) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   // The pick should trigger a connection attempt on exactly one endpoint.
   ExpectPickQueued(picker.get(), {}, MakeMetadata());
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address : kAddresses) {
     subchannel = FindSubchannel(address);
@@ -224,8 +222,6 @@ TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
   // The pick should trigger a connection attempt on the endpoint that won
   // (the one with index 0).
   ExpectPickQueued(picker.get(), {}, MakeMetadata());
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
@@ -249,8 +245,6 @@ TEST_F(AutoShardingTest, RetainsEndpointForHostnameAcrossUpdates) {
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   ExpectPickQueued(picker.get(), {}, MakeMetadata());
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
@@ -296,8 +290,6 @@ TEST_F(AutoShardingTest, SameAddressListedMultipleTimes) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   const auto metadata = MakeMetadata();
   ExpectPickQueued(picker.get(), {}, metadata);
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address :
        {"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}) {
@@ -329,8 +321,6 @@ TEST_F(AutoShardingTest, MultipleAddressesPerEndpoint) {
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   const auto metadata = MakeMetadata();
   ExpectPickQueued(picker.get(), {}, metadata);
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address :
        {"ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
@@ -365,8 +355,6 @@ TEST_F(AutoShardingTest,
       absl::OkStatus());
   auto picker = ExpectState(GRPC_CHANNEL_IDLE);
   ExpectPickQueued(picker.get(), {}, MakeMetadata());
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   SubchannelState* subchannel0 = nullptr;
   for (size_t i = 0; i < subchannels.size(); ++i) {
     if (subchannels[i]->ConnectionRequested()) {
@@ -463,8 +451,6 @@ TEST_F(AutoShardingTest,
       absl::UnavailableError("no reachable endpoints; last error: "
                              "UNAVAILABLE: connection attempt failed"));
   subchannel0->SetConnectivityState(GRPC_CHANNEL_IDLE);
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel0->ConnectionRequested());
   subchannel0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   subchannel0->SetConnectivityState(GRPC_CHANNEL_READY);

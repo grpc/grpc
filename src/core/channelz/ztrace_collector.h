@@ -17,6 +17,8 @@
 
 #include <grpc/support/time.h>
 
+#include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <tuple>
 #include <type_traits>
@@ -122,6 +124,9 @@ constexpr bool kIsElement<Needle, H, Haystack...> =
 
 }  // namespace ztrace_collector_detail
 
+constexpr int64_t kDefaultZTraceMemoryCap = 1024 * 1024;
+constexpr int64_t kMaxZTraceMemoryCap = 16 * 1024 * 1024;
+
 inline std::optional<int64_t> IntFromArgs(const ZTrace::Args& args,
                                           const std::string& name) {
   auto it = args.find(name);
@@ -220,7 +225,9 @@ class ZTraceCollector {
     Instance(ZTrace::Args args,
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine)
-        : memory_cap_(IntFromArgs(args, "memory_cap").value_or(1024 * 1024)),
+        : memory_cap_(std::clamp<int64_t>(
+              IntFromArgs(args, "memory_cap").value_or(kDefaultZTraceMemoryCap),
+              0, kMaxZTraceMemoryCap)),
           config_(std::move(args)),
           event_engine_(std::move(event_engine)) {}
     using Collections = std::tuple<Collection<Data>...>;
@@ -236,8 +243,10 @@ class ZTraceCollector {
           return;
       }
       if (state_ == State::kDone) return;
+      size_t incoming_usage = MemoryUsageOf(value.second);
+      if (incoming_usage > memory_cap_) return;
       ++items_matched_;
-      memory_used_ += MemoryUsageOf(value.second);
+      memory_used_ += incoming_usage;
       while (memory_used_ > memory_cap_) {
         auto memory_used_before = memory_used_;
         RemoveMostRecent();

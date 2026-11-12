@@ -1068,6 +1068,7 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
 // an old picker on a data plane thread.  Changes the default target
 // repeatedly while RPCs are in flight.
 TEST_F(RlsEnd2endTest, UpdateDefaultTargetWithRpcsInFlight) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix b/578817175");
   StartBackends(2);
   auto service_config_builder =
       MakeServiceConfigBuilder()

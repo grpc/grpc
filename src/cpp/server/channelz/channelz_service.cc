@@ -322,7 +322,7 @@ Status ChannelzV2Service::GetEntity(
 }
 
 Status ChannelzV2Service::QueryTrace(
-    ServerContext* /*ctx*/, const channelz::v2::QueryTraceRequest* request,
+    ServerContext* ctx, const channelz::v2::QueryTraceRequest* request,
     ServerWriter<channelz::v2::QueryTraceResponse>* writer) {
   grpc_core::channelz::ZTrace::Args args;
   for (const auto& [key, value] : request->args()) {
@@ -355,8 +355,8 @@ Status ChannelzV2Service::QueryTrace(
       request->name(), std::move(args),
       grpc_event_engine::experimental::GetDefaultEventEngine(),
       [state, writer](absl::StatusOr<std::optional<std::string>> response) {
-        if (state->done.HasBeenNotified()) return;
         grpc_core::MutexLock lock(state->mu);
+        if (state->done.HasBeenNotified()) return;
         if (!response.ok()) {
           state->status = grpc::Status(
               static_cast<grpc::StatusCode>(response.status().code()),
@@ -376,7 +376,9 @@ Status ChannelzV2Service::QueryTrace(
           state->done.Notify();
         }
       });
-  state->done.WaitForNotification();
+  while (!state->done.WaitForNotificationWithTimeout(kChannelzTimeout)) {
+    if (ztrace != nullptr && ctx->IsCancelled()) ztrace.reset();
+  }
   grpc_core::MutexLock lock(state->mu);
   return state->status;
 }
