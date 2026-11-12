@@ -39,6 +39,7 @@
 #include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -483,11 +484,15 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   // Read-from-sidestream event handlers
   StatusFlag HandleClientInitialMetadataFromSidestream(
       const ExtProcResponse::RequestHeaders& response);
-  StatusFlag HandleClientMessageFromSidestream(
+  // Returns a promise that resolves once any resulting message has been pushed
+  // to the server.
+  auto HandleClientMessageFromSidestream(
       const ExtProcResponse::RequestBody& response);
   StatusFlag HandleServerInitialMetadataFromSidestream(
       const ExtProcResponse::ResponseHeaders& response);
-  StatusFlag HandleServerMessageFromSidestream(
+  // Returns a promise that resolves once any resulting message has been pushed
+  // to the client.
+  auto HandleServerMessageFromSidestream(
       const ExtProcResponse::ResponseBody& response);
   StatusFlag HandleServerTrailingMetadataFromSidestream(
       const ExtProcResponse::ResponseTrailers& response);
@@ -505,7 +510,8 @@ class ExtProcFilter::ExtProcCall final : public DualRefCounted<ExtProcCall> {
   auto SendMessageToSideStream(std::string payload);
 
   // Parses and processes an incoming response message payload from the
-  // side-stream, then sends any resulting drain messages.
+  // side-stream, then waits for any resulting pushes onto the call to complete
+  // and sends any resulting drain messages.
   auto ProcessSideStreamResponse(absl::string_view payload);
 
   // Handles transport status updates/closure on the ext_proc side-stream.
@@ -842,68 +848,87 @@ ExtProcFilter::ExtProcCall::HandleClientInitialMetadataFromSidestream(
   return Success{};
 }
 
-StatusFlag ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
+auto ExtProcFilter::ExtProcCall::HandleClientMessageFromSidestream(
     const ExtProcResponse::RequestBody& response) {
-  if (response.mutation.drain_complete) {
-    if (request_body_drain_state_ != BodyDrainState::kDrainInFlight) {
+  // Synchronously validate the response and update the call state, extracting
+  // the message to push to the server (if any) and whether to half-close.
+  MessageHandle new_msg;
+  bool finish_sends = false;
+  const StatusFlag status = [&]() -> StatusFlag {
+    if (response.mutation.drain_complete) {
+      if (request_body_drain_state_ != BodyDrainState::kDrainInFlight) {
+        CancelCallWithError(absl::InternalError(
+            "Received unexpected drain_complete from external processor"));
+        return Failure{};
+      }
+      request_body_drain_state_ = BodyDrainState::kDrained;
+      request_body_drain_complete_latch_.Set();
+      request_event_state_ = SideStreamRequestEventState::kExpectNothing;
+      return Success{};
+    }
+    if (request_event_state_ != SideStreamRequestEventState::kExpectBody) {
       CancelCallWithError(absl::InternalError(
-          "Received unexpected drain_complete from external processor"));
+          "Received unexpected request body response from external "
+          "processor"));
       return Failure{};
     }
-    request_body_drain_state_ = BodyDrainState::kDrained;
-    request_body_drain_complete_latch_.Set();
-    request_event_state_ = SideStreamRequestEventState::kExpectNothing;
-    return Success{};
-  }
-  if (request_event_state_ != SideStreamRequestEventState::kExpectBody) {
-    CancelCallWithError(absl::InternalError(
-        "Received unexpected request body response from external processor"));
-    return Failure{};
-  }
-  GRPC_TRACE_LOG(ext_proc_filter, INFO)
-      << DebugTag() << "Parsed request body response, eos: "
-      << response.mutation.end_of_stream << ", eos_without_msg: "
-      << response.mutation.end_of_stream_without_message;
-  // TODO(rishesh): Remove this check when we stop using the
-  // v3-to-v1 adaptor layer.
-  if (outstanding_c2s_messages_ == 0) {
-    CancelCallWithError(absl::InternalError(
-        "Received unexpected request body response from external processor"));
-    return Failure{};
-  }
-  --outstanding_c2s_messages_;
-  // Handle message, if any.
-  if (!response.mutation.end_of_stream ||
-      !response.mutation.end_of_stream_without_message) {
-    auto slice = Slice::FromCopiedString(response.mutation.body);
-    auto new_msg = initiator_.arena()->MakePooled<Message>(
-        SliceBuffer(std::move(slice)), /*flags=*/0);
-    // TODO(rishesh, roth): Spawning this push into the activity means that we
-    // won't have flow control feedback here in a pure v3 stack, so we need to
-    // fix it before we finish the v3 migration.
-    initiator_.SpawnPushMessage(std::move(new_msg));
-  }
-  // Handle EOS.
-  if (response.mutation.end_of_stream) {
-    ext_proc_closed_c2s_ = true;
+    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+        << DebugTag() << "Parsed request body response, eos: "
+        << response.mutation.end_of_stream << ", eos_without_msg: "
+        << response.mutation.end_of_stream_without_message;
     // TODO(rishesh): Remove this check when we stop using the
     // v3-to-v1 adaptor layer.
-    if (outstanding_c2s_messages_ > 0 ||
-        (response.mutation.end_of_stream_without_message &&
-         !c2s_writes_done_)) {
+    if (outstanding_c2s_messages_ == 0) {
       CancelCallWithError(absl::InternalError(
-          "Client tried to send a message but external processor server has "
-          "already force sent half close to the server"));
+          "Received unexpected request body response from external "
+          "processor"));
       return Failure{};
     }
-    request_event_state_ = SideStreamRequestEventState::kExpectNothing;
-    if (c2s_writes_done_) {
-      initiator_.SpawnFinishSends();
-      ext_proc_filter_->RecordClientHalfCloseDuration(
-          (Timestamp::Now() - client_half_close_start_time_).seconds());
+    --outstanding_c2s_messages_;
+    // Handle message, if any.
+    if (!response.mutation.end_of_stream ||
+        !response.mutation.end_of_stream_without_message) {
+      auto slice = Slice::FromCopiedString(response.mutation.body);
+      new_msg = initiator_.arena()->MakePooled<Message>(
+          SliceBuffer(std::move(slice)), /*flags=*/0);
     }
-  }
-  return Success{};
+    // Handle EOS.
+    if (response.mutation.end_of_stream) {
+      ext_proc_closed_c2s_ = true;
+      // TODO(rishesh): Remove this check when we stop using the
+      // v3-to-v1 adaptor layer.
+      if (outstanding_c2s_messages_ > 0 ||
+          (response.mutation.end_of_stream_without_message &&
+           !c2s_writes_done_)) {
+        CancelCallWithError(absl::InternalError(
+            "Client tried to send a message but external processor server "
+            "has already force sent half close to the server"));
+        return Failure{};
+      }
+      request_event_state_ = SideStreamRequestEventState::kExpectNothing;
+      finish_sends = c2s_writes_done_;
+    }
+    return Success{};
+  }();
+  // Push the message to the server, if any, and then half-close if needed.
+  // The half-close is not sent until the push has completed.
+  const bool has_message = status.ok() && new_msg != nullptr;
+  return TrySeq(
+      If(
+          has_message,
+          [this, new_msg = std::move(new_msg)]() mutable {
+            return initiator_.SpawnPushMessageWithWaiting(std::move(new_msg));
+          },
+          Immediate(status)),
+      [self = WeakRef(), finish_sends]() -> StatusFlag {
+        if (finish_sends) {
+          self->initiator_.SpawnFinishSends();
+          self->ext_proc_filter_->RecordClientHalfCloseDuration(
+              (Timestamp::Now() - self->client_half_close_start_time_)
+                  .seconds());
+        }
+        return Success{};
+      });
 }
 
 StatusFlag
@@ -964,55 +989,68 @@ ExtProcFilter::ExtProcCall::HandleServerInitialMetadataFromSidestream(
   return Success{};
 }
 
-StatusFlag ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
+auto ExtProcFilter::ExtProcCall::HandleServerMessageFromSidestream(
     const ExtProcResponse::ResponseBody& response) {
-  if (response.mutation.drain_complete) {
-    if (response_body_drain_state_ != BodyDrainState::kDrainInFlight) {
+  // Synchronously validate the response and update the call state, extracting
+  // the message to push to the client (if any).
+  MessageHandle new_msg;
+  const StatusFlag status = [&]() -> StatusFlag {
+    if (response.mutation.drain_complete) {
+      if (response_body_drain_state_ != BodyDrainState::kDrainInFlight) {
+        CancelCallWithError(absl::InternalError(
+            "Received unexpected drain_complete from external processor"));
+        return Failure{};
+      }
+      response_body_drain_state_ = BodyDrainState::kDrained;
+      response_body_drain_complete_latch_.Set();
+      response_event_state_ =
+          processing_mode().send_response_trailers
+              ? SideStreamResponseEventState::kExpectTrailers
+              : SideStreamResponseEventState::kExpectNothing;
+      return Success{};
+    }
+    if (response_event_state_ !=
+        SideStreamResponseEventState::kExpectBodyOrTrailers) {
       CancelCallWithError(absl::InternalError(
-          "Received unexpected drain_complete from external processor"));
+          "Received unexpected response body response from external "
+          "processor"));
       return Failure{};
     }
-    response_body_drain_state_ = BodyDrainState::kDrained;
-    response_body_drain_complete_latch_.Set();
-    response_event_state_ = processing_mode().send_response_trailers
-                                ? SideStreamResponseEventState::kExpectTrailers
-                                : SideStreamResponseEventState::kExpectNothing;
+    // TODO(rishesh): Remove this check when we stop using the v3-to-v1
+    // bridge. We need this check in the short term because of the
+    // restriction that the ext_proc server cannot change the number of
+    // messages on the stream. However, once that restriction is removed, this
+    // check will no longer be correct: even if the server sends a
+    // trailers-only response, the ext_proc server should still be allowed to
+    // insert its own headers and messages before sending status.
+    if (is_trailers_only_) {
+      CancelCallWithError(absl::InternalError(
+          "Received response body response in a Trailers-Only call"));
+      return Failure{};
+    }
+    if (outstanding_s2c_messages_ == 0) {
+      CancelCallWithError(absl::InternalError(
+          "Received unexpected response body response from external "
+          "processor"));
+      return Failure{};
+    }
+    --outstanding_s2c_messages_;
+    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+        << DebugTag()
+        << "Processing external processor response for server body";
+    auto slice = Slice::FromCopiedString(response.mutation.body);
+    new_msg = handler_.arena()->MakePooled<Message>(
+        SliceBuffer(std::move(slice)), /*flags=*/0);
     return Success{};
-  }
-  if (response_event_state_ !=
-      SideStreamResponseEventState::kExpectBodyOrTrailers) {
-    CancelCallWithError(absl::InternalError(
-        "Received unexpected response body response from external processor"));
-    return Failure{};
-  }
-  // TODO(rishesh): Remove this check when we stop using the v3-to-v1 bridge.
-  // We need this check in the short term because of the restriction that the
-  // ext_proc server cannot change the number of messages on the stream.
-  // However, once that restriction is removed, this check will no longer be
-  // correct: even if the server sends a trailers-only response, the ext_proc
-  // server should still be allowed to insert its own headers and messages
-  // before sending status.
-  if (is_trailers_only_) {
-    CancelCallWithError(absl::InternalError(
-        "Received response body response in a Trailers-Only call"));
-    return Failure{};
-  }
-  if (outstanding_s2c_messages_ == 0) {
-    CancelCallWithError(absl::InternalError(
-        "Received unexpected response body response from external processor"));
-    return Failure{};
-  }
-  --outstanding_s2c_messages_;
-  GRPC_TRACE_LOG(ext_proc_filter, INFO)
-      << DebugTag() << "Processing external processor response for server body";
-  auto slice = Slice::FromCopiedString(response.mutation.body);
-  auto new_msg = handler_.arena()->MakePooled<Message>(
-      SliceBuffer(std::move(slice)), /*flags=*/0);
-  // TODO(rishesh, roth): Spawning this push into the activity means that we
-  // won't have flow control feedback here in a pure v3 stack, so we need to fix
-  // it before we finish the v3 migration.
-  handler_.SpawnPushMessage(std::move(new_msg));
-  return Success{};
+  }();
+  // Push the message to the client, if any.
+  const bool has_message = status.ok() && new_msg != nullptr;
+  return If(
+      has_message,
+      [this, new_msg = std::move(new_msg)]() mutable {
+        return handler_.SpawnPushMessageWithWaiting(std::move(new_msg));
+      },
+      Immediate(status));
 }
 
 StatusFlag
@@ -1078,8 +1116,9 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
     absl::string_view payload) {
   std::optional<std::string> request_drain;
   std::optional<std::string> response_drain;
-  // Synchronously parse and apply the response, collecting any drain messages
-  // that need to be sent to the side-stream.
+  ExtProcResponse::ResponseValue response_value;
+  // Synchronously parse the response, collecting the response to dispatch and
+  // any drain messages that need to be sent to the side-stream.
   const StatusFlag status = [&]() -> StatusFlag {
     // In observability mode, we only log the message and ignore it.
     // We must continue reading the stream to keep it alive.
@@ -1137,32 +1176,10 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
       }
       response_drain = std::move(*drain_payload);
     }
-    // Dispatch the parsed response to the appropriate processor based on the
-    // response type.
-    return Match(
-        parsed_response->response,
-        [&](const ExtProcResponse::ImmediateResponse& response) {
-          return HandleImmediateResponseFromSidestream(response);
-        },
-        [&](const ExtProcResponse::RequestHeaders& response) {
-          return HandleClientInitialMetadataFromSidestream(response);
-        },
-        [&](const ExtProcResponse::ResponseHeaders& response) {
-          return HandleServerInitialMetadataFromSidestream(response);
-        },
-        [&](const ExtProcResponse::ResponseTrailers& response) {
-          return HandleServerTrailingMetadataFromSidestream(response);
-        },
-        [&](const ExtProcResponse::RequestBody& response) {
-          return HandleClientMessageFromSidestream(response);
-        },
-        [&](const ExtProcResponse::ResponseBody& response) {
-          return HandleServerMessageFromSidestream(response);
-        },
-        [](std::monostate) { return StatusFlag(Success{}); });
+    response_value = std::move(parsed_response->response);
+    return Success{};
   }();
-  // Send any drain messages to the side-stream. TrySeq stops early if `status`
-  // is a failure, so nothing is sent in that case.
+  // Send any drain messages to the side-stream.
   auto maybe_send = [self = WeakRef()](std::optional<std::string> message) {
     const bool has_message = message.has_value();
     return If(
@@ -1172,8 +1189,42 @@ auto ExtProcFilter::ExtProcCall::ProcessSideStreamResponse(
         },
         []() { return StatusFlag(Success{}); });
   };
-  return TrySeq(Immediate(status), maybe_send(std::move(request_drain)),
-                maybe_send(std::move(response_drain)));
+  // If parsing failed, nothing is dispatched or sent.
+  return If(!status.ok(), Immediate(StatusFlag(Failure{})), [&]() {
+    // Dispatch the parsed response to the appropriate handler based on the
+    // response type. The handler runs synchronously here; the returned
+    // promise resolves once any resulting message has been pushed onto the
+    // call, which provides flow control feedback before we read the next
+    // response from the side-stream.
+    auto handle_response = MatchPromise(
+        std::move(response_value),
+        [this](const ExtProcResponse::ImmediateResponse& response) {
+          return HandleImmediateResponseFromSidestream(response);
+        },
+        [this](const ExtProcResponse::RequestHeaders& response) {
+          return HandleClientInitialMetadataFromSidestream(response);
+        },
+        [this](const ExtProcResponse::ResponseHeaders& response) {
+          return HandleServerInitialMetadataFromSidestream(response);
+        },
+        [this](const ExtProcResponse::ResponseTrailers& response) {
+          return HandleServerTrailingMetadataFromSidestream(response);
+        },
+        [this](const ExtProcResponse::RequestBody& response) {
+          return HandleClientMessageFromSidestream(response);
+        },
+        [this](const ExtProcResponse::ResponseBody& response) {
+          return HandleServerMessageFromSidestream(response);
+        },
+        [](std::monostate) { return StatusFlag(Success{}); });
+    // TryJoin polls the handler's promise first, so if the handler fails,
+    // no drain messages are sent.
+    return Map(
+        TryJoin<ValueOrFailure>(std::move(handle_response),
+                                TrySeq(maybe_send(std::move(request_drain)),
+                                       maybe_send(std::move(response_drain)))),
+        [](auto x) { return x.status(); });
+  });
 }
 
 bool ExtProcFilter::ExtProcCall::HandleSideStreamStatus(absl::Status status) {
