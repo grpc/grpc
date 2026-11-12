@@ -111,25 +111,15 @@ class Server::ChannelData::V1ChannelTransport final : public ServerTransport {
   // This is always called while holding the server's mu_global_, but the
   // compiler can't tell.
   void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS {
-    {
-      MutexLock lock(mu_);
-      ChannelData* chand = static_cast<ChannelData*>(
-          grpc_channel_stack_element(channel_->channel_stack(), 0)
-              ->channel_data);
-      chand->Destroy();
-      channel_.reset();
-    }
+    ChannelData* chand = static_cast<ChannelData*>(
+        grpc_channel_stack_element(channel_->channel_stack(), 0)
+            ->channel_data);
+    chand->Destroy();
     Unref();
   }
 
   void PerformOp(grpc_transport_op* op) override {
-    RefCountedPtr<Channel> channel;
-    {
-      MutexLock lock(mu_);
-      channel = channel_;
-    }
-    if (channel == nullptr) return;
-    auto* elem = grpc_channel_stack_element(channel->channel_stack(), 0);
+    auto* elem = grpc_channel_stack_element(channel_->channel_stack(), 0);
     elem->filter->start_transport_op(elem, op);
   }
 
@@ -144,8 +134,7 @@ class Server::ChannelData::V1ChannelTransport final : public ServerTransport {
   }
 
  private:
-  Mutex mu_;
-  RefCountedPtr<Channel> channel_ ABSL_GUARDED_BY(mu_);
+  const RefCountedPtr<Channel> channel_;
 };
 
 //
