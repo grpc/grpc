@@ -528,7 +528,7 @@ absl::Status Server::ListenerState::LegacyAddActiveConnection(
   auto connection = MakeOrphanable<Connection>(
       Ref(), std::move(*owned_transport), /*hold_connection_quota=*/false);
   GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
-  if (is_serving_ == false) {
+  if (!is_serving_) {
     GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
     server_->StartDrainingConnectionLocked(
         std::move(connection),

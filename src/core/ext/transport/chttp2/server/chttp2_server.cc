@@ -594,7 +594,7 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
         grpc_chttp2_transport_start_reading(
             transport.get(), (*result)->read_buffer.c_slice_buffer(),
             /*notify_on_receive_settings=*/nullptr, nullptr,
-            /*on_close=*/nullptr);
+            /*notify_on_close=*/nullptr);
       }
       transport_passed_to_server = true;
     } else {
@@ -613,7 +613,7 @@ void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
         auto* ph2_transport = new http2::Http2ServerTransport(
             std::move(promise_endpoint), args,
             std::move(event_engine_ptr), /*on_receive_settings=*/nullptr,
-            /*on_close=*/nullptr);
+            /*on_close_callback=*/nullptr);
         // OnHandshakeDone() will spawn the initial transport promises.
         listener_state_->OnHandshakeDone(
             this, ph2_transport, accepting_pollset_, args);
