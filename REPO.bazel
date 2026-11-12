@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-exports_files([
-    "add_custom_build_file.patch",
-    "add_module_dot_bazel.patch",
-])
+# Bazel 9 passes the `includes` attribute of cc_library and cc_binary with -I
+# instead of -isystem (https://github.com/bazelbuild/bazel/pull/25750).
+# Keep the Bazel 8 behavior: headers in src/core/ext/upb-gen and
+# src/core/ext/upbdefs-gen must not take precedence over generated headers.
+
+# buildifier: disable=module-docstring
+repo(features = ["system_include_paths"])
