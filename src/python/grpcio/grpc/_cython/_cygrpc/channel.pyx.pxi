@@ -64,8 +64,9 @@ cdef void _raise_call_error(c_call_error, metadata) except *:
 
 cdef void _destroy_c_completion_queue(
     grpc_completion_queue *c_completion_queue) noexcept nogil:
-  grpc_completion_queue_shutdown(c_completion_queue)
-  grpc_completion_queue_destroy(c_completion_queue)
+  if c_completion_queue != NULL:
+    grpc_completion_queue_shutdown(c_completion_queue)
+    grpc_completion_queue_destroy(c_completion_queue)
 
 
 cdef class _CallState:
@@ -494,7 +495,8 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       with nogil:
         _destroy_c_completion_queue(c_call_cq)
         _destroy_c_completion_queue(c_conn_cq)
-        grpc_channel_destroy(c_channel)
+        if c_channel != NULL:
+          grpc_channel_destroy(c_channel)
         grpc_shutdown()
       state.condition.notify_all()
     else:
