@@ -20,6 +20,9 @@ import unittest
 import grpc
 from grpc.aio import _base_call
 from grpc.experimental import aio
+from grpc_channelz.v1 import channelz
+from grpc_channelz.v1 import channelz_pb2
+from grpc_channelz.v1 import channelz_pb2_grpc
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -28,6 +31,37 @@ from tests_aio.unit._test_server import start_test_server
 
 _UNARY_CALL_METHOD_WITH_SLEEP = "/grpc.testing.TestService/UnaryCallWithSleep"
 _LONG_TIMEOUT_THAT_SHOULD_NOT_EXPIRE = 60
+_ENABLE_CHANNELZ = (("grpc.enable_channelz", 1),)
+_CHANNELZ_POLLS = 40
+_CHANNELZ_POLL_INTERVAL_S = 0.05
+
+
+class _ChannelzClient:
+    async def __aenter__(self):
+        self._server = aio.server(options=(("grpc.so_reuseport", 0),))
+        port = self._server.add_insecure_port("[::]:0")
+        channelz.add_channelz_servicer(self._server)
+        await self._server.start()
+        self._channel = aio.insecure_channel("localhost:%d" % port)
+        self._stub = channelz_pb2_grpc.ChannelzStub(self._channel)
+        return self
+
+    async def __aexit__(self, *unused_exc_info):
+        await self._channel.close()
+        await self._server.stop(None)
+
+    async def is_channel_listed(self, target):
+        response = await self._stub.GetTopChannels(
+            channelz_pb2.GetTopChannelsRequest(start_channel_id=0)
+        )
+        return any(ch.data.target.endswith(target) for ch in response.channel)
+
+    async def is_channel_destroyed(self, target):
+        for _ in range(_CHANNELZ_POLLS):
+            if not await self.is_channel_listed(target):
+                return True
+            await asyncio.sleep(_CHANNELZ_POLL_INTERVAL_S)
+        return False
 
 
 class TestCloseChannel(AioTestBase):
@@ -131,6 +165,44 @@ class TestCloseChannel(AioTestBase):
 
             self.assertFalse(call1.cancelled())
             self.assertTrue(call2.cancelled())
+
+    async def test_intercepted_call_outlives_channel_object(self):
+        gate = asyncio.Event()
+
+        class _GateInterceptor(aio.UnaryUnaryClientInterceptor):
+            async def intercept_unary_unary(
+                self, continuation, client_call_details, request
+            ):
+                await gate.wait()
+                return await continuation(client_call_details, request)
+
+        def start_call():
+            channel = aio.insecure_channel(
+                self._server_target,
+                options=_ENABLE_CHANNELZ,
+                interceptors=[_GateInterceptor()],
+            )
+            return channel.unary_unary(
+                _UNARY_CALL_METHOD_WITH_SLEEP,
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString,
+            )(messages_pb2.SimpleRequest())
+
+        async def request(channelz_client):
+            call = start_call()  # its channel object is dropped
+            gate.set()
+            self.assertIsInstance(await call, messages_pb2.SimpleResponse)
+            self.assertEqual(grpc.StatusCode.OK, await call.code())
+            self.assertTrue(
+                await channelz_client.is_channel_listed(self._server_target)
+            )
+
+        async with _ChannelzClient() as channelz_client:
+            await request(channelz_client)
+            # channel is destroyed in the Core
+            self.assertTrue(
+                await channelz_client.is_channel_destroyed(self._server_target)
+            )
 
 
 if __name__ == "__main__":
