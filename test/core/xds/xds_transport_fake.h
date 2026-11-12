@@ -254,7 +254,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   RefCountedPtr<FakeXdsTransport> GetTransport(
       const XdsBootstrap::XdsServerTarget& server);
 
- private:
   RefCountedPtr<FakeXdsTransport> GetTransportLocked(const std::string& key)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
