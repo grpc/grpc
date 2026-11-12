@@ -330,9 +330,10 @@ ArenaPromise<absl::Status> ExtAuthzFilter::Call::OnClientInitialMetadata(
   // was created rather than via Timestamp::FromCycleCounterRoundDown(), since
   // the latter can be off by up to 2 seconds (the process epoch that it is
   // relative to is truncated to whole seconds).
-  // The leading :: is needed since Call here refers to ExtAuthzFilter::Call.
-  if (const ::grpc_core::Call* call = MaybeGetContext<::grpc_core::Call>();
-      call != nullptr) {
+  // The alias is needed because ExtAuthzFilter::Call shadows the core Call
+  // type in this scope.
+  using CoreCall = ::grpc_core::Call;
+  if (const CoreCall* call = MaybeGetContext<CoreCall>(); call != nullptr) {
     const Duration elapsed = Duration::FromTimespec(
         gpr_cycle_counter_sub(gpr_get_cycle_counter(), call->start_time()));
     params.start_time =

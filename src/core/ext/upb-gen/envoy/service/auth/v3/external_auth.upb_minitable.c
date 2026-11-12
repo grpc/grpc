@@ -21,39 +21,44 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_service_auth_v3_CheckRequest__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} envoy__service__auth__v3__CheckRequest_msg_init_Fields;
 
-static const upb_MiniTableField envoy_service_auth_v3_CheckRequest__fields[1] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__service__auth__v3__CheckRequest_msg_init_Fields envoy_service_auth_v3_CheckRequest__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext_msg_init},
+}};
 
 const upb_MiniTable envoy__service__auth__v3__CheckRequest_msg_init = {
-  &envoy_service_auth_v3_CheckRequest__submsgs[0],
-  &envoy_service_auth_v3_CheckRequest__fields[0],
+  &envoy_service_auth_v3_CheckRequest__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.CheckRequest",
 #endif
 };
 
-const upb_MiniTable* envoy__service__auth__v3__CheckRequest_msg_init_ptr = &envoy__service__auth__v3__CheckRequest_msg_init;
-static const upb_MiniTableSubInternal envoy_service_auth_v3_DeniedHttpResponse__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__HttpStatus_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[2];
+} envoy__service__auth__v3__DeniedHttpResponse_msg_init_Fields;
 
-static const upb_MiniTableField envoy_service_auth_v3_DeniedHttpResponse__fields[3] = {
-  {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+static const envoy__service__auth__v3__DeniedHttpResponse_msg_init_Fields envoy_service_auth_v3_DeniedHttpResponse__fields = {{
+  {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 40), 0, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__HttpStatus_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init},
+}};
 
 const upb_MiniTable envoy__service__auth__v3__DeniedHttpResponse_msg_init = {
-  &envoy_service_auth_v3_DeniedHttpResponse__submsgs[0],
-  &envoy_service_auth_v3_DeniedHttpResponse__fields[0],
+  &envoy_service_auth_v3_DeniedHttpResponse__fields.fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.DeniedHttpResponse",
@@ -61,31 +66,33 @@ const upb_MiniTable envoy__service__auth__v3__DeniedHttpResponse_msg_init = {
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002800003f010012, &upb_prm_1bt_maxmaxb},
-    {0x001000003f00001a, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* envoy__service__auth__v3__DeniedHttpResponse_msg_init_ptr = &envoy__service__auth__v3__DeniedHttpResponse_msg_init;
-static const upb_MiniTableSubInternal envoy_service_auth_v3_OkHttpResponse__submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__QueryParameter_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[6];
+  upb_MiniTableSubInternal subs[4];
+} envoy__service__auth__v3__OkHttpResponse_msg_init_Fields;
 
-static const upb_MiniTableField envoy_service_auth_v3_OkHttpResponse__fields[6] = {
-  {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 24), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+static const envoy__service__auth__v3__OkHttpResponse_msg_init_Fields envoy_service_auth_v3_OkHttpResponse__fields = {{
+  {2, UPB_SIZE(12, 16), 0, 18, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 24), 64, UPB_SIZE(16, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(20, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(24, 40), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(28, 48), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 40), 0, UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(28, 48), 0, UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(32, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__QueryParameter_msg_init},
+}};
 
 const upb_MiniTable envoy__service__auth__v3__OkHttpResponse_msg_init = {
-  &envoy_service_auth_v3_OkHttpResponse__submsgs[0],
-  &envoy_service_auth_v3_OkHttpResponse__fields[0],
+  &envoy_service_auth_v3_OkHttpResponse__fields.fields[0],
   UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.OkHttpResponse",
@@ -93,13 +100,13 @@ const upb_MiniTable envoy__service__auth__v3__OkHttpResponse_msg_init = {
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000012, &upb_prm_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f00002a, &upb_prs_1bt},
-    {0x002800003f020032, &upb_prm_1bt_maxmaxb},
-    {0x003000003f03003a, &upb_prm_1bt_maxmaxb},
-    {0x003800003f000042, &upb_prs_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f00002a, &upb_DecodeFast_String_Repeated_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003800003f000042, &upb_DecodeFast_String_Repeated_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -110,43 +117,34 @@ const upb_MiniTable envoy__service__auth__v3__OkHttpResponse_msg_init = {
   })
 };
 
-const upb_MiniTable* envoy__service__auth__v3__OkHttpResponse_msg_init_ptr = &envoy__service__auth__v3__OkHttpResponse_msg_init;
-static const upb_MiniTableSubInternal envoy_service_auth_v3_CheckResponse__submsgs[5] = {
-  {.UPB_PRIVATE(submsg) = &google__rpc__Status_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__DeniedHttpResponse_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__OkHttpResponse_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__DeniedHttpResponse_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[5];
+  upb_MiniTableSubInternal subs[5];
+} envoy__service__auth__v3__CheckResponse_msg_init_Fields;
 
-static const upb_MiniTableField envoy_service_auth_v3_CheckResponse__fields[5] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(16, 24), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__service__auth__v3__CheckResponse_msg_init_Fields envoy_service_auth_v3_CheckResponse__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(11, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 24), 65, UPB_SIZE(9, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 32), UPB_SIZE(-21, -13), UPB_SIZE(7, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__rpc__Status_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__DeniedHttpResponse_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__OkHttpResponse_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__DeniedHttpResponse_msg_init},
+}};
 
 const upb_MiniTable envoy__service__auth__v3__CheckResponse_msg_init = {
-  &envoy_service_auth_v3_CheckResponse__submsgs[0],
-  &envoy_service_auth_v3_CheckResponse__fields[0],
-  UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+  &envoy_service_auth_v3_CheckResponse__fields.fields[0],
+  UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.CheckResponse",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0020000c02010012, &upb_pom_1bt_max64b},
-    {0x0020000c0302001a, &upb_pom_1bt_max128b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0020000c0504002a, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
-const upb_MiniTable* envoy__service__auth__v3__CheckResponse_msg_init_ptr = &envoy__service__auth__v3__CheckResponse_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &envoy__service__auth__v3__CheckRequest_msg_init,
   &envoy__service__auth__v3__DeniedHttpResponse_msg_init,

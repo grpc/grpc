@@ -19,53 +19,58 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_service_auth_v3_AttributeContext__submsgs[7] = {
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__Peer_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__Peer_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__Request_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__ContextExtensionsEntry_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__TLSSession_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[7];
+  upb_MiniTableSubInternal subs[7];
+} envoy__service__auth__v3__AttributeContext_msg_init_Fields;
 
-static const upb_MiniTableField envoy_service_auth_v3_AttributeContext__fields[7] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {10, UPB_SIZE(24, 40), 0, 3, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {11, UPB_SIZE(28, 48), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {12, UPB_SIZE(32, 56), 68, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {13, UPB_SIZE(36, 64), 69, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__service__auth__v3__AttributeContext_msg_init_Fields envoy_service_auth_v3_AttributeContext__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 32), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(24, 40), 0, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {11, UPB_SIZE(28, 48), 67, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {12, UPB_SIZE(32, 56), 68, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {13, UPB_SIZE(36, 64), 69, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__Peer_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__Peer_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__Request_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__ContextExtensionsEntry_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__TLSSession_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata_msg_init},
+}};
 
 const upb_MiniTable envoy__service__auth__v3__AttributeContext_msg_init = {
-  &envoy_service_auth_v3_AttributeContext__submsgs[0],
-  &envoy_service_auth_v3_AttributeContext__fields[0],
+  &envoy_service_auth_v3_AttributeContext__fields.fields[0],
   UPB_SIZE(40, 72), 7, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.AttributeContext",
 #endif
 };
 
-const upb_MiniTable* envoy__service__auth__v3__AttributeContext_msg_init_ptr = &envoy__service__auth__v3__AttributeContext_msg_init;
-static const upb_MiniTableSubInternal envoy_service_auth_v3_AttributeContext_Peer__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__Peer__LabelsEntry_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[5];
+  upb_MiniTableSubInternal subs[2];
+} envoy__service__auth__v3__AttributeContext__Peer_msg_init_Fields;
 
-static const upb_MiniTableField envoy_service_auth_v3_AttributeContext_Peer__fields[5] = {
-  {1, UPB_SIZE(12, 64), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+static const envoy__service__auth__v3__AttributeContext__Peer_msg_init_Fields envoy_service_auth_v3_AttributeContext_Peer__fields = {{
+  {1, UPB_SIZE(12, 64), 64, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 72), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 72), 0, UPB_SIZE(10, 12), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(36, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__Peer__LabelsEntry_msg_init},
+}};
 
 const upb_MiniTable envoy__service__auth__v3__AttributeContext__Peer_msg_init = {
-  &envoy_service_auth_v3_AttributeContext_Peer__submsgs[0],
-  &envoy_service_auth_v3_AttributeContext_Peer__fields[0],
+  &envoy_service_auth_v3_AttributeContext_Peer__fields.fields[0],
   UPB_SIZE(48, 80), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.AttributeContext.Peer",
@@ -73,66 +78,69 @@ const upb_MiniTable envoy__service__auth__v3__AttributeContext__Peer_msg_init = 
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000012, &upb_pss_1bt},
+    {0x001000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000022, &upb_pss_1bt},
-    {0x003000003f00002a, &upb_pss_1bt},
+    {0x002000003f000022, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x003000003f00002a, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* envoy__service__auth__v3__AttributeContext__Peer_msg_init_ptr = &envoy__service__auth__v3__AttributeContext__Peer_msg_init;
-static const upb_MiniTableField envoy_service_auth_v3_AttributeContext_Peer_LabelsEntry__fields[2] = {
+typedef struct {
+  upb_MiniTableField fields[2];
+} envoy__service__auth__v3__AttributeContext__Peer__LabelsEntry_msg_init_Fields;
+
+static const envoy__service__auth__v3__AttributeContext__Peer__LabelsEntry_msg_init_Fields envoy_service_auth_v3_AttributeContext_Peer_LabelsEntry__fields = {{
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable envoy__service__auth__v3__AttributeContext__Peer__LabelsEntry_msg_init = {
-  NULL,
-  &envoy_service_auth_v3_AttributeContext_Peer_LabelsEntry__fields[0],
+  &envoy_service_auth_v3_AttributeContext_Peer_LabelsEntry__fields.fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.AttributeContext.Peer.LabelsEntry",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* envoy__service__auth__v3__AttributeContext__Peer__LabelsEntry_msg_init_ptr = &envoy__service__auth__v3__AttributeContext__Peer__LabelsEntry_msg_init;
-static const upb_MiniTableSubInternal envoy_service_auth_v3_AttributeContext_Request__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__HttpRequest_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} envoy__service__auth__v3__AttributeContext__Request_msg_init_Fields;
 
-static const upb_MiniTableField envoy_service_auth_v3_AttributeContext_Request__fields[2] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__service__auth__v3__AttributeContext__Request_msg_init_Fields envoy_service_auth_v3_AttributeContext_Request__fields = {{
+  {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__HttpRequest_msg_init},
+}};
 
 const upb_MiniTable envoy__service__auth__v3__AttributeContext__Request_msg_init = {
-  &envoy_service_auth_v3_AttributeContext_Request__submsgs[0],
-  &envoy_service_auth_v3_AttributeContext_Request__fields[0],
+  &envoy_service_auth_v3_AttributeContext_Request__fields.fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.AttributeContext.Request",
 #endif
 };
 
-const upb_MiniTable* envoy__service__auth__v3__AttributeContext__Request_msg_init_ptr = &envoy__service__auth__v3__AttributeContext__Request_msg_init;
-static const upb_MiniTableSubInternal envoy_service_auth_v3_AttributeContext_HttpRequest__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__HttpRequest__HeadersEntry_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderMap_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[13];
+  upb_MiniTableSubInternal subs[2];
+} envoy__service__auth__v3__AttributeContext__HttpRequest_msg_init_Fields;
 
-static const upb_MiniTableField envoy_service_auth_v3_AttributeContext_HttpRequest__fields[13] = {
+static const envoy__service__auth__v3__AttributeContext__HttpRequest_msg_init_Fields envoy_service_auth_v3_AttributeContext_HttpRequest__fields = {{
   {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 176), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 176), 0, UPB_SIZE(33, 34), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(36, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(44, 64), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(52, 80), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -142,97 +150,105 @@ static const upb_MiniTableField envoy_service_auth_v3_AttributeContext_HttpReque
   {10, UPB_SIZE(76, 128), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {11, UPB_SIZE(84, 144), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {12, UPB_SIZE(92, 160), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {13, UPB_SIZE(16, 192), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {13, UPB_SIZE(16, 192), 64, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__service__auth__v3__AttributeContext__HttpRequest__HeadersEntry_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderMap_msg_init},
+}};
 
 const upb_MiniTable envoy__service__auth__v3__AttributeContext__HttpRequest_msg_init = {
-  &envoy_service_auth_v3_AttributeContext_HttpRequest__submsgs[0],
-  &envoy_service_auth_v3_AttributeContext_HttpRequest__fields[0],
+  &envoy_service_auth_v3_AttributeContext_HttpRequest__fields.fields[0],
   UPB_SIZE(112, 200), 13, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.AttributeContext.HttpRequest",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003000003f000022, &upb_pss_1bt},
-    {0x004000003f00002a, &upb_pss_1bt},
-    {0x005000003f000032, &upb_pss_1bt},
-    {0x006000003f00003a, &upb_pss_1bt},
-    {0x007000003f000042, &upb_pss_1bt},
-    {0x00b800003f000048, &upb_psv8_1bt},
-    {0x008000003f000052, &upb_pss_1bt},
-    {0x009000003f00005a, &upb_pss_1bt},
-    {0x00a000003f000062, &upb_psb_1bt},
+    {0x003000003f000022, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x004000003f00002a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x005000003f000032, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x006000003f00003a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x007000003f000042, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x00b800003f000048, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x008000003f000052, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x009000003f00005a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x00a000003f000062, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* envoy__service__auth__v3__AttributeContext__HttpRequest_msg_init_ptr = &envoy__service__auth__v3__AttributeContext__HttpRequest_msg_init;
-static const upb_MiniTableField envoy_service_auth_v3_AttributeContext_HttpRequest_HeadersEntry__fields[2] = {
+typedef struct {
+  upb_MiniTableField fields[2];
+} envoy__service__auth__v3__AttributeContext__HttpRequest__HeadersEntry_msg_init_Fields;
+
+static const envoy__service__auth__v3__AttributeContext__HttpRequest__HeadersEntry_msg_init_Fields envoy_service_auth_v3_AttributeContext_HttpRequest_HeadersEntry__fields = {{
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable envoy__service__auth__v3__AttributeContext__HttpRequest__HeadersEntry_msg_init = {
-  NULL,
-  &envoy_service_auth_v3_AttributeContext_HttpRequest_HeadersEntry__fields[0],
+  &envoy_service_auth_v3_AttributeContext_HttpRequest_HeadersEntry__fields.fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.AttributeContext.HttpRequest.HeadersEntry",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* envoy__service__auth__v3__AttributeContext__HttpRequest__HeadersEntry_msg_init_ptr = &envoy__service__auth__v3__AttributeContext__HttpRequest__HeadersEntry_msg_init;
-static const upb_MiniTableField envoy_service_auth_v3_AttributeContext_TLSSession__fields[1] = {
+typedef struct {
+  upb_MiniTableField fields[1];
+} envoy__service__auth__v3__AttributeContext__TLSSession_msg_init_Fields;
+
+static const envoy__service__auth__v3__AttributeContext__TLSSession_msg_init_Fields envoy_service_auth_v3_AttributeContext_TLSSession__fields = {{
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable envoy__service__auth__v3__AttributeContext__TLSSession_msg_init = {
-  NULL,
-  &envoy_service_auth_v3_AttributeContext_TLSSession__fields[0],
+  &envoy_service_auth_v3_AttributeContext_TLSSession__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.AttributeContext.TLSSession",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
+    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* envoy__service__auth__v3__AttributeContext__TLSSession_msg_init_ptr = &envoy__service__auth__v3__AttributeContext__TLSSession_msg_init;
-static const upb_MiniTableField envoy_service_auth_v3_AttributeContext_ContextExtensionsEntry__fields[2] = {
+typedef struct {
+  upb_MiniTableField fields[2];
+} envoy__service__auth__v3__AttributeContext__ContextExtensionsEntry_msg_init_Fields;
+
+static const envoy__service__auth__v3__AttributeContext__ContextExtensionsEntry_msg_init_Fields envoy_service_auth_v3_AttributeContext_ContextExtensionsEntry__fields = {{
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable envoy__service__auth__v3__AttributeContext__ContextExtensionsEntry_msg_init = {
-  NULL,
-  &envoy_service_auth_v3_AttributeContext_ContextExtensionsEntry__fields[0],
+  &envoy_service_auth_v3_AttributeContext_ContextExtensionsEntry__fields.fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.service.auth.v3.AttributeContext.ContextExtensionsEntry",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* envoy__service__auth__v3__AttributeContext__ContextExtensionsEntry_msg_init_ptr = &envoy__service__auth__v3__AttributeContext__ContextExtensionsEntry_msg_init;
 static const upb_MiniTable *messages_layout[8] = {
   &envoy__service__auth__v3__AttributeContext_msg_init,
   &envoy__service__auth__v3__AttributeContext__Peer_msg_init,

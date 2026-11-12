@@ -19,13 +19,9 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__service__auth__v3__CheckRequest_msg_init;
-extern const upb_MiniTable* envoy__service__auth__v3__CheckRequest_msg_init_ptr;
 extern const upb_MiniTable envoy__service__auth__v3__DeniedHttpResponse_msg_init;
-extern const upb_MiniTable* envoy__service__auth__v3__DeniedHttpResponse_msg_init_ptr;
 extern const upb_MiniTable envoy__service__auth__v3__OkHttpResponse_msg_init;
-extern const upb_MiniTable* envoy__service__auth__v3__OkHttpResponse_msg_init_ptr;
 extern const upb_MiniTable envoy__service__auth__v3__CheckResponse_msg_init;
-extern const upb_MiniTable* envoy__service__auth__v3__CheckResponse_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_service_auth_v3_external_auth_proto_upb_file_layout;
 

@@ -27,6 +27,11 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_ext_authz_v3_ExtA
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_ext_authz_v3_ShadowDecision_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_ext_authz_v3_ext_authz_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.ext_authz.v3.ShadowDecision");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_ext_authz_v3_BufferSettings_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_ext_authz_v3_ext_authz_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.ext_authz.v3.BufferSettings");
