@@ -570,7 +570,9 @@ void Server::ListenerState::DrainConnectionsLocked(
   GRPC_TRACE_LOG(server, INFO)
       << "[server " << server_.get() << " listener_state " << this
       << "]: DrainConnectionsLocked(reason=\"" << reason
-      << "\", grace_period=" << grace_period << ")";
+      << "\", grace_period=" << grace_period << "): "
+      << handshaking_connections_.size() << " handshaking connections, "
+      << active_connections_.size() << " active connections";
   // For handshaking connections, orphan them immediately.
   handshaking_connections_.clear();
   // If there are any active connections, start draining them.
@@ -2117,6 +2119,7 @@ void Server::MaybeFinishShutdown() {
   if (!ShutdownReady() || shutdown_published_) {
     return;
   }
+LOG(INFO) << "HERE 0";
   {
     MutexLock lock(mu_call_);
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
