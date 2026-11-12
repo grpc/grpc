@@ -73,16 +73,12 @@
 </table>
 
 <h2> Python </h2>
+<p><code>$ pip install --pre --upgrade --force-reinstall --extra-index-url \<br />
+&#160;&#160;&#160;&#160;<a id="python-repo-link" href="./python">./python</a> \<br />
+&#160;&#160;&#160;&#160;grpcio grpcio-tools</code></p>
 <script type="text/javascript">
-// <![CDATA[
-var pythonRepoLink = document.createElement("a");
-pythonRepoLink.href = './python';
-var pythonRepo = pythonRepoLink.href;
-document.write("<p><code>" +
-"$ pip install --pre --upgrade --force-reinstall --extra-index-url \\<br />" +
-"&nbsp;&nbsp;&nbsp;&nbsp;<a href='" +  pythonRepo + "'>" + pythonRepo + "</a> \\<br />" +
-"&nbsp;&nbsp;&nbsp;&nbsp;grpcio grpcio-tools</code></p>");
-// ]]>
+var pythonRepoLink = document.getElementById("python-repo-link");
+pythonRepoLink.textContent = pythonRepoLink.href;
 </script>
 <table>
   <xsl:apply-templates select="artifact[@type='python']">
