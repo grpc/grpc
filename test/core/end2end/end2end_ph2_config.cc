@@ -79,6 +79,7 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.CancelAfterAccept"
 
 #define GRPC_HTTP2_PH2_CLIENT_ONLY_AVOID_LIST                \
+  "|Http2SingleHopTests.KeepaliveTimeout"                    \
   "|Http2SingleHopTests.MaxConcurrentStreams"                \
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"  \
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond" \
@@ -106,7 +107,6 @@ class Ph2InsecureFixture : public InsecureFixture {
 #define GRPC_HTTP2_PH2_CLIENT_SERVER_ONLY_AVOID_LIST ""
 
 #define GRPC_HTTP2_PH2_COMMON_AVOID_LIST            \
-  "|Http2SingleHopTests.KeepaliveTimeout"           \
   "|Http2Tests.GracefulServerShutdown"              \
   "|Http2Tests.MaxAgeForciblyClose"                 \
   "|Http2Tests.MaxAgeGracefullyClose"               \
