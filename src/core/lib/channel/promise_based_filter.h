@@ -58,10 +58,12 @@
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -1286,6 +1288,10 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           server_initial_metadata;
       InterActivityPipe<MessageHandle, 1> server_to_client_messages;
       InterActivityLatch<ServerMetadataHandle> server_trailing_metadata;
+      // True while server initial metadata from the v2 stack is waiting
+      // for the v3 interceptor in the server initial metadata pipe.
+      // Accessed only from the v2 activity.
+      bool server_initial_metadata_in_flight = false;
     };
     auto* pipe_owner = GetContext<Arena>()->ManagedNew<PipeOwner>();
     // We need to start polling the initiator for server trailing
@@ -1314,7 +1320,27 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
         Race(
             // Get server trailing metadata from the v3 promise via the
             // inter-activity latch.
-            pipe_owner->server_trailing_metadata.Wait(),
+            //
+            // The v3 interceptor returns server initial metadata and server
+            // trailing metadata to us via two different latches, which can
+            // be set in either order.  If server initial metadata is still
+            // waiting in the v2 pipe, hold the trailing metadata until it
+            // has been released.  Otherwise, the v2 filter would see the
+            // call complete first and never forward the initial metadata.
+            // This would hang the call if the initial metadata is in the
+            // same batch as the trailing metadata.  The v2 filter polls
+            // this promise again once the initial metadata has been
+            // released.
+            Seq(pipe_owner->server_trailing_metadata.Wait(),
+                [pipe_owner](ServerMetadataHandle metadata) {
+                  return [pipe_owner, metadata = std::move(metadata)]() mutable
+                             -> Poll<ServerMetadataHandle> {
+                    if (pipe_owner->server_initial_metadata_in_flight) {
+                      return Pending{};
+                    }
+                    return std::move(metadata);
+                  };
+                }),
             // This promise does the rest of the things, but it will always
             // return pending, because the promise can't actually finish
             // until the initiator returns trailing metadata above.
@@ -1409,11 +1435,19 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                        pipe_owner](ServerMetadataHandle metadata) mutable {
                         // Step 1: Push the metadata onto the v3 handler in
                         // its activity.
+                        pipe_owner->server_initial_metadata_in_flight = true;
                         handler.SpawnPushServerInitialMetadata(
                             std::move(metadata));
                         // Step 3: Here in the v2 activity, read from the
                         // inter-activity latch and return the metadata.
-                        return pipe_owner->server_initial_metadata.Wait();
+                        return Map(
+                            pipe_owner->server_initial_metadata.Wait(),
+                            [pipe_owner](
+                                std::optional<ServerMetadataHandle> result) {
+                              pipe_owner->server_initial_metadata_in_flight =
+                                  false;
+                              return result;
+                            });
                       });
                   // We handle server-to-client messages the same as
                   // client-to-server messages, except in the opposite

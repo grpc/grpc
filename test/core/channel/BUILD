@@ -177,6 +177,7 @@ grpc_cc_test(
         "//src/core:message",
         "//src/core:metadata",
         "//src/core:metadata_batch",
+        "//src/core:pipe",
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:seq",
