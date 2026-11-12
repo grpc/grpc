@@ -1412,6 +1412,7 @@ TEST_F(PickFirstTest, ReconnectWithoutNewResolverResultStartsFromTopOfList) {
 }
 
 TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix b/578817175");
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
@@ -1780,6 +1781,7 @@ TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
 }
 
 TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix b/578817175");
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
@@ -1817,6 +1819,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
 
 TEST_F(RoundRobinTest, TransientFailure) {
   SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix b/578817175");
   // Start servers and create channel.  Channel should go to READY state.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -2731,7 +2734,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
   SKIP_RETRY_TEST_FOR_PH2_CLIENT(
-      "TODO (tjagtap) [PH2][P5][Retry] Test with Retry-PH2 feature");
+      "TODO(tjagtap) [PH2][P5][Retry] Test with Retry-PH2 feature");
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);

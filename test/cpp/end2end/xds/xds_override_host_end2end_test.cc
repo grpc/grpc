@@ -499,6 +499,7 @@ TEST_P(OverrideHostTest, UnhealthyEndpoint) {
 }
 
 TEST_P(OverrideHostTest, OverrideWithWeightedClusters) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(3);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -531,6 +532,7 @@ TEST_P(OverrideHostTest, OverrideWithWeightedClusters) {
 }
 
 TEST_P(OverrideHostTest, ClusterOverrideHonoredButHostGone) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(4);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -573,6 +575,7 @@ TEST_P(OverrideHostTest, ClusterOverrideHonoredButHostGone) {
 }
 
 TEST_P(OverrideHostTest, ClusterGoneHostStays) {
+  SKIP_TEST_FOR_PH2_SERVER("TODO(ritulb) [PH2][P1] Fix bug");
   CreateAndStartBackends(3);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";

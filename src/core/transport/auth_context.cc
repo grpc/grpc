@@ -18,6 +18,7 @@
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
@@ -158,11 +159,20 @@ void grpc_auth_context::set_protocol(absl::string_view protocol) {
 
 void grpc_auth_context_add_property(grpc_auth_context* ctx, const char* name,
                                     const char* value, size_t value_length) {
-  GRPC_TRACE_LOG(api, INFO) << absl::StrFormat(
-      "grpc_auth_context_add_property(ctx=%p, name=%s, value=%*.*s, "
-      "value_length=%lu)",
-      ctx, name, (int)value_length, (int)value_length, value,
-      (unsigned long)value_length);
+  // Exported keying material is a secret, so don't log its value.
+  if (name != nullptr &&
+      strcmp(name, GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME) == 0) {
+    GRPC_TRACE_LOG(api, INFO) << absl::StrFormat(
+        "grpc_auth_context_add_property(ctx=%p, name=%s, value=<redacted>, "
+        "value_length=%lu)",
+        ctx, name, (unsigned long)value_length);
+  } else {
+    GRPC_TRACE_LOG(api, INFO) << absl::StrFormat(
+        "grpc_auth_context_add_property(ctx=%p, name=%s, value=%*.*s, "
+        "value_length=%lu)",
+        ctx, name, (int)value_length, (int)value_length, value,
+        (unsigned long)value_length);
+  }
   ctx->add_property(name, value, value_length);
 }
 

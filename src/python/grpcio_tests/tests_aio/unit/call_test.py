@@ -64,6 +64,24 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         self.assertTrue(str(call) is not None)
         self.assertTrue(repr(call) is not None)
 
+    async def test_call_to_string_rpc_error(self):
+        details = "Test abort details"
+        request = messages_pb2.SimpleRequest(
+            response_status=messages_pb2.EchoStatus(
+                code=grpc.StatusCode.ABORTED.value[0],
+                message=details,
+            )
+        )
+        call = self._stub.UnaryCall(request)
+
+        with self.assertRaises(aio.AioRpcError):
+            await call
+
+        call_repr = repr(call)
+        self.assertIn("status = StatusCode.ABORTED", call_repr)
+        self.assertIn(f'details = "{details}"', call_repr)
+        self.assertEqual(call_repr, str(call))
+
     async def test_call_ok(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
 
