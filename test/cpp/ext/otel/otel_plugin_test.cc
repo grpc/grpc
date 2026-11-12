@@ -230,6 +230,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientCallDuration) {
   EXPECT_EQ(*status_value, "OK");
 }
 
+// This call has zero attempts because the target URI is invalid and the
+// resolver will return no addresses. This tests that call-level metrics are
+// recorded even without any attempts.
 TEST_F(OpenTelemetryPluginEnd2EndTest, ClientCallDurationZeroAttempts) {
   Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName,

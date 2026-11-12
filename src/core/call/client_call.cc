@@ -437,7 +437,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               out_trailing_metadata->count = 0;
               auto* call_tracer = arena()->GetContext<ClientCallTracer>();
               if (call_tracer != nullptr) {
-                call_tracer->RecordEnd(*out_status, status->message());
+                call_tracer->RecordEnd(*status);
               }
             })),
         is_notify_tag_closure, notify_tag, cq_));
@@ -477,11 +477,7 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
   }
   auto* call_tracer = arena()->GetContext<ClientCallTracer>();
   if (call_tracer != nullptr) {
-    absl::string_view error_string;
-    if (status != GRPC_STATUS_OK && out_error_string != nullptr) {
-      error_string = absl::string_view(*out_error_string);
-    }
-    call_tracer->RecordEnd(status, error_string);
+    call_tracer->RecordEnd(ServerMetadataToStatus(*server_trailing_metadata));
   }
   PublishMetadataArray(server_trailing_metadata.get(), out_trailing_metadata,
                        true);

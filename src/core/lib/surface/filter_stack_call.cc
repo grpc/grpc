@@ -366,6 +366,11 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
     if (final_op_.client.status != nullptr) {
       *final_op_.client.status = status;
     }
+    auto* call_tracer = arena()->GetContext<ClientCallTracer>();
+    if (call_tracer != nullptr) {
+      call_tracer->RecordEnd(absl::Status(static_cast<absl::StatusCode>(status),
+                                          absl::string_view(status_details)));
+    }
     *final_op_.client.status_details =
         grpc_slice_from_cpp_string(std::move(status_details));
     status_error_.set(error);
@@ -376,14 +381,6 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
       } else {
         channelz_channel->RecordCallSucceeded();
       }
-    }
-    auto* call_tracer = arena()->GetContext<ClientCallTracer>();
-    if (call_tracer != nullptr) {
-      absl::string_view error_string = error.message();
-      if (!error.ok() && final_op_.client.error_string != nullptr) {
-        error_string = absl::string_view(*final_op_.client.error_string);
-      }
-      call_tracer->RecordEnd(status, error_string);
     }
   } else {
     *final_op_.server.cancelled =

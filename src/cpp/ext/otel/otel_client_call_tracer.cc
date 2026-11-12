@@ -584,19 +584,20 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::RecordAnnotation(
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracerInterface::RecordEnd(
-    grpc_status_code status_code, absl::string_view error_string) {
+    const absl::Status& status) {
   if (span_ != nullptr) {
-    if (status_code == GRPC_STATUS_OK) {
+    if (status.ok()) {
       span_->SetStatus(opentelemetry::trace::StatusCode::kOk);
     } else {
       span_->SetStatus(opentelemetry::trace::StatusCode::kError,
-                       AbslStringViewToNoStdStringView(error_string));
+                       status.ToString());
     }
   }
   if (otel_plugin_->client_.call.duration == nullptr) {
     return;
   }
-  AttributeVector attributes = GetAttributes(status_code);
+  AttributeVector attributes =
+      GetAttributes(static_cast<grpc_status_code>(status.code()));
   double elapsed_seconds = absl::ToDoubleSeconds(absl::Now() - start_time_);
   otel_plugin_->client_.call.duration->Record(
       elapsed_seconds, attributes, opentelemetry::context::Context{});

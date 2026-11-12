@@ -244,8 +244,7 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
   // Should be the last API call to the object. Once invoked, the tracer
   // library is free to destroy the object.
-  virtual void RecordEnd(grpc_status_code status_code,
-                         absl::string_view error_string) = 0;
+  virtual void RecordEnd(const absl::Status& status) = 0;
 };
 
 // Interface for a tracer that records activities on a server call.
@@ -382,9 +381,7 @@ class ClientCallTracer final : public CallSpan {
     return interface_->StartNewAttempt(is_transparent_retry);
   }
 
-  void RecordEnd(grpc_status_code status_code, absl::string_view error_string) {
-    interface_->RecordEnd(status_code, error_string);
-  }
+  void RecordEnd(const absl::Status& status) { interface_->RecordEnd(status); }
 
  private:
   ClientCallTracerInterface* interface_;
