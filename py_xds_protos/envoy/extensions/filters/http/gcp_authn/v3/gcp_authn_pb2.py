@@ -31,7 +31,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n:envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto\x12*envoy.extensions.filters.http.gcp_authn.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a#envoy/config/core/v3/http_uri.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a#envoy/annotations/deprecation.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xff\x02\n\x14GcpAuthnFilterConfig\x12<\n\x08http_uri\x18\x01 \x01(\x0b\x32\x1d.envoy.config.core.v3.HttpUriB\x0b\x18\x01\x92\xc7\x86\xd8\x04\x03\x33.0\x12\x37\n\x0cretry_policy\x18\x02 \x01(\x0b\x32!.envoy.config.core.v3.RetryPolicy\x12R\n\x0c\x63\x61\x63he_config\x18\x03 \x01(\x0b\x32<.envoy.extensions.filters.http.gcp_authn.v3.TokenCacheConfig\x12M\n\x0ctoken_header\x18\x04 \x01(\x0b\x32\x37.envoy.extensions.filters.http.gcp_authn.v3.TokenHeader\x12\x0f\n\x07\x63luster\x18\x05 \x01(\t\x12<\n\x07timeout\x18\x06 \x01(\x0b\x32\x19.google.protobuf.DurationB\x10\xfa\x42\r\xaa\x01\n\x1a\x06\x08\x80\x80\x80\x80\x10\x32\x00\"\xe9\x02\n\x08\x41udience\x12\x0b\n\x03url\x18\x01 \x01(\t\x12V\n\x0c\x61\x63\x63\x65ss_token\x18\x02 \x01(\x0b\x32@.envoy.extensions.filters.http.gcp_authn.v3.Audience.AccessToken\x12P\n\tbound_jwt\x18\x03 \x01(\x0b\x32=.envoy.extensions.filters.http.gcp_authn.v3.Audience.BoundJwt\x12\x61\n\x12\x62ound_access_token\x18\x04 \x01(\x0b\x32\x45.envoy.extensions.filters.http.gcp_authn.v3.Audience.BoundAccessToken\x1a\r\n\x0b\x41\x63\x63\x65ssToken\x1a \n\x08\x42oundJwt\x12\x14\n\x03url\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x1a\x12\n\x10\x42oundAccessToken\"U\n\x10TokenCacheConfig\x12\x41\n\ncache_size\x18\x01 \x01(\x0b\x32\x1c.google.protobuf.UInt64ValueB\x0f\xfa\x42\x0c\x32\n\x18\xff\xff\xff\xff\xff\xff\xff\xff\x7f\"M\n\x0bTokenHeader\x12\x1b\n\x04name\x18\x01 \x01(\tB\r\xfa\x42\nr\x08\x10\x01\xc0\x01\x01\xc8\x01\x00\x12!\n\x0cvalue_prefix\x18\x02 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x02\xc8\x01\x00\x42\xb2\x01\n8io.envoyproxy.envoy.extensions.filters.http.gcp_authn.v3B\rGcpAuthnProtoP\x01Z]github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/gcp_authn/v3;gcp_authnv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n:envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto\x12*envoy.extensions.filters.http.gcp_authn.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a#envoy/config/core/v3/http_uri.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a#envoy/annotations/deprecation.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xe3\x03\n\x14GcpAuthnFilterConfig\x12<\n\x08http_uri\x18\x01 \x01(\x0b\x32\x1d.envoy.config.core.v3.HttpUriB\x0b\x18\x01\x92\xc7\x86\xd8\x04\x03\x33.0\x12\x37\n\x0cretry_policy\x18\x02 \x01(\x0b\x32!.envoy.config.core.v3.RetryPolicy\x12R\n\x0c\x63\x61\x63he_config\x18\x03 \x01(\x0b\x32<.envoy.extensions.filters.http.gcp_authn.v3.TokenCacheConfig\x12M\n\x0ctoken_header\x18\x04 \x01(\x0b\x32\x37.envoy.extensions.filters.http.gcp_authn.v3.TokenHeader\x12\x1a\n\x12token_metadata_key\x18\x07 \x01(\t\x12\x0f\n\x07\x63luster\x18\x05 \x01(\t\x12<\n\x07timeout\x18\x06 \x01(\x0b\x32\x19.google.protobuf.DurationB\x10\xfa\x42\r\xaa\x01\n\x1a\x06\x08\x80\x80\x80\x80\x10\x32\x00\x12\x46\n\x08\x61udience\x18\x08 \x01(\x0b\x32\x34.envoy.extensions.filters.http.gcp_authn.v3.Audience\"\xf6\x04\n\x08\x41udience\x12\x0b\n\x03url\x18\x01 \x01(\t\x12V\n\x0c\x61\x63\x63\x65ss_token\x18\x02 \x01(\x0b\x32@.envoy.extensions.filters.http.gcp_authn.v3.Audience.AccessToken\x12P\n\tbound_jwt\x18\x03 \x01(\x0b\x32=.envoy.extensions.filters.http.gcp_authn.v3.Audience.BoundJwt\x12\x61\n\x12\x62ound_access_token\x18\x04 \x01(\x0b\x32\x45.envoy.extensions.filters.http.gcp_authn.v3.Audience.BoundAccessToken\x12]\n\x10iam_access_token\x18\x05 \x01(\x0b\x32\x43.envoy.extensions.filters.http.gcp_authn.v3.Audience.IAMAccessToken\x1a\x36\n\x0b\x41\x63\x63\x65ssToken\x12\'\n\x06scopes\x18\x01 \x03(\tB\x17\xfa\x42\x14\x92\x01\x11\"\x0fr\r\x10\x01\x32\t^[^\\s,]+$\x1a \n\x08\x42oundJwt\x12\x14\n\x03url\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x1a;\n\x10\x42oundAccessToken\x12\'\n\x06scopes\x18\x01 \x03(\tB\x17\xfa\x42\x14\x92\x01\x11\"\x0fr\r\x10\x01\x32\t^[^\\s,]+$\x1aZ\n\x0eIAMAccessToken\x12\x18\n\x07\x61\x63\x63ount\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x1e\n\rauthorization\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x0e\n\x06scopes\x18\x03 \x03(\t\"U\n\x10TokenCacheConfig\x12\x41\n\ncache_size\x18\x01 \x01(\x0b\x32\x1c.google.protobuf.UInt64ValueB\x0f\xfa\x42\x0c\x32\n\x18\xff\xff\xff\xff\xff\xff\xff\xff\x7f\"\xc7\x01\n\x0bTokenHeader\x12\x1c\n\x04name\x18\x01 \x01(\tB\x0e\xfa\x42\x0br\t\xc0\x01\x01\xc8\x01\x00\xd0\x01\x01\x12!\n\x0cvalue_prefix\x18\x02 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x02\xc8\x01\x00\x12\x63\n\x11preserve_existing\x18\x03 \x01(\x0b\x32H.envoy.extensions.filters.http.gcp_authn.v3.TokenHeader.PreserveExisting\x1a\x12\n\x10PreserveExistingB\xb2\x01\n8io.envoyproxy.envoy.extensions.filters.http.gcp_authn.v3B\rGcpAuthnProtoP\x01Z]github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/gcp_authn/v3;gcp_authnv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -43,26 +43,38 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GCPAUTHNFILTERCONFIG'].fields_by_name['http_uri']._serialized_options = b'\030\001\222\307\206\330\004\0033.0'
   _globals['_GCPAUTHNFILTERCONFIG'].fields_by_name['timeout']._loaded_options = None
   _globals['_GCPAUTHNFILTERCONFIG'].fields_by_name['timeout']._serialized_options = b'\372B\r\252\001\n\032\006\010\200\200\200\200\0202\000'
+  _globals['_AUDIENCE_ACCESSTOKEN'].fields_by_name['scopes']._loaded_options = None
+  _globals['_AUDIENCE_ACCESSTOKEN'].fields_by_name['scopes']._serialized_options = b'\372B\024\222\001\021\"\017r\r\020\0012\t^[^\\s,]+$'
   _globals['_AUDIENCE_BOUNDJWT'].fields_by_name['url']._loaded_options = None
   _globals['_AUDIENCE_BOUNDJWT'].fields_by_name['url']._serialized_options = b'\372B\004r\002\020\001'
+  _globals['_AUDIENCE_BOUNDACCESSTOKEN'].fields_by_name['scopes']._loaded_options = None
+  _globals['_AUDIENCE_BOUNDACCESSTOKEN'].fields_by_name['scopes']._serialized_options = b'\372B\024\222\001\021\"\017r\r\020\0012\t^[^\\s,]+$'
+  _globals['_AUDIENCE_IAMACCESSTOKEN'].fields_by_name['account']._loaded_options = None
+  _globals['_AUDIENCE_IAMACCESSTOKEN'].fields_by_name['account']._serialized_options = b'\372B\004r\002\020\001'
+  _globals['_AUDIENCE_IAMACCESSTOKEN'].fields_by_name['authorization']._loaded_options = None
+  _globals['_AUDIENCE_IAMACCESSTOKEN'].fields_by_name['authorization']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_TOKENCACHECONFIG'].fields_by_name['cache_size']._loaded_options = None
   _globals['_TOKENCACHECONFIG'].fields_by_name['cache_size']._serialized_options = b'\372B\0142\n\030\377\377\377\377\377\377\377\377\177'
   _globals['_TOKENHEADER'].fields_by_name['name']._loaded_options = None
-  _globals['_TOKENHEADER'].fields_by_name['name']._serialized_options = b'\372B\nr\010\020\001\300\001\001\310\001\000'
+  _globals['_TOKENHEADER'].fields_by_name['name']._serialized_options = b'\372B\013r\t\300\001\001\310\001\000\320\001\001'
   _globals['_TOKENHEADER'].fields_by_name['value_prefix']._loaded_options = None
   _globals['_TOKENHEADER'].fields_by_name['value_prefix']._serialized_options = b'\372B\010r\006\300\001\002\310\001\000'
   _globals['_GCPAUTHNFILTERCONFIG']._serialized_start=334
-  _globals['_GCPAUTHNFILTERCONFIG']._serialized_end=717
-  _globals['_AUDIENCE']._serialized_start=720
-  _globals['_AUDIENCE']._serialized_end=1081
-  _globals['_AUDIENCE_ACCESSTOKEN']._serialized_start=1014
-  _globals['_AUDIENCE_ACCESSTOKEN']._serialized_end=1027
-  _globals['_AUDIENCE_BOUNDJWT']._serialized_start=1029
-  _globals['_AUDIENCE_BOUNDJWT']._serialized_end=1061
-  _globals['_AUDIENCE_BOUNDACCESSTOKEN']._serialized_start=1063
-  _globals['_AUDIENCE_BOUNDACCESSTOKEN']._serialized_end=1081
-  _globals['_TOKENCACHECONFIG']._serialized_start=1083
-  _globals['_TOKENCACHECONFIG']._serialized_end=1168
-  _globals['_TOKENHEADER']._serialized_start=1170
-  _globals['_TOKENHEADER']._serialized_end=1247
+  _globals['_GCPAUTHNFILTERCONFIG']._serialized_end=817
+  _globals['_AUDIENCE']._serialized_start=820
+  _globals['_AUDIENCE']._serialized_end=1450
+  _globals['_AUDIENCE_ACCESSTOKEN']._serialized_start=1209
+  _globals['_AUDIENCE_ACCESSTOKEN']._serialized_end=1263
+  _globals['_AUDIENCE_BOUNDJWT']._serialized_start=1265
+  _globals['_AUDIENCE_BOUNDJWT']._serialized_end=1297
+  _globals['_AUDIENCE_BOUNDACCESSTOKEN']._serialized_start=1299
+  _globals['_AUDIENCE_BOUNDACCESSTOKEN']._serialized_end=1358
+  _globals['_AUDIENCE_IAMACCESSTOKEN']._serialized_start=1360
+  _globals['_AUDIENCE_IAMACCESSTOKEN']._serialized_end=1450
+  _globals['_TOKENCACHECONFIG']._serialized_start=1452
+  _globals['_TOKENCACHECONFIG']._serialized_end=1537
+  _globals['_TOKENHEADER']._serialized_start=1540
+  _globals['_TOKENHEADER']._serialized_end=1739
+  _globals['_TOKENHEADER_PRESERVEEXISTING']._serialized_start=1721
+  _globals['_TOKENHEADER_PRESERVEEXISTING']._serialized_end=1739
 # @@protoc_insertion_point(module_scope)

@@ -45,6 +45,14 @@ typedef struct envoy_type_tracing_v3_CustomTag_Metadata {
 struct envoy_type_metadata_v3_MetadataKey;
 struct envoy_type_metadata_v3_MetadataKind;
 
+typedef enum {
+  envoy_type_tracing_v3_CustomTag_UNSPECIFIED = 0,
+  envoy_type_tracing_v3_CustomTag_STRING = 1,
+  envoy_type_tracing_v3_CustomTag_INT = 2,
+  envoy_type_tracing_v3_CustomTag_DOUBLE = 3,
+  envoy_type_tracing_v3_CustomTag_BOOL = 4
+} envoy_type_tracing_v3_CustomTag_ValueType;
+
 
 
 /* envoy.type.tracing.v3.CustomTag */
@@ -96,117 +104,129 @@ typedef enum {
 
 UPB_INLINE envoy_type_tracing_v3_CustomTag_type_oneofcases
 envoy_type_tracing_v3_CustomTag_type_case(const envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(20, 32), -9, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 32), -13, UPB_SIZE(18, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_type_tracing_v3_CustomTag_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_clear_type(envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(20, 32), -9, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 32), -13, UPB_SIZE(18, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__tracing__v3__CustomTag_msg_init, &field);
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_clear_tag(envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_type_tracing_v3_CustomTag_tag(const envoy_type_tracing_v3_CustomTag* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_clear_literal(envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(20, 32), -9, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 32), -13, UPB_SIZE(18, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_type_tracing_v3_CustomTag_Literal* envoy_type_tracing_v3_CustomTag_literal(const envoy_type_tracing_v3_CustomTag* msg) {
   const envoy_type_tracing_v3_CustomTag_Literal* default_val = NULL;
   const envoy_type_tracing_v3_CustomTag_Literal* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(20, 32), -9, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 32), -13, UPB_SIZE(18, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__tracing__v3__CustomTag__Literal_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_tracing_v3_CustomTag_has_literal(const envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(20, 32), -9, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 32), -13, UPB_SIZE(18, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_clear_environment(envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), -9, UPB_SIZE(13, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(24, 32), -13, UPB_SIZE(16, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_type_tracing_v3_CustomTag_Environment* envoy_type_tracing_v3_CustomTag_environment(const envoy_type_tracing_v3_CustomTag* msg) {
   const envoy_type_tracing_v3_CustomTag_Environment* default_val = NULL;
   const envoy_type_tracing_v3_CustomTag_Environment* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), -9, UPB_SIZE(13, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(24, 32), -13, UPB_SIZE(16, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__tracing__v3__CustomTag__Environment_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_tracing_v3_CustomTag_has_environment(const envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), -9, UPB_SIZE(13, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(24, 32), -13, UPB_SIZE(16, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_clear_request_header(envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 32), -9, UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), -13, UPB_SIZE(14, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_type_tracing_v3_CustomTag_Header* envoy_type_tracing_v3_CustomTag_request_header(const envoy_type_tracing_v3_CustomTag* msg) {
   const envoy_type_tracing_v3_CustomTag_Header* default_val = NULL;
   const envoy_type_tracing_v3_CustomTag_Header* ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 32), -9, UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), -13, UPB_SIZE(14, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__tracing__v3__CustomTag__Header_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_tracing_v3_CustomTag_has_request_header(const envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 32), -9, UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), -13, UPB_SIZE(14, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_clear_metadata(envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 32), -9, UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 32), -13, UPB_SIZE(12, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_type_tracing_v3_CustomTag_Metadata* envoy_type_tracing_v3_CustomTag_metadata(const envoy_type_tracing_v3_CustomTag* msg) {
   const envoy_type_tracing_v3_CustomTag_Metadata* default_val = NULL;
   const envoy_type_tracing_v3_CustomTag_Metadata* ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 32), -9, UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 32), -13, UPB_SIZE(12, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__tracing__v3__CustomTag__Metadata_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_tracing_v3_CustomTag_has_metadata(const envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 32), -9, UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 32), -13, UPB_SIZE(12, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_clear_value(envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_type_tracing_v3_CustomTag_value(const envoy_type_tracing_v3_CustomTag* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_tracing_v3_CustomTag_has_value(const envoy_type_tracing_v3_CustomTag* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_type_tracing_v3_CustomTag_clear_value_type(envoy_type_tracing_v3_CustomTag* msg) {
+  const upb_MiniTableField field = {7, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE int32_t envoy_type_tracing_v3_CustomTag_value_type(const envoy_type_tracing_v3_CustomTag* msg) {
+  int32_t default_val = 0;
+  int32_t ret;
+  const upb_MiniTableField field = {7, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_set_tag(envoy_type_tracing_v3_CustomTag* msg, upb_StringView value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_set_literal(envoy_type_tracing_v3_CustomTag* msg, envoy_type_tracing_v3_CustomTag_Literal* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(20, 32), -9, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 32), -13, UPB_SIZE(18, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__tracing__v3__CustomTag__Literal_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -220,7 +240,7 @@ UPB_INLINE struct envoy_type_tracing_v3_CustomTag_Literal* envoy_type_tracing_v3
   return sub;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_set_environment(envoy_type_tracing_v3_CustomTag* msg, envoy_type_tracing_v3_CustomTag_Environment* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), -9, UPB_SIZE(13, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(24, 32), -13, UPB_SIZE(16, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__tracing__v3__CustomTag__Environment_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -234,7 +254,7 @@ UPB_INLINE struct envoy_type_tracing_v3_CustomTag_Environment* envoy_type_tracin
   return sub;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_set_request_header(envoy_type_tracing_v3_CustomTag* msg, envoy_type_tracing_v3_CustomTag_Header* value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 32), -9, UPB_SIZE(11, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(24, 32), -13, UPB_SIZE(14, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__tracing__v3__CustomTag__Header_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -248,7 +268,7 @@ UPB_INLINE struct envoy_type_tracing_v3_CustomTag_Header* envoy_type_tracing_v3_
   return sub;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_set_metadata(envoy_type_tracing_v3_CustomTag* msg, envoy_type_tracing_v3_CustomTag_Metadata* value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(20, 32), -9, UPB_SIZE(9, 12), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 32), -13, UPB_SIZE(12, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__tracing__v3__CustomTag__Metadata_msg_init);
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
@@ -262,7 +282,11 @@ UPB_INLINE struct envoy_type_tracing_v3_CustomTag_Metadata* envoy_type_tracing_v
   return sub;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_set_value(envoy_type_tracing_v3_CustomTag* msg, upb_StringView value) {
-  const upb_MiniTableField field = {6, UPB_SIZE(20, 32), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
+}
+UPB_INLINE void envoy_type_tracing_v3_CustomTag_set_value_type(envoy_type_tracing_v3_CustomTag* msg, int32_t value) {
+  const upb_MiniTableField field = {7, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 

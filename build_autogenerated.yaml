@@ -33322,12 +33322,12 @@ external_proto_libraries:
   urls:
   - https://github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz
 - destination: third_party/envoy-api
-  hash: 40ba505a3c8e0d56f10ad5b95c05d54138228ff521cff22393276bb67188dfc3
+  hash: 6cd4f3ed0f12b4f18780f0a29e38f7f914a73c45d8b70960c7d5ba62b817239b
   proto_prefix: third_party/envoy-api/
   strip_path_prefix: ''
-  strip_prefix: data-plane-api-005c18a923f166a793a1c227171398dab883cc5d
+  strip_prefix: data-plane-api-0a161d3b6cc400ed14fe35c3e5f95b77fa36376c
   urls:
-  - https://github.com/envoyproxy/data-plane-api/archive/005c18a923f166a793a1c227171398dab883cc5d.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/0a161d3b6cc400ed14fe35c3e5f95b77fa36376c.tar.gz
 - destination: third_party/googleapis
   hash: 07a6f700cee5ca796f5230876ed8454bf1d8cc409b3b3e634505bc4f32a9f72b
   proto_prefix: third_party/googleapis/
@@ -33343,12 +33343,12 @@ external_proto_libraries:
   urls:
   - https://github.com/grpc/grpc-proto/archive/dd549fc4ed04b60b0fdd3866b82ef0a7c87c6e4f.tar.gz
 - destination: third_party/protoc-gen-validate
-  hash: e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
+  hash: 9e47ef41ec0e269a173a94b6766cc4be4e1a1098fcda040b2f0441c51bfb6ae2
   proto_prefix: third_party/protoc-gen-validate/
   strip_path_prefix: ''
-  strip_prefix: protoc-gen-validate-1.2.1
+  strip_prefix: protoc-gen-validate-1.3.3
   urls:
-  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
+  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.3.3.tar.gz
 - destination: third_party/xds
   hash: 49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d
   proto_prefix: third_party/xds/

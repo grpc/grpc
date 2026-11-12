@@ -27,7 +27,7 @@ from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioni
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n%envoy/type/metadata/v3/metadata.proto\x12\x16\x65nvoy.type.metadata.v3\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\x85\x02\n\x0bMetadataKey\x12\x14\n\x03key\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12G\n\x04path\x18\x02 \x03(\x0b\x32/.envoy.type.metadata.v3.MetadataKey.PathSegmentB\x08\xfa\x42\x05\x92\x01\x02\x08\x01\x1al\n\x0bPathSegment\x12\x16\n\x03key\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01H\x00:5\x9a\xc5\x88\x1e\x30\n.envoy.type.metadata.v2.MetadataKey.PathSegmentB\x0e\n\x07segment\x12\x03\xf8\x42\x01:)\x9a\xc5\x88\x1e$\n\"envoy.type.metadata.v2.MetadataKey\"\xb3\x04\n\x0cMetadataKind\x12?\n\x07request\x18\x01 \x01(\x0b\x32,.envoy.type.metadata.v3.MetadataKind.RequestH\x00\x12;\n\x05route\x18\x02 \x01(\x0b\x32*.envoy.type.metadata.v3.MetadataKind.RouteH\x00\x12?\n\x07\x63luster\x18\x03 \x01(\x0b\x32,.envoy.type.metadata.v3.MetadataKind.ClusterH\x00\x12\x39\n\x04host\x18\x04 \x01(\x0b\x32).envoy.type.metadata.v3.MetadataKind.HostH\x00\x1a=\n\x07Request:2\x9a\xc5\x88\x1e-\n+envoy.type.metadata.v2.MetadataKind.Request\x1a\x39\n\x05Route:0\x9a\xc5\x88\x1e+\n)envoy.type.metadata.v2.MetadataKind.Route\x1a=\n\x07\x43luster:2\x9a\xc5\x88\x1e-\n+envoy.type.metadata.v2.MetadataKind.Cluster\x1a\x37\n\x04Host:/\x9a\xc5\x88\x1e*\n(envoy.type.metadata.v2.MetadataKind.Host:*\x9a\xc5\x88\x1e%\n#envoy.type.metadata.v2.MetadataKindB\x0b\n\x04kind\x12\x03\xf8\x42\x01\x42\x89\x01\n$io.envoyproxy.envoy.type.metadata.v3B\rMetadataProtoP\x01ZHgithub.com/envoyproxy/go-control-plane/envoy/type/metadata/v3;metadatav3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n%envoy/type/metadata/v3/metadata.proto\x12\x16\x65nvoy.type.metadata.v3\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\x96\x02\n\x0bMetadataKey\x12\x14\n\x03key\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12G\n\x04path\x18\x02 \x03(\x0b\x32/.envoy.type.metadata.v3.MetadataKey.PathSegmentB\x08\xfa\x42\x05\x92\x01\x02\x08\x01\x1a}\n\x0bPathSegment\x12\x16\n\x03key\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01H\x00\x12\x0f\n\x05index\x18\x02 \x01(\rH\x00:5\x9a\xc5\x88\x1e\x30\n.envoy.type.metadata.v2.MetadataKey.PathSegmentB\x0e\n\x07segment\x12\x03\xf8\x42\x01:)\x9a\xc5\x88\x1e$\n\"envoy.type.metadata.v2.MetadataKey\"\xb3\x04\n\x0cMetadataKind\x12?\n\x07request\x18\x01 \x01(\x0b\x32,.envoy.type.metadata.v3.MetadataKind.RequestH\x00\x12;\n\x05route\x18\x02 \x01(\x0b\x32*.envoy.type.metadata.v3.MetadataKind.RouteH\x00\x12?\n\x07\x63luster\x18\x03 \x01(\x0b\x32,.envoy.type.metadata.v3.MetadataKind.ClusterH\x00\x12\x39\n\x04host\x18\x04 \x01(\x0b\x32).envoy.type.metadata.v3.MetadataKind.HostH\x00\x1a=\n\x07Request:2\x9a\xc5\x88\x1e-\n+envoy.type.metadata.v2.MetadataKind.Request\x1a\x39\n\x05Route:0\x9a\xc5\x88\x1e+\n)envoy.type.metadata.v2.MetadataKind.Route\x1a=\n\x07\x43luster:2\x9a\xc5\x88\x1e-\n+envoy.type.metadata.v2.MetadataKind.Cluster\x1a\x37\n\x04Host:/\x9a\xc5\x88\x1e*\n(envoy.type.metadata.v2.MetadataKind.Host:*\x9a\xc5\x88\x1e%\n#envoy.type.metadata.v2.MetadataKindB\x0b\n\x04kind\x12\x03\xf8\x42\x01\x42\x89\x01\n$io.envoyproxy.envoy.type.metadata.v3B\rMetadataProtoP\x01ZHgithub.com/envoyproxy/go-control-plane/envoy/type/metadata/v3;metadatav3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -60,17 +60,17 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_METADATAKIND']._loaded_options = None
   _globals['_METADATAKIND']._serialized_options = b'\232\305\210\036%\n#envoy.type.metadata.v2.MetadataKind'
   _globals['_METADATAKEY']._serialized_start=157
-  _globals['_METADATAKEY']._serialized_end=418
+  _globals['_METADATAKEY']._serialized_end=435
   _globals['_METADATAKEY_PATHSEGMENT']._serialized_start=267
-  _globals['_METADATAKEY_PATHSEGMENT']._serialized_end=375
-  _globals['_METADATAKIND']._serialized_start=421
-  _globals['_METADATAKIND']._serialized_end=984
-  _globals['_METADATAKIND_REQUEST']._serialized_start=687
-  _globals['_METADATAKIND_REQUEST']._serialized_end=748
-  _globals['_METADATAKIND_ROUTE']._serialized_start=750
-  _globals['_METADATAKIND_ROUTE']._serialized_end=807
-  _globals['_METADATAKIND_CLUSTER']._serialized_start=809
-  _globals['_METADATAKIND_CLUSTER']._serialized_end=870
-  _globals['_METADATAKIND_HOST']._serialized_start=872
-  _globals['_METADATAKIND_HOST']._serialized_end=927
+  _globals['_METADATAKEY_PATHSEGMENT']._serialized_end=392
+  _globals['_METADATAKIND']._serialized_start=438
+  _globals['_METADATAKIND']._serialized_end=1001
+  _globals['_METADATAKIND_REQUEST']._serialized_start=704
+  _globals['_METADATAKIND_REQUEST']._serialized_end=765
+  _globals['_METADATAKIND_ROUTE']._serialized_start=767
+  _globals['_METADATAKIND_ROUTE']._serialized_end=824
+  _globals['_METADATAKIND_CLUSTER']._serialized_start=826
+  _globals['_METADATAKIND_CLUSTER']._serialized_end=887
+  _globals['_METADATAKIND_HOST']._serialized_start=889
+  _globals['_METADATAKIND_HOST']._serialized_end=944
 # @@protoc_insertion_point(module_scope)
