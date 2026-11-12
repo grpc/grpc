@@ -402,8 +402,9 @@ absl::StatusOr<ExtAuthzResponse::OkResponse> ParseOkResponse(
   if (ok_resp == nullptr) return ok_response;
   size_t size = 0;
   // headers
-  auto headers = ParseExtAuthzHeaderOptions(
-      envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size), size);
+  const auto* upb_headers =
+      envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size);
+  auto headers = ParseExtAuthzHeaderOptions(upb_headers, size);
   if (!headers.ok()) return headers.status();
   ok_response.header_mutation.set_headers = std::move(*headers);
   // headers_to_remove
@@ -418,10 +419,11 @@ absl::StatusOr<ExtAuthzResponse::OkResponse> ParseOkResponse(
     ok_response.header_mutation.remove_headers.push_back(std::string(key));
   }
   // response_headers_to_add
-  auto response_headers_to_add = ParseExtAuthzHeaderOptions(
+  const auto* upb_response_headers_to_add =
       envoy_service_auth_v3_OkHttpResponse_response_headers_to_add(ok_resp,
-                                                                   &size),
-      size);
+                                                                   &size);
+  auto response_headers_to_add =
+      ParseExtAuthzHeaderOptions(upb_response_headers_to_add, size);
   if (!response_headers_to_add.ok()) return response_headers_to_add.status();
   ok_response.response_headers_to_add = std::move(*response_headers_to_add);
   return ok_response;
@@ -447,8 +449,9 @@ absl::StatusOr<ExtAuthzResponse::DeniedResponse> ParseDeniedResponse(
   }
   // headers
   size_t size = 0;
-  auto headers = ParseExtAuthzHeaderOptions(
-      envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size), size);
+  const auto* upb_headers =
+      envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size);
+  auto headers = ParseExtAuthzHeaderOptions(upb_headers, size);
   if (!headers.ok()) return headers.status();
   denied_response.headers = std::move(*headers);
   return denied_response;
