@@ -17,15 +17,13 @@ set -ex
 
 GIT_ROOT="$(pwd)"
 
-# TODO(weizheyuan): Enable bazel 9 globally and remove this line
-export OVERRIDE_BAZEL_VERSION=9.3.2
-
 cd test/bazel_build_out_of_tree/bzlmod_test
 
 # Build the same targets as .bcr/presubmit.yml so we are more confident with
 # releases.
 $GIT_ROOT/tools/bazel \
     build \
+    --nobuild \
     -- \
     "@grpc" \
     "@grpc//:grpc++" \

@@ -5,23 +5,39 @@ bazel-testlogs
 bins
 libs
 objs
+
+# All third_party/ subdirectories except the following ones that are
+# explicitly referenced in our BUILD files:
+#
+#   third_party/address_sorting
+#   third_party/xxhash
+
 third_party/abseil-cpp
+third_party/autosharding
 third_party/benchmark
-third_party/boringssl
 third_party/bloaty
+third_party/boringssl
 third_party/boringssl-with-bazel
+third_party/cares
 third_party/cel-c
+third_party/cel-spec
 third_party/envoy-api
 third_party/googleapis
 third_party/googletest
+third_party/grpc-proto
+third_party/objective_c
 third_party/opencensus-proto
+third_party/opentelemetry
 third_party/opentelemetry-cpp
 third_party/protobuf
 third_party/protoc-gen-validate
+third_party/rake-compiler-dock
 third_party/re2
+third_party/toolchains
 third_party/upb
 third_party/utf8_range
 third_party/xds
+third_party/zlib
 
 test/distrib/bazel/cpp
 test/distrib/bazel/python
