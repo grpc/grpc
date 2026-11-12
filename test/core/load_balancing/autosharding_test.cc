@@ -20,10 +20,13 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
@@ -31,7 +34,9 @@
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace testing {
@@ -93,6 +98,61 @@ class AutoShardingTest : public LoadBalancingPolicyTest {
   }
 
   AutoShardingTest() : LoadBalancingPolicyTest("autosharding_experimental") {}
+
+  // Checks that an endpoint with the given addresses and no hostname
+  // attribute (gRFC A81) gets expected_hostname as its default hostname.
+  // Assignments from the autosharding server refer to endpoints by
+  // hostname.
+  //
+  // The endpoint is listed after one whose hostname attribute is
+  // expected_hostname, so it should be ignored as a duplicate, leaving a
+  // single endpoint.  To check that, we fail the first endpoint's
+  // connection attempt.  With a single endpoint, the policy reports
+  // TRANSIENT_FAILURE.  With two, it would report CONNECTING and start
+  // connecting to the second endpoint; and since the picker starts at a
+  // random endpoint, the first pick might already have gone to the second
+  // endpoint, in which case the first endpoint's subchannel won't exist.
+  void ExpectDefaultHostname(
+      absl::Span<const absl::string_view> endpoint_addresses,
+      absl::string_view expected_hostname,
+      SourceLocation location = SourceLocation()) {
+    ASSERT_FALSE(endpoint_addresses.empty())
+        << location.file() << ":" << location.line();
+    for (absl::string_view address : endpoint_addresses) {
+      ASSERT_NE(address, kAddresses[0])
+          << location.file() << ":" << location.line();
+    }
+    const std::vector<EndpointAddresses> endpoints = {
+        MakeEndpointAddresses(
+            {kAddresses[0]},
+            ChannelArgs().Set(GRPC_ARG_ADDRESS_NAME, expected_hostname)),
+        MakeEndpointAddresses(endpoint_addresses)};
+    EXPECT_EQ(ApplyUpdate(
+                  BuildUpdate(endpoints,
+                              ConfigBuilder().SetEnableFallback(true).Build()),
+                  lb_policy()),
+              absl::OkStatus())
+        << location.file() << ":" << location.line();
+    auto picker = ExpectState(GRPC_CHANNEL_IDLE, absl::OkStatus(), location);
+    ExpectPickQueued(picker.get(), {}, MakeMetadata(), location);
+    SubchannelState* subchannel = FindSubchannel(kAddresses[0]);
+    ASSERT_NE(subchannel, nullptr) << location.file() << ":" << location.line();
+    EXPECT_TRUE(subchannel->ConnectionRequested())
+        << location.file() << ":" << location.line();
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    picker = ExpectState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(), location);
+    subchannel->SetConnectivityState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        absl::UnavailableError("connection attempt failed"));
+    ExpectReresolutionRequest(location);
+    picker = ExpectState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        absl::UnavailableError("no reachable endpoints; last error: "
+                               "UNAVAILABLE: connection attempt failed"),
+        location);
+    EXPECT_EQ(FindSubchannel(endpoint_addresses.front()), nullptr)
+        << location.file() << ":" << location.line();
+  }
 };
 
 TEST_F(AutoShardingTest, StartupFallback) {
@@ -232,6 +292,66 @@ TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
   picker = ExpectState(GRPC_CHANNEL_READY);
   auto address = ExpectPickComplete(picker.get(), {}, MakeMetadata());
   EXPECT_EQ(address, kAddresses[0]);
+}
+
+// Without a hostname attribute, an endpoint's default hostname is its first
+// address in the same form as ring_hash's default hash key: host:port for
+// IP addresses (IPv6 in brackets, IPv4-mapped IPv6 not converted to IPv4),
+// the path for unix addresses, a NUL byte followed by the name for
+// unix-abstract addresses, and cid:port for vsock addresses.  The tests
+// below pin the current format.  Characters that need it are
+// percent-encoded in the input URIs, so the tests also catch a hostname
+// derived without percent-decoding.
+
+TEST_F(AutoShardingTest, DefaultHostnameForIpv4Address) {
+  ExpectDefaultHostname({"ipv4:127.0.0.1:442"}, "127.0.0.1:442");
+}
+
+TEST_F(AutoShardingTest, DefaultHostnameForIpv6Address) {
+  ExpectDefaultHostname({"ipv6:%5B2001:db8::1%5D:442"}, "[2001:db8::1]:442");
+}
+
+TEST_F(AutoShardingTest, DefaultHostnameForIpv6AddressWithZone) {
+  // Zone 25 is written as "%25", so decoding the hostname a second time
+  // would change it.
+  ExpectDefaultHostname({"ipv6:%5Bfe80::1%2525%5D:442"}, "[fe80::1%25]:442");
+}
+
+TEST_F(AutoShardingTest, DefaultHostnameForIpv4MappedIpv6Address) {
+  // The address is not converted to IPv4.
+  ExpectDefaultHostname({"ipv6:%5B::ffff:127.0.0.1%5D:442"},
+                        "[::ffff:127.0.0.1]:442");
+}
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+TEST_F(AutoShardingTest, DefaultHostnameForUnixAddress) {
+  // The path contains an encoded "%" and an encoded space, so a hostname
+  // that was decoded zero times or twice would be different.
+  ExpectDefaultHostname({"unix:/tmp/autosharding%2520hash%20test.sock"},
+                        "/tmp/autosharding%20hash test.sock");
+}
+
+TEST_F(AutoShardingTest, DefaultHostnameForUnixAbstractAddress) {
+  // The hostname starts with a NUL byte.  As above, the name contains an
+  // encoded "%" and an encoded space.  It also contains a NUL byte
+  // (encoded as "%00"), so a hostname built from a C string would be cut
+  // short.
+  constexpr absl::string_view kNul("\0", 1);
+  ExpectDefaultHostname(
+      {"unix-abstract:autosharding%00%2520hash%20test"},
+      absl::StrCat(kNul, "autosharding", kNul, "%20hash test"));
+}
+#endif  // GRPC_HAVE_UNIX_SOCKET
+
+#ifdef GRPC_HAVE_VSOCK
+TEST_F(AutoShardingTest, DefaultHostnameForVsockAddress) {
+  ExpectDefaultHostname({"vsock:3:442"}, "3:442");
+}
+#endif  // GRPC_HAVE_VSOCK
+
+TEST_F(AutoShardingTest, DefaultHostnameUsesFirstAddress) {
+  ExpectDefaultHostname({"ipv6:%5B2001:db8::1%5D:442", "ipv4:127.0.0.1:443"},
+                        "[2001:db8::1]:442");
 }
 
 TEST_F(AutoShardingTest, RetainsEndpointForHostnameAcrossUpdates) {

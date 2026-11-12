@@ -31,6 +31,7 @@
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/telemetry/metrics.h"
@@ -914,6 +915,68 @@ TEST_F(PickFirstTest,
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate();
 }
+
+TEST_F(PickFirstTest, HappyEyeballsCountsIpv4MappedAddressesAsIpv6) {
+  // Pins current behavior: Happy Eyeballs groups addresses by sockaddr
+  // family, so an IPv4-mapped IPv6 address is grouped with the other IPv6
+  // addresses.  Whether it should count as IPv4 instead is a separate
+  // decision; this test only catches an accidental change.
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv6:%5B2001:db8::1%5D:443", "ipv6:%5B::ffff:127.0.0.1%5D:444",
+      "ipv4:127.0.0.1:445"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  auto* subchannel_ipv6 = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel_ipv6, nullptr);
+  auto* subchannel_ipv4_mapped = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel_ipv4_mapped, nullptr);
+  auto* subchannel_ipv4 = FindSubchannel(kAddresses[2]);
+  ASSERT_NE(subchannel_ipv4, nullptr);
+  // The LB policy will request a connection on the first subchannel.
+  EXPECT_TRUE(subchannel_ipv6->ConnectionRequested());
+  subchannel_ipv6->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate();
+  EXPECT_FALSE(subchannel_ipv4_mapped->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv4->ConnectionRequested());
+  // When the timer fires, the LB policy moves on to the first address of
+  // the next family.  That is the IPv4 address, not the IPv4-mapped one,
+  // which would come next if it counted as IPv4 or as a family of its own.
+  IncrementTimeBy(Duration::Milliseconds(250));
+  EXPECT_TRUE(subchannel_ipv4->ConnectionRequested());
+  EXPECT_FALSE(subchannel_ipv4_mapped->ConnectionRequested());
+}
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+TEST_F(PickFirstTest, HappyEyeballsCountsUnixAbstractAddressesAsUnix) {
+  // Pins current behavior: unix and unix-abstract addresses have the same
+  // sockaddr family, so Happy Eyeballs does not interleave them, even
+  // though their URI schemes differ.
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "unix:/tmp/pick_first_test_1.sock", "unix:/tmp/pick_first_test_2.sock",
+      "unix-abstract:pick_first_test"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  auto* subchannel_unix_1 = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel_unix_1, nullptr);
+  auto* subchannel_unix_2 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel_unix_2, nullptr);
+  auto* subchannel_unix_abstract = FindSubchannel(kAddresses[2]);
+  ASSERT_NE(subchannel_unix_abstract, nullptr);
+  // The LB policy will request a connection on the first subchannel.
+  EXPECT_TRUE(subchannel_unix_1->ConnectionRequested());
+  subchannel_unix_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate();
+  EXPECT_FALSE(subchannel_unix_2->ConnectionRequested());
+  EXPECT_FALSE(subchannel_unix_abstract->ConnectionRequested());
+  // When the timer fires, the LB policy moves on to the next address in
+  // the list, since there is no other family.
+  IncrementTimeBy(Duration::Milliseconds(250));
+  EXPECT_TRUE(subchannel_unix_2->ConnectionRequested());
+  EXPECT_FALSE(subchannel_unix_abstract->ConnectionRequested());
+}
+#endif  // GRPC_HAVE_UNIX_SOCKET
 
 TEST_F(PickFirstTest, FirstAddressGoesIdleBeforeSecondOneFails) {
   // Send an update containing two addresses.

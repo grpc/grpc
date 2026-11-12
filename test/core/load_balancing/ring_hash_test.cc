@@ -27,8 +27,10 @@
 #include <string>
 #include <vector>
 
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/xxhash_inline.h"
@@ -40,6 +42,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace testing {
@@ -70,16 +73,78 @@ class RingHashTest : public LoadBalancingPolicyTest {
         {{"ring_hash_experimental", Json::FromObject(fields)}})}));
   }
 
-  RequestHashAttribute* MakeHashAttributeForString(absl::string_view key) {
-    std::string key_str = absl::StrCat(key, "_0");
-    uint64_t hash = XXH64(key_str.data(), key_str.size(), 0);
+  // Returns an attribute whose request hash is the hash of the ring entry
+  // with the given index for an endpoint with the given hash key.  Ring
+  // entries are named "<hash_key>_<index>".
+  RequestHashAttribute* MakeHashAttributeForRingEntry(
+      absl::string_view hash_key, size_t index) {
+    std::string entry = absl::StrCat(hash_key, "_", index);
+    uint64_t hash = XXH64(entry.data(), entry.size(), 0);
     attribute_storage_.emplace_back(
         std::make_unique<RequestHashAttribute>(hash));
     return attribute_storage_.back().get();
   }
 
+  RequestHashAttribute* MakeHashAttributeForString(absl::string_view key) {
+    return MakeHashAttributeForRingEntry(key, 0);
+  }
+
   RequestHashAttribute* MakeHashAttribute(absl::string_view address) {
     return MakeHashAttributeForString(absl::StripPrefix(address, "ipv4:"));
+  }
+
+  // Checks that the default hash key (used when an endpoint has no hash
+  // key attribute) of an endpoint with the given addresses is
+  // expected_hash_key.  The key determines the endpoint's position on the
+  // ring, so a change in its format would move traffic between endpoints.
+  //
+  // The endpoint is paired with one other endpoint, which has an explicit
+  // hash key, so that its ring entries don't depend on its address.  We
+  // pick using the hashes of kNumPicks ring entries for expected_hash_key.
+  // Since the picker is IDLE, each pick triggers a connection attempt on
+  // the endpoint that owns the ring entry.  If the actual key were
+  // different, about half of these picks would land on the other endpoint.
+  //
+  // The other endpoint comes first, and its address is the IPv4 form of
+  // the IPv4-mapped IPv6 address used below.  If endpoints or subchannels
+  // were identified by normalized address, the IPv4-mapped endpoint would
+  // be merged into the other one (ring_hash keeps the first of duplicate
+  // endpoints) or share its subchannel, and the checks below would fail.
+  void ExpectDefaultHashKey(
+      absl::Span<const absl::string_view> endpoint_addresses,
+      absl::string_view expected_hash_key,
+      SourceLocation location = SourceLocation()) {
+    constexpr absl::string_view kOtherAddress = "ipv4:127.0.0.1:441";
+    constexpr size_t kNumPicks = 30;
+    ASSERT_FALSE(endpoint_addresses.empty())
+        << location.file() << ":" << location.line();
+    for (absl::string_view address : endpoint_addresses) {
+      ASSERT_NE(address, kOtherAddress)
+          << location.file() << ":" << location.line();
+    }
+    const std::array<EndpointAddresses, 2> endpoints = {
+        MakeEndpointAddresses(
+            {kOtherAddress},
+            ChannelArgs().Set(GRPC_ARG_RING_HASH_ENDPOINT_HASH_KEY, "other")),
+        MakeEndpointAddresses(endpoint_addresses)};
+    // With a minimum ring size of 1024, each endpoint gets 512 ring entries,
+    // so all kNumPicks entries exist.
+    const auto config = MakeRingHashConfig(/*min_ring_size=*/1024);
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(endpoints, config), lb_policy()),
+              absl::OkStatus())
+        << location.file() << ":" << location.line();
+    auto picker = ExpectState(GRPC_CHANNEL_IDLE, absl::OkStatus(), location);
+    for (size_t i = 0; i < kNumPicks; ++i) {
+      ExpectPickQueued(picker.get(),
+                       {MakeHashAttributeForRingEntry(expected_hash_key, i)},
+                       {}, location);
+    }
+    SubchannelState* subchannel = FindSubchannel(endpoint_addresses.front());
+    ASSERT_NE(subchannel, nullptr) << location.file() << ":" << location.line();
+    EXPECT_TRUE(subchannel->ConnectionRequested())
+        << location.file() << ":" << location.line();
+    EXPECT_EQ(FindSubchannel(kOtherAddress), nullptr)
+        << location.file() << ":" << location.line();
   }
 
   std::vector<std::unique_ptr<RequestHashAttribute>> attribute_storage_;
@@ -343,6 +408,61 @@ TEST_F(RingHashTest, EndpointHashKeys) {
   auto address = ExpectPickComplete(picker.get(), {hash_attribute});
   EXPECT_EQ(address, kAddresses[1]);
 }
+
+// An endpoint without a hash key attribute uses its first address as its
+// hash key: host:port for IP addresses (IPv6 in brackets, IPv4-mapped IPv6
+// not converted to IPv4), the path for unix addresses, a NUL byte followed
+// by the name for unix-abstract addresses, and cid:port for vsock
+// addresses.  The tests above use IPv4; the tests below pin the current
+// format for the other address types.  Characters that need it are
+// percent-encoded in the input URIs, so the tests also catch a key derived
+// without percent-decoding.
+
+TEST_F(RingHashTest, DefaultHashKeyUsesFirstAddress) {
+  ExpectDefaultHashKey({"ipv6:%5B2001:db8::1%5D:441", "ipv4:127.0.0.1:442"},
+                       "[2001:db8::1]:441");
+}
+
+TEST_F(RingHashTest, DefaultHashKeyForIpv6Address) {
+  ExpectDefaultHashKey({"ipv6:%5B2001:db8::1%5D:441"}, "[2001:db8::1]:441");
+}
+
+TEST_F(RingHashTest, DefaultHashKeyForIpv6AddressWithZone) {
+  // Zone 25 is written as "%25", so decoding the key a second time would
+  // change it.
+  ExpectDefaultHashKey({"ipv6:%5Bfe80::1%2525%5D:441"}, "[fe80::1%25]:441");
+}
+
+TEST_F(RingHashTest, DefaultHashKeyForIpv4MappedIpv6Address) {
+  // The address is not converted to IPv4, and the endpoint stays separate
+  // from the other endpoint, whose address is the IPv4 form.
+  ExpectDefaultHashKey({"ipv6:%5B::ffff:127.0.0.1%5D:441"},
+                       "[::ffff:127.0.0.1]:441");
+}
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+TEST_F(RingHashTest, DefaultHashKeyForUnixAddress) {
+  // The path contains an encoded "%" and an encoded space, so a key that
+  // was decoded zero times or twice would be different.
+  ExpectDefaultHashKey({"unix:/tmp/ring%2520hash%20test.sock"},
+                       "/tmp/ring%20hash test.sock");
+}
+
+TEST_F(RingHashTest, DefaultHashKeyForUnixAbstractAddress) {
+  // The key starts with a NUL byte.  As above, the name contains an
+  // encoded "%" and an encoded space.  It also contains a NUL byte
+  // (encoded as "%00"), so a key built from a C string would be cut short.
+  constexpr absl::string_view kNul("\0", 1);
+  ExpectDefaultHashKey({"unix-abstract:ring%00%2520hash%20test"},
+                       absl::StrCat(kNul, "ring", kNul, "%20hash test"));
+}
+#endif  // GRPC_HAVE_UNIX_SOCKET
+
+#ifdef GRPC_HAVE_VSOCK
+TEST_F(RingHashTest, DefaultHashKeyForVsockAddress) {
+  ExpectDefaultHashKey({"vsock:3:441"}, "3:441");
+}
+#endif  // GRPC_HAVE_VSOCK
 
 TEST_F(RingHashTest, PickFailsWithoutRequestHashAttribute) {
   const std::array<absl::string_view, 3> kAddresses = {

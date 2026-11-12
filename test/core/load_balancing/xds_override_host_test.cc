@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <array>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -31,6 +32,7 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_config.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_health_status.h"
@@ -228,6 +230,46 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
         << location.file() << ":" << location.line();
   }
 
+  // Checks the path where an override host names an endpoint that has no
+  // subchannel (here, a draining endpoint, which is not passed to the child
+  // policy).  The policy creates the subchannel by parsing the override
+  // host back into an address, which must give back exactly the endpoint's
+  // address.  The override pick then completes and reports override_host
+  // in actual_address_list.
+  void ExpectOverrideHostCreatesSubchannel(
+      absl::string_view address, absl::string_view override_host,
+      SourceLocation location = SourceLocation()) {
+    const std::array<absl::string_view, 3> addresses = {
+        "ipv4:127.0.0.1:441", address, "ipv4:127.0.0.1:443"};
+    ApplyUpdateWithHealthStatuses({{addresses[0], XdsHealthStatus::kUnknown},
+                                   {addresses[1], XdsHealthStatus::kDraining},
+                                   {addresses[2], XdsHealthStatus::kHealthy}},
+                                  {"UNKNOWN", "HEALTHY", "DRAINING"});
+    auto picker =
+        ExpectRoundRobinStartup({addresses[0], addresses[2]}, location);
+    ASSERT_NE(picker, nullptr) << location.file() << ":" << location.line();
+    EXPECT_EQ(FindSubchannel(address), nullptr)
+        << location.file() << ":" << location.line();
+    auto* attribute = MakeOverrideHostAttribute(override_host);
+    ExpectPickQueued(picker.get(), {attribute}, {}, location);
+    // Subchannel creation triggers a new picker.  Consume it before
+    // checking the subchannel, so that a failed check doesn't leave it
+    // queued.
+    picker = ExpectState(GRPC_CHANNEL_READY, absl::OkStatus(), location);
+    SubchannelState* subchannel = FindSubchannel(address);
+    ASSERT_NE(subchannel, nullptr) << location.file() << ":" << location.line();
+    // Picking again triggers a connection attempt on the new subchannel.
+    ExpectPickQueued(picker.get(), {attribute}, {}, location);
+    EXPECT_TRUE(subchannel->ConnectionRequested())
+        << location.file() << ":" << location.line();
+    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+    picker = ExpectState(GRPC_CHANNEL_READY, absl::OkStatus(), location);
+    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+    picker = ExpectState(GRPC_CHANNEL_READY, absl::OkStatus(), location);
+    ExpectOverridePicks(picker.get(), attribute, subchannel->address(),
+                        {override_host}, location);
+  }
+
   std::vector<std::unique_ptr<OverrideHostAttributeStorage>> attribute_storage_;
 };
 
@@ -253,6 +295,60 @@ TEST_F(XdsOverrideHostTest, OverrideHost) {
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   auto* address0_attribute = MakeOverrideHostAttribute(kAddresses[0]);
   ExpectOverridePicks(picker.get(), address0_attribute, kAddresses[0]);
+}
+
+TEST_F(XdsOverrideHostTest, OverrideHostKeysForIpv6Addresses) {
+  // The policy matches override hosts against each endpoint address as
+  // host:port, with IPv6 in brackets and IPv4-mapped IPv6 not converted to
+  // IPv4, and reports the same strings in actual_address_list.  These
+  // strings are stored in session cookies, so their format must not change.
+  // The policy computes them both from the update and when the child policy
+  // creates each endpoint's subchannel.
+  struct Endpoint {
+    absl::string_view address;
+    absl::string_view override_host;
+  };
+  const std::array<Endpoint, 3> kEndpoints = {{
+      {"ipv6:%5B2001:db8::1%5D:441", "[2001:db8::1]:441"},
+      // Zone 25 is written as "%25" in the override host and as "%2525" in
+      // the URI.
+      {"ipv6:%5Bfe80::1%2525%5D:442", "[fe80::1%25]:442"},
+      // The IPv4-mapped address is not converted to IPv4.
+      {"ipv6:%5B::ffff:127.0.0.1%5D:443", "[::ffff:127.0.0.1]:443"},
+  }};
+  const std::array<absl::string_view, 3> kAddresses = {
+      kEndpoints[0].address, kEndpoints[1].address, kEndpoints[2].address};
+  auto picker = ExpectStartupWithRoundRobin(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Maps the address of each endpoint's subchannel to its override host.
+  std::map<std::string, absl::string_view> override_hosts;
+  std::vector<std::string> subchannel_addresses;
+  for (const Endpoint& endpoint : kEndpoints) {
+    SubchannelState* subchannel = FindSubchannel(endpoint.address);
+    ASSERT_NE(subchannel, nullptr) << endpoint.address;
+    // ExpectOverridePicks() picks several times.  If the override didn't
+    // match, round_robin would also pick the other endpoints.
+    ExpectOverridePicks(picker.get(),
+                        MakeOverrideHostAttribute(endpoint.override_host),
+                        subchannel->address(), {endpoint.override_host});
+    override_hosts.emplace(subchannel->address(), endpoint.override_host);
+    subchannel_addresses.push_back(subchannel->address());
+  }
+  // The IPv4 form of the IPv4-mapped address matches no endpoint, so picks
+  // are round-robin.  Those picks also report the picked endpoint's address
+  // in actual_address_list, which is how the first cookie gets set.
+  auto* ipv4_attribute = MakeOverrideHostAttribute("127.0.0.1:443");
+  std::vector<std::string> picks;
+  for (size_t i = 0; i < kEndpoints.size(); ++i) {
+    auto address = ExpectPickComplete(picker.get(), {ipv4_attribute});
+    ASSERT_TRUE(address.has_value());
+    auto it = override_hosts.find(*address);
+    ASSERT_NE(it, override_hosts.end()) << *address;
+    EXPECT_EQ(ipv4_attribute->actual_address_list(), it->second);
+    picks.push_back(*std::move(address));
+  }
+  EXPECT_THAT(picks,
+              ::testing::UnorderedElementsAreArray(subchannel_addresses));
 }
 
 TEST_F(XdsOverrideHostTest, SubchannelNotFound) {
@@ -540,6 +636,39 @@ TEST_F(XdsOverrideHostTest, MultipleAddressesPerEndpoint) {
                       {kEndpoint1Addresses[1], kEndpoint1Addresses[0]});
 }
 
+TEST_F(XdsOverrideHostTest,
+       ActualAddressListOrderForEndpointWithThreeAddresses) {
+  // actual_address_list starts with the address in use, followed by the
+  // endpoint's other addresses in their original order.  With three
+  // addresses and the middle one in use, a list built in any other order
+  // would differ.  The addresses sort in the reverse of their order here,
+  // so a list built from a sorted set would differ too.
+  constexpr std::array<absl::string_view, 3> kEndpoint1Addresses = {
+      "ipv6:%5B2001:db8::9%5D:441", "ipv6:%5B2001:db8::5%5D:442",
+      "ipv6:%5B2001:db8::1%5D:443"};
+  constexpr std::array<absl::string_view, 1> kEndpoint2Addresses = {
+      "ipv4:127.0.0.1:444"};
+  const std::array<EndpointAddresses, 2> kEndpoints = {
+      MakeEndpointAddresses(kEndpoint1Addresses),
+      MakeEndpointAddresses(kEndpoint2Addresses)};
+  EXPECT_EQ(UpdateXdsOverrideHostPolicy(kEndpoints), absl::OkStatus());
+  auto picker = ExpectRoundRobinStartup(kEndpoints);
+  ASSERT_NE(picker, nullptr);
+  // Change endpoint 1 to connect to its second address.
+  ExpectEndpointAddressChange(kEndpoint1Addresses, 0, 1, [&]() {
+    WaitForRoundRobinListChange(
+        {kEndpoint1Addresses[0], kEndpoint2Addresses[0]},
+        {kEndpoint2Addresses[0]});
+  });
+  picker = WaitForRoundRobinListChange(
+      {kEndpoint2Addresses[0]},
+      {kEndpoint1Addresses[1], kEndpoint2Addresses[0]});
+  ExpectOverridePicks(
+      picker.get(), MakeOverrideHostAttribute("[2001:db8::5]:442"),
+      kEndpoint1Addresses[1],
+      {"[2001:db8::5]:442", "[2001:db8::9]:441", "[2001:db8::1]:443"});
+}
+
 TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
@@ -594,6 +723,21 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // Now the pick with override should complete.
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
+}
+
+TEST_F(XdsOverrideHostTest,
+       ChildPolicyNeverCreatedSubchannelForIpv4MappedAddress) {
+  // The address is not converted to IPv4.
+  ExpectOverrideHostCreatesSubchannel("ipv6:%5B::ffff:127.0.0.1%5D:442",
+                                      "[::ffff:127.0.0.1]:442");
+}
+
+TEST_F(XdsOverrideHostTest,
+       ChildPolicyNeverCreatedSubchannelForIpv6AddressWithZone) {
+  // Zone 25 is written as "%25" in the override host and as "%2525" in the
+  // URI.
+  ExpectOverrideHostCreatesSubchannel("ipv6:%5Bfe80::1%2525%5D:442",
+                                      "[fe80::1%25]:442");
 }
 
 TEST_F(XdsOverrideHostTest,
