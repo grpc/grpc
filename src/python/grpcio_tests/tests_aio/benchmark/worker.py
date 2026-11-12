@@ -39,7 +39,7 @@ async def run_worker_server(port: int) -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(
         description="gRPC Python performance testing worker"
     )
