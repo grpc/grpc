@@ -187,7 +187,7 @@ archive_override(
 )
 
 # --- Provide repo @com_google_fuzztest.
-bazel_dep(name = "fuzztest", version = "20260629.0.bcr.1", dev_dependency = True, repo_name = "com_google_fuzztest")
+bazel_dep(name = "fuzztest", version = "20260629.0", dev_dependency = True, repo_name = "com_google_fuzztest")
 
 # This package is not directly used by grpc, but requested by fuzztest.
 #
@@ -196,6 +196,23 @@ bazel_dep(name = "fuzztest", version = "20260629.0.bcr.1", dev_dependency = True
 #
 # See also https://bazel.build/external/module#version-selection.
 bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
+
+# These packages are not directly used by grpc, but requested by riegeli.
+#
+# The reason for version bump is that the versions requested by riegeli do not
+# load rules_cc, which Bazel 9 requires.
+bazel_dep(name = "brotli", version = "1.2.0.bcr.1", dev_dependency = True, repo_name = None)
+bazel_dep(name = "bzip2", version = "1.0.8.bcr.3", dev_dependency = True, repo_name = None)
+bazel_dep(name = "highwayhash", version = "0.0.0-20240305-5ad3bf8.bcr.1", dev_dependency = True, repo_name = None)
+bazel_dep(name = "lz4", version = "1.9.4.bcr.1", dev_dependency = True, repo_name = None)
+bazel_dep(name = "snappy", version = "1.2.2.bcr.2", dev_dependency = True, repo_name = None)
+bazel_dep(name = "xz", version = "5.4.5.bcr.6", dev_dependency = True, repo_name = None)
+
+# This package is not directly used by grpc, but requested by fuzztest.
+#
+# The reason for version bump is that flatbuffers@25.12.19 depends on
+# aspect_rules_esbuild@0.21.0, which does not load with Bazel 9.
+bazel_dep(name = "flatbuffers", version = "25.12.19.bcr.1", dev_dependency = True, repo_name = None)
 
 # This package is not directly used by grpc, but requested by opentelemetry-cpp
 # and google_cloud_cpp. Pin a newer version than the 8.11.0.bcr.2 that
