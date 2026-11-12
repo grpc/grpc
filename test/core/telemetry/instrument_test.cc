@@ -47,7 +47,7 @@ using CollectionScopeTest = InstrumentTest;
 
 class MockInstrumentRecorder : public InstrumentRecorder {
  public:
-  virtual ~MockInstrumentRecorder() = default;
+  ~MockInstrumentRecorder() override = default;
   MOCK_METHOD(void, RecordHistogram,
               (const InstrumentMetadata::Description* description,
                int64_t value, absl::Span<const std::string> label_values),
