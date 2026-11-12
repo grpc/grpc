@@ -256,7 +256,6 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 };
 
 TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
-  SKIP_TEST_FOR_PH2_SERVER("TODO(tjagtap) [PH2][P1] Flakes on PH2");
   // Cover all valid statuses.
   for (int i = 0; i <= NUM_REQUESTS_PER_CHANNEL; ++i) {
     for (int j = 0; j < GetParam().num_listening_ports(); ++j) {

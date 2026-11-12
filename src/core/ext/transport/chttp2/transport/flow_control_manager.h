@@ -88,7 +88,7 @@ inline uint32_t GetMaxPermittedDequeue(
                   static_cast<size_t>(RFC9113::kMaxSize31Bit - 1)}));
   }
   GRPC_HTTP2_FLOW_CONTROL_HELPERS
-      << "GetFlowControlTokens flow_control_tokens = " << flow_control_tokens
+      << "GetMaxPermittedDequeue flow_control_tokens = " << flow_control_tokens
       << " upper_limit = " << upper_limit << " max_dequeue = " << max_dequeue;
   return max_dequeue;
 }

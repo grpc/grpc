@@ -22,8 +22,9 @@
 #include <memory>
 
 #include "src/core/config/config_vars.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -59,9 +60,10 @@ CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
   // In scenarios where keepalive_timeout is less than ping_timeout, the error
   // message should contain the keepalive timeout string. CHTTP2 doesn't
   // enforce keepalive_timeout and returns the ping_timeout error message.
-  absl::string_view expected_substr = IsPh2Test()
-                                          ? GRPC_CHTTP2_KEEPALIVE_TIMEOUT_STR
-                                          : GRPC_CHTTP2_PING_TIMEOUT_STR;
+  const absl::string_view expected_substr =
+      (IsPh2ClientEnabled() || IsPh2ClientServerEnabled())
+          ? GRPC_CHTTP2_KEEPALIVE_TIMEOUT_STR
+          : GRPC_CHTTP2_PING_TIMEOUT_STR;
   EXPECT_THAT(server_status.message(), ::testing::HasSubstr(expected_substr));
 }
 

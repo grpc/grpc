@@ -359,8 +359,6 @@ TEST_F(XdsOverrideHostTest, DrainingState) {
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   // Picks without an override will round-robin over the two endpoints
   // that are not in draining state.
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
@@ -397,8 +395,6 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // Now the connection to the draining host gets dropped.
@@ -420,7 +416,6 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // picks where the override host is CONNECTING.  All picks without an
   // override host should not use this host.
   LOG(INFO) << "### subchannel starts reconnecting";
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -456,8 +451,6 @@ TEST_F(XdsOverrideHostTest, DrainingToHealthy) {
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kHealthy},
@@ -487,8 +480,6 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[1]});
   ExpectOverridePicks(picker.get(), address0_attribute, kAddresses[0]);
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
@@ -595,7 +586,6 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
                                 absl::StripPrefix(kAddresses[1], "ipv4:")),
                    LoadBalancingPolicy::kDelayTypeConnecting,
                    {address1_attribute});
-  WaitForWorkSerializerToFlush();
   subchannel2 = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel2, nullptr);
   EXPECT_EQ(subchannel2->NumWatchers(), 1);
@@ -612,7 +602,6 @@ TEST_F(XdsOverrideHostTest, ChildPolicyNeverCreatedSubchannel) {
                                 " was IDLE, connection requested"),
                    LoadBalancingPolicy::kDelayTypeConnecting,
                    {address1_attribute});
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // Subchannel state change will trigger returning a new picker.
@@ -650,8 +639,6 @@ TEST_F(XdsOverrideHostTest,
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
                                 {"UNKNOWN", "HEALTHY", "DRAINING"});
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   // Picks without an override will round-robin over the two endpoints
   // that are not in draining state.
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
@@ -710,8 +697,6 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   EXPECT_THAT(timer_durations, ::testing::ElementsAre(Duration::Seconds(55)));
   timer_durations.clear();
   picker = ExpectState(GRPC_CHANNEL_READY);
-  // Make sure subchannels get orphaned in the WorkSerializer.
-  WaitForWorkSerializerToFlush();
   // Picks without an override will use only the endpoint that is not in
   // draining state.
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0]});

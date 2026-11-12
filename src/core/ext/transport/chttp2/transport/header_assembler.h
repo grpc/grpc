@@ -54,10 +54,6 @@ namespace http2 {
 
 #define ASSEMBLER_LOG DVLOG(3)
 
-constexpr absl::string_view kAssemblerHpackError =
-    "RFC9113 : A decoding error in a field block MUST be treated as a "
-    "connection error of type COMPRESSION_ERROR.";
-
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
 // A complete field section (which contains our gRPC Metadata) consists of
@@ -283,7 +279,7 @@ class HeaderAssembler {
   static Http2Status ParseHeader(HPackParser& parser, SliceBuffer&& buffer,
                                  grpc_metadata_batch* grpc_metadata_batch,
                                  const ParseHeaderArgs args) {
-    // TODO(alishananda): Propagate mitigation engine here.
+    // TODO(alishananda) [PH2][P1] Propagate mitigation engine here.
     parser.BeginFrame(
         /*grpc_metadata_batch*/ grpc_metadata_batch,
         args.max_header_list_size_soft_limit,

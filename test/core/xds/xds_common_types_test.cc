@@ -37,6 +37,7 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
+#include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
@@ -68,6 +69,8 @@
 #include "udpa/type/v1/typed_struct.pb.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
+#include "xds/type/matcher/v3/string.pb.h"
+#include "xds/type/matcher/v3/string.upb.h"
 #include "xds/type/v3/typed_struct.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -236,6 +239,233 @@ TEST_F(FractionalPercentTest, ClampsValue) {
   envoy_type_v3_FractionalPercent_set_denominator(
       proto, envoy_type_v3_FractionalPercent_HUNDRED);
   EXPECT_EQ(1000000, ParseFractionalPercent(proto));
+}
+
+//
+// StringMatcherParse() tests
+//
+
+// Matches an absl::Status with the given code and message.
+MATCHER_P2(StatusIs, code, message, "") {
+  return arg.code() == code && arg.message() == message;
+}
+
+enum class CaseSensitive { kFalse, kTrue };
+
+// Matches a StringMatcher with the given type, pattern and case sensitivity.
+MATCHER_P3(StringMatcherIs, type, pattern, case_sensitive, "") {
+  const std::string& actual_pattern =
+      arg.type() == StringMatcher::Type::kSafeRegex
+          ? arg.regex_matcher()->pattern()
+          : arg.string_matcher();
+  *result_listener << "actual: " << arg.ToString();
+  return arg.type() == type && actual_pattern == pattern &&
+         arg.case_sensitive() == (case_sensitive == CaseSensitive::kTrue);
+}
+
+class StringMatcherParseTest : public XdsCommonTypesTest {
+ protected:
+  absl::StatusOr<StringMatcher> Parse(
+      const envoy::type::matcher::v3::StringMatcher& proto) {
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      return absl::InternalError("protobuf serialization failed");
+    }
+    const auto* upb_proto = envoy_type_matcher_v3_StringMatcher_parse(
+        serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) return absl::InternalError("upb parsing failed");
+    return Parse(upb_proto);
+  }
+
+  absl::StatusOr<StringMatcher> Parse(
+      const xds::type::matcher::v3::StringMatcher& proto) {
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      return absl::InternalError("protobuf serialization failed");
+    }
+    const auto* upb_proto = xds_type_matcher_v3_StringMatcher_parse(
+        serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) return absl::InternalError("upb parsing failed");
+    return Parse(upb_proto);
+  }
+
+  template <typename UpbProto>
+  absl::StatusOr<StringMatcher> Parse(const UpbProto* upb_proto) {
+    ValidationErrors errors;
+    StringMatcher string_matcher =
+        StringMatcherParse(MakeDecodeContext(), upb_proto, &errors);
+    if (!errors.ok()) {
+      return errors.status(absl::StatusCode::kInvalidArgument,
+                           "validation failed");
+    }
+    return string_matcher;
+  }
+};
+
+TEST_F(StringMatcherParseTest, Exact) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.set_exact("foo");
+  auto string_matcher = Parse(proto);
+  ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kExact,
+                                               "foo", CaseSensitive::kTrue));
+}
+
+TEST_F(StringMatcherParseTest, EmptyExact) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.set_exact("");
+  auto string_matcher = Parse(proto);
+  ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kExact, "",
+                                               CaseSensitive::kTrue));
+}
+
+TEST_F(StringMatcherParseTest, Prefix) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.set_prefix("foo");
+  auto string_matcher = Parse(proto);
+  ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kPrefix,
+                                               "foo", CaseSensitive::kTrue));
+}
+
+TEST_F(StringMatcherParseTest, Suffix) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.set_suffix("foo");
+  auto string_matcher = Parse(proto);
+  ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kSuffix,
+                                               "foo", CaseSensitive::kTrue));
+}
+
+TEST_F(StringMatcherParseTest, Contains) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.set_contains("foo");
+  auto string_matcher = Parse(proto);
+  ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kContains,
+                                               "foo", CaseSensitive::kTrue));
+}
+
+TEST_F(StringMatcherParseTest, SafeRegex) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.mutable_safe_regex()->set_regex("fo+");
+  auto string_matcher = Parse(proto);
+  ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kSafeRegex,
+                                               "fo+", CaseSensitive::kTrue));
+}
+
+TEST_F(StringMatcherParseTest, IgnoreCase) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.set_prefix("foo");
+  proto.set_ignore_case(true);
+  auto string_matcher = Parse(proto);
+  ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kPrefix,
+                                               "foo", CaseSensitive::kFalse));
+}
+
+TEST_F(StringMatcherParseTest, NotPresent) {
+  auto string_matcher =
+      Parse(static_cast<const envoy_type_matcher_v3_StringMatcher*>(nullptr));
+  EXPECT_THAT(string_matcher.status(),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       "validation failed: [field: error:field not present]"));
+}
+
+TEST_F(StringMatcherParseTest, NoMatchPattern) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  auto string_matcher = Parse(proto);
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field: error:invalid string matcher]"));
+}
+
+TEST_F(StringMatcherParseTest, EmptyPrefix) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.set_prefix("");
+  auto string_matcher = Parse(proto);
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field:prefix error:must be non-empty]"));
+}
+
+TEST_F(StringMatcherParseTest, EmptySuffix) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.set_suffix("");
+  auto string_matcher = Parse(proto);
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field:suffix error:must be non-empty]"));
+}
+
+TEST_F(StringMatcherParseTest, EmptyContains) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.set_contains("");
+  auto string_matcher = Parse(proto);
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field:contains error:must be non-empty]"));
+}
+
+TEST_F(StringMatcherParseTest, EmptySafeRegex) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.mutable_safe_regex();
+  auto string_matcher = Parse(proto);
+  EXPECT_THAT(string_matcher.status(),
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       "validation failed: [field:safe_regex.regex error:must "
+                       "be non-empty]"));
+}
+
+TEST_F(StringMatcherParseTest, InvalidSafeRegex) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.mutable_safe_regex()->set_regex("[");
+  auto string_matcher = Parse(proto);
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(
+          absl::StatusCode::kInvalidArgument,
+          "validation failed: [field: error:Invalid regex string specified "
+          "in matcher: missing ]: []"));
+}
+
+TEST_F(StringMatcherParseTest, SafeRegexIgnoreCaseUnsupported) {
+  envoy::type::matcher::v3::StringMatcher proto;
+  proto.mutable_safe_regex()->set_regex("foo");
+  proto.set_ignore_case(true);
+  auto string_matcher = Parse(proto);
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(
+          absl::StatusCode::kInvalidArgument,
+          "validation failed: [field:ignore_case error:not supported for regex "
+          "matcher]"));
+}
+
+TEST_F(StringMatcherParseTest, XdsStringMatcher) {
+  xds::type::matcher::v3::StringMatcher proto;
+  proto.set_suffix("foo");
+  proto.set_ignore_case(true);
+  auto string_matcher = Parse(proto);
+  ASSERT_TRUE(string_matcher.ok()) << string_matcher.status();
+  EXPECT_THAT(*string_matcher, StringMatcherIs(StringMatcher::Type::kSuffix,
+                                               "foo", CaseSensitive::kFalse));
+}
+
+TEST_F(StringMatcherParseTest, XdsStringMatcherEmptyPrefix) {
+  xds::type::matcher::v3::StringMatcher proto;
+  proto.set_prefix("");
+  auto string_matcher = Parse(proto);
+  EXPECT_THAT(
+      string_matcher.status(),
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               "validation failed: [field:prefix error:must be non-empty]"));
 }
 
 //

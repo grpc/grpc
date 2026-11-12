@@ -321,7 +321,6 @@ class Chttp2SecurityFrameTest : public ::testing::Test {
   // still running.
   explicit Chttp2SecurityFrameTest(absl::string_view frame_on_registration) {
     state_->set_frame_to_send_on_registration(frame_on_registration);
-    GRPC_CLOSURE_INIT(&on_close_, OnClose, this, nullptr);
     ExecCtx exec_ctx;
     ChannelArgs args = ChannelArgs()
                            .SetObject(ResourceQuota::Default())
@@ -332,8 +331,9 @@ class Chttp2SecurityFrameTest : public ::testing::Test {
             std::make_unique<FakeEndpoint>(state_));
     transport_ = grpc_create_chttp2_transport(
         args, OrphanablePtr<grpc_endpoint>(ep), /*is_client=*/true);
-    grpc_chttp2_transport_start_reading(transport_, nullptr, nullptr, nullptr,
-                                        &on_close_);
+    grpc_chttp2_transport_start_reading(
+        transport_, nullptr, nullptr, nullptr,
+        [this]() { close_notification_.Notify(); });
   }
 
   ~Chttp2SecurityFrameTest() override {
@@ -347,18 +347,10 @@ class Chttp2SecurityFrameTest : public ::testing::Test {
     EXPECT_TRUE(close_notification_.WaitForNotificationWithTimeout(kTimeout));
   }
 
-  static void OnClose(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<Chttp2SecurityFrameTest*>(arg);
-    self->close_error_ = error;
-    self->close_notification_.Notify();
-  }
-
   std::shared_ptr<FakeEndpointState> state_ =
       std::make_shared<FakeEndpointState>();
   Transport* transport_ = nullptr;
-  grpc_closure on_close_;
   absl::Notification close_notification_;
-  grpc_error_handle close_error_;
 };
 
 // A SECURITY frame requested before the peer's initial SETTINGS must not close
@@ -414,10 +406,6 @@ TEST_F(Chttp2SecurityFrameTest,
   state_->DeliverRead(kEmptySettings);
 
   ASSERT_TRUE(close_notification_.WaitForNotificationWithTimeout(kTimeout));
-  EXPECT_FALSE(close_error_.ok());
-  EXPECT_THAT(
-      StatusToString(close_error_),
-      ::testing::HasSubstr("Unexpected SECURITY frame scheduled for write"));
   EXPECT_TRUE(state_->WaitForNullCallback());
   EXPECT_FALSE(state_->has_send_frame_callback());
   EXPECT_EQ(state_->written().find("frame1"), std::string::npos);

@@ -615,14 +615,18 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
       << "; request: " << this << "; status: " << status;
   if (status.ok() && !shutting_down_ && channel_ != nullptr) {
     ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
-  } else if (fd_node->polled_fd->IsCurrent() && channel_ != nullptr) {
+  } else if (fd_node->polled_fd->IsCurrent() && channel_ != nullptr &&
+             (shutting_down_ || !fd_node->already_shutdown)) {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
     // on this request will be cancelled by the following ares_cancel(). The
     // remaining file descriptors in this request will be cleaned up in the
     // following Work() method.
     //
-    // Nothing is done if the handle is not current.
+    // Nothing is done if the handle is not current, or if CheckSocketsLocked()
+    // shut the fd down because c-ares stopped using it (e.g. c-ares retired
+    // the connection to a timed-out server and requeued its queries to
+    // another server): those lookups are still in flight on other fds.
     ares_cancel(channel_);
   }
   CheckSocketsLocked();
@@ -637,12 +641,14 @@ void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
       << "; request:" << this << "; status: " << status;
   if (status.ok() && !shutting_down_ && channel_ != nullptr) {
     ares_process_fd(channel_, ARES_SOCKET_BAD, fd_node->as);
-  } else if (fd_node->polled_fd->IsCurrent() && channel_ != nullptr) {
+  } else if (fd_node->polled_fd->IsCurrent() && channel_ != nullptr &&
+             (shutting_down_ || !fd_node->already_shutdown)) {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
     // on this request will be cancelled by the following ares_cancel(). The
     // remaining file descriptors in this request will be cleaned up in the
-    // following Work() method.
+    // following Work() method. As in OnReadable(), don't cancel when the fd
+    // was shut down only because c-ares stopped using it.
     ares_cancel(channel_);
   }
   CheckSocketsLocked();

@@ -81,13 +81,13 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -343,12 +343,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     // Sets the connectivity state for this subchannel.  The updated state
     // will be reported to all associated SubchannelInterface objects.
-    void SetConnectivityState(
-        grpc_connectivity_state state,
-        const absl::Status& status = absl::OkStatus(),
-        bool validate_state_transition = true,
-        absl::AnyInvocable<void()> run_before_flush = nullptr,
-        SourceLocation location = SourceLocation()) {
+    void SetConnectivityState(grpc_connectivity_state state,
+                              const absl::Status& status = absl::OkStatus(),
+                              bool validate_state_transition = true,
+                              SourceLocation location = SourceLocation()) {
       LOG(INFO) << "Setting connectivity state of " << address_ << " to "
                 << ConnectivityStateName(state) << " (" << status << ")";
       ExecCtx exec_ctx;
@@ -360,46 +358,19 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             << "bug in test: " << ConnectivityStateName(state)
             << " must have OK status: " << status;
       }
-      // Updating the state in the state tracker will enqueue
-      // notifications to watchers on the WorkSerializer.  If any
-      // subchannel reports READY, the pick_first leaf policy will then
-      // start a health watch, whose initial notification will also be
-      // scheduled on the WorkSerializer.  We don't want to return until
-      // all of those notifications have been delivered.
-      absl::Notification notification;
-      test_->work_serializer_->Run([&]() {
-        if (validate_state_transition) {
-          AssertValidConnectivityStateTransition(state_tracker_.state(), state,
-                                                 location);
-        }
-        LOG(INFO) << "Setting state on tracker";
-        state_tracker_.SetState(state, status, "set from test");
-        // SetState() enqueued the connectivity state notifications for
-        // the subchannel, so we add another callback to the queue to be
-        // executed after that state notifications has been delivered.
-        if (run_before_flush != nullptr) run_before_flush();
-        LOG(INFO) << "Waiting for state notifications to be delivered";
-        test_->work_serializer_->Run([&]() {
-          LOG(INFO) << "State notifications delivered, waiting for "
-                       "health notifications";
-          // Now the connectivity state notifications has been
-          // delivered. If the state reported was READY, then the
-          // pick_first leaf policy will have started a health watch, so
-          // we add another callback to the queue to be executed after
-          // the initial health watch notification has been delivered.
-          test_->work_serializer_->Run([&]() { notification.Notify(); });
-        });
-      });
-      while (!notification.HasBeenNotified()) {
-        test_->fuzzing_ee_->Tick();
+      if (validate_state_transition) {
+        AssertValidConnectivityStateTransition(state_tracker_.state(), state,
+                                               location);
       }
-      LOG(INFO) << "Health notifications delivered";
+      LOG(INFO) << "Setting state on tracker";
+      state_tracker_.SetState(state, status, "set from test");
     }
 
     // Indicates if any of the associated SubchannelInterface objects
     // have requested a connection attempt since the last time this
     // method was called.
     bool ConnectionRequested() {
+      test_->TickUntil([&]() { return requested_connection_; });
       return std::exchange(requested_connection_, false);
     }
 
@@ -418,6 +389,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // Checks that all OOB watchers have the expected reporting period.
     void CheckOobReportingPeriod(Duration expected,
                                  SourceLocation location = SourceLocation()) {
+      test_->DrainPendingWork();
       for (const auto* watcher : orca_watchers_) {
         EXPECT_EQ(watcher->report_interval(), expected)
             << location.file() << ":" << location.line();
@@ -425,16 +397,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     size_t NumWatchers() const {
-      size_t num_watchers;
-      absl::Notification notification;
-      work_serializer()->Run([&]() {
-        num_watchers = state_tracker_.NumWatchers();
-        notification.Notify();
-      });
-      while (!notification.HasBeenNotified()) {
-        test_->fuzzing_ee_->Tick();
-      }
-      return num_watchers;
+      test_->DrainPendingWork();
+      return state_tracker_.NumWatchers();
     }
 
     std::shared_ptr<WorkSerializer> work_serializer() const {
@@ -476,12 +440,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     explicit FakeHelper(LoadBalancingPolicyTest* test) : test_(test) {}
 
-    bool QueueEmpty() { return queue_.empty(); }
+    ~FakeHelper() override {
+      if (test_->helper_ == this) test_->helper_ = nullptr;
+    }
+
+    bool QueueEmpty() {
+      return !test_->TickUntil([&]() { return !queue_.empty(); });
+    }
+
+    void ClearQueue() { queue_.clear(); }
 
     // Called at test tear-down time to ensure that we have not left any
     // unexpected events in the queue.
     void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
-      EXPECT_TRUE(queue_.empty())
+      EXPECT_TRUE(QueueEmpty())
           << location.file() << ":" << location.line() << "\n"
           << QueueString();
     }
@@ -492,6 +464,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // the queue.
     std::optional<StateUpdate> GetNextStateUpdate(
         SourceLocation location = SourceLocation()) {
+      test_->TickUntil([&]() { return !queue_.empty(); });
       EXPECT_FALSE(queue_.empty()) << location.file() << ":" << location.line();
       if (queue_.empty()) return std::nullopt;
       Event& event = queue_.front();
@@ -512,6 +485,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // from the queue.
     std::optional<ReresolutionRequested> GetNextReresolution(
         SourceLocation location = SourceLocation()) {
+      test_->TickUntil([&]() { return !queue_.empty(); });
       EXPECT_FALSE(queue_.empty()) << location.file() << ":" << location.line();
       if (queue_.empty()) return std::nullopt;
       Event& event = queue_.front();
@@ -704,11 +678,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void TearDown() override {
     ExecCtx exec_ctx;
     fuzzing_ee_->FuzzingDone();
-    // Make sure pickers (and transitively, subchannels) are unreffed before
-    // destroying the fixture.
-    WaitForWorkSerializerToFlush();
-    work_serializer_.reset();
-    exec_ctx.Flush();
+    DrainPendingWork();
     if (lb_policy_ != nullptr) {
       // Note: Can't safely trigger this from inside the FakeHelper dtor,
       // because if there is a picker in the queue that is holding a ref
@@ -717,8 +687,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       // (This will cause an ASAN failure, but it will not display the
       // queued events, so the failure will be harder to diagnose.)
       helper_->ExpectQueueEmpty();
+      helper_->ClearQueue();
       lb_policy_.reset();
     }
+    work_serializer_.reset();
+    exec_ctx.Flush();
     fuzzing_ee_->TickUntilIdle();
     WaitForSingleOwner(std::move(fuzzing_ee_));
     grpc_shutdown_blocking();
@@ -767,54 +740,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   absl::Status ApplyUpdate(LoadBalancingPolicy::UpdateArgs update_args,
                            LoadBalancingPolicy* lb_policy) {
     ExecCtx exec_ctx;
-    absl::Status status;
-    // When the LB policy gets the update, it will create new
-    // subchannels, and it will register connectivity state watchers and
-    // optionally health watchers for each one.  We don't want to return
-    // until all the initial notifications for all of those watchers
-    // have been delivered to the LB policy.
-    absl::Notification notification;
-    work_serializer_->Run([&]() {
-      status = lb_policy->UpdateLocked(std::move(update_args));
-      // UpdateLocked() enqueued the initial connectivity state
-      // notifications for the subchannels, so we add another
-      // callback to the queue to be executed after those initial
-      // state notifications have been delivered.
-      LOG(INFO) << "Applied update, waiting for initial connectivity state "
-                   "notifications";
-      work_serializer_->Run([&]() {
-        LOG(INFO) << "Initial connectivity state notifications "
-                     "delivered; waiting for health notifications";
-        // Now that the initial state notifications have been
-        // delivered, the queue will contain the health watch
-        // notifications for any subchannels in state READY,
-        // so we add another callback to the queue to be
-        // executed after those health watch notifications have
-        // been delivered.
-        work_serializer_->Run([&]() { notification.Notify(); });
-      });
-    });
-    while (!notification.HasBeenNotified()) {
-      fuzzing_ee_->Tick();
-    }
-    LOG(INFO) << "health notifications delivered";
-    return status;
+    return lb_policy->UpdateLocked(std::move(update_args));
   }
 
   // Invoke ExitIdle on the LB policy
   void ExitIdle() {
     ExecCtx exec_ctx;
-    absl::Notification notification;
-    // Note: ExitIdle() will enqueue a bunch of connectivity state
-    // notifications on the WorkSerializer, and we want to wait until
-    // those are delivered to the LB policy.
-    work_serializer_->Run([&]() {
-      lb_policy_->ExitIdleLocked();
-      work_serializer_->Run([&]() { notification.Notify(); });
-    });
-    while (!notification.HasBeenNotified()) {
-      fuzzing_ee_->Tick();
-    }
+    lb_policy_->ExitIdleLocked();
   }
 
   void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
@@ -978,6 +910,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       const CallAttributes& call_attributes = {},
       const std::map<std::string, std::string>& metadata = {}) {
     ExecCtx exec_ctx;
+    DrainPendingWork();
     FakeMetadata md(metadata);
     FakeCallState call_state(call_attributes);
     return picker->Pick({"/service/method", &md, &call_state});
@@ -1394,9 +1327,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   SubchannelState* FindSubchannel(absl::string_view address,
                                   const ChannelArgs& args = ChannelArgs()) {
     SubchannelKey key(MakeAddress(address), args);
-    auto it = subchannel_pool_.find(key);
-    if (it == subchannel_pool_.end()) return nullptr;
-    return &it->second;
+    SubchannelState* subchannel = nullptr;
+    TickUntil([&]() {
+      auto it = subchannel_pool_.find(key);
+      if (it == subchannel_pool_.end()) return false;
+      subchannel = &it->second;
+      return true;
+    });
+    return subchannel;
   }
 
   // Creates and returns an entry in the subchannel pool.
@@ -1414,24 +1352,29 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return &it->second;
   }
 
-  void WaitForWorkSerializerToFlush() {
+  // Ticks fuzzing_ee_ until either predicate() returns true or fuzzing_ee_
+  // has no more immediate callbacks to execute.  Returns true if predicate()
+  // was satisfied, or false if fuzzing_ee_ became idle first.
+  bool TickUntil(absl::FunctionRef<bool()> predicate) {
     ExecCtx exec_ctx;
-    LOG(INFO) << "waiting for WorkSerializer to flush...";
-    absl::Notification notification;
-    work_serializer_->Run([&]() { notification.Notify(); });
-    while (!notification.HasBeenNotified()) {
+    while (true) {
+      if (predicate()) return true;
+      exec_ctx.Flush();
+      if (fuzzing_ee_->IsIdleIgnoringTimers()) return false;
       fuzzing_ee_->Tick();
+      exec_ctx.Flush();
     }
-    LOG(INFO) << "WorkSerializer flush complete";
   }
 
-  void IncrementTimeBy(Duration duration, bool flush_work_serializer = true) {
+  void DrainPendingWork() {
+    TickUntil([]() { return false; });
+  }
+
+  void IncrementTimeBy(Duration duration) {
     ExecCtx exec_ctx;
     LOG(INFO) << "Incrementing time by " << duration;
     fuzzing_ee_->TickForDuration(duration);
     LOG(INFO) << "Done incrementing time";
-    // Flush WorkSerializer, in case the timer callback enqueued anything.
-    if (flush_work_serializer) WaitForWorkSerializerToFlush();
   }
 
   void SetExpectedTimerDuration(std::optional<EventEngine::Duration> duration,

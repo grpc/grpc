@@ -121,10 +121,11 @@ auto MockSettingsAckReceived(SettingsPromiseManager& manager) {
 }
 
 auto MockSettingsAckReceivedDelayed(SettingsPromiseManager& manager) {
-  LOG(INFO) << "MockSettingsAckReceived Factory";
+  LOG(INFO) << "MockSettingsAckReceivedDelayed Factory";
   return TrySeq(Sleep(Duration::Milliseconds(kSettingsShortTimeout * 0.4)),
                 [&manager]() -> Poll<absl::Status> {
-                  LOG(INFO) << "MockSettingsAckReceived OnSettingsAckReceived";
+                  LOG(INFO)
+                      << "MockSettingsAckReceivedDelayed OnSettingsAckReceived";
                   manager.TestOnlyRecordReceivedAck();
                   return absl::OkStatus();
                 });

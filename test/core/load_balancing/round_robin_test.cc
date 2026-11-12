@@ -164,6 +164,11 @@ TEST_F(RoundRobinTest, StartsConnectingFromRandomIndex) {
     connect_order.clear();
     EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, nullptr), lb_policy()),
               absl::OkStatus());
+    for (absl::string_view address : kAddresses) {
+      auto* subchannel = FindSubchannel(address);
+      ASSERT_NE(subchannel, nullptr);
+      EXPECT_TRUE(subchannel->ConnectionRequested());
+    }
     ASSERT_FALSE(connect_order.empty());
     if (connect_order[0] != kAddresses[0]) {
       EXPECT_THAT(

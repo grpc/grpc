@@ -1205,7 +1205,7 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
     // promise_complete notification before the next loop iteration can start.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
-  // TODO(tjagtap) [PH2][P5]
+
   // Asserts inside StressTestAsserts are flaking about 20% of time time for
   // ASAN only. For other things it is passing. Either find a better way to
   // check this, by writing a fresh test, OR avoid running this test with asan.

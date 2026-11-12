@@ -19,11 +19,15 @@
 #include <grpc/grpc.h>
 
 #include <memory>
+#include <optional>
+#include <string>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/xds/grpc/blackboard.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
@@ -172,29 +176,6 @@ class TestHttpFilterFactory final : public XdsHttpFilterFactory {
 
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return true; }
-  const grpc_channel_filter* channel_filter() const override {
-    return &TestFilter::kFilterVtable;
-  }
-
-  // Legacy methods - can be stubbed out
-  std::optional<Json> GenerateFilterConfig(
-      absl::string_view, const XdsResourceType::DecodeContext&,
-      const XdsExtension&, ValidationErrors*) const override {
-    return std::nullopt;
-  }
-  std::optional<Json> GenerateFilterConfigOverride(
-      absl::string_view, const XdsResourceType::DecodeContext&,
-      const XdsExtension&, ValidationErrors*) const override {
-    return std::nullopt;
-  }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const Json&, const Json*) const override {
-    return absl::UnimplementedError("not implemented");
-  }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const Json&) const override {
-    return absl::UnimplementedError("not implemented");
-  }
 };
 
 // A fake filter chain that basically just contains the list of filters
@@ -282,7 +263,7 @@ class XdsRouteConfigFilterChainBuilderTest : public ::testing::Test {
 
   XdsRouteConfigResource::FilterConfigOverride MakeOverride(
       std::string value, bool disabled = false) {
-    return {"test.FilterConfig", Json(),
+    return {"test.FilterConfig",
             MakeRefCounted<TestFilterConfig>(std::move(value),
                                              /*blackboard_entry=*/nullptr),
             disabled};
@@ -738,6 +719,58 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
                   GetTestXdsHttpFilterFactory(),
                   "hcm+vhost+route+cw/blackboard{hcm+vhost+route+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route+cw"), "hcm+vhost+route+cw");
+}
+
+//
+// GetHeaderValue() tests
+//
+
+TEST(XdsRoutingGetHeaderValueTest, HostAndAuthorityUseAuthority) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer),
+            "authority");
+}
+
+TEST(XdsRoutingGetHeaderValueTest, HostOnlyUsesHost) {
+  grpc_metadata_batch md;
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), "host");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer), "host");
+}
+
+TEST(XdsRoutingGetHeaderValueTest, AuthorityOnlyUsesAuthority) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer),
+            "authority");
+}
+
+TEST(XdsRoutingGetHeaderValueTest, NeitherHostNorAuthority) {
+  grpc_metadata_batch md;
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "host", &buffer), std::nullopt);
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":authority", &buffer),
+            std::nullopt);
+}
+
+TEST(XdsRoutingGetHeaderValueTest, AuthorityHeaderNamesAreCaseInsensitive) {
+  grpc_metadata_batch md;
+  md.Set(HttpAuthorityMetadata(), Slice::FromStaticString("authority"));
+  md.Set(HostMetadata(), Slice::FromStaticString("host"));
+  std::string buffer;
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "Host", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, "HOST", &buffer), "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":Authority", &buffer),
+            "authority");
+  EXPECT_EQ(XdsRouting::GetHeaderValue(&md, ":AUTHORITY", &buffer),
+            "authority");
 }
 
 }  // namespace

@@ -62,7 +62,7 @@ std::optional<Http2Frame> GoawayManager::MaybeGetGoawayFrame() {
 }
 
 void GoawayManager::MaybeGetSerializedGoawayFrame(FrameSender& frame_sender) {
-  GRPC_HTTP2_GOAWAY_LOG << "MaybeGetSerializedGoawayFrames: current state: "
+  GRPC_HTTP2_GOAWAY_LOG << "MaybeGetSerializedGoawayFrame: current state: "
                         << context_->GoawayStateToString(
                                context_->goaway_state);
 
