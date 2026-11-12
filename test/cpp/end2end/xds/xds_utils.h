@@ -94,6 +94,15 @@ class XdsBootstrapBuilder {
         server_listener_resource_name_template;
     return *this;
   }
+  // Adds an entry to the "allowed_grpc_services" map, which is used to
+  // look up credentials for side-channel gRPC services (e.g., ext_proc)
+  // when the xDS server is not trusted.
+  XdsBootstrapBuilder& AddAllowedGrpcService(
+      const std::string& target_uri,
+      const std::string& channel_creds_type = "insecure") {
+    allowed_grpc_services_[target_uri] = channel_creds_type;
+    return *this;
+  }
 
   std::string Build();
 
@@ -111,6 +120,7 @@ class XdsBootstrapBuilder {
   std::string MakeNodeText();
   std::string MakeCertificateProviderText();
   std::string MakeAuthorityText();
+  std::string MakeAllowedGrpcServicesText();
 
   bool ignore_resource_deletion_ = false;
   bool fail_on_data_errors_ = false;
@@ -125,6 +135,8 @@ class XdsBootstrapBuilder {
   std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
   std::string server_listener_resource_name_template_ =
       "grpc/server?xds.resource.listening_address=%s";
+  std::map<std::string /*target_uri*/, std::string /*channel_creds_type*/>
+      allowed_grpc_services_;
 };
 
 // Utilities for constructing xDS resources.
