@@ -16,13 +16,14 @@
 
 #include "src/core/load_balancing/autosharding/autosharding_assignment.h"
 
+#include <google/protobuf/text_format.h>
+
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "google/protobuf/text_format.h"
 #include "proto/autosharding/v1/autosharding.pb.h"
 #include "proto/autosharding/v1/autosharding.upb.h"
 #include "src/core/util/ref_counted_ptr.h"
