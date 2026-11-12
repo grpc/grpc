@@ -112,8 +112,7 @@ class Server::ChannelData::V1ChannelTransport final : public ServerTransport {
   // compiler can't tell.
   void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS {
     ChannelData* chand = static_cast<ChannelData*>(
-        grpc_channel_stack_element(channel_->channel_stack(), 0)
-            ->channel_data);
+        grpc_channel_stack_element(channel_->channel_stack(), 0)->channel_data);
     chand->Destroy();
     Unref();
   }
