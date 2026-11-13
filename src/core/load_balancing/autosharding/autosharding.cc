@@ -350,6 +350,10 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   std::map<std::string, OrphanablePtr<AutoShardingEndpoint>> endpoint_map_;
   EndpointAddressesList endpoints_;
   ChannelArgs args_;
+  // args_ without the channel factory, for the child policies.  The channel
+  // factory is only for client_.  In the args of a subchannel, it would
+  // prevent subchannel sharing and keep the factory alive.
+  ChannelArgs child_args_;
   // Reused across stream restarts and client recreations (gRFC A119).
   const std::string uuid_;
   std::string effective_target_;
@@ -637,7 +641,7 @@ void AutoshardingLbPolicy::AutoShardingEndpoint::CreateChildPolicy() {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = autosharding_lb_->work_serializer();
   lb_policy_args.args =
-      autosharding_lb_->args_
+      autosharding_lb_->child_args_
           .Set(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING, true)
           .Set(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX, true);
   lb_policy_args.channel_control_helper =
@@ -676,7 +680,7 @@ AutoshardingLbPolicy::AutoShardingEndpoint::UpdateChildPolicyLocked() {
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses = std::make_shared<SingleEndpointIterator>(
       autosharding_lb_->endpoints_[index_]);
-  update_args.args = autosharding_lb_->args_;
+  update_args.args = autosharding_lb_->child_args_;
   update_args.config = std::move(*config);
   return child_policy_->UpdateLocked(std::move(update_args));
 }
@@ -791,6 +795,7 @@ std::string ComputeHostname(const EndpointAddresses& endpoint) {
 absl::Status AutoshardingLbPolicy::UpdateLocked(UpdateArgs args) {
   // Save channel args.
   args_ = std::move(args.args);
+  child_args_ = args_.Remove(GRPC_ARG_CHANNEL_FACTORY);
   auto new_config = args.config.TakeAsSubclass<AutoShardingLbConfig>();
   // Update resolution note.
   resolution_note_ = std::move(args.resolution_note);

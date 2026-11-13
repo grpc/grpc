@@ -330,10 +330,10 @@ TEST_F(AutoShardingTest, ServerSentEmptySliceDisablesFallback) {
   // A key in the first slice triggers a connection attempt on the endpoint
   // assigned to it, and picks complete to that endpoint once it is READY.
   ExpectPickQueued(picker.get(), {}, MakeMetadata("a"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   // The other endpoint is not assigned to any slice, so it is not used.
-  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
@@ -362,13 +362,13 @@ TEST_F(AutoShardingTest, ReportsConnectingUntilFirstResult) {
   ExitIdle();
   ExpectQueueEmpty();
   for (absl::string_view address : kAddresses) {
-    EXPECT_EQ(FindSubchannel(address, args), nullptr);
+    EXPECT_EQ(FindSubchannel(address), nullptr);
   }
   // The first result ends the wait.
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
 }
@@ -392,7 +392,7 @@ TEST_F(AutoShardingTest, GapUsesFallbackPool) {
   // The pick creates exactly one subchannel, and requests a connection on it.
   std::vector<SubchannelState*> subchannels;
   for (absl::string_view address : kAddresses) {
-    SubchannelState* subchannel = FindSubchannel(address, args);
+    SubchannelState* subchannel = FindSubchannel(address);
     if (subchannel != nullptr) subchannels.push_back(subchannel);
   }
   ASSERT_EQ(subchannels.size(), 1u) << "pick created more than one subchannel";
@@ -428,7 +428,7 @@ TEST_F(AutoShardingTest, StartupFallback) {
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("some_key"));
   for (absl::string_view address : kAddresses) {
-    EXPECT_EQ(FindSubchannel(address, args), nullptr);
+    EXPECT_EQ(FindSubchannel(address), nullptr);
   }
   // When the initial stream fails without a valid assignment, startup fallback
   // uses all resolver endpoints.
@@ -440,14 +440,14 @@ TEST_F(AutoShardingTest, StartupFallback) {
                               MakeMetadata("some_key"));
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address : kAddresses) {
-    subchannel = FindSubchannel(address, args);
+    subchannel = FindSubchannel(address);
     if (subchannel != nullptr) break;
   }
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // No other subchannels should have been created.
   for (absl::string_view address : kAddresses) {
-    auto* sc = FindSubchannel(address, args);
+    auto* sc = FindSubchannel(address);
     if (sc != nullptr) EXPECT_EQ(sc, subchannel);
   }
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -804,10 +804,10 @@ TEST_F(AutoShardingTest,
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[1])});
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("z"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[1], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
-  EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[0]), nullptr);
 }
 
 TEST_F(AutoShardingTest, ChannelFactoryAddedLaterCreatesClient) {
@@ -834,10 +834,10 @@ TEST_F(AutoShardingTest, ChannelFactoryAddedLaterCreatesClient) {
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("a"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
-  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
 }
 
 TEST_F(AutoShardingTest, SameConfigUpdateKeepsClient) {
@@ -859,10 +859,10 @@ TEST_F(AutoShardingTest, SameConfigUpdateKeepsClient) {
   EXPECT_EQ(WaitForStream(), stream);
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
-  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
 }
 
 TEST_F(AutoShardingTest, InitialAssignmentTimeoutUsesFallbackWhenEnabled) {
@@ -878,7 +878,7 @@ TEST_F(AutoShardingTest, InitialAssignmentTimeoutUsesFallbackWhenEnabled) {
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("some_key"));
   for (absl::string_view address : kAddresses) {
-    EXPECT_EQ(FindSubchannel(address, args), nullptr);
+    EXPECT_EQ(FindSubchannel(address), nullptr);
   }
   // When the initial assignment timer fires, picks use the fallback pool.
   IncrementTimeBy(Duration::Seconds(2));
@@ -886,7 +886,7 @@ TEST_F(AutoShardingTest, InitialAssignmentTimeoutUsesFallbackWhenEnabled) {
                               MakeMetadata("some_key"));
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address : kAddresses) {
-    subchannel = FindSubchannel(address, args);
+    subchannel = FindSubchannel(address);
     if (subchannel != nullptr) break;
   }
   ASSERT_NE(subchannel, nullptr);
@@ -919,10 +919,10 @@ TEST_F(AutoShardingTest, EndpointUpdateRebuildsSliceMap) {
             absl::OkStatus());
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[1], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
-  EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[0]), nullptr);
 }
 
 TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
@@ -944,10 +944,10 @@ TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
             absl::OkStatus());
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[1], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
-  EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[0]), nullptr);
   // Restore original order (kAddresses[1] at index 1), then remove the tail
   // endpoint so only kAddresses[0] (still at index 0) remains.
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
@@ -956,7 +956,7 @@ TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
   // Picks still go to kAddresses[1], so they do not touch kAddresses[0].
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
-  EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[0]), nullptr);
   constexpr std::array<absl::string_view, 1> kFirstAddress = {kAddresses[0]};
   EXPECT_EQ(
       ApplyUpdate(BuildUpdate(kFirstAddress, ConfigBuilder().Build(), args),
@@ -969,6 +969,25 @@ TEST_F(AutoShardingTest, EndpointReorderAndRemovalRebuildSliceMap) {
         EXPECT_EQ(status, absl::UnavailableError("no endpoint available"));
       },
       {}, MakeMetadata("a"));
+}
+
+TEST_F(AutoShardingTest, ChildPoliciesDoNotGetChannelFactory) {
+  ChannelArgs args = MakeChannelArgs().Set("grpc.test.arg", "value");
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("some_key"));
+  SendAssignment({{"", {0}}}, {EndpointName(kAddresses[0])});
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("a"));
+  // The subchannel gets the other channel args, but not the channel factory,
+  // which is only for the autosharding client.
+  SubchannelState* subchannel = FindSubchannel(
+      kAddresses[0], ChannelArgs().Set("grpc.test.arg", "value"));
+  ASSERT_NE(subchannel, nullptr);
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
 }
 
 TEST_F(AutoShardingTest, OldPickerDoesNotConnectToRemovedEndpoint) {
@@ -999,8 +1018,8 @@ TEST_F(AutoShardingTest, OldPickerDoesNotConnectToRemovedEndpoint) {
   // requests a connection, but the removed endpoint does not create a child
   // policy, so no subchannel is created.
   ExpectPickQueued(old_picker.get(), {}, MakeMetadata("a"));
-  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
-  EXPECT_EQ(FindSubchannel(kAddresses[0], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[0]), nullptr);
   ExpectQueueEmpty();
 }
 
@@ -1015,7 +1034,7 @@ TEST_F(AutoShardingTest, IgnoresStateUpdateFromRemovedEndpoint) {
   SendAssignment({{"", {0}}}, {EndpointName(kAddresses[1])});
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("a"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[1], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -1057,7 +1076,7 @@ TEST_F(AutoShardingTest, AssignedEndpointMissingFromResolverUsesFallback) {
                               MakeMetadata("a"));
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address : kAddresses) {
-    subchannel = FindSubchannel(address, args);
+    subchannel = FindSubchannel(address);
     if (subchannel != nullptr) break;
   }
   ASSERT_NE(subchannel, nullptr);
@@ -1160,10 +1179,10 @@ TEST_F(AutoShardingTest, EmptyEndpointListKeepsClientAndAssignment) {
       },
       /*call_attributes=*/{}, MakeMetadata("z"));
   ExpectPickQueued(picker.get(), {}, MakeMetadata("a"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
-  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
 }
 
 TEST_F(AutoShardingTest, AssignmentDuringEmptyEndpointListKeepsFailing) {
@@ -1189,10 +1208,10 @@ TEST_F(AutoShardingTest, AssignmentDuringEmptyEndpointListKeepsFailing) {
             absl::OkStatus());
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
                               MakeMetadata("a"));
-  SubchannelState* subchannel = FindSubchannel(kAddresses[0], args);
+  SubchannelState* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
-  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
+  EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
 }
 
 TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
@@ -1219,8 +1238,8 @@ TEST_F(AutoShardingTest, EndpointsWithDuplicateHostnames) {
   // (the one with index 0).
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("some_key"));
-  EXPECT_EQ(FindSubchannel(kAddresses[1], args), nullptr);
-  auto* subchannel = FindSubchannel(kAddresses[0], args);
+  EXPECT_EQ(FindSubchannel(kAddresses[1]), nullptr);
+  auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -1250,7 +1269,7 @@ TEST_F(AutoShardingTest, RetainsEndpointForHostnameAcrossUpdates) {
   stream->MaybeSendStatusToClient(absl::UnavailableError("stream failed"));
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                               MakeMetadata("some_key"));
-  auto* subchannel = FindSubchannel(kAddresses[0], args);
+  auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   EXPECT_TRUE(subchannel->ConnectionRequested());
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -1320,7 +1339,7 @@ TEST_F(AutoShardingTest, SameAddressListedMultipleTimes) {
                               metadata);
   SubchannelState* subchannel = nullptr;
   for (absl::string_view address : kAddresses) {
-    subchannel = FindSubchannel(address, args);
+    subchannel = FindSubchannel(address);
     if (subchannel != nullptr) break;
   }
   ASSERT_NE(subchannel, nullptr);
@@ -1359,7 +1378,7 @@ TEST_F(AutoShardingTest, MultipleAddressesPerEndpoint) {
   for (absl::string_view address :
        {kEndpoint1Addresses[0], kEndpoint1Addresses[1], kEndpoint2Addresses[0],
         kEndpoint2Addresses[1]}) {
-    subchannel = FindSubchannel(address, args);
+    subchannel = FindSubchannel(address);
     if (subchannel != nullptr) break;
   }
   ASSERT_NE(subchannel, nullptr);
@@ -1379,7 +1398,7 @@ TEST_F(AutoShardingTest,
       kAddresses[0], kAddresses[1], "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   std::array<SubchannelState*, 4> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kFourAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kFourAddresses[i]);
   }
   absl::flat_hash_set<SubchannelState*> failed_subchannels;
   EXPECT_EQ(
@@ -1513,10 +1532,14 @@ TEST_F(AutoShardingTest, ProactiveConnectionAttemptChoosesRandomIdleEndpoint) {
     // Use a different channel factory key and subchannel args for each
     // policy, so that each policy has its own stream and subchannels.
     const std::string channel_factory_key = absl::StrCat("key", i);
-    ChannelArgs args = MakeChannelArgs().Set("grpc.test.policy_index", i);
+    // The policy removes the channel factory from the args of its children.
+    const ChannelArgs child_args =
+        ChannelArgs().Set("grpc.test.policy_index", i);
+    ChannelArgs args =
+        child_args.SetObject<experimental::ChannelFactory>(factory_);
     std::array<SubchannelState*, 4> subchannels;
     for (size_t j = 0; j < subchannels.size(); ++j) {
-      subchannels[j] = CreateSubchannel(kFourAddresses[j], args);
+      subchannels[j] = CreateSubchannel(kFourAddresses[j], child_args);
     }
     EXPECT_EQ(
         ApplyUpdate(BuildUpdate(kFourAddresses,
@@ -1575,7 +1598,7 @@ TEST_F(AutoShardingTest, ExitIdleInIdleTriggersOneConnectionAttempt) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1616,7 +1639,7 @@ TEST_F(AutoShardingTest, ExitIdleInConnectingOrReadyDoesNothing) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1650,7 +1673,7 @@ TEST_F(AutoShardingTest, InitialConnectTimerConnectsWithoutPicks) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1683,7 +1706,7 @@ TEST_F(AutoShardingTest, InitialConnectTimerRestartsWhenEndpointIsRemoved) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1718,7 +1741,7 @@ TEST_F(AutoShardingTest, PickConnectionClearsInitialConnect) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1745,7 +1768,7 @@ TEST_F(AutoShardingTest, ExitIdleBeforeFirstResultConnectsWhenResultArrives) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1772,7 +1795,7 @@ TEST_F(AutoShardingTest, ExitIdleWhileInitialConnectTimerRunsConnectsAtOnce) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1809,7 +1832,7 @@ TEST_F(AutoShardingTest, ShutdownWhileInitialConnectTimerPending) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1837,7 +1860,7 @@ TEST_F(AutoShardingTest, ErrorWithFallbackDisabledDoesNotStartTimer) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
                         lb_policy()),
@@ -1862,7 +1885,7 @@ TEST_F(AutoShardingTest, ErrorWithFallbackEnabledStartsTimer) {
   ChannelArgs args = MakeChannelArgs();
   std::array<SubchannelState*, 2> subchannels;
   for (size_t i = 0; i < subchannels.size(); ++i) {
-    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+    subchannels[i] = CreateSubchannel(kAddresses[i]);
   }
   EXPECT_EQ(
       ApplyUpdate(
