@@ -1557,6 +1557,33 @@ TEST_F(CredentialsTest, TestJwtCredsWithInvalidRabUri) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST_F(CredentialsTest, TestJwtCredsWithNonGduUniverseDomainInJsonSkipsRab) {
+  char* original_json_key = test_json_key_str();
+  ExecCtx exec_ctx;
+  std::string json_key_str = absl::StrReplaceAll(
+      original_json_key,
+      {{"\"type\": \"service_account\"",
+        "\"type\": \"service_account\", \"universe_domain\": "
+        "\"apis-tpclp.goog\""}});
+  gpr_free(original_json_key);
+  grpc_call_credentials* creds =
+      grpc_service_account_jwt_access_credentials_create(
+          json_key_str.c_str(), grpc_max_auth_token_lifetime(), nullptr);
+  GRPC_CHECK_NE(creds, nullptr);
+  std::string emd = absl::StrCat("authorization: Bearer ", test_signed_jwt);
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  creds->Unref();
+  grpc_jwt_encode_and_sign_set_override(nullptr);
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 TEST_F(CredentialsTest, TestJwtCredsSuccess) {
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
