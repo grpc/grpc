@@ -508,6 +508,79 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         )
 
 
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class OpenTelemetryObservabilitySyncHandlersTest(
+    OpenTelemetryObservabilityBase
+):
+    async def test_record_unary_unary(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True, sync_handlers=True
+        )
+        await _test_server.unary_unary_call(
+            port=self._port, registered_method=True
+        )
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/UnaryUnary")
+
+    async def test_record_unary_stream(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True, sync_handlers=True
+        )
+        await _test_server.unary_stream_call(
+            port=self._port, registered_method=True
+        )
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/UnaryStream")
+
+    async def test_record_stream_unary(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True, sync_handlers=True
+        )
+        await _test_server.stream_unary_call(
+            port=self._port, registered_method=True
+        )
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/StreamUnary")
+
+    async def test_record_stream_stream(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True, sync_handlers=True
+        )
+        await _test_server.stream_stream_call(
+            port=self._port, registered_method=True
+        )
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/StreamStream")
+
+    async def test_record_unary_unary_aborted(self):
+        self._server, self._port = await _test_server.start_server(
+            register_method=True, sync_handlers=True
+        )
+        with self.assertRaises(grpc.RpcError) as ex_context:
+            await _test_server.unary_unary_call(
+                port=self._port,
+                registered_method=True,
+                metadata=(_test_server.ABORT_RPC_METADATA,),
+            )
+
+        self.assertEqual(ex_context.exception.code(), grpc.StatusCode.ABORTED)
+
+        await self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics.keys())
+        self._validate_all_method_labels(self.all_metrics, "test/UnaryUnary")
+
+
 if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)
