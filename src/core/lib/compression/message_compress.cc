@@ -32,6 +32,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
+#include "absl/base/attributes.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -41,9 +42,10 @@
 namespace grpc_core {
 namespace {
 
-absl::StatusOr<SliceBuffer> ZlibBody(z_stream* zs, const SliceBuffer& input,
-                                     int (*flate)(z_stream* zs, int flush),
-                                     std::optional<uint32_t> max_output_size) {
+ABSL_ATTRIBUTE_NO_SANITIZE_CFI absl::StatusOr<SliceBuffer> ZlibBody(
+    z_stream* zs, const SliceBuffer& input,
+    int (*flate)(z_stream* zs, int flush),
+    std::optional<uint32_t> max_output_size) {
   int r = Z_STREAM_END;  // Do not fail on an empty input.
   int flush;
   size_t i;
