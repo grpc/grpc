@@ -199,11 +199,12 @@ bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency =
 
 # These packages are not directly used by grpc, but requested by opentelemetry-cpp
 # and google_cloud_cpp.
-# 
+#
 # The `repo_name` is set to None since they're not referred by us.
 #
 # Pin a newer version than the 8.11.0.bcr.2 that opentelemetry-cpp requests.
 bazel_dep(name = "curl", version = "8.11.0.bcr.5", repo_name = None)
+
 # Pin a newer version than 3.6.0 that curl requests.
 bazel_dep(name = "mbedtls", version = "3.6.0.bcr.1", repo_name = None)
 bazel_dep(name = "nlohmann_json", version = "3.12.0.bcr.2", repo_name = None)
