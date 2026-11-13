@@ -405,8 +405,8 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
   if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    return grpc_event_engine::experimental::event_engine_tcp_client_connect(
-        closure, ep, config, addr, deadline);
+    grpc_core::Crash(
+        "tcp_connect should not be called when using EventEngine client");
   }
   grpc_resolved_address mapped_addr;
   int fd = -1;
@@ -424,8 +424,9 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
 
 static bool tcp_cancel_connect(int64_t connection_handle) {
   if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    return grpc_event_engine::experimental::
-        event_engine_tcp_client_cancel_connect(connection_handle);
+    grpc_core::Crash(
+        "tcp_cancel_connect should not be called when using EventEngine "
+        "client");
   }
   if (connection_handle <= 0) {
     return false;
