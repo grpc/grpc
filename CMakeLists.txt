@@ -40552,6 +40552,9 @@ if(WIN32 AND MSVC)
       "GPR_DLL_IMPORTS"
     )
   endif()
+  target_compile_options(xds_cel_test PRIVATE
+    /Zc:preprocessor
+  )
 endif()
 target_compile_features(xds_cel_test PUBLIC cxx_std_17)
 target_include_directories(xds_cel_test
