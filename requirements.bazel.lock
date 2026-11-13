@@ -425,6 +425,10 @@ opentelemetry-exporter-prometheus==0.51b0 \
     --hash=sha256:25673d79d3b0b864133ee8df789fc6fb408c51e64b3cb775c20526c10bb93d05 \
     --hash=sha256:5c5c45b254e08c19564ab033f44a941a07fb6a33ea441b75ad203c70997a8f25
     # via -r requirements.bazel.txt
+opentelemetry-proto==1.45.1 \
+    --hash=sha256:79e0fb95e4616691a469439238aa9224d75779b3e108e895d1aa125ab29ca77c \
+    --hash=sha256:f38e2a8413053c180cd3d2637fbb279673ec2f6a6e09c995aafa2f452c52b46e
+    # via -r requirements.bazel.txt
 opentelemetry-resourcedetector-gcp==1.9.0a0 \
     --hash=sha256:4e5a0822b0f0d7647b7ceb282d7aa921dd7f45466540bd0a24f954f90db8fde8 \
     --hash=sha256:6860a6649d1e3b9b7b7f09f3918cc16b72aa0c0c590d2a72ea6e42b67c9a42e7
@@ -456,6 +460,7 @@ protobuf==7.35.1 \
     # via
     #   -r requirements.bazel.txt
     #   googleapis-common-protos
+    #   opentelemetry-proto
 pyasn1==0.6.1 \
     --hash=sha256:0d632f46f2ba09143da3a8afe9e33fb6f92fa2320ab7e886e2d0f7672af84629 \
     --hash=sha256:6f580d2bdd84365380830acf45550f2511469f673cb4a5ae3857a3170128b034
