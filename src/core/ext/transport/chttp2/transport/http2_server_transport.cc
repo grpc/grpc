@@ -708,49 +708,43 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
 
 Http2Status Http2ServerTransport::ProcessMetadata() {
   HeaderAssembler& assembler = read_context_.header_assembler();
-  // CallInitiator& call = stream->GetCallInitiator();
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata";
   if (assembler.IsReady()) {
+    const uint32_t stream_id = read_context_.GetStreamId();
+    const bool end_stream = read_context_.HeaderHasEndStream();
+    const RefCountedPtr<Stream> stream = LookupStream(stream_id);
+    const bool is_initial_metadata = (stream == nullptr);
     ValueOrHttp2Status<ClientMetadataHandle> read_result =
-        assembler.ReadMetadata(read_context_.parser(),
-                               !read_context_.HeaderHasEndStream(),
+        assembler.ReadMetadata(read_context_.parser(), is_initial_metadata,
                                /*max_header_list_size_soft_limit=*/
                                read_context_.soft_limit(),
                                /*max_header_list_size_hard_limit=*/
                                settings_->acked().max_header_list_size());
     if (read_result.IsOk()) {
       ClientMetadataHandle metadata = TakeValue(std::move(read_result));
-      // TODO(tjagtap): [PH2][P0] : Might be worth differentiating between
-      // initial and trailing metadata based on the number of header frames
-      // received.
-      if (read_context_.HeaderHasEndStream()) {
-        // TODO(akshitpatel) [PH2][P1] : Implement receiving trailing metadata.
-        // Details:
-        // - Standard gRPC clients do not send trailers (only EOS).
-        // - If received (HEADERS with END_STREAM), mark stream as half-closed
-        //   remote.
-        // - Upper layers discard client trailers, so we are fine with not
-        //   propagating them.
-        //
-        // With these assumptions, the flow will look like this:
-        // - If the client sends trailing metadata with an OK status, we will
-        //   mark the stream as half-closed remote and do nothing else.
-        // - If the client sends trailing metadata with a non-OK status, this
-        //   case needs to be handled.
-        // TODO(akshitpatel) : [PH2][P0] : Verify this.
-        RefCountedPtr<Stream> stream =
-            LookupStream(read_context_.GetStreamId());
-        HandleStreamStateChange(
-            *stream, stream->OnTrailingMetadataReceived(std::move(metadata)));
-      } else {
+      if (is_initial_metadata) {
         GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata "
-                                  "SpawnPushServerInitialMetadata";
+                                  "Initial metadata received for stream_id="
+                               << stream_id << " end_stream=" << end_stream;
         metadata->Set(PeerString(), read_context_.peer_string());
         metadata->Set(LocalAddressString(),
                       read_context_.local_address_string());
-        return IncomingStream(std::move(metadata), read_context_.GetStreamId());
+        return IncomingStream(std::move(metadata), stream_id, end_stream);
       }
+      // Trailing metadata on an existing stream.
+      // - Standard gRPC clients do not send trailers (only END_STREAM on the
+      //   last DATA frame). Custom HTTP2 clients might.
+      // - Upper layers discard client trailers, so we do not propagate them.
+      //   We only mark the stream as half-closed remote.
+      // - A second HEADERS frame without END_STREAM is rejected as a stream
+      //   error by ValidateMetadataFrameState before reaching here.
+      GRPC_DCHECK(end_stream);
+      GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata "
+                                "Trailing metadata received for stream_id="
+                             << stream_id;
+      HandleStreamStateChange(
+          *stream, stream->OnTrailingMetadataReceived(std::move(metadata)));
       return Http2Status::Ok();
     }
     GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata Failed";
@@ -1516,7 +1510,8 @@ Http2Status Http2ServerTransport::ValidateIncomingStream(
 }
 
 Http2Status Http2ServerTransport::IncomingStream(
-    ClientMetadataHandle&& metadata, const uint32_t stream_id) {
+    ClientMetadataHandle&& metadata, const uint32_t stream_id,
+    const bool end_stream) {
   GRPC_DCHECK(LookupStream(stream_id) == nullptr);
 
   RefCountedPtr<Arena> arena = call_arena_allocator_->MakeArena();
@@ -1537,6 +1532,10 @@ Http2Status Http2ServerTransport::IncomingStream(
   AddToStreamList(stream);
   UpdateMaxConcurrentStreamsFromStreamQuota();
   stream->SetInitialMetadataReceived();
+
+  if (end_stream) {
+    HandleStreamStateChange(*stream, stream->OnHalfCloseReceived());
+  }
 
   stream->GetCallInitiator().SpawnGuarded(
       "CallOutboundLoop",
