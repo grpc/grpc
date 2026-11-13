@@ -127,6 +127,7 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   absl::string_view name() const override { return kAutoSharding; }
 
   absl::Status UpdateLocked(UpdateArgs args) override;
+  void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
  private:
@@ -291,6 +292,12 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   // TRANSIENT_FAILURE, then status is the status reported by the endpoint.
   void UpdateAggregatedConnectivityStateLocked(absl::Status status);
 
+  // Reports state and picker to the channel, and stores state in
+  // current_state_.
+  void UpdateStateLocked(grpc_connectivity_state state,
+                         const absl::Status& status,
+                         RefCountedPtr<SubchannelPicker> picker);
+
   // Triggers a connection attempt on an IDLE endpoint chosen at random,
   // unless an endpoint is already CONNECTING (gRFC A119).
   void ConnectToRandomIdleEndpointLocked();
@@ -326,6 +333,8 @@ class AutoshardingLbPolicy final : public LoadBalancingPolicy {
   // TRANSIENT_FAILURE, but keeps assignment_ for the next good update
   // (gRFC A119).
   absl::Status resolver_error_;
+  // The state most recently reported to the channel.
+  grpc_connectivity_state current_state_ = GRPC_CHANNEL_IDLE;
 
   // TODO(roth): If we ever change the helper UpdateState() API to not
   // need the status reported for TRANSIENT_FAILURE state (because
@@ -661,6 +670,14 @@ void AutoshardingLbPolicy::ShutdownLocked() {
   assignment_ = nullptr;
 }
 
+void AutoshardingLbPolicy::ExitIdleLocked() {
+  // Per gRFC A119 (same as ring_hash in gRFC A117), a request to exit IDLE
+  // triggers a connection attempt only if the policy reports IDLE.
+  if (current_state_ == GRPC_CHANNEL_IDLE) {
+    ConnectToRandomIdleEndpointLocked();
+  }
+}
+
 void AutoshardingLbPolicy::ResetBackoffLocked() {
   if (client_ != nullptr) client_->ResetBackoff();
   for (const auto& [_, endpoint] : endpoint_map_) {
@@ -825,9 +842,8 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
     absl::Status status) {
   // A bad resolver state fails all picks (gRFC A119).
   if (!resolver_error_.ok()) {
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, resolver_error_,
-        MakeRefCounted<TransientFailurePicker>(resolver_error_));
+    UpdateStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, resolver_error_,
+                      MakeRefCounted<TransientFailurePicker>(resolver_error_));
     return;
   }
   // Nothing to report until UpdateLocked() has set endpoints_ and config_.
@@ -840,8 +856,8 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
   // TODO(bpawan): Set delay_type to "autosharding_assignment_pending" per
   // gRFC A121 once it is supported in C++.
   if (assignment_.ok() && *assignment_ == nullptr) {
-    channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                                          MakeRefCounted<QueuePicker>(nullptr));
+    UpdateStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                      MakeRefCounted<QueuePicker>(nullptr));
     return;
   }
   // If there is no assignment and fallback is disabled, we cannot route any
@@ -852,9 +868,8 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
     GRPC_TRACE_LOG(autosharding_lb, INFO)
         << "[AS " << this << "] no assignment and fallback disabled, failing "
         << "picks: " << pick_status;
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, pick_status,
-        MakeRefCounted<TransientFailurePicker>(pick_status));
+    UpdateStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, pick_status,
+                      MakeRefCounted<TransientFailurePicker>(pick_status));
     return;
   }
   // Count the number of endpoints in each state.
@@ -922,7 +937,7 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
   } else {
     status = absl::OkStatus();
   }
-  channel_control_helper()->UpdateState(
+  UpdateStateLocked(
       state, status,
       MakeRefCounted<Picker>(RefAsSubclass<AutoshardingLbPolicy>(
                                  DEBUG_LOCATION, "AutoShardingPicker"),
@@ -934,6 +949,13 @@ void AutoshardingLbPolicy::UpdateAggregatedConnectivityStateLocked(
       state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     ConnectToRandomIdleEndpointLocked();
   }
+}
+
+void AutoshardingLbPolicy::UpdateStateLocked(
+    grpc_connectivity_state state, const absl::Status& status,
+    RefCountedPtr<SubchannelPicker> picker) {
+  current_state_ = state;
+  channel_control_helper()->UpdateState(state, status, std::move(picker));
 }
 
 void AutoshardingLbPolicy::ConnectToRandomIdleEndpointLocked() {

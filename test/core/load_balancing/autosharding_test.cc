@@ -1522,6 +1522,75 @@ TEST_F(AutoShardingTest, ProactiveConnectionAttemptChoosesRandomIdleEndpoint) {
   EXPECT_GT(chosen_addresses.size(), 1u);
 }
 
+TEST_F(AutoShardingTest, ExitIdleInIdleTriggersOneConnectionAttempt) {
+  ChannelArgs args = MakeChannelArgs();
+  std::array<SubchannelState*, 2> subchannels;
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+  }
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                              MakeMetadata("some_key"));
+  // Keys before "m" go to kAddresses[0], and the rest go to kAddresses[1].
+  const std::array<std::string, 2> kKeys = {"a", "z"};
+  SendAssignment({{"m", {0}}, {"", {1}}},
+                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  ExpectState(GRPC_CHANNEL_IDLE);
+  for (SubchannelState* subchannel : subchannels) {
+    EXPECT_FALSE(subchannel->ConnectionRequested());
+  }
+  // In IDLE, a request to exit IDLE triggers a connection attempt on exactly
+  // one endpoint.
+  ExitIdle();
+  size_t chosen = subchannels.size();
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    if (subchannels[i]->ConnectionRequested()) {
+      ASSERT_EQ(chosen, subchannels.size()) << "index " << i;
+      chosen = i;
+    }
+  }
+  ASSERT_LT(chosen, subchannels.size());
+  subchannels[chosen]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata(kKeys[chosen]));
+}
+
+TEST_F(AutoShardingTest, ExitIdleInConnectingOrReadyDoesNothing) {
+  ChannelArgs args = MakeChannelArgs();
+  std::array<SubchannelState*, 2> subchannels;
+  for (size_t i = 0; i < subchannels.size(); ++i) {
+    subchannels[i] = CreateSubchannel(kAddresses[i], args);
+  }
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, ConfigBuilder().Build(), args),
+                        lb_policy()),
+            absl::OkStatus());
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                              MakeMetadata("some_key"));
+  // Keys before "m" go to kAddresses[0], and the rest go to kAddresses[1].
+  SendAssignment({{"m", {0}}, {"", {1}}},
+                 {EndpointName(kAddresses[0]), EndpointName(kAddresses[1])});
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                              MakeMetadata("a"));
+  EXPECT_TRUE(subchannels[0]->ConnectionRequested());
+  subchannels[0]->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                              MakeMetadata("a"));
+  // In CONNECTING, a request to exit IDLE does nothing.
+  ExitIdle();
+  EXPECT_FALSE(subchannels[1]->ConnectionRequested());
+  subchannels[0]->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto picker = ExpectState(GRPC_CHANNEL_READY);
+  EXPECT_THAT(ExpectPickComplete(picker.get(), {}, MakeMetadata("a")),
+              ::testing::Optional(kAddresses[0]));
+  // In READY, a request to exit IDLE does nothing, even though an endpoint
+  // is IDLE.
+  ExitIdle();
+  EXPECT_FALSE(subchannels[1]->ConnectionRequested());
+  ExpectQueueEmpty();
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
