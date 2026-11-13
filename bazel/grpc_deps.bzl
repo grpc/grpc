@@ -439,6 +439,7 @@ def grpc_deps():
             name = "autosharding",
             sha256 = "12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2",
             strip_prefix = "autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7",
+            build_file = "@com_github_grpc_grpc//bazel:autosharding.BUILD",
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
                 "https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",

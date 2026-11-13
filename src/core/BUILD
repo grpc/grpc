@@ -8393,6 +8393,62 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_policy_autosharding_assignment",
+    srcs = [
+        "load_balancing/autosharding/autosharding_assignment.cc",
+    ],
+    hdrs = [
+        "load_balancing/autosharding/autosharding_assignment.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "ref_counted",
+        "upb_utils",
+        "//:autosharding_upb",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_autosharding_client",
+    srcs = [
+        "load_balancing/autosharding/autosharding_client.cc",
+    ],
+    hdrs = [
+        "load_balancing/autosharding/autosharding_client.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "grpc_check",
+        "grpc_lb_policy_autosharding_assignment",
+        "sync",
+        "time",
+        "upb_utils",
+        "//:autosharding_upb",
+        "//:backoff",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:xds_transport",
+        "@com_google_protobuf//upb/mem",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_autosharding",
     srcs = [
         "load_balancing/autosharding/autosharding.cc",
@@ -8410,10 +8466,15 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "channel_factory",
         "connectivity_state",
         "delegating_helper",
+        "down_cast",
         "grpc_check",
+        "grpc_lb_policy_autosharding_assignment",
+        "grpc_lb_policy_autosharding_client",
         "grpc_lb_policy_pick_first",
+        "grpc_lb_policy_weighted_target",
         "json",
         "json_args",
         "json_object_loader",
@@ -8422,22 +8483,25 @@ grpc_cc_library(
         "lb_policy_registry",
         "pollset_set",
         "ref_counted",
-        "ref_counted_string",
         "resolved_address",
         "shared_bit_gen",
         "time",
+        "uuid_v4",
         "validation_errors",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:work_serializer",
+        "//:xds_transport",
     ],
 )
 
