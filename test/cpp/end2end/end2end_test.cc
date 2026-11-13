@@ -1853,14 +1853,6 @@ TEST_P(ProxyEnd2endTest, Peer) {
 }
 
 TEST_P(ProxyEnd2endTest, LocalAddress) {
-  // The proxy creates its backend call with the incoming server call as the
-  // parent (ClientContext::FromServerContext), which the PH2 server does not
-  // support yet (ServerCall::Completed() is unimplemented).
-  if (GetParam().use_proxy()) {
-    SKIP_TEST_FOR_PH2_SERVER(
-        "TODO(ritulb) [PH2][P1] Proxy call propagation is not supported by "
-        "PH2");
-  }
   ResetStub();
   EchoRequest request;
   EchoResponse response;

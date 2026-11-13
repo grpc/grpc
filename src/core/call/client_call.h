@@ -85,7 +85,7 @@ class ClientCall final
 
   void Orphaned() override {
     SourceDestructing();
-    if (!saw_trailing_metadata_.load(std::memory_order_relaxed)) {
+    if (!Completed()) {
       CancelWithError(absl::CancelledError());
     }
   }
@@ -103,7 +103,10 @@ class ClientCall final
   char* GetPeer() override;
   char* GetLocalAddress() override;
 
-  bool Completed() final { Crash("unimplemented"); }
+  bool Completed() final {
+    return saw_trailing_metadata_.load(std::memory_order_relaxed) ||
+           cancel_status_.is_set();
+  }
   bool failed_before_recv_message() const final {
     return started_call_initiator_.WasCancelledPushed();
   }
