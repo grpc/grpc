@@ -29,6 +29,7 @@ load(
     "variable_with_value",
     "with_feature_set",
 )
+load("@rules_cc//cc:defs.bzl", "CcToolchainConfigInfo", "cc_common")
 
 all_compile_actions = [
     ACTION_NAMES.c_compile,
