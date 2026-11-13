@@ -60,6 +60,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
   // Keeps state for an individual connection. Lifetime: Internally refcounted
   // and owned by Server::ListenerState.
+  // TODO(roth): Remove this in favor of HandshakingConnection once the
+  // server_connection_management experiment is removed.
   class ActiveConnection : public LogicalConnection {
    public:
     // State for handshake. Lifetime: Owned by ActiveConnection and lasts while
@@ -121,6 +123,76 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     friend class grpc_core::testing::ActiveConnectionTestPeer;
     friend class grpc_core::testing::HandshakingStateTestPeer;
 
+    void OnClose();
+
+    void SendGoAwayImplLocked();
+    void DisconnectImmediatelyImplLocked();
+
+    RefCountedPtr<Server::ListenerState> const listener_state_;
+    WorkSerializer work_serializer_;
+    // Following fields are protected by WorkSerializer.
+    // Set by HandshakingState before the handshaking begins and set to a valid
+    // transport when handshaking is done successfully.
+    std::variant<OrphanablePtr<HandshakingState>,
+                 RefCountedPtr<grpc_chttp2_transport>,
+                 RefCountedPtr<http2::Http2ServerTransport>>
+        state_;
+    bool shutdown_ = false;
+  };
+
+  // Keeps state for an individual connection. Lifetime: Internally refcounted
+  // and owned by Server::ListenerState.
+  class HandshakingConnection : public LogicalConnection {
+   public:
+    // State for handshake. Lifetime: Owned by HandshakingConnection and lasts
+    // while the handshake is ongoing.
+    class HandshakingState : public InternallyRefCounted<HandshakingState> {
+     public:
+      HandshakingState(RefCountedPtr<HandshakingConnection> connection_ref,
+                       grpc_tcp_server* tcp_server,
+                       grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
+                       const ChannelArgs& args,
+                       OrphanablePtr<grpc_endpoint> endpoint);
+
+      ~HandshakingState() override;
+
+      void Orphan() override;
+
+      void StartLocked(const ChannelArgs& args);
+
+      void ShutdownLocked(absl::Status status);
+
+     private:
+      void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
+
+      RefCountedPtr<HandshakingConnection> const connection_;
+      grpc_tcp_server* const tcp_server_;
+      grpc_pollset* const accepting_pollset_;
+      const AcceptorPtr acceptor_;
+      grpc_pollset_set* const interested_parties_;
+      Timestamp const deadline_;
+      OrphanablePtr<grpc_endpoint> endpoint_;
+      // Following fields are protected by WorkSerializer.
+      RefCountedPtr<HandshakeManager> handshake_mgr_;
+    };
+
+    HandshakingConnection(RefCountedPtr<Server::ListenerState> listener_state,
+                          grpc_tcp_server* tcp_server,
+                          grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
+                          const ChannelArgs& args, MemoryOwner memory_owner,
+                          OrphanablePtr<grpc_endpoint> endpoint);
+    void Start(const ChannelArgs& args);
+
+    void SendGoAway() override;
+    void DisconnectImmediately() override;
+
+    void Orphan() override;
+
+    // Needed to be able to grab an external weak ref in
+    // NewChttp2ServerListener::OnAccept()
+    using InternallyRefCounted<LogicalConnection>::RefAsSubclass;
+
+   private:
     void OnClose();
 
     void SendGoAwayImplLocked();
