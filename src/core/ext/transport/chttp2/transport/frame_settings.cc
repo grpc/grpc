@@ -97,10 +97,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);
 
   if (parser->is_ack) {
-    if (t != nullptr) {
-      t->http2_ztrace_collector.Append(
-          grpc_core::H2SettingsTrace<true>{true, {}});
-    }
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2SettingsTrace<true>{true, {}});
     return absl::OkStatus();
   }
 
@@ -110,10 +108,6 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_ID0;
           if (is_last) {
-            if (t == nullptr) {
-              *parser->target_settings = *parser->incoming_settings;
-              return absl::OkStatus();
-            }
             grpc_core::Http2Settings* target_settings =
                 parser->incoming_settings.get();
             t->http2_stats->IncrementHttp2HeaderTableSize(
@@ -208,8 +202,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         parser->value |= *cur;
         cur++;
 
-        if (t != nullptr &&
-            parser->id == grpc_core::Http2Settings::kInitialWindowSizeWireId) {
+        if (parser->id == grpc_core::Http2Settings::kInitialWindowSizeWireId) {
           t->initial_window_update +=
               static_cast<int64_t>(parser->value) -
               parser->incoming_settings->initial_window_size();
@@ -223,23 +216,19 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         auto error =
             parser->incoming_settings->Apply(parser->id, parser->value);
         if (error != Http2ErrorCode::kNoError) {
-          if (t != nullptr) {
-            grpc_chttp2_goaway_append(
-                t->last_new_stream_id, static_cast<uint32_t>(error),
-                grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf,
-                &t->http2_ztrace_collector);
-          }
+          grpc_chttp2_goaway_append(
+              t->last_new_stream_id, static_cast<uint32_t>(error),
+              grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf,
+              &t->http2_ztrace_collector);
           return GRPC_ERROR_CREATE(absl::StrFormat(
               "invalid value %u passed for %s", parser->value,
               grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));
         }
-        if (t != nullptr) {
-          GRPC_TRACE_LOG(http, INFO)
-              << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
-              << t->peer_string.as_string_view() << ": got setting "
-              << grpc_core::Http2Settings::WireIdToName(parser->id) << " = "
-              << parser->value;
-        }
+        GRPC_TRACE_LOG(http, INFO)
+            << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
+            << t->peer_string.as_string_view() << ": got setting "
+            << grpc_core::Http2Settings::WireIdToName(parser->id) << " = "
+            << parser->value;
       } break;
     }
   }

@@ -31,12 +31,13 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/frame_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/handshaker/handshaker.h"
@@ -93,6 +94,8 @@ class Http2SettingsHandshaker final : public Handshaker {
 
   void StartReadLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   absl::Status ProcessReadBufferLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  absl::Status ParseAndApplySettingsPayloadLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void RecordErrorLocked(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Returns true if the handshake is completely finished and the caller should
   // invoke on_handshake_done outside the lock.
@@ -123,14 +126,11 @@ class Http2SettingsHandshaker final : public Handshaker {
 
   ReadState read_state_ ABSL_GUARDED_BY(mu_);
   size_t prefix_bytes_read_ ABSL_GUARDED_BY(mu_) = 0;
-  uint8_t frame_header_buf_[9] ABSL_GUARDED_BY(mu_);
+  uint8_t frame_header_buf_[kFrameHeaderSize] ABSL_GUARDED_BY(mu_);
   size_t frame_header_bytes_read_ ABSL_GUARDED_BY(mu_) = 0;
-  uint32_t frame_length_ ABSL_GUARDED_BY(mu_) = 0;
-  uint8_t frame_type_ ABSL_GUARDED_BY(mu_) = 0;
-  uint8_t frame_flags_ ABSL_GUARDED_BY(mu_) = 0;
-  uint32_t frame_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
+  Http2FrameHeader frame_header_ ABSL_GUARDED_BY(mu_);
   uint32_t payload_bytes_remaining_ ABSL_GUARDED_BY(mu_) = 0;
-  grpc_chttp2_settings_parser settings_parser_ ABSL_GUARDED_BY(mu_);
+  SliceBuffer payload_buffer_ ABSL_GUARDED_BY(mu_);
 };
 
 void Http2SettingsHandshaker::DoHandshake(
@@ -360,47 +360,35 @@ absl::Status Http2SettingsHandshaker::ProcessReadBufferLocked() {
           break;
         }
         case ReadState::kReadingSettingsFrameHeader: {
-          while (cur < end && frame_header_bytes_read_ < 9) {
+          while (cur < end && frame_header_bytes_read_ < kFrameHeaderSize) {
             frame_header_buf_[frame_header_bytes_read_++] = *cur++;
           }
-          if (frame_header_bytes_read_ == 9) {
-            frame_length_ =
-                (static_cast<uint32_t>(frame_header_buf_[0]) << 16) |
-                (static_cast<uint32_t>(frame_header_buf_[1]) << 8) |
-                static_cast<uint32_t>(frame_header_buf_[2]);
-            frame_type_ = frame_header_buf_[3];
-            frame_flags_ = frame_header_buf_[4];
-            frame_stream_id_ =
-                ((static_cast<uint32_t>(frame_header_buf_[5]) & 0x7f) << 24) |
-                (static_cast<uint32_t>(frame_header_buf_[6]) << 16) |
-                (static_cast<uint32_t>(frame_header_buf_[7]) << 8) |
-                static_cast<uint32_t>(frame_header_buf_[8]);
-            if (frame_type_ != GRPC_CHTTP2_FRAME_SETTINGS ||
-                frame_flags_ != 0) {
+          if (frame_header_bytes_read_ == kFrameHeaderSize) {
+            frame_header_ = Http2FrameHeader::Parse(frame_header_buf_);
+            if (frame_header_.type != GRPC_CHTTP2_FRAME_SETTINGS ||
+                frame_header_.flags != 0) {
               return GRPC_ERROR_CREATE(absl::StrFormat(
                   "Expected SETTINGS frame as the first frame, got frame "
                   "type %d, flags %d",
-                  frame_type_, frame_flags_));
+                  frame_header_.type, frame_header_.flags));
             }
-            if (frame_stream_id_ != 0) {
+            if (frame_header_.stream_id != 0) {
               return GRPC_ERROR_CREATE(
                   "Settings frame received for non-zero stream");
             }
-            if (frame_length_ > settings_.acked().max_frame_size()) {
-              return GRPC_ERROR_CREATE(absl::StrFormat(
-                  "Frame size %d larger than max frame size %d", frame_length_,
-                  settings_.acked().max_frame_size()));
+            if (frame_header_.length % 6 != 0) {
+              return GRPC_ERROR_CREATE(
+                  "settings frames must be a multiple of six bytes");
             }
-            grpc_error_handle err = grpc_chttp2_settings_parser_begin_frame(
-                &settings_parser_, frame_length_, frame_flags_,
-                settings_.mutable_peer());
-            if (!err.ok()) return err;
-            payload_bytes_remaining_ = frame_length_;
+            if (frame_header_.length > settings_.acked().max_frame_size()) {
+              return GRPC_ERROR_CREATE(absl::StrFormat(
+                  "Frame size %d larger than max frame size %d",
+                  frame_header_.length, settings_.acked().max_frame_size()));
+            }
+            payload_bytes_remaining_ = frame_header_.length;
             if (payload_bytes_remaining_ == 0) {
-              err = grpc_chttp2_settings_parser_parse(
-                  &settings_parser_, /*t=*/nullptr, /*s=*/nullptr,
-                  grpc_empty_slice(), /*is_last=*/1);
-              if (!err.ok()) return err;
+              absl::Status status = ParseAndApplySettingsPayloadLocked();
+              if (!status.ok()) return status;
               read_state_ = ReadState::kDone;
             } else {
               read_state_ = ReadState::kReadingSettingsFramePayload;
@@ -413,15 +401,12 @@ absl::Status Http2SettingsHandshaker::ProcessReadBufferLocked() {
           const size_t take =
               std::min(avail, static_cast<size_t>(payload_bytes_remaining_));
           const size_t offset = static_cast<size_t>(cur - slice.begin());
-          Slice payload_slice = slice.RefSubSlice(offset, take);
+          payload_buffer_.Append(slice.RefSubSlice(offset, take));
           cur += take;
           payload_bytes_remaining_ -= static_cast<uint32_t>(take);
-          const int is_last = (payload_bytes_remaining_ == 0) ? 1 : 0;
-          grpc_error_handle err = grpc_chttp2_settings_parser_parse(
-              &settings_parser_, /*t=*/nullptr, /*s=*/nullptr,
-              payload_slice.c_slice(), is_last);
-          if (!err.ok()) return err;
-          if (is_last) {
+          if (payload_bytes_remaining_ == 0) {
+            absl::Status status = ParseAndApplySettingsPayloadLocked();
+            if (!status.ok()) return status;
             read_state_ = ReadState::kDone;
           }
           break;
@@ -441,6 +426,23 @@ absl::Status Http2SettingsHandshaker::ProcessReadBufferLocked() {
       remaining_buffer.TakeAndAppend(args_->read_buffer);
       remaining_buffer.Swap(&args_->read_buffer);
     }
+  }
+  return absl::OkStatus();
+}
+
+absl::Status Http2SettingsHandshaker::ParseAndApplySettingsPayloadLocked() {
+  http2::ValueOrHttp2Status<Http2Frame> frame =
+      ParseFramePayload(frame_header_, std::move(payload_buffer_));
+  if (!frame.IsOk()) {
+    return GRPC_ERROR_CREATE(frame.DebugString());
+  }
+  auto& settings_frame = std::get<Http2SettingsFrame>(frame.value());
+  http2::Http2ErrorCode error =
+      settings_.ApplyIncomingSettings(settings_frame.settings);
+  if (error != http2::Http2ErrorCode::kNoError) {
+    return GRPC_ERROR_CREATE(
+        absl::StrFormat("invalid settings frame: %s",
+                        http2::Http2Status::DebugGetCode(error)));
   }
   return absl::OkStatus();
 }

@@ -9462,6 +9462,7 @@ grpc_cc_library(
         "grpc_check",
         "http2_settings",
         "http2_settings_manager",
+        "http2_status",
         "slice",
         "slice_buffer",
         "sync",
