@@ -236,7 +236,6 @@ class Server : public ServerInterface,
                            OrphanablePtr<ListenerInterface> l);
 
     void Start();
-
     void Stop();
 
     ListenerInterface* listener() { return listener_.get(); }
@@ -342,6 +341,42 @@ class Server : public ServerInterface,
     // FIXME: can we avoid this?
     friend class Connection;
 
+    enum class State {
+      // Sentinel value used to initialize the field.
+      // Possible transitions from this state:
+      // - kStarted: Start() called, and there is no config fetcher
+      // - kAwaitingInitialConfig: Start() called, and there is a config
+      //   fetcher
+      kInit,
+      // Config watcher has been started, waiting for initial config
+      // before starting transport listener.
+      // Possible transitions from this state:
+      // - kStarted: we receive a valid config
+      // - kInvalidConfigBeforeStart: we receive an invalid config
+      // - kStopped: Stop() is called
+      kAwaitingInitialConfig,
+      // Transport listener has been started.
+      // If we're using a config fetcher, the config is valid.
+      // Possible transitions from this state:
+      // - kInvalidConfig: we receive an invalid config
+      // - kStopped: Stop() is called
+      kStarted,
+      // Config is invalid.  Transport listener has been started.
+      // Possible transitions from this state:
+      // - kStarted: we receive a valid config
+      // - kStopped: Stop() is called
+      kInvalidConfig,
+      // Config is invalid and transport listener has NOT been started.
+      // Possible transitions from this state:
+      // - kStarted: we receive a valid config
+      // - kStopped: Stop() is called
+      kInvalidConfigBeforeStart,
+      // Transport listener has been stopped.
+      // This is a terminal state.  Any subsequent calls to Start() or
+      // Stop() are no-ops.
+      kStopped,
+    };
+
     class ConfigFetcherWatcher : public ServerConfigFetcher::WatcherInterface {
      public:
       explicit ConfigFetcherWatcher(ListenerState* listener_state)
@@ -410,8 +445,7 @@ class Server : public ServerInterface,
 
     RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager_
         ABSL_GUARDED_BY(&Server::mu_global_);
-    bool is_serving_ ABSL_GUARDED_BY(&Server::mu_global_) = false;
-    bool started_ ABSL_GUARDED_BY(&Server::mu_global_) = false;
+    State state_ ABSL_GUARDED_BY(&Server::mu_global_) = State::kInit;
     absl::flat_hash_set<OrphanablePtr<Orphanable>> handshaking_connections_
         ABSL_GUARDED_BY(&Server::mu_global_);
     absl::flat_hash_set<OrphanablePtr<Connection>> active_connections_
@@ -424,8 +458,8 @@ class Server : public ServerInterface,
                 // granular critical regions.
     RefCountedPtr<ServerConfigFetcher::ConnectionManager>
         legacy_connection_manager_ ABSL_GUARDED_BY(mu_);
-    bool legacy_is_serving_ ABSL_GUARDED_BY(mu_) = false;
-    bool legacy_started_ ABSL_GUARDED_BY(mu_) = false;
+    bool is_serving_ ABSL_GUARDED_BY(mu_) = false;
+    bool started_ ABSL_GUARDED_BY(mu_) = false;
     absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
         connections_ ABSL_GUARDED_BY(mu_);
     std::deque<ConnectionsToBeDrained> connections_to_be_drained_list_

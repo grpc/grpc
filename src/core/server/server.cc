@@ -160,24 +160,27 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
       if (listener_state_->server_->ShutdownCalled()) {
         return;
       }
-      listener_state_->legacy_is_serving_ = true;
-      if (listener_state_->legacy_started_) return;
-      listener_state_->legacy_started_ = true;
+      listener_state_->is_serving_ = true;
+      if (listener_state_->started_) return;
+      listener_state_->started_ = true;
     }
     listener_state_->listener_->Start();
     return;
   }
+  bool start_transport_listener = false;
   {
     MutexLock lock(listener_state_->server_->mu_global_);
+    if (listener_state_->state_ == State::kStopped) return;
     connection_manager_to_destroy = listener_state_->connection_manager_;
     listener_state_->connection_manager_ = std::move(connection_manager);
     listener_state_->DrainConnectionsOnConfigUpdateLocked();
-    if (listener_state_->server_->ShutdownCalled()) return;
-    listener_state_->is_serving_ = true;
-    if (listener_state_->started_) return;
-    listener_state_->started_ = true;
+    if (listener_state_->state_ == State::kAwaitingInitialConfig ||
+        listener_state_->state_ == State::kInvalidConfigBeforeStart) {
+      start_transport_listener = true;
+    }
+    listener_state_->state_ = State::kStarted;
   }
-  listener_state_->listener_->Start();
+  if (start_transport_listener) listener_state_->listener_->Start();
 }
 
 void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
@@ -187,13 +190,17 @@ void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
       << "]: StopServing()";
   if (!IsServerConnectionManagementEnabled()) {
     MutexLock lock(listener_state_->mu_);
-    listener_state_->legacy_is_serving_ = false;
+    listener_state_->is_serving_ = false;
     listener_state_->DrainConnectionsLocked();
     return;
   }
-  Server* server = listener_state_->server_.get();
-  MutexLock lock(server->mu_global_);
-  listener_state_->is_serving_ = false;
+  MutexLock lock(listener_state_->server_->mu_global_);
+  if (listener_state_->state_ == State::kStopped) return;
+  if (listener_state_->state_ == State::kStarted) {
+    listener_state_->state_ = State::kInvalidConfig;
+  } else if (listener_state_->state_ == State::kAwaitingInitialConfig) {
+    listener_state_->state_ = State::kInvalidConfigBeforeStart;
+  }
   listener_state_->DrainConnectionsOnConfigUpdateLocked();
 }
 
@@ -229,15 +236,16 @@ void Server::ListenerState::Start() {
     server_->config_fetcher()->StartWatch(
         grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
         std::move(watcher));
+    MutexLock lock(server_->mu_global_);
+    state_ = State::kAwaitingInitialConfig;
   } else {
     if (IsServerConnectionManagementEnabled()) {
       MutexLock lock(server_->mu_global_);
-      started_ = true;
-      is_serving_ = true;
+      state_ = State::kStarted;
     } else {
       MutexLock lock(mu_);
-      legacy_started_ = true;
-      legacy_is_serving_ = true;
+      started_ = true;
+      is_serving_ = true;
     }
     if (listener_ != nullptr) listener_->Start();
   }
@@ -254,17 +262,18 @@ void Server::ListenerState::Stop() {
     // Orphan the connections so that they can start cleaning up.
     connections = std::move(connections_);
     connections_.clear();
-    legacy_is_serving_ = false;
+    is_serving_ = false;
   } else {
     MutexLock lock(server_->mu_global_);
-    is_serving_ = false;
+    if (state_ == State::kStopped) return;
+    state_ = State::kStopped;
   }
-  if (listener_ != nullptr && config_fetcher_watcher_ != nullptr) {
+  if (config_fetcher_watcher_ != nullptr) {
     GRPC_CHECK_NE(server_->config_fetcher(), nullptr);
     server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
   }
   GRPC_CLOSURE_INIT(&destroy_done_, OnDestroyDone, this, nullptr);
-  if (listener_ == nullptr) {
+  if (IsServerConnectionManagementEnabled() && listener_ == nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, &destroy_done_, absl::OkStatus());
     return;
   }
@@ -289,7 +298,7 @@ std::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager;
   {
     MutexLock lock(mu_);
-    if (!legacy_is_serving_) {
+    if (!is_serving_) {
       // Not serving
       return std::nullopt;
     }
@@ -333,7 +342,7 @@ std::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
   // time-of-check-to-time-of-use cases. The server may have stopped serving
   // or the connection manager may have changed before we add the connection
   // to the list of tracked connections.
-  if (!legacy_is_serving_ || connection_manager != legacy_connection_manager_) {
+  if (!is_serving_ || connection_manager != legacy_connection_manager_) {
     // Not serving
     return std::nullopt;
   }
@@ -402,7 +411,7 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnectionImpl(
   RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager;
   {
     MutexLock lock(server_->mu_global_);
-    if (!is_serving_) {
+    if (state_ != State::kStarted) {
       // Not serving
       return std::nullopt;
     }
@@ -446,7 +455,7 @@ std::optional<ChannelArgs> Server::ListenerState::AddHandshakingConnectionImpl(
   // time-of-check-to-time-of-use cases. The server may have stopped serving
   // or the connection manager may have changed before we add the connection
   // to the list of tracked connections.
-  if (!is_serving_ || connection_manager != connection_manager_) {
+  if (state_ != State::kStarted || connection_manager != connection_manager_) {
     // Not serving
     return std::nullopt;
   }
@@ -528,7 +537,7 @@ absl::Status Server::ListenerState::LegacyAddActiveConnection(
   auto connection = MakeOrphanable<Connection>(
       Ref(), std::move(*owned_transport), /*hold_connection_quota=*/false);
   GRPC_TRACE_LOG(server, INFO) << "created Connection " << connection.get();
-  if (!is_serving_) {
+  if (state_ != State::kStarted) {
     GRPC_TRACE_LOG(server, INFO) << "immediately draining new connection";
     server_->StartDrainingConnectionLocked(
         std::move(connection),
