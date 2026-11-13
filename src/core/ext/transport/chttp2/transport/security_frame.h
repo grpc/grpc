@@ -198,6 +198,9 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
       {
         MutexLock lock(mutex_);
         GRPC_DCHECK(payload_.Length() != 0);
+        // TODO(tjagtap) [PH2][P1] Close connection if
+        // `payload_.Length() > GrpcErrors::kMaxSecurityFrameSize`. Check CHTTP2
+        // implementation.
         GRPC_DCHECK(payload_.Length() <= GrpcErrors::kMaxSecurityFrameSize);
         GRPC_HTTP2_SECURITY_FRAME_DLOG
             << "SecurityFrameHandler::MaybeAppendSecurityFrame Write Frame "
