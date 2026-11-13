@@ -46,6 +46,7 @@
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_handshaker.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/handshaker/handshaker.h"
@@ -60,6 +61,7 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -490,6 +492,146 @@ void NewChttp2ServerListener::ActiveConnection::
 }
 
 //
+// NewChttp2ServerListener::HandshakingConnection
+//
+
+NewChttp2ServerListener::HandshakingConnection::HandshakingConnection(
+    RefCountedPtr<Server::ListenerState> listener_state,
+    grpc_tcp_server* tcp_server, grpc_pollset* accepting_pollset,
+    AcceptorPtr acceptor, const ChannelArgs& args,
+    OrphanablePtr<grpc_endpoint> endpoint)
+    : InternallyRefCounted(
+          GRPC_TRACE_FLAG_ENABLED(chttp2_server_refcount)
+              ? "NewChttp2ServerListener::HandshakingConnection"
+              : nullptr),
+      listener_state_(std::move(listener_state)),
+      work_serializer_(
+          args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+      tcp_server_(tcp_server),
+      accepting_pollset_(accepting_pollset),
+      acceptor_(std::move(acceptor)),
+      interested_parties_(grpc_pollset_set_create()),
+      deadline_(GetConnectionDeadline(args)),
+      endpoint_(std::move(endpoint)),
+      handshake_mgr_(MakeRefCounted<HandshakeManager>()) {
+  if (accepting_pollset != nullptr) {
+    grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
+  }
+}
+
+NewChttp2ServerListener::HandshakingConnection::~HandshakingConnection() {
+  if (accepting_pollset_ != nullptr) {
+    grpc_pollset_set_del_pollset(interested_parties_, accepting_pollset_);
+  }
+  grpc_pollset_set_destroy(interested_parties_);
+  if (tcp_server_ != nullptr) {
+    grpc_tcp_server_unref(tcp_server_);
+  }
+}
+
+void NewChttp2ServerListener::HandshakingConnection::Start(
+    const ChannelArgs& args) {
+  work_serializer_.Run([self = Ref(), args]() { self->StartLocked(args); },
+                       DEBUG_LOCATION);
+}
+
+void NewChttp2ServerListener::HandshakingConnection::StartLocked(
+    const ChannelArgs& channel_args) {
+  if (handshake_mgr_ == nullptr) return;
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_SERVER, channel_args, interested_parties_,
+      handshake_mgr_.get());
+  handshake_mgr_->Add(MakeHttp2SettingsHandshaker(/*is_client=*/false));
+  handshake_mgr_->DoHandshake(
+      std::move(endpoint_), channel_args, deadline_, acceptor_.get(),
+      [self = Ref()](absl::StatusOr<HandshakerArgs*> result) mutable {
+        auto* self_ptr = self.get();
+        self_ptr->work_serializer_.Run(
+            [self = std::move(self), result = std::move(result)]() mutable {
+              self->OnHandshakeDoneLocked(std::move(result));
+            },
+            DEBUG_LOCATION);
+      });
+}
+
+void NewChttp2ServerListener::HandshakingConnection::Orphan() {
+  work_serializer_.Run(
+      [this]() {
+        if (handshake_mgr_ != nullptr) {
+          handshake_mgr_->Shutdown(
+              absl::UnavailableError("Handshake cancelled"));
+          handshake_mgr_.reset();
+        }
+        Unref();
+      },
+      DEBUG_LOCATION);
+}
+
+void NewChttp2ServerListener::HandshakingConnection::OnHandshakeDoneLocked(
+    absl::StatusOr<HandshakerArgs*> result) {
+  // If the handshaking succeeded but there is no endpoint, then the
+  // handshaker may have handed off the connection to some external
+  // code, so we can just clean up here without creating a transport.
+  bool transport_passed_to_server = false;
+  ChannelArgs args;
+  if (handshake_mgr_ != nullptr && result.ok()) {
+    args = std::move((*result)->args);
+  }
+  const auto* settings_handshake_result =
+      args.GetObject<Http2SettingsHandshakeResult>();
+  if (handshake_mgr_ != nullptr && result.ok() &&
+      (*result)->endpoint != nullptr && settings_handshake_result != nullptr) {
+    const bool is_callv3 =
+        args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
+    if (!is_callv3) {
+      // v1 stack
+      RefCountedPtr<Transport> transport =
+          grpc_create_chttp2_transport(args, std::move((*result)->endpoint),
+                                       false)
+              ->Ref();
+      if (listener_state_->OnHandshakeDone(
+              this, transport.get(), accepting_pollset_, args)) {
+        grpc_chttp2_transport_start_reading(
+            transport.get(), (*result)->read_buffer.c_slice_buffer(),
+            /*notify_on_receive_settings=*/nullptr, nullptr,
+            /*notify_on_close=*/nullptr);
+      }
+      transport_passed_to_server = true;
+    } else {
+      // v3 stack
+      std::unique_ptr<EventEngine::Endpoint> event_engine_endpoint =
+          grpc_event_engine::experimental::
+              grpc_take_wrapped_event_engine_endpoint(
+                  (*result)->endpoint.release());
+      if (GPR_UNLIKELY(event_engine_endpoint == nullptr)) {
+        LOG(ERROR) << "Failed to take endpoint.";
+      } else {
+        PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),
+                                         std::move((*result)->read_buffer));
+        std::shared_ptr<EventEngine> event_engine_ptr =
+            args.GetObjectRef<EventEngine>();
+        auto* ph2_transport = new http2::Http2ServerTransport(
+            std::move(promise_endpoint), args,
+            std::move(event_engine_ptr), /*on_receive_settings=*/nullptr,
+            /*on_close_callback=*/nullptr);
+        // OnHandshakeDone() will spawn the initial transport promises.
+        listener_state_->OnHandshakeDone(
+            this, ph2_transport, accepting_pollset_, args);
+        transport_passed_to_server = true;
+      }
+    }
+    // Since the handshake is done, we no longer need to shutdown the
+    // handshake when we get orphaned.
+    handshake_mgr_.reset();
+  }
+  // Clean up if we didn't create a transport.
+  if (!transport_passed_to_server) {
+    listener_state_->OnHandshakeDone(
+        this, /*transport=*/nullptr, accepting_pollset_, args);
+  }
+}
+
+//
 // NewChttp2ServerListener
 //
 
@@ -640,6 +782,7 @@ void NewChttp2ServerListener::OnAccept(
           self->listener_state_->memory_quota(), peer)) {
     return;
   }
+  // FIXME: move this to server code?
   RefCountedPtr<MitigationEngine> mitigation_engine = self->mitigation_engine();
   if (mitigation_engine != nullptr) {
     auto action = mitigation_engine->EvaluateIncomingConnection(
@@ -670,20 +813,31 @@ void NewChttp2ServerListener::OnAccept(
   }
   auto memory_owner =
       self->listener_state_->memory_quota()->CreateMemoryOwner();
-  auto connection = memory_owner.MakeOrphanable<ActiveConnection>(
-      self->listener_state_, self->tcp_server_, accepting_pollset,
-      std::move(acceptor), self->args_, std::move(memory_owner),
-      std::move(endpoint));
-  RefCountedPtr<ActiveConnection> connection_ref =
-      connection->RefAsSubclass<ActiveConnection>();
-  std::optional<ChannelArgs> new_args =
-      self->listener_state_->AddLogicalConnection(std::move(connection),
-                                                  self->args_, tcp);
-  if (new_args.has_value()) {
-    connection_ref->Start(*new_args);
-  } else {
-    self->listener_state_->connection_quota()->ReleaseConnections(1);
+  if (!IsServerConnectionManagementEnabled()) {
+    auto connection = memory_owner.MakeOrphanable<ActiveConnection>(
+        self->listener_state_, self->tcp_server_, accepting_pollset,
+        std::move(acceptor), self->args_, std::move(memory_owner),
+        std::move(endpoint));
+    RefCountedPtr<ActiveConnection> connection_ref =
+        connection->RefAsSubclass<ActiveConnection>();
+    std::optional<ChannelArgs> new_args =
+        self->listener_state_->AddLogicalConnection(std::move(connection),
+                                                    self->args_, tcp);
+    if (new_args.has_value()) {
+      connection_ref->Start(*new_args);
+    } else {
+      self->listener_state_->connection_quota()->ReleaseConnections(1);
+    }
+    return;
   }
+  auto connection = memory_owner.MakeOrphanable<HandshakingConnection>(
+      self->listener_state_, self->tcp_server_, accepting_pollset,
+      std::move(acceptor), self->args_, std::move(endpoint));
+  RefCountedPtr<HandshakingConnection> connection_ref = connection->Ref();
+  std::optional<ChannelArgs> new_args =
+      self->listener_state_->AddHandshakingConnection(std::move(connection),
+                                                      self->args_, tcp);
+  if (new_args.has_value()) connection_ref->Start(*new_args);
 }
 
 void NewChttp2ServerListener::TcpServerShutdownComplete(

@@ -759,6 +759,9 @@ class Http2ServerTransport final : public ServerTransport,
 
   HPackCompressor encoder_;
   TransportShutdownTracker shutdown_tracker_;
+
+  // TODO(roth): Remove this as part of removing the
+  // server_connection_management experiment.
   absl::AnyInvocable<void()> on_close_callback_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){

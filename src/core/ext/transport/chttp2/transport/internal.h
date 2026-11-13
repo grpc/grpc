@@ -339,8 +339,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // is invoked.  After that, the polling will be coordinated via the
   // bind_pollset_set transport op, sent by the subchannel when it
   // starts a connectivity watch.
+  // TODO(roth): Remove these three fields as part of removing the
+  // server_connection_management experiment.
   grpc_pollset_set* interested_parties_until_recv_settings = nullptr;
-
   absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> notify_on_receive_settings;
   absl::AnyInvocable<void()> notify_on_close;
 

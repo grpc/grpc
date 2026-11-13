@@ -661,6 +661,48 @@ TEST(Http2SettingsManagerTest,
             Http2ErrorCode::kConnectError);
 }
 
+TEST(Http2SettingsManagerTest, InitFromHandshakeWorks) {
+  Http2SettingsManager settings_manager;
+  Http2Settings local_sent;
+  local_sent.SetInitialWindowSize(100000);
+  local_sent.SetMaxFrameSize(32768);
+  Http2Settings peer_initial;
+  peer_initial.SetMaxConcurrentStreams(50);
+  peer_initial.SetAllowTrueBinaryMetadata(true);
+
+  settings_manager.InitFromHandshake(local_sent, peer_initial);
+
+  EXPECT_EQ(settings_manager.local(), local_sent);
+  EXPECT_EQ(settings_manager.acked().initial_window_size(), 65535u);
+  EXPECT_EQ(settings_manager.peer(), peer_initial);
+  // Since the initial SETTINGS frame was already sent during handshake and
+  // local_ has not changed since, MaybeSendUpdate() should return nullopt.
+  EXPECT_EQ(settings_manager.MaybeSendUpdate(), std::nullopt);
+  // Receiving the peer's ACK of the handshake SETTINGS frame should succeed.
+  EXPECT_TRUE(settings_manager.AckLastSend());
+  EXPECT_EQ(settings_manager.acked(), local_sent);
+  // A second unsolicited ACK should fail.
+  EXPECT_FALSE(settings_manager.AckLastSend());
+}
+
+TEST(Http2SettingsManagerTest, InitFromHandshakeWithSubsequentLocalUpdate) {
+  Http2SettingsManager settings_manager;
+  Http2Settings local_sent;
+  local_sent.SetInitialWindowSize(100000);
+  Http2Settings peer_initial;
+
+  settings_manager.InitFromHandshake(local_sent, peer_initial);
+  // Mutate local settings before receiving the ACK for the handshake SETTINGS.
+  settings_manager.mutable_local().SetMaxFrameSize(32768);
+  // While waiting for the handshake SETTINGS ACK, MaybeSendUpdate() returns
+  // nullopt.
+  EXPECT_EQ(settings_manager.MaybeSendUpdate(), std::nullopt);
+  // Once the handshake SETTINGS ACK arrives, MaybeSendUpdate() sends the diff.
+  EXPECT_TRUE(settings_manager.AckLastSend());
+  EXPECT_THAT(settings_manager.MaybeSendUpdate(),
+              SettingsFrame(KeyValueVec{{5, 32768}}));
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

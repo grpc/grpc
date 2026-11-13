@@ -111,6 +111,15 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     return state_ == SettingsState::kReady;
   }
 
+  void InitFromHandshake(const Http2Settings& local_settings_sent,
+                         const Http2Settings& peer_initial_settings) {
+    settings_.InitFromHandshake(local_settings_sent, peer_initial_settings);
+    state_ = SettingsState::kReady;
+    should_spawn_security_frame_loop_ = true;
+    ++num_acks_to_send_;
+    WillSendSettings();
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being sent from our transport to the peer.
 
@@ -259,6 +268,10 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     if (state_ == SettingsState::kFirstPeerSettingsReceived) {
       MaybeReportInitialSettings(event_engine);
       state_ = SettingsState::kReady;
+      apply_settings_result.should_spawn_security_frame_loop =
+          IsSecurityFrameExpected();
+    } else if (should_spawn_security_frame_loop_) {
+      should_spawn_security_frame_loop_ = false;
       apply_settings_result.should_spawn_security_frame_loop =
           IsSecurityFrameExpected();
     }
@@ -462,7 +475,10 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // Data Members for SETTINGS being received from the peer.
   const bool is_client_;
 
+  // TODO(roth): Remove this parameter as part of removing the
+  // server_connection_management experiment.
   absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_first_settings_;
+
   absl::flat_hash_map<uint16_t, uint32_t> pending_peer_settings_;
   // Number of incoming SETTINGS frames that we have received but not ACKed yet.
   uint32_t num_acks_to_send_ = 0;
@@ -473,6 +489,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     kReady,
   };
   SettingsState state_;
+  bool should_spawn_security_frame_loop_ = false;
 
   // Number of times the peer has increased the initial window size. Currently,
   // PH2 handles this by iterating over all the active streams to potentially
