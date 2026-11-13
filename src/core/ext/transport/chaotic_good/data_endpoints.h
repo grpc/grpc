@@ -452,6 +452,8 @@ class Endpoint final {
     Timestamp last_metrics_update = Timestamp::ProcessEpoch();
     TcpCallTracer::IpAddress local_addr;
     TcpCallTracer::IpAddress peer_addr;
+    Duration delay_duration = Duration::Zero();
+    int delay_percent = 0;
   };
 
   static auto PullDataPayload(RefCountedPtr<EndpointContext> ctx);
