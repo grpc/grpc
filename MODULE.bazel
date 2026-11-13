@@ -78,7 +78,7 @@ bazel_dep(name = "rules_shell", version = "0.4.0")
 
 # Golang rules.
 #
-# Patch to fix a windows rbe related issue on bazel 9.3.2
+# Patch to fix a windows rbe related issue on bazel 8.7.0
 # See also https://github.com/grpc/grpc/issues/42607.
 bazel_dep(name = "rules_go", version = "0.59.0", repo_name = "io_bazel_rules_go")
 single_version_override(
@@ -197,10 +197,16 @@ bazel_dep(name = "fuzztest", version = "20260629.0.bcr.1", dev_dependency = True
 # See also https://bazel.build/external/module#version-selection.
 bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
 
-# This package is not directly used by grpc, but requested by opentelemetry-cpp
-# and google_cloud_cpp. Pin a newer version than the 8.11.0.bcr.2 that
-# opentelemetry-cpp requests.
+# These packages are not directly used by grpc, but requested by opentelemetry-cpp
+# and google_cloud_cpp.
+# 
+# The `repo_name` is set to None since they're not referred by us.
+#
+# Pin a newer version than the 8.11.0.bcr.2 that opentelemetry-cpp requests.
 bazel_dep(name = "curl", version = "8.11.0.bcr.5", repo_name = None)
+# Pin a newer version than 3.6.0 that curl requests.
+bazel_dep(name = "mbedtls", version = "3.6.0.bcr.1", repo_name = None)
+bazel_dep(name = "nlohmann_json", version = "3.12.0.bcr.2", repo_name = None)
 
 # --- Provide repo @grpc_custom_exec_properties.
 http_archive(

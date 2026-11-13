@@ -44,3 +44,4 @@ compatibility range. The currently supported versions are captured by the
 following list:
 
 - [`9.3.2`](https://github.com/bazelbuild/bazel/releases/tag/9.3.2)
+- [`8.7.0`](https://github.com/bazelbuild/bazel/releases/tag/8.7.0)
