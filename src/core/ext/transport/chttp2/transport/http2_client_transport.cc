@@ -114,7 +114,7 @@ void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
   // Notes : Refer : src/core/ext/transport/chaotic_good/client_transport.cc
   // Functions : StartConnectivityWatch, StopConnectivityWatch, PerformOp
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::PerformOp Begin";
-  bool did_stuff = false;
+  [[maybe_unused]] bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
     StartConnectivityWatch(op->start_connectivity_watch_state,
                            std::move(op->start_connectivity_watch));

@@ -2259,7 +2259,7 @@ void Http2ServerTransport::SetCallDestination(
 // SpawnGracefulGoawayPromise() hops to the EventEngine).
 void Http2ServerTransport::PerformOp(grpc_transport_op* op) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp Begin";
-  bool did_stuff = false;
+  [[maybe_unused]] bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
     StartConnectivityWatch(op->start_connectivity_watch_state,
                            std::move(op->start_connectivity_watch));
