@@ -973,22 +973,7 @@ void NewChttp2ServerListener::OnAccept(
   }
   auto memory_owner =
       self->listener_state_->memory_quota()->CreateMemoryOwner();
-  if (IsServerConnectionManagementEnabled()) {
-    auto connection = memory_owner.MakeOrphanable<HandshakingConnection>(
-        self->listener_state_, self->tcp_server_, accepting_pollset,
-        std::move(acceptor), self->args_, std::move(memory_owner),
-        std::move(endpoint));
-    RefCountedPtr<HandshakingConnection> connection_ref =
-        connection->RefAsSubclass<HandshakingConnection>();
-    std::optional<ChannelArgs> new_args =
-        self->listener_state_->AddLogicalConnection(std::move(connection),
-                                                    self->args_, tcp);
-    if (new_args.has_value()) {
-      connection_ref->Start(*new_args);
-    } else {
-      self->listener_state_->connection_quota()->ReleaseConnections(1);
-    }
-  } else {
+  if (!IsServerConnectionManagementEnabled()) {
     auto connection = memory_owner.MakeOrphanable<ActiveConnection>(
         self->listener_state_, self->tcp_server_, accepting_pollset,
         std::move(acceptor), self->args_, std::move(memory_owner),
@@ -1003,6 +988,21 @@ void NewChttp2ServerListener::OnAccept(
     } else {
       self->listener_state_->connection_quota()->ReleaseConnections(1);
     }
+    return;
+  }
+  auto connection = memory_owner.MakeOrphanable<HandshakingConnection>(
+      self->listener_state_, self->tcp_server_, accepting_pollset,
+      std::move(acceptor), self->args_, std::move(memory_owner),
+      std::move(endpoint));
+  RefCountedPtr<HandshakingConnection> connection_ref =
+      connection->RefAsSubclass<HandshakingConnection>();
+  std::optional<ChannelArgs> new_args =
+      self->listener_state_->AddLogicalConnection(std::move(connection),
+                                                  self->args_, tcp);
+  if (new_args.has_value()) {
+    connection_ref->Start(*new_args);
+  } else {
+    self->listener_state_->connection_quota()->ReleaseConnections(1);
   }
 }
 
