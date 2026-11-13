@@ -43,6 +43,7 @@ struct PrivateGenerator {
                    const grpc_generator::File* file);
 
   std::pair<bool, std::string> GetGrpcServices();
+  std::pair<bool, std::string> GetGrpcServicesPyi();
 
  private:
   bool PrintPreamble(grpc_generator::Printer* out);
