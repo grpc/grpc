@@ -131,6 +131,18 @@ bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 
 bazel_dep(name = "rules_python", version = "2.0.2")
 
+# envoy_api requires rules_python 2.4.5, which breaks the Python Bazel build
+# in CI with "/usr/bin/env: 'python3': No such file or directory". Starting
+# with 2.4.0, rules_python rewrites wheel RECORD files with a py_binary whose
+# bootstrap runs "/usr/bin/env python3" in an empty environment, and the CI
+# docker image has python3 only in /usr/local/bin.
+# TODO(bpawan): Remove this override when rules_python or the CI image is
+# fixed, and upgrade rules_python to 2.4.5 or later.
+single_version_override(
+    module_name = "rules_python",
+    version = "2.0.2",
+)
+
 DEFAULT_PYTHON_VERSION = "3.11"
 
 PYTHON_VERSIONS = [
