@@ -44,7 +44,6 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wstring-conversion",
     "-Wtautological-overlap-compare",
     "-Wthread-safety-analysis",
-    "-Wthread-safety-beta",
     "-Wunused-but-set-variable",
     "-Wunused-comparison",
     "-Wvla",
