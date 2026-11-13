@@ -1327,10 +1327,10 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
             // waiting in the v2 pipe, hold the trailing metadata until it
             // has been released.  Otherwise, the v2 filter would see the
             // call complete first and never forward the initial metadata.
-            // This would hang the call if the initial metadata is in the
-            // same batch as the trailing metadata.  The v2 filter polls
-            // this promise again once the initial metadata has been
-            // released.
+            // If the initial metadata is in the same batch as the trailing
+            // metadata, the call would then be stuck until its deadline.
+            // The v2 filter polls this promise again once the initial
+            // metadata has been released.
             Seq(pipe_owner->server_trailing_metadata.Wait(),
                 [pipe_owner](ServerMetadataHandle metadata) {
                   return [pipe_owner, metadata = std::move(metadata)]() mutable
