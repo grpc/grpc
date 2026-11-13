@@ -13307,7 +13307,7 @@ targets:
   - test/core/filters/ext_authz_message_test.cc
   deps:
   - gtest
-  - protobuf
+  - grpc++
   - grpc_test_util
   uses_polling: false
 - name: ext_proc_message_test

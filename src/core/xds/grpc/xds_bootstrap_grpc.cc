@@ -233,7 +233,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();
       if (key == "grpc_service") {
-        return XdsExtProcOnClientEnabled() || XdsExtProcOnServerEnabled ||
+        return XdsExtProcOnClientEnabled() || XdsExtProcOnServerEnabled() ||
                XdsExtAuthzOnClientEnabled() || XdsExtAuthzOnServerEnabled();
       }
       return true;

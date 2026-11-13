@@ -505,6 +505,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc++",
         "//:transport_auth_context",
         "//src/core:channel_args",
         "//src/core:endpoint_info_handshaker",

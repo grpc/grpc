@@ -274,7 +274,7 @@ class XdsExtAuthzTest : public XdsEnd2endTest {
     auto* google_grpc = grpc_service->mutable_google_grpc();
     google_grpc->set_target_uri(
         grpc_core::LocalIpUri(ext_authz_server_->port()));
-    google_grpc->add_channel_credentials_plugin()->PackFrom(
+    (void)google_grpc->add_channel_credentials_plugin()->PackFrom(
         envoy::extensions::grpc_service::channel_credentials::insecure::v3::
             InsecureCredentials());
     return ext_authz;
