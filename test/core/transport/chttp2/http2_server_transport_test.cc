@@ -40,6 +40,7 @@
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -56,6 +57,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -3025,6 +3027,58 @@ TEST_F(Http2ServerTransportTest,
       endpoint()->NewStep();
   AddTransportCloseExpectations(teardown_step.get(), /*last_stream_id=*/5u);
   teardown_step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, AddDataConcurrentWithAndAfterTransportClose) {
+  // Verifies that Http2ServerTransport::AddData exports transport and party
+  // properties when active, does not dereference a null transport_party_ when
+  // racing with CloseTransport(), and safely completes after close.
+  struct PendingChannelzQuery {
+    std::shared_ptr<Notification> done;
+    std::shared_ptr<channelz::DataSinkImplementation> sink;
+  };
+  const auto start_add_data = [this]() -> PendingChannelzQuery {
+    PendingChannelzQuery query{
+        std::make_shared<Notification>(),
+        std::make_shared<channelz::DataSinkImplementation>()};
+    const std::shared_ptr<channelz::DataSinkCompletionNotification>
+        done_notifier =
+            std::make_shared<channelz::DataSinkCompletionNotification>(
+                [done = query.done]() { done->Notify(); });
+    server_transport()->AddData(channelz::DataSink(query.sink, done_notifier));
+    return query;
+  };
+  const auto finish_add_data =
+      [this](const PendingChannelzQuery& query) -> Json::Array {
+    while (!query.done->HasBeenNotified()) {
+      event_engine()->Tick();
+    }
+    return query.sink->Finalize(/*timed_out=*/false);
+  };
+
+  // Step 1: Initialize the transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // Step 2: Export channelz data on an active transport and verify both
+  // transport and party entries are populated.
+  const PendingChannelzQuery active_query = start_add_data();
+  EXPECT_EQ(finish_add_data(active_query).size(), 2u);
+
+  // Step 3: Schedule AddData immediately before initiating transport close so
+  // AddData snapshots a non-null party and races with CloseTransport() on the
+  // transport party.
+  const PendingChannelzQuery race_query = start_add_data();
+  const std::shared_ptr<EventSequenceEndpoint::Step> teardown_step =
+      endpoint()->NewStep();
+  AddTransportCloseExpectations(teardown_step.get());
+  teardown_step->Wait();
+  EXPECT_LE(finish_add_data(race_query).size(), 2u);
+
+  // Step 4: Calling AddData after the transport is closed completes cleanly
+  // without exporting additional entries.
+  const PendingChannelzQuery closed_query = start_add_data();
+  EXPECT_EQ(finish_add_data(closed_query).size(), 0u);
 }
 
 }  // namespace testing
