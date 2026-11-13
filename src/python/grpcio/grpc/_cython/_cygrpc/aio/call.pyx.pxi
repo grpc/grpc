@@ -112,6 +112,7 @@ cdef class _AioCall(GrpcCallWrapper):
         cdef grpc_slice method_slice
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
         cdef grpc_call_error set_credentials_error
+        cdef grpc_call_credentials *c_call_credentials
 
         if registered_call_handle:
             self.call = grpc_channel_create_registered_call(
@@ -142,7 +143,11 @@ cdef class _AioCall(GrpcCallWrapper):
             grpc_slice_unref(method_slice)
 
         if credentials is not None:
-            set_credentials_error = grpc_call_set_credentials(self.call, credentials.c())
+            c_call_credentials = credentials.c()
+            set_credentials_error = grpc_call_set_credentials(
+                self.call, c_call_credentials
+            )
+            grpc_call_credentials_release(c_call_credentials)
             if set_credentials_error != GRPC_CALL_OK:
                 raise InternalError("Credentials couldn't have been set: {0}".format(set_credentials_error))
 
