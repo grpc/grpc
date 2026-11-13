@@ -15,6 +15,7 @@
 Contains the objc_grpc_library rule.
 """
 
+load("@rules_cc//cc:objc_library.bzl", "objc_library")
 load(
     "//bazel:generate_objc.bzl",
     "generate_objc",
@@ -63,7 +64,7 @@ def objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kw
         )
         arc_srcs = [":" + objc_grpc_library_name + "_srcs"]
 
-    native.objc_library(
+    objc_library(
         name = name,
         hdrs = [":" + objc_grpc_library_name + "_hdrs"],
         non_arc_srcs = [":" + objc_grpc_library_name + "_non_arc_srcs"],

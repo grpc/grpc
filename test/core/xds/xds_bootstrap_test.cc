@@ -971,6 +971,32 @@ TEST(XdsBootstrapTest, WithAllowedGrpcServices) {
 }
 
 // TODO(roth): Remove this when env var guard goes away.
+TEST(XdsBootstrapTest, AllowedGrpcServicesParsedWithServerEnvVar) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_SERVER");
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\","
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
+      "    }"
+      "  ],"
+      "  \"allowed_grpc_services\": {"
+      "    \"server.example.com\": {"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
+      "    }"
+      "  }"
+      "}";
+  auto bootstrap_or = GrpcXdsBootstrapBuilder::Build(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
+  EXPECT_THAT(bootstrap->allowed_grpc_services(),
+              ::testing::ElementsAre(::testing::Pair(
+                  "server.example.com",
+                  EqAllowedGrpcService("insecure", ::testing::ElementsAre()))));
+}
+
+// TODO(roth): Remove this when env var guard goes away.
 TEST(XdsBootstrapTest, AllowedGrpcServicesIgnoredWithoutEnvVar) {
   const char* json_str =
       "{"

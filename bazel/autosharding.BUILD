@@ -12,7 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-exports_files([
-    "add_custom_build_file.patch",
-    "add_module_dot_bazel.patch",
-])
+# BUILD file for the autosharding repository when gRPC is used via WORKSPACE.
+# The upstream archive has no BUILD files. Under Bzlmod, the BCR module
+# provides an equivalent overlay.
+
+licenses(["notice"])
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "autosharding_proto",
+    srcs = ["proto/autosharding/v1/autosharding.proto"],
+    deps = [
+        "@com_google_googleapis//google/api:field_behavior_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)

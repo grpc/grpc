@@ -44,15 +44,12 @@ def grpc_deps():
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
-            patch_args = ["-p1"],
-            patches = [
-                "@com_github_grpc_grpc//bazel/zlib:add_custom_build_file.patch",
-            ],
-            sha256 = "da8937719bb6e9600a671f320934c0db3b8020c9c30fecda60b5a5ebdc9a1ea0",
-            strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
+            build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
+            sha256 = "b9258cf6254e7f7c37f1cd61dba943a1c5ea3cff5718c789834dac359094f5f7",
+            strip_prefix = "zlib-da607da739fa6047df13e66a2af6b8bec7c2a498",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
-                "https://github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/da607da739fa6047df13e66a2af6b8bec7c2a498.tar.gz",
+                "https://github.com/madler/zlib/archive/da607da739fa6047df13e66a2af6b8bec7c2a498.tar.gz",
             ],
         )
 
@@ -442,6 +439,7 @@ def grpc_deps():
             name = "autosharding",
             sha256 = "12b48c57daad78453fbe3c08f1c435f8a454ca01ea96abaa3d6f116805e43ee2",
             strip_prefix = "autosharding-3a21f69fe5516fe340af29ef68e327381473ecc7",
+            build_file = "@com_github_grpc_grpc//bazel:autosharding.BUILD",
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
                 "https://github.com/GoogleCloudPlatform/autosharding/archive/3a21f69fe5516fe340af29ef68e327381473ecc7.tar.gz",
