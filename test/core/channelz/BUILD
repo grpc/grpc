@@ -33,8 +33,6 @@ grpc_cc_test(
         "absl/synchronization",
     ],
     tags = [
-        # b/117517566.
-        "grpc:no-internal-poller",
         "channelz_test",
     ],
     deps = [
@@ -87,8 +85,6 @@ grpc_cc_test(
         "absl/status:statusor",
     ],
     tags = [
-        # b/117517566.
-        "grpc:no-internal-poller",
         "channelz_test",
     ],
     deps = [
