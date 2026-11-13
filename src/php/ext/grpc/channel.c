@@ -560,10 +560,13 @@ PHP_METHOD(Channel, watchConnectivityState) {
                                         (grpc_connectivity_state)last_state,
                                         deadline->wrapped, completion_queue,
                                         NULL);
+  // The wait lasts up to the deadline, and other threads of a ZTS process lock
+  // the same mutex to use this persistent channel. This object's reference
+  // keeps the channel alive without it.
+  gpr_mu_unlock(&channel->wrapper->mu);
   grpc_event event =
       grpc_completion_queue_pluck(completion_queue, NULL,
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  gpr_mu_unlock(&channel->wrapper->mu);
   RETURN_BOOL(event.success);
 }
 
