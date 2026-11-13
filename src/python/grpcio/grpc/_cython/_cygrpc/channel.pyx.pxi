@@ -459,9 +459,6 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       for call_state in state.segregated_call_states:
         grpc_call_cancel_with_status(
             call_state.c_call, code, encoded_details, NULL)
-      # TODO(https://github.com/grpc/grpc/issues/3064): Cancel connectivity
-      # watching.
-
       if drain_calls:
         while not _calls_drained(state):
           event = channel.next_call_event()
@@ -471,12 +468,15 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       else:
         while state.integrated_call_states:
           state.condition.wait()
-        while state.connectivity_due:
-          state.condition.wait()
+
+      if state.c_channel != NULL:
+        grpc_channel_destroy(state.c_channel)
+
+      while state.connectivity_due:
+        state.condition.wait()
 
       _destroy_c_completion_queue(state.c_call_completion_queue)
       _destroy_c_completion_queue(state.c_connectivity_completion_queue)
-      grpc_channel_destroy(state.c_channel)
       state.c_channel = NULL
       grpc_shutdown()
       state.condition.notify_all()
